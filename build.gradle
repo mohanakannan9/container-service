@@ -3,14 +3,32 @@ version '1.0-SNAPSHOT'
 
 apply plugin: 'groovy'
 apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'xnat'
 
-sourceCompatibility = 1.5
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
 
 repositories {
+    mavenLocal()
+    maven {
+        url 'http://nrgxnat.artifactoryonline.com/nrgxnat/libs-release'
+        name 'XNAT Release Repository'
+    }
+    maven {
+        url 'http://nrgxnat.artifactoryonline.com/nrgxnat/libs-snapshot'
+        name 'XNAT Snapshot Repository'
+    }
+    maven {
+        url 'http://nrgxnat.artifactoryonline.com/nrgxnat/ext-release'
+        name 'XNAT External Release Repository'
+    }
+    jcenter()
     mavenCentral()
 }
 
 dependencies {
     compile 'org.codehaus.groovy:groovy-all:2.3.11'
+    compile group: 'com.spotify', name: 'docker-client', version: '3.5.12'
     testCompile group: 'junit', name: 'junit', version: '4.11'
 }
