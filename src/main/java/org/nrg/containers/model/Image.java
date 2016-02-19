@@ -3,7 +3,6 @@ package org.nrg.containers.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import org.nrg.framework.orm.hibernate.BaseHibernateEntity;
 
 import java.util.List;
 import java.util.Map;

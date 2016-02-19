@@ -1,4 +1,4 @@
-package org.nrg.xapi.services;
+package org.nrg.containers.services;
 
 import org.nrg.containers.model.Container;
 import org.nrg.containers.model.Image;

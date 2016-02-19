@@ -1,10 +1,10 @@
-package org.nrg.xapi.rest;
+package org.nrg.containers.rest;
 
 import io.swagger.annotations.*;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.containers.model.Image;
 import org.nrg.containers.model.ImageParameters;
-import org.nrg.xapi.services.ContainerService;
+import org.nrg.containers.services.ContainerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;

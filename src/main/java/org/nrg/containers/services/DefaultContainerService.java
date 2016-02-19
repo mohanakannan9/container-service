@@ -1,4 +1,4 @@
-package org.nrg.xapi.services;
+package org.nrg.containers.services;
 
 import com.google.common.collect.Maps;
 import org.apache.commons.lang.StringUtils;
