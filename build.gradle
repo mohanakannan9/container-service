@@ -4,6 +4,7 @@ version '1.0-SNAPSHOT'
 apply plugin: 'groovy'
 apply plugin: 'java'
 apply plugin: 'idea'
+apply plugin: 'maven'
 //apply plugin: 'xnat'
 
 sourceCompatibility = 1.7
@@ -44,21 +45,25 @@ dependencies {
     compile ("org.nrg.xnat:web:${vXnat}") {
         transitive = false
     }
-//    compile "org.springframework:spring-beans:${vSpring}"
-//    compile "org.springframework:spring-context:${vSpring}"
-//    compile "org.springframework:spring-core:${vSpring}"
-//    compile "org.springframework:spring-tx:${vSpring}"
-//    compile "org.springframework:spring-web:${vSpring}"
-//    compile "org.springframework:spring-webmvc:${vSpring}"
+    compile ("org.nrg:framework:${vXnat}") {
+        transitive = false
+    }
 
-//    compile "io.springfox:springfox-swagger2:${vSwagger}"
-//    compile "io.springfox:springfox-swagger-ui:${vSwagger}"
+    compile "org.springframework:spring-beans:${vSpring}"
+    compile "org.springframework:spring-context:${vSpring}"
+    compile "org.springframework:spring-core:${vSpring}"
+    compile "org.springframework:spring-tx:${vSpring}"
+    compile "org.springframework:spring-web:${vSpring}"
+    compile "org.springframework:spring-webmvc:${vSpring}"
+
+    compile "io.springfox:springfox-swagger2:${vSwagger}"
+    compile "io.springfox:springfox-swagger-ui:${vSwagger}"
 
 //    compile "org.hibernate:hibernate-core:${vHibernate}"
 
-//    compile "com.fasterxml.jackson.core:jackson-annotations:${vJackson}"
-//    compile "com.fasterxml.jackson.core:jackson-core:${vJackson}"
-//    compile "com.fasterxml.jackson.core:jackson-databind:${vJackson}"
+    compile "com.fasterxml.jackson.core:jackson-annotations:${vJackson}"
+    compile "com.fasterxml.jackson.core:jackson-core:${vJackson}"
+    compile "com.fasterxml.jackson.core:jackson-databind:${vJackson}"
 
 //    compile "org.codehaus.groovy:groovy-all:${vGroovy}"
     compile group: 'com.spotify', name: 'docker-client', version: '3.5.12'
