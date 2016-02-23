@@ -16,10 +16,10 @@ def vSwagger = '2.3.1'
 def vHibernate = '4.3.11.Final'
 def vJackson = '2.7.0'
 def vSlf4j = '1.7.15'
-def vLog4j = '1.2.17'
 def vJunit = '4.12'
-def vGroovy = '2.4.5'
-def vJython = '2.7.0'
+//def vLog4j = '1.2.17'
+//def vGroovy = '2.4.5'
+//def vJython = '2.7.0'
 
 repositories {
     mavenLocal()
@@ -65,8 +65,22 @@ dependencies {
     compile "com.fasterxml.jackson.core:jackson-core:${vJackson}"
     compile "com.fasterxml.jackson.core:jackson-databind:${vJackson}"
 
+    compile "org.slf4j:slf4j-api:${vSlf4j}"
+    compile "org.slf4j:slf4j-log4j12:${vSlf4j}"
+
 //    compile "org.codehaus.groovy:groovy-all:${vGroovy}"
     compile group: 'com.spotify', name: 'docker-client', version: '3.5.12'
 
     testCompile group: 'junit', name: 'junit', version: "${vJunit}"
+    testCompile "org.hamcrest:hamcrest-library:1.3"
 }
+
+//compileJava {
+//    options.encoding = 'UTF-8'
+//    options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+//}
+//
+//compileTestJava {
+//    options.encoding = 'UTF-8'
+//    options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+//}

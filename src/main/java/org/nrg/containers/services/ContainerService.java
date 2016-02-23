@@ -7,6 +7,8 @@ import org.nrg.containers.model.ImageParameters;
 import java.util.List;
 
 public interface ContainerService {
+    String getServer();
+
     List<Image> getAllImages();
 
     Image getImageByName(final String name);

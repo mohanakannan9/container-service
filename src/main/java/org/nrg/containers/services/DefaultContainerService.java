@@ -21,38 +21,45 @@ import java.util.Map;
 public class DefaultContainerService implements ContainerService {
     private String DOCKER_HOST = "http://10.0.0.170:2375";
 
+    // Later, this will be initialized from a preference
+    private String _server = DOCKER_HOST;
+
+    public String getServer() {
+        return _server;
+    }
+
     public List<Image> getAllImages() {
         if (_log.isDebugEnabled()) {
-            _log.debug("getAllImages, server " + DOCKER_HOST);
+            _log.debug("getAllImages, server " + _server);
         }
-        return DockerControlApi.getAllImages(DOCKER_HOST);
+        return DockerControlApi.getAllImages(_server);
     }
 
     public Image getImageByName(final String name) {
         if (_log.isDebugEnabled()) {
-            _log.debug("getImageByName, image "+name+", server " + DOCKER_HOST);
+            _log.debug("getImageByName, image "+name+", server " + _server);
         }
 
-        return DockerControlApi.getImageByName(DOCKER_HOST, name);
+        return DockerControlApi.getImageByName(_server, name);
     }
 
     public List<Container> getAllContainers() {
-        return DockerControlApi.getAllContainers(DOCKER_HOST);
+        return DockerControlApi.getAllContainers(_server);
     }
 
     public String getContainerStatus(final String id) {
-        return DockerControlApi.getContainerStatus(DOCKER_HOST, id);
+        return DockerControlApi.getContainerStatus(_server, id);
     }
 
     public Container getContainer(final String id) {
-        return DockerControlApi.getContainer(DOCKER_HOST, id);
+        return DockerControlApi.getContainer(_server, id);
     }
 
     @Override
     public String launch(String imageName, ImageParameters params) {
-//        final Image image = DockerControlApi.getImageByName(DOCKER_HOST, imageName);
+//        final Image image = DockerControlApi.getImageByName(_server, imageName);
 //        final ImageMetadata imageMetadata = _imageMetadataService.getByImageId(image.id());
-        return DockerControlApi.launchImage(DOCKER_HOST, imageName, params.getCommandArray(), params.getVolumesArray());
+        return DockerControlApi.launchImage(_server, imageName, params.getCommandArray(), params.getVolumesArray());
     }
 
     static Map<String, Class<? extends ImageMetadata>> imageMetadataClasses = null;
@@ -66,7 +73,7 @@ public class DefaultContainerService implements ContainerService {
 
                 for (Class<?> clazz : classes) {
                     if (ImageMetadata.class.isAssignableFrom(clazz)) {
-                        Class<? extends ImageMetadata> metadataClazz = (Class<? extends ImageMetadata>) clazz;
+                        Class<? extends ImageMetadata> metadataClazz = clazz.asSubclass(ImageMetadata.class);
                         if (metadataClazz.isAnnotationPresent(ImageMetadataAnn.class)) {
                             ImageMetadataAnn annotation = metadataClazz.getAnnotation(ImageMetadataAnn.class);
                             if (StringUtils.isBlank(annotation.version())) {
