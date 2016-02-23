@@ -59,7 +59,7 @@ dependencies {
     compile "io.springfox:springfox-swagger2:${vSwagger}"
     compile "io.springfox:springfox-swagger-ui:${vSwagger}"
 
-//    compile "org.hibernate:hibernate-core:${vHibernate}"
+    compile "org.hibernate:hibernate-core:${vHibernate}"
 
     compile "com.fasterxml.jackson.core:jackson-annotations:${vJackson}"
     compile "com.fasterxml.jackson.core:jackson-core:${vJackson}"
