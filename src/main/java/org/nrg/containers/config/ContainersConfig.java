@@ -2,63 +2,37 @@ package org.nrg.containers.config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.MessageSource;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.support.ResourceBundleMessageSource;
-import org.springframework.web.servlet.ViewResolver;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
-import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
-import org.springframework.web.servlet.view.InternalResourceViewResolver;
-import org.springframework.web.servlet.view.JstlView;
 
 @Configuration
-@EnableWebMvc
-@ComponentScan("org.nrg.containers.rest, org.nrg.containers.services")
-public class ContainersConfig extends WebMvcConfigurerAdapter implements ApplicationContextAware, InitializingBean {
+@ComponentScan("org.nrg.containers.rest, " +
+        "org.nrg.containers.services, " +
+        "org.nrg.containers.services.impl")
+public class ContainersConfig {
 
-    @Bean
-    public ViewResolver viewResolver() {
-        return new InternalResourceViewResolver() {{
-            setViewClass(JstlView.class);
-            setPrefix("/WEB-INF/views/");
-            setSuffix(".jsp");
-        }};
-    }
-
-    @Bean
-    public MessageSource messageSource() {
-        ResourceBundleMessageSource messageSource = new ResourceBundleMessageSource();
-        messageSource.setBasename("messages");
-        return messageSource;
-    }
-
-    // Added to support Swagger requirements.
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("swagger-ui.html")
-                .addResourceLocations("classpath:/META-INF/resources/");
-
-        registry.addResourceHandler("/webjars/**")
-                .addResourceLocations("classpath:/META-INF/resources/webjars/");
-    }
-
-    @Override
-    public void setApplicationContext(final ApplicationContext context) throws BeansException {
-        _context = context;
-    }
-
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        _log.debug(_context.getApplicationName());
-    }
+// TODO Add Exception handling
+//    @Bean
+//    public SimpleMappingExceptionResolver exceptionResolver() {
+//        SimpleMappingExceptionResolver exceptionResolver = new SimpleMappingExceptionResolver();
+//
+//        Properties exceptionMappings = new Properties();
+//
+//        exceptionMappings.put("net.petrikainulainen.spring.testmvc.todo.exception.TodoNotFoundException", "error/404");
+//        exceptionMappings.put("java.lang.Exception", "error/error");
+//        exceptionMappings.put("java.lang.RuntimeException", "error/error");
+//
+//        exceptionResolver.setExceptionMappings(exceptionMappings);
+//
+//        Properties statusCodes = new Properties();
+//
+//        statusCodes.put("error/404", "404");
+//        statusCodes.put("error/error", "500");
+//
+//        exceptionResolver.setStatusCodes(statusCodes);
+//
+//        return exceptionResolver;
+//    }
 
     private static final Logger _log = LoggerFactory.getLogger(ContainersConfig.class);
-    private ApplicationContext _context;
 }
