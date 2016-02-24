@@ -18,7 +18,7 @@ import org.junit.rules.TestName;
 import org.nrg.containers.api.DockerControlApi;
 import org.nrg.containers.model.Container;
 import org.nrg.containers.model.Image;
-import org.nrg.containers.services.DefaultContainerService;
+import org.nrg.containers.services.impl.DefaultContainerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
