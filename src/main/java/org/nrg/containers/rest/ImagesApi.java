@@ -24,32 +24,19 @@ public class ImagesApi {
 //    @ApiResponses({
 //            @ApiResponse(code = 200, message = "A list of images on the server"),
 //            @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(method = RequestMethod.GET)
+    @RequestMapping(method = RequestMethod.GET, produces = {"application/json"})
     @ResponseBody
     public List<Image> getAllImages() {
-        if (_log.isDebugEnabled()) {
-            _log.debug("GET all images");
-        }
-        List<Image> imageList = _service.getAllImages();
-        if (_log.isDebugEnabled()) {
-            _log.debug("Found image list " + imageList);
-        }
-        return imageList;
+        return service.getAllImages();
     }
 
     //    @ApiOperation(value = "Get list of images.", notes = "Returns a list of all images on the container server.", response = Image.class, responseContainer = "List")
 //    @ApiResponses({
 //            @ApiResponse(code = 200, message = "A list of images on the server"),
 //            @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(method = RequestMethod.GET, params = {"name"})
+    @RequestMapping(method = RequestMethod.GET, produces = {"application/json"}, params = {"name"})
     public ResponseEntity<Image> getByName(@RequestParam String name) {
-        if (_log.isDebugEnabled()) {
-            _log.debug("GET image " + name);
-        }
-        final Image image = _service.getImageByName(name);
-        if (_log.isDebugEnabled()) {
-            _log.debug("Found image " + image);
-        }
+        final Image image = service.getImageByName(name);
         return image == null ? new ResponseEntity<Image>(HttpStatus.NOT_FOUND) : new ResponseEntity<>(image, HttpStatus.OK);
     }
 
@@ -65,12 +52,12 @@ public class ImagesApi {
         if (_log.isDebugEnabled()) {
             _log.debug("About to launch image "+name);
         }
-        final String containerId =  _service.launch(name, launchArguments);
+        final String containerId =  service.launch(name, launchArguments);
         return StringUtils.isBlank(containerId) ?
                 new ResponseEntity<String>(HttpStatus.INTERNAL_SERVER_ERROR) :
                 new ResponseEntity<>(containerId, HttpStatus.OK);
     }
 
     @Inject
-    private ContainerService _service;
+    private ContainerService service;
 }

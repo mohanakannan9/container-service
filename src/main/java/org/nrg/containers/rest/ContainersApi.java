@@ -25,7 +25,7 @@ public class ContainersApi {
     @RequestMapping(method = RequestMethod.GET)
     @ResponseBody
     public List<Container> getAllContainers() {
-        return _service.getAllContainers();
+        return service.getAllContainers();
     }
 
 //    @ApiOperation(value = "Gets the container with the specified id.", notes = "Returns the serialized container object with the specified id.", response = Container.class)
@@ -38,7 +38,7 @@ public class ContainersApi {
     @RequestMapping(value = {"/{id}"}, method = RequestMethod.GET)
 //    public ResponseEntity<Container> getById(@ApiParam(value = "Id of the container to fetch", required = true) @PathVariable("id") final String id) {
     public ResponseEntity<Container> getById(@ApiParam(value = "Id of the container to fetch", required = true) @PathVariable("id") final String id) {
-        final Container container = _service.getContainer(id);
+        final Container container = service.getContainer(id);
         return container == null ? new ResponseEntity<Container>(HttpStatus.NOT_FOUND) : new ResponseEntity<>(container, HttpStatus.OK);
     }
 
@@ -51,10 +51,10 @@ public class ContainersApi {
 //            @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = {"/{id}/status"}, method = {RequestMethod.GET})
     public ResponseEntity<String> getStatus(@ApiParam(value = "Id of the container to fetch", required = true) @PathVariable("id") final String id) {
-        final String status = _service.getContainerStatus(id);
+        final String status = service.getContainerStatus(id);
         return status == null ? new ResponseEntity<String>(HttpStatus.NOT_FOUND) : new ResponseEntity<>(status, HttpStatus.OK);
     }
 
     @Inject
-    private ContainerService _service;
+    private ContainerService service;
 }

@@ -20,7 +20,7 @@ public class Container {
      **/
     @ApiModelProperty(value = "The container's id.")
     @JsonProperty("id")
-    public String getId() {
+    public String id() {
         return _id;
     }
 
@@ -33,7 +33,7 @@ public class Container {
      **/
     @ApiModelProperty(value = "The container's status.")
     @JsonProperty("status")
-    public String getStatus() {
+    public String status() {
         return _status;
     }
 
