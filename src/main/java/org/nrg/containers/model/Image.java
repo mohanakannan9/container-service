@@ -1,6 +1,7 @@
 package org.nrg.containers.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Objects;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
@@ -63,8 +64,7 @@ public class Image {
      * The image's repo tags.
      **/
     @ApiModelProperty(value = "The image's repo tags.")
-    //TODO: How does json handle lists?
-    // @JsonProperty("repotags")
+    @JsonProperty("repotags")
     public List<String> getRepoTags() { return _repoTags; }
 
     public void setRepoTags(final List<String> repoTags) { _repoTags = repoTags; }
@@ -90,9 +90,39 @@ public class Image {
             sb.append(tag).append(", ");
         }
         sb.append(_repoTags.get(_repoTags.size()-1)).append("]\n");
+        sb.append("  labels: {");
+        for (Map.Entry<String, String> label : _labels.entrySet()) {
+            sb.append(label.getKey())
+                    .append(": ")
+                    .append(label.getValue())
+                    .append(", ");
+        }
+        sb.replace(sb.length()-2, sb.length(), "");
+        sb.append("  }\n");
         sb.append("}\n");
         return sb.toString();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
+        Image that = (Image) o;
+
+        return Objects.equal(this._name, that._name) &&
+                Objects.equal(this._id, that._id) &&
+                Objects.equal(this._repoTags, that._repoTags) &&
+                Objects.equal(this._size, that._size) &&
+                Objects.equal(this._labels, that._labels);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(_name, _id, _repoTags, _size, _labels);
+    }
 }
