@@ -139,21 +139,26 @@ public class DockerControlApi {
     }
 
     private static com.spotify.docker.client.messages.Image _getImageByName(final String server, final String imageName) {
+        final DockerClient client = getClient(server);
 
-        final List<com.spotify.docker.client.messages.Image> filteredImages =
-                _getImages(server, ImmutableMap.of("filter", imageName));
+        List<com.spotify.docker.client.messages.Image> images = null;
+        try {
+            images = client.listImages(DockerClient.ListImagesParam.byName(imageName));
+        } catch (DockerException | InterruptedException e) {
+            e.printStackTrace();
+        }
 
-        if (filteredImages != null && !filteredImages.isEmpty()) {
-            if (filteredImages.size() > 1) {
+        if (images != null && !images.isEmpty()) {
+            if (images.size() > 1) {
                 String warn = "Found multiple images with name "+imageName + ": ";
-                for (final com.spotify.docker.client.messages.Image image : filteredImages) {
+                for (final com.spotify.docker.client.messages.Image image : images) {
                     warn += image.id() + " ";
                 }
-                warn += ". Returning "+filteredImages.get(0).id()+".";
+                warn += ". Returning "+images.get(0).id()+".";
 
                 _log.warn(warn);
             }
-            return filteredImages.get(0);
+            return images.get(0);
         }
         return null;
     }
@@ -232,7 +237,7 @@ public class DockerControlApi {
     public static String getContainerStatus(final String server, final String id) {
         final Container container = getContainer(server, id);
 
-        return container != null ? container.getStatus() : null;
+        return container != null ? container.status() : null;
     }
 
     /**
@@ -409,18 +414,11 @@ public class DockerControlApi {
      * @param dockerContainer Spotify-Docker Container object
      * @return NRG Container object
      **/
-    private static org.nrg.containers.model.Container DockerContainerToNrgContainer(final com.spotify.docker.client.messages.Container dockerContainer) {
-        org.nrg.containers.model.Container genericContainer = null;
+    private static Container DockerContainerToNrgContainer(final com.spotify.docker.client.messages.Container dockerContainer) {
+        Container genericContainer = null;
         if (dockerContainer != null) {
             genericContainer =
-                    new org.nrg.containers.model.Container(
-                            // TODO container fields
-//                            dockerContainer.repoTags() != null && dockerContainer.repoTags().size() > 0 ? dockerContainer.repoTags().get(0) : "null",
-//                            dockerContainer.id(),
-//                            dockerContainer.size(),
-//                            dockerContainer.repoTags(),
-//                            dockerContainer.labels()
-                    );
+                    new Container(dockerContainer.id(), dockerContainer.status());
         }
         return genericContainer;
     }
@@ -435,7 +433,7 @@ public class DockerControlApi {
         org.nrg.containers.model.Container genericContainer = null;
         if (dockerContainer != null) {
             genericContainer =
-                    new org.nrg.containers.model.Container(
+                    new Container(
                             // TODO container fields
 //                            dockerContainer.repoTags() != null && dockerContainer.repoTags().size() > 0 ? dockerContainer.repoTags().get(0) : "null",
 //                            dockerContainer.id(),
