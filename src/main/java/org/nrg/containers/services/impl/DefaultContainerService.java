@@ -1,4 +1,4 @@
-package org.nrg.containers.services;
+package org.nrg.containers.services.impl;
 
 import com.google.common.collect.Maps;
 import org.apache.commons.lang.StringUtils;
@@ -8,6 +8,7 @@ import org.nrg.containers.model.Image;
 import org.nrg.containers.model.ImageParameters;
 import org.nrg.containers.model.metadata.ImageMetadata;
 import org.nrg.containers.model.metadata.ImageMetadataAnn;
+import org.nrg.containers.services.ContainerService;
 import org.nrg.framework.utilities.Reflection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
