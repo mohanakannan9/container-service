@@ -25,8 +25,8 @@ public class MockImages {
             new Image(FIRST_NAME, FIRST_ID, FIRST_SIZE, FIRST_TAGS, FIRST_LABELS);
 
     public final static String SECOND_NAME = "second";
-    public final static String SECOND_ID = "0";
-    public final static Long SECOND_SIZE = 0L;
+    public final static String SECOND_ID = "1";
+    public final static Long SECOND_SIZE = 1L;
     public final static List<String> SECOND_TAGS = Lists.newArrayList("tagX", "tagY");
     public final static Map<String, String> SECOND_LABELS = ImmutableMap.of("label1", "value1");
     public final static Image SECOND =
