@@ -10,7 +10,7 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 @Configuration
 @EnableWebMvc
-@ComponentScan(value = "org.nrg.containers.services, org.nrg.containers.rest", resourcePattern = "*.class")
+@ComponentScan(value = "org.nrg.containers.services, org.nrg.containers.rest, org.nrg.containers.api, org.nrg.containers.api.impl", resourcePattern = "*.class")
 public class MockContainerServiceConfig {
     @Bean
     public ContainerService mockContainerService() {
