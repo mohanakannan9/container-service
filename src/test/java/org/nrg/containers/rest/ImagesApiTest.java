@@ -1,4 +1,4 @@
-package org.nrg.containers.test.rest;
+package org.nrg.containers.rest;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;

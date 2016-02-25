@@ -1,10 +1,8 @@
 package org.nrg.containers.rest;
 
-import io.swagger.annotations.*;
-import oracle.jrockit.jfr.StringConstantPool;
+import io.swagger.annotations.ApiParam;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.containers.exceptions.BadRequestException;
-import org.nrg.containers.exceptions.ContainerServerException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Image;
 import org.nrg.containers.model.ImageParameters;
@@ -14,7 +12,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.inject.Inject;
 import java.util.List;

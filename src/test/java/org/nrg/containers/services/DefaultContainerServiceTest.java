@@ -1,4 +1,4 @@
-package org.nrg.containers.test.services;
+package org.nrg.containers.services;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
