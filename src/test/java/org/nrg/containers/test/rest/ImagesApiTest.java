@@ -85,9 +85,10 @@ public class ImagesApiTest {
 
         when(service.getAllImages()).thenReturn(mockImageList);
 
-        final String response = mockMvc.perform(get("/images").accept(MediaType.parseMediaType("application/json;charset=UTF-8")))
+        final String response =
+                mockMvc.perform(get("/images").accept(MediaType.APPLICATION_JSON_UTF8))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType("application/json;charset=UTF-8"))
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -109,12 +110,11 @@ public class ImagesApiTest {
         when(service.getImageByName(name)).thenReturn(mockImage);
 
         final String response =
-                mockMvc.perform(
-                                get("/images")
-                                .param("name", "foo")
-                                .accept(MediaType.parseMediaType("application/json;charset=UTF-8")))
+                mockMvc.perform(get("/images")
+                                .param("name", name)
+                                .accept(MediaType.APPLICATION_JSON_UTF8))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType("application/json;charset=UTF-8"))
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -122,6 +122,18 @@ public class ImagesApiTest {
         ObjectMapper mapper = new ObjectMapper();
         Image responseImage = mapper.readValue(response, Image.class);
         assertThat(responseImage, equalTo(mockImage));
+    }
+
+    @Test
+    public void testGetImageByNameNotFound() throws Exception {
+        final String name = "foo";
+        when(service.getImageByName(name)).thenReturn(null);
+
+
+        mockMvc.perform(get("/images")
+                        .param("name", "foo")
+                        .accept(MediaType.APPLICATION_JSON_UTF8))
+                .andExpect(status().isNotFound());
     }
 
     @Configuration

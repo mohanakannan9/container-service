@@ -2,6 +2,8 @@ package org.nrg.containers.rest;
 
 import io.swagger.annotations.*;
 import org.apache.commons.lang.StringUtils;
+import org.nrg.containers.exceptions.ContainerServerException;
+import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Image;
 import org.nrg.containers.model.ImageParameters;
 import org.nrg.containers.services.ContainerService;
@@ -35,9 +37,13 @@ public class ImagesApi {
 //            @ApiResponse(code = 200, message = "A list of images on the server"),
 //            @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(method = RequestMethod.GET, produces = {"application/json"}, params = {"name"})
-    public ResponseEntity<Image> getByName(@RequestParam String name) {
+    @ResponseBody
+    public Image getByName(@RequestParam String name) throws NotFoundException {
         final Image image = service.getImageByName(name);
-        return image == null ? new ResponseEntity<Image>(HttpStatus.NOT_FOUND) : new ResponseEntity<>(image, HttpStatus.OK);
+        if (image == null) {
+            throw new NotFoundException("No image found with name "+name);
+        }
+        return image;
     }
 
 //    @ApiOperation(value = "Launches a container.", notes = "Returns the updated serialized image object with the specified image name.", response = Image.class)

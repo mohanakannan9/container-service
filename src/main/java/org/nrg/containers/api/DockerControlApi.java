@@ -17,6 +17,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+import org.nrg.containers.exceptions.ContainerServerException;
 import org.nrg.containers.model.Container;
 import org.nrg.containers.model.Image;
 import org.slf4j.Logger;
@@ -145,7 +146,7 @@ public class DockerControlApi {
         try {
             images = client.listImages(DockerClient.ListImagesParam.byName(imageName));
         } catch (DockerException | InterruptedException e) {
-            e.printStackTrace();
+            throw new ContainerServerException(e);
         }
 
         if (images != null && !images.isEmpty()) {
