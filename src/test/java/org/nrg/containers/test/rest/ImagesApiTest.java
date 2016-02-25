@@ -202,6 +202,12 @@ public class ImagesApiTest {
                         .param("id", id)
                         .accept(MediaType.APPLICATION_JSON_UTF8))
                 .andExpect(status().isNotFound());
+
+        mockMvc.perform(delete("/images")) // Note, no query params
+                .andExpect(status().isBadRequest());
+                //.andExpect(content().string("Include the name or id of an image to delete in the query parameters."));
+                // I wish my exception message got passed to the response body, but it doesn't.
+                // May need to move to a different exception handling model
     }
 
     @Configuration

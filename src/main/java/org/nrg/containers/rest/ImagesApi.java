@@ -3,6 +3,7 @@ package org.nrg.containers.rest;
 import io.swagger.annotations.*;
 import oracle.jrockit.jfr.StringConstantPool;
 import org.apache.commons.lang.StringUtils;
+import org.nrg.containers.exceptions.BadRequestException;
 import org.nrg.containers.exceptions.ContainerServerException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Image;
@@ -76,6 +77,12 @@ public class ImagesApi {
             throw new NotFoundException("No image found with id "+inputId);
         }
         return id;
+    }
+
+    @RequestMapping(method = RequestMethod.DELETE, params = {})
+    @ResponseBody
+    public void delete() throws BadRequestException {
+        throw new BadRequestException("Include the name or id of an image to delete in the query parameters.");
     }
 
 //    @ApiOperation(value = "Launches a container.", notes = "Returns the updated serialized image object with the specified image name.", response = Image.class)
