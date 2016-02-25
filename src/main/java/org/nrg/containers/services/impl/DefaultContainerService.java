@@ -23,44 +23,46 @@ public class DefaultContainerService implements ContainerService {
     private String DOCKER_HOST = "http://10.0.0.170:2375";
 
     // Later, this will be initialized from a preference
-    private String _server = DOCKER_HOST;
+    private String server = DOCKER_HOST;
+
+    private static final Logger _log = LoggerFactory.getLogger(DefaultContainerService.class);
 
     public String getServer() {
-        return _server;
+        return server;
     }
 
     public List<Image> getAllImages() {
         if (_log.isDebugEnabled()) {
-            _log.debug("getAllImages, server " + _server);
+            _log.debug("getAllImages, server " + server);
         }
-        return DockerControlApi.getAllImages(_server);
+        return DockerControlApi.getAllImages(server);
     }
 
     public Image getImageByName(final String name) {
         if (_log.isDebugEnabled()) {
-            _log.debug("getImageByName, image "+name+", server " + _server);
+            _log.debug("getImageByName, image "+name+", server " + server);
         }
 
-        return DockerControlApi.getImageByName(_server, name);
+        return DockerControlApi.getImageByName(server, name);
     }
 
     public List<Container> getAllContainers() {
-        return DockerControlApi.getAllContainers(_server);
+        return DockerControlApi.getAllContainers(server);
     }
 
     public String getContainerStatus(final String id) {
-        return DockerControlApi.getContainerStatus(_server, id);
+        return DockerControlApi.getContainerStatus(server, id);
     }
 
     public Container getContainer(final String id) {
-        return DockerControlApi.getContainer(_server, id);
+        return DockerControlApi.getContainer(server, id);
     }
 
     @Override
     public String launch(String imageName, ImageParameters params) {
-//        final Image image = DockerControlApi.getImageByName(_server, imageName);
+//        final Image image = DockerControlApi.getImageByName(server, imageName);
 //        final ImageMetadata imageMetadata = _imageMetadataService.getByImageId(image.id());
-        return DockerControlApi.launchImage(_server, imageName, params.getCommandArray(), params.getVolumesArray());
+        return DockerControlApi.launchImage(server, imageName, params.getCommandArray(), params.getVolumesArray());
     }
 
     static Map<String, Class<? extends ImageMetadata>> imageMetadataClasses = null;
@@ -122,6 +124,4 @@ public class DefaultContainerService implements ContainerService {
 
 //    @Inject
 //    private ImageMetadataService _imageMetadataService;
-
-    private static final Logger _log = LoggerFactory.getLogger(DefaultContainerService.class);
 }
