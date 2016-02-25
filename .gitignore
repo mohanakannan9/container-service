@@ -9,3 +9,6 @@ build/
 *.iml
 *.ipr
 *.iws
+
+# xnat-web exploded war
+/out/
