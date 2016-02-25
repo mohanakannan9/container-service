@@ -7,15 +7,11 @@ import com.google.common.collect.Lists;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
+import org.nrg.containers.config.MockContainerServiceConfig;
 import org.nrg.containers.model.Image;
 import org.nrg.containers.services.ContainerService;
-import org.nrg.containers.services.impl.DefaultContainerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -23,7 +19,6 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 import javax.servlet.ServletContext;
 import java.util.List;
@@ -33,14 +28,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
-@ContextConfiguration(classes = ImagesApiTest.ContainersTestConfig.class)
+@ContextConfiguration(classes = MockContainerServiceConfig.class)
 public class ImagesApiTest {
 
     private MockMvc mockMvc;
@@ -209,15 +204,4 @@ public class ImagesApiTest {
                 // I wish my exception message got passed to the response body, but it doesn't.
                 // May need to move to a different exception handling model
     }
-
-    @Configuration
-    @EnableWebMvc
-    @ComponentScan(value = "org.nrg.containers.services, org.nrg.containers.rest", resourcePattern = "*.class")
-    static class ContainersTestConfig {
-        @Bean
-        public ContainerService mockContainerService() {
-            return Mockito.mock(DefaultContainerService.class);
-        }
-    }
-
 }
