@@ -49,9 +49,6 @@ public class ImagesApi {
 //            @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = {"/launch"}, method = {RequestMethod.POST}, params = {"name"})
     public ResponseEntity<String> launch(@ApiParam(value = "The name of the image to launch.", required = true) @RequestParam("name") String name, @RequestBody ImageParameters launchArguments) {
-        if (_log.isDebugEnabled()) {
-            _log.debug("About to launch image "+name);
-        }
         final String containerId =  service.launch(name, launchArguments);
         return StringUtils.isBlank(containerId) ?
                 new ResponseEntity<String>(HttpStatus.INTERNAL_SERVER_ERROR) :

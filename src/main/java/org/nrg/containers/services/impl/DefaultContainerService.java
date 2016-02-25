@@ -22,7 +22,7 @@ import java.util.Map;
 public class DefaultContainerService implements ContainerService {
     private String DOCKER_HOST = "http://10.0.0.170:2375";
 
-    // Later, this will be initialized from a preference
+    // TODO Later, this will be initialized from a preference
     private String server = DOCKER_HOST;
 
     private static final Logger _log = LoggerFactory.getLogger(DefaultContainerService.class);
@@ -32,17 +32,10 @@ public class DefaultContainerService implements ContainerService {
     }
 
     public List<Image> getAllImages() {
-        if (_log.isDebugEnabled()) {
-            _log.debug("getAllImages, server " + server);
-        }
         return DockerControlApi.getAllImages(server);
     }
 
     public Image getImageByName(final String name) {
-        if (_log.isDebugEnabled()) {
-            _log.debug("getImageByName, image "+name+", server " + server);
-        }
-
         return DockerControlApi.getImageByName(server, name);
     }
 
