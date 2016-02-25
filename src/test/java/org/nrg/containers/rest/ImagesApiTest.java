@@ -2,12 +2,11 @@ package org.nrg.containers.rest;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.containers.config.MockContainerServiceConfig;
+import org.nrg.containers.mocks.MockImages;
 import org.nrg.containers.model.Image;
 import org.nrg.containers.services.ContainerService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +21,6 @@ import org.springframework.web.context.WebApplicationContext;
 
 import javax.servlet.ServletContext;
 import java.util.List;
-import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -63,21 +61,7 @@ public class ImagesApiTest {
 
     @Test
     public void testGetAllImages() throws Exception {
-        final String firstName = "first";
-        final String firstId = "0";
-        final Long firstSize = 0L;
-        final List<String> firstTags = Lists.newArrayList("tag1", "tag2");
-        final Map<String, String> firstLabels = ImmutableMap.of("label0", "value0");
-        final Image first = new Image(firstName, firstId, firstSize, firstTags, firstLabels);
-
-        final String secondName = "second";
-        final String secondId = "0";
-        final Long secondSize = 0L;
-        final List<String> secondTags = Lists.newArrayList("tagx", "tagY");
-        final Map<String, String> secondLabels = ImmutableMap.of("label1", "value1");
-        final Image second = new Image(secondName, secondId, secondSize, secondTags, secondLabels);
-
-        final List<Image> mockImageList = Lists.newArrayList(first, second);
+        final List<Image> mockImageList = MockImages.FIRST_AND_SECOND;
 
         when(service.getAllImages()).thenReturn(mockImageList);
 
@@ -96,12 +80,9 @@ public class ImagesApiTest {
 
     @Test
     public void testGetImage() throws Exception {
-        final String name = "foo";
-        final String id = "0";
-        final Long size = 0L;
-        final List<String> tags = Lists.newArrayList("tag1", "tag2");
-        final Map<String, String> labels = ImmutableMap.of("label0", "value0");
-        final Image mockImage = new Image(name, id, size, tags, labels);
+        final String name = MockImages.FOO_NAME;
+        final String id = MockImages.FOO_ID;
+        final Image mockImage = MockImages.FOO;
 
         when(service.getImageByName(name))
                 .thenReturn(mockImage)
@@ -152,8 +133,8 @@ public class ImagesApiTest {
 
     @Test
     public void testDeleteImage() throws Exception {
-        final String name = "foo";
-        final String id = "0";
+        final String name = MockImages.FOO_NAME;
+        final String id = MockImages.FOO_ID;
 
         when(service.deleteImageByName(name))
                 .thenReturn(id)
