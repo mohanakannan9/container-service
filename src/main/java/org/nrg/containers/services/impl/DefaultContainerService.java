@@ -2,7 +2,7 @@ package org.nrg.containers.services.impl;
 
 import com.google.common.collect.Maps;
 import org.apache.commons.lang.StringUtils;
-import org.nrg.containers.api.DockerControlApi;
+import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.model.Container;
 import org.nrg.containers.model.Image;
 import org.nrg.containers.model.ImageParameters;
@@ -12,6 +12,7 @@ import org.nrg.containers.services.ContainerService;
 import org.nrg.framework.utilities.Reflection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -27,22 +28,25 @@ public class DefaultContainerService implements ContainerService {
 
     private static final Logger _log = LoggerFactory.getLogger(DefaultContainerService.class);
 
+    @Autowired
+    private ContainerControlApi controlApi; 
+
     public String getServer() {
         return server;
     }
 
     public List<Image> getAllImages() {
-        return DockerControlApi.getAllImages(server);
+        return controlApi.getAllImages(server);
     }
 
     public Image getImageByName(final String name) {
-        return DockerControlApi.getImageByName(server, name);
+        return controlApi.getImageByName(server, name);
     }
 
     @Override
     public Image getImageById(String id) {
         // TODO Figure out what to do with this. Not sure if we need to be fetching images by id.
-        return null;
+        return controlApi.getImageById(server, id);
     }
 
     @Override
@@ -56,22 +60,22 @@ public class DefaultContainerService implements ContainerService {
     }
 
     public List<Container> getAllContainers() {
-        return DockerControlApi.getAllContainers(server);
+        return controlApi.getAllContainers(server);
     }
 
     public String getContainerStatus(final String id) {
-        return DockerControlApi.getContainerStatus(server, id);
+        return controlApi.getContainerStatus(server, id);
     }
 
     public Container getContainer(final String id) {
-        return DockerControlApi.getContainer(server, id);
+        return controlApi.getContainer(server, id);
     }
 
     @Override
     public String launch(String imageName, ImageParameters params) {
-//        final Image image = DockerControlApi.getImageByName(server, imageName);
+//        final Image image = controlApi.getImageByName(server, imageName);
 //        final ImageMetadata imageMetadata = _imageMetadataService.getByImageId(image.id());
-        return DockerControlApi.launchImage(server, imageName, params.getCommandArray(), params.getVolumesArray());
+        return controlApi.launchImage(server, imageName, params.getCommandArray(), params.getVolumesArray());
     }
 
     static Map<String, Class<? extends ImageMetadata>> imageMetadataClasses = null;

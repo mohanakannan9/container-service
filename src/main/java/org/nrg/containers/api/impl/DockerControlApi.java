@@ -1,4 +1,4 @@
-package org.nrg.containers.api;
+package org.nrg.containers.api.impl;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
@@ -19,65 +19,22 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.exceptions.ContainerServerException;
 import org.nrg.containers.model.Container;
 import org.nrg.containers.model.Image;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Map;
 
-public class DockerControlApi {
+@Service
+public class DockerControlApi implements ContainerControlApi {
     private static final Logger _log = LoggerFactory.getLogger(DockerControlApi.class);
-
-    public DockerControlApi() {
-        /*String[] cmd = "/opt/run -z y -f %i_%s -o /output /input".split(" ");
-        String[] idle = "sh -c while :; do sleep 1; echo $(date) >> /output/heartbeat.log; done".split(" ");
-        final HostConfig host = HostConfig.builder().binds("/data/xnat/cache/prj001:/input", "/data/xnat/cache/nii:/output").build();
-        final ContainerConfig config = ContainerConfig.builder().image("pooky-dev/dcm2niix:latest").hostConfig(host).attachStdout(true).attachStderr(true).cmd(cmd).build();
-        final DockerClient client = DefaultDockerClient.builder().uri("http://localhost:2375").build();
-
-        try {
-            final ContainerCreation container = client.createContainer(config);
-            final String id = container.id();
-
-            // Inspect container
-            final ContainerInfo info = client.inspectContainer(id);
-            final ContainerState state = info.state();
-            System.out.print("Config: " + config.toString());
-            System.out.print("Info: " + info.toString());
-            System.out.print("Path: " + info.path());
-            System.out.print("Args: " + info.args().toString());
-
-            // Start container
-            client.startContainer(id);
-
-            final LogStream output = client.logs(id, DockerClient.LogsParam.stderr(), DockerClient.LogsParam.stdout());
-            final String execOutput = output.readFully();
-            System.out.print(execOutput);
-
-            // Exec command inside running container with attached STDOUT and STDERR
-            // def final String[] cmd = "find /data /input /output".split(" ")
-            client.execCreate(id, cmd, DockerClient.ExecCreateParam.attachStdout(), DockerClient.ExecCreateParam.attachStderr());
-            //final LogStream output = client.execStart(execId);
-            //final String execOutput = output.readFully();
-            //
-            //println execOutput
-
-            // Kill container
-            client.killContainer(id);
-
-            // Remove container
-            client.removeContainer(id);
-        } catch (DockerException | InterruptedException e) {
-            e.printStackTrace();
-        }*/
-
-
-    }
 
     /**
      * Query Docker server for all images
@@ -85,9 +42,10 @@ public class DockerControlApi {
      * @param server Server URI
      * @return Image objects stored on docker server
      **/
-    public static List<org.nrg.containers.model.Image> getAllImages(final String server) {
+    public List<org.nrg.containers.model.Image> getAllImages(final String server) {
         return getImages(server, null);
     }
+
 
     /**
      * Query Docker server for images with parameters
@@ -96,7 +54,7 @@ public class DockerControlApi {
      * @param params Map of query parameters (name = value)
      * @return Image objects stored on docker server meeting the query parameters
      **/
-    public static List<Image> getImages(final String server, final Map<String, String> params) {
+    public List<Image> getImages(final String server, final Map<String, String> params) {
         if (_log.isDebugEnabled()) {
             _log.debug("method getImages server "+ server + "; params "+ params);
         }
@@ -134,7 +92,7 @@ public class DockerControlApi {
      * @param imageName Name of image
      * @return Image stored on docker server with the given name
      **/
-    public static Image getImageByName(final String server, final String imageName) {
+    public Image getImageByName(final String server, final String imageName) {
         if (_log.isDebugEnabled()) {
             _log.debug("method getImages server "+ server + "; imageName "+ imageName);
         }
@@ -167,12 +125,52 @@ public class DockerControlApi {
     }
 
     /**
+     * Query Docker server for image by name
+     *
+     * @param server Server URI
+     * @param imageId ID of image
+     * @return Image stored on docker server with the given name
+     **/
+    public Image getImageById(final String server, final String imageId) {
+        if (_log.isDebugEnabled()) {
+            _log.debug("method getImages server "+ server + "; imageId "+ imageId);
+        }
+        return DockerImageToNrgImage(_getImageById(server, imageId));
+    }
+
+    private static com.spotify.docker.client.messages.Image _getImageById(final String server, final String imageId) {
+//        TODO: Make this work
+//        final DockerClient client = getClient(server);
+//
+//        List<com.spotify.docker.client.messages.Image> images = null;
+//        try {
+//            images = client.listImages(DockerClient.ListImagesParam.byName(imageId));
+//        } catch (DockerException | InterruptedException e) {
+//            throw new ContainerServerException(e);
+//        }
+//
+//        if (images != null && !images.isEmpty()) {
+//            if (images.size() > 1) {
+//                String warn = "Found multiple images with name "+ imageId + ": ";
+//                for (final com.spotify.docker.client.messages.Image image : images) {
+//                    warn += image.id() + " ";
+//                }
+//                warn += ". Returning "+images.get(0).id()+".";
+//
+//                _log.warn(warn);
+//            }
+//            return images.get(0);
+//        }
+        return null;
+    }
+
+    /**
      * Query Docker server for all containers
      *
      * @param server Server URI
      * @return Container objects stored on docker server
      **/
-    public static List<Container> getAllContainers(final String server) {
+    public List<Container> getAllContainers(final String server) {
         return getContainers(server, null);
     }
 
@@ -183,7 +181,7 @@ public class DockerControlApi {
      * @param params Map of query parameters (name = value)
      * @return Container objects stored on docker server meeting the query parameters
      **/
-    public static List<Container> getContainers(final String server, final Map<String, String> params) {
+    public List<Container> getContainers(final String server, final Map<String, String> params) {
         if (_log.isDebugEnabled()) {
             _log.debug("method getContainers server "+ server + "; params "+ params);
         }
@@ -216,7 +214,7 @@ public class DockerControlApi {
      * @param id Container ID
      * @return Container object with specified ID
      **/
-    public static Container getContainer(final String server, final String id) {
+    public Container getContainer(final String server, final String id) {
         return DockerContainerToNrgContainer(_getContainer(server, id));
     }
 
@@ -237,7 +235,7 @@ public class DockerControlApi {
      * @param id Container ID
      * @return Status of Container object with specified ID
      **/
-    public static String getContainerStatus(final String server, final String id) {
+    public String getContainerStatus(final String server, final String id) {
         final Container container = getContainer(server, id);
 
         return container != null ? container.status() : null;
@@ -252,7 +250,7 @@ public class DockerControlApi {
      * @param volumes Volume mounts, in the form "/path/on/server:/path/in/container"
      * @return ID of created Container
      **/
-    public static String launchImage(final String server, final String imageName, final String[] runCommand, final String[] volumes) {
+    public String launchImage(final String server, final String imageName, final String[] runCommand, final String[] volumes) {
         final HostConfig hostConfig =
                 HostConfig.builder()
                 .binds(volumes)
