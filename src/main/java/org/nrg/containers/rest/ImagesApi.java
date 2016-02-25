@@ -10,6 +10,7 @@ import org.nrg.containers.services.ContainerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,7 +19,7 @@ import java.util.List;
 
 //@Api(description = "XCS images API")
 @RestController
-@RequestMapping(value = "/images")
+@RequestMapping(value = "/images", produces = {MediaType.APPLICATION_JSON_UTF8_VALUE})
 public class ImagesApi {
     private static final Logger _log = LoggerFactory.getLogger(ImagesApi.class);
 
@@ -26,7 +27,7 @@ public class ImagesApi {
 //    @ApiResponses({
 //            @ApiResponse(code = 200, message = "A list of images on the server"),
 //            @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(method = RequestMethod.GET, produces = {"application/json"})
+    @RequestMapping(method = RequestMethod.GET)
     @ResponseBody
     public List<Image> getAllImages() {
         return service.getAllImages();
@@ -36,7 +37,7 @@ public class ImagesApi {
 //    @ApiResponses({
 //            @ApiResponse(code = 200, message = "A list of images on the server"),
 //            @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(method = RequestMethod.GET, produces = {"application/json"}, params = {"name"})
+    @RequestMapping(method = RequestMethod.GET, params = {"name"})
     @ResponseBody
     public Image getByName(@RequestParam String name) throws NotFoundException {
         final Image image = service.getImageByName(name);
