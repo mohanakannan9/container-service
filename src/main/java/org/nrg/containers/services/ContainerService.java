@@ -13,6 +13,12 @@ public interface ContainerService {
 
     Image getImageByName(final String name);
 
+    Image getImageById(final String id);
+
+    String deleteImageById(final String id);
+
+    String deleteImageByName(final String name);
+
     List<Container> getAllContainers();
 
     String getContainerStatus(final String id);

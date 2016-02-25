@@ -39,6 +39,22 @@ public class DefaultContainerService implements ContainerService {
         return DockerControlApi.getImageByName(server, name);
     }
 
+    @Override
+    public Image getImageById(String id) {
+        // TODO Figure out what to do with this. Not sure if we need to be fetching images by id.
+        return null;
+    }
+
+    @Override
+    public String deleteImageById(String id) {
+        return null;
+    }
+
+    @Override
+    public String deleteImageByName(String name) {
+        return null;
+    }
+
     public List<Container> getAllContainers() {
         return DockerControlApi.getAllContainers(server);
     }

@@ -34,6 +34,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -87,11 +88,11 @@ public class ImagesApiTest {
 
         final String response =
                 mockMvc.perform(get("/images").accept(MediaType.APPLICATION_JSON_UTF8))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
+                        .andExpect(status().isOk())
+                        .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
 
         ObjectMapper mapper = new ObjectMapper();
         List<Image> responseImageList = mapper.readValue(response, new TypeReference<List<Image>>(){});
@@ -99,7 +100,7 @@ public class ImagesApiTest {
     }
 
     @Test
-    public void testGetImageByName() throws Exception {
+    public void testGetImage() throws Exception {
         final String name = "foo";
         final String id = "0";
         final Long size = 0L;
@@ -107,31 +108,98 @@ public class ImagesApiTest {
         final Map<String, String> labels = ImmutableMap.of("label0", "value0");
         final Image mockImage = new Image(name, id, size, tags, labels);
 
-        when(service.getImageByName(name)).thenReturn(mockImage);
+        when(service.getImageByName(name))
+                .thenReturn(mockImage)
+                .thenReturn(null);
 
-        final String response =
+        final String responseByName =
                 mockMvc.perform(get("/images")
                                 .param("name", name)
                                 .accept(MediaType.APPLICATION_JSON_UTF8))
+                        .andExpect(status().isOk())
+                        .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        final ObjectMapper mapper = new ObjectMapper();
+        final Image imageByName = mapper.readValue(responseByName, Image.class);
+        assertThat(imageByName, equalTo(mockImage));
+
+        mockMvc.perform(get("/images")
+                        .param("name", name)
+                        .accept(MediaType.APPLICATION_JSON_UTF8))
+                .andExpect(status().isNotFound());
+
+
+        when(service.getImageById(id))
+                .thenReturn(mockImage)
+                .thenReturn(null);
+
+        final String responseById =
+                mockMvc.perform(get("/images")
+                                .param("id", id)
+                                .accept(MediaType.APPLICATION_JSON_UTF8))
+                        .andExpect(status().isOk())
+                        .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        final Image imageById = mapper.readValue(responseById, Image.class);
+        assertThat(imageById, equalTo(mockImage));
+
+        mockMvc.perform(get("/images")
+                        .param("id", id)
+                        .accept(MediaType.APPLICATION_JSON_UTF8))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void testDeleteImage() throws Exception {
+        final String name = "foo";
+        final String id = "0";
+
+        when(service.deleteImageByName(name))
+                .thenReturn(id)
+                .thenReturn(null);
+
+        final String responseByName =
+                mockMvc.perform(delete("/images")
+                        .param("name", name)
+                        .accept(MediaType.APPLICATION_JSON_UTF8))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
 
-        ObjectMapper mapper = new ObjectMapper();
-        Image responseImage = mapper.readValue(response, Image.class);
-        assertThat(responseImage, equalTo(mockImage));
-    }
+        assertThat(responseByName, equalTo(id));
 
-    @Test
-    public void testGetImageByNameNotFound() throws Exception {
-        final String name = "foo";
-        when(service.getImageByName(name)).thenReturn(null);
+        mockMvc.perform(delete("/images")
+                        .param("name", name)
+                        .accept(MediaType.APPLICATION_JSON_UTF8))
+                .andExpect(status().isNotFound());
 
 
-        mockMvc.perform(get("/images")
-                        .param("name", "foo")
+        when(service.deleteImageById(id))
+                .thenReturn(id)
+                .thenReturn(null);
+
+        final String responseById =
+                mockMvc.perform(delete("/images")
+                                .param("id", id)
+                                .accept(MediaType.APPLICATION_JSON_UTF8))
+                        .andExpect(status().isOk())
+                        .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        assertThat(responseById, equalTo(id));
+
+        mockMvc.perform(delete("/images")
+                        .param("id", id)
                         .accept(MediaType.APPLICATION_JSON_UTF8))
                 .andExpect(status().isNotFound());
     }

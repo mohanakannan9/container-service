@@ -1,6 +1,7 @@
 package org.nrg.containers.rest;
 
 import io.swagger.annotations.*;
+import oracle.jrockit.jfr.StringConstantPool;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.containers.exceptions.ContainerServerException;
 import org.nrg.containers.exceptions.NotFoundException;
@@ -39,12 +40,42 @@ public class ImagesApi {
 //            @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(method = RequestMethod.GET, params = {"name"})
     @ResponseBody
-    public Image getByName(@RequestParam String name) throws NotFoundException {
+    public Image getByName(final @RequestParam String name) throws NotFoundException {
         final Image image = service.getImageByName(name);
         if (image == null) {
             throw new NotFoundException("No image found with name "+name);
         }
         return image;
+    }
+
+    @RequestMapping(method = RequestMethod.GET, params = {"id"})
+    @ResponseBody
+    public Image getById(final @RequestParam String id) throws NotFoundException {
+        final Image image = service.getImageById(id);
+        if (image == null) {
+            throw new NotFoundException("No image found with id "+id);
+        }
+        return image;
+    }
+
+    @RequestMapping(method = RequestMethod.DELETE, params = {"name"})
+    @ResponseBody
+    public String deleteByName(final @RequestParam String name) throws NotFoundException {
+        final String id = service.deleteImageByName(name);
+        if (id == null) {
+            throw new NotFoundException("No image found with name "+name);
+        }
+        return id;
+    }
+
+    @RequestMapping(method = RequestMethod.DELETE, params = {"id"})
+    @ResponseBody
+    public String deleteById(final @RequestParam(name="id") String inputId) throws NotFoundException {
+        final String id = service.deleteImageById(inputId);
+        if (id == null) {
+            throw new NotFoundException("No image found with id "+inputId);
+        }
+        return id;
     }
 
 //    @ApiOperation(value = "Launches a container.", notes = "Returns the updated serialized image object with the specified image name.", response = Image.class)
