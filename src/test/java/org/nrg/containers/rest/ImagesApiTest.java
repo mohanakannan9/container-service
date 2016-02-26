@@ -5,12 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.nrg.containers.config.MockContainerServiceConfig;
+import org.nrg.containers.config.ImagesApiTestConfig;
 import org.nrg.containers.mocks.MockImages;
 import org.nrg.containers.model.Image;
 import org.nrg.containers.services.ContainerService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -33,7 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
-@ContextConfiguration(classes = MockContainerServiceConfig.class)
+@ContextConfiguration(classes = ImagesApiTestConfig.class)
 public class ImagesApiTest {
 
     private MockMvc mockMvc;
@@ -42,7 +41,6 @@ public class ImagesApiTest {
     private WebApplicationContext wac;
 
     @Autowired
-    @Qualifier("mockContainerService")
     private ContainerService service;
 
     @Before
