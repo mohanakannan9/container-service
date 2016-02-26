@@ -11,13 +11,6 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 @Configuration
 @EnableWebMvc
-//@ComponentScan(
-//        value = "org.nrg.containers.services, " +
-//                "org.nrg.containers.services.impl, " +
-//                "org.nrg.containers.api, " +
-//                "org.nrg.containers.metadata, " +
-//                "org.nrg.containers.metadata.service",
-//        resourcePattern = "*.class")
 public class DefaultContainerServiceTestConfig {
     @Bean
     public ContainerControlApi mockContainerControlApi() {

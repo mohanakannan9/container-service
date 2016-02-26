@@ -15,9 +15,4 @@ public class ImagesApiTestConfig {
     public ContainerService mockContainerService() {
         return Mockito.mock(ContainerService.class);
     }
-//
-//    @Bean
-//    public ImageMetadataService mockImageMetadataService() {
-//        return Mockito.mock(ImageMetadataService.class);
-//    }
 }
