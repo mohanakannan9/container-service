@@ -85,6 +85,10 @@ dependencies {
     testCompile "org.mockito:mockito-core:1.+"
 //    testCompile "com.jayway.jsonpath:json-path:2.1.0"
     testCompile "javax.servlet:javax.servlet-api:3.1.0"
+    testCompile "com.h2database:h2:1.4.191"
+    testCompile "org.springframework:spring-jdbc:${vSpring}"
+    testCompile "org.springframework:spring-orm:${vSpring}"
+    testCompile "org.hibernate:hibernate-ehcache:${vHibernate}"
 }
 
 //compileJava {
