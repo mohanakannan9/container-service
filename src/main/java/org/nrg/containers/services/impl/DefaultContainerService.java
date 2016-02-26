@@ -3,12 +3,12 @@ package org.nrg.containers.services.impl;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.containers.api.ContainerControlApi;
+import org.nrg.containers.metadata.ImageMetadata;
+import org.nrg.containers.metadata.ImageMetadataAnn;
 import org.nrg.containers.metadata.service.ImageMetadataService;
 import org.nrg.containers.model.Container;
 import org.nrg.containers.model.Image;
 import org.nrg.containers.model.ImageParameters;
-import org.nrg.containers.metadata.ImageMetadata;
-import org.nrg.containers.metadata.ImageMetadataAnn;
 import org.nrg.containers.services.ContainerService;
 import org.nrg.framework.utilities.Reflection;
 import org.slf4j.Logger;
@@ -30,7 +30,12 @@ public class DefaultContainerService implements ContainerService {
     private static final Logger _log = LoggerFactory.getLogger(DefaultContainerService.class);
 
     @Autowired
-    private ContainerControlApi controlApi; 
+    @SuppressWarnings("SpringJavaAutowiringInspection") // IntelliJ does not process the excludeFilter in ContainerServiceConfig @ComponentScan, erroneously marks this red
+    private ContainerControlApi controlApi;
+
+    @Autowired
+    @SuppressWarnings("SpringJavaAutowiringInspection") // IntelliJ does not process the excludeFilter in ContainerServiceConfig @ComponentScan, erroneously marks this red
+    private ImageMetadataService imageMetadataService;
 
     public String getServer() {
         return server;
@@ -135,7 +140,4 @@ public class DefaultContainerService implements ContainerService {
 
         return metadataObj;
     }
-
-    @Autowired
-    private ImageMetadataService imageMetadataService;
 }

@@ -60,5 +60,6 @@ public class ContainersApi {
     }
 
     @Inject
+    @SuppressWarnings("SpringJavaAutowiringInspection") // IntelliJ does not process the excludeFilter in ContainersSpringConfig @ComponentScan, erroneously marks this red
     private ContainerService service;
 }
