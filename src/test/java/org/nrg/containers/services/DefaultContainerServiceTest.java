@@ -4,11 +4,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.containers.api.ContainerControlApi;
-import org.nrg.containers.config.MockContainerControlConfig;
+import org.nrg.containers.config.DefaultContainerServiceTestConfig;
 import org.nrg.containers.mocks.MockImages;
 import org.nrg.containers.model.Image;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -21,15 +20,13 @@ import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
-@ContextConfiguration(classes = MockContainerControlConfig.class)
+@ContextConfiguration(classes = DefaultContainerServiceTestConfig.class)
 public class DefaultContainerServiceTest {
 
     @Autowired
-    @Qualifier("mockContainerControlApi")
     private ContainerControlApi controlApi;
 
     @Autowired
-    @Qualifier("defaultContainerService")
     private ContainerService service;
 
     private String server;
