@@ -8,4 +8,4 @@ import org.springframework.context.annotation.FilterType;
 @Configuration
 @ComponentScan(value = "org.nrg.containers",
         excludeFilters = @Filter(type = FilterType.REGEX, pattern = ".*TestConfig.*", value = {}))
-public class ContainerServiceConfig {}
+public class ContainersSpringConfig {}
