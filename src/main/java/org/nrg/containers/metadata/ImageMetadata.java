@@ -1,16 +1,22 @@
-package org.nrg.containers.model.metadata;
+package org.nrg.containers.metadata;
 
 import com.google.common.collect.ImmutableMap;
 import org.apache.commons.lang.StringUtils;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.framework.orm.hibernate.annotations.Auditable;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 import java.util.Map;
 
 @Auditable
 @Entity
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"imageId"}))
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
 public abstract class ImageMetadata extends AbstractHibernateEntity {
     public ImageMetadata() {}
 
@@ -29,7 +35,7 @@ public abstract class ImageMetadata extends AbstractHibernateEntity {
         }
     }
 
-    @Column(unique = true)
+    @Column(unique = true, name = "imageId")
     public String getImageId() {
         return _imageId;
     }

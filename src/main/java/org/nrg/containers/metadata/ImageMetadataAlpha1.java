@@ -1,4 +1,4 @@
-package org.nrg.containers.model.metadata;
+package org.nrg.containers.metadata;
 
 import java.util.Map;
 

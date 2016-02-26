@@ -1,6 +1,6 @@
-package org.nrg.containers.services;
+package org.nrg.containers.metadata.service;
 
-import org.nrg.containers.model.metadata.ImageMetadata;
+import org.nrg.containers.metadata.ImageMetadata;
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
 
 @SuppressWarnings("unused")

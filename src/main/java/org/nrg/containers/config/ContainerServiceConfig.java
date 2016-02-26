@@ -4,5 +4,5 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@ComponentScan("org.nrg.containers.rest, org.nrg.containers.services, org.nrg.containers.api")
+@ComponentScan("org.nrg.containers.rest, org.nrg.containers.services, org.nrg.containers.api, org.nrg.containers.metadata")
 public class ContainerServiceConfig {}
