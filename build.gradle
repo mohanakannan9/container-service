@@ -5,6 +5,7 @@ apply plugin: 'groovy'
 apply plugin: 'java'
 apply plugin: 'idea'
 apply plugin: 'maven'
+apply plugin: 'jacoco'
 //apply plugin: 'xnat'
 
 sourceCompatibility = 1.7
