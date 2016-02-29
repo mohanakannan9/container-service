@@ -81,7 +81,7 @@ dependencies {
     compile "javax.inject:javax.inject:1"
 
 //    compile "org.codehaus.groovy:groovy-all:${vGroovy}"
-    compile (group: 'com.spotify', name: 'docker-client', version: '3.5.13-SNAPSHOT') {
+    compile (group: 'com.spotify', name: 'docker-client', version: '3.5.13-xnatfork-SNAPSHOT') {
         exclude group: "ch.qos.logback"
     }
 
