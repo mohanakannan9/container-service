@@ -8,8 +8,8 @@ import org.junit.runner.RunWith;
 import org.nrg.containers.config.ContainersApiTestConfig;
 import org.nrg.containers.model.Container;
 import org.nrg.containers.model.ContainerMocks;
-import org.nrg.containers.model.ImageMocks;
 import org.nrg.containers.model.Image;
+import org.nrg.containers.model.ImageMocks;
 import org.nrg.containers.services.ContainerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -21,7 +21,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import javax.servlet.ServletContext;
-
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -31,7 +30,6 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -68,13 +66,13 @@ public class ContainersApiTest {
 
     @Test
     public void testGetAllContainers() throws Exception {
+        final String path = ContainerService.CONTAINER_SERVICE_REST_PATH_PREFIX;
         final List<Container> mockContainerList = ContainerMocks.FIRST_AND_SECOND;
 
         when(service.getAllContainers()).thenReturn(mockContainerList);
 
         final String response =
-                mockMvc.perform(get(ContainerService.CONTAINER_SERVICE_REST_PATH_PREFIX)
-                                .accept(MediaType.APPLICATION_JSON_UTF8))
+                mockMvc.perform(get(path).accept(MediaType.APPLICATION_JSON_UTF8))
                         .andExpect(status().isOk())
                         .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
                         .andReturn()
@@ -87,6 +85,7 @@ public class ContainersApiTest {
 
     @Test
     public void testGetContainerById() throws Exception {
+        final String path = CONTAINERS;
         final String id = ContainerMocks.FOO_ID;
         final Container mockContainer = ContainerMocks.FOO;
 
@@ -95,9 +94,7 @@ public class ContainersApiTest {
                 .thenReturn(null);
 
         final String responseById =
-                mockMvc.perform(get(CONTAINERS)
-                                .param("id", id)
-                                .accept(MediaType.APPLICATION_JSON_UTF8))
+                mockMvc.perform(get(path).param("id", id).accept(MediaType.APPLICATION_JSON_UTF8))
                         .andExpect(status().isOk())
                         .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
                         .andReturn()
@@ -107,14 +104,13 @@ public class ContainersApiTest {
         final Container containerById = mapper.readValue(responseById, Container.class);
         assertThat(containerById, equalTo(mockContainer));
 
-        mockMvc.perform(get(CONTAINERS)
-                        .param("id", id)
-                        .accept(MediaType.APPLICATION_JSON_UTF8))
+        mockMvc.perform(get(path).param("id", id).accept(MediaType.APPLICATION_JSON_UTF8))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     public void testGetContainerStatus() throws Exception {
+        final String path = CONTAINERS+"/status";
         final String id = ContainerMocks.FOO_ID;
         final String status = ContainerMocks.FOO_STATUS;
 
@@ -122,9 +118,7 @@ public class ContainersApiTest {
                 .thenReturn(status);
 
         final String response =
-                mockMvc.perform(get(CONTAINERS+"/status")
-                                .param("id", id)
-                                .accept(MediaType.APPLICATION_JSON_UTF8))
+                mockMvc.perform(get(path).param("id", id).accept(MediaType.APPLICATION_JSON_UTF8))
                         .andExpect(status().isOk())
                         .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
                         .andReturn()
@@ -136,12 +130,13 @@ public class ContainersApiTest {
 
     @Test
     public void testGetAllImages() throws Exception {
+        final String path = IMAGES;
         final List<Image> mockImageList = ImageMocks.FIRST_AND_SECOND;
 
         when(service.getAllImages()).thenReturn(mockImageList);
 
         final String response =
-                mockMvc.perform(get(IMAGES).accept(MediaType.APPLICATION_JSON_UTF8))
+                mockMvc.perform(get(path).accept(MediaType.APPLICATION_JSON_UTF8))
                         .andExpect(status().isOk())
                         .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
                         .andReturn()
@@ -154,6 +149,7 @@ public class ContainersApiTest {
 
     @Test
     public void testGetImageByName() throws Exception {
+        final String path = IMAGES;
         final String name = ImageMocks.FOO_NAME;
         final Image mockImage = ImageMocks.FOO;
 
@@ -162,9 +158,7 @@ public class ContainersApiTest {
                 .thenReturn(null);
 
         final String responseByName =
-                mockMvc.perform(get(IMAGES)
-                                .param("name", name)
-                                .accept(MediaType.APPLICATION_JSON_UTF8))
+                mockMvc.perform(get(path).param("name", name).accept(MediaType.APPLICATION_JSON_UTF8))
                         .andExpect(status().isOk())
                         .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
                         .andReturn()
@@ -177,6 +171,7 @@ public class ContainersApiTest {
 
     @Test
     public void testGetImageById() throws Exception {
+        final String path = IMAGES;
         final String id = ImageMocks.FOO_ID;
         final Image mockImage = ImageMocks.FOO;
 
@@ -185,9 +180,7 @@ public class ContainersApiTest {
                 .thenReturn(null);
 
         final String responseById =
-                mockMvc.perform(get(IMAGES)
-                                .param("id", id)
-                                .accept(MediaType.APPLICATION_JSON_UTF8))
+                mockMvc.perform(get(path).param("id", id).accept(MediaType.APPLICATION_JSON_UTF8))
                         .andExpect(status().isOk())
                         .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
                         .andReturn()
@@ -197,14 +190,13 @@ public class ContainersApiTest {
         final Image imageById = mapper.readValue(responseById, Image.class);
         assertThat(imageById, equalTo(mockImage));
 
-        mockMvc.perform(get(IMAGES)
-                        .param("id", id)
-                        .accept(MediaType.APPLICATION_JSON_UTF8))
+        mockMvc.perform(get(path).param("id", id).accept(MediaType.APPLICATION_JSON_UTF8))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     public void testDeleteImageByName() throws Exception {
+        final String path = IMAGES;
         final String name = ImageMocks.FOO_NAME;
         final String id = ImageMocks.FOO_ID;
 
@@ -213,9 +205,7 @@ public class ContainersApiTest {
                 .thenReturn(null);
 
         final String responseByName =
-                mockMvc.perform(delete(IMAGES)
-                                .param("name", name)
-                                .accept(MediaType.APPLICATION_JSON_UTF8))
+                mockMvc.perform(delete(path).param("name", name).accept(MediaType.APPLICATION_JSON_UTF8))
                         .andExpect(status().isOk())
                         .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
                         .andReturn()
@@ -227,6 +217,7 @@ public class ContainersApiTest {
 
     @Test
     public void testDeleteImageById() throws Exception {
+        final String path = IMAGES;
         final String id = ImageMocks.FOO_ID;
 
         when(service.deleteImageById(id))
@@ -234,9 +225,7 @@ public class ContainersApiTest {
                 .thenReturn(null);
 
         final String responseById =
-                mockMvc.perform(delete(IMAGES)
-                                .param("id", id)
-                                .accept(MediaType.APPLICATION_JSON_UTF8))
+                mockMvc.perform(delete(path).param("id", id).accept(MediaType.APPLICATION_JSON_UTF8))
                         .andExpect(status().isOk())
                         .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
                         .andReturn()
@@ -248,14 +237,13 @@ public class ContainersApiTest {
 
     @Test
     public void testDeleteImageNoParams() throws Exception {
+        final String path = IMAGES;
         final String id = ImageMocks.FOO_ID;
 
-        mockMvc.perform(delete(IMAGES)
-                        .param("id", id)
-                        .accept(MediaType.APPLICATION_JSON_UTF8))
+        mockMvc.perform(delete(path).param("id", id).accept(MediaType.APPLICATION_JSON_UTF8))
                 .andExpect(status().isNotFound());
 
-        mockMvc.perform(delete(IMAGES)) // Note, no query params
+        mockMvc.perform(delete(path)) // Note, no query params
                 .andExpect(status().isBadRequest());
         //.andExpect(content().string("Include the name or id of an image to delete in the query parameters."));
         // I wish my exception message got passed to the response body, but it doesn't.
