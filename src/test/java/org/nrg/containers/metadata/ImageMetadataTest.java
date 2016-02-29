@@ -26,4 +26,9 @@ public class ImageMetadataTest {
     public void testSpringConfiguration() {
         assertThat(metadataService, not(nullValue()));
     }
+
+    @Test
+    public void testGetByImageId() {
+        // TODO
+    }
 }

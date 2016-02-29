@@ -87,6 +87,11 @@ public class DefaultContainerServiceTest {
     }
 
     @Test
+    public void testSetServer() throws Exception {
+        // TODO
+    }
+
+    @Test
     public void testGetAllImages() throws Exception {
         final List<Image> mockImageList = MockImages.FIRST_AND_SECOND;
 
@@ -96,32 +101,52 @@ public class DefaultContainerServiceTest {
     }
 
     @Test
-    public void testGetImage() throws Exception {
+    public void testGetImageByName() throws Exception {
         final String name = MockImages.FOO_NAME;
-        final String id = MockImages.FOO_ID;
         final Image mockImage = MockImages.FOO;
 
         when(mockContainerControlApi.getImageByName(MOCK_CONTAINER_HOST, name)).thenReturn(mockImage);
         final Image responseImageByName = service.getImageByName(name);
         assertThat(responseImageByName, equalTo(mockImage));
+    }
+
+    @Test
+    public void testGetImageById() throws Exception {
+        final String id = MockImages.FOO_ID;
+        final Image mockImage = MockImages.FOO;
 
         when(mockContainerControlApi.getImageById(MOCK_CONTAINER_HOST, id)).thenReturn(mockImage);
         final Image responseImageById = service.getImageById(id);
         assertThat(responseImageById, equalTo(mockImage));
     }
 
-/*
-    TODO
+    @Test
+    public void testDeleteImageById() throws Exception {
+        // TODO
+    }
 
-    List<Container> getAllContainers(final String server);
+    @Test
+    public void testDeleteImageByName() throws Exception {
+        // TODO
+    }
 
-    List<Container> getContainers(final String server, final Map<String, String> params);
+    @Test
+    public void testGetAllContainers() throws Exception {
+        // TODO
+    }
 
-    Container getContainer(final String server, final String id);
+    @Test
+    public void testGetContainerStatus() throws Exception {
+        // TODO
+    }
 
-    String getContainerStatus(final String server, final String id);
+    @Test
+    public void testGetContainer() throws Exception {
+        // TODO
+    }
 
-    String launchImage(final String server, final String imageName, final String[] runCommand, final String[] volumes);
-
- */
+    @Test
+    public void testLaunch() throws Exception {
+        // TODO
+    }
 }
