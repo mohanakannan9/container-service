@@ -1,6 +1,8 @@
 package org.nrg.containers.services;
 
+import org.nrg.containers.exceptions.ContainerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Container;
 import org.nrg.containers.model.ContainerServer;
 import org.nrg.containers.model.Image;
@@ -24,19 +26,19 @@ public interface ContainerService {
 
     List<Image> getAllImages() throws NoServerPrefException;
 
-    Image getImageByName(final String name) throws NoServerPrefException;
+    Image getImageByName(final String name) throws NoServerPrefException, NotFoundException, ContainerServerException;
 
-    Image getImageById(final String id) throws NoServerPrefException;
+    Image getImageById(final String id) throws NoServerPrefException, NotFoundException, ContainerServerException;
 
-    String deleteImageById(final String id) throws NoServerPrefException;
+    String deleteImageById(final String id) throws NoServerPrefException, NotFoundException, ContainerServerException;
 
-    String deleteImageByName(final String name) throws NoServerPrefException;
+    String deleteImageByName(final String name) throws NoServerPrefException, NotFoundException, ContainerServerException;
 
-    List<Container> getAllContainers() throws NoServerPrefException;
+    List<Container> getAllContainers() throws NoServerPrefException, ContainerServerException;
 
-    String getContainerStatus(final String id) throws NoServerPrefException;
+    String getContainerStatus(final String id) throws NoServerPrefException, NotFoundException, ContainerServerException;
 
-    Container getContainer(final String id) throws NoServerPrefException;
+    Container getContainer(final String id) throws NoServerPrefException, NotFoundException, ContainerServerException;
 
-    String launch(final String imageName, final ImageParameters params) throws NoServerPrefException;
+    String launch(String imageName, ImageParameters params) throws NoServerPrefException, NotFoundException, ContainerServerException;
 }

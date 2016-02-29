@@ -6,9 +6,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.containers.config.ContainersApiTestConfig;
-import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.Container;
 import org.nrg.containers.model.ContainerMocks;
+import org.nrg.containers.model.ExceptionMocks;
 import org.nrg.containers.model.Image;
 import org.nrg.containers.model.ImageMocks;
 import org.nrg.containers.services.ContainerService;
@@ -74,8 +74,8 @@ public class ContainersApiTest {
         final MockHttpServletRequestBuilder request = get(path).accept(MediaType.APPLICATION_JSON_UTF8);
 
         when(service.getAllContainers())
-                .thenReturn(mockContainerList)                      // Happy path
-                .thenThrow(new NoServerPrefException("message"));   // No server pref defined
+                .thenReturn(mockContainerList)                          // Happy path
+                .thenThrow(ExceptionMocks.NO_SERVER_PREF_EXCEPTION);    // No server pref defined
 
         // Happy path
         final String response =
@@ -103,9 +103,9 @@ public class ContainersApiTest {
         final MockHttpServletRequestBuilder request = get(path).param("id", id).accept(MediaType.APPLICATION_JSON_UTF8);
 
         when(service.getContainer(id))
-                .thenReturn(mockContainer)                          // Happy path
-                .thenReturn(null)                                   // Not found
-                .thenThrow(new NoServerPrefException("message"));   // No server pref defined
+                .thenReturn(mockContainer)                              // Happy path
+                .thenThrow(ExceptionMocks.NOT_FOUND_EXCEPTION)          // Not found
+                .thenThrow(ExceptionMocks.NO_SERVER_PREF_EXCEPTION);    // No server pref defined
 
         // Happy path
         final String responseById =
@@ -137,8 +137,8 @@ public class ContainersApiTest {
         final MockHttpServletRequestBuilder request = get(path).param("id", id).accept(MediaType.APPLICATION_JSON_UTF8);
 
         when(service.getContainerStatus(id))
-                .thenReturn(status)                                 // Happy path
-                .thenThrow(new NoServerPrefException("message"));   // No server pref defined
+                .thenReturn(status)                                     // Happy path
+                .thenThrow(ExceptionMocks.NO_SERVER_PREF_EXCEPTION);    // No server pref defined
 
         // Happy path
         final String response =
@@ -164,8 +164,8 @@ public class ContainersApiTest {
         final MockHttpServletRequestBuilder request = get(path).accept(MediaType.APPLICATION_JSON_UTF8);
 
         when(service.getAllImages())
-                .thenReturn(mockImageList)                          // Happy path
-                .thenThrow(new NoServerPrefException("message"));   // No server pref defined
+                .thenReturn(mockImageList)                              // Happy path
+                .thenThrow(ExceptionMocks.NO_SERVER_PREF_EXCEPTION);    // No server pref defined
 
         // Happy path
         final String response =
@@ -193,9 +193,9 @@ public class ContainersApiTest {
         final MockHttpServletRequestBuilder request = get(path).param("name", name).accept(MediaType.APPLICATION_JSON_UTF8);
 
         when(service.getImageByName(name))
-                .thenReturn(mockImage)                              // Happy path
-                .thenReturn(null)                                   // Not found
-                .thenThrow(new NoServerPrefException("message"));   // No server pref defined
+                .thenReturn(mockImage)                                  // Happy path
+                .thenThrow(ExceptionMocks.NOT_FOUND_EXCEPTION)          // Not found
+                .thenThrow(ExceptionMocks.NO_SERVER_PREF_EXCEPTION);    // No server pref defined
 
         // Happy path
         final String responseByName =
@@ -227,9 +227,9 @@ public class ContainersApiTest {
         final MockHttpServletRequestBuilder request = get(path).param("id", id).accept(MediaType.APPLICATION_JSON_UTF8);
 
         when(service.getImageById(id))
-                .thenReturn(mockImage)                              // Happy path
-                .thenReturn(null)                                   // Not found
-                .thenThrow(new NoServerPrefException("message"));   // No server pref defined
+                .thenReturn(mockImage)                                  // Happy path
+                .thenThrow(ExceptionMocks.NOT_FOUND_EXCEPTION)          // Not found
+                .thenThrow(ExceptionMocks.NO_SERVER_PREF_EXCEPTION);    // No server pref defined
 
         // Happy path
         final String responseById =
@@ -261,9 +261,9 @@ public class ContainersApiTest {
         final MockHttpServletRequestBuilder request = delete(path).param("name", name).accept(MediaType.APPLICATION_JSON_UTF8);
 
         when(service.deleteImageByName(name))
-                .thenReturn(id)                                     // Happy path
-                .thenReturn(null)                                   // Not found
-                .thenThrow(new NoServerPrefException("message"));   // No server pref defined
+                .thenReturn(id)                                         // Happy path
+                .thenThrow(ExceptionMocks.NOT_FOUND_EXCEPTION)          // Not found
+                .thenThrow(ExceptionMocks.NO_SERVER_PREF_EXCEPTION);    // No server pref defined
 
         // Happy path
         final String responseByName =
@@ -293,9 +293,9 @@ public class ContainersApiTest {
         final MockHttpServletRequestBuilder request = delete(path).param("id", id).accept(MediaType.APPLICATION_JSON_UTF8);
 
         when(service.deleteImageById(id))
-                .thenReturn(id)                                     // Happy path
-                .thenReturn(null)                                   // Not found
-                .thenThrow(new NoServerPrefException("message"));   // No server pref defined
+                .thenReturn(id)                                         // Happy path
+                .thenThrow(ExceptionMocks.NOT_FOUND_EXCEPTION)          // Not found
+                .thenThrow(ExceptionMocks.NO_SERVER_PREF_EXCEPTION);    // No server pref defined
 
         // Happy path
         final String responseById =

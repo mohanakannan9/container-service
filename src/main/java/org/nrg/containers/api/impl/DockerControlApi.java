@@ -21,6 +21,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.exceptions.ContainerServerException;
+import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Container;
 import org.nrg.containers.model.Image;
 import org.slf4j.Logger;
@@ -92,14 +93,18 @@ public class DockerControlApi implements ContainerControlApi {
      * @param imageName Name of image
      * @return Image stored on docker server with the given name
      **/
-    public Image getImageByName(final String server, final String imageName) {
+    public Image getImageByName(final String server, final String imageName) throws ContainerServerException, NotFoundException {
         if (_log.isDebugEnabled()) {
             _log.debug("method getImages server "+ server + "; imageName "+ imageName);
         }
-        return DockerImageToNrgImage(_getImageByName(server, imageName));
+        final Image image = DockerImageToNrgImage(_getImageByName(server, imageName));
+        if (image != null) {
+            return image;
+        }
+        throw new NotFoundException(String.format("Could not find image %s on server %s", imageName, server));
     }
 
-    private static com.spotify.docker.client.messages.Image _getImageByName(final String server, final String imageName) {
+    private static com.spotify.docker.client.messages.Image _getImageByName(final String server, final String imageName) throws ContainerServerException {
         final DockerClient client = getClient(server);
 
         List<com.spotify.docker.client.messages.Image> images = null;
@@ -131,36 +136,40 @@ public class DockerControlApi implements ContainerControlApi {
      * @param imageId ID of image
      * @return Image stored on docker server with the given name
      **/
-    public Image getImageById(final String server, final String imageId) {
+    public Image getImageById(final String server, final String imageId) throws NotFoundException, ContainerServerException {
         if (_log.isDebugEnabled()) {
             _log.debug("method getImages server "+ server + "; imageId "+ imageId);
         }
-        return DockerImageToNrgImage(_getImageById(server, imageId));
+        final Image image = DockerImageToNrgImage(_getImageById(server, imageId));
+        if (image != null) {
+            return image;
+        }
+        throw new NotFoundException(String.format("Could not find image %s on server %s", imageId, server));
     }
 
-    private static com.spotify.docker.client.messages.Image _getImageById(final String server, final String imageId) {
+    private static com.spotify.docker.client.messages.Image _getImageById(final String server, final String imageId) throws ContainerServerException {
 //        TODO: Make this work
-//        final DockerClient client = getClient(server);
-//
-//        List<com.spotify.docker.client.messages.Image> images = null;
-//        try {
-//            images = client.listImages(DockerClient.ListImagesParam.byName(imageId));
-//        } catch (DockerException | InterruptedException e) {
-//            throw new ContainerServerException(e);
-//        }
-//
-//        if (images != null && !images.isEmpty()) {
-//            if (images.size() > 1) {
-//                String warn = "Found multiple images with name "+ imageId + ": ";
-//                for (final com.spotify.docker.client.messages.Image image : images) {
-//                    warn += image.id() + " ";
-//                }
-//                warn += ". Returning "+images.get(0).id()+".";
-//
-//                _log.warn(warn);
-//            }
-//            return images.get(0);
-//        }
+        final DockerClient client = getClient(server);
+
+        List<com.spotify.docker.client.messages.Image> images;
+        try {
+            images = client.listImages(DockerClient.ListImagesParam.byName(imageId));
+        } catch (DockerException | InterruptedException e) {
+            throw new ContainerServerException(e);
+        }
+
+        if (images != null && !images.isEmpty()) {
+            if (images.size() > 1) {
+                String warn = "Found multiple images with name "+ imageId + ": ";
+                for (final com.spotify.docker.client.messages.Image image : images) {
+                    warn += image.id() + " ";
+                }
+                warn += ". Returning "+images.get(0).id()+".";
+
+                _log.warn(warn);
+            }
+            return images.get(0);
+        }
         return null;
     }
 
@@ -214,8 +223,12 @@ public class DockerControlApi implements ContainerControlApi {
      * @param id Container ID
      * @return Container object with specified ID
      **/
-    public Container getContainer(final String server, final String id) {
-        return DockerContainerToNrgContainer(_getContainer(server, id));
+    public Container getContainer(final String server, final String id) throws NotFoundException {
+        final Container container = DockerContainerToNrgContainer(_getContainer(server, id));
+        if (container != null) {
+            return container;
+        }
+        throw new NotFoundException(String.format("Could not find container %s on server %s", id, server));
     }
 
     private static ContainerInfo _getContainer(final String server, final String id) {
@@ -223,7 +236,7 @@ public class DockerControlApi implements ContainerControlApi {
         try {
             return client.inspectContainer(id);
         } catch (DockerException | InterruptedException e) {
-            e.printStackTrace();
+            _log.error("Container server error." + e.getMessage());
         }
         return null;
     }
@@ -235,7 +248,7 @@ public class DockerControlApi implements ContainerControlApi {
      * @param id Container ID
      * @return Status of Container object with specified ID
      **/
-    public String getContainerStatus(final String server, final String id) {
+    public String getContainerStatus(final String server, final String id) throws NotFoundException {
         final Container container = getContainer(server, id);
 
         return container != null ? container.status() : null;

@@ -3,7 +3,9 @@ package org.nrg.containers.services.impl;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.containers.api.ContainerControlApi;
+import org.nrg.containers.exceptions.ContainerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.metadata.ImageMetadata;
 import org.nrg.containers.metadata.ImageMetadataAnn;
 import org.nrg.containers.metadata.service.ImageMetadataService;
@@ -62,40 +64,40 @@ public class DefaultContainerService implements ContainerService {
         return controlApi.getAllImages(server());
     }
 
-    public Image getImageByName(final String name) throws NoServerPrefException {
+    public Image getImageByName(final String name) throws NoServerPrefException, NotFoundException, ContainerServerException {
         return controlApi.getImageByName(server(), name);
     }
 
     @Override
-    public Image getImageById(String id) throws NoServerPrefException {
+    public Image getImageById(String id) throws NoServerPrefException, NotFoundException, ContainerServerException {
         // TODO Figure out what to do with this. Not sure if we need to be fetching images by id.
         return controlApi.getImageById(server(), id);
     }
 
     @Override
-    public String deleteImageById(String id) throws NoServerPrefException {
+    public String deleteImageById(String id) throws NoServerPrefException, NotFoundException, ContainerServerException {
         return null;
     }
 
     @Override
-    public String deleteImageByName(String name) throws NoServerPrefException {
+    public String deleteImageByName(String name) throws NoServerPrefException, NotFoundException, ContainerServerException {
         return null;
     }
 
-    public List<Container> getAllContainers() throws NoServerPrefException {
+    public List<Container> getAllContainers() throws NoServerPrefException, ContainerServerException {
         return controlApi.getAllContainers(server());
     }
 
-    public String getContainerStatus(final String id) throws NoServerPrefException {
+    public String getContainerStatus(final String id) throws NoServerPrefException, NotFoundException, ContainerServerException {
         return controlApi.getContainerStatus(server(), id);
     }
 
-    public Container getContainer(final String id) throws NoServerPrefException {
+    public Container getContainer(final String id) throws NoServerPrefException, NotFoundException, ContainerServerException {
         return controlApi.getContainer(server(), id);
     }
 
     @Override
-    public String launch(String imageName, ImageParameters params) throws NoServerPrefException {
+    public String launch(String imageName, ImageParameters params) throws NoServerPrefException, NotFoundException, ContainerServerException {
 //        final Image image = controlApi.getImageByName(server, imageName);
 //        final ImageMetadata imageMetadata = _imageMetadataService.getByImageId(image.id());
         return controlApi.launchImage(server(), imageName, params.getCommandArray(), params.getVolumesArray());

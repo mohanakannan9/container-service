@@ -1,8 +1,8 @@
 package org.nrg.containers.rest;
 
 import io.swagger.annotations.ApiParam;
-import org.apache.commons.lang.StringUtils;
 import org.nrg.containers.exceptions.BadRequestException;
+import org.nrg.containers.exceptions.ContainerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Container;
@@ -13,10 +13,7 @@ import org.nrg.containers.services.ContainerService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -39,15 +36,9 @@ public class ContainersApi {
 //            @ApiResponse(code = 200, message = "A list of images on the server"),
 //            @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(method = RequestMethod.GET)
-//    @ResponseBody
-//    public List<Container> getAllContainers() {
-    public ResponseEntity<List<Container>> getAllContainers() {
-        try {
-            return new ResponseEntity<>(service.getAllContainers(), HttpStatus.OK);
-        } catch (NoServerPrefException e) {
-            // TODO This exception handling sucks. Fix it.
-            return new ResponseEntity<>(HttpStatus.FAILED_DEPENDENCY);
-        }
+    @ResponseBody
+    public List<Container> getAllContainers() throws NoServerPrefException, ContainerServerException {
+        return service.getAllContainers();
     }
 
     //    @ApiOperation(value = "Gets the container with the specified id.", notes = "Returns the serialized container object with the specified id.", response = Container.class)
@@ -58,15 +49,9 @@ public class ContainersApi {
 //            @ApiResponse(code = 404, message = "Container not found."),
 //            @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = {ContainerService.CONTAINERS_REST_PATH}, method = RequestMethod.GET, params = {"id"})
-//    public ResponseEntity<Container> getContainerById(@ApiParam(value = "Id of the container to fetch", required = true) @PathVariable("id") final String id) {
-    public ResponseEntity<Container> getContainerById(@ApiParam(value = "Id of the container to fetch", required = true) @RequestParam("id") final String id) {
-        try {
-            final Container container = service.getContainer(id);
-            return container == null ? new ResponseEntity<Container>(HttpStatus.NOT_FOUND) : new ResponseEntity<>(container, HttpStatus.OK);
-        } catch (NoServerPrefException e) {
-            // TODO This exception handling sucks. Fix it.
-            return new ResponseEntity<>(HttpStatus.FAILED_DEPENDENCY);
-        }
+    @ResponseBody
+    public Container getContainerById(@ApiParam(value = "Id of the container to fetch", required = true) @RequestParam("id") final String id) throws NoServerPrefException, NotFoundException, ContainerServerException {
+        return service.getContainer(id);
     }
 
     //    @ApiOperation(value = "Gets the image with the specified name.", notes = "Returns the serialized image object with the specified name.", response = String.class)
@@ -77,16 +62,9 @@ public class ContainersApi {
 //            @ApiResponse(code = 404, message = "Container not found."),
 //            @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = {ContainerService.CONTAINERS_REST_PATH + "/status"}, method = RequestMethod.GET, params = {"id"})
-    public ResponseEntity<String> getContainerStatus(@ApiParam(value = "Id of the container to fetch", required = true) @RequestParam("id") final String id) {
-        final String status;
-        try {
-            status = service.getContainerStatus(id);
-            return status == null ? new ResponseEntity<String>(HttpStatus.NOT_FOUND) : new ResponseEntity<>(status, HttpStatus.OK);
-        } catch (NoServerPrefException e) {
-            // TODO This exception handling sucks. Fix it.
-            return new ResponseEntity<>(HttpStatus.FAILED_DEPENDENCY);
-        }
-
+    @ResponseBody
+    public String getContainerStatus(@ApiParam(value = "Id of the container to fetch", required = true) @RequestParam("id") final String id) throws NotFoundException, NoServerPrefException, ContainerServerException {
+            return service.getContainerStatus(id);
     }
 
     //    @ApiOperation(value = "Get list of images.", notes = "Returns a list of all images on the container server.", response = Image.class, responseContainer = "List")
@@ -94,13 +72,8 @@ public class ContainersApi {
 //            @ApiResponse(code = 200, message = "A list of images on the server"),
 //            @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = {ContainerService.IMAGES_REST_PATH}, method = RequestMethod.GET)
-    public ResponseEntity<List<Image>> getAllImages() {
-        try {
-            return new ResponseEntity<List<Image>>(service.getAllImages(), HttpStatus.OK);
-        } catch (NoServerPrefException e) {
-            // TODO This exception handling sucks. Fix it.
-            return new ResponseEntity<>(HttpStatus.FAILED_DEPENDENCY);
-        }
+    public List<Image> getAllImages() throws NoServerPrefException {
+        return service.getAllImages();
     }
 
     //    @ApiOperation(value = "Get list of images.", notes = "Returns a list of all images on the container server.", response = Image.class, responseContainer = "List")
@@ -108,62 +81,27 @@ public class ContainersApi {
 //            @ApiResponse(code = 200, message = "A list of images on the server"),
 //            @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = {ContainerService.IMAGES_REST_PATH}, method = RequestMethod.GET, params = {"name"})
-    public ResponseEntity<Image> getImageByName(final @RequestParam String name) throws NotFoundException {
-        try {
-            final Image image = service.getImageByName(name);
-            if (image == null) {
-                throw new NotFoundException("No image found with name "+name);
-            }
-            return new ResponseEntity<Image>(image, HttpStatus.OK);
-        } catch (NoServerPrefException e) {
-            // TODO This exception handling sucks. Fix it.
-            return new ResponseEntity<>(HttpStatus.FAILED_DEPENDENCY);
-        }
-
+    @ResponseBody
+    public Image getImageByName(final @RequestParam String name) throws NotFoundException, ContainerServerException, NoServerPrefException {
+        return service.getImageByName(name);
     }
 
     @RequestMapping(value = {ContainerService.IMAGES_REST_PATH}, method = RequestMethod.GET, params = {"id"})
-    public ResponseEntity<Image> getImageById(final @RequestParam String id) throws NotFoundException {
-        try {
-
-            final Image image = service.getImageById(id);
-            if (image == null) {
-                throw new NotFoundException("No image found with id " + id);
-            }
-            return new ResponseEntity<Image>(image, HttpStatus.OK);
-        } catch (NoServerPrefException e) {
-            // TODO This exception handling sucks. Fix it.
-            return new ResponseEntity<>(HttpStatus.FAILED_DEPENDENCY);
-        }
+    @ResponseBody
+    public Image getImageById(final @RequestParam String id) throws NotFoundException, NoServerPrefException, ContainerServerException {
+        return service.getImageById(id);
     }
 
     @RequestMapping(value = {ContainerService.IMAGES_REST_PATH}, method = RequestMethod.DELETE, params = {"name"})
-    public ResponseEntity<String> deleteImageByName(final @RequestParam String name) throws NotFoundException {
-        try {
-            final String id = service.deleteImageByName(name);
-            if (id == null) {
-                throw new NotFoundException("No image found with name " + name);
-            }
-            return new ResponseEntity<>(id, HttpStatus.OK);
-        } catch (NoServerPrefException e) {
-            // TODO This exception handling sucks. Fix it.
-            return new ResponseEntity<>(HttpStatus.FAILED_DEPENDENCY);
-        }
+    @ResponseBody
+    public String deleteImageByName(final @RequestParam String name) throws NotFoundException, NoServerPrefException, ContainerServerException {
+        return service.deleteImageByName(name);
     }
 
     @RequestMapping(value = {ContainerService.IMAGES_REST_PATH}, method = RequestMethod.DELETE, params = {"id"})
-    public ResponseEntity<String> deleteImageById(final @RequestParam(name="id") String inputId) throws NotFoundException {
-        try {
-
-            final String id = service.deleteImageById(inputId);
-            if (id == null) {
-                throw new NotFoundException("No image found with id " + inputId);
-            }
-            return new ResponseEntity<>(id, HttpStatus.OK);
-        } catch (NoServerPrefException e) {
-            // TODO This exception handling sucks. Fix it.
-            return new ResponseEntity<>(HttpStatus.FAILED_DEPENDENCY);
-        }
+    @ResponseBody
+    public String deleteImageById(final @RequestParam(name="id") String inputId) throws NotFoundException, NoServerPrefException, ContainerServerException {
+        return service.deleteImageById(inputId);
     }
 
     @RequestMapping(value = {ContainerService.IMAGES_REST_PATH}, method = RequestMethod.DELETE, params = {})
@@ -180,42 +118,21 @@ public class ContainersApi {
 //            @ApiResponse(code = 404, message = "Image not found."),
 //            @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = {"/launch"}, method = {RequestMethod.POST}, params = {"name"})
-    public ResponseEntity<String> launch(@ApiParam(value = "The name of the image to launch.", required = true) @RequestParam("name") String name, @RequestBody ImageParameters launchArguments) {
-        final String containerId;
-        try {
-            containerId = service.launch(name, launchArguments);
-            return StringUtils.isBlank(containerId) ?
-                    new ResponseEntity<String>(HttpStatus.INTERNAL_SERVER_ERROR) :
-                    new ResponseEntity<>(containerId, HttpStatus.OK);
-        } catch (NoServerPrefException e) {
-            // TODO This exception handling sucks. Fix it.
-            return new ResponseEntity<>(HttpStatus.FAILED_DEPENDENCY);
-        }
+    @ResponseBody
+    public String launch(@ApiParam(value = "The name of the image to launch.", required = true) @RequestParam("name") String name, @RequestBody ImageParameters launchArguments) throws NoServerPrefException, NotFoundException, ContainerServerException {
+        return service.launch(name, launchArguments);
     }
 
     @RequestMapping(value = {ContainerService.SERVER_REST_PATH}, method = {RequestMethod.GET})
-    public ResponseEntity<ContainerServer> getServer() {
-        try {
-            return new ResponseEntity<>(service.getServer(), HttpStatus.OK);
-        } catch (NoServerPrefException e) {
-            // TODO This exception handling sucks. Fix it.
-            return new ResponseEntity<>(HttpStatus.FAILED_DEPENDENCY);
-        }
+    @ResponseBody
+    public ContainerServer getServer() throws NoServerPrefException {
+        return service.getServer();
     }
 
     @RequestMapping(value = {ContainerService.SERVER_REST_PATH}, method = {RequestMethod.POST})
-    public ResponseEntity setServer(@RequestBody final ContainerServer containerServer) {
-        try {
-            service.setServer(containerServer.host());
-            return new ResponseEntity<>(HttpStatus.OK);
-        } catch (NoServerPrefException e) {
-            // TODO This exception handling sucks. Fix it.
-            return new ResponseEntity<>(HttpStatus.FAILED_DEPENDENCY);
-        } catch (InvalidPreferenceName invalidPreferenceName) {
-            // TODO Do something with this
-            invalidPreferenceName.printStackTrace();
-        }
-        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+    @ResponseBody
+    public void setServer(@RequestBody final ContainerServer containerServer) throws NoServerPrefException, InvalidPreferenceName {
+        service.setServer(containerServer.host());
     }
 
     @Inject
