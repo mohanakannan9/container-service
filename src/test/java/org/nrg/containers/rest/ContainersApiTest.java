@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.nrg.containers.config.ImagesApiTestConfig;
+import org.nrg.containers.config.ContainersApiTestConfig;
 import org.nrg.containers.mocks.MockImages;
 import org.nrg.containers.model.Image;
 import org.nrg.containers.services.ContainerService;
@@ -19,6 +19,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import javax.servlet.ServletContext;
+
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -32,8 +33,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
-@ContextConfiguration(classes = ImagesApiTestConfig.class)
-public class ImagesApiTest {
+@ContextConfiguration(classes = ContainersApiTestConfig.class)
+public class ContainersApiTest {
+    private final String IMAGES =
+            ContainerService.CONTAINER_SERVICE_REST_PATH_PREFIX + ContainerService.IMAGES_REST_PATH;
+    private final String CONTAINERS =
+            ContainerService.CONTAINER_SERVICE_REST_PATH_PREFIX + ContainerService.CONTAINERS_REST_PATH;
 
     private MockMvc mockMvc;
     final ObjectMapper mapper = new ObjectMapper();
@@ -59,13 +64,28 @@ public class ImagesApiTest {
     }
 
     @Test
+    public void testGetAllContainers() throws Exception {
+        // TODO
+    }
+
+    @Test
+    public void testGetContainerById() throws Exception {
+        // TODO
+    }
+
+    @Test
+    public void testGetContainerStatus() throws Exception {
+        // TODO
+    }
+
+    @Test
     public void testGetAllImages() throws Exception {
         final List<Image> mockImageList = MockImages.FIRST_AND_SECOND;
 
         when(service.getAllImages()).thenReturn(mockImageList);
 
         final String response =
-                mockMvc.perform(get("/images").accept(MediaType.APPLICATION_JSON_UTF8))
+                mockMvc.perform(get(IMAGES).accept(MediaType.APPLICATION_JSON_UTF8))
                         .andExpect(status().isOk())
                         .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
                         .andReturn()
@@ -77,7 +97,7 @@ public class ImagesApiTest {
     }
 
     @Test
-    public void testGetByName() throws Exception {
+    public void testGetImageByName() throws Exception {
         final String name = MockImages.FOO_NAME;
         final Image mockImage = MockImages.FOO;
 
@@ -86,7 +106,7 @@ public class ImagesApiTest {
                 .thenReturn(null);
 
         final String responseByName =
-                mockMvc.perform(get("/images")
+                mockMvc.perform(get(IMAGES)
                         .param("name", name)
                         .accept(MediaType.APPLICATION_JSON_UTF8))
                         .andExpect(status().isOk())
@@ -100,7 +120,7 @@ public class ImagesApiTest {
     }
 
     @Test
-    public void testGetById() throws Exception {
+    public void testGetImageById() throws Exception {
         final String id = MockImages.FOO_ID;
         final Image mockImage = MockImages.FOO;
 
@@ -109,7 +129,7 @@ public class ImagesApiTest {
                 .thenReturn(null);
 
         final String responseById =
-                mockMvc.perform(get("/images")
+                mockMvc.perform(get(IMAGES)
                         .param("id", id)
                         .accept(MediaType.APPLICATION_JSON_UTF8))
                         .andExpect(status().isOk())
@@ -121,14 +141,14 @@ public class ImagesApiTest {
         final Image imageById = mapper.readValue(responseById, Image.class);
         assertThat(imageById, equalTo(mockImage));
 
-        mockMvc.perform(get("/images")
+        mockMvc.perform(get(IMAGES)
                 .param("id", id)
                 .accept(MediaType.APPLICATION_JSON_UTF8))
                 .andExpect(status().isNotFound());
     }
 
     @Test
-    public void testDeleteByName() throws Exception {
+    public void testDeleteImageByName() throws Exception {
         final String name = MockImages.FOO_NAME;
         final String id = MockImages.FOO_ID;
 
@@ -137,7 +157,7 @@ public class ImagesApiTest {
                 .thenReturn(null);
 
         final String responseByName =
-                mockMvc.perform(delete("/images")
+                mockMvc.perform(delete(IMAGES)
                         .param("name", name)
                         .accept(MediaType.APPLICATION_JSON_UTF8))
                         .andExpect(status().isOk())
@@ -150,7 +170,7 @@ public class ImagesApiTest {
     }
 
     @Test
-    public void testDeleteById() throws Exception {
+    public void testDeleteImageById() throws Exception {
         final String id = MockImages.FOO_ID;
 
         when(service.deleteImageById(id))
@@ -158,7 +178,7 @@ public class ImagesApiTest {
                 .thenReturn(null);
 
         final String responseById =
-                mockMvc.perform(delete("/images")
+                mockMvc.perform(delete(IMAGES)
                         .param("id", id)
                         .accept(MediaType.APPLICATION_JSON_UTF8))
                         .andExpect(status().isOk())
@@ -171,15 +191,15 @@ public class ImagesApiTest {
     }
 
     @Test
-    public void testDelete() throws Exception {
+    public void testDeleteImageNoParams() throws Exception {
         final String id = MockImages.FOO_ID;
 
-        mockMvc.perform(delete("/images")
+        mockMvc.perform(delete(IMAGES)
                 .param("id", id)
                 .accept(MediaType.APPLICATION_JSON_UTF8))
                 .andExpect(status().isNotFound());
 
-        mockMvc.perform(delete("/images")) // Note, no query params
+        mockMvc.perform(delete(IMAGES)) // Note, no query params
                 .andExpect(status().isBadRequest());
         //.andExpect(content().string("Include the name or id of an image to delete in the query parameters."));
         // I wish my exception message got passed to the response body, but it doesn't.

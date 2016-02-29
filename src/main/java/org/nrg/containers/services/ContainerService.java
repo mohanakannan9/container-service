@@ -10,6 +10,11 @@ import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import java.util.List;
 
 public interface ContainerService {
+    String CONTAINER_SERVICE_REST_PATH_PREFIX = "/containers";
+    String CONTAINERS_REST_PATH = "/container";
+    String IMAGES_REST_PATH = "/images";
+    String SERVER_REST_PATH = "/server";
+
     String SERVER_PREF_TOOL_ID = "container";
     String SERVER_PREF_NAME = "server";
 
