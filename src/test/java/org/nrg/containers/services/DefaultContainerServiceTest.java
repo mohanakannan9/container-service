@@ -8,7 +8,7 @@ import org.junit.runner.RunWith;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.config.DefaultContainerServiceTestConfig;
 import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.mocks.MockImages;
+import org.nrg.containers.model.ImageMocks;
 import org.nrg.containers.model.ContainerServer;
 import org.nrg.containers.model.Image;
 import org.nrg.prefs.entities.Preference;
@@ -93,7 +93,7 @@ public class DefaultContainerServiceTest {
 
     @Test
     public void testGetAllImages() throws Exception {
-        final List<Image> mockImageList = MockImages.FIRST_AND_SECOND;
+        final List<Image> mockImageList = ImageMocks.FIRST_AND_SECOND;
 
         when(mockContainerControlApi.getAllImages(MOCK_CONTAINER_HOST)).thenReturn(mockImageList);
         final List<Image> responseImageList = service.getAllImages();
@@ -102,8 +102,8 @@ public class DefaultContainerServiceTest {
 
     @Test
     public void testGetImageByName() throws Exception {
-        final String name = MockImages.FOO_NAME;
-        final Image mockImage = MockImages.FOO;
+        final String name = ImageMocks.FOO_NAME;
+        final Image mockImage = ImageMocks.FOO;
 
         when(mockContainerControlApi.getImageByName(MOCK_CONTAINER_HOST, name)).thenReturn(mockImage);
         final Image responseImageByName = service.getImageByName(name);
@@ -112,8 +112,8 @@ public class DefaultContainerServiceTest {
 
     @Test
     public void testGetImageById() throws Exception {
-        final String id = MockImages.FOO_ID;
-        final Image mockImage = MockImages.FOO;
+        final String id = ImageMocks.FOO_ID;
+        final Image mockImage = ImageMocks.FOO;
 
         when(mockContainerControlApi.getImageById(MOCK_CONTAINER_HOST, id)).thenReturn(mockImage);
         final Image responseImageById = service.getImageById(id);

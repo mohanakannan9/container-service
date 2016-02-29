@@ -1,13 +1,12 @@
-package org.nrg.containers.mocks;
+package org.nrg.containers.model;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import org.nrg.containers.model.Image;
 
 import java.util.List;
 import java.util.Map;
 
-public class MockImages {
+public class ImageMocks {
     public final static String FOO_NAME = "foo";
     public final static String FOO_ID = "0";
     public final static Long FOO_SIZE = 0L;
