@@ -97,6 +97,13 @@ dependencies {
     testCompile "org.hibernate:hibernate-ehcache:${vHibernate}"
 }
 
+jacocoTestReport {
+    reports {
+        xml.enabled = true
+        html.enabled = false 
+    }
+}
+
 //compileJava {
 //    options.encoding = 'UTF-8'
 //    options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
