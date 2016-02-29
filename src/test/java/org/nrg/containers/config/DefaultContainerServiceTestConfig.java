@@ -5,6 +5,7 @@ import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.metadata.service.ImageMetadataService;
 import org.nrg.containers.services.ContainerService;
 import org.nrg.containers.services.impl.DefaultContainerService;
+import org.nrg.prefs.services.PreferenceService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
@@ -20,6 +21,11 @@ public class DefaultContainerServiceTestConfig {
     @Bean
     public ImageMetadataService mockImageMetadataService() {
         return Mockito.mock(ImageMetadataService.class);
+    }
+
+    @Bean
+    public PreferenceService mockPreferenceService() {
+        return Mockito.mock(PreferenceService.class);
     }
 
     @Bean

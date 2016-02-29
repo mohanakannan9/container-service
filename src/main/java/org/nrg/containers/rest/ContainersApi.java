@@ -1,6 +1,7 @@
 package org.nrg.containers.rest;
 
 import io.swagger.annotations.ApiParam;
+import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.Container;
 import org.nrg.containers.services.ContainerService;
 import org.slf4j.Logger;
@@ -27,9 +28,15 @@ public class ContainersApi {
 //            @ApiResponse(code = 200, message = "A list of images on the server"),
 //            @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(method = RequestMethod.GET)
-    @ResponseBody
-    public List<Container> getAllContainers() {
-        return service.getAllContainers();
+//    @ResponseBody
+//    public List<Container> getAllContainers() {
+    public ResponseEntity<List<Container>> getAllContainers() {
+        try {
+            return new ResponseEntity<>(service.getAllContainers(), HttpStatus.OK);
+        } catch (NoServerPrefException e) {
+            // TODO This exception handling sucks. Fix it.
+            return new ResponseEntity<>(HttpStatus.FAILED_DEPENDENCY);
+        }
     }
 
 //    @ApiOperation(value = "Gets the container with the specified id.", notes = "Returns the serialized container object with the specified id.", response = Container.class)
@@ -42,8 +49,13 @@ public class ContainersApi {
     @RequestMapping(value = {"/{id}"}, method = RequestMethod.GET)
 //    public ResponseEntity<Container> getById(@ApiParam(value = "Id of the container to fetch", required = true) @PathVariable("id") final String id) {
     public ResponseEntity<Container> getById(@ApiParam(value = "Id of the container to fetch", required = true) @PathVariable("id") final String id) {
-        final Container container = service.getContainer(id);
-        return container == null ? new ResponseEntity<Container>(HttpStatus.NOT_FOUND) : new ResponseEntity<>(container, HttpStatus.OK);
+        try {
+            final Container container = service.getContainer(id);
+            return container == null ? new ResponseEntity<Container>(HttpStatus.NOT_FOUND) : new ResponseEntity<>(container, HttpStatus.OK);
+        } catch (NoServerPrefException e) {
+            // TODO This exception handling sucks. Fix it.
+            return new ResponseEntity<>(HttpStatus.FAILED_DEPENDENCY);
+        }
     }
 
 //    @ApiOperation(value = "Gets the image with the specified name.", notes = "Returns the serialized image object with the specified name.", response = String.class)
@@ -55,8 +67,15 @@ public class ContainersApi {
 //            @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = {"/{id}/status"}, method = {RequestMethod.GET})
     public ResponseEntity<String> getStatus(@ApiParam(value = "Id of the container to fetch", required = true) @PathVariable("id") final String id) {
-        final String status = service.getContainerStatus(id);
-        return status == null ? new ResponseEntity<String>(HttpStatus.NOT_FOUND) : new ResponseEntity<>(status, HttpStatus.OK);
+        final String status;
+        try {
+            status = service.getContainerStatus(id);
+            return status == null ? new ResponseEntity<String>(HttpStatus.NOT_FOUND) : new ResponseEntity<>(status, HttpStatus.OK);
+        } catch (NoServerPrefException e) {
+            // TODO This exception handling sucks. Fix it.
+            return new ResponseEntity<>(HttpStatus.FAILED_DEPENDENCY);
+        }
+
     }
 
     @Inject

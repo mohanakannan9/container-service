@@ -3,14 +3,19 @@ package org.nrg.containers.services.impl;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.containers.api.ContainerControlApi;
+import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.metadata.ImageMetadata;
 import org.nrg.containers.metadata.ImageMetadataAnn;
 import org.nrg.containers.metadata.service.ImageMetadataService;
 import org.nrg.containers.model.Container;
+import org.nrg.containers.model.ContainerServer;
 import org.nrg.containers.model.Image;
 import org.nrg.containers.model.ImageParameters;
 import org.nrg.containers.services.ContainerService;
 import org.nrg.framework.utilities.Reflection;
+import org.nrg.prefs.entities.Preference;
+import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.nrg.prefs.services.PreferenceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,11 +27,6 @@ import java.util.Map;
 
 @Service
 public class DefaultContainerService implements ContainerService {
-    private String DOCKER_HOST = "http://10.0.0.170:2375";
-
-    // TODO Later, this will be initialized from a preference
-    private String server = DOCKER_HOST;
-
     private static final Logger _log = LoggerFactory.getLogger(DefaultContainerService.class);
 
     @Autowired
@@ -37,51 +37,68 @@ public class DefaultContainerService implements ContainerService {
     @SuppressWarnings("SpringJavaAutowiringInspection") // IntelliJ does not process the excludeFilter in ContainerServiceConfig @ComponentScan, erroneously marks this red
     private ImageMetadataService imageMetadataService;
 
-    public String getServer() {
-        return server;
-    }
+    @Autowired
+    @SuppressWarnings("SpringJavaAutowiringInspection") // IntelliJ does not process the excludeFilter in ContainerServiceConfig @ComponentScan, erroneously marks this red
+    private PreferenceService prefsService;
 
-    public List<Image> getAllImages() {
-        return controlApi.getAllImages(server);
-    }
-
-    public Image getImageByName(final String name) {
-        return controlApi.getImageByName(server, name);
+    public ContainerServer getServer() throws NoServerPrefException {
+        final Preference serverPref = prefsService.getPreference(SERVER_PREF_TOOL_ID, SERVER_PREF_NAME);
+        if (serverPref == null || StringUtils.isBlank(serverPref.getValue())) {
+            throw new NoServerPrefException("No container server URI defined in preferences.");
+        }
+        return new ContainerServer(serverPref.getValue());
     }
 
     @Override
-    public Image getImageById(String id) {
+    public void setServer(final String host) throws NoServerPrefException, InvalidPreferenceName {
+        prefsService.setPreference(SERVER_PREF_TOOL_ID, SERVER_PREF_NAME, host);
+    }
+
+    private String server() throws NoServerPrefException {
+        return getServer().host();
+    }
+
+    public List<Image> getAllImages() throws NoServerPrefException {
+        return controlApi.getAllImages(server());
+    }
+
+    public Image getImageByName(final String name) throws NoServerPrefException {
+        return controlApi.getImageByName(server(), name);
+    }
+
+    @Override
+    public Image getImageById(String id) throws NoServerPrefException {
         // TODO Figure out what to do with this. Not sure if we need to be fetching images by id.
-        return controlApi.getImageById(server, id);
+        return controlApi.getImageById(server(), id);
     }
 
     @Override
-    public String deleteImageById(String id) {
+    public String deleteImageById(String id) throws NoServerPrefException {
         return null;
     }
 
     @Override
-    public String deleteImageByName(String name) {
+    public String deleteImageByName(String name) throws NoServerPrefException {
         return null;
     }
 
-    public List<Container> getAllContainers() {
-        return controlApi.getAllContainers(server);
+    public List<Container> getAllContainers() throws NoServerPrefException {
+        return controlApi.getAllContainers(server());
     }
 
-    public String getContainerStatus(final String id) {
-        return controlApi.getContainerStatus(server, id);
+    public String getContainerStatus(final String id) throws NoServerPrefException {
+        return controlApi.getContainerStatus(server(), id);
     }
 
-    public Container getContainer(final String id) {
-        return controlApi.getContainer(server, id);
+    public Container getContainer(final String id) throws NoServerPrefException {
+        return controlApi.getContainer(server(), id);
     }
 
     @Override
-    public String launch(String imageName, ImageParameters params) {
+    public String launch(String imageName, ImageParameters params) throws NoServerPrefException {
 //        final Image image = controlApi.getImageByName(server, imageName);
 //        final ImageMetadata imageMetadata = _imageMetadataService.getByImageId(image.id());
-        return controlApi.launchImage(server, imageName, params.getCommandArray(), params.getVolumesArray());
+        return controlApi.launchImage(server(), imageName, params.getCommandArray(), params.getVolumesArray());
     }
 
     static Map<String, Class<? extends ImageMetadata>> imageMetadataClasses = null;

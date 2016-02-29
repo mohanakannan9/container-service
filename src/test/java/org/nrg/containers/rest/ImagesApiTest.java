@@ -36,6 +36,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class ImagesApiTest {
 
     private MockMvc mockMvc;
+    final ObjectMapper mapper = new ObjectMapper();
 
     @Autowired
     private WebApplicationContext wac;
@@ -71,15 +72,13 @@ public class ImagesApiTest {
                         .getResponse()
                         .getContentAsString();
 
-        ObjectMapper mapper = new ObjectMapper();
         List<Image> responseImageList = mapper.readValue(response, new TypeReference<List<Image>>(){});
         assertThat(responseImageList, equalTo(mockImageList));
     }
 
     @Test
-    public void testGetImage() throws Exception {
+    public void testGetByName() throws Exception {
         final String name = MockImages.FOO_NAME;
-        final String id = MockImages.FOO_ID;
         final Image mockImage = MockImages.FOO;
 
         when(service.getImageByName(name))
@@ -88,23 +87,22 @@ public class ImagesApiTest {
 
         final String responseByName =
                 mockMvc.perform(get("/images")
-                                .param("name", name)
-                                .accept(MediaType.APPLICATION_JSON_UTF8))
+                        .param("name", name)
+                        .accept(MediaType.APPLICATION_JSON_UTF8))
                         .andExpect(status().isOk())
                         .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
 
-        final ObjectMapper mapper = new ObjectMapper();
         final Image imageByName = mapper.readValue(responseByName, Image.class);
         assertThat(imageByName, equalTo(mockImage));
+    }
 
-        mockMvc.perform(get("/images")
-                        .param("name", name)
-                        .accept(MediaType.APPLICATION_JSON_UTF8))
-                .andExpect(status().isNotFound());
-
+    @Test
+    public void testGetById() throws Exception {
+        final String id = MockImages.FOO_ID;
+        final Image mockImage = MockImages.FOO;
 
         when(service.getImageById(id))
                 .thenReturn(mockImage)
@@ -112,8 +110,8 @@ public class ImagesApiTest {
 
         final String responseById =
                 mockMvc.perform(get("/images")
-                                .param("id", id)
-                                .accept(MediaType.APPLICATION_JSON_UTF8))
+                        .param("id", id)
+                        .accept(MediaType.APPLICATION_JSON_UTF8))
                         .andExpect(status().isOk())
                         .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
                         .andReturn()
@@ -124,13 +122,13 @@ public class ImagesApiTest {
         assertThat(imageById, equalTo(mockImage));
 
         mockMvc.perform(get("/images")
-                        .param("id", id)
-                        .accept(MediaType.APPLICATION_JSON_UTF8))
+                .param("id", id)
+                .accept(MediaType.APPLICATION_JSON_UTF8))
                 .andExpect(status().isNotFound());
     }
 
     @Test
-    public void testDeleteImage() throws Exception {
+    public void testDeleteByName() throws Exception {
         final String name = MockImages.FOO_NAME;
         final String id = MockImages.FOO_ID;
 
@@ -142,19 +140,18 @@ public class ImagesApiTest {
                 mockMvc.perform(delete("/images")
                         .param("name", name)
                         .accept(MediaType.APPLICATION_JSON_UTF8))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
+                        .andExpect(status().isOk())
+                        .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
 
         assertThat(responseByName, equalTo(id));
+    }
 
-        mockMvc.perform(delete("/images")
-                        .param("name", name)
-                        .accept(MediaType.APPLICATION_JSON_UTF8))
-                .andExpect(status().isNotFound());
-
+    @Test
+    public void testDeleteById() throws Exception {
+        final String id = MockImages.FOO_ID;
 
         when(service.deleteImageById(id))
                 .thenReturn(id)
@@ -162,8 +159,8 @@ public class ImagesApiTest {
 
         final String responseById =
                 mockMvc.perform(delete("/images")
-                                .param("id", id)
-                                .accept(MediaType.APPLICATION_JSON_UTF8))
+                        .param("id", id)
+                        .accept(MediaType.APPLICATION_JSON_UTF8))
                         .andExpect(status().isOk())
                         .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
                         .andReturn()
@@ -171,16 +168,36 @@ public class ImagesApiTest {
                         .getContentAsString();
 
         assertThat(responseById, equalTo(id));
+    }
+
+    @Test
+    public void testDelete() throws Exception {
+        final String id = MockImages.FOO_ID;
 
         mockMvc.perform(delete("/images")
-                        .param("id", id)
-                        .accept(MediaType.APPLICATION_JSON_UTF8))
+                .param("id", id)
+                .accept(MediaType.APPLICATION_JSON_UTF8))
                 .andExpect(status().isNotFound());
 
         mockMvc.perform(delete("/images")) // Note, no query params
                 .andExpect(status().isBadRequest());
-                //.andExpect(content().string("Include the name or id of an image to delete in the query parameters."));
-                // I wish my exception message got passed to the response body, but it doesn't.
-                // May need to move to a different exception handling model
+        //.andExpect(content().string("Include the name or id of an image to delete in the query parameters."));
+        // I wish my exception message got passed to the response body, but it doesn't.
+        // May need to move to a different exception handling model
+    }
+
+    @Test
+    public void testLaunch() throws Exception {
+        // TODO
+    }
+
+    @Test
+    public void testGetServer() throws Exception {
+        // TODO
+    }
+
+    @Test
+    public void testSetServer() throws Exception {
+        // TODO
     }
 }
