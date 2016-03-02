@@ -146,7 +146,7 @@ public class ContainersApiTest {
         final String status = ContainerMocks.FOO_STATUS;
 
         final String path = CONTAINERS_PATH +"/status";
-        final MockHttpServletRequestBuilder request = get(path).param("id", id).accept(MediaType.APPLICATION_JSON_UTF8);
+        final MockHttpServletRequestBuilder request = get(path).param("id", id);
 
         when(service.getContainerStatus(id))
                 .thenReturn(status)                                     // Happy path
@@ -156,7 +156,7 @@ public class ContainersApiTest {
         final String response =
                 mockMvc.perform(request)
                         .andExpect(status().isOk())
-                        .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+                        .andExpect(content().contentType(MediaType.TEXT_PLAIN))
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
@@ -272,15 +272,14 @@ public class ContainersApiTest {
         final String path = IMAGES_PATH;
 
         // REQUEST 0: No "onServer" param (defaults to false)
-        final MockHttpServletRequestBuilder request0 =
-                delete(path).param("name", name).accept(MediaType.APPLICATION_JSON_UTF8);
+        final MockHttpServletRequestBuilder request0 = delete(path).param("name", name);
 
         // REQUEST 1: "onServer=false"
         final MockHttpServletRequestBuilder request1 = request0.param("server", "false");
 
         // REQUEST 2: "onServer=true"
         final MockHttpServletRequestBuilder request2 =
-                delete(path).param("name", name).accept(MediaType.APPLICATION_JSON_UTF8).param("server", "true");
+                delete(path).param("name", name).param("server", "true");
 
         // Mock service
         when(service.deleteImageByName(name, false))
@@ -298,7 +297,7 @@ public class ContainersApiTest {
         final String response0 =
                 mockMvc.perform(request0)
                         .andExpect(status().isOk())
-                        .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+                        .andExpect(content().contentType(MediaType.TEXT_PLAIN))
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
@@ -309,7 +308,7 @@ public class ContainersApiTest {
         final String response1 =
                 mockMvc.perform(request1)
                         .andExpect(status().isOk())
-                        .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+                        .andExpect(content().contentType(MediaType.TEXT_PLAIN))
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
@@ -326,7 +325,7 @@ public class ContainersApiTest {
         final String response2 =
                 mockMvc.perform(request2)
                         .andExpect(status().isOk())
-                        .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+                        .andExpect(content().contentType(MediaType.TEXT_PLAIN))
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
@@ -347,15 +346,14 @@ public class ContainersApiTest {
         final String path = IMAGES_PATH;
 
         // REQUEST 0: No "onServer" param (defaults to false)
-        final MockHttpServletRequestBuilder request0 =
-                delete(path).param("id", id).accept(MediaType.APPLICATION_JSON_UTF8);
+        final MockHttpServletRequestBuilder request0 = delete(path).param("id", id);
 
         // REQUEST 1: "onServer=false"
         final MockHttpServletRequestBuilder request1 = request0.param("server", "false");
 
         // REQUEST 2: "onServer=true"
         final MockHttpServletRequestBuilder request2 =
-                delete(path).param("id", id).param("server", "true").accept(MediaType.APPLICATION_JSON_UTF8);
+                delete(path).param("id", id).param("server", "true");
 
         // Mock service
         when(service.deleteImageById(id, false))
@@ -373,7 +371,7 @@ public class ContainersApiTest {
         final String response0 =
                 mockMvc.perform(request0)
                         .andExpect(status().isOk())
-                        .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+                        .andExpect(content().contentType(MediaType.TEXT_PLAIN))
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
@@ -384,7 +382,7 @@ public class ContainersApiTest {
         final String response1 =
                 mockMvc.perform(request1)
                         .andExpect(status().isOk())
-                        .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+                        .andExpect(content().contentType(MediaType.TEXT_PLAIN))
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
@@ -401,7 +399,7 @@ public class ContainersApiTest {
         final String response2 =
                 mockMvc.perform(request2)
                         .andExpect(status().isOk())
-                        .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+                        .andExpect(content().contentType(MediaType.TEXT_PLAIN))
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
@@ -422,15 +420,13 @@ public class ContainersApiTest {
         final String path = IMAGES_PATH + "/" + id;
 
         // REQUEST 0: No "onServer" param (defaults to false)
-        final MockHttpServletRequestBuilder request0 =
-                delete(path).accept(MediaType.APPLICATION_JSON_UTF8);
+        final MockHttpServletRequestBuilder request0 = delete(path);
 
         // REQUEST 1: "onServer=false"
         final MockHttpServletRequestBuilder request1 = request0.param("server", "false");
 
         // REQUEST 2: "onServer=true"
-        final MockHttpServletRequestBuilder request2 =
-                delete(path).param("server", "true").accept(MediaType.APPLICATION_JSON_UTF8);
+        final MockHttpServletRequestBuilder request2 = delete(path).param("server", "true");
 
         // Mock service
         when(service.deleteImageById(id, false))
@@ -448,7 +444,7 @@ public class ContainersApiTest {
         final String response0 =
                 mockMvc.perform(request0)
                         .andExpect(status().isOk())
-                        .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+                        .andExpect(content().contentType(MediaType.TEXT_PLAIN))
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
@@ -459,7 +455,7 @@ public class ContainersApiTest {
         final String response1 =
                 mockMvc.perform(request1)
                         .andExpect(status().isOk())
-                        .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+                        .andExpect(content().contentType(MediaType.TEXT_PLAIN))
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
@@ -476,7 +472,7 @@ public class ContainersApiTest {
         final String response2 =
                 mockMvc.perform(request2)
                         .andExpect(status().isOk())
-                        .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+                        .andExpect(content().contentType(MediaType.TEXT_PLAIN))
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
@@ -493,7 +489,7 @@ public class ContainersApiTest {
     @Test
     public void testDeleteImageNoParams() throws Exception {
         final String path = IMAGES_PATH;
-        final MockHttpServletRequestBuilder request = delete(path).accept(MediaType.APPLICATION_JSON_UTF8); // Note, no query params
+        final MockHttpServletRequestBuilder request = delete(path); // Note, no query params
 
         mockMvc.perform(request)
                 .andExpect(status().isBadRequest());
@@ -546,7 +542,7 @@ public class ContainersApiTest {
 
         // REQUEST 0: No "onServer" param (defaults to false)
         final MockHttpServletRequestBuilder request =
-                post(path).content(postBody).accept(MediaType.APPLICATION_JSON_UTF8).contentType(MediaType.APPLICATION_JSON_UTF8);
+                post(path).content(postBody).contentType(MediaType.APPLICATION_JSON_UTF8);
 
         doNothing().when(service).setServer(server); // Have to use a different mocking syntax when method returns void
 
