@@ -13,13 +13,16 @@ import org.nrg.containers.services.ContainerService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.inject.Inject;
@@ -138,14 +141,24 @@ public class ContainersApi {
 
     @RequestMapping(value = {ContainerService.SERVER_REST_PATH}, method = {RequestMethod.GET})
     @ResponseBody
-    public ContainerServer getServer() throws NoServerPrefException {
-        return service.getServer();
+    public ContainerServer getServer() throws NotFoundException {
+        try {
+            return service.getServer();
+        } catch (NoServerPrefException e) {
+            throw new NotFoundException(e);
+        }
     }
 
     @RequestMapping(value = {ContainerService.SERVER_REST_PATH}, method = {RequestMethod.POST})
     @ResponseBody
-    public void setServer(@RequestBody final ContainerServer containerServer) throws NoServerPrefException, InvalidPreferenceName {
+    public void setServer(@RequestBody final ContainerServer containerServer) throws InvalidPreferenceName {
         service.setServer(containerServer.host());
+    }
+
+    @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
+    @ExceptionHandler(value = {InvalidPreferenceName.class})
+    public void handleInvalidPreferenceNameException() {
+        // Do nothing. HTTP 500 will be returned.
     }
 
     @Inject

@@ -52,7 +52,7 @@ public class DefaultContainerService implements ContainerService {
     }
 
     @Override
-    public void setServer(final String host) throws NoServerPrefException, InvalidPreferenceName {
+    public void setServer(final String host) throws InvalidPreferenceName {
         prefsService.setPreference(SERVER_PREF_TOOL_ID, SERVER_PREF_NAME, host);
     }
 

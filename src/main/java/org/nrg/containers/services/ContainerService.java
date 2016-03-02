@@ -22,7 +22,7 @@ public interface ContainerService {
 
     ContainerServer getServer() throws NoServerPrefException;
 
-    void setServer(final String host) throws NoServerPrefException, InvalidPreferenceName;
+    void setServer(final String host) throws InvalidPreferenceName;
 
     List<Image> getAllImages() throws NoServerPrefException;
 
