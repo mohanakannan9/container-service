@@ -28,6 +28,7 @@ import java.util.List;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -55,6 +56,8 @@ public class ContainersApiTest {
     @Before
     public void setup() {
         mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
+
+        reset(service); // To ensure test mock objects are isolated
     }
 
     @Test
@@ -258,31 +261,74 @@ public class ContainersApiTest {
         final String id = ImageMocks.FOO_ID;
 
         final String path = IMAGES;
-        final MockHttpServletRequestBuilder request = delete(path).param("name", name).accept(MediaType.APPLICATION_JSON_UTF8);
 
-        when(service.deleteImageByName(name))
-                .thenReturn(id)                                         // Happy path
+        // REQUEST 0: No "onServer" param (defaults to false)
+        final MockHttpServletRequestBuilder request0 =
+                delete(path).param("name", name).accept(MediaType.APPLICATION_JSON_UTF8);
+
+        // REQUEST 1: "onServer=false"
+        final MockHttpServletRequestBuilder request1 = request0.param("server", "false");
+
+        // REQUEST 2: "onServer=true"
+        final MockHttpServletRequestBuilder request2 =
+                delete(path).param("name", name).accept(MediaType.APPLICATION_JSON_UTF8).param("server", "true");
+
+        // Mock service
+        when(service.deleteImageByName(name, false))
+                .thenReturn(id)                                         // Happy path Request 0
+                .thenReturn(id)                                         // Happy path Request 1
                 .thenThrow(ExceptionMocks.NOT_FOUND_EXCEPTION)          // Not found
                 .thenThrow(ExceptionMocks.NO_SERVER_PREF_EXCEPTION);    // No server pref defined
 
-        // Happy path
-        final String responseByName =
-                mockMvc.perform(request)
+        when(service.deleteImageByName(name, true))
+                .thenReturn(id)                                         // Happy path Request 2
+                .thenThrow(ExceptionMocks.NOT_FOUND_EXCEPTION)          // Not found
+                .thenThrow(ExceptionMocks.NO_SERVER_PREF_EXCEPTION);    // No server pref defined
+
+        // Happy path Request 0
+        final String response0 =
+                mockMvc.perform(request0)
                         .andExpect(status().isOk())
                         .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
 
-        assertThat(responseByName, equalTo(id));
+        assertThat(response0, equalTo(id));
+
+        // Happy path Request 1
+        final String response1 =
+                mockMvc.perform(request1)
+                        .andExpect(status().isOk())
+                        .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        assertThat(response1, equalTo(id));
 
         // Not found
-        mockMvc.perform(request)
-                .andExpect(status().isNotFound());
+        mockMvc.perform(request0).andExpect(status().isNotFound());
 
         // No server pref defined
-        mockMvc.perform(request)
-                .andExpect(status().isFailedDependency());
+        mockMvc.perform(request0).andExpect(status().isFailedDependency());
+
+        // Happy path Request 2
+        final String response2 =
+                mockMvc.perform(request2)
+                        .andExpect(status().isOk())
+                        .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        assertThat(response2, equalTo(id));
+
+        // Not found
+        mockMvc.perform(request2).andExpect(status().isNotFound());
+
+        // No server pref defined
+        mockMvc.perform(request2).andExpect(status().isFailedDependency());
     }
 
     @Test
@@ -290,31 +336,149 @@ public class ContainersApiTest {
         final String id = ImageMocks.FOO_ID;
 
         final String path = IMAGES;
-        final MockHttpServletRequestBuilder request = delete(path).param("id", id).accept(MediaType.APPLICATION_JSON_UTF8);
 
-        when(service.deleteImageById(id))
-                .thenReturn(id)                                         // Happy path
+        // REQUEST 0: No "onServer" param (defaults to false)
+        final MockHttpServletRequestBuilder request0 =
+                delete(path).param("id", id).accept(MediaType.APPLICATION_JSON_UTF8);
+
+        // REQUEST 1: "onServer=false"
+        final MockHttpServletRequestBuilder request1 = request0.param("server", "false");
+
+        // REQUEST 2: "onServer=true"
+        final MockHttpServletRequestBuilder request2 =
+                delete(path).param("id", id).param("server", "true").accept(MediaType.APPLICATION_JSON_UTF8);
+
+        // Mock service
+        when(service.deleteImageById(id, false))
+                .thenReturn(id)                                         // Happy path Request 0
+                .thenReturn(id)                                         // Happy path Request 1
                 .thenThrow(ExceptionMocks.NOT_FOUND_EXCEPTION)          // Not found
                 .thenThrow(ExceptionMocks.NO_SERVER_PREF_EXCEPTION);    // No server pref defined
 
-        // Happy path
-        final String responseById =
-                mockMvc.perform(request)
+        when(service.deleteImageById(id, true))
+                .thenReturn(id)                                         // Happy path Request 2
+                .thenThrow(ExceptionMocks.NOT_FOUND_EXCEPTION)          // Not found
+                .thenThrow(ExceptionMocks.NO_SERVER_PREF_EXCEPTION);    // No server pref defined
+
+        // Happy path Request 0
+        final String response0 =
+                mockMvc.perform(request0)
                         .andExpect(status().isOk())
                         .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
 
-        assertThat(responseById, equalTo(id));
+        assertThat(response0, equalTo(id));
+
+        // Happy path Request 1
+        final String response1 =
+                mockMvc.perform(request1)
+                        .andExpect(status().isOk())
+                        .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        assertThat(response1, equalTo(id));
 
         // Not found
-        mockMvc.perform(request)
-                .andExpect(status().isNotFound());
+        mockMvc.perform(request0).andExpect(status().isNotFound());
 
         // No server pref defined
-        mockMvc.perform(request)
-                .andExpect(status().isFailedDependency());
+        mockMvc.perform(request0).andExpect(status().isFailedDependency());
+
+        // Happy path Request 2
+        final String response2 =
+                mockMvc.perform(request2)
+                        .andExpect(status().isOk())
+                        .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        assertThat(response2, equalTo(id));
+
+        // Not found
+        mockMvc.perform(request2).andExpect(status().isNotFound());
+
+        // No server pref defined
+        mockMvc.perform(request2).andExpect(status().isFailedDependency());
+    }
+
+    @Test
+    public void testDeleteImageByIdInPath() throws Exception {
+        final String id = ImageMocks.FOO_ID;
+
+        final String path = IMAGES + "/" + id;
+
+        // REQUEST 0: No "onServer" param (defaults to false)
+        final MockHttpServletRequestBuilder request0 =
+                delete(path).accept(MediaType.APPLICATION_JSON_UTF8);
+
+        // REQUEST 1: "onServer=false"
+        final MockHttpServletRequestBuilder request1 = request0.param("server", "false");
+
+        // REQUEST 2: "onServer=true"
+        final MockHttpServletRequestBuilder request2 =
+                delete(path).param("server", "true").accept(MediaType.APPLICATION_JSON_UTF8);
+
+        // Mock service
+        when(service.deleteImageById(id, false))
+                .thenReturn(id)                                         // Happy path Request 0
+                .thenReturn(id)                                         // Happy path Request 1
+                .thenThrow(ExceptionMocks.NOT_FOUND_EXCEPTION)          // Not found
+                .thenThrow(ExceptionMocks.NO_SERVER_PREF_EXCEPTION);    // No server pref defined
+
+        when(service.deleteImageById(id, true))
+                .thenReturn(id)                                         // Happy path Request 2
+                .thenThrow(ExceptionMocks.NOT_FOUND_EXCEPTION)          // Not found
+                .thenThrow(ExceptionMocks.NO_SERVER_PREF_EXCEPTION);    // No server pref defined
+
+        // Happy path Request 0
+        final String response0 =
+                mockMvc.perform(request0)
+                        .andExpect(status().isOk())
+                        .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        assertThat(response0, equalTo(id));
+
+        // Happy path Request 1
+        final String response1 =
+                mockMvc.perform(request1)
+                        .andExpect(status().isOk())
+                        .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        assertThat(response1, equalTo(id));
+
+        // Not found
+        mockMvc.perform(request0).andExpect(status().isNotFound());
+
+        // No server pref defined
+        mockMvc.perform(request0).andExpect(status().isFailedDependency());
+
+        // Happy path Request 2
+        final String response2 =
+                mockMvc.perform(request2)
+                        .andExpect(status().isOk())
+                        .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        assertThat(response2, equalTo(id));
+
+        // Not found
+        mockMvc.perform(request2).andExpect(status().isNotFound());
+
+        // No server pref defined
+        mockMvc.perform(request2).andExpect(status().isFailedDependency());
     }
 
     @Test

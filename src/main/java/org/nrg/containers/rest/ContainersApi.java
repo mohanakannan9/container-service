@@ -14,6 +14,7 @@ import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -94,14 +95,26 @@ public class ContainersApi {
 
     @RequestMapping(value = {ContainerService.IMAGES_REST_PATH}, method = RequestMethod.DELETE, params = {"name"})
     @ResponseBody
-    public String deleteImageByName(final @RequestParam String name) throws NotFoundException, NoServerPrefException, ContainerServerException {
-        return service.deleteImageByName(name);
+    public String deleteImageByName(final @RequestParam("name") String name,
+                                    final @RequestParam(name = "server", defaultValue = "false") String deleteOnServer)
+            throws NotFoundException, NoServerPrefException, ContainerServerException {
+        return service.deleteImageByName(name, Boolean.parseBoolean(deleteOnServer));
     }
 
     @RequestMapping(value = {ContainerService.IMAGES_REST_PATH}, method = RequestMethod.DELETE, params = {"id"})
     @ResponseBody
-    public String deleteImageById(final @RequestParam(name="id") String inputId) throws NotFoundException, NoServerPrefException, ContainerServerException {
-        return service.deleteImageById(inputId);
+    public String deleteImageById(final @RequestParam("id") String id,
+                                  final @RequestParam(name = "server", defaultValue = "false") String deleteOnServer)
+            throws NotFoundException, NoServerPrefException, ContainerServerException {
+        return service.deleteImageById(id, Boolean.parseBoolean(deleteOnServer));
+    }
+
+    @RequestMapping(value = {ContainerService.IMAGES_REST_PATH + "/{id}"}, method = RequestMethod.DELETE)
+    @ResponseBody
+    public String deleteImageByIdInPath(final @PathVariable String id,
+                                        final @RequestParam(name = "server", defaultValue = "false") String deleteOnServer)
+            throws NotFoundException, NoServerPrefException, ContainerServerException {
+        return service.deleteImageById(id, Boolean.parseBoolean(deleteOnServer));
     }
 
     @RequestMapping(value = {ContainerService.IMAGES_REST_PATH}, method = RequestMethod.DELETE, params = {})

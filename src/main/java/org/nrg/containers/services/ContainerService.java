@@ -30,9 +30,9 @@ public interface ContainerService {
 
     Image getImageById(final String id) throws NoServerPrefException, NotFoundException, ContainerServerException;
 
-    String deleteImageById(final String id) throws NoServerPrefException, NotFoundException, ContainerServerException;
+    String deleteImageById(final String id, final Boolean onServer) throws NoServerPrefException, NotFoundException, ContainerServerException;
 
-    String deleteImageByName(final String name) throws NoServerPrefException, NotFoundException, ContainerServerException;
+    String deleteImageByName(final String name, final Boolean onServer) throws NoServerPrefException, NotFoundException, ContainerServerException;
 
     List<Container> getAllContainers() throws NoServerPrefException, ContainerServerException;
 

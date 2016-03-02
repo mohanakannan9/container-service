@@ -75,12 +75,12 @@ public class DefaultContainerService implements ContainerService {
     }
 
     @Override
-    public String deleteImageById(String id) throws NoServerPrefException, NotFoundException, ContainerServerException {
+    public String deleteImageById(final String id, final Boolean onServer) throws NoServerPrefException, NotFoundException, ContainerServerException {
         return null;
     }
 
     @Override
-    public String deleteImageByName(String name) throws NoServerPrefException, NotFoundException, ContainerServerException {
+    public String deleteImageByName(final String name, final Boolean onServer) throws NoServerPrefException, NotFoundException, ContainerServerException {
         return null;
     }
 
