@@ -10,6 +10,7 @@ import org.nrg.containers.metadata.ImageMetadata;
 import org.nrg.containers.metadata.ImageMetadataAnn;
 import org.nrg.containers.metadata.service.ImageMetadataService;
 import org.nrg.containers.model.Container;
+import org.nrg.containers.model.ContainerHub;
 import org.nrg.containers.model.ContainerServer;
 import org.nrg.containers.model.Image;
 import org.nrg.containers.model.ImageParameters;
@@ -97,10 +98,51 @@ public class DefaultContainerService implements ContainerService {
     }
 
     @Override
-    public String launch(String imageName, ImageParameters params) throws NoServerPrefException, NotFoundException, ContainerServerException {
+    public String launch(final String imageName, final ImageParameters params)
+            throws NoServerPrefException, NotFoundException, ContainerServerException {
 //        final Image image = controlApi.getImageByName(server, imageName);
 //        final ImageMetadata imageMetadata = _imageMetadataService.getByImageId(image.id());
         return controlApi.launchImage(server(), imageName, params.getCommandArray(), params.getVolumesArray());
+    }
+
+    @Override
+    public String getContainerLogs(final String id) {
+        return null;
+    }
+
+    @Override
+    public String verbContainer(final String id, final String status) {
+        return null;
+    }
+
+    @Override
+    public ContainerHub getHub(final String hub, final Boolean verbose) {
+        return null;
+    }
+
+    @Override
+    public List<ContainerHub> getHubs(final Boolean verbose) {
+        return null;
+    }
+
+    @Override
+    public void setHub(final ContainerHub hub, final Boolean overwrite, final Boolean ignoreBlank) {
+        return;
+    }
+
+    @Override
+    public String search(final String term) {
+        return null;
+    }
+
+    @Override
+    public Image pullByName(final String image, final String hub, final String name) {
+        return null;
+    }
+
+    @Override
+    public Image pullFromSource(final String source, final String name) {
+        return null;
     }
 
     static Map<String, Class<? extends ImageMetadata>> imageMetadataClasses = null;

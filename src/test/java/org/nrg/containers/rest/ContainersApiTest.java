@@ -5,13 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.nrg.containers.config.ContainersApiTestConfig;
+import org.nrg.containers.config.RestApiTestConfig;
 import org.nrg.containers.model.Container;
 import org.nrg.containers.model.ContainerMocks;
 import org.nrg.containers.model.ContainerServer;
 import org.nrg.containers.model.ExceptionMocks;
-import org.nrg.containers.model.Image;
-import org.nrg.containers.model.ImageMocks;
 import org.nrg.containers.services.ContainerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -35,10 +33,6 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.nrg.containers.rest.ContainersApi.CONTAINERS_REST_PATH;
-import static org.nrg.containers.rest.ContainersApi.IMAGES_REST_PATH;
-import static org.nrg.containers.rest.ContainersApi.SERVER_REST_PATH;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -46,9 +40,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
-@ContextConfiguration(classes = ContainersApiTestConfig.class)
+@ContextConfiguration(classes = RestApiTestConfig.class)
 public class ContainersApiTest {
 
+    public static final MediaType JSON = MediaType.APPLICATION_JSON_UTF8;
+    public static final MediaType PLAIN_TEXT = MediaType.TEXT_PLAIN;
     private MockMvc mockMvc;
     final ObjectMapper mapper = new ObjectMapper();
 
@@ -78,8 +74,8 @@ public class ContainersApiTest {
     public void testGetAllContainers() throws Exception {
         final List<Container> mockContainerList = ContainerMocks.FIRST_AND_SECOND;
 
-        final String path = CONTAINERS_REST_PATH;
-        final MockHttpServletRequestBuilder request = get(path).accept(MediaType.APPLICATION_JSON_UTF8);
+        final String path = "/containers";
+        final MockHttpServletRequestBuilder request = get(path).accept(JSON);
 
         when(service.getAllContainers())
                 .thenReturn(mockContainerList)                          // Happy path
@@ -89,7 +85,7 @@ public class ContainersApiTest {
         final String response =
                 mockMvc.perform(request)
                         .andExpect(status().isOk())
-                        .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+                        .andExpect(content().contentType(JSON))
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
@@ -103,12 +99,12 @@ public class ContainersApiTest {
     }
 
     @Test
-    public void testGetContainerById() throws Exception {
+    public void testGetContainer() throws Exception {
         final String id = ContainerMocks.FOO_ID;
         final Container mockContainer = ContainerMocks.FOO;
 
-        final String path = CONTAINERS_REST_PATH;
-        final MockHttpServletRequestBuilder request = get(path).param("id", id).accept(MediaType.APPLICATION_JSON_UTF8);
+        final String path = "/containers/" + id;
+        final MockHttpServletRequestBuilder request = get(path).accept(JSON);
 
         when(service.getContainer(id))
                 .thenReturn(mockContainer)                              // Happy path
@@ -119,7 +115,7 @@ public class ContainersApiTest {
         final String responseById =
                 mockMvc.perform(request)
                         .andExpect(status().isOk())
-                        .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+                        .andExpect(content().contentType(JSON))
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
@@ -141,8 +137,8 @@ public class ContainersApiTest {
         final String id = ContainerMocks.FOO_ID;
         final String status = ContainerMocks.FOO_STATUS;
 
-        final String path = CONTAINERS_REST_PATH +"/status";
-        final MockHttpServletRequestBuilder request = get(path).param("id", id);
+        final String path = "/containers/" + id + "/status";
+        final MockHttpServletRequestBuilder request = get(path);
 
         when(service.getContainerStatus(id))
                 .thenReturn(status)                                     // Happy path
@@ -152,7 +148,7 @@ public class ContainersApiTest {
         final String response =
                 mockMvc.perform(request)
                         .andExpect(status().isOk())
-                        .andExpect(content().contentType(MediaType.TEXT_PLAIN))
+                        .andExpect(content().contentType(PLAIN_TEXT))
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
@@ -165,337 +161,18 @@ public class ContainersApiTest {
     }
 
     @Test
-    public void testGetAllImages() throws Exception {
-        final List<Image> mockImageList = ImageMocks.FIRST_AND_SECOND;
-
-        final String path = IMAGES_REST_PATH;
-        final MockHttpServletRequestBuilder request = get(path).accept(MediaType.APPLICATION_JSON_UTF8);
-
-        when(service.getAllImages())
-                .thenReturn(mockImageList)                              // Happy path
-                .thenThrow(ExceptionMocks.NO_SERVER_PREF_EXCEPTION);    // No server pref defined
-
-        // Happy path
-        final String response =
-                mockMvc.perform(request)
-                        .andExpect(status().isOk())
-                        .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
-                        .andReturn()
-                        .getResponse()
-                        .getContentAsString();
-
-        List<Image> responseImageList = mapper.readValue(response, new TypeReference<List<Image>>(){});
-        assertThat(responseImageList, equalTo(mockImageList));
-
-        // No server pref defined
-        mockMvc.perform(request)
-                .andExpect(status().isFailedDependency());
+    public void testVerbContainer() throws Exception {
+        // TODO
     }
 
     @Test
-    public void testGetImageByName() throws Exception {
-        final String name = ImageMocks.FOO_NAME;
-        final Image mockImage = ImageMocks.FOO;
-
-        final String path = IMAGES_REST_PATH;
-        final MockHttpServletRequestBuilder request = get(path).param("name", name).accept(MediaType.APPLICATION_JSON_UTF8);
-
-        when(service.getImageByName(name))
-                .thenReturn(mockImage)                                  // Happy path
-                .thenThrow(ExceptionMocks.NOT_FOUND_EXCEPTION)          // Not found
-                .thenThrow(ExceptionMocks.NO_SERVER_PREF_EXCEPTION);    // No server pref defined
-
-        // Happy path
-        final String responseByName =
-                mockMvc.perform(request)
-                        .andExpect(status().isOk())
-                        .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
-                        .andReturn()
-                        .getResponse()
-                        .getContentAsString();
-
-        final Image imageByName = mapper.readValue(responseByName, Image.class);
-        assertThat(imageByName, equalTo(mockImage));
-
-        // Not found
-        mockMvc.perform(request)
-                .andExpect(status().isNotFound());
-
-        // No server pref defined
-        mockMvc.perform(request)
-                .andExpect(status().isFailedDependency());
-    }
-
-    @Test
-    public void testGetImageById() throws Exception {
-        final String id = ImageMocks.FOO_ID;
-        final Image mockImage = ImageMocks.FOO;
-
-        final String path = IMAGES_REST_PATH;
-        final MockHttpServletRequestBuilder request = get(path).param("id", id).accept(MediaType.APPLICATION_JSON_UTF8);
-
-        when(service.getImageById(id))
-                .thenReturn(mockImage)                                  // Happy path
-                .thenThrow(ExceptionMocks.NOT_FOUND_EXCEPTION)          // Not found
-                .thenThrow(ExceptionMocks.NO_SERVER_PREF_EXCEPTION);    // No server pref defined
-
-        // Happy path
-        final String responseById =
-                mockMvc.perform(request)
-                        .andExpect(status().isOk())
-                        .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
-                        .andReturn()
-                        .getResponse()
-                        .getContentAsString();
-
-        final Image imageById = mapper.readValue(responseById, Image.class);
-        assertThat(imageById, equalTo(mockImage));
-
-        // Not found
-        mockMvc.perform(request)
-                .andExpect(status().isNotFound());
-
-        // No server pref defined
-        mockMvc.perform(request)
-                .andExpect(status().isFailedDependency());
-    }
-
-    @Test
-    public void testDeleteImageByName() throws Exception {
-        final String name = ImageMocks.FOO_NAME;
-        final String id = ImageMocks.FOO_ID;
-
-        final String path = IMAGES_REST_PATH;
-
-        // REQUEST 0: No "onServer" param (defaults to false)
-        final MockHttpServletRequestBuilder request0 = delete(path).param("name", name);
-
-        // REQUEST 1: "onServer=false"
-        final MockHttpServletRequestBuilder request1 = request0.param("server", "false");
-
-        // REQUEST 2: "onServer=true"
-        final MockHttpServletRequestBuilder request2 =
-                delete(path).param("name", name).param("server", "true");
-
-        // Mock service
-        when(service.deleteImageByName(name, false))
-                .thenReturn(id)                                         // Happy path Request 0
-                .thenReturn(id)                                         // Happy path Request 1
-                .thenThrow(ExceptionMocks.NOT_FOUND_EXCEPTION)          // Not found
-                .thenThrow(ExceptionMocks.NO_SERVER_PREF_EXCEPTION);    // No server pref defined
-
-        when(service.deleteImageByName(name, true))
-                .thenReturn(id)                                         // Happy path Request 2
-                .thenThrow(ExceptionMocks.NOT_FOUND_EXCEPTION)          // Not found
-                .thenThrow(ExceptionMocks.NO_SERVER_PREF_EXCEPTION);    // No server pref defined
-
-        // Happy path Request 0
-        final String response0 =
-                mockMvc.perform(request0)
-                        .andExpect(status().isOk())
-                        .andExpect(content().contentType(MediaType.TEXT_PLAIN))
-                        .andReturn()
-                        .getResponse()
-                        .getContentAsString();
-
-        assertThat(response0, equalTo(id));
-
-        // Happy path Request 1
-        final String response1 =
-                mockMvc.perform(request1)
-                        .andExpect(status().isOk())
-                        .andExpect(content().contentType(MediaType.TEXT_PLAIN))
-                        .andReturn()
-                        .getResponse()
-                        .getContentAsString();
-
-        assertThat(response1, equalTo(id));
-
-        // Not found
-        mockMvc.perform(request0).andExpect(status().isNotFound());
-
-        // No server pref defined
-        mockMvc.perform(request0).andExpect(status().isFailedDependency());
-
-        // Happy path Request 2
-        final String response2 =
-                mockMvc.perform(request2)
-                        .andExpect(status().isOk())
-                        .andExpect(content().contentType(MediaType.TEXT_PLAIN))
-                        .andReturn()
-                        .getResponse()
-                        .getContentAsString();
-
-        assertThat(response2, equalTo(id));
-
-        // Not found
-        mockMvc.perform(request2).andExpect(status().isNotFound());
-
-        // No server pref defined
-        mockMvc.perform(request2).andExpect(status().isFailedDependency());
-    }
-
-    @Test
-    public void testDeleteImageById() throws Exception {
-        final String id = ImageMocks.FOO_ID;
-
-        final String path = IMAGES_REST_PATH;
-
-        // REQUEST 0: No "onServer" param (defaults to false)
-        final MockHttpServletRequestBuilder request0 = delete(path).param("id", id);
-
-        // REQUEST 1: "onServer=false"
-        final MockHttpServletRequestBuilder request1 = request0.param("server", "false");
-
-        // REQUEST 2: "onServer=true"
-        final MockHttpServletRequestBuilder request2 =
-                delete(path).param("id", id).param("server", "true");
-
-        // Mock service
-        when(service.deleteImageById(id, false))
-                .thenReturn(id)                                         // Happy path Request 0
-                .thenReturn(id)                                         // Happy path Request 1
-                .thenThrow(ExceptionMocks.NOT_FOUND_EXCEPTION)          // Not found
-                .thenThrow(ExceptionMocks.NO_SERVER_PREF_EXCEPTION);    // No server pref defined
-
-        when(service.deleteImageById(id, true))
-                .thenReturn(id)                                         // Happy path Request 2
-                .thenThrow(ExceptionMocks.NOT_FOUND_EXCEPTION)          // Not found
-                .thenThrow(ExceptionMocks.NO_SERVER_PREF_EXCEPTION);    // No server pref defined
-
-        // Happy path Request 0
-        final String response0 =
-                mockMvc.perform(request0)
-                        .andExpect(status().isOk())
-                        .andExpect(content().contentType(MediaType.TEXT_PLAIN))
-                        .andReturn()
-                        .getResponse()
-                        .getContentAsString();
-
-        assertThat(response0, equalTo(id));
-
-        // Happy path Request 1
-        final String response1 =
-                mockMvc.perform(request1)
-                        .andExpect(status().isOk())
-                        .andExpect(content().contentType(MediaType.TEXT_PLAIN))
-                        .andReturn()
-                        .getResponse()
-                        .getContentAsString();
-
-        assertThat(response1, equalTo(id));
-
-        // Not found
-        mockMvc.perform(request0).andExpect(status().isNotFound());
-
-        // No server pref defined
-        mockMvc.perform(request0).andExpect(status().isFailedDependency());
-
-        // Happy path Request 2
-        final String response2 =
-                mockMvc.perform(request2)
-                        .andExpect(status().isOk())
-                        .andExpect(content().contentType(MediaType.TEXT_PLAIN))
-                        .andReturn()
-                        .getResponse()
-                        .getContentAsString();
-
-        assertThat(response2, equalTo(id));
-
-        // Not found
-        mockMvc.perform(request2).andExpect(status().isNotFound());
-
-        // No server pref defined
-        mockMvc.perform(request2).andExpect(status().isFailedDependency());
-    }
-
-    @Test
-    public void testDeleteImageByIdInPath() throws Exception {
-        final String id = ImageMocks.FOO_ID;
-
-        final String path = IMAGES_REST_PATH + "/" + id;
-
-        // REQUEST 0: No "onServer" param (defaults to false)
-        final MockHttpServletRequestBuilder request0 = delete(path);
-
-        // REQUEST 1: "onServer=false"
-        final MockHttpServletRequestBuilder request1 = request0.param("server", "false");
-
-        // REQUEST 2: "onServer=true"
-        final MockHttpServletRequestBuilder request2 = delete(path).param("server", "true");
-
-        // Mock service
-        when(service.deleteImageById(id, false))
-                .thenReturn(id)                                         // Happy path Request 0
-                .thenReturn(id)                                         // Happy path Request 1
-                .thenThrow(ExceptionMocks.NOT_FOUND_EXCEPTION)          // Not found
-                .thenThrow(ExceptionMocks.NO_SERVER_PREF_EXCEPTION);    // No server pref defined
-
-        when(service.deleteImageById(id, true))
-                .thenReturn(id)                                         // Happy path Request 2
-                .thenThrow(ExceptionMocks.NOT_FOUND_EXCEPTION)          // Not found
-                .thenThrow(ExceptionMocks.NO_SERVER_PREF_EXCEPTION);    // No server pref defined
-
-        // Happy path Request 0
-        final String response0 =
-                mockMvc.perform(request0)
-                        .andExpect(status().isOk())
-                        .andExpect(content().contentType(MediaType.TEXT_PLAIN))
-                        .andReturn()
-                        .getResponse()
-                        .getContentAsString();
-
-        assertThat(response0, equalTo(id));
-
-        // Happy path Request 1
-        final String response1 =
-                mockMvc.perform(request1)
-                        .andExpect(status().isOk())
-                        .andExpect(content().contentType(MediaType.TEXT_PLAIN))
-                        .andReturn()
-                        .getResponse()
-                        .getContentAsString();
-
-        assertThat(response1, equalTo(id));
-
-        // Not found
-        mockMvc.perform(request0).andExpect(status().isNotFound());
-
-        // No server pref defined
-        mockMvc.perform(request0).andExpect(status().isFailedDependency());
-
-        // Happy path Request 2
-        final String response2 =
-                mockMvc.perform(request2)
-                        .andExpect(status().isOk())
-                        .andExpect(content().contentType(MediaType.TEXT_PLAIN))
-                        .andReturn()
-                        .getResponse()
-                        .getContentAsString();
-
-        assertThat(response2, equalTo(id));
-
-        // Not found
-        mockMvc.perform(request2).andExpect(status().isNotFound());
-
-        // No server pref defined
-        mockMvc.perform(request2).andExpect(status().isFailedDependency());
-    }
-
-    @Test
-    public void testDeleteImageNoParams() throws Exception {
-        final String path = IMAGES_REST_PATH;
-        final MockHttpServletRequestBuilder request = delete(path); // Note, no query params
-
-        mockMvc.perform(request)
-                .andExpect(status().isBadRequest());
-        //.andExpect(content().string("Include the name or id of an image to delete in the query parameters."));
-        // I wish my exception message got passed to the response body, but it doesn't.
-        // May need to move to a different exception handling model
+    public void testGetContainerLogs() throws Exception {
+        // TODO
     }
 
     @Test
     public void testLaunch() throws Exception {
+        final String path = "/containers/launch";
         // TODO
     }
 
@@ -504,11 +181,11 @@ public class ContainersApiTest {
         final String server = "http://foo.bar:123";
         final ContainerServer containerServer = new ContainerServer(server);
 
-        final String path = SERVER_REST_PATH;
+        final String path = "/containers/server";
 
         // REQUEST 0: No "onServer" param (defaults to false)
         final MockHttpServletRequestBuilder request =
-                get(path).accept(MediaType.APPLICATION_JSON_UTF8);
+                get(path).accept(JSON);
 
         when(service.getServer())
                 .thenReturn(containerServer)
@@ -517,7 +194,7 @@ public class ContainersApiTest {
         final String response =
                 mockMvc.perform(request)
                         .andExpect(status().isOk())
-                        .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+                        .andExpect(content().contentType(JSON))
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
@@ -534,11 +211,11 @@ public class ContainersApiTest {
         final String server = "http://foo.bar:123";
         final String postBody = "{\"host\":\"" + server + "\"}";
 
-        final String path = SERVER_REST_PATH;
+        final String path = "/containers/server";
 
         // REQUEST 0: No "onServer" param (defaults to false)
         final MockHttpServletRequestBuilder request =
-                post(path).content(postBody).contentType(MediaType.APPLICATION_JSON_UTF8);
+                post(path).content(postBody).contentType(JSON);
 
         doNothing().when(service).setServer(server); // Have to use a different mocking syntax when method returns void
 
@@ -552,5 +229,35 @@ public class ContainersApiTest {
 
         mockMvc.perform(request).andExpect(status().isInternalServerError());
         verify(service, times(2)).setServer(server);
+    }
+
+    @Test
+    public void testGetHub() throws Exception {
+        // TODO
+    }
+
+    @Test
+    public void testGetHubs() throws Exception {
+        // TODO
+    }
+
+    @Test
+    public void testSetHub() throws Exception {
+        // TODO
+    }
+
+    @Test
+    public void testSearch() throws Exception {
+        // TODO
+    }
+
+    @Test
+    public void testPullByName() throws Exception {
+        // TODO
+    }
+
+    @Test
+    public void testPullFromSource() throws Exception {
+        // TODO
     }
 }

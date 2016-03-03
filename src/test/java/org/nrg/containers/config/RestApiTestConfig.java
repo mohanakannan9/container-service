@@ -10,7 +10,7 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 @Configuration
 @EnableWebMvc
 @ComponentScan("org.nrg.containers.rest")
-public class ContainersApiTestConfig {
+public class RestApiTestConfig {
     @Bean
     public ContainerService mockContainerService() {
         return Mockito.mock(ContainerService.class);
