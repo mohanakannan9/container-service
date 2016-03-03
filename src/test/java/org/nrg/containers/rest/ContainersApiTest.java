@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 import org.nrg.containers.config.ContainersApiTestConfig;
 import org.nrg.containers.model.Container;
 import org.nrg.containers.model.ContainerMocks;
@@ -36,6 +35,9 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.nrg.containers.rest.ContainersApi.CONTAINERS_REST_PATH;
+import static org.nrg.containers.rest.ContainersApi.IMAGES_REST_PATH;
+import static org.nrg.containers.rest.ContainersApi.SERVER_REST_PATH;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -46,12 +48,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebAppConfiguration
 @ContextConfiguration(classes = ContainersApiTestConfig.class)
 public class ContainersApiTest {
-    private final String IMAGES_PATH =
-            ContainerService.CONTAINER_SERVICE_REST_PATH_PREFIX + ContainerService.IMAGES_REST_PATH;
-    private final String CONTAINERS_PATH =
-            ContainerService.CONTAINER_SERVICE_REST_PATH_PREFIX + ContainerService.CONTAINERS_REST_PATH;
-    private final String SERVER_PATH =
-            ContainerService.CONTAINER_SERVICE_REST_PATH_PREFIX + ContainerService.SERVER_REST_PATH;
 
     private MockMvc mockMvc;
     final ObjectMapper mapper = new ObjectMapper();
@@ -82,7 +78,7 @@ public class ContainersApiTest {
     public void testGetAllContainers() throws Exception {
         final List<Container> mockContainerList = ContainerMocks.FIRST_AND_SECOND;
 
-        final String path = ContainerService.CONTAINER_SERVICE_REST_PATH_PREFIX;
+        final String path = CONTAINERS_REST_PATH;
         final MockHttpServletRequestBuilder request = get(path).accept(MediaType.APPLICATION_JSON_UTF8);
 
         when(service.getAllContainers())
@@ -111,7 +107,7 @@ public class ContainersApiTest {
         final String id = ContainerMocks.FOO_ID;
         final Container mockContainer = ContainerMocks.FOO;
 
-        final String path = CONTAINERS_PATH;
+        final String path = CONTAINERS_REST_PATH;
         final MockHttpServletRequestBuilder request = get(path).param("id", id).accept(MediaType.APPLICATION_JSON_UTF8);
 
         when(service.getContainer(id))
@@ -145,7 +141,7 @@ public class ContainersApiTest {
         final String id = ContainerMocks.FOO_ID;
         final String status = ContainerMocks.FOO_STATUS;
 
-        final String path = CONTAINERS_PATH +"/status";
+        final String path = CONTAINERS_REST_PATH +"/status";
         final MockHttpServletRequestBuilder request = get(path).param("id", id);
 
         when(service.getContainerStatus(id))
@@ -172,7 +168,7 @@ public class ContainersApiTest {
     public void testGetAllImages() throws Exception {
         final List<Image> mockImageList = ImageMocks.FIRST_AND_SECOND;
 
-        final String path = IMAGES_PATH;
+        final String path = IMAGES_REST_PATH;
         final MockHttpServletRequestBuilder request = get(path).accept(MediaType.APPLICATION_JSON_UTF8);
 
         when(service.getAllImages())
@@ -201,7 +197,7 @@ public class ContainersApiTest {
         final String name = ImageMocks.FOO_NAME;
         final Image mockImage = ImageMocks.FOO;
 
-        final String path = IMAGES_PATH;
+        final String path = IMAGES_REST_PATH;
         final MockHttpServletRequestBuilder request = get(path).param("name", name).accept(MediaType.APPLICATION_JSON_UTF8);
 
         when(service.getImageByName(name))
@@ -235,7 +231,7 @@ public class ContainersApiTest {
         final String id = ImageMocks.FOO_ID;
         final Image mockImage = ImageMocks.FOO;
 
-        final String path = IMAGES_PATH;
+        final String path = IMAGES_REST_PATH;
         final MockHttpServletRequestBuilder request = get(path).param("id", id).accept(MediaType.APPLICATION_JSON_UTF8);
 
         when(service.getImageById(id))
@@ -269,7 +265,7 @@ public class ContainersApiTest {
         final String name = ImageMocks.FOO_NAME;
         final String id = ImageMocks.FOO_ID;
 
-        final String path = IMAGES_PATH;
+        final String path = IMAGES_REST_PATH;
 
         // REQUEST 0: No "onServer" param (defaults to false)
         final MockHttpServletRequestBuilder request0 = delete(path).param("name", name);
@@ -343,7 +339,7 @@ public class ContainersApiTest {
     public void testDeleteImageById() throws Exception {
         final String id = ImageMocks.FOO_ID;
 
-        final String path = IMAGES_PATH;
+        final String path = IMAGES_REST_PATH;
 
         // REQUEST 0: No "onServer" param (defaults to false)
         final MockHttpServletRequestBuilder request0 = delete(path).param("id", id);
@@ -417,7 +413,7 @@ public class ContainersApiTest {
     public void testDeleteImageByIdInPath() throws Exception {
         final String id = ImageMocks.FOO_ID;
 
-        final String path = IMAGES_PATH + "/" + id;
+        final String path = IMAGES_REST_PATH + "/" + id;
 
         // REQUEST 0: No "onServer" param (defaults to false)
         final MockHttpServletRequestBuilder request0 = delete(path);
@@ -488,7 +484,7 @@ public class ContainersApiTest {
 
     @Test
     public void testDeleteImageNoParams() throws Exception {
-        final String path = IMAGES_PATH;
+        final String path = IMAGES_REST_PATH;
         final MockHttpServletRequestBuilder request = delete(path); // Note, no query params
 
         mockMvc.perform(request)
@@ -508,7 +504,7 @@ public class ContainersApiTest {
         final String server = "http://foo.bar:123";
         final ContainerServer containerServer = new ContainerServer(server);
 
-        final String path = SERVER_PATH;
+        final String path = SERVER_REST_PATH;
 
         // REQUEST 0: No "onServer" param (defaults to false)
         final MockHttpServletRequestBuilder request =
@@ -538,7 +534,7 @@ public class ContainersApiTest {
         final String server = "http://foo.bar:123";
         final String postBody = "{\"host\":\"" + server + "\"}";
 
-        final String path = SERVER_PATH;
+        final String path = SERVER_REST_PATH;
 
         // REQUEST 0: No "onServer" param (defaults to false)
         final MockHttpServletRequestBuilder request =

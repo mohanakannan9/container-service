@@ -30,15 +30,19 @@ import java.util.List;
 
 //@Api(description = "XNAT Container Services REST API")
 @RestController
-@RequestMapping(value = ContainerService.CONTAINER_SERVICE_REST_PATH_PREFIX)
+@RequestMapping
 public class ContainersApi {
     private static final Logger _log = LoggerFactory.getLogger(ContainersApi.class);
+    public static final String CONTAINERS_REST_PATH = "/containers";
+    public static final String IMAGES_REST_PATH = "/containers/images";
+    public static final String SERVER_REST_PATH = "/containers/server";
+    public static final String HUBS_REST_PATH = "/containers/hubs";
 
     //    @ApiOperation(value = "Get list of images.", notes = "Returns a list of all images on the container server.", response = Image.class, responseContainer = "List")
 //    @ApiResponses({
 //            @ApiResponse(code = 200, message = "A list of images on the server"),
 //            @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(method = RequestMethod.GET, produces = {MediaType.APPLICATION_JSON_UTF8_VALUE, MediaType.TEXT_PLAIN_VALUE})
+    @RequestMapping(value = CONTAINERS_REST_PATH, method = RequestMethod.GET, produces = {MediaType.APPLICATION_JSON_UTF8_VALUE, MediaType.TEXT_PLAIN_VALUE})
     @ResponseBody
     public List<Container> getAllContainers() throws NoServerPrefException, ContainerServerException {
         return service.getAllContainers();
@@ -51,7 +55,7 @@ public class ContainersApi {
 //            @ApiResponse(code = 403, message = "Not authorized to view this container."),
 //            @ApiResponse(code = 404, message = "Container not found."),
 //            @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {ContainerService.CONTAINERS_REST_PATH}, method = RequestMethod.GET, params = {"id"},
+    @RequestMapping(value = CONTAINERS_REST_PATH, method = RequestMethod.GET, params = {"id"},
             produces = {MediaType.APPLICATION_JSON_UTF8_VALUE, MediaType.TEXT_PLAIN_VALUE})
     @ResponseBody
     public Container getContainerById(@ApiParam(value = "Id of the container to fetch", required = true) @RequestParam("id") final String id) throws NoServerPrefException, NotFoundException, ContainerServerException {
@@ -65,7 +69,7 @@ public class ContainersApi {
 //            @ApiResponse(code = 403, message = "Not authorized to view this container."),
 //            @ApiResponse(code = 404, message = "Container not found."),
 //            @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {ContainerService.CONTAINERS_REST_PATH + "/status"}, method = RequestMethod.GET, params = {"id"},
+    @RequestMapping(value = CONTAINERS_REST_PATH + "/status", method = RequestMethod.GET, params = {"id"},
             produces = {MediaType.TEXT_PLAIN_VALUE})
     @ResponseBody
     public String getContainerStatus(@ApiParam(value = "Id of the container to fetch", required = true) @RequestParam("id") final String id) throws NotFoundException, NoServerPrefException, ContainerServerException {
@@ -76,7 +80,7 @@ public class ContainersApi {
 //    @ApiResponses({
 //            @ApiResponse(code = 200, message = "A list of images on the server"),
 //            @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {ContainerService.IMAGES_REST_PATH}, method = RequestMethod.GET,
+    @RequestMapping(value = IMAGES_REST_PATH, method = RequestMethod.GET,
             produces = {MediaType.APPLICATION_JSON_UTF8_VALUE, MediaType.TEXT_PLAIN_VALUE})
     public List<Image> getAllImages() throws NoServerPrefException {
         return service.getAllImages();
@@ -86,21 +90,21 @@ public class ContainersApi {
 //    @ApiResponses({
 //            @ApiResponse(code = 200, message = "A list of images on the server"),
 //            @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {ContainerService.IMAGES_REST_PATH}, method = RequestMethod.GET, params = {"name"},
+    @RequestMapping(value = IMAGES_REST_PATH, method = RequestMethod.GET, params = {"name"},
             produces = {MediaType.APPLICATION_JSON_UTF8_VALUE, MediaType.TEXT_PLAIN_VALUE})
     @ResponseBody
     public Image getImageByName(final @RequestParam String name) throws NotFoundException, ContainerServerException, NoServerPrefException {
         return service.getImageByName(name);
     }
 
-    @RequestMapping(value = {ContainerService.IMAGES_REST_PATH}, method = RequestMethod.GET, params = {"id"},
+    @RequestMapping(value = IMAGES_REST_PATH, method = RequestMethod.GET, params = {"id"},
             produces = {MediaType.APPLICATION_JSON_UTF8_VALUE, MediaType.TEXT_PLAIN_VALUE})
     @ResponseBody
     public Image getImageById(final @RequestParam String id) throws NotFoundException, NoServerPrefException, ContainerServerException {
         return service.getImageById(id);
     }
 
-    @RequestMapping(value = {ContainerService.IMAGES_REST_PATH}, method = RequestMethod.DELETE, params = {"name"},
+    @RequestMapping(value = IMAGES_REST_PATH, method = RequestMethod.DELETE, params = {"name"},
             produces = {MediaType.TEXT_PLAIN_VALUE})
     @ResponseBody
     public String deleteImageByName(final @RequestParam("name") String name,
@@ -109,7 +113,7 @@ public class ContainersApi {
         return service.deleteImageByName(name, Boolean.parseBoolean(deleteOnServer));
     }
 
-    @RequestMapping(value = {ContainerService.IMAGES_REST_PATH}, method = RequestMethod.DELETE, params = {"id"},
+    @RequestMapping(value = IMAGES_REST_PATH, method = RequestMethod.DELETE, params = {"id"},
             produces = {MediaType.TEXT_PLAIN_VALUE})
     @ResponseBody
     public String deleteImageById(final @RequestParam("id") String id,
@@ -118,7 +122,7 @@ public class ContainersApi {
         return service.deleteImageById(id, Boolean.parseBoolean(deleteOnServer));
     }
 
-    @RequestMapping(value = {ContainerService.IMAGES_REST_PATH + "/{id}"}, method = RequestMethod.DELETE,
+    @RequestMapping(value = IMAGES_REST_PATH + "/{id}", method = RequestMethod.DELETE,
             produces = {MediaType.TEXT_PLAIN_VALUE})
     @ResponseBody
     public String deleteImageByIdInPath(final @PathVariable String id,
@@ -127,7 +131,7 @@ public class ContainersApi {
         return service.deleteImageById(id, Boolean.parseBoolean(deleteOnServer));
     }
 
-    @RequestMapping(value = {ContainerService.IMAGES_REST_PATH}, method = RequestMethod.DELETE, params = {})
+    @RequestMapping(value = IMAGES_REST_PATH, method = RequestMethod.DELETE, params = {})
     @ResponseBody
     public void deleteImageNoParams() throws BadRequestException {
         throw new BadRequestException("Include the name or id of an image to delete in the query parameters.");
@@ -147,7 +151,7 @@ public class ContainersApi {
         return service.launch(name, launchArguments);
     }
 
-    @RequestMapping(value = {ContainerService.SERVER_REST_PATH}, method = {RequestMethod.GET},
+    @RequestMapping(value = SERVER_REST_PATH, method = {RequestMethod.GET},
             produces = {MediaType.APPLICATION_JSON_UTF8_VALUE, MediaType.TEXT_PLAIN_VALUE})
     @ResponseBody
     public ContainerServer getServer() throws NotFoundException {
@@ -158,7 +162,7 @@ public class ContainersApi {
         }
     }
 
-    @RequestMapping(value = {ContainerService.SERVER_REST_PATH}, method = {RequestMethod.POST})
+    @RequestMapping(value = SERVER_REST_PATH, method = {RequestMethod.POST})
     @ResponseBody
     public void setServer(@RequestBody final ContainerServer containerServer) throws InvalidPreferenceName {
         service.setServer(containerServer.host());
