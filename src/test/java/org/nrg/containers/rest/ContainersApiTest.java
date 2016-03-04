@@ -2,15 +2,18 @@ package org.nrg.containers.rest;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.containers.config.RestApiTestConfig;
+import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Container;
-import org.nrg.containers.model.ContainerMocks;
 import org.nrg.containers.model.ContainerServer;
-import org.nrg.containers.model.ExceptionMocks;
 import org.nrg.containers.services.ContainerService;
+import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
@@ -23,6 +26,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 import javax.servlet.ServletContext;
 import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -41,12 +45,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
 @ContextConfiguration(classes = RestApiTestConfig.class)
+@SuppressWarnings("ThrowableInstanceNeverThrown")
 public class ContainersApiTest {
-
-    public static final MediaType JSON = MediaType.APPLICATION_JSON_UTF8;
-    public static final MediaType PLAIN_TEXT = MediaType.TEXT_PLAIN;
+    
     private MockMvc mockMvc;
     final ObjectMapper mapper = new ObjectMapper();
+
+    final MediaType JSON = MediaType.APPLICATION_JSON_UTF8;
+    final MediaType PLAIN_TEXT = MediaType.TEXT_PLAIN;
+    
+    final NotFoundException NOT_FOUND_EXCEPTION = new NotFoundException("Some cool message");
+    final NoServerPrefException NO_SERVER_PREF_EXCEPTION = new NoServerPrefException("message");
+    final InvalidPreferenceName INVALID_PREFERENCE_NAME = new InvalidPreferenceName("*invalid name*");
 
     @Autowired
     private WebApplicationContext wac;
@@ -71,15 +81,17 @@ public class ContainersApiTest {
     }
 
     @Test
-    public void testGetAllContainers() throws Exception {
-        final List<Container> mockContainerList = ContainerMocks.FIRST_AND_SECOND;
+    public void testGetContainers() throws Exception {
+        final List<Container> mockContainerList = Lists.newArrayList(new Container("0", "first"), new Container("1", "second"));
+
+        final Map<String, List<String>> blank = Maps.newHashMap();
 
         final String path = "/containers";
         final MockHttpServletRequestBuilder request = get(path).accept(JSON);
 
-        when(service.getAllContainers())
+        when(service.getContainers(blank))
                 .thenReturn(mockContainerList)                          // Happy path
-                .thenThrow(ExceptionMocks.NO_SERVER_PREF_EXCEPTION);    // No server pref defined
+                .thenThrow(NO_SERVER_PREF_EXCEPTION);    // No server pref defined
 
         // Happy path
         final String response =
@@ -99,17 +111,47 @@ public class ContainersApiTest {
     }
 
     @Test
+    public void testGetContainersWithParams() throws Exception {
+//        final List<Container> mockContainerList = ContainerMocks.FIRST_AND_SECOND;
+//
+//        final Map<String, List<String>> blank = Maps.newHashMap();
+//
+//        final String path = "/containers";
+//        final MockHttpServletRequestBuilder request = get(path).accept(JSON);
+//
+//        when(service.getContainers(blank))
+//                .thenReturn(mockContainerList)                          // Happy path
+//                .thenThrow(NO_SERVER_PREF_EXCEPTION);    // No server pref defined
+//
+//        // Happy path
+//        final String response =
+//                mockMvc.perform(request)
+//                        .andExpect(status().isOk())
+//                        .andExpect(content().contentType(JSON))
+//                        .andReturn()
+//                        .getResponse()
+//                        .getContentAsString();
+//
+//        List<Container> responseImageList = mapper.readValue(response, new TypeReference<List<Container>>(){});
+//        assertThat(responseImageList, equalTo(mockContainerList));
+//
+//        // No server pref defined
+//        mockMvc.perform(request)
+//                .andExpect(status().isFailedDependency());
+    }
+
+    @Test
     public void testGetContainer() throws Exception {
-        final String id = ContainerMocks.FOO_ID;
-        final Container mockContainer = ContainerMocks.FOO;
+        final String id = "foo";
+        final Container mockContainer = new Container("foo", "Great");
 
         final String path = "/containers/" + id;
         final MockHttpServletRequestBuilder request = get(path).accept(JSON);
 
         when(service.getContainer(id))
                 .thenReturn(mockContainer)                              // Happy path
-                .thenThrow(ExceptionMocks.NOT_FOUND_EXCEPTION)          // Not found
-                .thenThrow(ExceptionMocks.NO_SERVER_PREF_EXCEPTION);    // No server pref defined
+                .thenThrow(NOT_FOUND_EXCEPTION)          // Not found
+                .thenThrow(NO_SERVER_PREF_EXCEPTION);    // No server pref defined
 
         // Happy path
         final String responseById =
@@ -134,15 +176,15 @@ public class ContainersApiTest {
 
     @Test
     public void testGetContainerStatus() throws Exception {
-        final String id = ContainerMocks.FOO_ID;
-        final String status = ContainerMocks.FOO_STATUS;
+        final String id = "foo";
+        final String status = "Great";
 
         final String path = "/containers/" + id + "/status";
         final MockHttpServletRequestBuilder request = get(path);
 
         when(service.getContainerStatus(id))
                 .thenReturn(status)                                     // Happy path
-                .thenThrow(ExceptionMocks.NO_SERVER_PREF_EXCEPTION);    // No server pref defined
+                .thenThrow(NO_SERVER_PREF_EXCEPTION);    // No server pref defined
 
         // Happy path
         final String response =
@@ -162,7 +204,7 @@ public class ContainersApiTest {
 
     @Test
     public void testVerbContainer() throws Exception {
-        // TODO
+//        final Map<String, String> verbAndStatus =
     }
 
     @Test
@@ -189,7 +231,7 @@ public class ContainersApiTest {
 
         when(service.getServer())
                 .thenReturn(containerServer)
-                .thenThrow(ExceptionMocks.NO_SERVER_PREF_EXCEPTION);
+                .thenThrow(NO_SERVER_PREF_EXCEPTION);
 
         final String response =
                 mockMvc.perform(request)
@@ -225,7 +267,7 @@ public class ContainersApiTest {
         verify(service, times(1)).setServer(server); // Method has been called once
 
         // Now mock out the exception
-        doThrow(ExceptionMocks.INVALID_PREFERENCE_NAME).when(service).setServer(server);
+        doThrow(INVALID_PREFERENCE_NAME).when(service).setServer(server);
 
         mockMvc.perform(request).andExpect(status().isInternalServerError());
         verify(service, times(2)).setServer(server);
@@ -259,5 +301,10 @@ public class ContainersApiTest {
     @Test
     public void testPullFromSource() throws Exception {
         // TODO
+    }
+
+    @Test
+    public void testLaunchOn() throws Exception {
+
     }
 }

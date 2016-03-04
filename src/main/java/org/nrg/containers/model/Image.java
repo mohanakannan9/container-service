@@ -1,6 +1,7 @@
 package org.nrg.containers.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -18,10 +19,6 @@ public class Image {
     private Map<String, String> _labels;
 
     public Image() {}
-
-    public Image(final String name) {
-        _name = name;
-    }
 
     public Image(final String name, final String id, Long size, List<String> repoTags, Map<String, String> labels){
         _name = name;
@@ -79,28 +76,13 @@ public class Image {
     public void setLabels(final Map<String, String> labels) { _labels = labels; }
 
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("class Image {\n");
-
-        sb.append("  id: ").append(_id).append("\n");
-        sb.append("  name: ").append(_name).append("\n");
-        sb.append("  size: ").append(_size).append("\n");
-        sb.append("  tags: [");
-        for (String tag : _repoTags.subList(0, _repoTags.size()-1)) {
-            sb.append(tag).append(", ");
-        }
-        sb.append(_repoTags.get(_repoTags.size()-1)).append("]\n");
-        sb.append("  labels: {");
-        for (Map.Entry<String, String> label : _labels.entrySet()) {
-            sb.append(label.getKey())
-                    .append(": ")
-                    .append(label.getValue())
-                    .append(", ");
-        }
-        sb.replace(sb.length()-2, sb.length(), "");
-        sb.append("  }\n");
-        sb.append("}\n");
-        return sb.toString();
+        return MoreObjects.toStringHelper(this)
+                .add("id", _id)
+                .add("name", _name)
+                .add("size", _size)
+                .add("tags", _repoTags)
+                .add("labels", _labels)
+                .toString();
     }
 
     @Override

@@ -1,5 +1,7 @@
 package org.nrg.containers.services;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -9,7 +11,6 @@ import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.config.DefaultContainerServiceTestConfig;
 import org.nrg.containers.model.ContainerServer;
 import org.nrg.containers.model.Image;
-import org.nrg.containers.model.ImageMocks;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -86,7 +87,7 @@ public class DefaultContainerServiceTest {
 
     @Test
     public void testGetAllImages() throws Exception {
-        final List<Image> mockImageList = ImageMocks.FIRST_AND_SECOND;
+        final List<Image> mockImageList = Lists.newArrayList(new Image("first", "0", 0L, Lists.newArrayList("tag1", "tag2"), ImmutableMap.of("label0", "value0")), new Image("second", "1", 1L, Lists.newArrayList("tagX", "tagY"), ImmutableMap.of("label1", "value1")));
 
         when(mockContainerControlApi.getAllImages()).thenReturn(mockImageList);
         final List<Image> responseImageList = service.getAllImages();
@@ -95,8 +96,8 @@ public class DefaultContainerServiceTest {
 
     @Test
     public void testGetImageByName() throws Exception {
-        final String name = ImageMocks.FOO_NAME;
-        final Image mockImage = ImageMocks.FOO;
+        final String name = "foo";
+        final Image mockImage = new Image("foo", "0", 0L, Lists.newArrayList("tag1", "tag2"), ImmutableMap.of("label0", "value0"));
 
         when(mockContainerControlApi.getImageByName(name)).thenReturn(mockImage);
         final Image responseImageByName = service.getImageByName(name);
@@ -105,8 +106,8 @@ public class DefaultContainerServiceTest {
 
     @Test
     public void testGetImageById() throws Exception {
-        final String id = ImageMocks.FOO_ID;
-        final Image mockImage = ImageMocks.FOO;
+        final String id = "0";
+        final Image mockImage = new Image("foo", "0", 0L, Lists.newArrayList("tag1", "tag2"), ImmutableMap.of("label0", "value0"));
 
         when(mockContainerControlApi.getImageById(id)).thenReturn(mockImage);
         final Image responseImageById = service.getImageById(id);

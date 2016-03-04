@@ -4,6 +4,7 @@ import com.google.common.collect.Maps;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.exceptions.ContainerServerException;
+import org.nrg.containers.exceptions.NoHubException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.metadata.ImageMetadata;
@@ -13,7 +14,6 @@ import org.nrg.containers.model.Container;
 import org.nrg.containers.model.ContainerHub;
 import org.nrg.containers.model.ContainerServer;
 import org.nrg.containers.model.Image;
-import org.nrg.containers.model.ImageParameters;
 import org.nrg.containers.services.ContainerService;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
@@ -64,7 +64,9 @@ public class DefaultContainerService implements ContainerService {
         return null;
     }
 
-    public List<Container> getAllContainers() throws NoServerPrefException, ContainerServerException {
+    @Override
+    public List<Container> getContainers(final Map<String, List<String>> params) throws NoServerPrefException, ContainerServerException {
+        // TODO do stuff with queryParams
         return controlApi.getAllContainers();
     }
 
@@ -77,30 +79,46 @@ public class DefaultContainerService implements ContainerService {
     }
 
     @Override
-    public String launch(final String imageName, final ImageParameters params)
+    public String launch(final String imageName, final Map<String, String> params, Boolean wait)
             throws NoServerPrefException, NotFoundException, ContainerServerException {
-//        final Image image = controlApi.getImageByName(server, imageName);
-//        final ImageMetadata imageMetadata = _imageMetadataService.getByImageId(image.id());
-        return controlApi.launchImage(imageName, params.getCommandArray(), params.getVolumesArray());
-    }
 
-    @Override
-    public String getContainerLogs(final String id) {
+        // Find image and metadata
+        // Resolve all arguments
+        // stage data
+        // launch
+        //return controlApi.launchImage(server(), imageName, params.getCommandArray(), params.getVolumesArray());
         return null;
     }
 
     @Override
-    public String verbContainer(final String id, final String status) {
+    public String launchOn(final String imageName, final String xnatId, final String type, final Map<String, String> launchArguments, final Boolean wait) {
+        // Find xnat object
+        // Find image and metadata
+        // Resolve all arguments
+        // stage data
+        // launch
         return null;
     }
 
     @Override
-    public ContainerHub getHub(final String hub, final Boolean verbose) {
+    public String getContainerLogs(final String id)
+            throws NoServerPrefException, NotFoundException, ContainerServerException {
         return null;
     }
 
     @Override
-    public List<ContainerHub> getHubs(final Boolean verbose) {
+    public String verbContainer(final String id, final String status)
+            throws NoServerPrefException, NotFoundException, ContainerServerException {
+        return null;
+    }
+
+    @Override
+    public ContainerHub getHub(final String hub, final Boolean verbose) throws NotFoundException {
+        return null;
+    }
+
+    @Override
+    public List<ContainerHub> getHubs(final Boolean verbose) throws NotFoundException {
         return null;
     }
 
@@ -110,17 +128,37 @@ public class DefaultContainerService implements ContainerService {
     }
 
     @Override
-    public String search(final String term) {
+    public String search(final String term) throws NoHubException {
         return null;
     }
 
     @Override
-    public Image pullByName(final String image, final String hub, final String name) {
+    public Image pullByName(final String image, final String hub, final String name)
+            throws NoHubException, NotFoundException, ContainerServerException {
         return null;
     }
 
     @Override
-    public Image pullFromSource(final String source, final String name) {
+    public Image pullFromSource(final String source, final String name)
+            throws NoHubException, NotFoundException, ContainerServerException {
+        return null;
+    }
+
+    @Override
+    public String setMetadataByName(final String name, final Map<String, String> metadata, final String project, final Boolean overwrite, final Boolean ignoreBlank)
+            throws NoServerPrefException, NotFoundException {
+        // Check if metadata format is valid
+        // Get image
+        // write metadata to db with image id
+        return null;
+    }
+
+    @Override
+    public String setMetadataById(final String id, final Map<String, String> metadata, final String project, final Boolean overwrite, final Boolean ignoreBlank)
+            throws NoServerPrefException, NotFoundException {
+        // Check if metadata format is valid
+        // Get image
+        // write metadata to db with image id
         return null;
     }
 
