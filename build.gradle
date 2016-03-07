@@ -46,9 +46,7 @@ dependencies {
     compile ("org.nrg.xnat:web:${vXnat}") {
         transitive = false
     }
-    compile ("org.nrg:framework:${vXnat}") {
-        transitive = false
-    }
+    compile ("org.nrg:framework:${vXnat}")
     compile ("org.nrg:prefs:${vXnat}") {
         transitive = false
     }
