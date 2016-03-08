@@ -13,12 +13,6 @@ import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import java.util.List;
 
 public interface ContainerService {
-    String SERVER_PREF_TOOL_ID = "container";
-    String SERVER_PREF_NAME = "server";
-
-    ContainerServer getServer() throws NoServerPrefException;
-
-    void setServer(String host) throws InvalidPreferenceName;
 
     List<Image> getAllImages() throws NoServerPrefException;
 
