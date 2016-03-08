@@ -22,7 +22,10 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 
+import java.util.List;
+
 import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
 
@@ -35,16 +38,16 @@ public class DockerControlApiTest {
     final static String CERT_PATH_PREF_NAME = "certpath";
 
     // Local docker-machine based VM
-    final static String MOCK_CONTAINER_HOST = "tcp://192.168.99.100:2376";
-    final static String MOCK_CERT_PATH = "~/.docker/machine/machines/testDocker";
+    final static String MOCK_CONTAINER_HOST = "https://192.168.99.100:2376";
+    final static String MOCK_CERT_PATH = "/Users/Kelsey/.docker/machine/machines/testDocker";
 
     final static Preference MOCK_PREFERENCE_ENTITY_HOST = new Preference();
     final static Preference MOCK_PREFERENCE_ENTITY_CERT = new Preference();
 
     private static DockerClient client;
 
-    private static final String BUSYBOX = "busybox";
-    private static final String UBUNTU = "ubuntu";
+    private static final String IMAGE1 = "busybox";
+    private static final String IMAGE2 = "ubuntu";
 
     @Autowired
     private DockerControlApi controlApi;
@@ -57,10 +60,6 @@ public class DockerControlApiTest {
 
     @Before
     public void setup() throws Exception {
-        client = controlApi.getClient();
-        client.pull(BUSYBOX);
-        client.pull(UBUNTU);
-
         MOCK_PREFERENCE_ENTITY_HOST.setValue(MOCK_CONTAINER_HOST);
         when(mockPrefsService.getPreference(
                 SERVER_PREF_TOOL_ID,
@@ -69,7 +68,11 @@ public class DockerControlApiTest {
         MOCK_PREFERENCE_ENTITY_CERT.setValue(MOCK_CERT_PATH);
         when(mockPrefsService.getPreference(
                 SERVER_PREF_TOOL_ID,
-                SERVER_PREF_NAME)).thenReturn(MOCK_PREFERENCE_ENTITY_CERT);
+                CERT_PATH_PREF_NAME)).thenReturn(MOCK_PREFERENCE_ENTITY_CERT);
+
+        client = controlApi.getClient();
+        client.pull(IMAGE1);
+        client.pull(IMAGE2);
 
     }
 
@@ -89,8 +92,16 @@ public class DockerControlApiTest {
     }
     @Test
     public void testGetImageByName() throws Exception {
-        final Image image = controlApi.getImageByName(BUSYBOX);
-        assertThat(image.getName(), containsString(BUSYBOX));
+        final Image image = controlApi.getImageByName(IMAGE1);
+        assertThat(image.getName(), containsString(IMAGE1));
+    }
+
+    @Test
+    public void testGetAllImages() throws Exception {
+        final List<Image> images = controlApi.getAllImages();
+        assertEquals(images.size(), 2);
+        assertThat(images.get(0).getName(), containsString(IMAGE1));
+        assertThat(images.get(1).getName(), containsString(IMAGE2));
     }
 
 }

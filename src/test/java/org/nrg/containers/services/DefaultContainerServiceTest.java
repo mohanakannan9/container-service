@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.nrg.containers.api.ContainerControlApi;
+import org.nrg.containers.api.impl.DockerControlApi;
 import org.nrg.containers.config.DefaultContainerServiceTestConfig;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.ImageMocks;
@@ -48,8 +49,8 @@ public class DefaultContainerServiceTest {
     public void setup() {
         MOCK_PREFERENCE_ENTITY.setValue(MOCK_CONTAINER_HOST);
         when(mockPrefsService.getPreference(
-                ContainerService.SERVER_PREF_TOOL_ID,
-                ContainerService.SERVER_PREF_NAME)).thenReturn(MOCK_PREFERENCE_ENTITY);
+                DockerControlApi.SERVER_PREF_TOOL_ID,
+                DockerControlApi.SERVER_PREF_NAME)).thenReturn(MOCK_PREFERENCE_ENTITY);
     }
 
     @Test
@@ -63,8 +64,8 @@ public class DefaultContainerServiceTest {
     public void testGetServerBlankPrefValue() throws Exception {
         final Preference BLANK_PREFERENCE = new Preference();
         when(mockPrefsService.getPreference(
-                ContainerService.SERVER_PREF_TOOL_ID,
-                ContainerService.SERVER_PREF_NAME))
+                DockerControlApi.SERVER_PREF_TOOL_ID,
+                DockerControlApi.SERVER_PREF_NAME))
                 .thenReturn(BLANK_PREFERENCE);
 
         thrown.expect(NoServerPrefException.class);
@@ -76,8 +77,8 @@ public class DefaultContainerServiceTest {
     @Test
     public void testGetServerNullPref() throws Exception {
         when(mockPrefsService.getPreference(
-                ContainerService.SERVER_PREF_TOOL_ID,
-                ContainerService.SERVER_PREF_NAME))
+                DockerControlApi.SERVER_PREF_TOOL_ID,
+                DockerControlApi.SERVER_PREF_NAME))
                 .thenReturn(null);
 
         thrown.expect(NoServerPrefException.class);
@@ -95,7 +96,7 @@ public class DefaultContainerServiceTest {
     public void testGetAllImages() throws Exception {
         final List<Image> mockImageList = ImageMocks.FIRST_AND_SECOND;
 
-        when(mockContainerControlApi.getAllImages(MOCK_CONTAINER_HOST)).thenReturn(mockImageList);
+        when(mockContainerControlApi.getAllImages()).thenReturn(mockImageList);
         final List<Image> responseImageList = service.getAllImages();
         assertThat(responseImageList, equalTo(mockImageList));
     }
@@ -105,7 +106,7 @@ public class DefaultContainerServiceTest {
         final String name = ImageMocks.FOO_NAME;
         final Image mockImage = ImageMocks.FOO;
 
-        when(mockContainerControlApi.getImageByName(MOCK_CONTAINER_HOST, name)).thenReturn(mockImage);
+        when(mockContainerControlApi.getImageByName(name)).thenReturn(mockImage);
         final Image responseImageByName = service.getImageByName(name);
         assertThat(responseImageByName, equalTo(mockImage));
     }
@@ -115,7 +116,7 @@ public class DefaultContainerServiceTest {
         final String id = ImageMocks.FOO_ID;
         final Image mockImage = ImageMocks.FOO;
 
-        when(mockContainerControlApi.getImageById(MOCK_CONTAINER_HOST, id)).thenReturn(mockImage);
+        when(mockContainerControlApi.getImageById(id)).thenReturn(mockImage);
         final Image responseImageById = service.getImageById(id);
         assertThat(responseImageById, equalTo(mockImage));
     }

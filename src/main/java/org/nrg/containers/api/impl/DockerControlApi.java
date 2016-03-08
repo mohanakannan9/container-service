@@ -35,9 +35,9 @@ import java.nio.file.Paths;
 public class DockerControlApi implements ContainerControlApi {
     private static final Logger _log = LoggerFactory.getLogger(DockerControlApi.class);
 
-    String SERVER_PREF_TOOL_ID = "container";
-    String SERVER_PREF_NAME = "server";
-    String CERT_PATH_PREF_NAME = "certpath";
+    public static String SERVER_PREF_TOOL_ID = "container";
+    public static String SERVER_PREF_NAME = "server";
+    public static String CERT_PATH_PREF_NAME = "certpath";
 
     @Autowired
     @SuppressWarnings("SpringJavaAutowiringInspection") // IntelliJ does not process the excludeFilter in ContainerServiceConfig @ComponentScan, erroneously marks this red
