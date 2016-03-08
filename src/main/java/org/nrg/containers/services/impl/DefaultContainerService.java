@@ -40,39 +40,20 @@ public class DefaultContainerService implements ContainerService {
     @SuppressWarnings("SpringJavaAutowiringInspection") // IntelliJ does not process the excludeFilter in ContainerServiceConfig @ComponentScan, erroneously marks this red
     private ImageMetadataService imageMetadataService;
 
-    @Autowired
-    @SuppressWarnings("SpringJavaAutowiringInspection") // IntelliJ does not process the excludeFilter in ContainerServiceConfig @ComponentScan, erroneously marks this red
-    private PreferenceService prefsService;
-
-    public ContainerServer getServer() throws NoServerPrefException {
-        final Preference serverPref = prefsService.getPreference(SERVER_PREF_TOOL_ID, SERVER_PREF_NAME);
-        if (serverPref == null || StringUtils.isBlank(serverPref.getValue())) {
-            throw new NoServerPrefException("No container server URI defined in preferences.");
-        }
-        return new ContainerServer(serverPref.getValue());
-    }
-
-    @Override
-    public void setServer(final String host) throws InvalidPreferenceName {
-        prefsService.setPreference(SERVER_PREF_TOOL_ID, SERVER_PREF_NAME, host);
-    }
-
-    private String server() throws NoServerPrefException {
-        return getServer().host();
-    }
+    
 
     public List<Image> getAllImages() throws NoServerPrefException {
-        return controlApi.getAllImages(server());
+        return controlApi.getAllImages(controlApi.server());
     }
 
     public Image getImageByName(final String name) throws NoServerPrefException, NotFoundException, ContainerServerException {
-        return controlApi.getImageByName(server(), name);
+        return controlApi.getImageByName(controlApi.server(), name);
     }
 
     @Override
     public Image getImageById(String id) throws NoServerPrefException, NotFoundException, ContainerServerException {
         // TODO Figure out what to do with this. Not sure if we need to be fetching images by id.
-        return controlApi.getImageById(server(), id);
+        return controlApi.getImageById(controlApi.server(), id);
     }
 
     @Override
@@ -86,15 +67,15 @@ public class DefaultContainerService implements ContainerService {
     }
 
     public List<Container> getAllContainers() throws NoServerPrefException, ContainerServerException {
-        return controlApi.getAllContainers(server());
+        return controlApi.getAllContainers(controlApi.server());
     }
 
     public String getContainerStatus(final String id) throws NoServerPrefException, NotFoundException, ContainerServerException {
-        return controlApi.getContainerStatus(server(), id);
+        return controlApi.getContainerStatus(controlApi.server(), id);
     }
 
     public Container getContainer(final String id) throws NoServerPrefException, NotFoundException, ContainerServerException {
-        return controlApi.getContainer(server(), id);
+        return controlApi.getContainer(controlApi.server(), id);
     }
 
     @Override
@@ -102,7 +83,7 @@ public class DefaultContainerService implements ContainerService {
             throws NoServerPrefException, NotFoundException, ContainerServerException {
 //        final Image image = controlApi.getImageByName(server, imageName);
 //        final ImageMetadata imageMetadata = _imageMetadataService.getByImageId(image.id());
-        return controlApi.launchImage(server(), imageName, params.getCommandArray(), params.getVolumesArray());
+        return controlApi.launchImage(controlApi.server(), imageName, params.getCommandArray(), params.getVolumesArray());
     }
 
     @Override
