@@ -9,6 +9,10 @@ public class ContainerServer {
 
     public ContainerServer() {}
 
+    public ContainerServer(final String host) {
+        setHost(host);
+        setCertPath(null);
+    }
     public ContainerServer(final String host, final String certPath) {
         setHost(host);
         setCertPath(certPath);

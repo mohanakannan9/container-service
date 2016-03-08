@@ -47,4 +47,8 @@ public interface ContainerService {
     Image pullByName(String image, String hub, String name);
 
     Image pullFromSource(String source, String name);
+
+    ContainerServer getServer() throws NoServerPrefException, NotFoundException;
+
+    void setServer(String host) throws InvalidPreferenceName;
 }

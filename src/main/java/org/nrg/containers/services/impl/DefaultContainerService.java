@@ -43,17 +43,17 @@ public class DefaultContainerService implements ContainerService {
     
 
     public List<Image> getAllImages() throws NoServerPrefException {
-        return controlApi.getAllImages(controlApi.server());
+        return controlApi.getAllImages();
     }
 
     public Image getImageByName(final String name) throws NoServerPrefException, NotFoundException, ContainerServerException {
-        return controlApi.getImageByName(controlApi.server(), name);
+        return controlApi.getImageByName(name);
     }
 
     @Override
     public Image getImageById(String id) throws NoServerPrefException, NotFoundException, ContainerServerException {
         // TODO Figure out what to do with this. Not sure if we need to be fetching images by id.
-        return controlApi.getImageById(controlApi.server(), id);
+        return controlApi.getImageById(id);
     }
 
     @Override
@@ -67,15 +67,15 @@ public class DefaultContainerService implements ContainerService {
     }
 
     public List<Container> getAllContainers() throws NoServerPrefException, ContainerServerException {
-        return controlApi.getAllContainers(controlApi.server());
+        return controlApi.getAllContainers();
     }
 
     public String getContainerStatus(final String id) throws NoServerPrefException, NotFoundException, ContainerServerException {
-        return controlApi.getContainerStatus(controlApi.server(), id);
+        return controlApi.getContainerStatus(id);
     }
 
     public Container getContainer(final String id) throws NoServerPrefException, NotFoundException, ContainerServerException {
-        return controlApi.getContainer(controlApi.server(), id);
+        return controlApi.getContainer(id);
     }
 
     @Override
@@ -83,7 +83,7 @@ public class DefaultContainerService implements ContainerService {
             throws NoServerPrefException, NotFoundException, ContainerServerException {
 //        final Image image = controlApi.getImageByName(server, imageName);
 //        final ImageMetadata imageMetadata = _imageMetadataService.getByImageId(image.id());
-        return controlApi.launchImage(controlApi.server(), imageName, params.getCommandArray(), params.getVolumesArray());
+        return controlApi.launchImage(imageName, params.getCommandArray(), params.getVolumesArray());
     }
 
     @Override
@@ -124,6 +124,16 @@ public class DefaultContainerService implements ContainerService {
     @Override
     public Image pullFromSource(final String source, final String name) {
         return null;
+    }
+
+    @Override
+    public ContainerServer getServer() throws NoServerPrefException, NotFoundException {
+        return null;
+    }
+
+    @Override
+    public void setServer(String host) throws InvalidPreferenceName {
+
     }
 
     static Map<String, Class<? extends ImageMetadata>> imageMetadataClasses = null;

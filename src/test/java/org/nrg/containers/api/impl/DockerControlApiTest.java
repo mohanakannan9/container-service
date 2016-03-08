@@ -12,6 +12,7 @@ import org.nrg.containers.config.DockerControlApiTestConfig;
 import org.nrg.containers.config.RestApiTestConfig;
 import org.nrg.containers.exceptions.ContainerServerException;
 import org.nrg.containers.exceptions.NotFoundException;
+import org.nrg.containers.model.ContainerServer;
 import org.nrg.containers.model.Image;
 import org.nrg.containers.services.ContainerService;
 import org.nrg.prefs.entities.Preference;
@@ -43,6 +44,7 @@ public class DockerControlApiTest {
     private static DockerClient client;
 
     private static final String BUSYBOX = "busybox";
+    private static final String UBUNTU = "ubuntu";
 
     @Autowired
     private DockerControlApi controlApi;
@@ -55,8 +57,9 @@ public class DockerControlApiTest {
 
     @Before
     public void setup() throws Exception {
-        client = controlApi.getClientFromEnv();
+        client = controlApi.getClient();
         client.pull(BUSYBOX);
+        client.pull(UBUNTU);
 
         MOCK_PREFERENCE_ENTITY_HOST.setValue(MOCK_CONTAINER_HOST);
         when(mockPrefsService.getPreference(
@@ -70,7 +73,6 @@ public class DockerControlApiTest {
 
     }
 
-}
 
     @After
     public void tearDown() throws Exception {
@@ -78,10 +80,19 @@ public class DockerControlApiTest {
     }
 
     @Test
+    public void testGetServer() throws Exception {
+        ContainerServer server = controlApi.getServer();
+        assertThat(server.host(), containsString(MOCK_CONTAINER_HOST));
+        assertThat(server.certPath(), containsString(MOCK_CERT_PATH));
+
+
+    }
+    @Test
     public void testGetImageByName() throws Exception {
-        final Image image = controlApi.getImageByName(SERVER, BUSYBOX);
+        final Image image = controlApi.getImageByName(BUSYBOX);
         assertThat(image.getName(), containsString(BUSYBOX));
     }
+
 }
 
 

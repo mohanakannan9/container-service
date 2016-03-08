@@ -53,31 +53,6 @@ public class DockerControlApi implements ContainerControlApi {
         return getImages(null);
     }
 
-    @Override
-    public Image getImageById(String imageId) throws NotFoundException, ContainerServerException {
-        return null;
-    }
-
-    @Override
-    public List<Container> getAllContainers() {
-        return null;
-    }
-
-    @Override
-    public List<Container> getContainers(Map<String, String> params) {
-        return null;
-    }
-
-    @Override
-    public Container getContainer(String id) throws NotFoundException {
-        return null;
-    }
-
-    @Override
-    public String getContainerStatus(String id) throws NotFoundException {
-        return null;
-    }
-
     /**
      * Query Docker server for images with parameters
      *
@@ -183,22 +158,19 @@ public class DockerControlApi implements ContainerControlApi {
     /**
      * Query Docker server for image by name
      *
-     * @param server Server URI
      * @param imageId ID of image
      * @return Image stored on docker server with the given name
      **/
-    public Image getImageById(final String server, final String imageId) throws NotFoundException, ContainerServerException {
-        if (_log.isDebugEnabled()) {
-            _log.debug("method getImages server "+ server + "; imageId "+ imageId);
-        }
-        final Image image = DockerImageToNrgImage(_getImageById(server, imageId));
+    @Override
+    public Image getImageById(final String imageId) throws NotFoundException, ContainerServerException {
+        final Image image = DockerImageToNrgImage(_getImageById(imageId));
         if (image != null) {
             return image;
         }
-        throw new NotFoundException(String.format("Could not find image %s on server %s", imageId, server));
+        throw new NotFoundException(String.format("Could not find image %s", imageId));
     }
 
-    private com.spotify.docker.client.messages.Image _getImageById(final String server, final String imageId) throws ContainerServerException {
+    private com.spotify.docker.client.messages.Image _getImageById(final String imageId) throws ContainerServerException {
 //        TODO: Make this work
         final DockerClient client = getClient();
 
@@ -224,28 +196,25 @@ public class DockerControlApi implements ContainerControlApi {
         return null;
     }
 
+
     /**
      * Query Docker server for all containers
      *
-     * @param server Server URI
      * @return Container objects stored on docker server
      **/
-    public List<Container> getAllContainers(final String server) {
-        return getContainers(server, null);
+    @Override
+    public List<Container> getAllContainers() {
+        return getContainers(null);
     }
 
     /**
      * Query Docker server for containers with parameters
      *
-     * @param server Server URI
      * @param params Map of query parameters (name = value)
      * @return Container objects stored on docker server meeting the query parameters
      **/
-    public List<Container> getContainers(final String server, final Map<String, String> params) {
-        if (_log.isDebugEnabled()) {
-            _log.debug("method getContainers server "+ server + "; params "+ params);
-        }
-
+    @Override
+    public List<Container> getContainers(final Map<String, String> params) {
         DockerClient dockerClient = getClient();
         List<com.spotify.docker.client.messages.Container> containerList = null;
 
@@ -270,19 +239,19 @@ public class DockerControlApi implements ContainerControlApi {
     /**
      * Query Docker server for specific container
      *
-     * @param server Server URI
      * @param id Container ID
      * @return Container object with specified ID
      **/
-    public Container getContainer(final String server, final String id) throws NotFoundException {
-        final Container container = DockerContainerToNrgContainer(_getContainer(server, id));
+    @Override
+    public Container getContainer(final String id) throws NotFoundException {
+        final Container container = DockerContainerToNrgContainer(_getContainer(id));
         if (container != null) {
             return container;
         }
-        throw new NotFoundException(String.format("Could not find container %s on server %s", id, server));
+        throw new NotFoundException(String.format("Could not find container %s", id));
     }
 
-    private ContainerInfo _getContainer(final String server, final String id) {
+    private ContainerInfo _getContainer(final String id) {
         final DockerClient client = getClient();
         try {
             return client.inspectContainer(id);
@@ -295,12 +264,12 @@ public class DockerControlApi implements ContainerControlApi {
     /**
      * Query Docker server for status of specific container
      *
-     * @param server Server URI
      * @param id Container ID
      * @return Status of Container object with specified ID
      **/
-    public String getContainerStatus(final String server, final String id) throws NotFoundException {
-        final Container container = getContainer(server, id);
+    @Override
+    public String getContainerStatus(final String id) throws NotFoundException {
+        final Container container = getContainer(id);
 
         return container != null ? container.status() : null;
     }
@@ -313,6 +282,7 @@ public class DockerControlApi implements ContainerControlApi {
      * @param volumes Volume mounts, in the form "/path/on/server:/path/in/container"
      * @return ID of created Container
      **/
+    @Override
     public String launchImage(final String imageName, final String[] runCommand, final String[] volumes) {
         final HostConfig hostConfig =
                 HostConfig.builder()
