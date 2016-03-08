@@ -3,6 +3,8 @@ package org.nrg.containers.api.impl;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.spotify.docker.client.DefaultDockerClient;
+import com.spotify.docker.client.DockerCertificateException;
+import com.spotify.docker.client.DockerCertificates;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.DockerException;
 import com.spotify.docker.client.messages.ContainerConfig;
@@ -10,60 +12,84 @@ import com.spotify.docker.client.messages.ContainerCreation;
 import com.spotify.docker.client.messages.ContainerInfo;
 import com.spotify.docker.client.messages.HostConfig;
 import org.apache.commons.lang.StringUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.exceptions.ContainerServerException;
+import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Container;
+import org.nrg.containers.model.ContainerServer;
 import org.nrg.containers.model.Image;
+import org.nrg.prefs.entities.Preference;
+import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.nrg.prefs.services.PreferenceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Map;
+import java.nio.file.Paths;
 
 @Service
 public class DockerControlApi implements ContainerControlApi {
     private static final Logger _log = LoggerFactory.getLogger(DockerControlApi.class);
 
+    String SERVER_PREF_TOOL_ID = "container";
+    String SERVER_PREF_NAME = "server";
+    String CERT_PATH_PREF_NAME = "certpath";
+
+    @Autowired
+    @SuppressWarnings("SpringJavaAutowiringInspection") // IntelliJ does not process the excludeFilter in ContainerServiceConfig @ComponentScan, erroneously marks this red
+    private PreferenceService prefsService;
+
     /**
      * Query Docker server for all images
      *
-     * @param server Server URI
      * @return Image objects stored on docker server
      **/
-    public List<org.nrg.containers.model.Image> getAllImages(final String server) {
-        return getImages(server, null);
+    @Override
+    public List<org.nrg.containers.model.Image> getAllImages() {
+        return getImages(null);
     }
 
+    @Override
+    public Image getImageById(String imageId) throws NotFoundException, ContainerServerException {
+        return null;
+    }
+
+    @Override
+    public List<Container> getAllContainers() {
+        return null;
+    }
+
+    @Override
+    public List<Container> getContainers(Map<String, String> params) {
+        return null;
+    }
+
+    @Override
+    public Container getContainer(String id) throws NotFoundException {
+        return null;
+    }
+
+    @Override
+    public String getContainerStatus(String id) throws NotFoundException {
+        return null;
+    }
 
     /**
      * Query Docker server for images with parameters
      *
-     * @param server Server URI
      * @param params Map of query parameters (name = value)
      * @return Image objects stored on docker server meeting the query parameters
      **/
-    public List<Image> getImages(final String server, final Map<String, String> params) {
-        if (_log.isDebugEnabled()) {
-            _log.debug("method getImages server "+ server + "; params "+ params);
-        }
-        return DockerImageToNrgImage(_getImages(server, params));
+    public List<Image> getImages(final Map<String, String> params) {
+        return DockerImageToNrgImage(_getImages(params));
     }
 
-    private static List<com.spotify.docker.client.messages.Image> _getImages(final String server, final Map<String, String> params) {
-        final DockerClient dockerClient = getClient(server);
+    private List<com.spotify.docker.client.messages.Image> _getImages(final Map<String, String> params) {
+        final DockerClient dockerClient = getClient();
 
         // Transform param map to ListImagesParam array
         DockerClient.ListImagesParam[] dockerParams;
@@ -86,26 +112,51 @@ public class DockerControlApi implements ContainerControlApi {
         return null;
     }
 
+    public ContainerServer getServer() {
+
+        final Preference serverPref = prefsService.getPreference(SERVER_PREF_TOOL_ID, SERVER_PREF_NAME);
+        final Preference certPathPref = prefsService.getPreference(SERVER_PREF_TOOL_ID, CERT_PATH_PREF_NAME);
+        if (serverPref == null || StringUtils.isBlank(serverPref.getValue())) {
+            try {
+                throw new NoServerPrefException("No container server URI defined in preferences.");
+            } catch (NoServerPrefException e) {
+                e.printStackTrace();
+            }
+        }
+        return new ContainerServer(serverPref.getValue(), certPathPref.getValue());
+    }
+
+    public void setServer(final String host) throws InvalidPreferenceName {
+        prefsService.setPreference(SERVER_PREF_TOOL_ID, SERVER_PREF_NAME, host);
+        prefsService.setPreference(SERVER_PREF_TOOL_ID, CERT_PATH_PREF_NAME, null);
+    }
+
+    public void setServer(final String host, final String certPath) throws InvalidPreferenceName {
+        prefsService.setPreference(SERVER_PREF_TOOL_ID, SERVER_PREF_NAME, host);
+        prefsService.setPreference(SERVER_PREF_TOOL_ID, CERT_PATH_PREF_NAME, certPath);
+    }
+
+    public String server() {
+        return getServer().host();
+    }
+
     /**
      * Query Docker server for image by name
      *
-     * @param server Server URI
      * @param imageName Name of image
      * @return Image stored on docker server with the given name
      **/
-    public Image getImageByName(final String server, final String imageName) throws ContainerServerException, NotFoundException {
-        if (_log.isDebugEnabled()) {
-            _log.debug("method getImages server "+ server + "; imageName "+ imageName);
-        }
-        final Image image = DockerImageToNrgImage(_getImageByName(server, imageName));
+    @Override
+    public Image getImageByName(final String imageName) throws ContainerServerException, NotFoundException {
+        final Image image = DockerImageToNrgImage(_getImageByName(imageName));
         if (image != null) {
             return image;
         }
-        throw new NotFoundException(String.format("Could not find image %s on server %s", imageName, server));
+        throw new NotFoundException(String.format("Could not find image %s", imageName));
     }
 
-    private static com.spotify.docker.client.messages.Image _getImageByName(final String server, final String imageName) throws ContainerServerException {
-        final DockerClient client = getClient(server);
+    private com.spotify.docker.client.messages.Image _getImageByName(final String imageName) throws ContainerServerException {
+        final DockerClient client = getClient();
 
         List<com.spotify.docker.client.messages.Image> images = null;
         try {
@@ -147,9 +198,9 @@ public class DockerControlApi implements ContainerControlApi {
         throw new NotFoundException(String.format("Could not find image %s on server %s", imageId, server));
     }
 
-    private static com.spotify.docker.client.messages.Image _getImageById(final String server, final String imageId) throws ContainerServerException {
+    private com.spotify.docker.client.messages.Image _getImageById(final String server, final String imageId) throws ContainerServerException {
 //        TODO: Make this work
-        final DockerClient client = getClient(server);
+        final DockerClient client = getClient();
 
         List<com.spotify.docker.client.messages.Image> images;
         try {
@@ -195,7 +246,7 @@ public class DockerControlApi implements ContainerControlApi {
             _log.debug("method getContainers server "+ server + "; params "+ params);
         }
 
-        DockerClient dockerClient = getClient(server);
+        DockerClient dockerClient = getClient();
         List<com.spotify.docker.client.messages.Container> containerList = null;
 
         // Transform param map to ListImagesParam array
@@ -231,8 +282,8 @@ public class DockerControlApi implements ContainerControlApi {
         throw new NotFoundException(String.format("Could not find container %s on server %s", id, server));
     }
 
-    private static ContainerInfo _getContainer(final String server, final String id) {
-        final DockerClient client = getClient(server);
+    private ContainerInfo _getContainer(final String server, final String id) {
+        final DockerClient client = getClient();
         try {
             return client.inspectContainer(id);
         } catch (DockerException | InterruptedException e) {
@@ -257,13 +308,12 @@ public class DockerControlApi implements ContainerControlApi {
     /**
      * Launch image on Docker server
      *
-     * @param server Server URI
      * @param imageName name of image to launch
      * @param runCommand Command string to execute
      * @param volumes Volume mounts, in the form "/path/on/server:/path/in/container"
      * @return ID of created Container
      **/
-    public String launchImage(final String server, final String imageName, final String[] runCommand, final String[] volumes) {
+    public String launchImage(final String imageName, final String[] runCommand, final String[] volumes) {
         final HostConfig hostConfig =
                 HostConfig.builder()
                 .binds(volumes)
@@ -280,7 +330,7 @@ public class DockerControlApi implements ContainerControlApi {
         if (_log.isDebugEnabled()) {
             final String message = String.format(
                     "Starting container: server %s, image %s, command \"%s\", volumes [%s]",
-                    server,
+                    server(),
                     imageName,
                     StringUtils.join(runCommand, " "),
                     StringUtils.join(volumes, ", ")
@@ -288,7 +338,7 @@ public class DockerControlApi implements ContainerControlApi {
             _log.debug(message);
         }
 
-        final DockerClient client = getClient(server);
+        final DockerClient client = getClient();
         final ContainerCreation container;
         try {
             container = client.createContainer(containerConfig);
@@ -312,48 +362,28 @@ public class DockerControlApi implements ContainerControlApi {
     /**
      * Create a client connection to a Docker server
      *
-     * @param server Server URI
      * @return DockerClient object
      **/
-    public static DockerClient getClient(final String server) {
+    public DockerClient getClient() {
+        ContainerServer dockerServer = getServer();
         if (_log.isDebugEnabled()) {
-            _log.debug("method getClient, Create server connection, server " + server);
+            _log.debug("method getClient, Create server connection, server " + dockerServer.host());
         }
-
-        DefaultDockerClient.Builder builder = DefaultDockerClient.builder();
-        builder.uri(server);
-        return builder.build();
+        DockerClient client = null;
+        try {
+            client = DefaultDockerClient.builder()
+                    .uri(dockerServer.host())
+                    .dockerCertificates(new DockerCertificates(Paths.get(dockerServer.certPath())))
+                    .build();
+        } catch (DockerCertificateException e) {
+            e.printStackTrace();
+        }
+        return client;
     }
 
+    public DockerClient getClientFromEnv() throws DockerCertificateException {
 
-    private String _httpGet(final String url, final String requestParams) throws IOException {
-        CloseableHttpClient httpclient = HttpClients.createDefault();
-        HttpGet httpGet = new HttpGet(url + '?' + requestParams);
-        CloseableHttpResponse response = httpclient.execute(httpGet);
-        try {
-            System.out.println(response.getStatusLine());
-            HttpEntity entity1 = response.getEntity();
-            EntityUtils.consume(entity1);
-        } finally {
-            response.close();
-        }
-        return response.toString();
-    }
-
-    private String _httpPost(final String url, final List<NameValuePair> nameValuePairs) throws UnsupportedEncodingException, IOException {
-        CloseableHttpClient httpclient = HttpClients.createDefault();
-        HttpPost httpPost = new HttpPost(url);
-        httpPost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-        CloseableHttpResponse response = httpclient.execute(httpPost);
-
-        try {
-            System.out.println(response.getStatusLine());
-            HttpEntity entity = response.getEntity();
-            EntityUtils.consume(entity);
-        } finally {
-            response.close();
-        }
-        return response.toString();
+        return DefaultDockerClient.fromEnv().build();
     }
 
 
