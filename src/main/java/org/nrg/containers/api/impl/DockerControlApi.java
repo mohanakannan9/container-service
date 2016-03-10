@@ -111,9 +111,6 @@ public class DockerControlApi implements ContainerControlApi {
         prefsService.setPreference(SERVER_PREF_TOOL_ID, CERT_PATH_PREF_NAME, certPath);
     }
 
-    public String server() {
-        return getServer().host();
-    }
 
     /**
      * Query Docker server for image by name
@@ -300,7 +297,7 @@ public class DockerControlApi implements ContainerControlApi {
         if (_log.isDebugEnabled()) {
             final String message = String.format(
                     "Starting container: server %s, image %s, command \"%s\", volumes [%s]",
-                    server(),
+                    getServer(),
                     imageName,
                     StringUtils.join(runCommand, " "),
                     StringUtils.join(volumes, ", ")

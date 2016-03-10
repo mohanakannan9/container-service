@@ -4,13 +4,14 @@ import org.nrg.containers.exceptions.ContainerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Container;
+import org.nrg.containers.model.ContainerServer;
 import org.nrg.containers.model.Image;
 
 import java.util.List;
 import java.util.Map;
 
 public interface ContainerControlApi {
-    String server() throws NoServerPrefException;
+    ContainerServer getServer() throws NoServerPrefException;
 
     List<Image> getAllImages();
 

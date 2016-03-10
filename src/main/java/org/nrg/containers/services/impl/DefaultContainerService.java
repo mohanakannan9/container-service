@@ -16,9 +16,7 @@ import org.nrg.containers.model.Image;
 import org.nrg.containers.model.ImageParameters;
 import org.nrg.containers.services.ContainerService;
 import org.nrg.framework.utilities.Reflection;
-import org.nrg.prefs.entities.Preference;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
-import org.nrg.prefs.services.PreferenceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -128,7 +126,7 @@ public class DefaultContainerService implements ContainerService {
 
     @Override
     public ContainerServer getServer() throws NoServerPrefException, NotFoundException {
-        return null;
+        return controlApi.getServer();
     }
 
     @Override
