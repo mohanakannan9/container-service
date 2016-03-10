@@ -102,6 +102,10 @@ jacocoTestReport {
     }
 }
 
+task unitTest( type: Test ) {
+    exclude '**/DockerControlApiTest.class'
+}
+
 //compileJava {
 //    options.encoding = 'UTF-8'
 //    options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"

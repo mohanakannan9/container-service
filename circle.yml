@@ -1,4 +1,6 @@
 test:
+    override:
+        - ./gradlew clean unitTest
     post:
         - ./gradlew jacocoTestReport
         - pip install --user codecov && codecov 
