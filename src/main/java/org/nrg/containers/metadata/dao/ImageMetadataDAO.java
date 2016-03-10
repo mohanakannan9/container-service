@@ -2,17 +2,17 @@ package org.nrg.containers.metadata.dao;
 
 import org.hibernate.Criteria;
 import org.hibernate.criterion.Restrictions;
-import org.nrg.containers.exceptions.ImageMetadataException;
 import org.nrg.containers.metadata.ImageMetadata;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
-import org.nrg.user.entities.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Repository
+@Transactional
 public class ImageMetadataDAO extends AbstractHibernateDAO<ImageMetadata> {
     private static final Logger _log = LoggerFactory.getLogger(ImageMetadataDAO.class);
 
@@ -42,12 +42,11 @@ public class ImageMetadataDAO extends AbstractHibernateDAO<ImageMetadata> {
 
     /**
      * @param imageId Find metadata for the image with given ID
-     * @return
+     * @return List of ImageMetadata for that image
      */
-    public ImageMetadata getByImageId(final String imageId) {
+    public List<ImageMetadata> getByImageId(final String imageId) {
         Criteria criteria = getSession().createCriteria(getParameterizedType());
         criteria.add(Restrictions.eq("imageId", imageId));
-        criteria.add(Restrictions.eq("enabled", true));
-        return (ImageMetadata) criteria.list().get(0);
+        return criteria.list();
     }
 }

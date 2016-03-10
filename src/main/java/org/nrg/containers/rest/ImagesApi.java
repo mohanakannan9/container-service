@@ -6,21 +6,23 @@ import io.swagger.annotations.ApiResponses;
 import org.nrg.containers.exceptions.ContainerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
+import org.nrg.containers.metadata.ImageMetadata;
 import org.nrg.containers.model.Image;
 import org.nrg.containers.services.ContainerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.Map;
 
 import static org.springframework.web.bind.annotation.RequestMethod.DELETE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
@@ -36,6 +38,8 @@ public class ImagesApi {
     @SuppressWarnings("SpringJavaAutowiringInspection") // IntelliJ does not process the excludeFilter in ContainersSpringConfig @ComponentScan, erroneously marks this red
     private ContainerService service;
 
+    public static final String ID_REGEX = "(?:[a-zA-Z0-9-_+.]+:)?[a-fA-F0-9]{6,}";
+
     public static final String JSON = MediaType.APPLICATION_JSON_UTF8_VALUE;
     public static final String PLAIN_TEXT = MediaType.TEXT_PLAIN_VALUE;
 
@@ -50,7 +54,7 @@ public class ImagesApi {
         return service.getAllImages();
     }
 
-    @RequestMapping(value = "/images/{id:(?:[a-zA-Z0-9-_+.]+:)?[a-fA-F0-9]{6,}}", method = GET, produces = {JSON, PLAIN_TEXT})
+    @RequestMapping(value = "/images/{id:"+ID_REGEX+"}", method = GET, produces = {JSON, PLAIN_TEXT})
     @ResponseBody
     public Image getImageByIdWithNameFallback(final @PathVariable("id") String id,
                               final @RequestParam(name = "project", required = false) String projectParam,
@@ -124,45 +128,54 @@ public class ImagesApi {
         return service.deleteImageById(id, deleteOnServer);
     }
 
-    @RequestMapping(value = {"/images/{image}", "/images/{repo}/{image}", "/images/name/{image}", "/images/name/{repo}/{image}"},
-            method = POST, consumes = JSON)
-    @ResponseBody
-    public String setMetadataByName(final @PathVariable("image") String image,
-                                    final @PathVariable("repo") String repo,
-                                    final @RequestBody Map<String, String> metadata,
+    @RequestMapping(value = {"/images/{name:.*}", "/images/name/{name}"}, method = POST, consumes = JSON)
+    @ResponseStatus(value = HttpStatus.CREATED)
+    public void setMetadataByName(final @PathVariable("name") String name,
+                                    final @RequestBody ImageMetadata metadata,
                                     final @RequestParam(value = "project", required = false) String project,
                                     final @RequestParam(value = "overwrite", defaultValue = "false") Boolean overwrite,
                                     final @RequestParam(value = "ignoreBlank", defaultValue = "false") Boolean ignoreBlank)
-            throws NoServerPrefException, NotFoundException {
-        final String name = repo != null ? repo + "/" + image : image;
-        return service.setMetadataByName(name, metadata, project, overwrite, ignoreBlank);
+            throws NoServerPrefException, NotFoundException, ContainerServerException {
+        service.setMetadataByName(name, metadata, project, overwrite, ignoreBlank);
     }
 
-    @RequestMapping(value = "/images/{id:([a-zA-Z0-9-_+.]+:)?[a-fA-F0-9]{6,}}", method = POST, consumes = JSON)
-    @ResponseBody
-    public String setMetadataByIdWithNameFallback(final @PathVariable("id") String id,
-                                    final @RequestBody Map<String, String> metadata,
+    @RequestMapping(value = {"/images/{repo}/{image}", "/images/name/{repo}/{image}"}, method = POST, consumes = JSON)
+    @ResponseStatus(value = HttpStatus.CREATED)
+    public void setMetadataByNameWithRepo(final @PathVariable("image") String image,
+                                            final @PathVariable("repo") String repo,
+                                            final @RequestBody ImageMetadata metadata,
+                                            final @RequestParam(value = "project", required = false) String project,
+                                            final @RequestParam(value = "overwrite", defaultValue = "false") Boolean overwrite,
+                                            final @RequestParam(value = "ignoreBlank", defaultValue = "false") Boolean ignoreBlank)
+            throws NoServerPrefException, NotFoundException, ContainerServerException {
+        final String name = repo != null ? repo + "/" + image : image;
+        service.setMetadataByName(name, metadata, project, overwrite, ignoreBlank);
+    }
+
+    @RequestMapping(value = "/images/{id:"+ID_REGEX+"}", method = POST, consumes = JSON)
+    @ResponseStatus(value = HttpStatus.CREATED)
+    public void setMetadataByIdWithNameFallback(final @PathVariable("id") String imageId,
+                                    final @RequestBody ImageMetadata metadata,
                                     final @RequestParam(value = "project", required = false) String project,
                                     final @RequestParam(value = "overwrite", defaultValue = "false") Boolean overwrite,
                                     final @RequestParam(value = "ignoreBlank", defaultValue = "false") Boolean ignoreBlank)
-            throws NoServerPrefException, NotFoundException {
+            throws NoServerPrefException, NotFoundException, ContainerServerException {
         try {
-            return service.setMetadataById(id, metadata, project, overwrite, ignoreBlank);
+            service.setMetadataById(imageId, metadata, project, overwrite, ignoreBlank);
         } catch (NotFoundException e) {
-            _log.warn("Could not find image with id " + id + ". Trying as name.");
-            return service.setMetadataByName(id, metadata, project, overwrite, ignoreBlank);
-
+            _log.warn("Could not find image with id " + imageId + ". Trying as name.");
+            service.setMetadataByName(imageId, metadata, project, overwrite, ignoreBlank);
         }
     }
     @RequestMapping(value = "/images/id/{id}", method = POST, consumes = JSON)
-    @ResponseBody
-    public String setMetadataById(final @PathVariable("id") String id,
-                                    final @RequestBody Map<String, String> metadata,
+    @ResponseStatus(value = HttpStatus.CREATED)
+    public void setMetadataById(final @PathVariable("id") String imageId,
+                                    final @RequestBody ImageMetadata metadata,
                                     final @RequestParam(value = "project", required = false) String project,
                                     final @RequestParam(value = "overwrite", defaultValue = "false") Boolean overwrite,
                                     final @RequestParam(value = "ignoreBlank", defaultValue = "false") Boolean ignoreBlank)
-            throws NoServerPrefException, NotFoundException {
-        return service.setMetadataById(id, metadata, project, overwrite, ignoreBlank);
+            throws NoServerPrefException, NotFoundException, ContainerServerException {
+        service.setMetadataById(imageId, metadata, project, overwrite, ignoreBlank);
     }
 
 }
