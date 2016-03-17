@@ -2,6 +2,7 @@ package org.nrg.containers.api.impl;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.spotify.docker.client.DockerClient;
 import org.junit.After;
 import org.junit.Before;
@@ -18,11 +19,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
-import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.contains;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -42,8 +46,8 @@ public class DockerControlApiTest {
 
     private static DockerClient client;
 
-    private static final String IMAGE1 = "busybox";
-    private static final String IMAGE2 = "ubuntu";
+    private static final String IMAGE1 = "busybox:latest";
+    private static final String IMAGE2 = "ubuntu:latest";
 
     @Autowired
     private DockerControlApi controlApi;
@@ -86,7 +90,7 @@ public class DockerControlApiTest {
     public void testGetImageByName() throws Exception {
         client.pull(IMAGE1);
         final Image image = controlApi.getImageByName(IMAGE1);
-        assertEquals(image.getName(), IMAGE1);
+        assertThat(image.getName(), containsString(IMAGE1));
     }
 
     @Test
@@ -94,10 +98,18 @@ public class DockerControlApiTest {
         client.pull(IMAGE1);
         client.pull(IMAGE2);
         final List<Image> images = controlApi.getAllImages();
-        assertEquals(images.size(), 2);
 
-        final List<String> imageNames = imagesToNames(images);
-        assertThat(imageNames, containsInAnyOrder(IMAGE1, IMAGE2));
+        final List<String> imageNames = imagesToTags(images);
+        assertThat(IMAGE1, isIn(imageNames));
+        assertThat(IMAGE2, isIn(imageNames));
+    }
+
+    private List<String> imagesToTags(final List<Image> images) {
+        List<String> tags = Lists.newArrayList();
+        for (Image image : images){
+           tags.addAll(image.getRepoTags());
+        }
+        return tags;
     }
 
     private List<String> imagesToNames(final List<Image> images) {
@@ -109,6 +121,18 @@ public class DockerControlApiTest {
         };
         return Lists.transform(images, imageToName);
     }
+
+    @Test
+    public void testLaunchImage() throws Exception {
+        List cmd = new ArrayList<String>();
+        cmd.add("ls");
+        List vol = null;
+        //vol.add("/tmp:/tmp");
+
+        client.pull(IMAGE1);
+        String containerId = controlApi.launchImage(IMAGE1, cmd, vol);
+    }
+
 }
 
 

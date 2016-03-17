@@ -27,5 +27,5 @@ public interface ContainerControlApi {
 
     String getContainerStatus(final String id) throws NotFoundException;
 
-    String launchImage(final String imageName, final String[] runCommand, final String[] volumes);
+    String launchImage(final String imageName, final List<String> runCommand, final List <String> volumes);
 }

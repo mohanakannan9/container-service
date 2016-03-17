@@ -11,6 +11,8 @@ import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
 import com.spotify.docker.client.messages.ContainerInfo;
 import com.spotify.docker.client.messages.HostConfig;
+import com.spotify.docker.client.messages.ImageSearchResult;
+import com.spotify.docker.client.messages.ImageInfo;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.exceptions.ContainerServerException;
@@ -280,8 +282,9 @@ public class DockerControlApi implements ContainerControlApi {
      * @return ID of created Container
      **/
     @Override
-    public String launchImage(final String imageName, final String[] runCommand, final String[] volumes) {
-        final HostConfig hostConfig =
+    public String launchImage(final String imageName, final List<String> runCommand, final List<String> volumes) {
+
+         final HostConfig hostConfig =
                 HostConfig.builder()
                 .binds(volumes)
                 .build();
@@ -352,6 +355,25 @@ public class DockerControlApi implements ContainerControlApi {
 
         return DefaultDockerClient.fromEnv().build();
     }
+
+    /**
+     * Search docker server for images
+     *
+     * @param searchString string to match with image names.
+     * @return List of NRG Image objects
+     **/
+    public void searchImages(String searchString) throws Exception {
+        List<ImageSearchResult> searchResult = getClient().searchImages(searchString);
+
+    }
+
+    public ImageInfo pullImage(String imageName) throws Exception {
+        final DockerClient client = getClient();
+        client.pull(imageName);
+        return client.inspectImage(imageName);
+
+    }
+
 
 
     // TODO Move everything below to a DAO class
