@@ -37,6 +37,7 @@ public class DefaultContainerService implements ContainerService {
     private ImageMetadataService imageMetadataService;
 
     @Autowired
+    @SuppressWarnings("SpringJavaAutowiringInspection") // IntelliJ does not process the excludeFilter in ContainerServiceConfig @ComponentScan, erroneously marks this red
     private ScriptService scriptService;
 
     
@@ -114,7 +115,7 @@ public class DefaultContainerService implements ContainerService {
         // Use transporter to stage any files
 
 
-        final String imageId = metadata.getImageId();
+        final String imageId = null; // metadata.getImageId();
         final String[] command = null;
         final String[] volumes = null;
         return controlApi.launchImage(imageId, command, volumes);

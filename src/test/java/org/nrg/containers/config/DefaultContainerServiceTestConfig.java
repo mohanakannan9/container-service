@@ -1,6 +1,7 @@
 package org.nrg.containers.config;
 
 import org.mockito.Mockito;
+import org.nrg.automation.services.ScriptService;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.metadata.service.ImageMetadataService;
 import org.nrg.containers.services.ContainerService;
@@ -20,6 +21,11 @@ public class DefaultContainerServiceTestConfig {
     @Bean
     public ImageMetadataService mockImageMetadataService() {
         return Mockito.mock(ImageMetadataService.class);
+    }
+
+    @Bean
+    public ScriptService mockScriptService() {
+        return Mockito.mock(ScriptService.class);
     }
 
     @Bean
