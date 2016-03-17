@@ -53,6 +53,9 @@ dependencies {
     compile ("org.nrg:config:${vXnat}") {
         transitive = false
     }
+    compile ("org.nrg:automation:${vXnat}") {
+        transitive = false
+    }
 
     compile "org.springframework:spring-beans:${vSpring}"
     compile "org.springframework:spring-context:${vSpring}"

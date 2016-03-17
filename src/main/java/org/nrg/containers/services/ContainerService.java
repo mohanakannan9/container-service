@@ -38,6 +38,8 @@ public interface ContainerService {
     String launchOn(String imageName, String xnatId, String type, Map<String, String> launchArguments, Boolean wait)
             throws NoServerPrefException, NotFoundException, ContainerServerException;
 
+    String launchFromScript(String scriptId, Map<String, String> launchArguments, Boolean wait);
+
     String getContainerLogs(String id) throws NoServerPrefException, NotFoundException, ContainerServerException;
 
     String verbContainer(String id, String status) throws NoServerPrefException, NotFoundException, ContainerServerException;
@@ -63,4 +65,7 @@ public interface ContainerService {
     ContainerServer getServer() throws NoServerPrefException, NotFoundException;
 
     void setServer(String host) throws InvalidPreferenceName;
+
+    String setMetadataById(String id, Map<String, String> metadata, String project, Boolean overwrite, Boolean ignoreBlank)
+            throws NoServerPrefException, NotFoundException;
 }

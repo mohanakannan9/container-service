@@ -188,6 +188,26 @@ public class ContainersApi {
         return service.launchOn(name, xnatId, type, launchArguments, wait);
     }
 
+    @ApiOperation(value = "Launch container from an XNAT script.", httpMethod = "POST",
+            notes = "Launches a container from an XNAT script.")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "Container successfully launched."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to launch this container."),
+            @ApiResponse(code = 404, message = "Image not found."),
+            @ApiResponse(code = 424, message = "Container Server value is not set."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = {"/launch/script/{scriptId}"},
+            method = POST, produces = PLAIN_TEXT, consumes = JSON)
+    @ResponseBody
+    public String launchOn(@ApiParam(value = "The script to launch.", required = true)
+                               final @PathVariable("scriptId") String scriptId,
+                           final @RequestBody Map<String, String> launchArguments,
+                           final @RequestParam(name = "wait", defaultValue = "false") Boolean wait)
+            throws NoServerPrefException, NotFoundException, ContainerServerException {
+        return service.launchFromScript(scriptId, launchArguments, wait);
+    }
+
     @ApiOperation(value = "Get server", httpMethod = "GET",
             notes = "The container server URI stored in the XNAT database.")
     @ApiResponses({

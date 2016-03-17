@@ -1,5 +1,8 @@
 package org.nrg.containers.services.impl;
 
+import com.google.common.collect.Maps;
+import org.apache.commons.lang.StringUtils;
+import org.nrg.automation.services.ScriptService;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.exceptions.ContainerServerException;
 import org.nrg.containers.exceptions.NoHubException;
@@ -32,6 +35,9 @@ public class DefaultContainerService implements ContainerService {
     @Autowired
     @SuppressWarnings("SpringJavaAutowiringInspection") // IntelliJ does not process the excludeFilter in ContainerServiceConfig @ComponentScan, erroneously marks this red
     private ImageMetadataService imageMetadataService;
+
+    @Autowired
+    private ScriptService scriptService;
 
     
 
@@ -95,6 +101,23 @@ public class DefaultContainerService implements ContainerService {
         // stage data
         // launch
         return null;
+    }
+
+    @Override
+    public String launchFromScript(String scriptId, Map<String, String> launchArguments, Boolean wait) {
+        final String context = scriptService.getByScriptId(scriptId).getLanguage();
+        //TODO final ImageMetadata metadata = imageMetadataService.getByScriptingContext(context);
+        final ImageMetadata metadata = null;
+
+        // Pull args from metadata
+        // Resolve args from launchArguments
+        // Use transporter to stage any files
+
+
+        final String imageId = metadata.getImageId();
+        final String[] command = null;
+        final String[] volumes = null;
+        return controlApi.launchImage(imageId, command, volumes);
     }
 
     @Override
@@ -172,5 +195,10 @@ public class DefaultContainerService implements ContainerService {
     @Override
     public void setServer(String host) throws InvalidPreferenceName {
         // TODO
+    }
+
+    @Override
+    public String setMetadataById(String id, Map<String, String> metadata, String project, Boolean overwrite, Boolean ignoreBlank) throws NoServerPrefException, NotFoundException {
+        return null;
     }
 }
