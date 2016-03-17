@@ -116,8 +116,8 @@ public class DefaultContainerService implements ContainerService {
 
 
         final String imageId = null; // metadata.getImageId();
-        final String[] command = null;
-        final String[] volumes = null;
+        final List<String> command = null;
+        final List<String> volumes = null;
         return controlApi.launchImage(imageId, command, volumes);
     }
 
