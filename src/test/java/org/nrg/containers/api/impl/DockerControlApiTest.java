@@ -48,6 +48,7 @@ public class DockerControlApiTest {
 
     private static final String IMAGE1 = "busybox:latest";
     private static final String IMAGE2 = "ubuntu:latest";
+    private static final String IMAGE3 = "kelseym/pydicom:0.0.2";
 
     @Autowired
     private DockerControlApi controlApi;
@@ -126,11 +127,12 @@ public class DockerControlApiTest {
     public void testLaunchImage() throws Exception {
         List cmd = new ArrayList<String>();
         cmd.add("ls");
-        List vol = null;
-        //vol.add("/tmp:/tmp");
+        cmd.add("/data");
+        List vol = new ArrayList<String>();
+        vol.add("/data:/Users/Kelsey/Projects/XNAT/1.7/pydicomDocker/data");
 
-        client.pull(IMAGE1);
-        String containerId = controlApi.launchImage(IMAGE1, cmd, vol);
+        client.pull(IMAGE3);
+        String containerId = controlApi.launchImage(IMAGE3, cmd, vol);
     }
 
 }
