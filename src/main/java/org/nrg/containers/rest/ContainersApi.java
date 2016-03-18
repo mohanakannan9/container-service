@@ -65,6 +65,7 @@ public class ContainersApi {
     public List<Container> getContainers(@ApiParam(value = "ID of the container to fetch", required = true)
                                              final @RequestParam MultiValueMap<String, String> queryParams)
             throws NoServerPrefException, ContainerServerException {
+        _log.debug(String.format("%s: %s", "getContainers", queryParams));
         return service.getContainers(queryParams);
     }
 
@@ -82,6 +83,7 @@ public class ContainersApi {
     public Container getContainer(@ApiParam(value = "ID of the container to fetch", required = true)
                                       final @PathVariable("id") String id)
             throws NoServerPrefException, NotFoundException, ContainerServerException {
+        _log.debug(String.format("%s: %s", "getContainer", id));
         return service.getContainer(id);
     }
 
@@ -99,7 +101,8 @@ public class ContainersApi {
     public String getContainerStatus(@ApiParam(value = "Get status of container with this ID", required = true)
                                          final @PathVariable("id") String id)
             throws NotFoundException, NoServerPrefException, ContainerServerException {
-            return service.getContainerStatus(id);
+        _log.debug(String.format("%s: %s", "getContainerStatus", id));
+        return service.getContainerStatus(id);
     }
 
     @ApiOperation(value = "Set container status", httpMethod = "PUT", produces = PLAIN_TEXT,
@@ -119,6 +122,7 @@ public class ContainersApi {
                                              allowableValues = CONTAINER_VERBS_CSV)
                                          final @PathVariable("verb") String verb)
             throws NotFoundException, NoServerPrefException, ContainerServerException {
+        _log.debug(String.format("%s: %s, %s", "verbContainer", id, verb));
         return service.verbContainer(id, verb);
     }
 
@@ -200,11 +204,12 @@ public class ContainersApi {
     @RequestMapping(value = {"/launch/script/{scriptId}"},
             method = POST, produces = PLAIN_TEXT, consumes = JSON)
     @ResponseBody
-    public String launchOn(@ApiParam(value = "The script to launch.", required = true)
+    public String launchFromScript(@ApiParam(value = "The script to launch.", required = true)
                                final @PathVariable("scriptId") String scriptId,
                            final @RequestBody Map<String, String> launchArguments,
                            final @RequestParam(name = "wait", defaultValue = "false") Boolean wait)
             throws NoServerPrefException, NotFoundException, ContainerServerException {
+        _log.debug(String.format("%s: scriptId %s, args %s", "launchFromScript", scriptId, launchArguments));
         return service.launchFromScript(scriptId, launchArguments, wait);
     }
 

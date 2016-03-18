@@ -38,7 +38,7 @@ public interface ContainerService {
     String launchOn(String imageName, String xnatId, String type, Map<String, String> launchArguments, Boolean wait)
             throws NoServerPrefException, NotFoundException, ContainerServerException;
 
-    String launchFromScript(String scriptId, Map<String, String> launchArguments, Boolean wait);
+    String launchFromScript(String scriptId, Map<String, String> launchArguments, Boolean wait) throws NotFoundException;
 
     String getContainerLogs(String id) throws NoServerPrefException, NotFoundException, ContainerServerException;
 

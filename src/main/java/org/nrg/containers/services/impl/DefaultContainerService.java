@@ -1,7 +1,6 @@
 package org.nrg.containers.services.impl;
 
-import com.google.common.collect.Maps;
-import org.apache.commons.lang.StringUtils;
+import org.nrg.automation.entities.Script;
 import org.nrg.automation.services.ScriptService;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.exceptions.ContainerServerException;
@@ -105,8 +104,13 @@ public class DefaultContainerService implements ContainerService {
     }
 
     @Override
-    public String launchFromScript(String scriptId, Map<String, String> launchArguments, Boolean wait) {
-        final String context = scriptService.getByScriptId(scriptId).getLanguage();
+    public String launchFromScript(String scriptId, Map<String, String> launchArguments, Boolean wait) throws NotFoundException {
+        final Script script = scriptService.getByScriptId(scriptId);
+        if (script == null) {
+            throw new NotFoundException("Could not find script " + scriptId);
+        }
+
+        final String context = script.getLanguage();
         //TODO final ImageMetadata metadata = imageMetadataService.getByScriptingContext(context);
         final ImageMetadata metadata = null;
 

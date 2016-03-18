@@ -2,6 +2,7 @@ package org.nrg.containers.rest;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.junit.Before;
@@ -30,6 +31,7 @@ import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
@@ -219,6 +221,41 @@ public class ContainersApiTest {
     }
 
     @Test
+    public void testLaunchOn() throws Exception {
+
+    }
+
+    @Test
+    public void testLaunchFromScript() throws Exception {
+        final String scriptId = "123";
+        final Map<String, String> otherArgs =
+            ImmutableMap.of("arg1", "val1", "arg2", "val2");
+
+        final String path = "/containers/launch/script/" + scriptId;
+
+        // REQUEST 0: No "onServer" param (defaults to false)
+        final MockHttpServletRequestBuilder request =
+            post(path).contentType(JSON).content(mapper.writeValueAsString(otherArgs));
+
+        when(service.launchFromScript(scriptId, otherArgs, false))
+            .thenReturn("yay")
+            .thenThrow(NOT_FOUND_EXCEPTION);
+
+        final String response =
+            mockMvc.perform(request)
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(PLAIN_TEXT))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        assertEquals("yay", response);
+
+        // Not found
+        mockMvc.perform(request).andExpect(status().isNotFound());
+    }
+
+    @Test
     public void testGetServer() throws Exception {
         final String server = "http://foo.bar:123";
         final ContainerServer containerServer = new ContainerServer(server);
@@ -301,10 +338,5 @@ public class ContainersApiTest {
     @Test
     public void testPullFromSource() throws Exception {
         // TODO
-    }
-
-    @Test
-    public void testLaunchOn() throws Exception {
-
     }
 }

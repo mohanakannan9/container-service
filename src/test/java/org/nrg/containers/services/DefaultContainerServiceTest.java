@@ -2,13 +2,20 @@ package org.nrg.containers.services;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.nrg.automation.entities.Script;
+import org.nrg.automation.services.ScriptService;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.config.DefaultContainerServiceTestConfig;
+import org.nrg.containers.exceptions.NotFoundException;
+import org.nrg.containers.metadata.ImageMetadata;
+import org.nrg.containers.metadata.ImageMetadataArg;
+import org.nrg.containers.metadata.service.ImageMetadataService;
 import org.nrg.containers.model.ContainerServer;
 import org.nrg.containers.model.Image;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +24,8 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -31,8 +40,16 @@ public class DefaultContainerServiceTest {
     final static String MOCK_CONTAINER_CERT_PATH = "/path/to/file";
     final static ContainerServer MOCK_CONTAINER_SERVER = new ContainerServer(MOCK_CONTAINER_HOST, MOCK_CONTAINER_CERT_PATH);
 
+    final NotFoundException NOT_FOUND_EXCEPTION = new NotFoundException("Some cool message");
+
     @Autowired
     private ContainerControlApi mockContainerControlApi;
+
+    @Autowired
+    private ImageMetadataService mockImageMetadataService;
+
+    @Autowired
+    private ScriptService mockScriptService;
 
     @Autowired
     private ContainerService service;
@@ -142,5 +159,123 @@ public class DefaultContainerServiceTest {
     @Test
     public void testLaunch() throws Exception {
         // TODO
+    }
+
+    @Test
+    public void testGetContainers() throws Exception {
+
+    }
+
+    @Test
+    public void testLaunchOn() throws Exception {
+
+    }
+
+    @Test
+    public void testLaunchFromScript() throws Exception {
+        final String scriptId = "123";
+        final String scriptName = "foo";
+        final String scriptContext = "pyxnat";
+        final String scriptContextVersion = "1.0";
+        final String scriptContent = "print \"What up, Earth?\"";
+        final Script script = new Script(scriptId, scriptName,
+            scriptContext, scriptContextVersion, scriptContent);
+
+        final String imageName = "bar";
+        final Set<String> mountsIn = Sets.newHashSet("/poo:/pee", "/data:/input");
+        final String mountsOut = "/data/xnat/stuuuuuuf:/output";
+        final String execution = "ls";
+        final String argName = "arg1";
+        final String argDescription = "The first arg";
+        final ImageMetadataArg arg =
+            ImageMetadataArg.builder()
+                .name(argName)
+                .description(argDescription)
+            .build();
+        final ImageMetadata metadata =
+            ImageMetadata.builder()
+                .imageId(imageName)
+                .mountsIn(mountsIn)
+                .mountsOut(mountsOut)
+                .execution(execution)
+                .arg(arg)
+            .build();
+
+        final Map<String, String> otherArgs =
+            ImmutableMap.of("arg1", "val1", "arg2", "val2");
+        final Boolean wait = false;
+
+
+
+
+        when(mockScriptService.getByScriptId(scriptId))
+            .thenReturn(script)
+            .thenReturn(null);
+
+        // TODO
+//        when(mockImageMetadataService.getByType(scriptContext))
+//            .thenReturn(metadata);
+
+
+        // TODO
+        when(mockContainerControlApi.launchImage(null, null, null))
+            .thenReturn("ok");
+
+        assertEquals("ok", service.launchFromScript(scriptId, otherArgs, wait));
+    }
+
+    @Test
+    public void testGetContainerLogs() throws Exception {
+
+    }
+
+    @Test
+    public void testVerbContainer() throws Exception {
+
+    }
+
+    @Test
+    public void testGetHub() throws Exception {
+
+    }
+
+    @Test
+    public void testGetHubs() throws Exception {
+
+    }
+
+    @Test
+    public void testSetHub() throws Exception {
+
+    }
+
+    @Test
+    public void testSearch() throws Exception {
+
+    }
+
+    @Test
+    public void testPullByName() throws Exception {
+
+    }
+
+    @Test
+    public void testPullFromSource() throws Exception {
+
+    }
+
+    @Test
+    public void testSetMetadataByName() throws Exception {
+
+    }
+
+    @Test
+    public void testSetMetadataById() throws Exception {
+
+    }
+
+    @Test
+    public void testSetMetadataById1() throws Exception {
+
     }
 }
