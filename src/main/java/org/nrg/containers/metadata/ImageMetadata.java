@@ -29,6 +29,8 @@ public class ImageMetadata extends AbstractHibernateEntity {
     @JsonProperty("xnat.mounts.in") private Set<String> mountsIn;
     @JsonProperty("xnat.mounts.out") private Set<String> mountsOut;
     @JsonProperty("xnat.args") private List<ImageMetadataArg> args;
+    @JsonProperty("xnat.type") private String type;
+    @JsonProperty("xnat.description") private String decription;
 
     @JsonProperty("xnat.metadata-version")
     public String version() {
@@ -96,6 +98,22 @@ public class ImageMetadata extends AbstractHibernateEntity {
 
     public void setArgs(final List<ImageMetadataArg> args) {
         this.args = args;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getDecription() {
+        return decription;
+    }
+
+    public void setDecription(String decription) {
+        this.decription = decription;
     }
 
     @Override

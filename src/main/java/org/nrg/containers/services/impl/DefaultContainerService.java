@@ -8,6 +8,7 @@ import org.nrg.containers.exceptions.NoHubException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.metadata.ImageMetadata;
+import org.nrg.containers.metadata.ImageMetadataArg;
 import org.nrg.containers.metadata.service.ImageMetadataService;
 import org.nrg.containers.model.Container;
 import org.nrg.containers.model.ContainerHub;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 public class DefaultContainerService implements ContainerService {
@@ -111,15 +113,20 @@ public class DefaultContainerService implements ContainerService {
         }
 
         final String context = script.getLanguage();
-        //TODO final ImageMetadata metadata = imageMetadataService.getByScriptingContext(context);
-        final ImageMetadata metadata = null;
+        final ImageMetadata metadata = imageMetadataService.getMetadataFromContext(context);
 
+        List<ImageMetadataArg> args = metadata.getArgs();
+        String description = metadata.getDecription();
+        String execution = metadata.getExecution();
+        String imageId = metadata.getImageId();
+        Set<String> mountsIn = metadata.getMountsIn();
+        Set<String> mountsOut = metadata.getMountsOut();
+        String type = metadata.getType();
         // Pull args from metadata
         // Resolve args from launchArguments
         // Use transporter to stage any files
 
 
-        final String imageId = null; // metadata.getImageId();
         final List<String> command = null;
         final List<String> volumes = null;
         return controlApi.launchImage(imageId, command, volumes);

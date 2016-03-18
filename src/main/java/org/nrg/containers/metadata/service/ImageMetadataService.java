@@ -12,4 +12,6 @@ public interface ImageMetadataService extends BaseHibernateService<ImageMetadata
     List<ImageMetadata> getByImageId(String imageId);
 
     void setMetadata(Image image, ImageMetadata metadata, String project, Boolean overwrite, Boolean ignoreBlank);
+
+    ImageMetadata getMetadataFromContext(String context);
 }
