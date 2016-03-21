@@ -2,38 +2,33 @@ package org.nrg.containers.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Objects;
+import org.nrg.prefs.annotations.NrgPreference;
+import org.nrg.prefs.annotations.NrgPreferenceBean;
+import org.nrg.prefs.beans.AbstractPreferenceBean;
+import org.nrg.prefs.exceptions.InvalidPreferenceName;
 
-public class ContainerServer {
-    private String _host;
-    private String _certPath;
-
+@NrgPreferenceBean(toolId = "container", toolName = "Container Prefs", description = "All the preferences for the Container Service")
+public class ContainerServer extends AbstractPreferenceBean {
     public ContainerServer() {}
 
-    public ContainerServer(final String host) {
-        setHost(host);
-        setCertPath(null);
-    }
-    public ContainerServer(final String host, final String certPath) {
-        setHost(host);
-        setCertPath(certPath);
-    }
-
+    @NrgPreference
     @JsonProperty("host")
-    public String host() {
-        return _host;
+    public String getHost() {
+        return getValue("host");
     }
 
-    public void setHost(final String host) {
-        _host = host;
+    public void setHost(final String host) throws InvalidPreferenceName {
+        set(host, "host");
     }
 
+    @NrgPreference
     @JsonProperty("certPath")
-    public String certPath() {
-        return _certPath;
+    public String getCertPath() {
+        return getValue("certPath");
     }
 
-    public void setCertPath(final String certPath) {
-        _certPath = certPath;
+    public void setCertPath(final String certPath) throws InvalidPreferenceName {
+        set(certPath, "certPath");
     }
 
     @Override
@@ -47,12 +42,12 @@ public class ContainerServer {
 
         ContainerServer that = (ContainerServer) o;
 
-        return Objects.equal(this._host, that._host) &&
-                Objects.equal(this._certPath, that._certPath);
+        return Objects.equal(this.getHost(), that.getHost()) &&
+                Objects.equal(this.getCertPath(), that.getCertPath());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(_host, _certPath);
+        return Objects.hashCode(getHost(), getCertPath());
     }
 }
