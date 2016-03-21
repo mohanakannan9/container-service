@@ -213,12 +213,12 @@ public class DefaultContainerServiceTest {
             .thenReturn(null);
 
         // TODO
-//        when(mockImageMetadataService.getByType(scriptContext))
-//            .thenReturn(metadata);
+        when(mockImageMetadataService.getMetadataFromContext(scriptContext))
+            .thenReturn(metadata);
 
 
         // TODO
-        when(mockContainerControlApi.launchImage(null, null, null))
+        when(mockContainerControlApi.launchImage("bar", null, null))
             .thenReturn("ok");
 
         assertEquals("ok", service.launchFromScript(scriptId, otherArgs, wait));
