@@ -48,7 +48,7 @@ public class DockerControlApiTest {
 
     private static final String IMAGE1 = "busybox:latest";
     private static final String IMAGE2 = "ubuntu:latest";
-    private static final String IMAGE3 = "kelseym/pydicom:0.0.2";
+    private static final String IMAGE3 = "kelseym/pydicom:latest";
 
     @Autowired
     private DockerControlApi controlApi;
@@ -127,14 +127,34 @@ public class DockerControlApiTest {
     public void testLaunchImage() throws Exception {
         List cmd = new ArrayList<String>();
         cmd.add("ls");
-        cmd.add("/data");
+        cmd.add("/data/pyscript.py");
         List vol = new ArrayList<String>();
-        vol.add("/data:/Users/Kelsey/Projects/XNAT/1.7/pydicomDocker/data");
+        vol.add("/Users/Kelsey/Projects/XNAT/1.7/pydicomDocker/data:/data");
 
         client.pull(IMAGE3);
         String containerId = controlApi.launchImage(IMAGE3, cmd, vol);
     }
 
+    @Test
+    public void testLaunchPythonScript() throws Exception {
+       // python pyscript.py -h <hostname> -u <user> -p <password> -s <session_id>
+        List cmd = new ArrayList<String>();
+        cmd.add("python");
+        cmd.add("/data/pyscript.py");
+        cmd.add("-h");
+        cmd.add("https://central.xnat.org");
+        cmd.add("-u");
+        cmd.add("admin");
+        cmd.add("-p");
+        cmd.add("admin");
+        cmd.add("s");
+        cmd.add("CENTRAL_E07096");
+        List vol = new ArrayList<String>();
+        vol.add("/Users/Kelsey/Projects/XNAT/1.7/pydicomDocker/data:/data");
+
+        client.pull(IMAGE3);
+        String containerId = controlApi.launchImage(IMAGE3, cmd, vol);
+    }
 }
 
 
