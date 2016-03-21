@@ -4,8 +4,10 @@ import org.mockito.Mockito;
 import org.nrg.automation.services.ScriptService;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.metadata.service.ImageMetadataService;
+import org.nrg.containers.model.ContainerServer;
 import org.nrg.containers.services.ContainerService;
 import org.nrg.containers.services.impl.DefaultContainerService;
+import org.nrg.transporter.TransportService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
@@ -26,6 +28,16 @@ public class DefaultContainerServiceTestConfig {
     @Bean
     public ScriptService mockScriptService() {
         return Mockito.mock(ScriptService.class);
+    }
+
+    @Bean
+    public ContainerServer mockContainerServer() {
+        return Mockito.mock(ContainerServer.class);
+    }
+
+    @Bean
+    public TransportService mockTransportService() {
+        return Mockito.mock(TransportService.class);
     }
 
     @Bean

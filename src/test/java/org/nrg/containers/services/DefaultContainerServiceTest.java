@@ -38,7 +38,7 @@ import static org.mockito.Mockito.when;
 public class DefaultContainerServiceTest {
     final static String MOCK_CONTAINER_HOST = "fake://host.url";
     final static String MOCK_CONTAINER_CERT_PATH = "/path/to/file";
-    final static ContainerServer MOCK_CONTAINER_SERVER = new ContainerServer(MOCK_CONTAINER_HOST, MOCK_CONTAINER_CERT_PATH);
+    ;
 
     final NotFoundException NOT_FOUND_EXCEPTION = new NotFoundException("Some cool message");
 
@@ -52,6 +52,9 @@ public class DefaultContainerServiceTest {
     private ScriptService mockScriptService;
 
     @Autowired
+    private ContainerServer mockContainerServer;
+
+    @Autowired
     private ContainerService service;
 
     @Rule
@@ -59,15 +62,18 @@ public class DefaultContainerServiceTest {
 
     @Before
     public void setup() throws Exception {
+        when(mockContainerServer.getHost()).thenReturn(MOCK_CONTAINER_HOST);
+        when(mockContainerServer.getCertPath()).thenReturn(MOCK_CONTAINER_CERT_PATH);
+
         when(mockContainerControlApi.getServer())
-                .thenReturn(MOCK_CONTAINER_SERVER);
+                .thenReturn(mockContainerServer);
     }
 
     @Test
     public void testGetServer() throws Exception {
         // No need to mock method here, because we mocked it in setup()
         final ContainerServer containerServer = service.getServer();
-        assertEquals(containerServer, MOCK_CONTAINER_SERVER);
+        assertEquals(containerServer, mockContainerServer);
     }
 
 //    @Test

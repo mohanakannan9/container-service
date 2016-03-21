@@ -1,5 +1,6 @@
 package org.nrg.containers.api.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
@@ -13,8 +14,6 @@ import org.junit.runner.RunWith;
 import org.nrg.containers.config.DockerControlApiTestConfig;
 import org.nrg.containers.model.ContainerServer;
 import org.nrg.containers.model.Image;
-import org.nrg.prefs.entities.Preference;
-import org.nrg.prefs.services.PreferenceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -32,18 +31,12 @@ import static org.mockito.Mockito.when;
 @ContextConfiguration(classes = DockerControlApiTestConfig.class)
 public class DockerControlApiTest {
 
-    final static String SERVER_PREF_TOOL_ID = "container";
-    final static String SERVER_PREF_NAME = "server";
-    final static String CERT_PATH_PREF_NAME = "certpath";
-
     // Local docker-machine based VM
 //    final static String MOCK_CONTAINER_HOST = "https://192.168.99.100:2376";
     final static String MOCK_CONTAINER_HOST = System.getenv("DOCKER_HOST").replace("tcp", "https");
 //    final static String MOCK_CERT_PATH = "/Users/Kelsey/.docker/machine/machines/testDocker";
     final static String MOCK_CERT_PATH = System.getenv("DOCKER_CERT_PATH");
 
-    final static Preference MOCK_PREFERENCE_ENTITY_HOST = new Preference();
-    final static Preference MOCK_PREFERENCE_ENTITY_CERT = new Preference();
 
     private static DockerClient client;
 
@@ -55,22 +48,15 @@ public class DockerControlApiTest {
     private DockerControlApi controlApi;
 
     @Autowired
-    private PreferenceService mockPrefsService;
+    private ContainerServer mockContainerServer;
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
     @Before
     public void setup() throws Exception {
-        MOCK_PREFERENCE_ENTITY_HOST.setValue(MOCK_CONTAINER_HOST);
-        when(mockPrefsService.getPreference(
-                SERVER_PREF_TOOL_ID,
-                SERVER_PREF_NAME)).thenReturn(MOCK_PREFERENCE_ENTITY_HOST);
-
-        MOCK_PREFERENCE_ENTITY_CERT.setValue(MOCK_CERT_PATH);
-        when(mockPrefsService.getPreference(
-                SERVER_PREF_TOOL_ID,
-                CERT_PATH_PREF_NAME)).thenReturn(MOCK_PREFERENCE_ENTITY_CERT);
+        when(mockContainerServer.getHost()).thenReturn(MOCK_CONTAINER_HOST);
+        when(mockContainerServer.getCertPath()).thenReturn(MOCK_CERT_PATH);
 
         client = controlApi.getClient();
     }
@@ -82,12 +68,13 @@ public class DockerControlApiTest {
 
     @Test
     public void testGetServer() throws Exception {
-        final ContainerServer expectedServer =
-            new ContainerServer(MOCK_CONTAINER_HOST, MOCK_CERT_PATH);
+        final ObjectMapper mapper = new ObjectMapper();
+        final String containerServerJson =
+            "{\"host\":\""+ MOCK_CONTAINER_HOST + "\", \"certPath\":\"" +
+                MOCK_CERT_PATH + "\"}";
+        final ContainerServer expectedServer = mapper.readValue(containerServerJson, ContainerServer.class);
 
-        final ContainerServer server = controlApi.getServer();
-
-        assertEquals(expectedServer, server);
+        assertEquals(expectedServer, controlApi.getServer());
     }
 
     @Test

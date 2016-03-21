@@ -1,6 +1,7 @@
 package org.nrg.containers.config;
 
 import org.mockito.Mockito;
+import org.nrg.containers.model.ContainerServer;
 import org.nrg.containers.services.ContainerService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -14,5 +15,10 @@ public class RestApiTestConfig {
     @Bean
     public ContainerService mockContainerService() {
         return Mockito.mock(ContainerService.class);
+    }
+
+    @Bean
+    public ContainerServer mockContainerServer() {
+        return Mockito.mock(ContainerServer.class);
     }
 }

@@ -66,6 +66,9 @@ public class ContainersApiTest {
     @Autowired
     private ContainerService service;
 
+    @Autowired
+    private ContainerServer containerServer;
+
     @Before
     public void setup() {
         mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
@@ -258,7 +261,7 @@ public class ContainersApiTest {
     @Test
     public void testGetServer() throws Exception {
         final String server = "http://foo.bar:123";
-        final ContainerServer containerServer = new ContainerServer(server);
+        final ContainerServer containerServer = new ContainerServer();
 
         final String path = "/containers/server";
 
@@ -287,14 +290,15 @@ public class ContainersApiTest {
 
     @Test
     public void testSetServer() throws Exception {
-        final ContainerServer server = new ContainerServer("http://foo.bar:123");
-        final String postBody = mapper.writeValueAsString(server);
+        final String containerServerJson =
+            "{\"host\":\"http://abc.123\", \"certPath\":\"/path/to/thing\"}";
+        final ContainerServer server = mapper.readValue(containerServerJson, ContainerServer.class);
 
         final String path = "/containers/server";
 
         // REQUEST 0: No "onServer" param (defaults to false)
         final MockHttpServletRequestBuilder request =
-                post(path).content(postBody).contentType(JSON);
+                post(path).content(containerServerJson).contentType(JSON);
 
         doNothing().when(service).setServer(server); // Have to use a different mocking syntax when method returns void
 
