@@ -208,7 +208,7 @@ public class ContainersApi {
                                final @PathVariable("scriptId") String scriptId,
                            final @RequestBody Map<String, String> launchArguments,
                            final @RequestParam(name = "wait", defaultValue = "false") Boolean wait)
-            throws NoServerPrefException, NotFoundException, ContainerServerException {
+        throws Exception {
         _log.debug(String.format("%s: scriptId %s, args %s", "launchFromScript", scriptId, launchArguments));
         return service.launchFromScript(scriptId, launchArguments, wait);
     }

@@ -6,6 +6,7 @@ import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Container;
 import org.nrg.containers.model.ContainerServer;
 import org.nrg.containers.model.Image;
+import org.nrg.prefs.exceptions.InvalidPreferenceName;
 
 import java.util.List;
 import java.util.Map;
@@ -28,4 +29,6 @@ public interface ContainerControlApi {
     String getContainerStatus(final String id) throws NotFoundException;
 
     String launchImage(final String imageName, final List<String> runCommand, final List <String> volumes);
+
+    void setServer(String host) throws InvalidPreferenceName;
 }
