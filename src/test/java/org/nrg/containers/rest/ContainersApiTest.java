@@ -287,8 +287,8 @@ public class ContainersApiTest {
 
     @Test
     public void testSetServer() throws Exception {
-        final String server = "http://foo.bar:123";
-        final String postBody = "{\"host\":\"" + server + "\"}";
+        final ContainerServer server = new ContainerServer("http://foo.bar:123");
+        final String postBody = mapper.writeValueAsString(server);
 
         final String path = "/containers/server";
 

@@ -2,7 +2,7 @@ package org.nrg.containers.api.impl;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
+import com.google.common.io.Resources;
 import com.spotify.docker.client.DockerClient;
 import org.junit.After;
 import org.junit.Before;
@@ -21,12 +21,11 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.isIn;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.contains;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -38,17 +37,19 @@ public class DockerControlApiTest {
     final static String CERT_PATH_PREF_NAME = "certpath";
 
     // Local docker-machine based VM
-    final static String MOCK_CONTAINER_HOST = "https://192.168.99.100:2376";
-    final static String MOCK_CERT_PATH = "/Users/Kelsey/.docker/machine/machines/testDocker";
+//    final static String MOCK_CONTAINER_HOST = "https://192.168.99.100:2376";
+    final static String MOCK_CONTAINER_HOST = System.getenv("DOCKER_HOST").replace("tcp", "https");
+//    final static String MOCK_CERT_PATH = "/Users/Kelsey/.docker/machine/machines/testDocker";
+    final static String MOCK_CERT_PATH = System.getenv("DOCKER_CERT_PATH");
 
     final static Preference MOCK_PREFERENCE_ENTITY_HOST = new Preference();
     final static Preference MOCK_PREFERENCE_ENTITY_CERT = new Preference();
 
     private static DockerClient client;
 
-    private static final String IMAGE1 = "busybox:latest";
-    private static final String IMAGE2 = "ubuntu:latest";
-    private static final String IMAGE3 = "kelseym/pydicom:latest";
+    private static final String BUSYBOX_LATEST = "busybox:latest";
+    private static final String UBUNTU_LATEST = "ubuntu:latest";
+    private static final String KELSEYM_PYDICOM = "kelseym/pydicom:latest";
 
     @Autowired
     private DockerControlApi controlApi;
@@ -81,34 +82,38 @@ public class DockerControlApiTest {
 
     @Test
     public void testGetServer() throws Exception {
+        final ContainerServer expectedServer =
+            new ContainerServer(MOCK_CONTAINER_HOST, MOCK_CERT_PATH);
+
         final ContainerServer server = controlApi.getServer();
-        assertEquals(server.host(), MOCK_CONTAINER_HOST);
-        assertEquals(server.certPath(), MOCK_CERT_PATH);
 
-
+        assertEquals(expectedServer, server);
     }
+
     @Test
     public void testGetImageByName() throws Exception {
-        client.pull(IMAGE1);
-        final Image image = controlApi.getImageByName(IMAGE1);
-        assertThat(image.getName(), containsString(IMAGE1));
+        client.pull(BUSYBOX_LATEST);
+        final Image image = controlApi.getImageByName(BUSYBOX_LATEST);
+        assertThat(image.getName(), containsString(BUSYBOX_LATEST));
     }
 
     @Test
     public void testGetAllImages() throws Exception {
-        client.pull(IMAGE1);
-        client.pull(IMAGE2);
+        client.pull(BUSYBOX_LATEST);
+        client.pull(UBUNTU_LATEST);
         final List<Image> images = controlApi.getAllImages();
 
         final List<String> imageNames = imagesToTags(images);
-        assertThat(IMAGE1, isIn(imageNames));
-        assertThat(IMAGE2, isIn(imageNames));
+        assertThat(BUSYBOX_LATEST, isIn(imageNames));
+        assertThat(UBUNTU_LATEST, isIn(imageNames));
     }
 
     private List<String> imagesToTags(final List<Image> images) {
-        List<String> tags = Lists.newArrayList();
-        for (Image image : images){
-           tags.addAll(image.getRepoTags());
+        final List<String> tags = Lists.newArrayList();
+        for (Image image : images) {
+            if (image.getRepoTags() != null) {
+                tags.addAll(image.getRepoTags());
+            }
         }
         return tags;
     }
@@ -131,8 +136,8 @@ public class DockerControlApiTest {
         List vol = new ArrayList<String>();
         vol.add("/Users/Kelsey/Projects/XNAT/1.7/pydicomDocker/data:/data");
 
-        client.pull(IMAGE3);
-        String containerId = controlApi.launchImage(IMAGE3, cmd, vol);
+        client.pull(KELSEYM_PYDICOM);
+        String containerId = controlApi.launchImage(KELSEYM_PYDICOM, cmd, vol);
     }
 
     @Test
@@ -152,8 +157,8 @@ public class DockerControlApiTest {
         List vol = new ArrayList<String>();
         vol.add("/Users/Kelsey/Projects/XNAT/1.7/pydicomDocker/data:/data");
 
-        client.pull(IMAGE3);
-        String containerId = controlApi.launchImage(IMAGE3, cmd, vol);
+        client.pull(KELSEYM_PYDICOM);
+        String containerId = controlApi.launchImage(KELSEYM_PYDICOM, cmd, vol);
     }
 }
 

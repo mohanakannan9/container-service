@@ -2,10 +2,12 @@ package org.nrg.containers.services.impl;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
+import com.spotify.docker.client.DockerException;
 import org.nrg.automation.entities.Script;
 import org.nrg.automation.services.ScriptService;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.exceptions.ContainerServerException;
+import org.nrg.containers.exceptions.ImageMetadataException;
 import org.nrg.containers.exceptions.NoHubException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
@@ -192,9 +194,8 @@ public class DefaultContainerService implements ContainerService {
 
     @Override
     public String getContainerLogs(final String id)
-            throws NoServerPrefException, NotFoundException, ContainerServerException {
-        // TODO
-        return null;
+        throws NoServerPrefException, NotFoundException, ContainerServerException, DockerException, InterruptedException {
+        return controlApi.getContainerLogs(id);
     }
 
     @Override
@@ -263,8 +264,8 @@ public class DefaultContainerService implements ContainerService {
     }
 
     @Override
-    public void setServer(String host) throws InvalidPreferenceName {
-        controlApi.setServer(host);
+    public void setServer(final ContainerServer server) throws InvalidPreferenceName {
+        controlApi.setServer(server.host(), server.certPath());
     }
 
     @Override

@@ -1,5 +1,6 @@
 package org.nrg.containers.rest;
 
+import com.spotify.docker.client.DockerException;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -139,7 +140,7 @@ public class ContainersApi {
     @ResponseBody
     public String getContainerLogs(@ApiParam(value = "Get logs of container with this ID", required = true)
                                        final @PathVariable("id") String id)
-            throws NotFoundException, NoServerPrefException, ContainerServerException {
+        throws NotFoundException, NoServerPrefException, ContainerServerException, DockerException, InterruptedException {
         return service.getContainerLogs(id);
     }
 
@@ -233,7 +234,7 @@ public class ContainersApi {
     @RequestMapping(value = "/server", method = POST)
     @ResponseBody
     public void setServer(final @RequestBody ContainerServer containerServer) throws InvalidPreferenceName {
-        service.setServer(containerServer.host());
+        service.setServer(containerServer);
     }
 
     @RequestMapping(value = "/hubs", method = GET, produces = {JSON, PLAIN_TEXT})
