@@ -40,7 +40,7 @@ public interface ContainerService {
             throws NoServerPrefException, NotFoundException, ContainerServerException;
 
 
-    String launchFromScript(String scriptId, Map<String, String> launchArguments, Boolean wait) throws NotFoundException, NoServerPrefException;
+    String launchFromScript(String scriptId, Map<String, String> launchArguments, Boolean wait) throws Exception;
 
     String getContainerLogs(String id) throws NoServerPrefException, NotFoundException, ContainerServerException, DockerException, InterruptedException;
 

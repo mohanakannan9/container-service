@@ -13,8 +13,8 @@ import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
 import com.spotify.docker.client.messages.ContainerInfo;
 import com.spotify.docker.client.messages.HostConfig;
-import com.spotify.docker.client.messages.ImageSearchResult;
 import com.spotify.docker.client.messages.ImageInfo;
+import com.spotify.docker.client.messages.ImageSearchResult;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.exceptions.ContainerServerException;
@@ -23,29 +23,23 @@ import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Container;
 import org.nrg.containers.model.ContainerServer;
 import org.nrg.containers.model.Image;
-import org.nrg.prefs.entities.Preference;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
-import org.nrg.prefs.services.PreferenceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
-import java.nio.file.Paths;
 
 @Service
 public class DockerControlApi implements ContainerControlApi {
     private static final Logger _log = LoggerFactory.getLogger(DockerControlApi.class);
 
-    public static String SERVER_PREF_TOOL_ID = "container";
-    public static String SERVER_PREF_NAME = "server";
-    public static String CERT_PATH_PREF_NAME = "certpath";
-
     @Autowired
     @SuppressWarnings("SpringJavaAutowiringInspection") // IntelliJ does not process the excludeFilter in ContainerServiceConfig @ComponentScan, erroneously marks this red
-    private PreferenceService prefsService;
+    private ContainerServer containerServer;
 
     /**
      * Query Docker server for all images
@@ -93,13 +87,10 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     public ContainerServer getServer() throws NoServerPrefException {
-
-        final Preference serverPref = prefsService.getPreference(SERVER_PREF_TOOL_ID, SERVER_PREF_NAME);
-        final Preference certPathPref = prefsService.getPreference(SERVER_PREF_TOOL_ID, CERT_PATH_PREF_NAME);
-        if (serverPref == null || StringUtils.isBlank(serverPref.getValue())) {
+        if (containerServer == null || containerServer.getHost() == null) {
             throw new NoServerPrefException("No container server URI defined in preferences.");
         }
-        return new ContainerServer(serverPref.getValue(), certPathPref.getValue());
+        return containerServer;
     }
 
     public void setServer(final String host) throws InvalidPreferenceName {
@@ -107,8 +98,13 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     public void setServer(final String host, final String certPath) throws InvalidPreferenceName {
-        prefsService.setPreference(SERVER_PREF_TOOL_ID, SERVER_PREF_NAME, host);
-        prefsService.setPreference(SERVER_PREF_TOOL_ID, CERT_PATH_PREF_NAME, certPath);
+        containerServer.setHost(host);
+        containerServer.setCertPath(certPath);
+    }
+
+    public void setServer(final ContainerServer server) throws InvalidPreferenceName {
+        containerServer.setHost(server.getHost());
+        containerServer.setCertPath(server.getCertPath());
     }
 
 
@@ -347,15 +343,14 @@ public class DockerControlApi implements ContainerControlApi {
      * @return DockerClient object
      **/
     public DockerClient getClient() throws NoServerPrefException {
-        ContainerServer dockerServer = getServer();
         if (_log.isDebugEnabled()) {
-            _log.debug("method getClient, Create server connection, server " + dockerServer.host());
+            _log.debug("method getClient, Create server connection, server " + containerServer.getHost());
         }
         DockerClient client = null;
         try {
             client = DefaultDockerClient.builder()
-                    .uri(dockerServer.host())
-                    .dockerCertificates(new DockerCertificates(Paths.get(dockerServer.certPath())))
+                    .uri(containerServer.getHost())
+                    .dockerCertificates(new DockerCertificates(Paths.get(containerServer.getCertPath())))
                     .build();
         } catch (DockerCertificateException e) {
             e.printStackTrace();

@@ -17,6 +17,8 @@ public interface ContainerControlApi {
 
     void setServer(String host, String certPath) throws InvalidPreferenceName;
 
+    void setServer(ContainerServer server) throws InvalidPreferenceName;
+
     List<Image> getAllImages() throws NoServerPrefException;
 
     Image getImageByName(final String imageName) throws ContainerServerException, NotFoundException, NoServerPrefException;

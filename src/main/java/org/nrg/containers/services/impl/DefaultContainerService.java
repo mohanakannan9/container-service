@@ -1,13 +1,12 @@
 package org.nrg.containers.services.impl;
 
 import com.google.common.collect.Lists;
-import org.apache.commons.io.FileUtils;
 import com.spotify.docker.client.DockerException;
+import org.apache.commons.io.FileUtils;
 import org.nrg.automation.entities.Script;
 import org.nrg.automation.services.ScriptService;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.exceptions.ContainerServerException;
-import org.nrg.containers.exceptions.ImageMetadataException;
 import org.nrg.containers.exceptions.NoHubException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
@@ -169,7 +168,7 @@ public class DefaultContainerService implements ContainerService {
 
 
         // Transport files
-        final String server = controlApi.getServer().host();
+        final String server = controlApi.getServer().getHost();
         final List<Path> paths = transportService.transport(server, session);
 
         final Calendar cal = Calendar.getInstance();
@@ -265,7 +264,7 @@ public class DefaultContainerService implements ContainerService {
 
     @Override
     public void setServer(final ContainerServer server) throws InvalidPreferenceName {
-        controlApi.setServer(server.host(), server.certPath());
+        controlApi.setServer(server);
     }
 
     @Override

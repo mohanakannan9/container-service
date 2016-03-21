@@ -6,6 +6,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import org.nrg.containers.exceptions.BadRequestException;
 import org.nrg.containers.exceptions.ContainerServerException;
 import org.nrg.containers.exceptions.NoHubException;
 import org.nrg.containers.exceptions.NoServerPrefException;
@@ -233,7 +234,10 @@ public class ContainersApi {
 
     @RequestMapping(value = "/server", method = POST)
     @ResponseBody
-    public void setServer(final @RequestBody ContainerServer containerServer) throws InvalidPreferenceName {
+    public void setServer(final @RequestBody ContainerServer containerServer) throws InvalidPreferenceName, BadRequestException {
+        if (containerServer.getHost() == null || containerServer.getHost().equals("")) {
+            throw new BadRequestException("Must set the \"host\" property in request body.");
+        }
         service.setServer(containerServer);
     }
 
