@@ -1,6 +1,9 @@
 package org.nrg.containers.model;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSetter;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
@@ -11,12 +14,18 @@ import org.nrg.prefs.exceptions.InvalidPreferenceName;
 public class ContainerServer extends AbstractPreferenceBean {
     public ContainerServer() {}
 
+    public ContainerServer(final ContainerServerJson csJson) throws InvalidPreferenceName {
+        setHost(csJson.getHost());
+        setCertPath(csJson.getCertPath());
+    }
+
     @NrgPreference
-    @JsonProperty("host")
+    @JsonGetter("host")
     public String getHost() {
         return getValue("host");
     }
 
+    @JsonSetter("host")
     public void setHost(final String host) throws InvalidPreferenceName {
         set(host, "host");
     }
@@ -27,8 +36,17 @@ public class ContainerServer extends AbstractPreferenceBean {
         return getValue("certPath");
     }
 
+    @JsonSetter("certPath")
     public void setCertPath(final String certPath) throws InvalidPreferenceName {
         set(certPath, "certPath");
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+            .add("host", getHost())
+            .add("certPath", getCertPath())
+            .toString();
     }
 
     @Override
