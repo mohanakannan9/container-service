@@ -6,18 +6,16 @@ import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.beans.AbstractPreferenceBean;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @NrgPreferenceBean(toolId = "container", toolName = "Container Prefs", description = "All the preferences for the Container Service")
 public class ContainerServerPrefsBean extends AbstractPreferenceBean {
+    private static final Logger _log = LoggerFactory.getLogger(ContainerServerPrefsBean.class);
 
     public void setFromBean(final ContainerServer csBean) throws InvalidPreferenceName {
-        if (csBean.host() != null) {
-            setHost(csBean.host());
-        }
-
-        if (csBean.certPath() != null) {
-            setCertPath(csBean.certPath());
-        }
+        setHost(csBean.host());
+        setCertPath(csBean.certPath());
     }
 
     public ContainerServer toBean() {
@@ -30,7 +28,10 @@ public class ContainerServerPrefsBean extends AbstractPreferenceBean {
     }
 
     public void setHost(final String host) throws InvalidPreferenceName {
-        set(host, "host");
+        _log.debug("Setting host: " + host);
+        if (host != null) {
+            set(host, "host");
+        }
     }
 
     @NrgPreference
@@ -39,7 +40,10 @@ public class ContainerServerPrefsBean extends AbstractPreferenceBean {
     }
 
     public void setCertPath(final String certPath) throws InvalidPreferenceName {
-        set(certPath, "certPath");
+        _log.debug("Setting certPath: " + certPath);
+        if (certPath != null) {
+            set(certPath, "certPath");
+        }
     }
 
     @Override

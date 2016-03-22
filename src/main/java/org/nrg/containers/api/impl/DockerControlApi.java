@@ -343,19 +343,27 @@ public class DockerControlApi implements ContainerControlApi {
      * @return DockerClient object
      **/
     public DockerClient getClient() throws NoServerPrefException {
+        final ContainerServer server = getServer();
+
         if (_log.isDebugEnabled()) {
-            _log.debug("method getClient, Create server connection, server " + containerServerPref.getHost());
+            _log.debug("method getClient, Create server connection, server " + server.host());
         }
-        DockerClient client = null;
-        try {
-            client = DefaultDockerClient.builder()
-                    .uri(containerServerPref.getHost())
-                    .dockerCertificates(new DockerCertificates(Paths.get(containerServerPref.getCertPath())))
-                    .build();
-        } catch (DockerCertificateException e) {
-            e.printStackTrace();
+
+        DefaultDockerClient.Builder clientBuilder =
+            DefaultDockerClient.builder()
+                .uri(server.host());
+
+        if (server.certPath() != null && !server.certPath().equals("")) {
+            try {
+                final DockerCertificates certificates =
+                    new DockerCertificates(Paths.get(server.certPath()));
+                clientBuilder = clientBuilder.dockerCertificates(certificates);
+            } catch (DockerCertificateException e) {
+                _log.error("Could not find docker certificates at " + server.certPath(), e);
+            }
         }
-        return client;
+
+        return clientBuilder.build();
     }
 
     public DockerClient getClientFromEnv() throws DockerCertificateException {
