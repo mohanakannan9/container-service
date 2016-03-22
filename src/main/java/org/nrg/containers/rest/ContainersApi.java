@@ -235,7 +235,7 @@ public class ContainersApi {
     @RequestMapping(value = "/server", method = POST)
     @ResponseBody
     public void setServer(final @RequestBody ContainerServer containerServer) throws InvalidPreferenceName, BadRequestException {
-        if (containerServer.getHost() == null || containerServer.getHost().equals("")) {
+        if (containerServer.host() == null || containerServer.host().equals("")) {
             throw new BadRequestException("Must set the \"host\" property in request body.");
         }
         service.setServer(containerServer);

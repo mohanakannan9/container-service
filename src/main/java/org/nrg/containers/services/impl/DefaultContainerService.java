@@ -166,7 +166,7 @@ public class DefaultContainerService implements ContainerService {
 
 
         // Transport files
-        final String server = controlApi.getServer().getHost();
+        final String server = controlApi.getServer().host();
         final List<Path> paths = transportService.transport(server, session);
 
         final Calendar cal = Calendar.getInstance();

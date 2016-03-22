@@ -55,8 +55,8 @@ public class DefaultContainerServiceTest {
 
     @Before
     public void setup() throws Exception {
-//        when(mockContainerServerPrefBean.getHost()).thenReturn(MOCK_CONTAINER_HOST);
-//        when(mockContainerServerPrefBean.getCertPath()).thenReturn(MOCK_CONTAINER_CERT_PATH);
+//        when(mockContainerServerPrefBean.host()).thenReturn(MOCK_CONTAINER_HOST);
+//        when(mockContainerServerPrefBean.certPath()).thenReturn(MOCK_CONTAINER_CERT_PATH);
 
         when(mockContainerControlApi.getServer())
                 .thenReturn(MOCK_CONTAINER_SERVER);

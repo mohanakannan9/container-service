@@ -1,10 +1,11 @@
 package org.nrg.containers.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Objects;
 
 public class ContainerServer {
-    private String host;
-    private String certPath;
+    @JsonProperty("host") private String host;
+    @JsonProperty("certPath") private String certPath;
 
     public ContainerServer() {}
 
@@ -13,19 +14,19 @@ public class ContainerServer {
         this.certPath = certPath;
     }
 
-    public String getHost() {
+    public String host() {
         return host;
     }
 
-    public void setHost(final String host) {
+    public void host(final String host) {
         this.host = host;
     }
 
-    public String getCertPath() {
+    public String certPath() {
         return certPath;
     }
 
-    public void setCertPath(final String certPath) {
+    public void certPath(final String certPath) {
         this.certPath = certPath;
     }
 
