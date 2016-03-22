@@ -4,7 +4,7 @@ import org.mockito.Mockito;
 import org.nrg.automation.services.ScriptService;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.metadata.service.ImageMetadataService;
-import org.nrg.containers.model.ContainerServer;
+import org.nrg.containers.model.ContainerServerPrefsBean;
 import org.nrg.containers.services.ContainerService;
 import org.nrg.containers.services.impl.DefaultContainerService;
 import org.nrg.transporter.TransportService;
@@ -31,8 +31,8 @@ public class DefaultContainerServiceTestConfig {
     }
 
     @Bean
-    public ContainerServer mockContainerServer() {
-        return Mockito.mock(ContainerServer.class);
+    public ContainerServerPrefsBean mockContainerServer() {
+        return Mockito.mock(ContainerServerPrefsBean.class);
     }
 
     @Bean

@@ -22,6 +22,7 @@ import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Container;
 import org.nrg.containers.model.ContainerServer;
+import org.nrg.containers.model.ContainerServerPrefsBean;
 import org.nrg.containers.model.Image;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.slf4j.Logger;
@@ -39,7 +40,7 @@ public class DockerControlApi implements ContainerControlApi {
 
     @Autowired
     @SuppressWarnings("SpringJavaAutowiringInspection") // IntelliJ does not process the excludeFilter in ContainerServiceConfig @ComponentScan, erroneously marks this red
-    private ContainerServer containerServer;
+    private ContainerServerPrefsBean containerServerPref;
 
     /**
      * Query Docker server for all images
@@ -87,10 +88,10 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     public ContainerServer getServer() throws NoServerPrefException {
-        if (containerServer == null || containerServer.getHost() == null) {
+        if (containerServerPref == null || containerServerPref.getHost() == null) {
             throw new NoServerPrefException("No container server URI defined in preferences.");
         }
-        return containerServer;
+        return containerServerPref.toBean();
     }
 
     public void setServer(final String host) throws InvalidPreferenceName {
@@ -98,13 +99,12 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     public void setServer(final String host, final String certPath) throws InvalidPreferenceName {
-        containerServer.setHost(host);
-        containerServer.setCertPath(certPath);
+        containerServerPref.setHost(host);
+        containerServerPref.setCertPath(certPath);
     }
 
-    public void setServer(final ContainerServer server) throws InvalidPreferenceName {
-        containerServer.setHost(server.getHost());
-        containerServer.setCertPath(server.getCertPath());
+    public void setServer(final ContainerServer serverBean) throws InvalidPreferenceName {
+        containerServerPref.setFromBean(serverBean);
     }
 
 
@@ -344,13 +344,13 @@ public class DockerControlApi implements ContainerControlApi {
      **/
     public DockerClient getClient() throws NoServerPrefException {
         if (_log.isDebugEnabled()) {
-            _log.debug("method getClient, Create server connection, server " + containerServer.getHost());
+            _log.debug("method getClient, Create server connection, server " + containerServerPref.getHost());
         }
         DockerClient client = null;
         try {
             client = DefaultDockerClient.builder()
-                    .uri(containerServer.getHost())
-                    .dockerCertificates(new DockerCertificates(Paths.get(containerServer.getCertPath())))
+                    .uri(containerServerPref.getHost())
+                    .dockerCertificates(new DockerCertificates(Paths.get(containerServerPref.getCertPath())))
                     .build();
         } catch (DockerCertificateException e) {
             e.printStackTrace();

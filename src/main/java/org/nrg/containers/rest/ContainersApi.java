@@ -14,7 +14,6 @@ import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Container;
 import org.nrg.containers.model.ContainerHub;
 import org.nrg.containers.model.ContainerServer;
-import org.nrg.containers.model.ContainerServerJson;
 import org.nrg.containers.model.Image;
 import org.nrg.containers.services.ContainerService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
@@ -225,9 +224,9 @@ public class ContainersApi {
             @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = "/server", method = GET, produces = {JSON, PLAIN_TEXT})
     @ResponseBody
-    public ContainerServerJson getServer() throws NotFoundException {
+    public ContainerServer getServer() throws NotFoundException {
         try {
-            return ContainerServerJson.fromPrefBean(service.getServer());
+            return service.getServer();
         } catch (NoServerPrefException e) {
             throw new NotFoundException(e);
         }

@@ -1,9 +1,7 @@
 package org.nrg.containers.api.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
-import com.google.common.io.Resources;
 import com.spotify.docker.client.DockerClient;
 import org.junit.After;
 import org.junit.Before;
@@ -12,8 +10,9 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.nrg.containers.config.DockerControlApiTestConfig;
-import org.nrg.containers.model.ContainerServer;
+import org.nrg.containers.model.ContainerServerPrefsBean;
 import org.nrg.containers.model.Image;
+import org.nrg.prefs.services.NrgPreferenceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -25,18 +24,15 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.isIn;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = DockerControlApiTestConfig.class)
 public class DockerControlApiTest {
 
-    // Local docker-machine based VM
-//    final static String MOCK_CONTAINER_HOST = "https://192.168.99.100:2376";
-    final static String MOCK_CONTAINER_HOST = System.getenv("DOCKER_HOST").replace("tcp", "https");
-//    final static String MOCK_CERT_PATH = "/Users/Kelsey/.docker/machine/machines/testDocker";
-    final static String MOCK_CERT_PATH = System.getenv("DOCKER_CERT_PATH");
-
+    static String CONTAINER_HOST;
+    static String CERT_PATH ;
 
     private static DockerClient client;
 
@@ -48,15 +44,39 @@ public class DockerControlApiTest {
     private DockerControlApi controlApi;
 
     @Autowired
-    private ContainerServer mockContainerServer;
+    private ContainerServerPrefsBean containerServerPrefsBean;
+
+    @Autowired
+    private NrgPreferenceService mockPrefsService;
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
     @Before
     public void setup() throws Exception {
-        when(mockContainerServer.getHost()).thenReturn(MOCK_CONTAINER_HOST);
-        when(mockContainerServer.getCertPath()).thenReturn(MOCK_CERT_PATH);
+
+        final String hostEnv = System.getenv("DOCKER_HOST");
+        CONTAINER_HOST = hostEnv != null && !hostEnv.equals("") ?
+            hostEnv.replace("tcp", "https") :
+            "https://192.168.99.100:2376";
+        final String certPathEnv = System.getenv("DOCKER_CERT_PATH");
+        CERT_PATH = certPathEnv != null && !certPathEnv.equals("") ?
+            certPathEnv : "/Users/Kelsey/.docker/machine/machines/testDocker";
+
+        when(mockPrefsService.getPreferenceValue("container", "host"))
+            .thenReturn(CONTAINER_HOST);
+        when(mockPrefsService.getPreferenceValue("container", "certPath"))
+            .thenReturn(CERT_PATH);
+        doNothing().when(mockPrefsService)
+            .setPreferenceValue("container", "host", "");
+        doNothing().when(mockPrefsService)
+            .setPreferenceValue("container", "certPath", "");
+        when(mockPrefsService.hasPreference("container", "host"))
+            .thenReturn(true);
+        when(mockPrefsService.hasPreference("container", "certPath"))
+            .thenReturn(true);
+
+        containerServerPrefsBean.initialize(mockPrefsService);
 
         client = controlApi.getClient();
     }
@@ -68,13 +88,13 @@ public class DockerControlApiTest {
 
     @Test
     public void testGetServer() throws Exception {
-        final ObjectMapper mapper = new ObjectMapper();
-        final String containerServerJson =
-            "{\"host\":\""+ MOCK_CONTAINER_HOST + "\", \"certPath\":\"" +
-                MOCK_CERT_PATH + "\"}";
-        final ContainerServer expectedServer = mapper.readValue(containerServerJson, ContainerServer.class);
+//        final ObjectMapper mapper = new ObjectMapper();
+//        final String containerServerJson =
+//            "{\"host\":\""+ CONTAINER_HOST + "\", \"certPath\":\"" +
+//                CERT_PATH + "\"}";
+//        final ContainerServerPrefsBean expectedServer = mapper.readValue(containerServerJson, ContainerServerPrefsBean.class);
 
-        assertEquals(expectedServer, controlApi.getServer());
+        assertEquals(containerServerPrefsBean.toBean(), controlApi.getServer());
     }
 
     @Test

@@ -55,8 +55,6 @@ public class DefaultContainerService implements ContainerService {
     @SuppressWarnings("SpringJavaAutowiringInspection") // IntelliJ does not process the excludeFilter in ContainerServiceConfig @ComponentScan, erroneously marks this red
     private TransportService transportService;
 
-    
-
     public List<Image> getAllImages() throws NoServerPrefException {
         return controlApi.getAllImages();
     }
