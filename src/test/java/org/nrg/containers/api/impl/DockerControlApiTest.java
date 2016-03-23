@@ -17,7 +17,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.hamcrest.Matchers.containsString;
@@ -137,11 +136,9 @@ public class DockerControlApiTest {
 
     @Test
     public void testLaunchImage() throws Exception {
-        List cmd = new ArrayList<String>();
-        cmd.add("ls");
-        cmd.add("/data/pyscript.py");
-        List vol = new ArrayList<String>();
-        vol.add("/Users/Kelsey/Projects/XNAT/1.7/pydicomDocker/data:/data");
+        final List<String> cmd = Lists.newArrayList("ls", "/data/pyscript.py");
+        final List<String> vol =
+            Lists.newArrayList("/Users/Kelsey/Projects/XNAT/1.7/pydicomDocker/data:/data");
 
         client.pull(KELSEYM_PYDICOM);
         String containerId = controlApi.launchImage(KELSEYM_PYDICOM, cmd, vol);
@@ -150,19 +147,15 @@ public class DockerControlApiTest {
     @Test
     public void testLaunchPythonScript() throws Exception {
        // python pyscript.py -h <hostname> -u <user> -p <password> -s <session_id>
-        List cmd = new ArrayList<String>();
-        cmd.add("python");
-        cmd.add("/data/pyscript.py");
-        cmd.add("-h");
-        cmd.add("https://central.xnat.org");
-        cmd.add("-u");
-        cmd.add("admin");
-        cmd.add("-p");
-        cmd.add("admin");
-        cmd.add("s");
-        cmd.add("CENTRAL_E07096");
-        List vol = new ArrayList<String>();
-        vol.add("/Users/Kelsey/Projects/XNAT/1.7/pydicomDocker/data:/data");
+        final List<String> cmd = Lists.newArrayList(
+            "python", "/data/pyscript.py",
+            "-h", "https://central.xnat.org",
+            "-u", "admin",
+            "-p", "admin",
+            "-s", "CENTRAL_E07096"
+        );
+        final List<String> vol =
+            Lists.newArrayList("/Users/Kelsey/Projects/XNAT/1.7/pydicomDocker/data:/data");
 
         client.pull(KELSEYM_PYDICOM);
         String containerId = controlApi.launchImage(KELSEYM_PYDICOM, cmd, vol);
