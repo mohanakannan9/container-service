@@ -33,7 +33,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.Map;
 
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
@@ -47,6 +46,7 @@ public class ContainersApi {
 
     public static final String JSON = MediaType.APPLICATION_JSON_UTF8_VALUE;
     public static final String PLAIN_TEXT = MediaType.TEXT_PLAIN_VALUE;
+    public static final String FORM = MediaType.APPLICATION_FORM_URLENCODED_VALUE;
 
     public static final String CONTAINER_VERBS = "start|stop|restart|pause|unpause|kill";
     public static final String CONTAINER_VERBS_CSV = "start,stop,restart,pause,unpause,kill";
@@ -155,17 +155,17 @@ public class ContainersApi {
             @ApiResponse(code = 424, message = "Container Server value is not set."),
             @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = {"/launch/{image}", "/launch/{repo}/{image}"},
-            method = POST, produces = PLAIN_TEXT, consumes = JSON)
+            method = POST, produces = PLAIN_TEXT, consumes = {JSON, FORM})
     @ResponseBody
     public String launch(@ApiParam(value = "The image to launch.", required = true)
                              final @PathVariable("image") String image,
                          @ApiParam(value = "The repo of the image.", required = false)
                              final @PathVariable("repo") String repo,
-                         final @RequestBody Map<String, String> launchArguments,
+                         final @RequestBody MultiValueMap<String, String> launchArguments,
                          final @RequestParam(name = "wait", defaultValue = "false") Boolean wait)
             throws NoServerPrefException, NotFoundException, ContainerServerException {
         final String name = repo != null ? repo + "/" + image : image;
-        return service.launch(name, launchArguments, wait);
+        return service.launch(name, launchArguments.toSingleValueMap(), wait);
     }
 
     @ApiOperation(value = "Launch container on XNAT object.", httpMethod = "POST",
@@ -178,7 +178,7 @@ public class ContainersApi {
             @ApiResponse(code = 424, message = "Container Server value is not set."),
             @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = {"/launch/{image}/on/{xnatId}", "/launch/{repo}/{image}/on/{xnatId}"},
-            method = POST, produces = PLAIN_TEXT, consumes = JSON)
+            method = POST, produces = PLAIN_TEXT, consumes = {JSON, FORM})
     @ResponseBody
     public String launchOn(@ApiParam(value = "The image to launch.", required = true)
                                final @PathVariable("image") String image,
@@ -186,12 +186,12 @@ public class ContainersApi {
                                final @PathVariable("repo") String repo,
                            @ApiParam(value = "XNAT object on which to launch.", required = true)
                                final @PathVariable("xnatId") String xnatId,
-                           final @RequestBody Map<String, String> launchArguments,
+                           final @RequestBody MultiValueMap<String, String> launchArguments,
                            final @RequestParam(value = "type", required = false) String type,
                            final @RequestParam(name = "wait", defaultValue = "false") Boolean wait)
             throws NoServerPrefException, NotFoundException, ContainerServerException {
         final String name = repo != null ? repo + "/" + image : image;
-        return service.launchOn(name, xnatId, type, launchArguments, wait);
+        return service.launchOn(name, xnatId, type, launchArguments.toSingleValueMap(), wait);
     }
 
     @ApiOperation(value = "Launch container from an XNAT script.", httpMethod = "POST",
@@ -204,15 +204,15 @@ public class ContainersApi {
             @ApiResponse(code = 424, message = "Container Server value is not set."),
             @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = {"/launch/script/{scriptId}"},
-            method = POST, produces = PLAIN_TEXT, consumes = JSON)
+            method = POST, produces = PLAIN_TEXT, consumes = {JSON, FORM})
     @ResponseBody
     public String launchFromScript(@ApiParam(value = "The script to launch.", required = true)
                                final @PathVariable("scriptId") String scriptId,
-                           final @RequestBody Map<String, String> launchArguments,
+                           final @RequestBody MultiValueMap<String, String> launchArguments,
                            final @RequestParam(name = "wait", defaultValue = "false") Boolean wait)
         throws Exception {
         _log.debug(String.format("%s: scriptId %s, args %s", "launchFromScript", scriptId, launchArguments));
-        return service.launchFromScript(scriptId, launchArguments, wait);
+        return service.launchFromScript(scriptId, launchArguments.toSingleValueMap(), wait);
     }
 
     @ApiOperation(value = "Get server", httpMethod = "GET",
