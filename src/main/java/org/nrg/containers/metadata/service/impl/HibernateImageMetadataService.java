@@ -30,5 +30,10 @@ public class HibernateImageMetadataService
         // TODO
     }
 
+    @Override
+    public ImageMetadata getMetadataFromContext(String context){
+        return getDao().getByType(context).get(0);
+    }
+
 
 }

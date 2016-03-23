@@ -2,6 +2,7 @@ package org.nrg.containers.rest;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.junit.Before;
@@ -30,6 +31,7 @@ import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
@@ -58,6 +60,11 @@ public class ContainersApiTest {
     final NoServerPrefException NO_SERVER_PREF_EXCEPTION = new NoServerPrefException("message");
     final InvalidPreferenceName INVALID_PREFERENCE_NAME = new InvalidPreferenceName("*invalid name*");
 
+    final static String MOCK_CONTAINER_HOST = "fake://host.url";
+    final static String MOCK_CONTAINER_CERT_PATH = "/path/to/file";
+    final static ContainerServer MOCK_CONTAINER_SERVER =
+        new ContainerServer(MOCK_CONTAINER_HOST, MOCK_CONTAINER_CERT_PATH);
+
     @Autowired
     private WebApplicationContext wac;
 
@@ -65,7 +72,7 @@ public class ContainersApiTest {
     private ContainerService service;
 
     @Before
-    public void setup() {
+    public void setup() throws InvalidPreferenceName {
         mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
 
         reset(service); // To ensure test mock objects are isolated
@@ -219,9 +226,42 @@ public class ContainersApiTest {
     }
 
     @Test
+    public void testLaunchOn() throws Exception {
+
+    }
+
+    @Test
+    public void testLaunchFromScript() throws Exception {
+        final String scriptId = "123";
+        final Map<String, String> otherArgs =
+            ImmutableMap.of("arg1", "val1", "arg2", "val2");
+
+        final String path = "/containers/launch/script/" + scriptId;
+
+        // REQUEST 0: No "onServer" param (defaults to false)
+        final MockHttpServletRequestBuilder request =
+            post(path).contentType(JSON).content(mapper.writeValueAsString(otherArgs));
+
+        when(service.launchFromScript(scriptId, otherArgs, false))
+            .thenReturn("yay")
+            .thenThrow(NOT_FOUND_EXCEPTION);
+
+        final String response =
+            mockMvc.perform(request)
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(PLAIN_TEXT))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        assertEquals("yay", response);
+
+        // Not found
+        mockMvc.perform(request).andExpect(status().isNotFound());
+    }
+
+    @Test
     public void testGetServer() throws Exception {
-        final String server = "http://foo.bar:123";
-        final ContainerServer containerServer = new ContainerServer(server);
 
         final String path = "/containers/server";
 
@@ -230,7 +270,7 @@ public class ContainersApiTest {
                 get(path).accept(JSON);
 
         when(service.getServer())
-                .thenReturn(containerServer)
+                .thenReturn(MOCK_CONTAINER_SERVER)
                 .thenThrow(NO_SERVER_PREF_EXCEPTION);
 
         final String response =
@@ -241,8 +281,9 @@ public class ContainersApiTest {
                         .getResponse()
                         .getContentAsString();
 
-        final ContainerServer responseServer = mapper.readValue(response, ContainerServer.class);
-        assertThat(responseServer, equalTo(containerServer));
+        final ContainerServer responseServer =
+            mapper.readValue(response, ContainerServer.class);
+        assertThat(responseServer, equalTo(MOCK_CONTAINER_SERVER));
 
         // Not found
         mockMvc.perform(request).andExpect(status().isNotFound());
@@ -250,27 +291,28 @@ public class ContainersApiTest {
 
     @Test
     public void testSetServer() throws Exception {
-        final String server = "http://foo.bar:123";
-        final String postBody = "{\"host\":\"" + server + "\"}";
+
+        final String containerServerJson =
+            mapper.writeValueAsString(MOCK_CONTAINER_SERVER);
 
         final String path = "/containers/server";
 
         // REQUEST 0: No "onServer" param (defaults to false)
         final MockHttpServletRequestBuilder request =
-                post(path).content(postBody).contentType(JSON);
+                post(path).content(containerServerJson).contentType(JSON);
 
-        doNothing().when(service).setServer(server); // Have to use a different mocking syntax when method returns void
+        doNothing().when(service).setServer(MOCK_CONTAINER_SERVER); // Have to use a different mocking syntax when method returns void
 
         mockMvc.perform(request)
                 .andExpect(status().isOk());
 
-        verify(service, times(1)).setServer(server); // Method has been called once
+        verify(service, times(1)).setServer(MOCK_CONTAINER_SERVER); // Method has been called once
 
         // Now mock out the exception
-        doThrow(INVALID_PREFERENCE_NAME).when(service).setServer(server);
+        doThrow(INVALID_PREFERENCE_NAME).when(service).setServer(MOCK_CONTAINER_SERVER);
 
         mockMvc.perform(request).andExpect(status().isInternalServerError());
-        verify(service, times(2)).setServer(server);
+        verify(service, times(2)).setServer(MOCK_CONTAINER_SERVER);
     }
 
     @Test
@@ -301,10 +343,5 @@ public class ContainersApiTest {
     @Test
     public void testPullFromSource() throws Exception {
         // TODO
-    }
-
-    @Test
-    public void testLaunchOn() throws Exception {
-
     }
 }

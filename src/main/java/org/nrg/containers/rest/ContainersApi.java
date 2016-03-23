@@ -1,10 +1,12 @@
 package org.nrg.containers.rest;
 
+import com.spotify.docker.client.DockerException;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import org.nrg.containers.exceptions.BadRequestException;
 import org.nrg.containers.exceptions.ContainerServerException;
 import org.nrg.containers.exceptions.NoHubException;
 import org.nrg.containers.exceptions.NoServerPrefException;
@@ -45,6 +47,7 @@ public class ContainersApi {
 
     public static final String JSON = MediaType.APPLICATION_JSON_UTF8_VALUE;
     public static final String PLAIN_TEXT = MediaType.TEXT_PLAIN_VALUE;
+    public static final String FORM = MediaType.APPLICATION_FORM_URLENCODED_VALUE;
 
     public static final String CONTAINER_VERBS = "start|stop|restart|pause|unpause|kill";
     public static final String CONTAINER_VERBS_CSV = "start,stop,restart,pause,unpause,kill";
@@ -65,6 +68,7 @@ public class ContainersApi {
     public List<Container> getContainers(@ApiParam(value = "ID of the container to fetch", required = true)
                                              final @RequestParam MultiValueMap<String, String> queryParams)
             throws NoServerPrefException, ContainerServerException {
+        _log.debug(String.format("%s: %s", "getContainers", queryParams));
         return service.getContainers(queryParams);
     }
 
@@ -82,6 +86,7 @@ public class ContainersApi {
     public Container getContainer(@ApiParam(value = "ID of the container to fetch", required = true)
                                       final @PathVariable("id") String id)
             throws NoServerPrefException, NotFoundException, ContainerServerException {
+        _log.debug(String.format("%s: %s", "getContainer", id));
         return service.getContainer(id);
     }
 
@@ -99,7 +104,8 @@ public class ContainersApi {
     public String getContainerStatus(@ApiParam(value = "Get status of container with this ID", required = true)
                                          final @PathVariable("id") String id)
             throws NotFoundException, NoServerPrefException, ContainerServerException {
-            return service.getContainerStatus(id);
+        _log.debug(String.format("%s: %s", "getContainerStatus", id));
+        return service.getContainerStatus(id);
     }
 
     @ApiOperation(value = "Set container status", httpMethod = "PUT", produces = PLAIN_TEXT,
@@ -119,6 +125,7 @@ public class ContainersApi {
                                              allowableValues = CONTAINER_VERBS_CSV)
                                          final @PathVariable("verb") String verb)
             throws NotFoundException, NoServerPrefException, ContainerServerException {
+        _log.debug(String.format("%s: %s, %s", "verbContainer", id, verb));
         return service.verbContainer(id, verb);
     }
 
@@ -135,7 +142,7 @@ public class ContainersApi {
     @ResponseBody
     public String getContainerLogs(@ApiParam(value = "Get logs of container with this ID", required = true)
                                        final @PathVariable("id") String id)
-            throws NotFoundException, NoServerPrefException, ContainerServerException {
+        throws NotFoundException, NoServerPrefException, ContainerServerException, DockerException, InterruptedException {
         return service.getContainerLogs(id);
     }
 
@@ -160,6 +167,29 @@ public class ContainersApi {
             throws NoServerPrefException, NotFoundException, ContainerServerException {
         final String name = repo != null ? repo + "/" + image : image;
         return service.launch(name, launchArguments, wait);
+    }
+
+    @ApiOperation(value = "Launch container.", httpMethod = "POST",
+            notes = "Launches a container from the given image with the posted arguments.")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "Container successfully launched."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to launch this container."),
+            @ApiResponse(code = 404, message = "Image not found."),
+            @ApiResponse(code = 424, message = "Container Server value is not set."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = {"/launch/{image}", "/launch/{repo}/{image}"},
+            method = POST, produces = PLAIN_TEXT, consumes = FORM)
+    @ResponseBody
+    public String launch(@ApiParam(value = "The image to launch.", required = true)
+                             final @PathVariable("image") String image,
+                         @ApiParam(value = "The repo of the image.", required = false)
+                             final @PathVariable("repo") String repo,
+                         final @RequestBody MultiValueMap<String, String> launchArguments,
+                         final @RequestParam(name = "wait", defaultValue = "false") Boolean wait)
+            throws NoServerPrefException, NotFoundException, ContainerServerException {
+        final String name = repo != null ? repo + "/" + image : image;
+        return service.launch(name, launchArguments.toSingleValueMap(), wait);
     }
 
     @ApiOperation(value = "Launch container on XNAT object.", httpMethod = "POST",
@@ -188,6 +218,74 @@ public class ContainersApi {
         return service.launchOn(name, xnatId, type, launchArguments, wait);
     }
 
+    @ApiOperation(value = "Launch container on XNAT object.", httpMethod = "POST",
+            notes = "Launches a container from the given image on the given XNAT object with the posted arguments.")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "Container successfully launched."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to launch this container."),
+            @ApiResponse(code = 404, message = "Image not found."),
+            @ApiResponse(code = 424, message = "Container Server value is not set."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = {"/launch/{image}/on/{xnatId}", "/launch/{repo}/{image}/on/{xnatId}"},
+            method = POST, produces = PLAIN_TEXT, consumes = FORM)
+    @ResponseBody
+    public String launchOn(@ApiParam(value = "The image to launch.", required = true)
+                               final @PathVariable("image") String image,
+                           @ApiParam(value = "The repo of the image.", required = false)
+                               final @PathVariable("repo") String repo,
+                           @ApiParam(value = "XNAT object on which to launch.", required = true)
+                               final @PathVariable("xnatId") String xnatId,
+                           final @RequestBody MultiValueMap<String, String> launchArguments,
+                           final @RequestParam(value = "type", required = false) String type,
+                           final @RequestParam(name = "wait", defaultValue = "false") Boolean wait)
+            throws NoServerPrefException, NotFoundException, ContainerServerException {
+        final String name = repo != null ? repo + "/" + image : image;
+        return service.launchOn(name, xnatId, type, launchArguments.toSingleValueMap(), wait);
+    }
+
+    @ApiOperation(value = "Launch container from an XNAT script.", httpMethod = "POST",
+            notes = "Launches a container from an XNAT script.")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "Container successfully launched."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to launch this container."),
+            @ApiResponse(code = 404, message = "Image not found."),
+            @ApiResponse(code = 424, message = "Container Server value is not set."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = {"/launch/script/{scriptId}"},
+            method = POST, produces = PLAIN_TEXT, consumes = JSON)
+    @ResponseBody
+    public String launchFromScript(@ApiParam(value = "The script to launch.", required = true)
+                               final @PathVariable("scriptId") String scriptId,
+                           final @RequestBody Map<String, String> launchArguments,
+                           final @RequestParam(name = "wait", defaultValue = "false") Boolean wait)
+        throws Exception {
+        _log.debug(String.format("%s: scriptId %s, args %s", "launchFromScript", scriptId, launchArguments));
+        return service.launchFromScript(scriptId, launchArguments, wait);
+    }
+
+    @ApiOperation(value = "Launch container from an XNAT script.", httpMethod = "POST",
+            notes = "Launches a container from an XNAT script.")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "Container successfully launched."),
+            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
+            @ApiResponse(code = 403, message = "Not authorized to launch this container."),
+            @ApiResponse(code = 404, message = "Image not found."),
+            @ApiResponse(code = 424, message = "Container Server value is not set."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = {"/launch/script/{scriptId}"},
+            method = POST, produces = PLAIN_TEXT, consumes = FORM)
+    @ResponseBody
+    public String launchFromScript(@ApiParam(value = "The script to launch.", required = true)
+                               final @PathVariable("scriptId") String scriptId,
+                           final @RequestBody MultiValueMap<String, String> launchArguments,
+                           final @RequestParam(name = "wait", defaultValue = "false") Boolean wait)
+        throws Exception {
+        _log.debug(String.format("%s: scriptId %s, args %s", "launchFromScript", scriptId, launchArguments));
+        return service.launchFromScript(scriptId, launchArguments.toSingleValueMap(), wait);
+    }
+
     @ApiOperation(value = "Get server", httpMethod = "GET",
             notes = "The container server URI stored in the XNAT database.")
     @ApiResponses({
@@ -207,8 +305,11 @@ public class ContainersApi {
 
     @RequestMapping(value = "/server", method = POST)
     @ResponseBody
-    public void setServer(final @RequestBody ContainerServer containerServer) throws InvalidPreferenceName {
-        service.setServer(containerServer.host());
+    public void setServer(final @RequestBody ContainerServer containerServer) throws InvalidPreferenceName, BadRequestException {
+        if (containerServer.host() == null || containerServer.host().equals("")) {
+            throw new BadRequestException("Must set the \"host\" property in request body.");
+        }
+        service.setServer(containerServer);
     }
 
     @RequestMapping(value = "/hubs", method = GET, produces = {JSON, PLAIN_TEXT})

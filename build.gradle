@@ -5,6 +5,7 @@ apply plugin: 'groovy'
 apply plugin: 'java'
 apply plugin: 'idea'
 apply plugin: 'maven'
+apply plugin: 'maven-publish'
 apply plugin: 'jacoco'
 //apply plugin: 'xnat'
 
@@ -46,11 +47,20 @@ dependencies {
     compile ("org.nrg.xnat:web:${vXnat}") {
         transitive = false
     }
-    compile ("org.nrg:framework:${vXnat}")
+    compile ("org.nrg.xdat:core:${vXnat}") {
+        transitive = false
+    }
     compile ("org.nrg:prefs:${vXnat}") {
         transitive = false
     }
     compile ("org.nrg:config:${vXnat}") {
+        transitive = false
+    }
+    compile ("org.nrg:automation:${vXnat}") {
+        transitive = false
+    }
+    compile "org.nrg:framework:${vXnat}"
+    compile (group: "org.nrg", name: "transporter", version: "1.0-SNAPSHOT") {
         transitive = false
     }
 
@@ -78,6 +88,8 @@ dependencies {
 
     compile "javax.inject:javax.inject:1"
 
+    compile "com.google.guava:guava:19.0"
+
 //    compile "org.codehaus.groovy:groovy-all:${vGroovy}"
     compile (group: 'com.spotify', name: 'docker-client', version: '3.6.3') {
         exclude group: "ch.qos.logback"
@@ -98,7 +110,7 @@ dependencies {
 jacocoTestReport {
     reports {
         xml.enabled = true
-        html.enabled = false 
+        html.enabled = false
     }
 }
 

@@ -1,5 +1,10 @@
 package org.nrg.containers.services.impl;
 
+import com.google.common.collect.Lists;
+import com.spotify.docker.client.DockerException;
+import org.apache.commons.io.FileUtils;
+import org.nrg.automation.entities.Script;
+import org.nrg.automation.services.ScriptService;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.exceptions.ContainerServerException;
 import org.nrg.containers.exceptions.NoHubException;
@@ -13,11 +18,17 @@ import org.nrg.containers.model.ContainerServer;
 import org.nrg.containers.model.Image;
 import org.nrg.containers.services.ContainerService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.nrg.transporter.TransportService;
+import org.nrg.xft.XFT;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
+import java.nio.file.Path;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 
@@ -33,7 +44,13 @@ public class DefaultContainerService implements ContainerService {
     @SuppressWarnings("SpringJavaAutowiringInspection") // IntelliJ does not process the excludeFilter in ContainerServiceConfig @ComponentScan, erroneously marks this red
     private ImageMetadataService imageMetadataService;
 
-    
+    @Autowired
+    @SuppressWarnings("SpringJavaAutowiringInspection") // IntelliJ does not process the excludeFilter in ContainerServiceConfig @ComponentScan, erroneously marks this red
+    private ScriptService scriptService;
+
+    @Autowired
+    @SuppressWarnings("SpringJavaAutowiringInspection") // IntelliJ does not process the excludeFilter in ContainerServiceConfig @ComponentScan, erroneously marks this red
+    private TransportService transportService;
 
     public List<Image> getAllImages() throws NoServerPrefException {
         return controlApi.getAllImages();
@@ -98,10 +115,86 @@ public class DefaultContainerService implements ContainerService {
     }
 
     @Override
+    public String launchFromScript(String scriptId, Map<String, String> launchArguments, Boolean wait)
+        throws Exception {
+        final Script script = scriptService.getByScriptId(scriptId);
+        if (script == null) {
+            throw new NotFoundException("Could not find script " + scriptId);
+        }
+
+        final String context = script.getLanguage();
+        final ImageMetadata metadata = imageMetadataService.getMetadataFromContext(context);
+        final String imageId = metadata.getImageId();
+
+        // TODO Remove all the hard-coded stuff from sprint 4. Make this work generically.
+//        List<ImageMetadataArg> args = metadata.getArgs();
+        // String description = metadata.getDecription();
+//        String execution = metadata.getExecution();
+//        String imageId = metadata.getImageId();
+//        List<String> mountsIn = Lists.newArrayList(metadata.getMountsIn());
+//        List<String> mountsOut = Lists.newArrayList(metadata.getMountsOut());
+        //String type = metadata.getType();
+
+//        String sessionId = null;
+//        XFTItem session = null;
+//        for (final ImageMetadataArg arg : args) {
+//            if (arg.getType().startsWith("xnat")) {
+//                final String id = launchArguments.get(arg.getValue());
+//                if (id == null || id.equals("")) {
+//                    throw new Exception(
+//                        String.format("Input argument %s is required, must contain a %s ID.",
+//                            arg.getValue(), arg.getType()));
+//                }
+//
+//                sessionId = id;
+//                session = ItemSearch.GetItem(arg.getType() + ".id", id, Users.getUser("admin"), false);
+//                launchArguments.remove(arg.getValue());
+//                break;
+//            }
+//        }
+//        if (sessionId == null) {
+//            sessionId = "";
+//        }
+//        final String sessionId = launchArguments.get("sessionId");
+//        final XFTItem session = ItemSearch.GetItem("xnat:mrSessionData.id", sessionId, Users.getUser("admin"), false);
+//        final String mountIn = launchArguments.get("mountIn");
+//        final String mountOut = launchArguments.get("mountOut");
+//        final String imageId = launchArguments.get("imageId");
+//        final String host = launchArguments.get("host");
+
+        // Resolve args from launchArguments
+
+
+        // Transport files
+        final String server = controlApi.getServer().host();
+//        final List<Path> paths = transportService.transport(server, session);
+
+        final Calendar cal = Calendar.getInstance();
+        final SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd_HHmmss");
+        final String timestamp = formatter.format(cal.getTime());
+        final String buildDir = XFT.getBuildPath() + timestamp;
+
+        final String filename = "script";
+        final File filenameWithPath = new File(buildDir, filename);
+        FileUtils.writeStringToFile(filenameWithPath, script.getContent());
+        final Path scriptPath = transportService.transport(server, filenameWithPath.toPath()).get(0);
+
+//        final List<String> command = Lists.newArrayList("python", "/data/output/"+filename,
+//            "-h", host, "-u", "admin", "-p", "admin",
+//            "-s", sessionId);
+        final List<String> command = Lists.newArrayList();
+//        final List<String> volumes = Lists.newArrayList(
+//            String.format("%s:%s", paths.get(0), mountIn),
+//            String.format("%s:%s", buildDir, mountOut));
+        final List<String> volumes = Lists.newArrayList();
+        return controlApi.launchImage(imageId, command, volumes);
+    }
+
+
+    @Override
     public String getContainerLogs(final String id)
-            throws NoServerPrefException, NotFoundException, ContainerServerException {
-        // TODO
-        return null;
+        throws NoServerPrefException, NotFoundException, ContainerServerException, DockerException, InterruptedException {
+        return controlApi.getContainerLogs(id);
     }
 
     @Override
@@ -170,7 +263,12 @@ public class DefaultContainerService implements ContainerService {
     }
 
     @Override
-    public void setServer(String host) throws InvalidPreferenceName {
-        // TODO
+    public void setServer(final ContainerServer server) throws InvalidPreferenceName {
+        controlApi.setServer(server);
+    }
+
+    @Override
+    public String setMetadataById(String id, Map<String, String> metadata, String project, Boolean overwrite, Boolean ignoreBlank) throws NoServerPrefException, NotFoundException {
+        return null;
     }
 }

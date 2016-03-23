@@ -49,4 +49,10 @@ public class ImageMetadataDAO extends AbstractHibernateDAO<ImageMetadata> {
         criteria.add(Restrictions.eq("imageId", imageId));
         return criteria.list();
     }
+
+    public List<ImageMetadata> getByType(final String type) {
+        Criteria criteria = getSession().createCriteria(getParameterizedType());
+        criteria.add(Restrictions.eq("type", type));
+        return criteria.list();
+    }
 }

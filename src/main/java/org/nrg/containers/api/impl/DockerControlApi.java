@@ -6,13 +6,15 @@ import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerCertificateException;
 import com.spotify.docker.client.DockerCertificates;
 import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.DockerClient.LogsParam;
 import com.spotify.docker.client.DockerException;
+import com.spotify.docker.client.LogStream;
 import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
 import com.spotify.docker.client.messages.ContainerInfo;
 import com.spotify.docker.client.messages.HostConfig;
-import com.spotify.docker.client.messages.ImageSearchResult;
 import com.spotify.docker.client.messages.ImageInfo;
+import com.spotify.docker.client.messages.ImageSearchResult;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.exceptions.ContainerServerException;
@@ -20,30 +22,25 @@ import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Container;
 import org.nrg.containers.model.ContainerServer;
+import org.nrg.containers.model.ContainerServerPrefsBean;
 import org.nrg.containers.model.Image;
-import org.nrg.prefs.entities.Preference;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
-import org.nrg.prefs.services.PreferenceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
-import java.nio.file.Paths;
 
 @Service
 public class DockerControlApi implements ContainerControlApi {
     private static final Logger _log = LoggerFactory.getLogger(DockerControlApi.class);
 
-    public static String SERVER_PREF_TOOL_ID = "container";
-    public static String SERVER_PREF_NAME = "server";
-    public static String CERT_PATH_PREF_NAME = "certpath";
-
     @Autowired
     @SuppressWarnings("SpringJavaAutowiringInspection") // IntelliJ does not process the excludeFilter in ContainerServiceConfig @ComponentScan, erroneously marks this red
-    private PreferenceService prefsService;
+    private ContainerServerPrefsBean containerServerPref;
 
     /**
      * Query Docker server for all images
@@ -51,7 +48,7 @@ public class DockerControlApi implements ContainerControlApi {
      * @return Image objects stored on docker server
      **/
     @Override
-    public List<org.nrg.containers.model.Image> getAllImages() {
+    public List<org.nrg.containers.model.Image> getAllImages() throws NoServerPrefException {
         return getImages(null);
     }
 
@@ -61,11 +58,12 @@ public class DockerControlApi implements ContainerControlApi {
      * @param params Map of query parameters (name = value)
      * @return Image objects stored on docker server meeting the query parameters
      **/
-    public List<Image> getImages(final Map<String, String> params) {
+    public List<Image> getImages(final Map<String, String> params) throws NoServerPrefException {
         return DockerImageToNrgImage(_getImages(params));
     }
 
-    private List<com.spotify.docker.client.messages.Image> _getImages(final Map<String, String> params) {
+    private List<com.spotify.docker.client.messages.Image> _getImages(final Map<String, String> params)
+        throws NoServerPrefException {
         final DockerClient dockerClient = getClient();
 
         // Transform param map to ListImagesParam array
@@ -89,28 +87,24 @@ public class DockerControlApi implements ContainerControlApi {
         return null;
     }
 
-    public ContainerServer getServer() {
-
-        final Preference serverPref = prefsService.getPreference(SERVER_PREF_TOOL_ID, SERVER_PREF_NAME);
-        final Preference certPathPref = prefsService.getPreference(SERVER_PREF_TOOL_ID, CERT_PATH_PREF_NAME);
-        if (serverPref == null || StringUtils.isBlank(serverPref.getValue())) {
-            try {
-                throw new NoServerPrefException("No container server URI defined in preferences.");
-            } catch (NoServerPrefException e) {
-                e.printStackTrace();
-            }
+    public ContainerServer getServer() throws NoServerPrefException {
+        if (containerServerPref == null || containerServerPref.getHost() == null) {
+            throw new NoServerPrefException("No container server URI defined in preferences.");
         }
-        return new ContainerServer(serverPref.getValue(), certPathPref.getValue());
+        return containerServerPref.toBean();
     }
 
     public void setServer(final String host) throws InvalidPreferenceName {
-        prefsService.setPreference(SERVER_PREF_TOOL_ID, SERVER_PREF_NAME, host);
-        prefsService.setPreference(SERVER_PREF_TOOL_ID, CERT_PATH_PREF_NAME, null);
+        setServer(host, null);
     }
 
     public void setServer(final String host, final String certPath) throws InvalidPreferenceName {
-        prefsService.setPreference(SERVER_PREF_TOOL_ID, SERVER_PREF_NAME, host);
-        prefsService.setPreference(SERVER_PREF_TOOL_ID, CERT_PATH_PREF_NAME, certPath);
+        containerServerPref.setHost(host);
+        containerServerPref.setCertPath(certPath);
+    }
+
+    public void setServer(final ContainerServer serverBean) throws InvalidPreferenceName {
+        containerServerPref.setFromBean(serverBean);
     }
 
 
@@ -121,7 +115,8 @@ public class DockerControlApi implements ContainerControlApi {
      * @return Image stored on docker server with the given name
      **/
     @Override
-    public Image getImageByName(final String imageName) throws ContainerServerException, NotFoundException {
+    public Image getImageByName(final String imageName)
+        throws ContainerServerException, NotFoundException, NoServerPrefException {
         final Image image = DockerImageToNrgImage(_getImageByName(imageName));
         if (image != null) {
             return image;
@@ -129,7 +124,8 @@ public class DockerControlApi implements ContainerControlApi {
         throw new NotFoundException(String.format("Could not find image %s", imageName));
     }
 
-    private com.spotify.docker.client.messages.Image _getImageByName(final String imageName) throws ContainerServerException {
+    private com.spotify.docker.client.messages.Image _getImageByName(final String imageName)
+        throws ContainerServerException, NoServerPrefException {
         final DockerClient client = getClient();
 
         List<com.spotify.docker.client.messages.Image> images = null;
@@ -161,7 +157,8 @@ public class DockerControlApi implements ContainerControlApi {
      * @return Image stored on docker server with the given name
      **/
     @Override
-    public Image getImageById(final String imageId) throws NotFoundException, ContainerServerException {
+    public Image getImageById(final String imageId)
+        throws NotFoundException, ContainerServerException, NoServerPrefException {
         final Image image = DockerImageToNrgImage(_getImageById(imageId));
         if (image != null) {
             return image;
@@ -169,7 +166,8 @@ public class DockerControlApi implements ContainerControlApi {
         throw new NotFoundException(String.format("Could not find image %s", imageId));
     }
 
-    private com.spotify.docker.client.messages.Image _getImageById(final String imageId) throws ContainerServerException {
+    private com.spotify.docker.client.messages.Image _getImageById(final String imageId)
+        throws ContainerServerException, NoServerPrefException {
 //        TODO: Make this work
         final DockerClient client = getClient();
 
@@ -202,7 +200,7 @@ public class DockerControlApi implements ContainerControlApi {
      * @return Container objects stored on docker server
      **/
     @Override
-    public List<Container> getAllContainers() {
+    public List<Container> getAllContainers() throws NoServerPrefException {
         return getContainers(null);
     }
 
@@ -213,7 +211,7 @@ public class DockerControlApi implements ContainerControlApi {
      * @return Container objects stored on docker server meeting the query parameters
      **/
     @Override
-    public List<Container> getContainers(final Map<String, String> params) {
+    public List<Container> getContainers(final Map<String, String> params) throws NoServerPrefException {
         DockerClient dockerClient = getClient();
         List<com.spotify.docker.client.messages.Container> containerList = null;
 
@@ -242,7 +240,7 @@ public class DockerControlApi implements ContainerControlApi {
      * @return Container object with specified ID
      **/
     @Override
-    public Container getContainer(final String id) throws NotFoundException {
+    public Container getContainer(final String id) throws NotFoundException, NoServerPrefException {
         final Container container = DockerContainerToNrgContainer(_getContainer(id));
         if (container != null) {
             return container;
@@ -250,7 +248,7 @@ public class DockerControlApi implements ContainerControlApi {
         throw new NotFoundException(String.format("Could not find container %s", id));
     }
 
-    private ContainerInfo _getContainer(final String id) {
+    private ContainerInfo _getContainer(final String id) throws NoServerPrefException {
         final DockerClient client = getClient();
         try {
             return client.inspectContainer(id);
@@ -267,7 +265,7 @@ public class DockerControlApi implements ContainerControlApi {
      * @return Status of Container object with specified ID
      **/
     @Override
-    public String getContainerStatus(final String id) throws NotFoundException {
+    public String getContainerStatus(final String id) throws NotFoundException, NoServerPrefException {
         final Container container = getContainer(id);
 
         return container != null ? container.status() : null;
@@ -282,7 +280,8 @@ public class DockerControlApi implements ContainerControlApi {
      * @return ID of created Container
      **/
     @Override
-    public String launchImage(final String imageName, final List<String> runCommand, final List<String> volumes) {
+    public String launchImage(final String imageName, final List<String> runCommand, final List<String> volumes)
+        throws NoServerPrefException {
 
          final HostConfig hostConfig =
                 HostConfig.builder()
@@ -329,26 +328,42 @@ public class DockerControlApi implements ContainerControlApi {
         return "";
     }
 
+    @Override
+    public String getContainerLogs(String id) throws NoServerPrefException, DockerException, InterruptedException {
+        final LogStream logStream = getClient().logs(id, LogsParam.stdout());
+        final String logs = logStream.readFully();
+        logStream.close();
+
+        return logs;
+    }
+
     /**
      * Create a client connection to a Docker server
      *
      * @return DockerClient object
      **/
-    public DockerClient getClient() {
-        ContainerServer dockerServer = getServer();
+    public DockerClient getClient() throws NoServerPrefException {
+        final ContainerServer server = getServer();
+
         if (_log.isDebugEnabled()) {
-            _log.debug("method getClient, Create server connection, server " + dockerServer.host());
+            _log.debug("method getClient, Create server connection, server " + server.host());
         }
-        DockerClient client = null;
-        try {
-            client = DefaultDockerClient.builder()
-                    .uri(dockerServer.host())
-                    .dockerCertificates(new DockerCertificates(Paths.get(dockerServer.certPath())))
-                    .build();
-        } catch (DockerCertificateException e) {
-            e.printStackTrace();
+
+        DefaultDockerClient.Builder clientBuilder =
+            DefaultDockerClient.builder()
+                .uri(server.host());
+
+        if (server.certPath() != null && !server.certPath().equals("")) {
+            try {
+                final DockerCertificates certificates =
+                    new DockerCertificates(Paths.get(server.certPath()));
+                clientBuilder = clientBuilder.dockerCertificates(certificates);
+            } catch (DockerCertificateException e) {
+                _log.error("Could not find docker certificates at " + server.certPath(), e);
+            }
         }
-        return client;
+
+        return clientBuilder.build();
     }
 
     public DockerClient getClientFromEnv() throws DockerCertificateException {
@@ -467,12 +482,12 @@ public class DockerControlApi implements ContainerControlApi {
         if (dockerContainer != null) {
             genericContainer =
                     new Container(
-                            // TODO container fields
-//                            dockerContainer.repoTags() != null && dockerContainer.repoTags().size() > 0 ? dockerContainer.repoTags().get(0) : "null",
-//                            dockerContainer.id(),
-//                            dockerContainer.size(),
-//                            dockerContainer.repoTags(),
-//                            dockerContainer.labels()
+                            dockerContainer.id(),
+                            dockerContainer.state().running() ? "Running" :
+                                dockerContainer.state().paused() ? "Paused" :
+                                dockerContainer.state().restarting() ? "Restarting" :
+                                dockerContainer.state().exitCode() != null ? "Exited" :
+                                null
                     );
         }
         return genericContainer;

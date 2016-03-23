@@ -4,36 +4,30 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Objects;
 
 public class ContainerServer {
-    private String _host;
-    private String _certPath;
+    @JsonProperty("host") private String host;
+    @JsonProperty("certPath") private String certPath;
 
     public ContainerServer() {}
 
-    public ContainerServer(final String host) {
-        setHost(host);
-        setCertPath(null);
-    }
     public ContainerServer(final String host, final String certPath) {
-        setHost(host);
-        setCertPath(certPath);
+        this.host = host;
+        this.certPath = certPath;
     }
 
-    @JsonProperty("host")
     public String host() {
-        return _host;
+        return host;
     }
 
-    public void setHost(final String host) {
-        _host = host;
+    public void host(final String host) {
+        this.host = host;
     }
 
-    @JsonProperty("certPath")
     public String certPath() {
-        return _certPath;
+        return certPath;
     }
 
-    public void setCertPath(final String certPath) {
-        _certPath = certPath;
+    public void certPath(final String certPath) {
+        this.certPath = certPath;
     }
 
     @Override
@@ -47,12 +41,12 @@ public class ContainerServer {
 
         ContainerServer that = (ContainerServer) o;
 
-        return Objects.equal(this._host, that._host) &&
-                Objects.equal(this._certPath, that._certPath);
+        return Objects.equal(this.host, that.host) &&
+                Objects.equal(this.certPath, that.certPath);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(_host, _certPath);
+        return Objects.hashCode(host, certPath);
     }
 }

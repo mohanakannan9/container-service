@@ -1,5 +1,6 @@
 package org.nrg.containers.services;
 
+import com.spotify.docker.client.DockerException;
 import org.nrg.containers.exceptions.ContainerServerException;
 import org.nrg.containers.exceptions.NoHubException;
 import org.nrg.containers.exceptions.NoServerPrefException;
@@ -38,7 +39,10 @@ public interface ContainerService {
     String launchOn(String imageName, String xnatId, String type, Map<String, String> launchArguments, Boolean wait)
             throws NoServerPrefException, NotFoundException, ContainerServerException;
 
-    String getContainerLogs(String id) throws NoServerPrefException, NotFoundException, ContainerServerException;
+
+    String launchFromScript(String scriptId, Map<String, String> launchArguments, Boolean wait) throws Exception;
+
+    String getContainerLogs(String id) throws NoServerPrefException, NotFoundException, ContainerServerException, DockerException, InterruptedException;
 
     String verbContainer(String id, String status) throws NoServerPrefException, NotFoundException, ContainerServerException;
 
@@ -62,5 +66,9 @@ public interface ContainerService {
 
     ContainerServer getServer() throws NoServerPrefException, NotFoundException;
 
-    void setServer(String host) throws InvalidPreferenceName;
+    void setServer(ContainerServer server) throws InvalidPreferenceName;
+
+    String setMetadataById(String id, Map<String, String> metadata, String project, Boolean overwrite, Boolean ignoreBlank)
+            throws NoServerPrefException, NotFoundException;
+
 }
