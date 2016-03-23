@@ -161,6 +161,7 @@ public class DefaultContainerService implements ContainerService {
         final String mountIn = launchArguments.get("mountIn");
         final String mountOut = launchArguments.get("mountOut");
         final String imageId = launchArguments.get("imageId");
+        final String host = launchArguments.get("host");
 
         // Resolve args from launchArguments
 
@@ -179,9 +180,9 @@ public class DefaultContainerService implements ContainerService {
         FileUtils.writeStringToFile(filenameWithPath, script.getContent());
         final Path scriptPath = transportService.transport(server, filenameWithPath.toPath()).get(0);
 
-        final List<String> command = Lists.newArrayList("python", scriptPath.toString(),
-            "--host", server, "--username", "admin", "--password", "admin",
-            "--session", sessionId);
+        final List<String> command = Lists.newArrayList("python", "/data/output/"+filename,
+            "-h", host, "-u", "admin", "-p", "admin",
+            "-s", sessionId);
         final List<String> volumes = Lists.newArrayList(
             String.format("%s:%s", paths.get(0), mountIn),
             String.format("%s:%s", buildDir, mountOut));
