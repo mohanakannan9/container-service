@@ -19,10 +19,7 @@ import org.nrg.containers.model.Image;
 import org.nrg.containers.services.ContainerService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.transporter.TransportService;
-import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xft.XFT;
-import org.nrg.xft.XFTItem;
-import org.nrg.xft.search.ItemSearch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -125,9 +122,11 @@ public class DefaultContainerService implements ContainerService {
             throw new NotFoundException("Could not find script " + scriptId);
         }
 
-//        final String context = script.getLanguage();
-//        final ImageMetadata metadata = imageMetadataService.getMetadataFromContext(context);
+        final String context = script.getLanguage();
+        final ImageMetadata metadata = imageMetadataService.getMetadataFromContext(context);
+        final String imageId = metadata.getImageId();
 
+        // TODO Remove all the hard-coded stuff from sprint 4. Make this work generically.
 //        List<ImageMetadataArg> args = metadata.getArgs();
         // String description = metadata.getDecription();
 //        String execution = metadata.getExecution();
@@ -156,19 +155,19 @@ public class DefaultContainerService implements ContainerService {
 //        if (sessionId == null) {
 //            sessionId = "";
 //        }
-        final String sessionId = launchArguments.get("sessionId");
-        final XFTItem session = ItemSearch.GetItem("xnat:mrSessionData.id", sessionId, Users.getUser("admin"), false);
-        final String mountIn = launchArguments.get("mountIn");
-        final String mountOut = launchArguments.get("mountOut");
-        final String imageId = launchArguments.get("imageId");
-        final String host = launchArguments.get("host");
+//        final String sessionId = launchArguments.get("sessionId");
+//        final XFTItem session = ItemSearch.GetItem("xnat:mrSessionData.id", sessionId, Users.getUser("admin"), false);
+//        final String mountIn = launchArguments.get("mountIn");
+//        final String mountOut = launchArguments.get("mountOut");
+//        final String imageId = launchArguments.get("imageId");
+//        final String host = launchArguments.get("host");
 
         // Resolve args from launchArguments
 
 
         // Transport files
         final String server = controlApi.getServer().host();
-        final List<Path> paths = transportService.transport(server, session);
+//        final List<Path> paths = transportService.transport(server, session);
 
         final Calendar cal = Calendar.getInstance();
         final SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd_HHmmss");
@@ -180,12 +179,14 @@ public class DefaultContainerService implements ContainerService {
         FileUtils.writeStringToFile(filenameWithPath, script.getContent());
         final Path scriptPath = transportService.transport(server, filenameWithPath.toPath()).get(0);
 
-        final List<String> command = Lists.newArrayList("python", "/data/output/"+filename,
-            "-h", host, "-u", "admin", "-p", "admin",
-            "-s", sessionId);
-        final List<String> volumes = Lists.newArrayList(
-            String.format("%s:%s", paths.get(0), mountIn),
-            String.format("%s:%s", buildDir, mountOut));
+//        final List<String> command = Lists.newArrayList("python", "/data/output/"+filename,
+//            "-h", host, "-u", "admin", "-p", "admin",
+//            "-s", sessionId);
+        final List<String> command = Lists.newArrayList();
+//        final List<String> volumes = Lists.newArrayList(
+//            String.format("%s:%s", paths.get(0), mountIn),
+//            String.format("%s:%s", buildDir, mountOut));
+        final List<String> volumes = Lists.newArrayList();
         return controlApi.launchImage(imageId, command, volumes);
     }
 
