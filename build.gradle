@@ -102,7 +102,7 @@ dependencies {
     compile "org.apache.velocity:velocity:1.7"
 
 //    compile "org.codehaus.groovy:groovy-all:${vGroovy}"
-    compile (group: 'com.spotify', name: 'docker-client', version: '3.6.3') {
+    compile (group: 'com.spotify', name: 'docker-client', version: '4.+') {
         exclude group: "ch.qos.logback"
     }
 
