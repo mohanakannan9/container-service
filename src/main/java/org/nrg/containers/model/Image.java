@@ -4,84 +4,93 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.hibernate.envers.Audited;
+import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
+import javax.persistence.ElementCollection;
+import javax.persistence.Entity;
+import javax.persistence.OneToMany;
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+@Audited
+@Entity
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
 @ApiModel(description = "Properties that define an image.")
-public class Image {
+public class Image extends AbstractHibernateEntity implements Serializable {
 
-    private String _name;
-    private String _id;
-    private List<String> _repoTags;
-    private Long _size;
-    private Map<String, String> _labels;
+    private String name;
+    @JsonProperty("image-id") private String imageId;
+    @JsonProperty("repo-tags") private List<String> repoTags;
+    private Long size;
+    private Map<String, String> labels;
 
     public Image() {}
 
-    public Image(final String name, final String id, Long size, List<String> repoTags, Map<String, String> labels){
-        _name = name;
-        _id = id;
-        _size = size;
-        _repoTags = repoTags;
-        _labels = labels;
+    public Image(final String name, final String imageId, Long size, List<String> repoTags, Map<String, String> labels){
+        this.name = name;
+        this.imageId = imageId;
+        this.size = size;
+        this.repoTags = repoTags;
+        this.labels = labels;
     }
 
     /**
      * The image's name.
      **/
     @ApiModelProperty(value = "The image's name.")
-    @JsonProperty("name")
     public String getName() {
-        return _name;
+        return name;
     }
 
-    public void setName(final String name) { _name = name; }
+    public void setName(final String name) { this.name = name; }
 
     /**
-     * The image's id.
+     * The image's docker id.
      **/
     @ApiModelProperty(value = "The image's id.")
-    @JsonProperty("id")
-    public String getId() { return _id; }
+    public String getImageId() { return imageId; }
 
-    public void setId(final String id) { _id = id; }
+    public void setImageId(final String imageId) { this.imageId = imageId; }
 
     /**
      * The image's size.
      **/
     @ApiModelProperty(value = "The image's size.")
-    @JsonProperty("size")
-    public Long getSize() { return _size; }
+    public Long getSize() { return size; }
 
-    public void setSize(final Long size) { _size = size; }
+    public void setSize(final Long size) { this.size = size; }
 
     /**
      * The image's repo tags.
      **/
     @ApiModelProperty(value = "The image's repo tags.")
-    @JsonProperty("repotags")
-    public List<String> getRepoTags() { return _repoTags; }
+    @ElementCollection
+    public List<String> getRepoTags() { return repoTags; }
 
-    public void setRepoTags(final List<String> repoTags) { _repoTags = repoTags; }
+    public void setRepoTags(final List<String> repoTags) { this.repoTags = repoTags; }
 
     /**
      * Image labels
      **/
     @ApiModelProperty(value = "Image labels")
     @JsonProperty("labels")
-    public Map<String, String> getLabels() { return _labels; }
+    @ElementCollection
+    public Map<String, String> getLabels() { return labels; }
 
-    public void setLabels(final Map<String, String> labels) { _labels = labels; }
+    public void setLabels(final Map<String, String> labels) { this.labels = labels; }
 
     public String toString() {
         return MoreObjects.toStringHelper(this)
-                .add("id", _id)
-                .add("name", _name)
-                .add("size", _size)
-                .add("tags", _repoTags)
-                .add("labels", _labels)
+                .add("imageId", imageId)
+                .add("name", name)
+                .add("size", size)
+                .add("tags", repoTags)
+                .add("labels", labels)
                 .toString();
     }
 
@@ -90,21 +99,21 @@ public class Image {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (o == null || !super.equals(o) || getClass() != o.getClass()) {
             return false;
         }
 
         Image that = (Image) o;
 
-        return Objects.equals(this._name, that._name) &&
-                Objects.equals(this._id, that._id) &&
-                Objects.equals(this._repoTags, that._repoTags) &&
-                Objects.equals(this._size, that._size) &&
-                Objects.equals(this._labels, that._labels);
+        return Objects.equals(this.name, that.name) &&
+                Objects.equals(this.imageId, that.imageId) &&
+                Objects.equals(this.repoTags, that.repoTags) &&
+                Objects.equals(this.size, that.size) &&
+                Objects.equals(this.labels, that.labels);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(_name, _id, _repoTags, _size, _labels);
+        return Objects.hash(super.hashCode(), name, imageId, repoTags, size, labels);
     }
 }

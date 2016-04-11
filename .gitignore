@@ -12,3 +12,6 @@ build/
 
 # xnat-web exploded war
 /out/
+
+# Intellij wants to see this file to configure hibernate, but we don't really need it
+hibernate.cfg.xml
