@@ -47,6 +47,9 @@ dependencies {
     compile ("org.nrg.xnat:web:${vXnat}") {
         transitive = false
     }
+    compile ("org.nrg.xnat:xnat-data-models:${vXnat}") {
+        transitive = false
+    }
     compile ("org.nrg.xdat:core:${vXnat}") {
         transitive = false
     }
