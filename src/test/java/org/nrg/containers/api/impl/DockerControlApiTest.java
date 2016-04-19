@@ -3,6 +3,7 @@ package org.nrg.containers.api.impl;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.DockerException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -10,6 +11,8 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.nrg.containers.config.DockerControlApiTestConfig;
+import org.nrg.containers.exceptions.ContainerServerException;
+import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.ContainerHub;
 import org.nrg.containers.model.ContainerServerPrefsBean;
 import org.nrg.containers.model.Image;
@@ -22,8 +25,7 @@ import java.util.List;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.isIn;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
@@ -39,6 +41,8 @@ public class DockerControlApiTest {
     private static final String BUSYBOX_LATEST = "busybox:latest";
     private static final String UBUNTU_LATEST = "ubuntu:latest";
     private static final String KELSEYM_PYDICOM = "kelseym/pydicom:latest";
+    private static final String BUSYBOX_ID = "307ac631f1b53c62d39e9c9e81bdbdbb50a2295c35fb0ec672d168a0b129a623";
+    private static final String BUSYBOX_NAME = "busybox:1.24.2-uclibc";
 
     @Autowired
     private DockerControlApi controlApi;
@@ -189,6 +193,19 @@ public class DockerControlApiTest {
     public void testPullImage() throws Exception {
         controlApi.pullImage(BUSYBOX_LATEST);
 
+    }
+
+    @Test
+    public void testDeleteImage() throws DockerException, InterruptedException, NoServerPrefException, ContainerServerException {
+        client.pull(BUSYBOX_NAME);
+        int beforeImageCount = client.listImages().size();
+        controlApi.deleteImageById(BUSYBOX_ID);
+        List<com.spotify.docker.client.messages.Image> images = client.listImages();
+        int afterImageCount = images.size();
+        assertEquals(beforeImageCount, afterImageCount+1);
+        for(com.spotify.docker.client.messages.Image image:images){
+            assertNotEquals(BUSYBOX_ID, image.id());
+        }
     }
 
 }
