@@ -73,13 +73,15 @@ public class DefaultContainerService implements ContainerService {
 
     @Override
     public String deleteImageById(final String id, final Boolean onServer) throws NoServerPrefException, NotFoundException, ContainerServerException {
-        // TODO
+        controlApi.deleteImageById(id);
+        // TODO delete image in XNAT database
         return null;
     }
 
     @Override
     public String deleteImageByName(final String name, final Boolean onServer) throws NoServerPrefException, NotFoundException, ContainerServerException {
-        // TODO
+        controlApi.deleteImageByName(name);
+        // TODO delete imaage in XNAT database
         return null;
     }
 

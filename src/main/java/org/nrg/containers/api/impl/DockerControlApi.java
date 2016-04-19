@@ -10,11 +10,7 @@ import com.spotify.docker.client.DockerCertificates;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.DockerClient.LogsParam;
 import com.spotify.docker.client.LogStream;
-import com.spotify.docker.client.messages.AuthConfig;
-import com.spotify.docker.client.messages.ContainerConfig;
-import com.spotify.docker.client.messages.ContainerCreation;
-import com.spotify.docker.client.messages.ContainerInfo;
-import com.spotify.docker.client.messages.HostConfig;
+import com.spotify.docker.client.messages.*;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.exceptions.ContainerServerException;
@@ -361,6 +357,21 @@ public class DockerControlApi implements ContainerControlApi {
         }
 
         return logs;
+    }
+
+    @Override
+    public void deleteImageByName(String name) throws NoServerPrefException, ContainerServerException {
+        com.spotify.docker.client.messages.Image image = _getImageByName(name);
+        deleteImageById(image.id());
+    }
+
+    @Override
+    public void deleteImageById(String id) throws NoServerPrefException {
+        try (final DockerClient dockerClient = getClient()) {
+            dockerClient.removeImage(id);
+        } catch (DockerException|InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
