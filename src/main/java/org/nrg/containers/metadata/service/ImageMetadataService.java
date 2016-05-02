@@ -1,7 +1,7 @@
 package org.nrg.containers.metadata.service;
 
 import org.nrg.containers.metadata.ImageMetadata;
-import org.nrg.containers.model.Image;
+import org.nrg.containers.image.Image;
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
 
 import java.util.List;

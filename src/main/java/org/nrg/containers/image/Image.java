@@ -1,4 +1,4 @@
-package org.nrg.containers.model;
+package org.nrg.containers.image;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
@@ -40,7 +40,7 @@ public class Image extends AbstractHibernateEntity implements Serializable {
     }
 
     /**
-     * The image's name.
+     * The image's XNAT name.
      **/
     @ApiModelProperty(value = "The image's name.")
     public String getName() {
