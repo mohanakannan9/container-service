@@ -71,7 +71,7 @@ public class Image extends AbstractHibernateEntity implements Serializable {
     @ElementCollection
     @ApiModelProperty(value = "The image's repo tags.")
     @JsonProperty("repotags")
-    public List<String> getRepoTags() { return _repoTags; }
+    public List<String> getRepoTags() { return repoTags; }
 
     public void setRepoTags(final List<String> repoTags) { this.repoTags = repoTags; }
 
