@@ -6,7 +6,7 @@ import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Container;
 import org.nrg.containers.model.ContainerHub;
 import org.nrg.containers.model.ContainerServer;
-import org.nrg.containers.image.Image;
+import org.nrg.containers.model.Image;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 
 import java.util.List;

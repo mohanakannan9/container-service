@@ -8,7 +8,7 @@ import org.nrg.containers.metadata.ImageMetadata;
 import org.nrg.containers.model.Container;
 import org.nrg.containers.model.ContainerHub;
 import org.nrg.containers.model.ContainerServer;
-import org.nrg.containers.image.Image;
+import org.nrg.containers.model.Image;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 
 import java.io.IOException;

@@ -18,7 +18,7 @@ import org.nrg.containers.metadata.service.ImageMetadataService;
 import org.nrg.containers.model.ContainerHub;
 import org.nrg.containers.model.ContainerHubPrefs;
 import org.nrg.containers.model.ContainerServer;
-import org.nrg.containers.image.Image;
+import org.nrg.containers.model.Image;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;

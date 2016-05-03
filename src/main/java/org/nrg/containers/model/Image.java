@@ -1,4 +1,4 @@
-package org.nrg.containers.image;
+package org.nrg.containers.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
@@ -11,7 +11,6 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
-import javax.persistence.OneToMany;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;

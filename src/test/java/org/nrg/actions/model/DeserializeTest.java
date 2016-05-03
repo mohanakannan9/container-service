@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import org.junit.Test;
-import org.nrg.containers.image.Image;
+import org.nrg.containers.model.Image;
 
 
 import static org.hamcrest.Matchers.anyOf;
