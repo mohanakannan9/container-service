@@ -7,7 +7,7 @@ import org.nrg.containers.exceptions.ContainerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.metadata.ImageMetadata;
-import org.nrg.containers.model.Image;
+import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.services.ContainerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,22 +43,22 @@ public class ImagesApi {
     public static final String JSON = MediaType.APPLICATION_JSON_UTF8_VALUE;
     public static final String PLAIN_TEXT = MediaType.TEXT_PLAIN_VALUE;
 
-    @ApiOperation(value = "Get list of images.", notes = "Returns a list of all images on the container server.", response = Image.class, responseContainer = "List")
+    @ApiOperation(value = "Get list of images.", notes = "Returns a list of all images on the container server.", response = DockerImage.class, responseContainer = "List")
     @ApiResponses({
             @ApiResponse(code = 200, message = "A list of images on the server"),
             @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = "/images", method = GET, produces = {JSON, PLAIN_TEXT})
-    public List<Image> getAllImages(final @RequestParam(value = "project", required = false) String projectParam,
-                                    final @RequestParam(value = "metadata", required = false) Boolean metadata)
+    public List<DockerImage> getAllImages(final @RequestParam(value = "project", required = false) String projectParam,
+                                          final @RequestParam(value = "metadata", required = false) Boolean metadata)
         throws NoServerPrefException, ContainerServerException {
         return service.getAllImages();
     }
 
     @RequestMapping(value = "/images/{id:"+ID_REGEX+"}", method = GET, produces = {JSON, PLAIN_TEXT})
     @ResponseBody
-    public Image getImageByIdWithNameFallback(final @PathVariable("id") String id,
-                              final @RequestParam(name = "project", required = false) String projectParam,
-                              final @RequestParam(name = "metadata", required = false) Boolean metadata)
+    public DockerImage getImageByIdWithNameFallback(final @PathVariable("id") String id,
+                                                    final @RequestParam(name = "project", required = false) String projectParam,
+                                                    final @RequestParam(name = "metadata", required = false) Boolean metadata)
             throws NotFoundException, NoServerPrefException, ContainerServerException {
         try {
             return service.getImageById(id);
@@ -70,28 +70,28 @@ public class ImagesApi {
 
     @RequestMapping(value = "/images/id/{id}", method = GET, produces = {JSON, PLAIN_TEXT})
     @ResponseBody
-    public Image getImageById(final @PathVariable("id") String id,
-                              final @RequestParam(name = "project", required = false) String projectParam,
-                              final @RequestParam(name = "metadata", required = false) Boolean metadata)
+    public DockerImage getImageById(final @PathVariable("id") String id,
+                                    final @RequestParam(name = "project", required = false) String projectParam,
+                                    final @RequestParam(name = "metadata", required = false) Boolean metadata)
             throws NotFoundException, NoServerPrefException, ContainerServerException {
         return service.getImageById(id);
     }
 
     @RequestMapping(value = {"/images/{name:.*}", "/images/name/{name}"}, method = GET, produces = {JSON, PLAIN_TEXT})
     @ResponseBody
-    public Image getImageByName(final @PathVariable("name") String name,
-                                final @RequestParam(name = "project", required = false) String projectParam,
-                                final @RequestParam(name = "metadata", required = false) Boolean metadata)
+    public DockerImage getImageByName(final @PathVariable("name") String name,
+                                      final @RequestParam(name = "project", required = false) String projectParam,
+                                      final @RequestParam(name = "metadata", required = false) Boolean metadata)
             throws NotFoundException, ContainerServerException, NoServerPrefException {
         return service.getImageByName(name);
     }
 
     @RequestMapping(value = {"/images/{repo}/{image}", "/images/name/{repo}/{image}"}, method = GET, produces = {JSON, PLAIN_TEXT})
     @ResponseBody
-    public Image getImageByNameWithRepo(final @PathVariable("image") String image,
-                                        final @PathVariable("repo") String repo,
-                                        final @RequestParam(name = "project", required = false) String projectParam,
-                                        final @RequestParam(name = "metadata", required = false) Boolean metadata)
+    public DockerImage getImageByNameWithRepo(final @PathVariable("image") String image,
+                                              final @PathVariable("repo") String repo,
+                                              final @RequestParam(name = "project", required = false) String projectParam,
+                                              final @RequestParam(name = "metadata", required = false) Boolean metadata)
             throws NotFoundException, ContainerServerException, NoServerPrefException {
         final String name = repo + "/" + image;
         return service.getImageByName(name);

@@ -6,7 +6,7 @@ import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Container;
 import org.nrg.containers.model.ContainerHub;
 import org.nrg.containers.model.ContainerServer;
-import org.nrg.containers.model.Image;
+import org.nrg.containers.model.DockerImage;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 
 import java.util.List;
@@ -27,11 +27,11 @@ public interface ContainerControlApi {
 
     void pullImage(String name, ContainerHub hub) throws NoServerPrefException, ContainerServerException;
 
-    List<Image> getAllImages() throws NoServerPrefException, ContainerServerException;
+    List<DockerImage> getAllImages() throws NoServerPrefException, ContainerServerException;
 
-    Image getImageByName(final String imageName) throws ContainerServerException, NotFoundException, NoServerPrefException;
+    DockerImage getImageByName(final String imageName) throws ContainerServerException, NotFoundException, NoServerPrefException;
 
-    Image getImageById(final String imageId) throws NotFoundException, ContainerServerException, NoServerPrefException;
+    DockerImage getImageById(final String imageId) throws NotFoundException, ContainerServerException, NoServerPrefException;
 
     List<Container> getAllContainers() throws NoServerPrefException, ContainerServerException;
 

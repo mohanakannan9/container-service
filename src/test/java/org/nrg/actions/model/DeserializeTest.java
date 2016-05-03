@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import org.junit.Test;
-import org.nrg.containers.model.Image;
+import org.nrg.containers.model.DockerImage;
 
 
 import static org.hamcrest.Matchers.anyOf;
@@ -45,7 +45,7 @@ public class DeserializeTest {
 
     @Test
     public void testDeserializeImage() throws Exception {
-        final Image image = mapper.readValue(IMAGE_JSON, Image.class);
+        final DockerImage image = mapper.readValue(IMAGE_JSON, DockerImage.class);
 
         assertEquals("sweet", image.getName());
         assertEquals("abc123", image.getImageId());

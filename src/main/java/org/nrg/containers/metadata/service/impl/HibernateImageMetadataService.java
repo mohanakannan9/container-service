@@ -3,7 +3,7 @@ package org.nrg.containers.metadata.service.impl;
 import org.nrg.containers.metadata.ImageMetadata;
 import org.nrg.containers.metadata.dao.ImageMetadataDAO;
 import org.nrg.containers.metadata.service.ImageMetadataService;
-import org.nrg.containers.model.Image;
+import org.nrg.containers.model.DockerImage;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +26,7 @@ public class HibernateImageMetadataService
     }
 
     @Override
-    public void setMetadata(Image image, ImageMetadata metadata, String project, Boolean overwrite, Boolean ignoreBlank) {
+    public void setMetadata(DockerImage image, ImageMetadata metadata, String project, Boolean overwrite, Boolean ignoreBlank) {
         // TODO
     }
 

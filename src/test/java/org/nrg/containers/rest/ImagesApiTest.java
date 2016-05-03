@@ -10,7 +10,7 @@ import org.junit.runner.RunWith;
 import org.nrg.containers.config.RestApiTestConfig;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
-import org.nrg.containers.model.Image;
+import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.services.ContainerService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,7 +52,7 @@ public class ImagesApiTest {
     final String FOO_REPO = "foo_repo";
     final String FOO = "foo";
     final String FOO_ID = "0";
-    final Image FOO_IMAGE = new Image(FOO, FOO_ID, 0L,
+    final DockerImage FOO_IMAGE = new DockerImage(FOO, FOO_ID, 0L,
             Lists.newArrayList("tag1", "tag2"), ImmutableMap.of("label0", "value0"));
 
     final NotFoundException NOT_FOUND_EXCEPTION = new NotFoundException("Some cool message");
@@ -83,19 +83,19 @@ public class ImagesApiTest {
 
     @Test
     public void testGetAllImages() throws Exception {
-        final Image first = new Image(
+        final DockerImage first = new DockerImage(
                 "first",
                 "0",
                 0L,
                 Lists.newArrayList("tag1", "tag2"),
                 ImmutableMap.of("label0", "value0"));
-        final Image second = new Image(
+        final DockerImage second = new DockerImage(
                 "second",
                 "1",
                 1L,
                 Lists.newArrayList("tagX", "tagY"),
                 ImmutableMap.of("label1", "value1"));
-        final List<Image> mockImageList = Lists.newArrayList(first, second);
+        final List<DockerImage> mockImageList = Lists.newArrayList(first, second);
 
         final String path = "/containers/images";
         final MockHttpServletRequestBuilder request = get(path).accept(JSON);
@@ -113,7 +113,7 @@ public class ImagesApiTest {
                         .getResponse()
                         .getContentAsString();
 
-        List<Image> responseImageList = mapper.readValue(response, new TypeReference<List<Image>>(){});
+        List<DockerImage> responseImageList = mapper.readValue(response, new TypeReference<List<DockerImage>>(){});
         assertThat(responseImageList, equalTo(mockImageList));
 
         // No server pref defined
@@ -147,7 +147,7 @@ public class ImagesApiTest {
                         .getResponse()
                         .getContentAsString();
 
-        final Image imageHappyPath = mapper.readValue(responseHappyPath, Image.class);
+        final DockerImage imageHappyPath = mapper.readValue(responseHappyPath, DockerImage.class);
         assertEquals(imageHappyPath, FOO_IMAGE);
 
         // No server pref defined
@@ -163,7 +163,7 @@ public class ImagesApiTest {
                         .getResponse()
                         .getContentAsString();
 
-        final Image imageNotFound = mapper.readValue(responseNotFound, Image.class);
+        final DockerImage imageNotFound = mapper.readValue(responseNotFound, DockerImage.class);
         assertEquals(imageNotFound, FOO_IMAGE);
 
         // Not found part 2
@@ -191,7 +191,7 @@ public class ImagesApiTest {
                         .getResponse()
                         .getContentAsString();
 
-        final Image imageById = mapper.readValue(responseById, Image.class);
+        final DockerImage imageById = mapper.readValue(responseById, DockerImage.class);
         assertThat(imageById, equalTo(FOO_IMAGE));
 
         // Not found
@@ -223,7 +223,7 @@ public class ImagesApiTest {
                         .getResponse()
                         .getContentAsString();
 
-        final Image imageByName = mapper.readValue(responseByName, Image.class);
+        final DockerImage imageByName = mapper.readValue(responseByName, DockerImage.class);
         assertThat(imageByName, equalTo(FOO_IMAGE));
 
         // Not found
@@ -255,7 +255,7 @@ public class ImagesApiTest {
                         .getResponse()
                         .getContentAsString();
 
-        final Image imageByName = mapper.readValue(responseByName, Image.class);
+        final DockerImage imageByName = mapper.readValue(responseByName, DockerImage.class);
         assertThat(imageByName, equalTo(FOO_IMAGE));
 
         // Not found

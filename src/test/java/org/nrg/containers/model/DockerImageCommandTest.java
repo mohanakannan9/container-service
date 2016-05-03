@@ -31,7 +31,7 @@ import static org.junit.Assert.assertThat;
 @ContextConfiguration(classes = DockerImageCommandTestConfig.class)
 public class DockerImageCommandTest {
 
-    private static final String IMAGE_JSON =
+    private static final String DOCKER_IMAGE_JSON =
             "{\"name\":\"sweet\", \"image-id\":\"abc123\", \"repo-tags\":[\"abc123:latest\"], \"size\":0, \"labels\":{\"foo\":\"bar\"}}";
     private static final String COMMAND_INPUT_0_JSON =
             "{\"name\":\"my_cool_input\", \"description\":\"A directory containing some files\", \"type\":\"directory\", \"required\":true}";
@@ -72,8 +72,8 @@ public class DockerImageCommandTest {
 
         final Output output = mapper.readValue(COMMAND_OUTPUT_JSON, Output.class);
 
-        final Image image = mapper.readValue(IMAGE_JSON, Image.class);
-        dockerImageService.create(image);
+        final DockerImage dockerImage = mapper.readValue(DOCKER_IMAGE_JSON, DockerImage.class);
+        dockerImageService.create(dockerImage);
 
         final String commandJson =
                 "{\"name\":\"test_command\", \"description\":\"The command for the test\", " +
@@ -81,7 +81,7 @@ public class DockerImageCommandTest {
                         "\"inputs\":" + commandInputListJson + ", " +
                         "\"outputs\":[" + COMMAND_OUTPUT_JSON + "], " +
                         "\"template\":\"foo\", \"type\":\"docker-image\", " +
-                        "\"image\":{\"id\":" + image.getId() + "}}";
+                        "\"docker-image\":{\"id\":" + dockerImage.getId() + "}}";
         final Command command = mapper.readValue(commandJson, Command.class);
 
         assertThat(command, instanceOf(DockerImageCommand.class));
@@ -105,7 +105,7 @@ public class DockerImageCommandTest {
         // and environment variables will not be saved.
         dockerImageCommandService.flush();
         dockerImageCommandService.refresh(dockerImageCommand);
-        assertEquals(image, dockerImageCommand.getImage());
+        assertEquals(dockerImage, dockerImageCommand.getDockerImage());
 
 
         assertEquals(commandInputList, dockerImageCommand.getInputs());

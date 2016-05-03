@@ -14,7 +14,7 @@ import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Container;
 import org.nrg.containers.model.ContainerHub;
 import org.nrg.containers.model.ContainerServer;
-import org.nrg.containers.model.Image;
+import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.services.ContainerService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.slf4j.Logger;
@@ -382,15 +382,15 @@ public class ContainersApi {
 
     @RequestMapping(value = "/pull", method = GET, params = "image")
     @ResponseBody
-    public Image pullByNameBad()
+    public DockerImage pullByNameBad()
             throws BadRequestException {
         throw new BadRequestException("Please specify a hub from which to pull the image.");
     }
 
     @RequestMapping(value = "/pull", method = GET, params = "source")
     @ResponseBody
-    public Image pullFromSource(final @RequestParam("source") String source,
-                        final @RequestParam(name = "name", required = false) String name)
+    public DockerImage pullFromSource(final @RequestParam("source") String source,
+                                      final @RequestParam(name = "name", required = false) String name)
             throws ContainerServerException, NotFoundException, NoHubException {
         return service.pullFromSource(source, name);
     }

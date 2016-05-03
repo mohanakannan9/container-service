@@ -15,7 +15,7 @@ import org.nrg.containers.exceptions.ContainerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.ContainerHub;
 import org.nrg.containers.model.ContainerServerPrefsBean;
-import org.nrg.containers.model.Image;
+import org.nrg.containers.model.DockerImage;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
@@ -112,7 +112,7 @@ public class DockerControlApiTest {
     @Test
     public void testGetImageByName() throws Exception {
         client.pull(BUSYBOX_LATEST);
-        final Image image = controlApi.getImageByName(BUSYBOX_LATEST);
+        final DockerImage image = controlApi.getImageByName(BUSYBOX_LATEST);
         assertThat(image.getName(), containsString(BUSYBOX_LATEST));
     }
 
@@ -120,16 +120,16 @@ public class DockerControlApiTest {
     public void testGetAllImages() throws Exception {
         client.pull(BUSYBOX_LATEST);
         client.pull(UBUNTU_LATEST);
-        final List<Image> images = controlApi.getAllImages();
+        final List<DockerImage> images = controlApi.getAllImages();
 
         final List<String> imageNames = imagesToTags(images);
         assertThat(BUSYBOX_LATEST, isIn(imageNames));
         assertThat(UBUNTU_LATEST, isIn(imageNames));
     }
 
-    private List<String> imagesToTags(final List<Image> images) {
+    private List<String> imagesToTags(final List<DockerImage> images) {
         final List<String> tags = Lists.newArrayList();
-        for (Image image : images) {
+        for (DockerImage image : images) {
             if (image.getRepoTags() != null) {
                 tags.addAll(image.getRepoTags());
             }
@@ -137,10 +137,10 @@ public class DockerControlApiTest {
         return tags;
     }
 
-    private List<String> imagesToNames(final List<Image> images) {
-        final Function<Image, String> imageToName = new Function<Image, String>() {
+    private List<String> imagesToNames(final List<DockerImage> images) {
+        final Function<DockerImage, String> imageToName = new Function<DockerImage, String>() {
             @Override
-            public String apply(final Image image) {
+            public String apply(final DockerImage image) {
                 return image.getName();
             }
         };

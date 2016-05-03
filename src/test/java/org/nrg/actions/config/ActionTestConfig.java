@@ -14,7 +14,7 @@ import org.nrg.actions.services.HibernateActionService;
 import org.nrg.containers.daos.DockerImageCommandDao;
 import org.nrg.containers.daos.DockerImageDao;
 import org.nrg.containers.model.DockerImageCommand;
-import org.nrg.containers.model.Image;
+import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.services.DockerImageCommandService;
 import org.nrg.containers.services.DockerImageService;
 import org.nrg.containers.services.HibernateDockerImageCommandService;
@@ -74,7 +74,7 @@ public class ActionTestConfig {
                 MatchTreeNode.class,
                 Matcher.class,
                 CommandInput.class,
-                Image.class,
+                DockerImage.class,
                 Output.class,
                 DockerImageCommand.class);
         return bean;

@@ -8,7 +8,7 @@ import org.nrg.containers.metadata.ImageMetadata;
 import org.nrg.containers.model.Container;
 import org.nrg.containers.model.ContainerHub;
 import org.nrg.containers.model.ContainerServer;
-import org.nrg.containers.model.Image;
+import org.nrg.containers.model.DockerImage;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 
 import java.io.IOException;
@@ -17,11 +17,11 @@ import java.util.Map;
 
 public interface ContainerService {
 
-    List<Image> getAllImages() throws NoServerPrefException, ContainerServerException;
+    List<DockerImage> getAllImages() throws NoServerPrefException, ContainerServerException;
 
-    Image getImageByName(String name) throws NoServerPrefException, NotFoundException, ContainerServerException;
+    DockerImage getImageByName(String name) throws NoServerPrefException, NotFoundException, ContainerServerException;
 
-    Image getImageById(String id) throws NoServerPrefException, NotFoundException, ContainerServerException;
+    DockerImage getImageById(String id) throws NoServerPrefException, NotFoundException, ContainerServerException;
 
     String deleteImageById(String id, Boolean onServer) throws NoServerPrefException, NotFoundException, ContainerServerException;
 
@@ -58,7 +58,7 @@ public interface ContainerService {
     void pullByName(String image, String hub)
         throws NoHubException, NotFoundException, ContainerServerException, IOException, NoServerPrefException;
 
-    Image pullFromSource(String source, String name) throws NoHubException, NotFoundException, ContainerServerException;
+    DockerImage pullFromSource(String source, String name) throws NoHubException, NotFoundException, ContainerServerException;
 
     void setMetadataByName(String name, ImageMetadata metadata, String project, Boolean overwrite, Boolean ignoreBlank)
             throws NoServerPrefException, NotFoundException, ContainerServerException;

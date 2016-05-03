@@ -9,7 +9,7 @@ import org.nrg.actions.model.matcher.Matcher;
 import org.nrg.actions.model.tree.MatchTreeNode;
 import org.nrg.actions.services.ActionService;
 import org.nrg.containers.model.DockerImageCommand;
-import org.nrg.containers.model.Image;
+import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.services.DockerImageCommandService;
 import org.nrg.containers.services.DockerImageService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -144,7 +144,7 @@ public class ActionTest {
 
     @Test
     public void testPersistAction() throws Exception {
-        final Image image = mapper.readValue(DOCKER_IMAGE_JSON, Image.class);
+        final DockerImage image = mapper.readValue(DOCKER_IMAGE_JSON, DockerImage.class);
         dockerImageService.create(image);
 
         final String commandJson = String.format(COMMAND_JSON_TEMPLATE, image.getId());

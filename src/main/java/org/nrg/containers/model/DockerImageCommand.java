@@ -23,17 +23,17 @@ import java.util.Objects;
 @JsonTypeName("docker-image")
 public class DockerImageCommand extends Command {
 
-    private Image image;
+    @JsonProperty("docker-image") private DockerImage dockerImage;
     private String command;
     @JsonProperty("env") private Map<String, String> environmentVariables;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    public Image getImage() {
-        return image;
+    public DockerImage getDockerImage() {
+        return dockerImage;
     }
 
-    public void setImage(final Image image) {
-        this.image = image;
+    public void setDockerImage(final DockerImage dockerImage) {
+        this.dockerImage = dockerImage;
     }
 
     @ElementCollection
@@ -69,21 +69,21 @@ public class DockerImageCommand extends Command {
 
         DockerImageCommand that = (DockerImageCommand) o;
 
-        return Objects.equals(this.image, that.image) &&
+        return Objects.equals(this.dockerImage, that.dockerImage) &&
             Objects.equals(this.environmentVariables, that.environmentVariables) &&
             Objects.equals(this.command, that.command);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), image, environmentVariables, command);
+        return Objects.hash(super.hashCode(), dockerImage, environmentVariables, command);
     }
 
 
     @Override
     public String toString() {
         return addParentFields(MoreObjects.toStringHelper(this))
-                .add("image", image)
+                .add("image", dockerImage)
                 .add("command", command)
                 .add("environmentVariables", environmentVariables)
                 .toString();

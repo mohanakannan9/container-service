@@ -20,7 +20,7 @@ import org.nrg.containers.model.Container;
 import org.nrg.containers.model.ContainerHub;
 import org.nrg.containers.model.ContainerServer;
 import org.nrg.containers.model.ContainerServerPrefsBean;
-import org.nrg.containers.model.Image;
+import org.nrg.containers.model.DockerImage;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +45,7 @@ public class DockerControlApi implements ContainerControlApi {
      * @return Image objects stored on docker server
      **/
     @Override
-    public List<Image> getAllImages() throws NoServerPrefException, ContainerServerException {
+    public List<DockerImage> getAllImages() throws NoServerPrefException, ContainerServerException {
         return getImages(null);
     }
 
@@ -55,7 +55,7 @@ public class DockerControlApi implements ContainerControlApi {
      * @param params Map of query parameters (name = value)
      * @return Image objects stored on docker server meeting the query parameters
      **/
-    public List<Image> getImages(final Map<String, String> params)
+    public List<DockerImage> getImages(final Map<String, String> params)
         throws NoServerPrefException, ContainerServerException {
         return DockerImageToNrgImage(_getImages(params));
     }
@@ -139,9 +139,9 @@ public class DockerControlApi implements ContainerControlApi {
      * @return Image stored on docker server with the given name
      **/
     @Override
-    public Image getImageByName(final String imageName)
+    public DockerImage getImageByName(final String imageName)
         throws ContainerServerException, NotFoundException, NoServerPrefException {
-        final Image image = DockerImageToNrgImage(_getImageByName(imageName));
+        final DockerImage image = DockerImageToNrgImage(_getImageByName(imageName));
         if (image != null) {
             return image;
         }
@@ -167,9 +167,9 @@ public class DockerControlApi implements ContainerControlApi {
      * @return Image stored on docker server with the given name
      **/
     @Override
-    public Image getImageById(final String imageId)
+    public DockerImage getImageById(final String imageId)
         throws NotFoundException, ContainerServerException, NoServerPrefException {
-        final Image image = DockerImageToNrgImage(_getImageById(imageId));
+        final DockerImage image = DockerImageToNrgImage(_getImageById(imageId));
         if (image != null) {
             return image;
         }
@@ -485,22 +485,21 @@ public class DockerControlApi implements ContainerControlApi {
     /**
      * Convert spotify-docker Image object to xnat-container Image object
      *
-     * @param dockerImage Spotify-Docker Image object
+     * @param image Spotify-Docker Image object
      * @return NRG Image object
      **/
-    private static Image DockerImageToNrgImage(final com.spotify.docker.client.messages.Image dockerImage) {
-        Image genericImage = null;
-        if (dockerImage != null) {
-            genericImage =
-                    new Image(
-                            dockerImage.repoTags() != null && dockerImage.repoTags().size() > 0 ? dockerImage.repoTags().get(0) : "null",
-                            dockerImage.id(),
-                            dockerImage.size(),
-                            dockerImage.repoTags(),
-                            dockerImage.labels()
-                    );
+    private static DockerImage DockerImageToNrgImage(final Image image) {
+        if (image == null) {
+            return null;
         }
-        return genericImage;
+
+        return new DockerImage(
+                image.repoTags() != null && image.repoTags().size() > 0 ? image.repoTags().get(0) : "null",
+                image.id(),
+                image.size(),
+                image.repoTags(),
+                image.labels()
+                );
     }
 
     /**
@@ -509,17 +508,17 @@ public class DockerControlApi implements ContainerControlApi {
      * @param dockerImageList List of Spotify-Docker Image objects
      * @return List of NRG Image objects
      **/
-    private static List<Image> DockerImageToNrgImage(final List<com.spotify.docker.client.messages.Image> dockerImageList) {
+    private static List<DockerImage> DockerImageToNrgImage(final List<Image> dockerImageList) {
         return Lists.transform(dockerImageList, DockerImageToNrgImage);
     }
 
     /**
      * Function to convert list of spotify-docker Image objects to list of xnat-container Image objects
      **/
-    private static Function<com.spotify.docker.client.messages.Image, Image> DockerImageToNrgImage =
-            new Function<com.spotify.docker.client.messages.Image, Image>() {
+    private static Function<Image, DockerImage> DockerImageToNrgImage =
+            new Function<com.spotify.docker.client.messages.Image, DockerImage>() {
                 @Override
-                public Image apply(com.spotify.docker.client.messages.Image image) {
+                public DockerImage apply(com.spotify.docker.client.messages.Image image) {
                     return DockerImageToNrgImage(image);
                 }
             };

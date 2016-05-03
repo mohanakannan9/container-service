@@ -15,7 +15,7 @@ import org.nrg.containers.model.Container;
 import org.nrg.containers.model.ContainerHub;
 import org.nrg.containers.model.ContainerHubPrefs;
 import org.nrg.containers.model.ContainerServer;
-import org.nrg.containers.model.Image;
+import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.services.ContainerService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.transporter.TransportService;
@@ -57,16 +57,16 @@ public class DefaultContainerService implements ContainerService {
     @SuppressWarnings("SpringJavaAutowiringInspection") // IntelliJ does not process the excludeFilter in ContainerServiceConfig @ComponentScan, erroneously marks this red
     private ContainerHubPrefs containerHubPrefs;
 
-    public List<Image> getAllImages() throws NoServerPrefException, ContainerServerException {
+    public List<DockerImage> getAllImages() throws NoServerPrefException, ContainerServerException {
         return controlApi.getAllImages();
     }
 
-    public Image getImageByName(final String name) throws NoServerPrefException, NotFoundException, ContainerServerException {
+    public DockerImage getImageByName(final String name) throws NoServerPrefException, NotFoundException, ContainerServerException {
         return controlApi.getImageByName(name);
     }
 
     @Override
-    public Image getImageById(String id) throws NoServerPrefException, NotFoundException, ContainerServerException {
+    public DockerImage getImageById(String id) throws NoServerPrefException, NotFoundException, ContainerServerException {
         // TODO Figure out what to do with this. Not sure if we need to be fetching images by id.
         return controlApi.getImageById(id);
     }
@@ -252,7 +252,7 @@ public class DefaultContainerService implements ContainerService {
     }
 
     @Override
-    public Image pullFromSource(final String source, final String name)
+    public DockerImage pullFromSource(final String source, final String name)
             throws NoHubException, NotFoundException, ContainerServerException {
         // TODO
         return null;
@@ -262,7 +262,7 @@ public class DefaultContainerService implements ContainerService {
     public void setMetadataByName(final String imageName, final ImageMetadata metadata, final String project,
                                   final Boolean overwrite, final Boolean ignoreBlank)
             throws NoServerPrefException, NotFoundException, ContainerServerException {
-        final Image image = getImageByName(imageName);
+        final DockerImage image = getImageByName(imageName);
         imageMetadataService.setMetadata(image, metadata, project, overwrite, ignoreBlank);
     }
 
@@ -270,7 +270,7 @@ public class DefaultContainerService implements ContainerService {
     public void setMetadataById(final String imageId, final ImageMetadata metadata, final String project,
                                 final Boolean overwrite, final Boolean ignoreBlank)
             throws NoServerPrefException, NotFoundException, ContainerServerException {
-        final Image image = getImageById(imageId);
+        final DockerImage image = getImageById(imageId);
         imageMetadataService.setMetadata(image, metadata, project, overwrite, ignoreBlank);
     }
 

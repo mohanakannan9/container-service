@@ -18,7 +18,7 @@ import org.nrg.containers.metadata.service.ImageMetadataService;
 import org.nrg.containers.model.ContainerHub;
 import org.nrg.containers.model.ContainerHubPrefs;
 import org.nrg.containers.model.ContainerServer;
-import org.nrg.containers.model.Image;
+import org.nrg.containers.model.DockerImage;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
@@ -124,30 +124,30 @@ public class DefaultContainerServiceTest {
 
     @Test
     public void testGetAllImages() throws Exception {
-        final List<Image> mockImageList = Lists.newArrayList(new Image("first", "0", 0L, Lists.newArrayList("tag1", "tag2"), ImmutableMap.of("label0", "value0")), new Image("second", "1", 1L, Lists.newArrayList("tagX", "tagY"), ImmutableMap.of("label1", "value1")));
+        final List<DockerImage> mockImageList = Lists.newArrayList(new DockerImage("first", "0", 0L, Lists.newArrayList("tag1", "tag2"), ImmutableMap.of("label0", "value0")), new DockerImage("second", "1", 1L, Lists.newArrayList("tagX", "tagY"), ImmutableMap.of("label1", "value1")));
 
         when(mockContainerControlApi.getAllImages()).thenReturn(mockImageList);
-        final List<Image> responseImageList = service.getAllImages();
+        final List<DockerImage> responseImageList = service.getAllImages();
         assertThat(responseImageList, equalTo(mockImageList));
     }
 
     @Test
     public void testGetImageByName() throws Exception {
         final String name = "foo";
-        final Image mockImage = new Image("foo", "0", 0L, Lists.newArrayList("tag1", "tag2"), ImmutableMap.of("label0", "value0"));
+        final DockerImage mockImage = new DockerImage("foo", "0", 0L, Lists.newArrayList("tag1", "tag2"), ImmutableMap.of("label0", "value0"));
 
         when(mockContainerControlApi.getImageByName(name)).thenReturn(mockImage);
-        final Image responseImageByName = service.getImageByName(name);
+        final DockerImage responseImageByName = service.getImageByName(name);
         assertThat(responseImageByName, equalTo(mockImage));
     }
 
     @Test
     public void testGetImageById() throws Exception {
         final String id = "0";
-        final Image mockImage = new Image("foo", "0", 0L, Lists.newArrayList("tag1", "tag2"), ImmutableMap.of("label0", "value0"));
+        final DockerImage mockImage = new DockerImage("foo", "0", 0L, Lists.newArrayList("tag1", "tag2"), ImmutableMap.of("label0", "value0"));
 
         when(mockContainerControlApi.getImageById(id)).thenReturn(mockImage);
-        final Image responseImageById = service.getImageById(id);
+        final DockerImage responseImageById = service.getImageById(id);
         assertThat(responseImageById, equalTo(mockImage));
     }
 
