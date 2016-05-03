@@ -3,7 +3,7 @@ package org.nrg.containers.metadata.service.impl;
 import org.nrg.containers.metadata.ImageMetadata;
 import org.nrg.containers.metadata.dao.ImageMetadataDAO;
 import org.nrg.containers.metadata.service.ImageMetadataService;
-import org.nrg.containers.model.Image;
+import org.nrg.containers.image.Image;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

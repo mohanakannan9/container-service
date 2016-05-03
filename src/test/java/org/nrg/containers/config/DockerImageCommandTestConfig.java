@@ -7,7 +7,7 @@ import org.nrg.actions.model.Output;
 import org.nrg.containers.daos.DockerImageCommandDao;
 import org.nrg.containers.daos.DockerImageDao;
 import org.nrg.containers.model.DockerImageCommand;
-import org.nrg.containers.model.Image;
+import org.nrg.containers.image.Image;
 import org.nrg.containers.services.DockerImageCommandService;
 import org.nrg.containers.services.DockerImageService;
 import org.nrg.containers.services.HibernateDockerImageCommandService;

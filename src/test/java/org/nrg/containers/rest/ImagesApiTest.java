@@ -10,7 +10,7 @@ import org.junit.runner.RunWith;
 import org.nrg.containers.config.RestApiTestConfig;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
-import org.nrg.containers.model.Image;
+import org.nrg.containers.image.Image;
 import org.nrg.containers.services.ContainerService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.springframework.beans.factory.annotation.Autowired;

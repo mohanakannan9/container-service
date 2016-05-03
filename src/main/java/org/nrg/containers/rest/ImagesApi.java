@@ -7,7 +7,7 @@ import org.nrg.containers.exceptions.ContainerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.metadata.ImageMetadata;
-import org.nrg.containers.model.Image;
+import org.nrg.containers.image.Image;
 import org.nrg.containers.services.ContainerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

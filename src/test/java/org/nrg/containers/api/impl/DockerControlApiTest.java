@@ -15,7 +15,7 @@ import org.nrg.containers.exceptions.ContainerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.ContainerHub;
 import org.nrg.containers.model.ContainerServerPrefsBean;
-import org.nrg.containers.model.Image;
+import org.nrg.containers.image.Image;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;

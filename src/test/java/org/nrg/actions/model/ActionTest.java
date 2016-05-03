@@ -9,7 +9,7 @@ import org.nrg.actions.model.matcher.Matcher;
 import org.nrg.actions.model.tree.MatchTreeNode;
 import org.nrg.actions.services.ActionService;
 import org.nrg.containers.model.DockerImageCommand;
-import org.nrg.containers.model.Image;
+import org.nrg.containers.image.Image;
 import org.nrg.containers.services.DockerImageCommandService;
 import org.nrg.containers.services.DockerImageService;
 import org.springframework.beans.factory.annotation.Autowired;
