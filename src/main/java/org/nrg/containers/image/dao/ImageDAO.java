@@ -26,9 +26,4 @@ public class ImageDAO extends AbstractHibernateDAO<Image> {
         return criteria.list();
     }
 
-    public List<Image> getByType(final String type) {
-        Criteria criteria = getSession().createCriteria(getParameterizedType());
-        criteria.add(Restrictions.eq("type", type));
-        return criteria.list();
-    }
 }

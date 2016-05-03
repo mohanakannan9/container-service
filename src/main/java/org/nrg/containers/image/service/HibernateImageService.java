@@ -1,8 +1,6 @@
-package org.nrg.containers.image.impl.service;
+package org.nrg.containers.image.service;
 
 import org.nrg.containers.image.dao.ImageDAO;
-import org.nrg.containers.image.dao.ImageDAO;
-import org.nrg.containers.image.service.ImageService;
 import org.nrg.containers.image.Image;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.slf4j.Logger;
