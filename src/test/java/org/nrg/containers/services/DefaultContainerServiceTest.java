@@ -19,6 +19,7 @@ import org.nrg.containers.model.ContainerHub;
 import org.nrg.containers.model.ContainerHubPrefs;
 import org.nrg.containers.model.ContainerServer;
 import org.nrg.containers.model.DockerImage;
+import org.nrg.prefs.beans.AbstractPreferenceBean;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
@@ -358,8 +359,8 @@ public class DefaultContainerServiceTest {
 
     private void setUpHubPrefs() {
         when(mockPrefsService.getToolPropertyNames(CONTAINER_HUB_PREF_ID))
-            .thenReturn(Sets.newHashSet(CONTAINER_HUB_PREF_ID + "."));
-        when(mockPrefsService.getPreferenceValue(CONTAINER_HUB_PREF_ID, CONTAINER_HUB_PREF_ID + "."))
+            .thenReturn(Sets.newHashSet(CONTAINER_HUB_PREF_ID + AbstractPreferenceBean.NAMESPACE_DELIMITER));
+        when(mockPrefsService.getPreferenceValue(CONTAINER_HUB_PREF_ID, CONTAINER_HUB_PREF_ID + AbstractPreferenceBean.NAMESPACE_DELIMITER))
             .thenReturn("{'url':'https://index.docker.io/v1/','name':'Docker Hub'," +
                 "'username':'','password':'','email':''}");
         containerHubPrefs.initialize();
