@@ -25,6 +25,7 @@ public class Action extends AbstractHibernateEntity {
     public Action() {}
 
     public Action(final ActionDto dto, final Command command) {
+        this.setId(dto.getId());
         this.name = dto.getName();
         this.description = dto.getDescription();
         this.inputs = dto.getInputs();

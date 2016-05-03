@@ -16,11 +16,25 @@ public class HibernateActionService extends AbstractHibernateEntityService<Actio
     @Autowired
     private CommandService commandService;
 
+    private Action newFromDto(final ActionDto actionDto) {
+        final Command command = commandService.retrieve(actionDto.getCommandId());
+        return new Action(actionDto, command);
+    }
+
     @Override
     public Action createFromDto(final ActionDto actionDto) {
-        final Command command = commandService.retrieve(actionDto.getCommandId());
-        final Action action = new Action(actionDto, command);
+        final Action action = newFromDto(actionDto);
         create(action);
         return action;
+    }
+
+    @Override
+    public void updateFromDto(final ActionDto actionDto) {
+        update(newFromDto(actionDto));
+    }
+
+    @Override
+    public void afterPropertiesSet() {
+        setInitialize(true);
     }
 }
