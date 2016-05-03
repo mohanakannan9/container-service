@@ -3,7 +3,7 @@ package org.nrg.containers.api.impl;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.DockerException;
+import com.spotify.docker.client.exceptions.DockerException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -88,7 +88,7 @@ public class DockerControlApiTest {
         when(mockPrefsService.hasPreference("container-server", "certPath"))
             .thenReturn(true);
 
-        containerServerPrefsBean.initialize(mockPrefsService);
+        containerServerPrefsBean.initialize();
 
         client = controlApi.getClient();
     }

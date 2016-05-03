@@ -10,8 +10,8 @@ import org.nrg.actions.services.CommandService;
 import org.nrg.automation.entities.Script;
 import org.nrg.automation.model.ScriptCommand;
 import org.nrg.automation.services.ScriptService;
+import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.model.DockerImageCommand;
-import org.nrg.containers.model.Image;
 import org.nrg.containers.services.DockerImageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
@@ -20,13 +20,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.isIn;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
@@ -60,7 +58,7 @@ public class CommandTest {
                     "\"inputs\":" + COMMAND_INPUT_LIST_JSON + ", " +
                     "\"outputs\":[" + COMMAND_OUTPUT_JSON + "], " +
                     "\"template\":\"foo\", \"type\":\"docker-image\", " +
-                    "\"image\":{\"id\":%d}}";
+                    "\"docker-image\":{\"id\":%d}}";
 
     private static final String SCRIPT_COMMAND_JSON_TEMPLATE =
             "{\"name\":\"script_command\", \"description\":\"The Script command for the test\", " +
@@ -123,13 +121,13 @@ public class CommandTest {
 
         assertEquals(output, dockerImageCommand.getOutputs().get(0));
 
-        assertEquals(0L, dockerImageCommand.getImage().getId());
+        assertEquals(0L, dockerImageCommand.getDockerImage().getId());
     }
 
     @Test
     public void testPersistDockerImageCommand() throws Exception {
 
-        final Image image = mapper.readValue(DOCKER_IMAGE_JSON, Image.class);
+        final DockerImage image = mapper.readValue(DOCKER_IMAGE_JSON, DockerImage.class);
         dockerImageService.create(image);
 
         final String dockerImageCommandJson =

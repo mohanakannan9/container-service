@@ -20,7 +20,7 @@ import java.util.Objects;
 @Entity
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
 @ApiModel(description = "Properties that define an image.")
-public class DockerImage extends AbstractHibernateEntity implements Serializable {
+public class DockerImage extends AbstractHibernateEntity {
 
     private String name;
     @JsonProperty("image-id") private String imageId;
@@ -69,7 +69,6 @@ public class DockerImage extends AbstractHibernateEntity implements Serializable
      **/
     @ElementCollection
     @ApiModelProperty(value = "The image's repo tags.")
-    @JsonProperty("repotags")
     public List<String> getRepoTags() { return repoTags; }
 
     public void setRepoTags(final List<String> repoTags) { this.repoTags = repoTags; }
@@ -78,7 +77,6 @@ public class DockerImage extends AbstractHibernateEntity implements Serializable
      * Image labels
      **/
     @ApiModelProperty(value = "Image labels")
-    @JsonProperty("labels")
     @ElementCollection
     public Map<String, String> getLabels() { return labels; }
 
