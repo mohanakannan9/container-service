@@ -8,9 +8,8 @@ import org.nrg.actions.config.ActionTestConfig;
 import org.nrg.actions.model.matcher.Matcher;
 import org.nrg.actions.model.tree.MatchTreeNode;
 import org.nrg.actions.services.ActionService;
-import org.nrg.containers.model.DockerImageCommand;
 import org.nrg.containers.model.DockerImage;
-import org.nrg.containers.services.DockerImageCommandService;
+import org.nrg.actions.services.CommandService;
 import org.nrg.containers.services.DockerImageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
@@ -18,11 +17,8 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.hamcrest.Matchers.emptyCollectionOf;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
-import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThat;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -70,7 +66,7 @@ public class ActionTest {
     private ActionService actionService;
 
     @Autowired
-    private DockerImageCommandService dockerImageCommandService;
+    private CommandService commandService;
 
     @Autowired
     private DockerImageService dockerImageService;
@@ -114,8 +110,7 @@ public class ActionTest {
         final MatchTreeNode scanMtNode = mapper.readValue(SCAN_MATCH_TREE_NODE_JSON, MatchTreeNode.class);
 
         final String commandJson = String.format(COMMAND_JSON_TEMPLATE, 0);
-        final DockerImageCommand command = mapper.readValue(commandJson, DockerImageCommand.class);
-        // dockerImageCommandService.create(command);
+        final Command command = mapper.readValue(commandJson, Command.class);
         final CommandInput commandInput = command.getInputs().get(0);
 
         final ActionInput actionInput = mapper.readValue(ACTION_INPUT_JSON, ActionInput.class);
@@ -127,9 +122,6 @@ public class ActionTest {
 
     @Test
     public void testDeserializeAction() throws Exception {
-//        final DockerImageCommand command = mapper.readValue(COMMAND_JSON, DockerImageCommand.class);
-//        dockerImageCommandService.create(command);
-//        final CommandInput input = command.getCommandInputs().get(0);
 
         final ActionInput actionInput = mapper.readValue(ACTION_INPUT_JSON, ActionInput.class);
 
@@ -148,10 +140,8 @@ public class ActionTest {
         dockerImageService.create(image);
 
         final String commandJson = String.format(COMMAND_JSON_TEMPLATE, image.getId());
-        final DockerImageCommand command = mapper.readValue(commandJson, DockerImageCommand.class);
-        dockerImageCommandService.create(command);
-//        dockerImageCommandService.flush();
-//        final DockerImageCommand retrievedCommand = dockerImageCommandService.retrieve(command.getId());
+        final Command command = mapper.readValue(commandJson, Command.class);
+        commandService.create(command);
 
         final String actionJson = String.format(ACTION_JSON_TEMPLATE, command.getId());
         final ActionDto actionDto = mapper.readValue(actionJson, ActionDto.class);

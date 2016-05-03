@@ -3,21 +3,21 @@ package org.nrg.actions.config;
 
 import org.hibernate.SessionFactory;
 import org.nrg.actions.daos.ActionDao;
+import org.nrg.actions.daos.CommandDao;
 import org.nrg.actions.model.Action;
+import org.nrg.actions.model.ActionInput;
+import org.nrg.actions.model.Command;
 import org.nrg.actions.model.CommandInput;
 import org.nrg.actions.model.Output;
 import org.nrg.actions.model.matcher.Matcher;
-import org.nrg.actions.model.ActionInput;
 import org.nrg.actions.model.tree.MatchTreeNode;
 import org.nrg.actions.services.ActionService;
+import org.nrg.actions.services.CommandService;
 import org.nrg.actions.services.HibernateActionService;
-import org.nrg.containers.daos.DockerImageCommandDao;
+import org.nrg.actions.services.HibernateCommandService;
 import org.nrg.containers.daos.DockerImageDao;
-import org.nrg.containers.model.DockerImageCommand;
 import org.nrg.containers.model.DockerImage;
-import org.nrg.containers.services.DockerImageCommandService;
 import org.nrg.containers.services.DockerImageService;
-import org.nrg.containers.services.HibernateDockerImageCommandService;
 import org.nrg.containers.services.HibernateDockerImageService;
 import org.nrg.framework.orm.hibernate.AggregatedAnnotationSessionFactoryBean;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -44,13 +44,13 @@ public class ActionTestConfig {
     }
 
     @Bean
-    public DockerImageCommandService dockerImageCommandService() {
-        return new HibernateDockerImageCommandService();
+    public CommandService commandService() {
+        return new HibernateCommandService();
     }
 
     @Bean
-    public DockerImageCommandDao dockerImageCommandDao() {
-        return new DockerImageCommandDao();
+    public CommandDao commandDao() {
+        return new CommandDao();
     }
 
     @Bean
@@ -76,7 +76,7 @@ public class ActionTestConfig {
                 CommandInput.class,
                 DockerImage.class,
                 Output.class,
-                DockerImageCommand.class);
+                Command.class);
         return bean;
     }
 

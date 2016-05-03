@@ -4,7 +4,6 @@ import org.nrg.actions.daos.ActionDao;
 import org.nrg.actions.model.Action;
 import org.nrg.actions.model.ActionDto;
 import org.nrg.actions.model.Command;
-import org.nrg.containers.services.DockerImageCommandService;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -15,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class HibernateActionService extends AbstractHibernateEntityService<Action, ActionDao>
         implements ActionService {
     @Autowired
-    private DockerImageCommandService commandService;
+    private CommandService commandService;
 
     @Override
     public Action createFromDto(final ActionDto actionDto) {

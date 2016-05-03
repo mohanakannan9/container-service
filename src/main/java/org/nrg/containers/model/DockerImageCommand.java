@@ -1,7 +1,6 @@
 package org.nrg.containers.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.MoreObjects;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
@@ -19,9 +18,10 @@ import java.util.Objects;
 @Audited
 @Entity
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
-@DiscriminatorValue("docker-image")
-@JsonTypeName("docker-image")
+@DiscriminatorValue(DockerImageCommand.COMMAND_TYPE)
 public class DockerImageCommand extends Command {
+
+    static final String COMMAND_TYPE = "docker-image";
 
     @JsonProperty("docker-image") private DockerImage dockerImage;
     private String command;
@@ -45,14 +45,6 @@ public class DockerImageCommand extends Command {
         this.environmentVariables = environmentVariables;
     }
 
-    public String getCommand() {
-        return this.command;
-    }
-
-    public void setCommand(String command) {
-        this.command = command;
-    }
-
     @Override
     public void run() {
         // TODO
@@ -69,21 +61,21 @@ public class DockerImageCommand extends Command {
 
         DockerImageCommand that = (DockerImageCommand) o;
 
+
         return Objects.equals(this.dockerImage, that.dockerImage) &&
-            Objects.equals(this.environmentVariables, that.environmentVariables) &&
-            Objects.equals(this.command, that.command);
+            Objects.equals(this.environmentVariables, that.environmentVariables);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), dockerImage, environmentVariables, command);
+        return Objects.hash(super.hashCode(), dockerImage, environmentVariables);
     }
 
 
     @Override
     public String toString() {
         return addParentFields(MoreObjects.toStringHelper(this))
-                .add("image", dockerImage)
+                .add("dockerImage", dockerImage)
                 .add("command", command)
                 .add("environmentVariables", environmentVariables)
                 .toString();

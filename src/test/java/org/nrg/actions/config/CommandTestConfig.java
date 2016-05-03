@@ -1,16 +1,22 @@
-package org.nrg.containers.config;
+package org.nrg.actions.config;
 
 import org.hibernate.SessionFactory;
+import org.nrg.actions.daos.CommandDao;
 import org.nrg.actions.model.Command;
 import org.nrg.actions.model.CommandInput;
 import org.nrg.actions.model.Output;
-import org.nrg.containers.daos.DockerImageCommandDao;
+import org.nrg.actions.services.CommandService;
+import org.nrg.actions.services.HibernateCommandService;
+import org.nrg.automation.entities.Script;
+import org.nrg.automation.model.ScriptCommand;
+import org.nrg.automation.repositories.ScriptRepository;
+import org.nrg.automation.services.ScriptService;
+import org.nrg.automation.services.impl.hibernate.HibernateScriptService;
+import org.nrg.containers.config.ContainersHibernateEntityTestConfig;
 import org.nrg.containers.daos.DockerImageDao;
 import org.nrg.containers.model.DockerImageCommand;
 import org.nrg.containers.model.DockerImage;
-import org.nrg.containers.services.DockerImageCommandService;
 import org.nrg.containers.services.DockerImageService;
-import org.nrg.containers.services.HibernateDockerImageCommandService;
 import org.nrg.containers.services.HibernateDockerImageService;
 import org.nrg.framework.orm.hibernate.AggregatedAnnotationSessionFactoryBean;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -26,7 +32,7 @@ import java.util.Properties;
 @Configuration
 //@EnableTransactionManagement
 @Import(ContainersHibernateEntityTestConfig.class)
-public class DockerImageCommandTestConfig {
+public class CommandTestConfig {
     @Bean
     public DockerImageService dockerImageService() {
         return new HibernateDockerImageService();
@@ -38,13 +44,23 @@ public class DockerImageCommandTestConfig {
     }
 
     @Bean
-    public DockerImageCommandService dockerImageCommandService() {
-        return new HibernateDockerImageCommandService();
+    public ScriptService scriptService() {
+        return new HibernateScriptService();
     }
 
     @Bean
-    public DockerImageCommandDao dockerImageCommandDao() {
-        return new DockerImageCommandDao();
+    public ScriptRepository scriptRepository() {
+        return new ScriptRepository();
+    }
+
+    @Bean
+    public CommandService commandService() {
+        return new HibernateCommandService();
+    }
+
+    @Bean
+    public CommandDao commandDao() {
+        return new CommandDao();
     }
 
     @Bean
@@ -56,6 +72,8 @@ public class DockerImageCommandTestConfig {
                 Command.class,
                 DockerImageCommand.class,
                 DockerImage.class,
+                ScriptCommand.class,
+                Script.class,
                 CommandInput.class,
                 Output.class);
         return bean;

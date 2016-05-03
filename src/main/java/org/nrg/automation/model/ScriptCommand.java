@@ -1,6 +1,5 @@
 package org.nrg.automation.model;
 
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.MoreObjects;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
@@ -16,9 +15,9 @@ import java.util.Objects;
 @Audited
 @Entity
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
-@JsonTypeName("script")
-@DiscriminatorValue("script")
+@DiscriminatorValue(ScriptCommand.COMMAND_TYPE)
 public class ScriptCommand extends Command {
+    static final String COMMAND_TYPE = "script";
     private Script script;
 
     @ManyToOne
@@ -32,13 +31,13 @@ public class ScriptCommand extends Command {
 
     @Override
     public void run() {
-
+        // TODO
     }
 
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null || !super.equals(o) || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         final ScriptCommand that = (ScriptCommand) o;
         return Objects.equals(script, that.script);
@@ -51,7 +50,7 @@ public class ScriptCommand extends Command {
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this)
+        return addParentFields(MoreObjects.toStringHelper(this))
                 .add("script", script)
                 .toString();
     }
