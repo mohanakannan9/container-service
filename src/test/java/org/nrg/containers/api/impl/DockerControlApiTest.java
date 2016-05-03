@@ -11,10 +11,11 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.nrg.containers.config.DockerControlApiTestConfig;
-import org.nrg.containers.exceptions.ContainerServerException;
+import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.model.ContainerHub;
-import org.nrg.containers.model.ContainerServerPrefsBean;
+import org.nrg.containers.model.DockerHub;
+import org.nrg.containers.model.DockerImageDto;
+import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.DockerImage;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,7 +49,7 @@ public class DockerControlApiTest {
     private DockerControlApi controlApi;
 
     @Autowired
-    private ContainerServerPrefsBean containerServerPrefsBean;
+    private DockerServerPrefsBean dockerServerPrefsBean;
 
     @Autowired
     private NrgPreferenceService mockPrefsService;
@@ -88,7 +89,7 @@ public class DockerControlApiTest {
         when(mockPrefsService.hasPreference("container-server", "certPath"))
             .thenReturn(true);
 
-        containerServerPrefsBean.initialize();
+        dockerServerPrefsBean.initialize();
 
         client = controlApi.getClient();
     }
@@ -106,13 +107,13 @@ public class DockerControlApiTest {
 //                CERT_PATH + "\"}";
 //        final ContainerServerPrefsBean expectedServer = mapper.readValue(containerServerJson, ContainerServerPrefsBean.class);
 
-        assertEquals(containerServerPrefsBean.toBean(), controlApi.getServer());
+        assertEquals(dockerServerPrefsBean.toBean(), controlApi.getServer());
     }
 
     @Test
     public void testGetImageByName() throws Exception {
         client.pull(BUSYBOX_LATEST);
-        final DockerImage image = controlApi.getImageByName(BUSYBOX_LATEST);
+        final DockerImageDto image = controlApi.getImageByName(BUSYBOX_LATEST);
         assertThat(image.getName(), containsString(BUSYBOX_LATEST));
     }
 
@@ -120,16 +121,16 @@ public class DockerControlApiTest {
     public void testGetAllImages() throws Exception {
         client.pull(BUSYBOX_LATEST);
         client.pull(UBUNTU_LATEST);
-        final List<DockerImage> images = controlApi.getAllImages();
+        final List<DockerImageDto> images = controlApi.getAllImages();
 
         final List<String> imageNames = imagesToTags(images);
         assertThat(BUSYBOX_LATEST, isIn(imageNames));
         assertThat(UBUNTU_LATEST, isIn(imageNames));
     }
 
-    private List<String> imagesToTags(final List<DockerImage> images) {
+    private List<String> imagesToTags(final List<DockerImageDto> images) {
         final List<String> tags = Lists.newArrayList();
-        for (DockerImage image : images) {
+        for (final DockerImageDto image : images) {
             if (image.getRepoTags() != null) {
                 tags.addAll(image.getRepoTags());
             }
@@ -137,10 +138,10 @@ public class DockerControlApiTest {
         return tags;
     }
 
-    private List<String> imagesToNames(final List<DockerImage> images) {
-        final Function<DockerImage, String> imageToName = new Function<DockerImage, String>() {
+    private List<String> imagesToNames(final List<DockerImageDto> images) {
+        final Function<DockerImageDto, String> imageToName = new Function<DockerImageDto, String>() {
             @Override
-            public String apply(final DockerImage image) {
+            public String apply(final DockerImageDto image) {
                 return image.getName();
             }
         };
@@ -181,12 +182,12 @@ public class DockerControlApiTest {
 
     @Test
     public void testPingHub() throws Exception {
-        final ContainerHub containerHub = ContainerHub.builder()
+        final DockerHub dockerHub = DockerHub.builder()
                 .url("https://index.docker.io/v1/")
                 .name("Docker Hub")
                 .build();
 
-        assertEquals("OK", controlApi.pingHub(containerHub));
+        assertEquals("OK", controlApi.pingHub(dockerHub));
     }
 
     @Test
@@ -196,7 +197,7 @@ public class DockerControlApiTest {
     }
 
     @Test
-    public void testDeleteImage() throws DockerException, InterruptedException, NoServerPrefException, ContainerServerException {
+    public void testDeleteImage() throws DockerException, InterruptedException, NoServerPrefException, DockerServerException {
         client.pull(BUSYBOX_NAME);
         int beforeImageCount = client.listImages().size();
         controlApi.deleteImageById(BUSYBOX_ID);

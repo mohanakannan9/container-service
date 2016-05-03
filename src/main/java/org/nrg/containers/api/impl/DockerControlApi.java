@@ -13,13 +13,14 @@ import com.spotify.docker.client.LogStream;
 import com.spotify.docker.client.messages.*;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.containers.api.ContainerControlApi;
-import org.nrg.containers.exceptions.ContainerServerException;
+import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Container;
-import org.nrg.containers.model.ContainerHub;
-import org.nrg.containers.model.ContainerServer;
-import org.nrg.containers.model.ContainerServerPrefsBean;
+import org.nrg.containers.model.DockerHub;
+import org.nrg.containers.model.DockerImageDto;
+import org.nrg.containers.model.DockerServer;
+import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.DockerImage;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.slf4j.Logger;
@@ -37,7 +38,7 @@ public class DockerControlApi implements ContainerControlApi {
 
     @Autowired
     @SuppressWarnings("SpringJavaAutowiringInspection") // IntelliJ does not process the excludeFilter in ContainerServiceConfig @ComponentScan, erroneously marks this red
-    private ContainerServerPrefsBean containerServerPref;
+    private DockerServerPrefsBean containerServerPref;
 
     /**
      * Query Docker server for all images
@@ -45,7 +46,7 @@ public class DockerControlApi implements ContainerControlApi {
      * @return Image objects stored on docker server
      **/
     @Override
-    public List<DockerImage> getAllImages() throws NoServerPrefException, ContainerServerException {
+    public List<DockerImageDto> getAllImages() throws NoServerPrefException, DockerServerException {
         return getImages(null);
     }
 
@@ -55,13 +56,13 @@ public class DockerControlApi implements ContainerControlApi {
      * @param params Map of query parameters (name = value)
      * @return Image objects stored on docker server meeting the query parameters
      **/
-    public List<DockerImage> getImages(final Map<String, String> params)
-        throws NoServerPrefException, ContainerServerException {
+    public List<DockerImageDto> getImages(final Map<String, String> params)
+        throws NoServerPrefException, DockerServerException {
         return DockerImageToNrgImage(_getImages(params));
     }
 
     private List<com.spotify.docker.client.messages.Image> _getImages(final Map<String, String> params)
-        throws NoServerPrefException, ContainerServerException {
+        throws NoServerPrefException, DockerServerException {
         // Transform param map to ListImagesParam array
         DockerClient.ListImagesParam[] dockerParams;
         if (params != null && params.size() > 0) {
@@ -76,14 +77,14 @@ public class DockerControlApi implements ContainerControlApi {
             return dockerClient.listImages(dockerParams);
         } catch (DockerException | InterruptedException e) {
             _log.error("Failed to list images. " + e.getMessage());
-            throw new ContainerServerException(e);
+            throw new DockerServerException(e);
         } catch (Error e) {
             _log.error("Failed to list images. " + e.getMessage());
             throw e;
         }
     }
 
-    public ContainerServer getServer() throws NoServerPrefException {
+    public DockerServer getServer() throws NoServerPrefException {
         if (containerServerPref == null || containerServerPref.getHost() == null) {
             throw new NoServerPrefException("No container server URI defined in preferences.");
         }
@@ -99,22 +100,22 @@ public class DockerControlApi implements ContainerControlApi {
         containerServerPref.setCertPath(certPath);
     }
 
-    public void setServer(final ContainerServer serverBean) throws InvalidPreferenceName {
+    public void setServer(final DockerServer serverBean) throws InvalidPreferenceName {
         containerServerPref.setFromBean(serverBean);
     }
 
     @Override
-    public String pingServer() throws NoServerPrefException, ContainerServerException {
+    public String pingServer() throws NoServerPrefException, DockerServerException {
         try (final DockerClient client = getClient()) {
             return client.ping();
         } catch (DockerException | InterruptedException e) {
             _log.error(e.getMessage());
-            throw new ContainerServerException(e);
+            throw new DockerServerException(e);
         }
     }
 
     @Override
-    public String pingHub(ContainerHub hub) throws ContainerServerException, NoServerPrefException {
+    public String pingHub(DockerHub hub) throws DockerServerException, NoServerPrefException {
         final DockerClient client = getClient();
         AuthConfig authConfig = AuthConfig.builder().email(hub.email()).username(hub.username())
                 .password(hub.password()).serverAddress(hub.url()).build();
@@ -127,7 +128,7 @@ public class DockerControlApi implements ContainerControlApi {
         }
         catch (Exception e) {
             _log.error(e.getMessage());
-            throw new ContainerServerException(e);
+            throw new DockerServerException(e);
         }
         return null;
     }
@@ -139,9 +140,9 @@ public class DockerControlApi implements ContainerControlApi {
      * @return Image stored on docker server with the given name
      **/
     @Override
-    public DockerImage getImageByName(final String imageName)
-        throws ContainerServerException, NotFoundException, NoServerPrefException {
-        final DockerImage image = DockerImageToNrgImage(_getImageByName(imageName));
+    public DockerImageDto getImageByName(final String imageName)
+        throws DockerServerException, NotFoundException, NoServerPrefException {
+        final DockerImageDto image = DockerImageToNrgImage(_getImageByName(imageName));
         if (image != null) {
             return image;
         }
@@ -149,12 +150,12 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     private com.spotify.docker.client.messages.Image _getImageByName(final String imageName)
-        throws ContainerServerException, NoServerPrefException {
+        throws DockerServerException, NoServerPrefException {
         List<com.spotify.docker.client.messages.Image> images;
         try (final DockerClient client = getClient()) {
             images = client.listImages(DockerClient.ListImagesParam.byName(imageName));
         } catch (DockerException | InterruptedException e) {
-            throw new ContainerServerException(e);
+            throw new DockerServerException(e);
         }
 
         return oneImage(imageName, images);
@@ -167,9 +168,9 @@ public class DockerControlApi implements ContainerControlApi {
      * @return Image stored on docker server with the given name
      **/
     @Override
-    public DockerImage getImageById(final String imageId)
-        throws NotFoundException, ContainerServerException, NoServerPrefException {
-        final DockerImage image = DockerImageToNrgImage(_getImageById(imageId));
+    public DockerImageDto getImageById(final String imageId)
+        throws NotFoundException, DockerServerException, NoServerPrefException {
+        final DockerImageDto image = DockerImageToNrgImage(_getImageById(imageId));
         if (image != null) {
             return image;
         }
@@ -177,14 +178,14 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     private com.spotify.docker.client.messages.Image _getImageById(final String imageId)
-        throws ContainerServerException, NoServerPrefException {
+        throws DockerServerException, NoServerPrefException {
 //        TODO: Make this work
 
         List<com.spotify.docker.client.messages.Image> images;
         try (final DockerClient client = getClient()) {
             images = client.listImages(DockerClient.ListImagesParam.byName(imageId));
         } catch (DockerException | InterruptedException e) {
-            throw new ContainerServerException(e);
+            throw new DockerServerException(e);
         }
 
         return oneImage(imageId, images);
@@ -216,7 +217,7 @@ public class DockerControlApi implements ContainerControlApi {
      * @return Container objects stored on docker server
      **/
     @Override
-    public List<Container> getAllContainers() throws NoServerPrefException, ContainerServerException {
+    public List<Container> getAllContainers() throws NoServerPrefException, DockerServerException {
         return getContainers(null);
     }
 
@@ -228,7 +229,7 @@ public class DockerControlApi implements ContainerControlApi {
      **/
     @Override
     public List<Container> getContainers(final Map<String, String> params)
-        throws NoServerPrefException, ContainerServerException {
+        throws NoServerPrefException, DockerServerException {
         List<com.spotify.docker.client.messages.Container> containerList;
 
         // Transform param map to ListImagesParam array
@@ -245,7 +246,7 @@ public class DockerControlApi implements ContainerControlApi {
             containerList = dockerClient.listContainers(dockerParams);
         } catch (DockerException | InterruptedException e) {
             _log.error(e.getMessage());
-            throw new ContainerServerException(e);
+            throw new DockerServerException(e);
         }
         return DockerContainerToNrgContainer(containerList);
     }
@@ -258,7 +259,7 @@ public class DockerControlApi implements ContainerControlApi {
      **/
     @Override
     public Container getContainer(final String id)
-        throws NotFoundException, NoServerPrefException, ContainerServerException {
+        throws NotFoundException, NoServerPrefException, DockerServerException {
         final Container container = DockerContainerToNrgContainer(_getContainer(id));
         if (container != null) {
             return container;
@@ -266,13 +267,13 @@ public class DockerControlApi implements ContainerControlApi {
         throw new NotFoundException(String.format("Could not find container %s", id));
     }
 
-    private ContainerInfo _getContainer(final String id) throws NoServerPrefException, ContainerServerException {
+    private ContainerInfo _getContainer(final String id) throws NoServerPrefException, DockerServerException {
         final DockerClient client = getClient();
         try {
             return client.inspectContainer(id);
         } catch (DockerException | InterruptedException e) {
             _log.error("Container server error." + e.getMessage());
-            throw new ContainerServerException(e);
+            throw new DockerServerException(e);
         }
     }
 
@@ -284,7 +285,7 @@ public class DockerControlApi implements ContainerControlApi {
      **/
     @Override
     public String getContainerStatus(final String id)
-        throws NotFoundException, NoServerPrefException, ContainerServerException {
+        throws NotFoundException, NoServerPrefException, DockerServerException {
         final Container container = getContainer(id);
 
         return container != null ? container.status() : null;
@@ -347,20 +348,20 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     @Override
-    public String getContainerLogs(String id) throws NoServerPrefException, ContainerServerException {
+    public String getContainerLogs(String id) throws NoServerPrefException, DockerServerException {
         String logs;
         try (final LogStream logStream = getClient().logs(id, LogsParam.stdout())) {
             logs = logStream.readFully();
         } catch (DockerException | InterruptedException e) {
             _log.error(e.getMessage());
-            throw new ContainerServerException(e);
+            throw new DockerServerException(e);
         }
 
         return logs;
     }
 
     @Override
-    public void deleteImageByName(String name) throws NoServerPrefException, ContainerServerException {
+    public void deleteImageByName(String name) throws NoServerPrefException, DockerServerException {
         com.spotify.docker.client.messages.Image image = _getImageByName(name);
         deleteImageById(image.id());
     }
@@ -380,7 +381,7 @@ public class DockerControlApi implements ContainerControlApi {
      * @return DockerClient object using default authConfig
      **/
     public DockerClient getClient() throws NoServerPrefException {
-        final ContainerServer server = getServer();
+        final DockerServer server = getServer();
 
         if (_log.isDebugEnabled()) {
             _log.debug("method getClient, Create server connection, server " + server.host());
@@ -424,12 +425,12 @@ public class DockerControlApi implements ContainerControlApi {
      *
      **/
     @Override
-    public void pullImage(String name) throws NoServerPrefException, ContainerServerException {
+    public void pullImage(String name) throws NoServerPrefException, DockerServerException {
         try (final DockerClient client = getClient()) {
             client.pull(name);
         } catch (DockerException | InterruptedException e) {
             _log.error(e.getMessage());
-            throw new ContainerServerException(e);
+            throw new DockerServerException(e);
         }
     }
 
@@ -438,7 +439,7 @@ public class DockerControlApi implements ContainerControlApi {
      *
      **/
     @Override
-    public void pullImage(String name, ContainerHub hub) throws NoServerPrefException, ContainerServerException {
+    public void pullImage(String name, DockerHub hub) throws NoServerPrefException, DockerServerException {
         if (hub == null) {
             pullImage(name);
         } else {
@@ -452,7 +453,7 @@ public class DockerControlApi implements ContainerControlApi {
                 client.pull(name, authConfig);
             } catch (DockerException | InterruptedException e) {
                 _log.error(e.getMessage());
-                throw new ContainerServerException(e);
+                throw new DockerServerException(e);
             }
         }
     }
@@ -488,18 +489,18 @@ public class DockerControlApi implements ContainerControlApi {
      * @param image Spotify-Docker Image object
      * @return NRG Image object
      **/
-    private static DockerImage DockerImageToNrgImage(final Image image) {
+    private static DockerImageDto DockerImageToNrgImage(final Image image) {
         if (image == null) {
             return null;
         }
 
-        return new DockerImage(
-                image.repoTags() != null && image.repoTags().size() > 0 ? image.repoTags().get(0) : "null",
-                image.id(),
-                image.size(),
-                image.repoTags(),
-                image.labels()
-                );
+        return DockerImageDto.builder()
+                .setImageId(image.id())
+                .setRepoTags(image.repoTags())
+                .setLabels(image.labels())
+                .setInDatabase(false)
+                .setOnDockerServer(true)
+                .build();
     }
 
     /**
@@ -508,17 +509,17 @@ public class DockerControlApi implements ContainerControlApi {
      * @param dockerImageList List of Spotify-Docker Image objects
      * @return List of NRG Image objects
      **/
-    private static List<DockerImage> DockerImageToNrgImage(final List<Image> dockerImageList) {
+    private static List<DockerImageDto> DockerImageToNrgImage(final List<Image> dockerImageList) {
         return Lists.transform(dockerImageList, DockerImageToNrgImage);
     }
 
     /**
      * Function to convert list of spotify-docker Image objects to list of xnat-container Image objects
      **/
-    private static Function<Image, DockerImage> DockerImageToNrgImage =
-            new Function<com.spotify.docker.client.messages.Image, DockerImage>() {
+    private static Function<Image, DockerImageDto> DockerImageToNrgImage =
+            new Function<Image, DockerImageDto>() {
                 @Override
-                public DockerImage apply(com.spotify.docker.client.messages.Image image) {
+                public DockerImageDto apply(final Image image) {
                     return DockerImageToNrgImage(image);
                 }
             };

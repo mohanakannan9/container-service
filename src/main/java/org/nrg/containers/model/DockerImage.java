@@ -1,7 +1,10 @@
 package org.nrg.containers.model;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.annotations.Cache;
@@ -24,18 +27,15 @@ public class DockerImage extends AbstractHibernateEntity {
 
     private String name;
     @JsonProperty("image-id") private String imageId;
-    @JsonProperty("repo-tags") private List<String> repoTags;
-    private Long size;
-    private Map<String, String> labels;
+    @JsonProperty("repo-tags") private ImmutableList<String> repoTags;
+    private ImmutableMap<String, String> labels;
 
     public DockerImage() {}
 
-    public DockerImage(final String name, final String imageId, Long size, List<String> repoTags, Map<String, String> labels){
-        this.name = name;
-        this.imageId = imageId;
-        this.size = size;
-        this.repoTags = repoTags;
-        this.labels = labels;
+    @JsonGetter("id")
+    @Override
+    public long getId() {
+        return super.getId();
     }
 
     /**
@@ -57,21 +57,13 @@ public class DockerImage extends AbstractHibernateEntity {
     public void setImageId(final String imageId) { this.imageId = imageId; }
 
     /**
-     * The image's size.
-     **/
-    @ApiModelProperty(value = "The image's size.")
-    public Long getSize() { return size; }
-
-    public void setSize(final Long size) { this.size = size; }
-
-    /**
      * The image's repo tags.
      **/
     @ElementCollection
     @ApiModelProperty(value = "The image's repo tags.")
     public List<String> getRepoTags() { return repoTags; }
 
-    public void setRepoTags(final List<String> repoTags) { this.repoTags = repoTags; }
+    public void setRepoTags(final List<String> repoTags) { this.repoTags = ImmutableList.copyOf(repoTags); }
 
     /**
      * Image labels
@@ -80,13 +72,12 @@ public class DockerImage extends AbstractHibernateEntity {
     @ElementCollection
     public Map<String, String> getLabels() { return labels; }
 
-    public void setLabels(final Map<String, String> labels) { this.labels = labels; }
+    public void setLabels(final Map<String, String> labels) { this.labels = ImmutableMap.copyOf(labels); }
 
     public String toString() {
         return addParentPropertiesToString(MoreObjects.toStringHelper(this))
                 .add("imageId", imageId)
                 .add("name", name)
-                .add("size", size)
                 .add("tags", repoTags)
                 .add("labels", labels)
                 .toString();
@@ -106,12 +97,11 @@ public class DockerImage extends AbstractHibernateEntity {
         return Objects.equals(this.name, that.name) &&
                 Objects.equals(this.imageId, that.imageId) &&
                 Objects.equals(this.repoTags, that.repoTags) &&
-                Objects.equals(this.size, that.size) &&
                 Objects.equals(this.labels, that.labels);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), name, imageId, repoTags, size, labels);
+        return Objects.hash(super.hashCode(), name, imageId, repoTags, labels);
     }
 }

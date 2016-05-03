@@ -3,8 +3,8 @@ package org.nrg.containers.config;
 import org.mockito.Mockito;
 import org.nrg.automation.services.ScriptService;
 import org.nrg.containers.api.ContainerControlApi;
-import org.nrg.containers.model.ContainerServerPrefsBean;
-import org.nrg.containers.model.ContainerHubPrefs;
+import org.nrg.containers.model.DockerServerPrefsBean;
+import org.nrg.containers.model.DockerHubPrefs;
 import org.nrg.containers.services.ContainerService;
 import org.nrg.containers.services.impl.DefaultContainerService;
 import org.nrg.prefs.services.NrgPreferenceService;
@@ -27,13 +27,13 @@ public class DefaultContainerServiceTestConfig {
     }
 
     @Bean
-    public ContainerServerPrefsBean mockContainerServer() {
-        return Mockito.mock(ContainerServerPrefsBean.class);
+    public DockerServerPrefsBean mockContainerServer() {
+        return Mockito.mock(DockerServerPrefsBean.class);
     }
 
     @Bean
-    public ContainerHubPrefs containerHubPrefs() {
-        return new ContainerHubPrefs();
+    public DockerHubPrefs containerHubPrefs() {
+        return new DockerHubPrefs();
     }
 
     @Bean

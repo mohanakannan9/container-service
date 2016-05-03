@@ -4,13 +4,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Objects;
 
-public class ContainerServer {
+public class DockerServer {
     @JsonProperty("host") private String host;
-    @JsonProperty("certPath") private String certPath;
+    @JsonProperty("cert-path") private String certPath;
 
-    public ContainerServer() {}
+    public DockerServer() {}
 
-    public ContainerServer(final String host, final String certPath) {
+    public DockerServer(final String host, final String certPath) {
         this.host = host;
         this.certPath = certPath;
     }
@@ -23,7 +23,7 @@ public class ContainerServer {
         return new Builder(this);
     }
 
-    private ContainerServer(final Builder builder) {
+    private DockerServer(final Builder builder) {
         this.host = builder.host;
         this.certPath = builder.certPath;
     }
@@ -53,7 +53,7 @@ public class ContainerServer {
             return false;
         }
 
-        ContainerServer that = (ContainerServer) o;
+        DockerServer that = (DockerServer) o;
 
         return Objects.equals(this.host, that.host) &&
                 Objects.equals(this.certPath, that.certPath);
@@ -70,13 +70,13 @@ public class ContainerServer {
 
         private Builder() {}
 
-        private Builder(final ContainerServer server) {
+        private Builder(final DockerServer server) {
             this.host = server.host;
             this.certPath = server.certPath;
         }
 
-        public ContainerServer build() {
-            return new ContainerServer(this);
+        public DockerServer build() {
+            return new DockerServer(this);
         }
 
         public Builder host(final String host) {

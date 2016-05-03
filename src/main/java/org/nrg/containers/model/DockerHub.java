@@ -9,16 +9,16 @@ import java.util.Objects;
 
 
 @JsonIgnoreProperties({"key"})
-public class ContainerHub {
+public class DockerHub {
     @JsonProperty("name") private String name;
     @JsonProperty("url") private String url;
     @JsonProperty("username") private String username;
     @JsonProperty("password") private String password;
     @JsonProperty("email") private String email;
 
-    public ContainerHub() {}
+    public DockerHub() {}
 
-    private ContainerHub(final Builder builder) {
+    private DockerHub(final Builder builder) {
         this.name = builder.name;
         this.url = builder.url;
         this.username = builder.username;
@@ -67,7 +67,7 @@ public class ContainerHub {
             return false;
         }
 
-        ContainerHub that = (ContainerHub) o;
+        DockerHub that = (DockerHub) o;
 
         return Objects.equals(this.name, that.name) &&
                 Objects.equals(this.url, that.url) &&
@@ -101,7 +101,7 @@ public class ContainerHub {
 
         private Builder() {}
 
-        private Builder(final ContainerHub hub) {
+        private Builder(final DockerHub hub) {
             this.name = hub.name;
             this.url = hub.url;
             this.username = hub.username;
@@ -109,8 +109,8 @@ public class ContainerHub {
             this.email = hub.email;
         }
 
-        public ContainerHub build() {
-            return new ContainerHub(this);
+        public DockerHub build() {
+            return new DockerHub(this);
         }
 
         public Builder name(final String name) {

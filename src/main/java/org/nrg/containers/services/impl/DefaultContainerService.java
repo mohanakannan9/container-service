@@ -5,14 +5,14 @@ import org.apache.commons.io.FileUtils;
 import org.nrg.automation.entities.Script;
 import org.nrg.automation.services.ScriptService;
 import org.nrg.containers.api.ContainerControlApi;
-import org.nrg.containers.exceptions.ContainerServerException;
+import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoHubException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Container;
-import org.nrg.containers.model.ContainerHub;
-import org.nrg.containers.model.ContainerHubPrefs;
-import org.nrg.containers.model.ContainerServer;
+import org.nrg.containers.model.DockerHub;
+import org.nrg.containers.model.DockerHubPrefs;
+import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.services.ContainerService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
@@ -49,53 +49,53 @@ public class DefaultContainerService implements ContainerService {
 
     @Autowired
     @SuppressWarnings("SpringJavaAutowiringInspection") // IntelliJ does not process the excludeFilter in ContainerServiceConfig @ComponentScan, erroneously marks this red
-    private ContainerHubPrefs containerHubPrefs;
+    private DockerHubPrefs dockerHubPrefs;
 
-    public List<DockerImage> getAllImages() throws NoServerPrefException, ContainerServerException {
-        return controlApi.getAllImages();
-    }
-
-    public DockerImage getImageByName(final String name) throws NoServerPrefException, NotFoundException, ContainerServerException {
-        return controlApi.getImageByName(name);
-    }
+//    public List<DockerImage> getAllImages() throws NoServerPrefException, DockerServerException {
+//        return controlApi.getAllImages();
+//    }
+//
+//    public DockerImage getImageByName(final String name) throws NoServerPrefException, NotFoundException, DockerServerException {
+//        return controlApi.getImageByName(name);
+//    }
+//
+//    @Override
+//    public DockerImage getImageById(String id) throws NoServerPrefException, NotFoundException, DockerServerException {
+//        // TODO Figure out what to do with this. Not sure if we need to be fetching images by id.
+//        return controlApi.getImageById(id);
+//    }
+//
+//    @Override
+//    public String deleteImageById(final String id, final Boolean onServer) throws NoServerPrefException, NotFoundException, DockerServerException {
+//        controlApi.deleteImageById(id);
+//        // TODO delete image in XNAT database
+//        return null;
+//    }
+//
+//    @Override
+//    public String deleteImageByName(final String name, final Boolean onServer) throws NoServerPrefException, NotFoundException, DockerServerException {
+//        controlApi.deleteImageByName(name);
+//        // TODO delete imaage in XNAT database
+//        return null;
+//    }
 
     @Override
-    public DockerImage getImageById(String id) throws NoServerPrefException, NotFoundException, ContainerServerException {
-        // TODO Figure out what to do with this. Not sure if we need to be fetching images by id.
-        return controlApi.getImageById(id);
-    }
-
-    @Override
-    public String deleteImageById(final String id, final Boolean onServer) throws NoServerPrefException, NotFoundException, ContainerServerException {
-        controlApi.deleteImageById(id);
-        // TODO delete image in XNAT database
-        return null;
-    }
-
-    @Override
-    public String deleteImageByName(final String name, final Boolean onServer) throws NoServerPrefException, NotFoundException, ContainerServerException {
-        controlApi.deleteImageByName(name);
-        // TODO delete imaage in XNAT database
-        return null;
-    }
-
-    @Override
-    public List<Container> getContainers(final Map<String, List<String>> params) throws NoServerPrefException, ContainerServerException {
+    public List<Container> getContainers(final Map<String, List<String>> params) throws NoServerPrefException, DockerServerException {
         // TODO do stuff with queryParams
         return controlApi.getAllContainers();
     }
 
-    public String getContainerStatus(final String id) throws NoServerPrefException, NotFoundException, ContainerServerException {
+    public String getContainerStatus(final String id) throws NoServerPrefException, NotFoundException, DockerServerException {
         return controlApi.getContainerStatus(id);
     }
 
-    public Container getContainer(final String id) throws NoServerPrefException, NotFoundException, ContainerServerException {
+    public Container getContainer(final String id) throws NoServerPrefException, NotFoundException, DockerServerException {
         return controlApi.getContainer(id);
     }
 
     @Override
     public String launch(final String imageName, final Map<String, String> params, Boolean wait)
-            throws NoServerPrefException, NotFoundException, ContainerServerException {
+            throws NoServerPrefException, NotFoundException, DockerServerException {
 
         // Find image and metadata
         // Resolve all arguments
@@ -195,38 +195,22 @@ public class DefaultContainerService implements ContainerService {
 
     @Override
     public String getContainerLogs(final String id)
-        throws NoServerPrefException, NotFoundException, ContainerServerException {
+        throws NoServerPrefException, NotFoundException, DockerServerException {
         return controlApi.getContainerLogs(id);
     }
 
     @Override
     public String verbContainer(final String id, final String status)
-            throws NoServerPrefException, NotFoundException, ContainerServerException {
+            throws NoServerPrefException, NotFoundException, DockerServerException {
         // TODO
         return null;
     }
 
     @Override
-    public List<ContainerHub> getHubs() {
-        return containerHubPrefs.getContainerHubs();
-    }
-
-    @Override
-    public void setHub(final ContainerHub hub) throws IOException {
-        containerHubPrefs.setContainerHub(hub);
-    }
-
-//    @Override
-//    public String search(final String term) throws NoHubException {
-//        // TODO
-//        return null;
-//    }
-
-    @Override
     public void pullByName(final String image, final String hub,
                            final String hubUsername, final String hubPassword)
-        throws NoHubException, NotFoundException, ContainerServerException, IOException, NoServerPrefException {
-        final ContainerHub hubWithAuth = ContainerHub.builder()
+        throws NoHubException, NotFoundException, DockerServerException, IOException, NoServerPrefException {
+        final DockerHub hubWithAuth = DockerHub.builder()
             .url(hub)
             .username(hubUsername)
             .password(hubPassword)
@@ -236,19 +220,19 @@ public class DefaultContainerService implements ContainerService {
 
     @Override
     public void pullByName(String image, String hub)
-        throws NoHubException, NotFoundException, ContainerServerException, IOException, NoServerPrefException {
-        final ContainerHub hubNoAuth = ContainerHub.builder().url(hub).build();
+        throws NoHubException, NotFoundException, DockerServerException, IOException, NoServerPrefException {
+        final DockerHub hubNoAuth = DockerHub.builder().url(hub).build();
         pullByName(image, hubNoAuth);
     }
 
-    private void pullByName(String image, ContainerHub hub)
-        throws NoHubException, NotFoundException, ContainerServerException, IOException, NoServerPrefException {
+    private void pullByName(String image, DockerHub hub)
+        throws NoHubException, NotFoundException, DockerServerException, IOException, NoServerPrefException {
         controlApi.pullImage(image, hub);
     }
 
     @Override
     public DockerImage pullFromSource(final String source, final String name)
-            throws NoHubException, NotFoundException, ContainerServerException {
+            throws NoHubException, NotFoundException, DockerServerException {
         // TODO
         return null;
     }
@@ -256,7 +240,7 @@ public class DefaultContainerService implements ContainerService {
 //    @Override
 //    public void setMetadataByName(final String imageName, final ImageMetadata metadata, final String project,
 //                                  final Boolean overwrite, final Boolean ignoreBlank)
-//            throws NoServerPrefException, NotFoundException, ContainerServerException {
+//            throws NoServerPrefException, NotFoundException, DockerServerException {
 //        final DockerImage image = getImageByName(imageName);
 //        imageMetadataService.setMetadata(image, metadata, project, overwrite, ignoreBlank);
 //    }
@@ -264,33 +248,13 @@ public class DefaultContainerService implements ContainerService {
 //    @Override
 //    public void setMetadataById(final String imageId, final ImageMetadata metadata, final String project,
 //                                final Boolean overwrite, final Boolean ignoreBlank)
-//            throws NoServerPrefException, NotFoundException, ContainerServerException {
+//            throws NoServerPrefException, NotFoundException, DockerServerException {
 //        final DockerImage image = getImageById(imageId);
 //        imageMetadataService.setMetadata(image, metadata, project, overwrite, ignoreBlank);
 //    }
 
     @Override
-    public ContainerServer getServer() throws NoServerPrefException, NotFoundException {
-        return controlApi.getServer();
-    }
-
-    @Override
-    public void setServer(final ContainerServer server) throws InvalidPreferenceName {
-        controlApi.setServer(server);
-    }
-
-    @Override
     public String setMetadataById(String id, Map<String, String> metadata, String project, Boolean overwrite, Boolean ignoreBlank) throws NoServerPrefException, NotFoundException {
         return null;
-    }
-
-    @Override
-    public String pingServer() throws NoServerPrefException, ContainerServerException {
-        return controlApi.pingServer();
-    }
-
-    @Override
-    public String pingHub(ContainerHub hub) throws ContainerServerException, NoServerPrefException {
-        return controlApi.pingHub(hub);
     }
 }

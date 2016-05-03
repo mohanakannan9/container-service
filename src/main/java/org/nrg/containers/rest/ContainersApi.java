@@ -7,15 +7,14 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.containers.exceptions.BadRequestException;
-import org.nrg.containers.exceptions.ContainerServerException;
+import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoHubException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Container;
-import org.nrg.containers.model.ContainerHub;
-import org.nrg.containers.model.ContainerServer;
 import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.services.ContainerService;
+import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +29,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -44,7 +42,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 import static org.springframework.web.bind.annotation.RequestMethod.PUT;
 
 @Api(description = "XNAT Container Services REST API")
-@RestController
+@XapiRestController
 @RequestMapping(value = "/containers")
 public class ContainersApi {
     private static final Logger _log = LoggerFactory.getLogger(ContainersApi.class);
@@ -71,7 +69,7 @@ public class ContainersApi {
     @ResponseBody
     public List<Container> getContainers(@ApiParam(value = "ID of the container to fetch", required = true)
                                              final @RequestParam MultiValueMap<String, String> queryParams)
-            throws NoServerPrefException, ContainerServerException {
+            throws NoServerPrefException, DockerServerException {
         _log.debug(String.format("%s: %s", "getContainers", queryParams));
         return service.getContainers(queryParams);
     }
@@ -89,7 +87,7 @@ public class ContainersApi {
     @ResponseBody
     public Container getContainer(@ApiParam(value = "ID of the container to fetch", required = true)
                                       final @PathVariable("id") String id)
-            throws NoServerPrefException, NotFoundException, ContainerServerException {
+            throws NoServerPrefException, NotFoundException, DockerServerException {
         _log.debug(String.format("%s: %s", "getContainer", id));
         return service.getContainer(id);
     }
@@ -107,7 +105,7 @@ public class ContainersApi {
     @ResponseBody
     public String getContainerStatus(@ApiParam(value = "Get status of container with this ID", required = true)
                                          final @PathVariable("id") String id)
-            throws NotFoundException, NoServerPrefException, ContainerServerException {
+            throws NotFoundException, NoServerPrefException, DockerServerException {
         _log.debug(String.format("%s: %s", "getContainerStatus", id));
         return service.getContainerStatus(id);
     }
@@ -128,7 +126,7 @@ public class ContainersApi {
                                      @ApiParam(value = "Perform this verb on container", required = true,
                                              allowableValues = CONTAINER_VERBS_CSV)
                                          final @PathVariable("verb") String verb)
-            throws NotFoundException, NoServerPrefException, ContainerServerException {
+            throws NotFoundException, NoServerPrefException, DockerServerException {
         _log.debug(String.format("%s: %s, %s", "verbContainer", id, verb));
         return service.verbContainer(id, verb);
     }
@@ -146,7 +144,7 @@ public class ContainersApi {
     @ResponseBody
     public String getContainerLogs(@ApiParam(value = "Get logs of container with this ID", required = true)
                                        final @PathVariable("id") String id)
-        throws NotFoundException, NoServerPrefException, ContainerServerException {
+        throws NotFoundException, NoServerPrefException, DockerServerException {
         return service.getContainerLogs(id);
     }
 
@@ -168,7 +166,7 @@ public class ContainersApi {
                              final @PathVariable("repo") String repo,
                          final @RequestBody Map<String, String> launchArguments,
                          final @RequestParam(name = "wait", defaultValue = "false") Boolean wait)
-            throws NoServerPrefException, NotFoundException, ContainerServerException {
+            throws NoServerPrefException, NotFoundException, DockerServerException {
         final String name = repo != null ? repo + "/" + image : image;
         return service.launch(name, launchArguments, wait);
     }
@@ -191,7 +189,7 @@ public class ContainersApi {
                              final @PathVariable("repo") String repo,
                          final @RequestBody MultiValueMap<String, String> launchArguments,
                          final @RequestParam(name = "wait", defaultValue = "false") Boolean wait)
-            throws NoServerPrefException, NotFoundException, ContainerServerException {
+            throws NoServerPrefException, NotFoundException, DockerServerException {
         final String name = repo != null ? repo + "/" + image : image;
         return service.launch(name, launchArguments.toSingleValueMap(), wait);
     }
@@ -217,7 +215,7 @@ public class ContainersApi {
                            final @RequestBody Map<String, String> launchArguments,
                            final @RequestParam(value = "type", required = false) String type,
                            final @RequestParam(name = "wait", defaultValue = "false") Boolean wait)
-            throws NoServerPrefException, NotFoundException, ContainerServerException {
+            throws NoServerPrefException, NotFoundException, DockerServerException {
         final String name = repo != null ? repo + "/" + image : image;
         return service.launchOn(name, xnatId, type, launchArguments, wait);
     }
@@ -243,7 +241,7 @@ public class ContainersApi {
                            final @RequestBody MultiValueMap<String, String> launchArguments,
                            final @RequestParam(value = "type", required = false) String type,
                            final @RequestParam(name = "wait", defaultValue = "false") Boolean wait)
-            throws NoServerPrefException, NotFoundException, ContainerServerException {
+            throws NoServerPrefException, NotFoundException, DockerServerException {
         final String name = repo != null ? repo + "/" + image : image;
         return service.launchOn(name, xnatId, type, launchArguments.toSingleValueMap(), wait);
     }
@@ -290,82 +288,13 @@ public class ContainersApi {
         return service.launchFromScript(scriptId, launchArguments.toSingleValueMap(), wait);
     }
 
-    @ApiOperation(value = "Get server", httpMethod = "GET",
-            notes = "The container server URI stored in the XNAT database.")
-    @ApiResponses({
-            @ApiResponse(code = 200, message = "Success."),
-            @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."),
-            @ApiResponse(code = 404, message = "No value set."),
-            @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = "/server", method = GET, produces = {JSON, PLAIN_TEXT})
-    @ResponseBody
-    public ContainerServer getServer() throws NotFoundException {
-        try {
-            return service.getServer();
-        } catch (NoServerPrefException e) {
-            throw new NotFoundException(e);
-        }
-    }
-
-    @RequestMapping(value = "/server", method = POST)
-    @ResponseBody
-    public void setServer(final @RequestBody ContainerServer containerServer) throws InvalidPreferenceName, BadRequestException {
-        if (containerServer.host() == null || containerServer.host().equals("")) {
-            throw new BadRequestException("Must set the \"host\" property in request body.");
-        }
-        service.setServer(containerServer);
-    }
-
-    @RequestMapping(value = "/server/ping", method = GET)
-    @ResponseBody
-    public String pingServer()
-        throws NoServerPrefException, ContainerServerException {
-        return service.pingServer();
-    }
-
-    @RequestMapping(value = "/hubs", method = GET, produces = {JSON, PLAIN_TEXT})
-    @ResponseBody
-    public List<ContainerHub> getHubs()
-            throws NotFoundException {
-        return service.getHubs();
-    }
-
-    @RequestMapping(value = "/hubs", method = POST, consumes = JSON)
-    @ResponseBody
-    public void setHub(final @RequestBody ContainerHub hub) throws IOException {
-        service.setHub(hub);
-    }
-
-//    @RequestMapping(value = "/hubs", method = POST, consumes = FORM)
-//    @ResponseBody
-//    public void setHubWithForm(final @RequestBody MultiValueMap<String, String> hubForm)
-//        throws IOException, BadRequestException {
-//        if (!hubForm.containsKey("url")) {
-//            throw new BadRequestException("URL is required for ub definition");
-//        }
-//        final Map<String, String> hubMap = hubForm.toSingleValueMap();
-//        final ContainerHub hub = ContainerHub.builder()
-//            .email(hubMap.containsKey("email") ? urlDecode(hubMap.get("email")) : "")
-//            .email(hubMap.containsKey("username") ? urlDecode(hubMap.get("username")) : "")
-//            .email(hubMap.containsKey("password") ? urlDecode(hubMap.get("password")) : "")
-//            .url(urlDecode(hubMap.get("url")))
-//            .build();
-//        service.setHub(hub);
-//    }
-
-//    @RequestMapping(value = "/search", method = GET)
-//    @ResponseBody
-//    public String search(final @RequestParam(name = "term") String term) throws NoHubException {
-//        return service.search(term);
-//    }
-
     @RequestMapping(value = "/pull", method = GET, params = {"image", "hub", "username", "password"})
     @ResponseBody
     public void pullByNameWithAuth(final @RequestParam("image") String image,
                             final @RequestParam("hub") String hub,
                             final @RequestParam("username") String hubUsername,
                             final @RequestParam("password") String hubPassword)
-        throws ContainerServerException, NotFoundException, NoHubException, IOException, BadRequestException, NoServerPrefException {
+        throws DockerServerException, NotFoundException, NoHubException, IOException, BadRequestException, NoServerPrefException {
         if (StringUtils.isBlank(hubUsername) ^ StringUtils.isBlank(hubPassword)) {
             throw new BadRequestException("Hub username and password must both be set, or not set.");
         }
@@ -376,7 +305,7 @@ public class ContainersApi {
     @ResponseBody
     public void pullByNameNoAuth(final @RequestParam("image") String image,
                             final @RequestParam("hub") String hub)
-        throws ContainerServerException, NotFoundException, NoHubException, IOException, NoServerPrefException {
+        throws DockerServerException, NotFoundException, NoHubException, IOException, NoServerPrefException {
         service.pullByName(image, hub);
     }
 
@@ -391,7 +320,7 @@ public class ContainersApi {
     @ResponseBody
     public DockerImage pullFromSource(final @RequestParam("source") String source,
                                       final @RequestParam(name = "name", required = false) String name)
-            throws ContainerServerException, NotFoundException, NoHubException {
+            throws DockerServerException, NotFoundException, NoHubException {
         return service.pullFromSource(source, name);
     }
 
