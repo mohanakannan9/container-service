@@ -24,7 +24,6 @@ public class DockerImageCommand extends Command {
     static final String COMMAND_TYPE = "docker-image";
 
     @JsonProperty("docker-image") private DockerImage dockerImage;
-    private String command;
     @JsonProperty("env") private Map<String, String> environmentVariables;
 
     @ManyToOne(fetch = FetchType.EAGER)
@@ -76,7 +75,6 @@ public class DockerImageCommand extends Command {
     public String toString() {
         return addParentPropertiesToString(MoreObjects.toStringHelper(this))
                 .add("dockerImage", dockerImage)
-                .add("command", command)
                 .add("environmentVariables", environmentVariables)
                 .toString();
     }
