@@ -9,8 +9,6 @@ import org.nrg.containers.exceptions.ContainerServerException;
 import org.nrg.containers.exceptions.NoHubException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
-import org.nrg.containers.metadata.ImageMetadata;
-import org.nrg.containers.metadata.service.ImageMetadataService;
 import org.nrg.containers.model.Container;
 import org.nrg.containers.model.ContainerHub;
 import org.nrg.containers.model.ContainerHubPrefs;
@@ -40,10 +38,6 @@ public class DefaultContainerService implements ContainerService {
     @Autowired
     @SuppressWarnings("SpringJavaAutowiringInspection") // IntelliJ does not process the excludeFilter in ContainerServiceConfig @ComponentScan, erroneously marks this red
     private ContainerControlApi controlApi;
-
-    @Autowired
-    @SuppressWarnings("SpringJavaAutowiringInspection") // IntelliJ does not process the excludeFilter in ContainerServiceConfig @ComponentScan, erroneously marks this red
-    private ImageMetadataService imageMetadataService;
 
     @Autowired
     @SuppressWarnings("SpringJavaAutowiringInspection") // IntelliJ does not process the excludeFilter in ContainerServiceConfig @ComponentScan, erroneously marks this red
@@ -130,8 +124,8 @@ public class DefaultContainerService implements ContainerService {
         }
 
         final String context = script.getLanguage();
-        final ImageMetadata metadata = imageMetadataService.getMetadataFromContext(context);
-        final String imageId = metadata.getImageId();
+//        final ImageMetadata metadata = imageMetadataService.getMetadataFromContext(context);
+//        final String imageId = metadata.getImageId();
 
         // TODO Remove all the hard-coded stuff from sprint 4. Make this work generically.
 //        List<ImageMetadataArg> args = metadata.getArgs();
@@ -194,7 +188,8 @@ public class DefaultContainerService implements ContainerService {
 //            String.format("%s:%s", paths.get(0), mountIn),
 //            String.format("%s:%s", buildDir, mountOut));
         final List<String> volumes = Lists.newArrayList();
-        return controlApi.launchImage(imageId, command, volumes);
+//        return controlApi.launchImage(imageId, command, volumes);
+        return null;
     }
 
 
@@ -258,21 +253,21 @@ public class DefaultContainerService implements ContainerService {
         return null;
     }
 
-    @Override
-    public void setMetadataByName(final String imageName, final ImageMetadata metadata, final String project,
-                                  final Boolean overwrite, final Boolean ignoreBlank)
-            throws NoServerPrefException, NotFoundException, ContainerServerException {
-        final DockerImage image = getImageByName(imageName);
-        imageMetadataService.setMetadata(image, metadata, project, overwrite, ignoreBlank);
-    }
-
-    @Override
-    public void setMetadataById(final String imageId, final ImageMetadata metadata, final String project,
-                                final Boolean overwrite, final Boolean ignoreBlank)
-            throws NoServerPrefException, NotFoundException, ContainerServerException {
-        final DockerImage image = getImageById(imageId);
-        imageMetadataService.setMetadata(image, metadata, project, overwrite, ignoreBlank);
-    }
+//    @Override
+//    public void setMetadataByName(final String imageName, final ImageMetadata metadata, final String project,
+//                                  final Boolean overwrite, final Boolean ignoreBlank)
+//            throws NoServerPrefException, NotFoundException, ContainerServerException {
+//        final DockerImage image = getImageByName(imageName);
+//        imageMetadataService.setMetadata(image, metadata, project, overwrite, ignoreBlank);
+//    }
+//
+//    @Override
+//    public void setMetadataById(final String imageId, final ImageMetadata metadata, final String project,
+//                                final Boolean overwrite, final Boolean ignoreBlank)
+//            throws NoServerPrefException, NotFoundException, ContainerServerException {
+//        final DockerImage image = getImageById(imageId);
+//        imageMetadataService.setMetadata(image, metadata, project, overwrite, ignoreBlank);
+//    }
 
     @Override
     public ContainerServer getServer() throws NoServerPrefException, NotFoundException {

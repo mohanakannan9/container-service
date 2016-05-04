@@ -4,7 +4,6 @@ import org.nrg.containers.exceptions.ContainerServerException;
 import org.nrg.containers.exceptions.NoHubException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
-import org.nrg.containers.metadata.ImageMetadata;
 import org.nrg.containers.model.Container;
 import org.nrg.containers.model.ContainerHub;
 import org.nrg.containers.model.ContainerServer;
@@ -60,11 +59,11 @@ public interface ContainerService {
 
     DockerImage pullFromSource(String source, String name) throws NoHubException, NotFoundException, ContainerServerException;
 
-    void setMetadataByName(String name, ImageMetadata metadata, String project, Boolean overwrite, Boolean ignoreBlank)
-            throws NoServerPrefException, NotFoundException, ContainerServerException;
-
-    void setMetadataById(String id, ImageMetadata metadata, String project, Boolean overwrite, Boolean ignoreBlank)
-            throws NoServerPrefException, NotFoundException, ContainerServerException;
+//    void setMetadataByName(String name, ImageMetadata metadata, String project, Boolean overwrite, Boolean ignoreBlank)
+//            throws NoServerPrefException, NotFoundException, ContainerServerException;
+//
+//    void setMetadataById(String id, ImageMetadata metadata, String project, Boolean overwrite, Boolean ignoreBlank)
+//            throws NoServerPrefException, NotFoundException, ContainerServerException;
 
     ContainerServer getServer() throws NoServerPrefException, NotFoundException;
 

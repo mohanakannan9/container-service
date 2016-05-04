@@ -14,7 +14,6 @@ import org.nrg.containers.config.DefaultContainerServiceTestConfig;
 import org.nrg.containers.exceptions.ContainerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
-import org.nrg.containers.metadata.service.ImageMetadataService;
 import org.nrg.containers.model.ContainerHub;
 import org.nrg.containers.model.ContainerHubPrefs;
 import org.nrg.containers.model.ContainerServer;
@@ -57,9 +56,6 @@ public class DefaultContainerServiceTest {
 
     @Autowired
     private ContainerControlApi mockContainerControlApi;
-
-    @Autowired
-    private ImageMetadataService mockImageMetadataService;
 
     @Autowired
     private ScriptService mockScriptService;

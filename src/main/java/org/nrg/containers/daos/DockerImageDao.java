@@ -11,8 +11,8 @@ import java.util.List;
 @Repository
 public class DockerImageDao extends AbstractHibernateDAO<DockerImage> {
     /**
-     * @param imageId Find metadata for the image with given ID
-     * @return List of ImageMetadata for that image
+     * @param imageId The Docker ID of the image
+     * @return List of Images with given image ID
      */
     public List<DockerImage> getByImageId(final String imageId) {
         Criteria criteria = getSession().createCriteria(getParameterizedType());
