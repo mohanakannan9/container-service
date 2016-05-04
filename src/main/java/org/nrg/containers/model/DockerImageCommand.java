@@ -74,7 +74,7 @@ public class DockerImageCommand extends Command {
 
     @Override
     public String toString() {
-        return addParentFields(MoreObjects.toStringHelper(this))
+        return addParentPropertiesToString(MoreObjects.toStringHelper(this))
                 .add("dockerImage", dockerImage)
                 .add("command", command)
                 .add("environmentVariables", environmentVariables)

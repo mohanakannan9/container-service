@@ -1,13 +1,8 @@
 package org.nrg.actions.model;
 
 import com.google.common.base.MoreObjects;
-import org.hibernate.annotations.Cache;
-import org.hibernate.annotations.CacheConcurrencyStrategy;
-import org.hibernate.envers.Audited;
-import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.Embeddable;
-import javax.persistence.Entity;
 import java.io.Serializable;
 import java.util.Objects;
 

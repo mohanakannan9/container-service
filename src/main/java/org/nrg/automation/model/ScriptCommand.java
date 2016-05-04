@@ -50,7 +50,7 @@ public class ScriptCommand extends Command {
 
     @Override
     public String toString() {
-        return addParentFields(MoreObjects.toStringHelper(this))
+        return addParentPropertiesToString(MoreObjects.toStringHelper(this))
                 .add("script", script)
                 .toString();
     }

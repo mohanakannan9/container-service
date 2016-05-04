@@ -83,7 +83,7 @@ public class DockerImage extends AbstractHibernateEntity {
     public void setLabels(final Map<String, String> labels) { this.labels = labels; }
 
     public String toString() {
-        return MoreObjects.toStringHelper(this)
+        return addParentPropertiesToString(MoreObjects.toStringHelper(this))
                 .add("imageId", imageId)
                 .add("name", name)
                 .add("size", size)

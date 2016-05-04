@@ -88,7 +88,7 @@ public class Action extends AbstractHibernateEntity {
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null || !super.equals(o) || getClass() != o.getClass()) return false;
         final Action that = (Action) o;
         return Objects.equals(this.name, that.name) &&
                 Objects.equals(this.description, that.description) &&
@@ -98,12 +98,12 @@ public class Action extends AbstractHibernateEntity {
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, description, command, inputs);
+        return Objects.hash(super.hashCode(), name, description, command, inputs);
     }
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this)
+        return addParentPropertiesToString(MoreObjects.toStringHelper(this))
                 .add("name", name)
                 .add("description", description)
                 .add("command", command)

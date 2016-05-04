@@ -123,11 +123,13 @@ public abstract class Command extends AbstractHibernateEntity {
 
     @Override
     public String toString() {
-        return addParentFields(MoreObjects.toStringHelper(this)).toString();
+        return addParentPropertiesToString(MoreObjects.toStringHelper(this)).toString();
     }
 
-    public ToStringHelper addParentFields(final ToStringHelper helper) {
-        return helper.add("name", name)
+    @Override
+    public ToStringHelper addParentPropertiesToString(final ToStringHelper helper) {
+        return super.addParentPropertiesToString(helper)
+                .add("name", name)
                 .add("description", description)
                 .add("infoUrl", infoUrl)
                 .add("template", template)
