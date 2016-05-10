@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.util.List;
 
+import static org.springframework.web.bind.annotation.RequestMethod.DELETE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
@@ -67,14 +68,6 @@ public class DockerImagesRestApi {
         return dockerService.getImages(fromDb, fromDockerServer);
     }
 
-    @RequestMapping(value = "/{id}", method = GET, produces = JSON)
-    @ResponseBody
-    public DockerImageDto getImage(final @PathVariable("id") Long id,
-                                   final @RequestParam(value = "from-docker-server", defaultValue = "true") Boolean fromDockerServer)
-            throws NotFoundException {
-        return dockerService.getImage(id, fromDockerServer);
-    }
-
     @RequestMapping(value = {}, method = POST, consumes = JSON)
     public ResponseEntity postImage(final @RequestBody DockerImageDto dockerImageDto)
             throws BadRequestException, DockerServerException, NotFoundException, NoServerPrefException {
@@ -83,6 +76,22 @@ public class DockerImagesRestApi {
         }
         dockerService.createImage(dockerImageDto);
         return new ResponseEntity(HttpStatus.CREATED);
+    }
+
+    @RequestMapping(value = "/{id}", method = GET, produces = JSON)
+    @ResponseBody
+    public DockerImageDto getImage(final @PathVariable("id") Long id,
+                                   final @RequestParam(value = "from-docker-server", defaultValue = "true") Boolean fromDockerServer)
+            throws NotFoundException {
+        return dockerService.getImage(id, fromDockerServer);
+    }
+
+    @RequestMapping(value = "/{id}", method = DELETE)
+    @ResponseBody
+    public void deleteImage(final @PathVariable("id") Long id,
+                            final @RequestParam(value = "from-docker-server", defaultValue = "false") Boolean fromDockerServer)
+            throws NotFoundException, NoServerPrefException, DockerServerException {
+        dockerService.removeImage(id, fromDockerServer);
     }
 
 //    @RequestMapping(value = {"/{name:.*}", "/name/{name}"}, method = GET, produces = {JSON, PLAIN_TEXT})

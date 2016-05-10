@@ -16,6 +16,7 @@ import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -106,10 +107,7 @@ public class DockerServiceImpl implements DockerService {
     public DockerImageDto getImage(final Long id, final Boolean fromDockerServer) throws NotFoundException {
         // We have an image from the database, and we need to know whether it is
         // present on the docker server.
-        final DockerImage dbImage = imageService.retrieve(id);
-        if (dbImage == null) {
-            throw new NotFoundException("No image with id "+id);
-        }
+        final DockerImage dbImage = imageService.getByDbId(id);
 
         if (!fromDockerServer) {
             // The user does not want us to check the docker server
@@ -133,6 +131,19 @@ public class DockerServiceImpl implements DockerService {
             // The image is not on the docker server
             return DockerImageDto.fromDbImage(dbImage, false);
         }
+    }
+
+    @Transactional
+    public void removeImage(final Long id, final Boolean fromDockerServer)
+            throws NotFoundException, NoServerPrefException, DockerServerException {
+        final DockerImage dbImage = imageService.getByDbId(id);
+        final String imageId = dbImage.getImageId();
+
+        if (fromDockerServer) {
+            controlApi.deleteImageById(imageId);
+        }
+
+        imageService.delete(dbImage);
     }
 
     public void createImage(final DockerImageDto dtoRequestIn)

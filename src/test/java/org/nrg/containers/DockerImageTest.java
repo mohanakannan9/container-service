@@ -9,6 +9,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.config.DockerImageTestConfig;
+import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.model.DockerImageDto;
 import org.nrg.containers.services.DockerImageService;
@@ -33,7 +34,10 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -200,6 +204,39 @@ public class DockerImageTest {
     }
 
     @Test
+    public void testCreateImageFromPost() throws Exception {
+        final String path = "/docker/images";
+        final MockHttpServletRequestBuilder request =
+                post(path)
+                        .content(IMAGE_TO_POST_JSON)
+                        .contentType(JSON);
+
+        final DockerImageDto toPost =
+                mapper.readValue(IMAGE_TO_POST_JSON, DockerImageDto.class);
+        final DockerImageDto toRetrieveFromMockDockerServer =
+                mapper.readValue(DOCKER_SERVER_IMAGE_JSON, DockerImageDto.class);
+        final String imageId = toRetrieveFromMockDockerServer.getImageId();
+        assertEquals(imageId, toPost.getImageId());
+
+        when(mockDockerControlApi.getImageById(imageId))
+                .thenReturn(toRetrieveFromMockDockerServer);
+
+        mockMvc.perform(request)
+                .andExpect(status().isCreated());
+
+        final DockerImage retrievedFromDb = dockerImageService.getByImageId(imageId).get(0);
+        assertNotNull(retrievedFromDb.getId());
+        assertEquals(toPost.getImageId(), retrievedFromDb.getImageId());
+        assertEquals(toPost.getName(), retrievedFromDb.getName());
+        assertEquals(toRetrieveFromMockDockerServer.getLabels(), retrievedFromDb.getLabels());
+        assertEquals(toRetrieveFromMockDockerServer.getRepoTags(), retrievedFromDb.getRepoTags());
+
+        assertNotNull(retrievedFromDb.getCreated());
+        assertNotNull(retrievedFromDb.getTimestamp());
+        assertTrue(retrievedFromDb.isEnabled());
+    }
+
+    @Test
     public void testGetImage() throws Exception {
         final String basePath = "/docker/images";
 
@@ -272,35 +309,64 @@ public class DockerImageTest {
     }
 
     @Test
-    public void testCreateImageFromPost() throws Exception {
-        final String path = "/docker/images";
-        final MockHttpServletRequestBuilder request =
-                post(path)
-                        .content(IMAGE_TO_POST_JSON)
-                        .contentType(JSON);
+    public void testDeleteImage() throws Exception {
+        final String basePath = "/docker/images";
 
-        final DockerImageDto toPost =
-                mapper.readValue(IMAGE_TO_POST_JSON, DockerImageDto.class);
-        final DockerImageDto toRetrieveFromMockDockerServer =
-                mapper.readValue(DOCKER_SERVER_IMAGE_JSON, DockerImageDto.class);
-        final String imageId = toRetrieveFromMockDockerServer.getImageId();
-        assertEquals(imageId, toPost.getImageId());
+        final DockerImageDto toSaveInDb =
+                mapper.readValue(IMAGE_JSON, DockerImageDto.class);
+        final DockerImageDto toSave0 =
+                toSaveInDb.toBuilder().setImageId("0000000").build();
+        final DockerImageDto toSave1 =
+                toSaveInDb.toBuilder().setImageId("1111111").build();
+        final DockerImageDto toSave2 =
+                toSaveInDb.toBuilder().setImageId("2222222").build();
 
-        when(mockDockerControlApi.getImageById(imageId))
-                .thenReturn(toRetrieveFromMockDockerServer);
+        final DockerImageDto createdDto0 = dockerImageService.create(toSave0);
+        final DockerImageDto createdDto1 = dockerImageService.create(toSave1);
+        final DockerImageDto createdDto2 = dockerImageService.create(toSave2);
+        final DockerImage retrievedFromDb0 = dockerImageService.retrieve(createdDto0.getId());
+        final DockerImage retrievedFromDb1 = dockerImageService.retrieve(createdDto1.getId());
+        final DockerImage retrievedFromDb2 = dockerImageService.retrieve(createdDto2.getId());
 
-        mockMvc.perform(request)
-                .andExpect(status().isCreated());
+        final Long dbId0 = retrievedFromDb0.getId();
+        final Long dbId1 = retrievedFromDb1.getId();
+        final Long dbId2 = retrievedFromDb2.getId();
+        final String dockerId0 = retrievedFromDb0.getImageId();
+        final String dockerId1 = retrievedFromDb1.getImageId();
+        final String dockerId2 = retrievedFromDb2.getImageId();
+        final String path0 = basePath + "/" + dbId0.toString();
+        final String path1 = basePath + "/" + dbId1.toString();
+        final String path2 = basePath + "/" + dbId2.toString();
 
-        final DockerImage retrievedFromDb = dockerImageService.getByImageId(imageId).get(0);
-        assertNotNull(retrievedFromDb.getId());
-        assertEquals(toPost.getImageId(), retrievedFromDb.getImageId());
-        assertEquals(toPost.getName(), retrievedFromDb.getName());
-        assertEquals(toRetrieveFromMockDockerServer.getLabels(), retrievedFromDb.getLabels());
-        assertEquals(toRetrieveFromMockDockerServer.getRepoTags(), retrievedFromDb.getRepoTags());
+        doNothing().when(mockDockerControlApi).deleteImageById(dockerId0);
+        doNothing().when(mockDockerControlApi).deleteImageById(dockerId1);
+        doThrow(DockerServerException.class).when(mockDockerControlApi).deleteImageById(dockerId2);
 
-        assertNotNull(retrievedFromDb.getCreated());
-        assertNotNull(retrievedFromDb.getTimestamp());
-        assertTrue(retrievedFromDb.isEnabled());
+        // Set up the requests we will make
+        final MockHttpServletRequestBuilder deleteFromServerRequest =
+                delete(path0).accept(JSON).param("from-docker-server", "true");
+
+        final MockHttpServletRequestBuilder doNotDeleteFromServerRequest =
+                delete(path1).accept(JSON).param("from-docker-server", "false");
+
+        final MockHttpServletRequestBuilder serverErrorRequest =
+                delete(path2).accept(JSON).param("from-docker-server", "true");
+
+        // Perform requests, check responses
+        assertNotNull(dockerImageService.retrieve(dbId0));
+        mockMvc.perform(deleteFromServerRequest)
+                .andExpect(status().isOk());
+        assertNull(dockerImageService.retrieve(dbId0));
+
+        assertNotNull(dockerImageService.retrieve(dbId1));
+        mockMvc.perform(doNotDeleteFromServerRequest)
+                .andExpect(status().isOk());
+        assertNull(dockerImageService.retrieve(dbId1));
+
+        assertNotNull(dockerImageService.retrieve(dbId2));
+        mockMvc.perform(serverErrorRequest)
+                .andExpect(status().isInternalServerError());
+        assertNotNull(dockerImageService.retrieve(dbId2)); // Delete did not happen
+
     }
 }

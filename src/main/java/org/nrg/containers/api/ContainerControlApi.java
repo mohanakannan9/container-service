@@ -7,7 +7,6 @@ import org.nrg.containers.model.Container;
 import org.nrg.containers.model.DockerHub;
 import org.nrg.containers.model.DockerImageDto;
 import org.nrg.containers.model.DockerServer;
-import org.nrg.containers.model.DockerImage;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 
 import java.util.List;
@@ -50,5 +49,5 @@ public interface ContainerControlApi {
 
     void deleteImageByName(String name) throws NoServerPrefException, DockerServerException;
 
-    void deleteImageById(String id) throws NoServerPrefException;
+    void deleteImageById(String id) throws NoServerPrefException, DockerServerException;
 }

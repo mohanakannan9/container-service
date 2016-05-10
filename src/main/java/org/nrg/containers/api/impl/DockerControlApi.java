@@ -367,11 +367,11 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     @Override
-    public void deleteImageById(String id) throws NoServerPrefException {
+    public void deleteImageById(String id) throws NoServerPrefException, DockerServerException {
         try (final DockerClient dockerClient = getClient()) {
             dockerClient.removeImage(id);
         } catch (DockerException|InterruptedException e) {
-            e.printStackTrace();
+            throw new DockerServerException(e);
         }
     }
 
