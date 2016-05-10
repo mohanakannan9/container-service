@@ -4,11 +4,7 @@ package org.nrg.actions.config;
 import org.hibernate.SessionFactory;
 import org.nrg.actions.daos.ActionDao;
 import org.nrg.actions.daos.CommandDao;
-import org.nrg.actions.model.Action;
-import org.nrg.actions.model.ActionInput;
-import org.nrg.actions.model.Command;
-import org.nrg.actions.model.CommandInput;
-import org.nrg.actions.model.Output;
+import org.nrg.actions.model.*;
 import org.nrg.actions.model.matcher.Matcher;
 import org.nrg.actions.model.tree.MatchTreeNode;
 import org.nrg.actions.services.ActionService;
@@ -17,6 +13,7 @@ import org.nrg.actions.services.HibernateActionService;
 import org.nrg.actions.services.HibernateCommandService;
 import org.nrg.containers.daos.DockerImageDao;
 import org.nrg.containers.model.DockerImage;
+import org.nrg.containers.model.DockerImageCommand;
 import org.nrg.containers.services.DockerImageService;
 import org.nrg.containers.services.HibernateDockerImageService;
 import org.nrg.framework.orm.hibernate.AggregatedAnnotationSessionFactoryBean;
@@ -75,6 +72,7 @@ public class ActionTestConfig {
                 Matcher.class,
                 CommandInput.class,
                 DockerImage.class,
+                DockerImageCommand.class,
                 Output.class,
                 Command.class);
         return bean;

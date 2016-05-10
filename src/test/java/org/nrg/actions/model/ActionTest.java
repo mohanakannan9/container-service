@@ -26,7 +26,7 @@ import static org.junit.Assert.assertThat;
 @ContextConfiguration(classes = ActionTestConfig.class)
 public class ActionTest {
     private static final String DOCKER_IMAGE_JSON =
-            "{\"name\":\"name\", \"repo-tags\":[\"a\", \"b\"], \"image-id\":\"abc123\"," +
+            "{\"name\":\"name\", \"repoTags\":[\"a\", \"b\"], \"imageId\":\"abc123\"," +
                     "\"labels\":{\"foo\":\"bar\"}, \"size\":0}";
 
     private static final String DICOM_RESOURCE_MATCHER_JSON =

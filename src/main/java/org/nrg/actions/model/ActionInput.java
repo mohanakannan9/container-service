@@ -5,12 +5,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import org.nrg.actions.model.tree.MatchTreeNode;
 
-import javax.persistence.Embeddable;
 import javax.persistence.Transient;
 import java.io.Serializable;
 import java.util.Objects;
 
-@Embeddable
 public class ActionInput implements Serializable {
 
     @JsonProperty("command-input-name") private String commandInputName;
@@ -75,7 +73,7 @@ public class ActionInput implements Serializable {
         if (this == o) {
             return true;
         }
-        if (o == null || !super.equals(o) || getClass() != o.getClass()) {
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
 

@@ -2,22 +2,13 @@ package org.nrg.actions.model.tree;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
-import org.hibernate.envers.Audited;
 import org.nrg.actions.model.matcher.Matcher;
 
 import javax.persistence.ElementCollection;
-import javax.persistence.Embeddable;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 
-@Embeddable
 public class MatchTreeNode implements Serializable {
     private String type;
     private MatchTreeNode parent;

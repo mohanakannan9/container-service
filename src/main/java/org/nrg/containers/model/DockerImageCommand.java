@@ -21,9 +21,9 @@ import java.util.Objects;
 @DiscriminatorValue(DockerImageCommand.COMMAND_TYPE)
 public class DockerImageCommand extends Command {
 
-    static final String COMMAND_TYPE = "docker-image";
+    static final String COMMAND_TYPE = "image";
 
-    @JsonProperty("docker-image") private DockerImage dockerImage;
+    @JsonProperty("image") private DockerImage dockerImage;
     @JsonProperty("env") private Map<String, String> environmentVariables;
 
     @ManyToOne(fetch = FetchType.EAGER)

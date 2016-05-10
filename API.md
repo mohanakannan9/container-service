@@ -238,8 +238,8 @@ Get a list of all Docker images
             "updated":,
             "disabled",
             "name": "foo/foo",
-            "image-id": "abc123efg",
-            "repo-tags": ["foo/foo:v1.0", "foo/foo:latest"],
+            "imageId": "abc123efg",
+            "repoTags": ["foo/foo:v1.0", "foo/foo:latest"],
             "labels": {
                 "label0": "value0",
                 "label1": "value1"
@@ -254,15 +254,15 @@ Get a list of all Docker images
             "updated":,
             "disabled",
             "name": "The bar/bar image",
-            "image-id": "123abc456",
-            "repo-tags": ["bar/bar:v99.99"],
+            "imageId": "123abc456",
+            "repoTags": ["bar/bar:v99.99"],
             "labels": null,
             "in-database": true,
             "on-docker-server": true
         },
         {
-            "image-id": "123456789",
-            "repo-tags": ["some/image"],
+            "imageId": "123456789",
+            "repoTags": ["some/image"],
             "in-database": false,
             "on-docker-server": true
         }
@@ -300,8 +300,8 @@ Get a specific Docker images
         "updated":,
         "disabled",
         "name": "foo/foo",
-        "image-id": "abc123efg",
-        "repo-tags": ["foo/foo:v1.0", "foo/foo:latest"],
+        "imageId": "abc123efg",
+        "repoTags": ["foo/foo:v1.0", "foo/foo:latest"],
         "labels": {
             "label0": "value0",
             "label1": "value1"
@@ -325,7 +325,7 @@ Save a new entry for a Docker image that is already on the Docker server
 
     {
         "name": "Arbitrary Name",
-        "image-id": "0123456789abcdef",
+        "imageId": "0123456789abcdef",
     }
 
 #### Query Parameters
@@ -334,7 +334,7 @@ Save a new entry for a Docker image that is already on the Docker server
 
 #### JSON Parameters
 
-- **image-id** - (Required) The ID of the docker image, as reported by the Docker server. For more information, see Docker's guide on [working with images](https://docs.docker.com/engine/userguide/containers/dockerimages/).
+- **imageId** - (Required) The ID of the docker image, as reported by the Docker server. For more information, see Docker's guide on [working with images](https://docs.docker.com/engine/userguide/containers/dockerimages/).
 - **name** - A user-friendly name. This will be displayed by XNAT anywhere users can view or select this image. If no name is provided, one of the image's repo tags will be randomly selected and used as the name.
 
 #### Example Response
@@ -344,7 +344,7 @@ Save a new entry for a Docker image that is already on the Docker server
 #### Status Codes
 
 - **201** - Created
-- **400** - Bad request. No image-id set on request body.
+- **400** - Bad request. No imageId set on request body.
 - **404** - Not found. No image exists on the Docker server with the given image ID.
 
 ### pull new image from hub, which automagically saves to db

@@ -30,7 +30,7 @@ public class DockerImage extends AbstractHibernateEntity {
     private String imageId;
     private ImmutableList<String> repoTags;
     private ImmutableMap<String, String> labels;
-
+    private int size;
     public DockerImage() {}
 
     public DockerImage(final String name,
@@ -78,6 +78,15 @@ public class DockerImage extends AbstractHibernateEntity {
     public Map<String, String> getLabels() { return labels; }
 
     public void setLabels(final Map<String, String> labels) { this.labels = ImmutableMap.copyOf(labels); }
+
+    /**
+     * The image's size.
+     **/
+    @ApiModelProperty(value = "The image's size.")
+    public int getSize() { return size; }
+
+    public void setSize(final int size) { this.size = size; }
+
 
     public String toString() {
         return addParentPropertiesToString(MoreObjects.toStringHelper(this))

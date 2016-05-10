@@ -2,11 +2,9 @@ package org.nrg.actions.model;
 
 import com.google.common.base.MoreObjects;
 
-import javax.persistence.Embeddable;
 import java.io.Serializable;
 import java.util.Objects;
 
-@Embeddable
 public class Output implements Serializable {
     private String name;
     private String description;

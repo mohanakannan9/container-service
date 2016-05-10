@@ -68,15 +68,15 @@ public class DockerImageTest {
     private WebApplicationContext wac;
 
     private static final String IMAGE_JSON =
-            "{\"name\":\"foo/foo\", \"image-id\":\"abc123efg\", " +
-                    "\"repo-tags\":[\"foo/foo:v1.0\", \"foo/foo:latest\"]," +
+            "{\"name\":\"foo/foo\", \"imageId\":\"abc123efg\", " +
+                    "\"repoTags\":[\"foo/foo:v1.0\", \"foo/foo:latest\"]," +
                     "\"labels\":{\"label0\":\"value0\", \"label1\":\"value1\"}}";
 
     private static final String IMAGE_TO_POST_JSON =
-            "{\"name\":\"Arbitrary name\", \"image-id\":\"0123456789abcdef\"}";
+            "{\"name\":\"Arbitrary name\", \"imageId\":\"0123456789abcdef\"}";
     private static final String DOCKER_SERVER_IMAGE_JSON =
-            "{\"image-id\":\"0123456789abcdef\", " +
-                    "\"repo-tags\":[\"bar/bar:v1.0\", \"bar/bar:latest\"]," +
+            "{\"imageId\":\"0123456789abcdef\", " +
+                    "\"repoTags\":[\"bar/bar:v1.0\", \"bar/bar:latest\"]," +
                     "\"labels\":{\"baz\":\"qux\"}," +
                     "\"on-docker-server\":true}";
 

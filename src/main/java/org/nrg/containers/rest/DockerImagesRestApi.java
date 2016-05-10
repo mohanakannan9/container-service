@@ -72,7 +72,7 @@ public class DockerImagesRestApi {
     public ResponseEntity postImage(final @RequestBody DockerImageDto dockerImageDto)
             throws BadRequestException, DockerServerException, NotFoundException, NoServerPrefException {
         if (StringUtils.isBlank(dockerImageDto.getImageId())) {
-            throw new BadRequestException("Cannot add Docker image. Please set image-id on request body.");
+            throw new BadRequestException("Cannot add Docker image. Please set imageId on request body.");
         }
         dockerService.createImage(dockerImageDto);
         return new ResponseEntity(HttpStatus.CREATED);
