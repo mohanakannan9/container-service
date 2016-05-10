@@ -12,6 +12,7 @@ import org.nrg.automation.model.ScriptCommand;
 import org.nrg.automation.services.ScriptService;
 import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.model.DockerImageCommand;
+import org.nrg.containers.model.DockerImageDto;
 import org.nrg.containers.services.DockerImageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
@@ -35,7 +36,7 @@ import static org.junit.Assert.assertThat;
 public class CommandTest {
 
     private static final String DOCKER_IMAGE_JSON =
-            "{\"name\":\"sweet\", \"image-id\":\"abc123\", \"repo-tags\":[\"abc123:latest\"], \"size\":0, \"labels\":{\"foo\":\"bar\"}}";
+            "{\"name\":\"sweet\", \"image-id\":\"abc123\", \"repo-tags\":[\"abc123:latest\"], \"labels\":{\"foo\":\"bar\"}}";
 
     private static final String SCRIPT_JSON =
             "{\"scriptId\":\"abc123\", \"scriptLabel\":\"a-script\", " +
@@ -127,7 +128,8 @@ public class CommandTest {
     @Test
     public void testPersistDockerImageCommand() throws Exception {
 
-        final DockerImage image = mapper.readValue(DOCKER_IMAGE_JSON, DockerImage.class);
+        final DockerImageDto imageDto = mapper.readValue(DOCKER_IMAGE_JSON, DockerImageDto.class);
+        final DockerImage image = imageDto.toDbImage();
         dockerImageService.create(image);
 
         final String dockerImageCommandJson =
