@@ -58,8 +58,8 @@ public class CommandTest {
                     "\"info-url\":\"http://abc.xyz\", \"env\":{\"foo\":\"bar\"}, " +
                     "\"inputs\":" + COMMAND_INPUT_LIST_JSON + ", " +
                     "\"outputs\":[" + COMMAND_OUTPUT_JSON + "], " +
-                    "\"template\":\"foo\", \"type\":\"docker-image\", " +
-                    "\"docker-image\":{\"id\":%d}}";
+                    "\"template\":\"foo\", \"type\":\"image\", " +
+                    "\"image\":{\"id\":%d}}";
 
     private static final String SCRIPT_COMMAND_JSON_TEMPLATE =
             "{\"name\":\"script_command\", \"description\":\"The Script command for the test\", " +

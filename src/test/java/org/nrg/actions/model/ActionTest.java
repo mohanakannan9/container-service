@@ -47,7 +47,7 @@ public class ActionTest {
                     "\"info-url\":\"http://abc.xyz\", \"env\":{\"foo\":\"bar\"}, " +
                     "\"inputs\":[" + COMMAND_INPUT_JSON + "], " +
                     "\"outputs\":[], " +
-                    "\"template\":\"foo\", \"type\":\"docker-image\", " +
+                    "\"template\":\"foo\", \"type\":\"image\", " +
                     "\"image\":{\"id\":%d}}";
 
     private static final String ACTION_INPUT_JSON =
