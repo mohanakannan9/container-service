@@ -114,10 +114,9 @@ public class DockerImageTest {
         final DockerImageDto notSavedInDbDto =
                 mapper.readValue(DOCKER_SERVER_IMAGE_JSON, DockerImageDto.class);
 
-        final DockerImage toSaveInDbImage = toSaveInDb.toDbImage();
-        dockerImageService.create(toSaveInDbImage);
-        final DockerImage retrievedFromDbImage = dockerImageService.retrieve(toSaveInDbImage.getId());
-        final DockerImageDto retrievedFromDbDto = DockerImageDto.fromDbImage(retrievedFromDbImage);
+        final DockerImageDto createdDto = dockerImageService.create(toSaveInDb);
+        final DockerImageDto retrievedFromDbDto =
+                DockerImageDto.fromDbImage(dockerImageService.retrieve(createdDto.getId()));
         final DockerImageDto dockerServerVersionOfSavedImage =
                 toSaveInDb.toBuilder()
                         .setName(null)

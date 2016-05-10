@@ -20,7 +20,7 @@ public class HibernateDockerImageService extends AbstractHibernateEntityService<
     }
 
     @Transactional
-    public void create(final DockerImageDto dto) {
-        create(dto.toDbImage());
+    public DockerImageDto create(DockerImageDto dto) {
+        return DockerImageDto.fromDbImage(create(dto.toDbImage()));
     }
 }

@@ -9,5 +9,5 @@ import java.util.List;
 public interface DockerImageService extends BaseHibernateService<DockerImage> {
     List<DockerImage> getByImageId(String imageId);
 
-    void create(DockerImageDto dto);
+    DockerImageDto create(DockerImageDto dto);
 }
