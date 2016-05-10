@@ -70,7 +70,8 @@ public class DockerImagesRestApi {
     @RequestMapping(value = "/{id}", method = GET, produces = JSON)
     @ResponseBody
     public DockerImageDto getImage(final @PathVariable("id") Long id,
-                                   final @RequestParam(value = "from-docker-server", defaultValue = "true") Boolean fromDockerServer) {
+                                   final @RequestParam(value = "from-docker-server", defaultValue = "true") Boolean fromDockerServer)
+            throws NotFoundException {
         return dockerService.getImage(id, fromDockerServer);
     }
 
@@ -201,6 +202,12 @@ public class DockerImagesRestApi {
     @ExceptionHandler(value = {NoServerPrefException.class})
     public String handleFailedDependency() {
         return "Set up Docker server before using this REST endpoint.";
+    }
+
+    @ResponseStatus(value = HttpStatus.NOT_FOUND)
+    @ExceptionHandler(value = {NotFoundException.class})
+    public String handleNotFound(final Exception e) {
+        return e.getMessage();
     }
 
 }

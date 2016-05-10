@@ -103,10 +103,13 @@ public class DockerServiceImpl implements DockerService {
         return Lists.newArrayList(combined.values());
     }
 
-    public DockerImageDto getImage(final Long id, final Boolean fromDockerServer) {
+    public DockerImageDto getImage(final Long id, final Boolean fromDockerServer) throws NotFoundException {
         // We have an image from the database, and we need to know whether it is
         // present on the docker server.
         final DockerImage dbImage = imageService.retrieve(id);
+        if (dbImage == null) {
+            throw new NotFoundException("No image with id "+id);
+        }
 
         if (!fromDockerServer) {
             // The user does not want us to check the docker server

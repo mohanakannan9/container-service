@@ -4,8 +4,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import org.hibernate.annotations.Immutable;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,12 +25,9 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
-import java.util.Date;
 import java.util.List;
 
 import static org.hamcrest.Matchers.isIn;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -50,7 +45,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ContextConfiguration(classes = DockerImageTestConfig.class)
 public class DockerImageTest {
     private MockMvc mockMvc;
-    final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = new ObjectMapper();
 
     private final MediaType FORM = MediaType.APPLICATION_FORM_URLENCODED;
     private final MediaType JSON = MediaType.APPLICATION_JSON_UTF8;
@@ -115,16 +110,17 @@ public class DockerImageTest {
                 mapper.readValue(DOCKER_SERVER_IMAGE_JSON, DockerImageDto.class);
 
         final DockerImageDto createdDto = dockerImageService.create(toSaveInDb);
+        final DockerImage retrievedFromDb = dockerImageService.retrieve(createdDto.getId());
         final DockerImageDto retrievedFromDbDto =
-                DockerImageDto.fromDbImage(dockerImageService.retrieve(createdDto.getId()));
+                DockerImageDto.fromDbImage(retrievedFromDb, null);
+        final DockerImageDto retrievedFromDbAndHasKnowledgeOfDockerServerStatus =
+                DockerImageDto.fromDbImage(retrievedFromDb, true);
         final DockerImageDto dockerServerVersionOfSavedImage =
                 toSaveInDb.toBuilder()
                         .setName(null)
                         .setInDatabase(null)
                         .setOnDockerServer(true)
                         .build();
-        final DockerImageDto retrievedFromDatabaseAndWithKnowledgeOfDockerServerStatus =
-                retrievedFromDbDto.toBuilder().setOnDockerServer(true).build();
 
         when(mockDockerControlApi.getAllImages())
                 .thenReturn(Lists.newArrayList(notSavedInDbDto, dockerServerVersionOfSavedImage));
@@ -155,7 +151,7 @@ public class DockerImageTest {
         final List<DockerImageDto> bothList =
                 mapper.readValue(bothResponse, new TypeReference<List<DockerImageDto>>(){});
         assertThat(notSavedInDbDto, isIn(bothList));
-        assertThat(retrievedFromDatabaseAndWithKnowledgeOfDockerServerStatus, isIn(bothList));
+        assertThat(retrievedFromDbAndHasKnowledgeOfDockerServerStatus, isIn(bothList));
 
         // Both: No server pref defined
 //        final String failedDepResponse =
@@ -201,6 +197,78 @@ public class DockerImageTest {
                         .getContentAsString();
         assertEquals("At least one of the query params \"from-db\" or \"from-docker-server\" must be \"true\".",
                 badReqResponse);
+    }
+
+    @Test
+    public void testGetImage() throws Exception {
+        final String basePath = "/docker/images";
+
+        final DockerImageDto toSaveInDb =
+                mapper.readValue(IMAGE_JSON, DockerImageDto.class);
+
+        final DockerImageDto createdDto = dockerImageService.create(toSaveInDb);
+        final DockerImage retrievedFromDb = dockerImageService.retrieve(createdDto.getId());
+        final DockerImageDto retrievedFromDbDto =
+                DockerImageDto.fromDbImage(retrievedFromDb, null);
+        final DockerImageDto retrievedFromDbAndHasKnowledgeOfDockerServerStatus =
+                DockerImageDto.fromDbImage(retrievedFromDb, true);
+        final DockerImageDto dockerServerVersionOfSavedImage =
+                toSaveInDb.toBuilder()
+                        .setName(null)
+                        .setInDatabase(null)
+                        .setOnDockerServer(true)
+                        .build();
+
+        final Long dbId = retrievedFromDb.getId();
+        final String dockerId = retrievedFromDb.getImageId();
+        final String path = basePath + "/" + dbId.toString();
+        final String badPath = basePath + "/0";
+
+        when(mockDockerControlApi.getImageById(dockerId))
+                .thenReturn(dockerServerVersionOfSavedImage);
+
+        // Set up the requests we will make, and what the service will return from each one
+        final MockHttpServletRequestBuilder checkDockerServerRequest =
+                get(path).accept(JSON).param("from-docker-server", "true");
+
+        final MockHttpServletRequestBuilder doNotCheckDockerServerRequest =
+                get(path).accept(JSON).param("from-docker-server", "false");
+
+        final MockHttpServletRequestBuilder badIdRequest =
+                get(badPath).accept(JSON).param("from-docker-server", "true");
+
+        // Perform requests, check responses
+        final String checkDockerServerResponse =
+                mockMvc.perform(checkDockerServerRequest)
+                        .andExpect(status().isOk())
+                        .andExpect(content().contentType(JSON))
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        assertEquals(retrievedFromDbAndHasKnowledgeOfDockerServerStatus,
+                mapper.readValue(checkDockerServerResponse, DockerImageDto.class));
+
+
+        final String doNotCheckDockerServerResponse =
+                mockMvc.perform(doNotCheckDockerServerRequest)
+                        .andExpect(status().isOk())
+                        .andExpect(content().contentType(JSON))
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        assertEquals(retrievedFromDbDto,
+                mapper.readValue(doNotCheckDockerServerResponse, DockerImageDto.class));
+
+        final String badIdResponse =
+                mockMvc.perform(badIdRequest)
+                        .andExpect(status().isNotFound())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+        assertEquals("No image with id 0",
+                badIdResponse);
     }
 
     @Test

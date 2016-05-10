@@ -22,6 +22,6 @@ public interface DockerService {
     String pingServer() throws NoServerPrefException, DockerServerException;
 
     List<DockerImageDto> getImages(Boolean fromDb, Boolean fromDockerServer) throws NoServerPrefException, DockerServerException;
-    DockerImageDto getImage(Long id, Boolean fromDockerServer);
+    DockerImageDto getImage(Long id, Boolean fromDockerServer) throws NotFoundException;
     void createImage(DockerImageDto dockerImageDto) throws DockerServerException, NoServerPrefException, NotFoundException;
 }
