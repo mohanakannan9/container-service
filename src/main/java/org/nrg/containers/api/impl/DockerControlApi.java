@@ -498,7 +498,7 @@ public class DockerControlApi implements ContainerControlApi {
                 .setImageId(image.id())
                 .setRepoTags(image.repoTags())
                 .setLabels(image.labels())
-                .setInDatabase(false)
+                .setInDatabase(null)
                 .setOnDockerServer(true)
                 .build();
     }

@@ -67,6 +67,10 @@ public class DockerImageDto {
         return new DockerImageDto(dockerImage, true, onDockerServer);
     }
 
+    public DockerImage toDbImage() {
+        return new DockerImage(name, imageId, repoTags, labels);
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -167,7 +171,7 @@ public class DockerImageDto {
         this.inDatabase = inDatabase;
     }
 
-    public Boolean onDockerServer() {
+    public Boolean getOnDockerServer() {
         return onDockerServer;
     }
 

@@ -3,9 +3,11 @@ package org.nrg.containers.rest;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.exceptions.BadRequestException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.DockerImageDto;
 import org.nrg.containers.services.DockerImageService;
 import org.nrg.containers.services.DockerService;
@@ -15,8 +17,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -25,6 +29,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import java.util.List;
 
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
+import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 //@Api(description = "XNAT Container Services REST API")
 @XapiRestController
@@ -52,6 +57,7 @@ public class DockerImagesRestApi {
             @ApiResponse(code = 200, message = "A list of images on the server"),
             @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(method = GET, produces = JSON)
+    @ResponseBody
     public List<DockerImageDto> getAllImages(final @RequestParam(value = "from-db", defaultValue = "true") Boolean fromDb,
                                              final @RequestParam(value = "from-docker-server", defaultValue = "true") Boolean fromDockerServer)
             throws NoServerPrefException, DockerServerException, BadRequestException {
@@ -66,6 +72,16 @@ public class DockerImagesRestApi {
     public DockerImageDto getImage(final @PathVariable("id") Long id,
                                    final @RequestParam(value = "from-docker-server", defaultValue = "true") Boolean fromDockerServer) {
         return dockerService.getImage(id, fromDockerServer);
+    }
+
+    @RequestMapping(value = {}, method = POST, consumes = JSON)
+    public ResponseEntity postImage(final @RequestBody DockerImageDto dockerImageDto)
+            throws BadRequestException, DockerServerException, NotFoundException, NoServerPrefException {
+        if (StringUtils.isBlank(dockerImageDto.getImageId())) {
+            throw new BadRequestException("Cannot add Docker image. Please set image-id on request body.");
+        }
+        dockerService.createImage(dockerImageDto);
+        return new ResponseEntity(HttpStatus.CREATED);
     }
 
 //    @RequestMapping(value = {"/{name:.*}", "/name/{name}"}, method = GET, produces = {JSON, PLAIN_TEXT})

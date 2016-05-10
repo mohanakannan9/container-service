@@ -23,4 +23,5 @@ public interface DockerService {
 
     List<DockerImageDto> getImages(Boolean fromDb, Boolean fromDockerServer) throws NoServerPrefException, DockerServerException;
     DockerImageDto getImage(Long id, Boolean fromDockerServer);
+    void createImage(DockerImageDto dockerImageDto) throws DockerServerException, NoServerPrefException, NotFoundException;
 }

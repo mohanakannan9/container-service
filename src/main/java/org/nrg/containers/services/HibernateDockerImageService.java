@@ -2,6 +2,7 @@ package org.nrg.containers.services;
 
 import org.nrg.containers.daos.DockerImageDao;
 import org.nrg.containers.model.DockerImage;
+import org.nrg.containers.model.DockerImageDto;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,5 +17,10 @@ public class HibernateDockerImageService extends AbstractHibernateEntityService<
     @Transactional
     public List<DockerImage> getByImageId(final String imageId) {
         return getDao().getByImageId(imageId);
+    }
+
+    @Transactional
+    public void create(final DockerImageDto dto) {
+        create(dto.toDbImage());
     }
 }

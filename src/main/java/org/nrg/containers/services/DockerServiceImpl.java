@@ -92,6 +92,7 @@ public class DockerServiceImpl implements DockerService {
         for (final DockerImageDto dockerImageDto : dockerServerList) {
             if (dockerImageDto != null) {
                 if (!combined.containsKey(dockerImageDto.getImageId())) {
+                    dockerImageDto.setInDatabase(false);
                     combined.put(dockerImageDto.getImageId(), dockerImageDto);
                 } else {
                     combined.get(dockerImageDto.getImageId()).setOnDockerServer(true);
@@ -129,5 +130,32 @@ public class DockerServiceImpl implements DockerService {
             // The image is not on the docker server
             return DockerImageDto.fromDbImage(dbImage, false);
         }
+    }
+
+    public void createImage(final DockerImageDto dtoRequestIn)
+            throws DockerServerException, NoServerPrefException, NotFoundException {
+
+        final String imageId = dtoRequestIn.getImageId();
+        final DockerImageDto retrievedFromServer = controlApi.getImageById(imageId);
+
+        String name = "";
+        if (StringUtils.isNotBlank(dtoRequestIn.getName())) {
+            name = dtoRequestIn.getName();
+        } else if (!retrievedFromServer.getRepoTags().isEmpty()) {
+            for (final String tag : retrievedFromServer.getRepoTags()) {
+                if (StringUtils.isNotBlank(tag)) {
+                    name = tag;
+                    break;
+                }
+            }
+        }
+
+        if (StringUtils.isBlank(name)) {
+            name = imageId;
+        }
+
+        retrievedFromServer.setName(name);
+
+        imageService.create(retrievedFromServer);
     }
 }

@@ -12,6 +12,7 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.envers.Audited;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
+import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import java.io.Serializable;
@@ -26,16 +27,20 @@ import java.util.Objects;
 public class DockerImage extends AbstractHibernateEntity {
 
     private String name;
-    @JsonProperty("image-id") private String imageId;
-    @JsonProperty("repo-tags") private ImmutableList<String> repoTags;
+    private String imageId;
+    private ImmutableList<String> repoTags;
     private ImmutableMap<String, String> labels;
 
     public DockerImage() {}
 
-    @JsonGetter("id")
-    @Override
-    public long getId() {
-        return super.getId();
+    public DockerImage(final String name,
+                       final String imageId,
+                       final List<String> repoTags,
+                       final Map<String, String> labels) {
+        this.name = name;
+        this.imageId = imageId;
+        this.repoTags = ImmutableList.copyOf(repoTags);
+        this.labels = ImmutableMap.copyOf(labels);
     }
 
     /**
