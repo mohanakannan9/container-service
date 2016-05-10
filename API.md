@@ -344,7 +344,8 @@ Save a new entry for a Docker image that is already on the Docker server
 #### Status Codes
 
 - **201** - Created
-- **400** - Not found. No image exists on the Docker server with the given image ID.
+- **400** - Bad request. No image-id set on request body.
+- **404** - Not found. No image exists on the Docker server with the given image ID.
 
 ### pull new image from hub, which automagically saves to db
 
