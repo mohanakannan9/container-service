@@ -313,7 +313,7 @@ Get a specific Docker images
 #### Status Codes
 
 - **200** - OK
-- **400** - Not found
+- **404** - Not found. No image exists in the database with the given image ID.
 
 ### `POST /xapi/docker/images`
 Save a new entry for a Docker image that is already on the Docker server
@@ -348,10 +348,32 @@ Save a new entry for a Docker image that is already on the Docker server
 - **404** - Not found. No image exists on the Docker server with the given image ID.
 
 ### pull new image from hub, which automagically saves to db
+<!--TODO -->
 
 ### `DELETE /xapi/docker/images/{id}`
-Delete image from db (optionally also from docker server)
+Delete image record from db (optionally also from docker server)
 
+#### Example Request
+
+    DELETE /xapi/docker/images/1?from-docker-server=false
+
+#### Query Parameters
+
+- **from-docker-server=true|false** - Default false. Also attempt to remove image from Docker Server.
+
+#### JSON Parameters
+
+- **None**
+
+#### Example Response
+
+    HTTP/1.1 200 OK
+
+#### Status Codes
+
+- **200** - OK
+- **404** - Not found. No image exists in the database with the given image ID.
+- **500** - Internal server error. Image deletion should be rolled back in this case.
 
 ## Administer Script Environments
 
