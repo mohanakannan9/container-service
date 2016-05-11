@@ -10,12 +10,8 @@ import org.nrg.containers.exceptions.NoHubException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Container;
-import org.nrg.containers.model.DockerHub;
-import org.nrg.containers.model.DockerHubPrefs;
-import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.services.ContainerService;
-import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.transporter.TransportService;
 import org.nrg.xft.XFT;
 import org.slf4j.Logger;
@@ -24,7 +20,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -46,10 +41,6 @@ public class DefaultContainerService implements ContainerService {
     @Autowired
     @SuppressWarnings("SpringJavaAutowiringInspection") // IntelliJ does not process the excludeFilter in ContainerServiceConfig @ComponentScan, erroneously marks this red
     private TransportService transportService;
-
-    @Autowired
-    @SuppressWarnings("SpringJavaAutowiringInspection") // IntelliJ does not process the excludeFilter in ContainerServiceConfig @ComponentScan, erroneously marks this red
-    private DockerHubPrefs dockerHubPrefs;
 
 //    public List<DockerImage> getAllImages() throws NoServerPrefException, DockerServerException {
 //        return controlApi.getAllImages();
@@ -167,7 +158,7 @@ public class DefaultContainerService implements ContainerService {
 
 
         // Transport files
-        final String server = controlApi.getServer().host();
+        final String server = controlApi.getServer().getHost();
 //        final List<Path> paths = transportService.transport(server, session);
 
         final Calendar cal = Calendar.getInstance();
@@ -206,29 +197,29 @@ public class DefaultContainerService implements ContainerService {
         return null;
     }
 
-    @Override
-    public void pullByName(final String image, final String hub,
-                           final String hubUsername, final String hubPassword)
-        throws NoHubException, NotFoundException, DockerServerException, IOException, NoServerPrefException {
-        final DockerHub hubWithAuth = DockerHub.builder()
-            .url(hub)
-            .username(hubUsername)
-            .password(hubPassword)
-            .build();
-        pullByName(image, hubWithAuth);
-    }
+//    @Override
+//    public void pullByName(final String image, final String hub,
+//                           final String hubUsername, final String hubPassword)
+//        throws NoHubException, NotFoundException, DockerServerException, IOException, NoServerPrefException {
+//        final DockerHub hubWithAuth = DockerHub.builder()
+//            .url(hub)
+//            .username(hubUsername)
+//            .password(hubPassword)
+//            .build();
+//        pullByName(image, hubWithAuth);
+//    }
+//
+//    @Override
+//    public void pullByName(String image, String hub)
+//        throws NoHubException, NotFoundException, DockerServerException, IOException, NoServerPrefException {
+//        final DockerHub hubNoAuth = DockerHub.builder().url(hub).build();
+//        pullByName(image, hubNoAuth);
+//    }
 
-    @Override
-    public void pullByName(String image, String hub)
-        throws NoHubException, NotFoundException, DockerServerException, IOException, NoServerPrefException {
-        final DockerHub hubNoAuth = DockerHub.builder().url(hub).build();
-        pullByName(image, hubNoAuth);
-    }
-
-    private void pullByName(String image, DockerHub hub)
-        throws NoHubException, NotFoundException, DockerServerException, IOException, NoServerPrefException {
-        controlApi.pullImage(image, hub);
-    }
+//    private void pullByName(String image, DockerHub hub)
+//        throws NoHubException, NotFoundException, DockerServerException, IOException, NoServerPrefException {
+//        controlApi.pullImage(image, hub);
+//    }
 
     @Override
     public DockerImage pullFromSource(final String source, final String name)

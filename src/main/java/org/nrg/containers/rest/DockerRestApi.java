@@ -47,7 +47,7 @@ public class DockerRestApi {
     @RequestMapping(value = "/server", method = POST)
     public ResponseEntity<String> setServer(final @RequestBody DockerServer dockerServer)
             throws InvalidPreferenceName {
-        if (StringUtils.isBlank(dockerServer.host())) {
+        if (StringUtils.isBlank(dockerServer.getHost())) {
             return new ResponseEntity<>("Must set the \"host\" property in request body.",
                     HttpStatus.BAD_REQUEST);
         }

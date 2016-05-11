@@ -15,9 +15,9 @@ import java.util.Map;
 public interface ContainerControlApi {
     DockerServer getServer() throws NoServerPrefException;
 
-    void setServer(String host, String certPath) throws InvalidPreferenceName;
+    DockerServer setServer(String host, String certPath) throws InvalidPreferenceName;
 
-    void setServer(DockerServer server) throws InvalidPreferenceName;
+    DockerServer setServer(DockerServer server) throws InvalidPreferenceName;
 
     String pingServer() throws NoServerPrefException, DockerServerException;
 

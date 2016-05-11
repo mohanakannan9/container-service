@@ -14,11 +14,11 @@ import java.util.List;
 
 public interface DockerService {
     List<DockerHub> getHubs();
-    void setHub(DockerHub hub) throws NrgServiceRuntimeException;
+    DockerHub setHub(DockerHub hub);
     String pingHub(DockerHub hub) throws DockerServerException, NoServerPrefException;
 
     DockerServer getServer() throws NotFoundException;
-    void setServer(DockerServer server) throws InvalidPreferenceName;
+    DockerServer setServer(DockerServer server) throws InvalidPreferenceName;
     String pingServer() throws NoServerPrefException, DockerServerException;
 
     List<DockerImageDto> getImages(Boolean fromDb, Boolean fromDockerServer) throws NoServerPrefException, DockerServerException;

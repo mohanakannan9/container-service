@@ -106,7 +106,7 @@ public class DockerControlApiTest {
 //                CERT_PATH + "\"}";
 //        final ContainerServerPrefsBean expectedServer = mapper.readValue(containerServerJson, ContainerServerPrefsBean.class);
 
-        assertEquals(dockerServerPrefsBean.toBean(), controlApi.getServer());
+        assertEquals(dockerServerPrefsBean.toDto(), controlApi.getServer());
     }
 
     @Test
@@ -181,10 +181,9 @@ public class DockerControlApiTest {
 
     @Test
     public void testPingHub() throws Exception {
-        final DockerHub dockerHub = DockerHub.builder()
-                .url("https://index.docker.io/v1/")
-                .name("Docker Hub")
-                .build();
+        final DockerHub dockerHub = new DockerHub();
+        dockerHub.setUrl("https://index.docker.io/v1/");
+        dockerHub.setName("Docker Hub");
 
         assertEquals("OK", controlApi.pingHub(dockerHub));
     }

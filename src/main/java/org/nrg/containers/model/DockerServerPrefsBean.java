@@ -16,16 +16,13 @@ import java.util.Objects;
 public class DockerServerPrefsBean extends AbstractPreferenceBean {
     private static final Logger _log = LoggerFactory.getLogger(DockerServerPrefsBean.class);
 
-    public void setFromBean(final DockerServer csBean) throws InvalidPreferenceName {
-        setHost(csBean.host());
-        setCertPath(csBean.certPath());
+    public void setFromDto(final DockerServer dockerServerDto) throws InvalidPreferenceName {
+        setHost(dockerServerDto.getHost());
+        setCertPath(dockerServerDto.getCertPath());
     }
 
-    public DockerServer toBean() {
-        return DockerServer.builder()
-            .host(getHost())
-            .certPath(getCertPath())
-            .build();
+    public DockerServer toDto() {
+        return new DockerServer(this);
     }
 
     @NrgPreference

@@ -3,11 +3,10 @@ package org.nrg.containers.config;
 import org.hibernate.SessionFactory;
 import org.mockito.Mockito;
 import org.nrg.containers.api.ContainerControlApi;
-import org.nrg.containers.api.impl.DockerControlApi;
 import org.nrg.containers.daos.DockerImageDao;
-import org.nrg.containers.model.DockerHubPrefs;
 import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.services.ContainerService;
+import org.nrg.containers.services.DockerHubService;
 import org.nrg.containers.services.DockerImageService;
 import org.nrg.containers.services.DockerService;
 import org.nrg.containers.services.DockerServiceImpl;
@@ -47,13 +46,13 @@ public class DockerImageTestConfig {
     }
 
     @Bean
-    public ContainerControlApi mockContainerControlApi() {
-        return Mockito.mock(ContainerControlApi.class);
+    public DockerHubService mockDockerHubService() {
+        return Mockito.mock(DockerHubService.class);
     }
 
     @Bean
-    public DockerHubPrefs mockDockerHubPrefs() {
-        return Mockito.mock(DockerHubPrefs.class);
+    public ContainerControlApi mockContainerControlApi() {
+        return Mockito.mock(ContainerControlApi.class);
     }
 
     @Bean

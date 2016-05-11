@@ -288,26 +288,26 @@ public class ContainersApi {
         return service.launchFromScript(scriptId, launchArguments.toSingleValueMap(), wait);
     }
 
-    @RequestMapping(value = "/pull", method = GET, params = {"image", "hub", "username", "password"})
-    @ResponseBody
-    public void pullByNameWithAuth(final @RequestParam("image") String image,
-                            final @RequestParam("hub") String hub,
-                            final @RequestParam("username") String hubUsername,
-                            final @RequestParam("password") String hubPassword)
-        throws DockerServerException, NotFoundException, NoHubException, IOException, BadRequestException, NoServerPrefException {
-        if (StringUtils.isBlank(hubUsername) ^ StringUtils.isBlank(hubPassword)) {
-            throw new BadRequestException("Hub username and password must both be set, or not set.");
-        }
-        service.pullByName(image, hub, hubUsername, hubPassword);
-    }
-
-    @RequestMapping(value = "/pull", method = GET, params = {"image", "hub"})
-    @ResponseBody
-    public void pullByNameNoAuth(final @RequestParam("image") String image,
-                            final @RequestParam("hub") String hub)
-        throws DockerServerException, NotFoundException, NoHubException, IOException, NoServerPrefException {
-        service.pullByName(image, hub);
-    }
+//    @RequestMapping(value = "/pull", method = GET, params = {"image", "hub", "username", "password"})
+//    @ResponseBody
+//    public void pullByNameWithAuth(final @RequestParam("image") String image,
+//                            final @RequestParam("hub") String hub,
+//                            final @RequestParam("username") String hubUsername,
+//                            final @RequestParam("password") String hubPassword)
+//        throws DockerServerException, NotFoundException, NoHubException, IOException, BadRequestException, NoServerPrefException {
+//        if (StringUtils.isBlank(hubUsername) ^ StringUtils.isBlank(hubPassword)) {
+//            throw new BadRequestException("Hub username and password must both be set, or not set.");
+//        }
+//        service.pullByName(image, hub, hubUsername, hubPassword);
+//    }
+//
+//    @RequestMapping(value = "/pull", method = GET, params = {"image", "hub"})
+//    @ResponseBody
+//    public void pullByNameNoAuth(final @RequestParam("image") String image,
+//                            final @RequestParam("hub") String hub)
+//        throws DockerServerException, NotFoundException, NoHubException, IOException, NoServerPrefException {
+//        service.pullByName(image, hub);
+//    }
 
     @RequestMapping(value = "/pull", method = GET, params = "image")
     @ResponseBody

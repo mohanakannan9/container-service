@@ -8,11 +8,9 @@ import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.DockerHub;
-import org.nrg.containers.model.DockerHubPrefs;
 import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.model.DockerImageDto;
 import org.nrg.containers.model.DockerServer;
-import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -30,16 +28,16 @@ public class DockerServiceImpl implements DockerService {
     private DockerImageService imageService;
 
     @Autowired
-    private DockerHubPrefs dockerHubPrefs;
+    private DockerHubService dockerHubService;
 
     @Override
     public List<DockerHub> getHubs() {
-        return dockerHubPrefs.getDockerHubs();
+        return dockerHubService.getAll();
     }
 
     @Override
-    public void setHub(final DockerHub hub) throws NrgServiceRuntimeException {
-        dockerHubPrefs.setDockerHub(hub);
+    public DockerHub setHub(final DockerHub hub)  {
+        return dockerHubService.create(hub);
     }
 
     @Override
@@ -57,8 +55,8 @@ public class DockerServiceImpl implements DockerService {
     }
 
     @Override
-    public void setServer(final DockerServer server) throws InvalidPreferenceName {
-        controlApi.setServer(server);
+    public DockerServer setServer(final DockerServer server) throws InvalidPreferenceName {
+        return controlApi.setServer(server);
     }
 
     @Override

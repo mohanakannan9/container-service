@@ -1,141 +1,92 @@
 package org.nrg.containers.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
-import org.apache.commons.lang.StringUtils;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.hibernate.envers.Audited;
+import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
+import javax.persistence.Entity;
 import java.util.Objects;
 
+@Audited
+@Entity
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
+public class DockerHub extends AbstractHibernateEntity {
 
-@JsonIgnoreProperties({"key"})
-public class DockerHub {
     @JsonProperty("name") private String name;
     @JsonProperty("url") private String url;
     @JsonProperty("username") private String username;
     @JsonProperty("password") private String password;
     @JsonProperty("email") private String email;
 
-    public DockerHub() {}
-
-    private DockerHub(final Builder builder) {
-        this.name = builder.name;
-        this.url = builder.url;
-        this.username = builder.username;
-        this.password = builder.password;
-        this.email = builder.email;
-    }
-
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    public Builder toBuilder() {
-        return new Builder(this);
-    }
-
-    public String name() {
+    public String getName() {
         return name;
     }
 
-    public String url() {
-        return url;
+    public void setName(final String name) {
+        this.name = name;
     }
 
     public String getUrl() {
         return url;
     }
 
-    public String username() {
+    public void setUrl(final String url) {
+        this.url = url;
+    }
+
+    public String getUsername() {
         return username;
     }
 
-    public String password() {
+    public void setUsername(final String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
         return password;
     }
 
-    public String email() {
+    public void setPassword(final String password) {
+        this.password = password;
+    }
+
+    public String getEmail() {
         return email;
     }
 
+    public void setEmail(final String email) {
+        this.email = email;
+    }
+
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        DockerHub that = (DockerHub) o;
-
-        return Objects.equals(this.name, that.name) &&
-                Objects.equals(this.url, that.url) &&
-                Objects.equals(this.username, that.username) &&
-                Objects.equals(this.password, that.password) &&
-                Objects.equals(this.email, that.email);
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        final DockerHub dockerHub = (DockerHub) o;
+        return Objects.equals(this.name, dockerHub.name) &&
+                Objects.equals(this.url, dockerHub.url) &&
+                Objects.equals(this.username, dockerHub.username) &&
+                Objects.equals(this.password, dockerHub.password) &&
+                Objects.equals(this.email, dockerHub.email);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, url, username, password, email);
+        return Objects.hash(super.hashCode(), name, url, username, password, email);
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-            .add("name", name)
-            .add("url", url)
-            .add("username", username)
-            .add("password", StringUtils.isBlank(password) ? "" : "******")
-            .add("email", email)
-            .toString();
-    }
-
-    public static class Builder {
-        private String name;
-        private String url;
-        private String username;
-        private String password;
-        private String email;
-
-        private Builder() {}
-
-        private Builder(final DockerHub hub) {
-            this.name = hub.name;
-            this.url = hub.url;
-            this.username = hub.username;
-            this.password = hub.password;
-            this.email = hub.email;
-        }
-
-        public DockerHub build() {
-            return new DockerHub(this);
-        }
-
-        public Builder name(final String name) {
-            this.name = name;
-            return this;
-        }
-
-        public Builder url(final String url) {
-            this.url = url;
-            return this;
-        }
-
-        public Builder username(final String username) {
-            this.username = username;
-            return this;
-        }
-
-        public Builder password(final String password) {
-            this.password = password;
-            return this;
-        }
-
-        public Builder email(final String email) {
-            this.email = email;
-            return this;
-        }
+                .add("name", name)
+                .add("url", url)
+                .add("username", username)
+                .add("password", "******")
+                .add("email", email)
+                .toString();
     }
 }

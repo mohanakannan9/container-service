@@ -1,8 +1,6 @@
 package org.nrg.containers.rest;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Lists;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -10,10 +8,8 @@ import org.nrg.containers.config.RestApiTestConfig;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
-import org.nrg.containers.model.DockerHub;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.services.DockerService;
-import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -25,13 +21,10 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-import java.util.List;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -122,7 +115,8 @@ public class DockerRestApiTest {
         final MockHttpServletRequestBuilder request =
                 post(path).content(containerServerJson).contentType(JSON);
 
-        doNothing().when(mockDockerService).setServer(MOCK_CONTAINER_SERVER); // Have to use a different mocking syntax when method returns void
+        when(mockDockerService.setServer(MOCK_CONTAINER_SERVER))
+                .thenReturn(MOCK_CONTAINER_SERVER);
 
         mockMvc.perform(request)
                 .andExpect(status().isCreated());
@@ -175,91 +169,91 @@ public class DockerRestApiTest {
                 failedDepResponse);
     }
 
-    @Test
-    public void testGetHubs() throws Exception {
-        final String path = "/docker/hubs";
-        final MockHttpServletRequestBuilder request = get(path).accept(JSON);
-
-        final DockerHub hub1 = DockerHub.builder()
-                .email("user@email.com")
-                .username("joe_schmoe")
-                .password("insecure")
-                .url("http://hub.io")
-                .name("My cool hub")
-                .build();
-        final DockerHub hub2 = DockerHub.builder()
-                .url("https://index.docker.io/v1/")
-                .name("Docker Hub")
-                .build();
-        final List<DockerHub> hubList = Lists.newArrayList(hub1, hub2);
-
-        when(mockDockerService.getHubs())
-                .thenReturn(hubList);
-
-        final String response =
-                mockMvc.perform(request)
-                        .andExpect(status().isOk())
-                        .andExpect(content().contentType(JSON))
-                        .andReturn()
-                        .getResponse()
-                        .getContentAsString();
-
-        assertEquals(hubList, mapper.readValue(response, new TypeReference<List<DockerHub>>(){}));
-    }
-
-    @Test
-    public void testSetHub() throws Exception {
-        final String path = "/docker/hubs";
-
-        final DockerHub hub = DockerHub.builder()
-                .email("user@email.com")
-                .username("joe_schmoe")
-                .password("insecure")
-                .url("http://hub.io")
-                .build();
-
-        doNothing().when(mockDockerService).setHub(hub);
-
-        // Make a json representation of the hub
-        final String hubJsonString = mapper.writeValueAsString(hub);
-
-//        // Make an html form representation of the hub
-//        final String hubFormString =
-//            String.format("email=%s&username=%s&password=%s&url=%s",
-//                urlEncode(hub.email()),
-//                urlEncode(hub.username()),
-//                urlEncode(hub.password()),
-//                urlEncode(hub.url()));
-
-
-        // send json in
-        final MockHttpServletRequestBuilder requestJson =
-                post(path).content(hubJsonString).contentType(JSON);
-
-        mockMvc.perform(requestJson)
-                .andExpect(status().isCreated());
-
-        verify(mockDockerService, times(1)).setHub(hub); // Method has been called once
-
-//        // send form in
-//        final MockHttpServletRequestBuilder requestForm =
-//            post(path).content(hubFormString).contentType(FORM);
+//    @Test
+//    public void testGetHubs() throws Exception {
+//        final String path = "/docker/hubs";
+//        final MockHttpServletRequestBuilder request = get(path).accept(JSON);
 //
-//        mockMvc.perform(requestForm)
-//            .andExpect(status().isOk());
+//        final DockerHub hub1 = DockerHub.builder()
+//                .email("user@email.com")
+//                .username("joe_schmoe")
+//                .password("insecure")
+//                .url("http://hub.io")
+//                .name("My cool hub")
+//                .build();
+//        final DockerHub hub2 = DockerHub.builder()
+//                .url("https://index.docker.io/v1/")
+//                .name("Docker Hub")
+//                .build();
+//        final List<DockerHub> hubList = Lists.newArrayList(hub1, hub2);
 //
-//        verify(service, times(2)).setHub(hub); // Method has been called twice
+//        when(mockDockerService.getHubs())
+//                .thenReturn(hubList);
+//
+//        final String response =
+//                mockMvc.perform(request)
+//                        .andExpect(status().isOk())
+//                        .andExpect(content().contentType(JSON))
+//                        .andReturn()
+//                        .getResponse()
+//                        .getContentAsString();
+//
+//        assertEquals(hubList, mapper.readValue(response, new TypeReference<List<DockerHub>>(){}));
+//    }
 
-        // Exception
-        doThrow(NrgServiceRuntimeException.class).when(mockDockerService).setHub(hub);
-
-        final String exceptionResponse =
-                mockMvc.perform(requestJson)
-                        .andExpect(status().isBadRequest())
-                        .andReturn()
-                        .getResponse()
-                        .getContentAsString();
-
-        assertEquals("Body was not a valid Docker Hub.", exceptionResponse);
-    }
+//    @Test
+//    public void testSetHub() throws Exception {
+//        final String path = "/docker/hubs";
+//
+//        final DockerHub hub = DockerHub.builder()
+//                .email("user@email.com")
+//                .username("joe_schmoe")
+//                .password("insecure")
+//                .url("http://hub.io")
+//                .build();
+//
+//        doNothing().when(mockDockerService).setHub(hub);
+//
+//        // Make a json representation of the hub
+//        final String hubJsonString = mapper.writeValueAsString(hub);
+//
+////        // Make an html form representation of the hub
+////        final String hubFormString =
+////            String.format("email=%s&username=%s&password=%s&url=%s",
+////                urlEncode(hub.email()),
+////                urlEncode(hub.username()),
+////                urlEncode(hub.password()),
+////                urlEncode(hub.url()));
+//
+//
+//        // send json in
+//        final MockHttpServletRequestBuilder requestJson =
+//                post(path).content(hubJsonString).contentType(JSON);
+//
+//        mockMvc.perform(requestJson)
+//                .andExpect(status().isCreated());
+//
+//        verify(mockDockerService, times(1)).setHub(hub); // Method has been called once
+//
+////        // send form in
+////        final MockHttpServletRequestBuilder requestForm =
+////            post(path).content(hubFormString).contentType(FORM);
+////
+////        mockMvc.perform(requestForm)
+////            .andExpect(status().isOk());
+////
+////        verify(service, times(2)).setHub(hub); // Method has been called twice
+//
+//        // Exception
+//        doThrow(NrgServiceRuntimeException.class).when(mockDockerService).setHub(hub);
+//
+//        final String exceptionResponse =
+//                mockMvc.perform(requestJson)
+//                        .andExpect(status().isBadRequest())
+//                        .andReturn()
+//                        .getResponse()
+//                        .getContentAsString();
+//
+//        assertEquals("Body was not a valid Docker Hub.", exceptionResponse);
+//    }
 }

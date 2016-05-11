@@ -13,7 +13,6 @@ import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.model.DockerImageDto;
 import org.nrg.containers.services.DockerImageService;
-import org.nrg.containers.services.DockerService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -57,9 +56,6 @@ public class DockerImageTest {
 
     @Autowired
     private DockerImageService dockerImageService;
-
-    @Autowired
-    private DockerService dockerService;
 
     @Autowired
     private ContainerControlApi mockDockerControlApi;

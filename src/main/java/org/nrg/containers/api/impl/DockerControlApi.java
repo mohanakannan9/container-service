@@ -89,20 +89,22 @@ public class DockerControlApi implements ContainerControlApi {
         if (containerServerPref == null || containerServerPref.getHost() == null) {
             throw new NoServerPrefException("No container server URI defined in preferences.");
         }
-        return containerServerPref.toBean();
+        return containerServerPref.toDto();
     }
 
     public void setServer(final String host) throws InvalidPreferenceName {
         setServer(host, null);
     }
 
-    public void setServer(final String host, final String certPath) throws InvalidPreferenceName {
+    public DockerServer setServer(final String host, final String certPath) throws InvalidPreferenceName {
         containerServerPref.setHost(host);
         containerServerPref.setCertPath(certPath);
+        return containerServerPref.toDto();
     }
 
-    public void setServer(final DockerServer serverBean) throws InvalidPreferenceName {
-        containerServerPref.setFromBean(serverBean);
+    public DockerServer setServer(final DockerServer serverBean) throws InvalidPreferenceName {
+        containerServerPref.setFromDto(serverBean);
+        return serverBean;
     }
 
     @Override
@@ -117,10 +119,13 @@ public class DockerControlApi implements ContainerControlApi {
 
     @Override
     public String pingHub(DockerHub hub) throws DockerServerException, NoServerPrefException {
-        final DockerClient client = getClient();
-        AuthConfig authConfig = AuthConfig.builder().email(hub.email()).username(hub.username())
-                .password(hub.password()).serverAddress(hub.url()).build();
-        try {
+        final AuthConfig authConfig = AuthConfig.builder()
+                .email(hub.getEmail())
+                .username(hub.getUsername())
+                .password(hub.getPassword())
+                .serverAddress(hub.getUrl())
+                .build();
+        try (final DockerClient client = getClient()) {
             client.pull("connectioncheckonly", authConfig);
         }
         catch (ImageNotFoundException imageNotFoundException){
@@ -385,20 +390,20 @@ public class DockerControlApi implements ContainerControlApi {
         final DockerServer server = getServer();
 
         if (_log.isDebugEnabled()) {
-            _log.debug("method getClient, Create server connection, server " + server.host());
+            _log.debug("method getClient, Create server connection, server " + server.getHost());
         }
 
         DefaultDockerClient.Builder clientBuilder =
             DefaultDockerClient.builder()
-                .uri(server.host());
+                .uri(server.getHost());
 
-        if (server.certPath() != null && !server.certPath().equals("")) {
+        if (StringUtils.isNotBlank(server.getCertPath())) {
             try {
                 final DockerCertificates certificates =
-                    new DockerCertificates(Paths.get(server.certPath()));
+                    new DockerCertificates(Paths.get(server.getCertPath()));
                 clientBuilder = clientBuilder.dockerCertificates(certificates);
             } catch (DockerCertificateException e) {
-                _log.error("Could not find docker certificates at " + server.certPath(), e);
+                _log.error("Could not find docker certificates at " + server.getCertPath(), e);
             }
         }
 
@@ -446,10 +451,10 @@ public class DockerControlApi implements ContainerControlApi {
         } else {
             try (final DockerClient client = getClient()) {
                 final AuthConfig authConfig = AuthConfig.builder()
-                    .email(hub.email())
-                    .username(hub.username())
-                    .password(hub.password())
-                    .serverAddress(hub.url())
+                    .email(hub.getEmail())
+                    .username(hub.getUsername())
+                    .password(hub.getPassword())
+                    .serverAddress(hub.getUrl())
                     .build();
                 client.pull(name, authConfig);
             } catch (DockerException | InterruptedException e) {

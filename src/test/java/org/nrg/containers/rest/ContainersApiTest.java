@@ -269,37 +269,37 @@ public class ContainersApiTest {
         mockMvc.perform(request).andExpect(status().isNotFound());
     }
 
-    @Test
-    public void testPullByName() throws Exception {
-        final String imageName = "foo/bar";
-        final String noAuthUrl = "http://a.url";
-        final String authUrl = "http://different.url";
-        final String username = "foo";
-        final String password = "bar";
-
-        final String path = "/containers/pull";
-
-        final MockHttpServletRequestBuilder requestNoAuth =
-            get(path).param("image", imageName).param("hub", noAuthUrl);
-
-        doNothing().when(service).pullByName(imageName, noAuthUrl);
-
-        mockMvc.perform(requestNoAuth)
-            .andExpect(status().isOk());
-        verify(service, times(1)).pullByName(imageName, noAuthUrl);
-
-        final MockHttpServletRequestBuilder requestWithAuth = get(path)
-                .param("image", imageName)
-                .param("hub", authUrl)
-                .param("username", username)
-                .param("password", password);
-
-        doNothing().when(service).pullByName(imageName, authUrl, username, password);
-
-        mockMvc.perform(requestWithAuth)
-            .andExpect(status().isOk());
-        verify(service, times(1)).pullByName(imageName, authUrl, username, password);
-    }
+//    @Test
+//    public void testPullByName() throws Exception {
+//        final String imageName = "foo/bar";
+//        final String noAuthUrl = "http://a.url";
+//        final String authUrl = "http://different.url";
+//        final String username = "foo";
+//        final String password = "bar";
+//
+//        final String path = "/containers/pull";
+//
+//        final MockHttpServletRequestBuilder requestNoAuth =
+//            get(path).param("image", imageName).param("hub", noAuthUrl);
+//
+//        doNothing().when(service).pullByName(imageName, noAuthUrl);
+//
+//        mockMvc.perform(requestNoAuth)
+//            .andExpect(status().isOk());
+//        verify(service, times(1)).pullByName(imageName, noAuthUrl);
+//
+//        final MockHttpServletRequestBuilder requestWithAuth = get(path)
+//                .param("image", imageName)
+//                .param("hub", authUrl)
+//                .param("username", username)
+//                .param("password", password);
+//
+//        doNothing().when(service).pullByName(imageName, authUrl, username, password);
+//
+//        mockMvc.perform(requestWithAuth)
+//            .andExpect(status().isOk());
+//        verify(service, times(1)).pullByName(imageName, authUrl, username, password);
+//    }
 
     public String urlEncode(final String raw) throws UnsupportedEncodingException {
         return URLEncoder.encode(raw, UTF_8.name());

@@ -15,34 +15,27 @@ public class DockerServer {
         this.certPath = certPath;
     }
 
-    public static Builder builder() {
-        return new Builder();
+    public DockerServer(final DockerServerPrefsBean dockerServerPrefsBean) {
+        this.host = dockerServerPrefsBean.getHost();
+        this.certPath = dockerServerPrefsBean.getCertPath();
     }
 
-    public Builder toBuilder() {
-        return new Builder(this);
-    }
-
-    private DockerServer(final Builder builder) {
-        this.host = builder.host;
-        this.certPath = builder.certPath;
-    }
-
-    public String host() {
+    public String getHost() {
         return host;
     }
 
-    public void host(final String host) {
+    public void setHost(final String host) {
         this.host = host;
     }
 
-    public String certPath() {
+    public String getCertPath() {
         return certPath;
     }
 
-    public void certPath(final String certPath) {
+    public void setCertPath(final String certPath) {
         this.certPath = certPath;
     }
+
 
     @Override
     public boolean equals(Object o) {
@@ -62,39 +55,5 @@ public class DockerServer {
     @Override
     public int hashCode() {
         return Objects.hash(host, certPath);
-    }
-
-    public static class Builder {
-        private String host;
-        private String certPath;
-
-        private Builder() {}
-
-        private Builder(final DockerServer server) {
-            this.host = server.host;
-            this.certPath = server.certPath;
-        }
-
-        public DockerServer build() {
-            return new DockerServer(this);
-        }
-
-        public Builder host(final String host) {
-            this.host = host;
-            return this;
-        }
-
-        public String host() {
-            return this.host;
-        }
-
-        public Builder certPath(final String certPath) {
-            this.certPath = certPath;
-            return this;
-        }
-
-        public String certPath() {
-            return this.certPath;
-        }
     }
 }

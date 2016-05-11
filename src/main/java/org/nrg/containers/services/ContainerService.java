@@ -45,11 +45,11 @@ public interface ContainerService {
 
     String verbContainer(String id, String status) throws NoServerPrefException, NotFoundException, DockerServerException;
 
-    void pullByName(String image, String hub, String hubUsername, String hubPassword)
-        throws NoHubException, NotFoundException, DockerServerException, IOException, NoServerPrefException;
-
-    void pullByName(String image, String hub)
-        throws NoHubException, NotFoundException, DockerServerException, IOException, NoServerPrefException;
+//    void pullByName(String image, String hub, String hubUsername, String hubPassword)
+//        throws NoHubException, NotFoundException, DockerServerException, IOException, NoServerPrefException;
+//
+//    void pullByName(String image, String hub)
+//        throws NoHubException, NotFoundException, DockerServerException, IOException, NoServerPrefException;
 
     DockerImage pullFromSource(String source, String name) throws NoHubException, NotFoundException, DockerServerException;
 
