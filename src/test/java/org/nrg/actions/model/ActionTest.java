@@ -26,8 +26,8 @@ import static org.junit.Assert.assertThat;
 @ContextConfiguration(classes = ActionTestConfig.class)
 public class ActionTest {
     private static final String DOCKER_IMAGE_JSON =
-            "{\"name\":\"name\", \"repoTags\":[\"a\", \"b\"], \"imageId\":\"abc123\"," +
-                    "\"labels\":{\"foo\":\"bar\"}, \"size\":0}";
+            "{\"name\":\"name\", \"repo-tags\":[\"a\", \"b\"], \"image-id\":\"abc123\"," +
+                    "\"labels\":{\"foo\":\"bar\"}}";
 
     private static final String DICOM_RESOURCE_MATCHER_JSON =
             "{\"value\":\"RESOURCE_NAME\", \"type\":\"string\", \"operator\":\"equals\", \"property\":\"name\"}";
@@ -47,8 +47,8 @@ public class ActionTest {
                     "\"info-url\":\"http://abc.xyz\", \"env\":{\"foo\":\"bar\"}, " +
                     "\"inputs\":[" + COMMAND_INPUT_JSON + "], " +
                     "\"outputs\":[], " +
-                    "\"template\":\"foo\", \"type\":\"image\", " +
-                    "\"image\":{\"id\":%d}}";
+                    "\"template\":\"foo\", \"type\":\"docker-image\", " +
+                    "\"docker-image\":{\"id\":%d}}";
 
     private static final String ACTION_INPUT_JSON =
             "{\"root-context-property-name\":\"some_identifier\", " +

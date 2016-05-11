@@ -29,7 +29,7 @@ import java.util.Objects;
 @DiscriminatorColumn(name = "COMMAND_TYPE")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = DockerImageCommand.class, name = "image"),
+        @JsonSubTypes.Type(value = DockerImageCommand.class, name = "docker-image"),
         @JsonSubTypes.Type(value = ScriptCommand.class, name = "script")
 })
 @JsonTypeName("command")

@@ -36,7 +36,7 @@ import static org.junit.Assert.assertThat;
 public class CommandTest {
 
     private static final String DOCKER_IMAGE_JSON =
-            "{\"name\":\"sweet\", \"imageId\":\"abc123\", \"repoTags\":[\"abc123:latest\"], \"labels\":{\"foo\":\"bar\"}}";
+            "{\"name\":\"sweet\", \"image-id\":\"abc123\", \"repo-tags\":[\"abc123:latest\"], \"labels\":{\"foo\":\"bar\"}}";
 
     private static final String SCRIPT_JSON =
             "{\"scriptId\":\"abc123\", \"scriptLabel\":\"a-script\", " +
@@ -58,8 +58,8 @@ public class CommandTest {
                     "\"info-url\":\"http://abc.xyz\", \"env\":{\"foo\":\"bar\"}, " +
                     "\"inputs\":" + COMMAND_INPUT_LIST_JSON + ", " +
                     "\"outputs\":[" + COMMAND_OUTPUT_JSON + "], " +
-                    "\"template\":\"foo\", \"type\":\"image\", " +
-                    "\"image\":{\"id\":%d}}";
+                    "\"template\":\"foo\", \"type\":\"docker-image\", " +
+                    "\"docker-image\":{\"id\":%d}}";
 
     private static final String SCRIPT_COMMAND_JSON_TEMPLATE =
             "{\"name\":\"script_command\", \"description\":\"The Script command for the test\", " +

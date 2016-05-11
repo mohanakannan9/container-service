@@ -1,6 +1,5 @@
 package org.nrg.containers.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
@@ -22,8 +21,8 @@ public class DockerImageDto {
     private Date updated;
     private Date disabled;
     private String name;
-    @JsonProperty("imageId") private String imageId;
-    @JsonProperty("repoTags") private ImmutableList<String> repoTags;
+    @JsonProperty("image-id") private String imageId;
+    @JsonProperty("repo-tags") private ImmutableList<String> repoTags;
     private ImmutableMap<String, String> labels;
     @JsonProperty("in-database") private Boolean inDatabase;
     @JsonProperty("on-docker-server") private Boolean onDockerServer;

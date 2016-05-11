@@ -90,8 +90,7 @@ public class ActionInput implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(),
-                rootContextPropertyName, required, commandInputName, root, parent);
+        return Objects.hash(rootContextPropertyName, required, commandInputName, root, parent);
     }
 
     @Override

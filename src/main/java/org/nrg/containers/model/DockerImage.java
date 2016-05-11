@@ -1,6 +1,5 @@
 package org.nrg.containers.model;
 
-import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
@@ -12,10 +11,8 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.envers.Audited;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
-import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
-import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -27,8 +24,8 @@ import java.util.Objects;
 public class DockerImage extends AbstractHibernateEntity {
 
     private String name;
-    private String imageId;
-    private ImmutableList<String> repoTags;
+    @JsonProperty("image-id") private String imageId;
+    @JsonProperty("repo-tags") private ImmutableList<String> repoTags;
     private ImmutableMap<String, String> labels;
     private int size;
     public DockerImage() {}
