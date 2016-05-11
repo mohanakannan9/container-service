@@ -1,10 +1,10 @@
-package org.nrg.automation.model;
+package org.nrg.actions.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.envers.Audited;
-import org.nrg.actions.model.Command;
 import org.nrg.automation.entities.Script;
 
 import javax.persistence.DiscriminatorValue;
@@ -19,6 +19,7 @@ import java.util.Objects;
 public class ScriptCommand extends Command {
     static final String COMMAND_TYPE = "script";
     private Script script;
+    @JsonProperty("script-environment") private ScriptEnvironment scriptEnvironment;
 
     @ManyToOne
     public Script getScript() {
@@ -27,6 +28,15 @@ public class ScriptCommand extends Command {
 
     public void setScript(final Script script) {
         this.script = script;
+    }
+
+    @ManyToOne
+    public ScriptEnvironment getScriptEnvironment() {
+        return scriptEnvironment;
+    }
+
+    public void setScriptEnvironment(final ScriptEnvironment scriptEnvironment) {
+        this.scriptEnvironment = scriptEnvironment;
     }
 
     @Override
@@ -40,7 +50,8 @@ public class ScriptCommand extends Command {
         if (o == null || !super.equals(o) || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         final ScriptCommand that = (ScriptCommand) o;
-        return Objects.equals(script, that.script);
+        return Objects.equals(this.script, that.script) &&
+                Objects.equals(this.scriptEnvironment, that.scriptEnvironment);
     }
 
     @Override
@@ -52,6 +63,7 @@ public class ScriptCommand extends Command {
     public String toString() {
         return addParentPropertiesToString(MoreObjects.toStringHelper(this))
                 .add("script", script)
+                .add("scriptEnvironment", scriptEnvironment)
                 .toString();
     }
 

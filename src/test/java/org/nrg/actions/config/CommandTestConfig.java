@@ -2,13 +2,17 @@ package org.nrg.actions.config;
 
 import org.hibernate.SessionFactory;
 import org.nrg.actions.daos.CommandDao;
+import org.nrg.actions.daos.ScriptEnvironmentDao;
 import org.nrg.actions.model.Command;
 import org.nrg.actions.model.CommandInput;
 import org.nrg.actions.model.Output;
+import org.nrg.actions.model.ScriptEnvironment;
 import org.nrg.actions.services.CommandService;
 import org.nrg.actions.services.HibernateCommandService;
+import org.nrg.actions.services.HibernateScriptEnvironmentService;
+import org.nrg.actions.services.ScriptEnvironmentService;
 import org.nrg.automation.entities.Script;
-import org.nrg.automation.model.ScriptCommand;
+import org.nrg.actions.model.ScriptCommand;
 import org.nrg.automation.repositories.ScriptRepository;
 import org.nrg.automation.services.ScriptService;
 import org.nrg.automation.services.impl.hibernate.HibernateScriptService;
@@ -54,6 +58,16 @@ public class CommandTestConfig {
     }
 
     @Bean
+    public ScriptEnvironmentService scriptEnvironmentService() {
+        return new HibernateScriptEnvironmentService();
+    }
+
+    @Bean
+    public ScriptEnvironmentDao scriptEnvironmentDao() {
+        return new ScriptEnvironmentDao();
+    }
+
+    @Bean
     public CommandService commandService() {
         return new HibernateCommandService();
     }
@@ -74,6 +88,7 @@ public class CommandTestConfig {
                 DockerImage.class,
                 ScriptCommand.class,
                 Script.class,
+                ScriptEnvironment.class,
                 CommandInput.class,
                 Output.class);
         return bean;

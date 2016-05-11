@@ -7,8 +7,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.actions.config.CommandTestConfig;
 import org.nrg.actions.services.CommandService;
+import org.nrg.actions.services.ScriptEnvironmentService;
 import org.nrg.automation.entities.Script;
-import org.nrg.automation.model.ScriptCommand;
 import org.nrg.automation.services.ScriptService;
 import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.model.DockerImageCommand;
@@ -28,6 +28,7 @@ import static org.hamcrest.Matchers.isIn;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -37,6 +38,10 @@ public class CommandTest {
 
     private static final String DOCKER_IMAGE_JSON =
             "{\"name\":\"sweet\", \"image-id\":\"abc123\", \"repo-tags\":[\"abc123:latest\"], \"labels\":{\"foo\":\"bar\"}}";
+
+    private static final String SCRIPT_ENVIRONMENT_JSON_TEMPLATE =
+            "{\"name\":\"Mr. Big Stuff\", \"description\":\"Who do you think you are?\", " +
+                    "\"docker-image\":{\"id\":%d}}";
 
     private static final String SCRIPT_JSON =
             "{\"scriptId\":\"abc123\", \"scriptLabel\":\"a-script\", " +
@@ -67,7 +72,8 @@ public class CommandTest {
                     "\"inputs\":" + COMMAND_INPUT_LIST_JSON + ", " +
                     "\"outputs\":[" + COMMAND_OUTPUT_JSON + "], " +
                     "\"template\":\"foo\", \"type\":\"script\", " +
-                    "\"script\":{\"id\":%d}}";
+                    "\"script\":{\"id\":%d}," +
+                    "\"script-environment\":{\"id\":%d}}";
 
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -76,6 +82,9 @@ public class CommandTest {
 
     @Autowired
     private ScriptService scriptService;
+
+    @Autowired
+    private ScriptEnvironmentService scriptEnvironmentService;
 
     @Autowired
     private CommandService commandService;
@@ -139,6 +148,8 @@ public class CommandTest {
         assertThat(command, instanceOf(DockerImageCommand.class));
         final DockerImageCommand dockerImageCommand = (DockerImageCommand) command;
         commandService.create(dockerImageCommand);
+        commandService.flush();
+        commandService.refresh(dockerImageCommand);
 
         final Command retrievedCommand = commandService.retrieve(dockerImageCommand.getId());
 
@@ -148,12 +159,13 @@ public class CommandTest {
     @Test
     public void testDeserializeScriptCommand() throws Exception {
 
-        final List<CommandInput> commandInputList = mapper.readValue(COMMAND_INPUT_LIST_JSON, new TypeReference<List<CommandInput>>() {});
+        final List<CommandInput> commandInputList =
+                mapper.readValue(COMMAND_INPUT_LIST_JSON, new TypeReference<List<CommandInput>>() {});
 
         final Output output = mapper.readValue(COMMAND_OUTPUT_JSON, Output.class);
 
         final String scriptCommandJson =
-                String.format(SCRIPT_COMMAND_JSON_TEMPLATE, 0);
+                String.format(SCRIPT_COMMAND_JSON_TEMPLATE, 0, 0);
         final Command command = mapper.readValue(scriptCommandJson, Command.class);
 
         assertThat(command, instanceOf(ScriptCommand.class));
@@ -170,24 +182,49 @@ public class CommandTest {
         assertEquals(output, scriptCommand.getOutputs().get(0));
 
         assertEquals(0L, scriptCommand.getScript().getId());
+        assertEquals(0L, scriptCommand.getScriptEnvironment().getId());
     }
 
     @Test
     public void testPersistScriptCommand() throws Exception {
 
-            final Script script = mapper.readValue(SCRIPT_JSON, Script.class);
-            scriptService.create(script);
+        final Script script = mapper.readValue(SCRIPT_JSON, Script.class);
+        scriptService.create(script);
+        final Script retrievedScript = scriptService.retrieve(script.getId());
 
-            final String scriptCommandJson =
-                    String.format(SCRIPT_COMMAND_JSON_TEMPLATE, script.getId());
-            final Command command = mapper.readValue(scriptCommandJson, Command.class);
+        final DockerImageDto imageDto = mapper.readValue(DOCKER_IMAGE_JSON, DockerImageDto.class);
+        final DockerImage image = imageDto.toDbImage();
+        dockerImageService.create(image);
 
-            assertThat(command, instanceOf(ScriptCommand.class));
-            final ScriptCommand scriptCommand = (ScriptCommand) command;
-            commandService.create(scriptCommand);
+        final String scriptEnvironmentJson =
+                String.format(SCRIPT_ENVIRONMENT_JSON_TEMPLATE, image.getId());
+        final ScriptEnvironment scriptEnvironment =
+                mapper.readValue(scriptEnvironmentJson, ScriptEnvironment.class);
+        scriptEnvironmentService.create(scriptEnvironment);
+        scriptEnvironmentService.flush();
+        scriptEnvironmentService.refresh(scriptEnvironment);
 
-            final Command retrievedCommand = commandService.retrieve(scriptCommand.getId());
+        final ScriptEnvironment retrievedScriptEnvironment =
+                scriptEnvironmentService.retrieve(scriptEnvironment.getId());
+        assertEquals(image, retrievedScriptEnvironment.getDockerImage());
 
-            assertEquals(scriptCommand, retrievedCommand);
+        final String scriptCommandJson =
+                String.format(SCRIPT_COMMAND_JSON_TEMPLATE,
+                        script.getId(), scriptEnvironment.getId());
+        final Command command = mapper.readValue(scriptCommandJson, Command.class);
+
+        assertThat(command, instanceOf(ScriptCommand.class));
+        final ScriptCommand scriptCommand = (ScriptCommand) command;
+        commandService.create(scriptCommand);
+        commandService.flush();
+        commandService.refresh(scriptCommand);
+
+        final ScriptCommand retrievedCommand = (ScriptCommand) commandService.retrieve(scriptCommand.getId());
+
+        assertEquals(scriptCommand, retrievedCommand);
+        assertNotNull(retrievedCommand.getScript());
+        assertEquals(retrievedScript, retrievedCommand.getScript());
+        assertNotNull(retrievedCommand.getScriptEnvironment());
+        assertEquals(retrievedScriptEnvironment, retrievedCommand.getScriptEnvironment());
     }
 }
