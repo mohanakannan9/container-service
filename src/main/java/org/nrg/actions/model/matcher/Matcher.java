@@ -2,9 +2,11 @@ package org.nrg.actions.model.matcher;
 
 import com.google.common.base.MoreObjects;
 
+import javax.persistence.Embeddable;
 import java.io.Serializable;
 import java.util.Objects;
 
+@Embeddable
 public class Matcher implements Serializable {
     private String type;
     private String property;
