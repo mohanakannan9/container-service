@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import static org.hamcrest.Matchers.emptyCollectionOf;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -146,9 +147,13 @@ public class ActionTest {
         final String actionJson = String.format(ACTION_JSON_TEMPLATE, command.getId());
         final ActionDto actionDto = mapper.readValue(actionJson, ActionDto.class);
         final Action action = actionService.createFromDto(actionDto);
+        actionService.flush();
+        actionService.refresh(action);
 
         final Action retrievedAction = actionService.retrieve(action.getId());
 
         assertEquals(action, retrievedAction);
+        assertNotNull(action.getCommand());
+        assertEquals(command, action.getCommand());
     }
 }

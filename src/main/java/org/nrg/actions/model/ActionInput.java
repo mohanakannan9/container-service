@@ -4,7 +4,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import org.nrg.actions.model.tree.MatchTreeNode;
+import org.nrg.actions.model.tree.MatchTreeNodeConverter;
 
+import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Embeddable;
 import javax.persistence.Transient;
 import java.io.Serializable;
@@ -57,6 +60,8 @@ public class ActionInput implements Serializable {
         this.required = required;
     }
 
+    @Column(columnDefinition = "varchar")
+    @Convert(converter = MatchTreeNodeConverter.class)
     public MatchTreeNode getRoot() {
         return root;
     }
