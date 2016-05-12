@@ -40,13 +40,15 @@ public class ActionTest {
                     "\"matchers\":[], \"children\":[" + RESOURCE_MATCH_TREE_NODE_JSON + "]}";
 
     private static final String INPUT_NAME = "my_cool_input";
-    private static final String COMMAND_INPUT_JSON =
+    private static final String COMMAND_LINE_INPUT_JSON =
             "{\"name\":\"" + INPUT_NAME + "\", " +
-                    "\"description\":\"A directory containing some files\", \"type\":\"directory\", \"required\":true}";
+                    "\"description\":\"A boolean value\", " +
+                    "\"type\":\"boolean\", \"required\":true, " +
+                    "\"true-value\":\"-b\", \"false-value\":\"\"}";
     private static final String COMMAND_JSON_TEMPLATE =
             "{\"name\":\"test_command\", \"description\":\"The command for the test\", " +
                     "\"info-url\":\"http://abc.xyz\", \"env\":{\"foo\":\"bar\"}, " +
-                    "\"inputs\":[" + COMMAND_INPUT_JSON + "], " +
+                    "\"command-line-inputs\":[" + COMMAND_LINE_INPUT_JSON + "], " +
                     "\"outputs\":[], " +
                     "\"template\":\"foo\", \"type\":\"docker-image\", " +
                     "\"docker-image\":{\"id\":%d}}";
@@ -112,13 +114,13 @@ public class ActionTest {
 
         final String commandJson = String.format(COMMAND_JSON_TEMPLATE, 0);
         final Command command = mapper.readValue(commandJson, Command.class);
-        final CommandInput commandInput = command.getInputs().get(0);
+        final CommandLineInput commandLineInput = command.getCommandLineInputs().get(0);
 
         final ActionInput actionInput = mapper.readValue(ACTION_INPUT_JSON, ActionInput.class);
 
         assertEquals("some_identifier", actionInput.getRootContextPropertyName());
         assertEquals(scanMtNode, actionInput.getRoot());
-        assertEquals(commandInput.getName(), actionInput.getCommandInputName());
+        assertEquals(commandLineInput.getName(), actionInput.getCommandInputName());
     }
 
     @Test

@@ -29,6 +29,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -37,7 +38,8 @@ import static org.junit.Assert.assertThat;
 public class CommandTest {
 
     private static final String DOCKER_IMAGE_JSON =
-            "{\"name\":\"sweet\", \"image-id\":\"abc123\", \"repo-tags\":[\"abc123:latest\"], \"labels\":{\"foo\":\"bar\"}}";
+            "{\"name\":\"sweet\", \"image-id\":\"abc123\", " +
+                    "\"repo-tags\":[\"abc123:latest\"], \"labels\":{\"foo\":\"bar\"}}";
 
     private static final String SCRIPT_ENVIRONMENT_JSON_TEMPLATE =
             "{\"name\":\"Mr. Big Stuff\", \"description\":\"Who do you think you are?\", " +
@@ -49,19 +51,23 @@ public class CommandTest {
                     "\"language\":\"English\"," +
                     "\"content\":\"It was the best of times, it was the *blurst* of times? You stupid monkey!\"}";
 
-    private static final String COMMAND_INPUT_0_JSON =
-            "{\"name\":\"my_cool_input\", \"description\":\"A directory containing some files\", \"type\":\"directory\", \"required\":true}";
-    private static final String COMMAND_INPUT_1_JSON =
-            "{\"name\":\"my_uncool_input\", \"description\":\"No one loves me :(\", \"type\":\"string\", \"required\":false}";
-    private static final String COMMAND_INPUT_LIST_JSON =
-            "[" + COMMAND_INPUT_0_JSON + ", " + COMMAND_INPUT_1_JSON + "]";
+    private static final String COMMAND_LINE_INPUT_0_JSON =
+            "{\"name\":\"my_cool_input\", \"description\":\"A boolean value\", " +
+                    "\"type\":\"boolean\", \"required\":true," +
+                    "\"true-value\":\"-b\", \"false-value\":\"\"}";
+    private static final String COMMAND_LINE_INPUT_1_JSON =
+            "{\"name\":\"my_uncool_input\", \"description\":\"No one loves me :(\", " +
+                    "\"type\":\"string\", \"required\":false," +
+                    "\"arg-template\":\"--uncool=#value#\"}";
+    private static final String COMMAND_LINE_INPUT_LIST_JSON =
+            "[" + COMMAND_LINE_INPUT_0_JSON + ", " + COMMAND_LINE_INPUT_1_JSON + "]";
     private static final String COMMAND_OUTPUT_JSON =
             "{\"name\":\"an_output\", \"description\":\"It will be put out\", \"required\":true, \"type\":\"files\"}";
 
     private static final String DOCKER_IMAGE_COMMAND_JSON_TEMPLATE =
             "{\"name\":\"docker_image_command\", \"description\":\"Docker Image command for the test\", " +
                     "\"info-url\":\"http://abc.xyz\", \"env\":{\"foo\":\"bar\"}, " +
-                    "\"inputs\":" + COMMAND_INPUT_LIST_JSON + ", " +
+                    "\"command-line-inputs\":" + COMMAND_LINE_INPUT_LIST_JSON + ", " +
                     "\"outputs\":[" + COMMAND_OUTPUT_JSON + "], " +
                     "\"template\":\"foo\", \"type\":\"docker-image\", " +
                     "\"docker-image\":{\"id\":%d}}";
@@ -69,7 +75,7 @@ public class CommandTest {
     private static final String SCRIPT_COMMAND_JSON_TEMPLATE =
             "{\"name\":\"script_command\", \"description\":\"The Script command for the test\", " +
                     "\"info-url\":\"http://abc.xyz\", " +
-                    "\"inputs\":" + COMMAND_INPUT_LIST_JSON + ", " +
+                    "\"command-line-inputs\":" + COMMAND_LINE_INPUT_LIST_JSON + ", " +
                     "\"outputs\":[" + COMMAND_OUTPUT_JSON + "], " +
                     "\"template\":\"foo\", \"type\":\"script\", " +
                     "\"script\":{\"id\":%d}," +
@@ -97,19 +103,33 @@ public class CommandTest {
 
     @Test
     public void testDeserializeCommandInput() throws Exception {
-        final CommandInput commandInput = mapper.readValue(COMMAND_INPUT_0_JSON, CommandInput.class);
+        final CommandLineInput commandLineInput0 =
+                mapper.readValue(COMMAND_LINE_INPUT_0_JSON, CommandLineInput.class);
+        final CommandLineInput commandLineInput1 =
+                mapper.readValue(COMMAND_LINE_INPUT_1_JSON, CommandLineInput.class);
 
-        assertEquals("my_cool_input", commandInput.getName());
-        assertEquals("A directory containing some files", commandInput.getDescription());
-        assertEquals("directory", commandInput.getType());
-        assertEquals(true, commandInput.isRequired());
-        assertEquals(null, commandInput.getValue());
+        assertEquals("my_cool_input", commandLineInput0.getName());
+        assertEquals("A boolean value", commandLineInput0.getDescription());
+        assertEquals("boolean", commandLineInput0.getType());
+        assertEquals(true, commandLineInput0.isRequired());
+        assertEquals("-b", commandLineInput0.getTrueValue());
+        assertEquals("", commandLineInput0.getFalseValue());
+        assertNull(commandLineInput0.getArgTemplate());
+
+        assertEquals("my_uncool_input", commandLineInput1.getName());
+        assertEquals("No one loves me :(", commandLineInput1.getDescription());
+        assertEquals("string", commandLineInput1.getType());
+        assertEquals(false, commandLineInput1.isRequired());
+        assertNull(commandLineInput1.getTrueValue());
+        assertNull(commandLineInput1.getFalseValue());
+        assertEquals("--uncool=#value#", commandLineInput1.getArgTemplate());
     }
 
     @Test
     public void testDeserializeDockerImageCommand() throws Exception {
 
-        final List<CommandInput> commandInputList = mapper.readValue(COMMAND_INPUT_LIST_JSON, new TypeReference<List<CommandInput>>() {});
+        final List<CommandLineInput> commandLineInputList =
+                mapper.readValue(COMMAND_LINE_INPUT_LIST_JSON, new TypeReference<List<CommandLineInput>>() {});
 
         final Output output = mapper.readValue(COMMAND_OUTPUT_JSON, Output.class);
 
@@ -126,8 +146,8 @@ public class CommandTest {
         assertEquals("foo", dockerImageCommand.getTemplate());
         assertEquals(ImmutableMap.of("foo", "bar"), dockerImageCommand.getEnvironmentVariables());
 
-        assertThat(dockerImageCommand.getInputs(), hasSize(2));
-        assertThat(commandInputList, everyItem(isIn(dockerImageCommand.getInputs())));
+        assertThat(dockerImageCommand.getCommandLineInputs(), hasSize(2));
+        assertThat(commandLineInputList, everyItem(isIn(dockerImageCommand.getCommandLineInputs())));
 
         assertEquals(output, dockerImageCommand.getOutputs().get(0));
 
@@ -159,8 +179,8 @@ public class CommandTest {
     @Test
     public void testDeserializeScriptCommand() throws Exception {
 
-        final List<CommandInput> commandInputList =
-                mapper.readValue(COMMAND_INPUT_LIST_JSON, new TypeReference<List<CommandInput>>() {});
+        final List<CommandLineInput> commandLineInputList =
+                mapper.readValue(COMMAND_LINE_INPUT_LIST_JSON, new TypeReference<List<CommandLineInput>>() {});
 
         final Output output = mapper.readValue(COMMAND_OUTPUT_JSON, Output.class);
 
@@ -176,8 +196,8 @@ public class CommandTest {
         assertEquals("http://abc.xyz", scriptCommand.getInfoUrl());
         assertEquals("foo", scriptCommand.getTemplate());
 
-        assertThat(scriptCommand.getInputs(), hasSize(2));
-        assertThat(commandInputList, everyItem(isIn(scriptCommand.getInputs())));
+        assertThat(scriptCommand.getCommandLineInputs(), hasSize(2));
+        assertThat(commandLineInputList, everyItem(isIn(scriptCommand.getCommandLineInputs())));
 
         assertEquals(output, scriptCommand.getOutputs().get(0));
 

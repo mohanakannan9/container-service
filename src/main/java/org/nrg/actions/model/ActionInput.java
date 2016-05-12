@@ -71,7 +71,7 @@ public class ActionInput implements Serializable {
     }
 
     @Transient
-    public CommandInput getCommandInput() {
+    public CommandLineInput getCommandInput() {
         return parent.getCommandInputByName(commandInputName);
     }
 

@@ -4,7 +4,7 @@ import org.hibernate.SessionFactory;
 import org.nrg.actions.daos.CommandDao;
 import org.nrg.actions.daos.ScriptEnvironmentDao;
 import org.nrg.actions.model.Command;
-import org.nrg.actions.model.CommandInput;
+import org.nrg.actions.model.CommandLineInput;
 import org.nrg.actions.model.Output;
 import org.nrg.actions.model.ScriptEnvironment;
 import org.nrg.actions.services.CommandService;
@@ -89,7 +89,7 @@ public class CommandTestConfig {
                 ScriptCommand.class,
                 Script.class,
                 ScriptEnvironment.class,
-                CommandInput.class,
+                CommandLineInput.class,
                 Output.class);
         return bean;
     }

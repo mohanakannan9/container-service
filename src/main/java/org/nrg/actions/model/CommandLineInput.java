@@ -1,5 +1,6 @@
 package org.nrg.actions.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 
 import javax.persistence.Embeddable;
@@ -7,12 +8,14 @@ import java.io.Serializable;
 import java.util.Objects;
 
 @Embeddable
-public class CommandInput implements Serializable {
+public class CommandLineInput implements Serializable {
     private String name;
     private String description;
     private String type;
-    private String value;
     private Boolean required;
+    @JsonProperty("arg-template") private String argTemplate;
+    @JsonProperty("true-value") private String trueValue;
+    @JsonProperty("false-value") private String falseValue;
 
     public String getName() {
         return name;
@@ -38,14 +41,6 @@ public class CommandInput implements Serializable {
         this.type = type;
     }
 
-    public String getValue() {
-        return value;
-    }
-
-    public void setValue(String value) {
-        this.value = value;
-    }
-
     public Boolean getRequired() {
         return required;
     }
@@ -58,21 +53,47 @@ public class CommandInput implements Serializable {
         this.required = required;
     }
 
+    public String getArgTemplate() {
+        return argTemplate;
+    }
+
+    public void setArgTemplate(final String argTemplate) {
+        this.argTemplate = argTemplate;
+    }
+
+    public String getTrueValue() {
+        return trueValue;
+    }
+
+    public void setTrueValue(final String trueValue) {
+        this.trueValue = trueValue;
+    }
+
+    public String getFalseValue() {
+        return falseValue;
+    }
+
+    public void setFalseValue(final String falseValue) {
+        this.falseValue = falseValue;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final CommandInput that = (CommandInput) o;
+        final CommandLineInput that = (CommandLineInput) o;
         return Objects.equals(this.name, that.name) &&
                 Objects.equals(this.description, that.description) &&
                 Objects.equals(this.type, that.type) &&
-                Objects.equals(this.value, that.value) &&
-                Objects.equals(this.required, that.required);
+                Objects.equals(this.required, that.required) &&
+                Objects.equals(this.argTemplate, that.argTemplate) &&
+                Objects.equals(this.trueValue, that.trueValue) &&
+                Objects.equals(this.falseValue, that.falseValue);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, description, type, value, required);
+        return Objects.hash(name, description, type, required, argTemplate, trueValue, falseValue);
     }
 
     @Override
@@ -81,8 +102,10 @@ public class CommandInput implements Serializable {
                 .add("name", name)
                 .add("description", description)
                 .add("type", type)
-                .add("value", value)
                 .add("required", required)
+                .add("argTemplate", argTemplate)
+                .add("trueValue", trueValue)
+                .add("falseValue", falseValue)
                 .toString();
     }
 }
