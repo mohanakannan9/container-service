@@ -39,6 +39,13 @@ public class MatchTreeNode implements Serializable {
     }
 
     public void setChildren(final List<MatchTreeNode> children) {
+        if (children != null && !children.isEmpty()) {
+            for (final MatchTreeNode child : children) {
+                if (child.getParent() == null) {
+                    child.setParent(this);
+                }
+            }
+        }
         this.children = children;
     }
 
@@ -69,7 +76,7 @@ public class MatchTreeNode implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, parent, children, matchers, providesInputValue, inputProperty);
+        return Objects.hash(type, children, matchers, providesInputValue, inputProperty);
     }
 
     @Override
@@ -84,7 +91,6 @@ public class MatchTreeNode implements Serializable {
         MatchTreeNode that = (MatchTreeNode) o;
 
         return Objects.equals(this.type, that.type) &&
-                Objects.equals(this.parent, that.parent) &&
                 Objects.equals(this.children, that.children) &&
                 Objects.equals(this.matchers, that.matchers) &&
                 Objects.equals(this.providesInputValue, that.providesInputValue) &&
@@ -95,7 +101,6 @@ public class MatchTreeNode implements Serializable {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("type", type)
-                .add("parent", parent)
                 .add("children", children)
                 .add("matchers", matchers)
                 .add("input", providesInputValue)
