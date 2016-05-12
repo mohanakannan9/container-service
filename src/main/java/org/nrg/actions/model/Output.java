@@ -11,8 +11,8 @@ public class Output implements Serializable {
     private String name;
     private String description;
     private String type;
-    private String value;
     private Boolean required;
+    private String path;
 
     public String getName() {
         return name;
@@ -38,14 +38,6 @@ public class Output implements Serializable {
         this.type = type;
     }
 
-    public String getValue() {
-        return value;
-    }
-
-    public void setValue(String value) {
-        this.value = value;
-    }
-
     public Boolean getRequired() {
         return required;
     }
@@ -58,6 +50,14 @@ public class Output implements Serializable {
         this.required = required;
     }
 
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(final String path) {
+        this.path = path;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
@@ -66,13 +66,13 @@ public class Output implements Serializable {
         return Objects.equals(this.name, that.name) &&
                 Objects.equals(this.description, that.description) &&
                 Objects.equals(this.type, that.type) &&
-                Objects.equals(this.value, that.value) &&
-                Objects.equals(this.required, that.required);
+                Objects.equals(this.required, that.required) &&
+                Objects.equals(this.path, that.path);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, description, type, value, required);
+        return Objects.hash(name, description, type, required, path);
     }
 
     @Override
@@ -81,8 +81,8 @@ public class Output implements Serializable {
                 .add("name", name)
                 .add("description", description)
                 .add("type", type)
-                .add("value", value)
                 .add("required", required)
+                .add("path", path)
                 .toString();
     }
 }

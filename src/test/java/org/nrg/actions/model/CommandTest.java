@@ -62,7 +62,9 @@ public class CommandTest {
     private static final String COMMAND_LINE_INPUT_LIST_JSON =
             "[" + COMMAND_LINE_INPUT_0_JSON + ", " + COMMAND_LINE_INPUT_1_JSON + "]";
     private static final String COMMAND_OUTPUT_JSON =
-            "{\"name\":\"an_output\", \"description\":\"It will be put out\", \"required\":true, \"type\":\"files\"}";
+            "{\"name\":\"an_output\", \"description\":\"It will be put out\", " +
+                    "\"required\":true, \"type\":\"files\"," +
+                    "\"path\":\"/path/to/#x#.txt\"}";
 
     private static final String DOCKER_IMAGE_COMMAND_JSON_TEMPLATE =
             "{\"name\":\"docker_image_command\", \"description\":\"Docker Image command for the test\", " +
@@ -123,6 +125,18 @@ public class CommandTest {
         assertNull(commandLineInput1.getTrueValue());
         assertNull(commandLineInput1.getFalseValue());
         assertEquals("--uncool=#value#", commandLineInput1.getArgTemplate());
+    }
+
+    @Test
+    public void testDeserializeOutput() throws Exception {
+        final Output output =
+                mapper.readValue(COMMAND_OUTPUT_JSON, Output.class);
+
+        assertEquals("an_output", output.getName());
+        assertEquals("It will be put out", output.getDescription());
+        assertEquals(true, output.isRequired());
+        assertEquals("files", output.getType());
+        assertEquals("/path/to/#x#.txt", output.getPath());
     }
 
     @Test
