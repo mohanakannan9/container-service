@@ -45,23 +45,31 @@ public class ActionTest {
                     "\"description\":\"A boolean value\", " +
                     "\"type\":\"boolean\", \"required\":true, " +
                     "\"true-value\":\"-b\", \"false-value\":\"\"}";
+    private static final String OUTPUT_NAME = "the_output";
+    private static final String COMMAND_OUTPUT_JSON =
+            "{\"name\":\"" + OUTPUT_NAME + "\", \"description\":\"I don't want to do this\"," +
+                    "\"type\":\"good\", \"required\":false}";
     private static final String COMMAND_JSON_TEMPLATE =
             "{\"name\":\"test_command\", \"description\":\"The command for the test\", " +
                     "\"info-url\":\"http://abc.xyz\", \"env\":{\"foo\":\"bar\"}, " +
                     "\"command-line-inputs\":[" + COMMAND_LINE_INPUT_JSON + "], " +
-                    "\"outputs\":[], " +
+                    "\"outputs\":[" + COMMAND_OUTPUT_JSON + "]," +
                     "\"template\":\"foo\", \"type\":\"docker-image\", " +
                     "\"docker-image\":{\"id\":%d}}";
 
     private static final String ACTION_INPUT_JSON =
             "{\"root-context-property-name\":\"some_identifier\", " +
                     "\"command-input-name\":\"" + INPUT_NAME + "\", " +
-                    "\"root\":" + SCAN_MATCH_TREE_NODE_JSON + ", " +
+                    "\"match-tree\":" + SCAN_MATCH_TREE_NODE_JSON + ", " +
                     "\"required\":true}";
+    private static final String ACTION_OUTPUT_JSON =
+            "{\"command-output-name\":\"" + OUTPUT_NAME + "\", " +
+                    "\"resource-name\":\"MY_SWEET_RESOURCE\"}";
     private static final String ACTION_JSON_TEMPLATE =
             "{\"name\":\"an_action\", \"description\":\"Yep, it's an action all right\", " +
                     "\"command-id\":%d, " +
-                    "\"inputs\":[" + ACTION_INPUT_JSON + "]}";
+                    "\"inputs\":[" + ACTION_INPUT_JSON + "]," +
+                    "\"outputs\":[" + ACTION_OUTPUT_JSON + "]}";
 
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -124,9 +132,22 @@ public class ActionTest {
     }
 
     @Test
+    public void testDeserializeActionOutput() throws Exception {
+        final String commandJson = String.format(COMMAND_JSON_TEMPLATE, 0);
+        final Command command = mapper.readValue(commandJson, Command.class);
+        final Output output = command.getOutputs().get(0);
+
+        final ActionOutput actionOutput = mapper.readValue(ACTION_OUTPUT_JSON, ActionOutput.class);
+
+        assertEquals("MY_SWEET_RESOURCE", actionOutput.getResourceName());
+        assertEquals(output.getName(), actionOutput.getCommandOutputName());
+    }
+
+    @Test
     public void testDeserializeAction() throws Exception {
 
         final ActionInput actionInput = mapper.readValue(ACTION_INPUT_JSON, ActionInput.class);
+        final ActionOutput actionOutput = mapper.readValue(ACTION_OUTPUT_JSON, ActionOutput.class);
 
         final String actionJson = String.format(ACTION_JSON_TEMPLATE, 0);
         final ActionDto actionDto = mapper.readValue(actionJson, ActionDto.class);
@@ -135,6 +156,7 @@ public class ActionTest {
         assertEquals("Yep, it's an action all right", actionDto.getDescription());
         assertEquals(Long.valueOf(0), actionDto.getCommandId());
         assertEquals(actionInput, actionDto.getInputs().get(0));
+        assertEquals(actionOutput, actionDto.getOutputs().get(0));
     }
 
     @Test

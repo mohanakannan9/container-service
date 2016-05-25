@@ -51,7 +51,7 @@ public class DockerImagesRestApi {
     public static final String ID_REGEX = "(?:[a-zA-Z0-9-_+.]+:)?[a-fA-F0-9]{6,}";
 
     public static final String JSON = MediaType.APPLICATION_JSON_UTF8_VALUE;
-    public static final String PLAIN_TEXT = MediaType.TEXT_PLAIN_VALUE;
+    public static final String TEXT = MediaType.TEXT_PLAIN_VALUE;
 
     @ApiOperation(value = "Get list of images.", notes = "Returns a list of all images on the container server.", response = DockerImageDto.class, responseContainer = "List")
     @ApiResponses({
@@ -68,14 +68,14 @@ public class DockerImagesRestApi {
         return dockerService.getImages(fromDb, fromDockerServer);
     }
 
-    @RequestMapping(value = {}, method = POST, consumes = JSON)
-    public ResponseEntity postImage(final @RequestBody DockerImageDto dockerImageDto)
+    @RequestMapping(value = {}, method = POST, consumes = JSON, produces = TEXT)
+    public ResponseEntity<String> postImage(final @RequestBody DockerImageDto dockerImageDto)
             throws BadRequestException, DockerServerException, NotFoundException, NoServerPrefException {
         if (StringUtils.isBlank(dockerImageDto.getImageId())) {
-            throw new BadRequestException("Cannot add Docker image. Please set imageId on request body.");
+            throw new BadRequestException("Cannot add Docker image. Please set image-id on request body.");
         }
-        dockerService.createImage(dockerImageDto);
-        return new ResponseEntity(HttpStatus.CREATED);
+        final DockerImageDto created = dockerService.createImage(dockerImageDto);
+        return new ResponseEntity<>(String.valueOf(created.getId()), HttpStatus.CREATED);
     }
 
     @RequestMapping(value = "/{id}", method = GET, produces = JSON)

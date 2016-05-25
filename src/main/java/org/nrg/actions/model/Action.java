@@ -21,6 +21,7 @@ public class Action extends AbstractHibernateEntity {
     private String description;
     private Command command;
     private List<ActionInput> inputs;
+    private List<ActionOutput> outputs;
 
     public Action() {}
 
@@ -65,6 +66,15 @@ public class Action extends AbstractHibernateEntity {
         this.inputs = inputs;
     }
 
+    @ElementCollection
+    public List<ActionOutput> getOutputs() {
+        return outputs;
+    }
+
+    public void setOutputs(final List<ActionOutput> outputs) {
+        this.outputs = outputs;
+    }
+
     @Transient
     public CommandLineInput getCommandInput(final ActionInput actionInput) {
         return getCommandInputByName(actionInput.getCommandInputName());
@@ -92,12 +102,13 @@ public class Action extends AbstractHibernateEntity {
         return Objects.equals(this.name, that.name) &&
                 Objects.equals(this.description, that.description) &&
                 Objects.equals(this.command, that.command) &&
-                Objects.equals(this.inputs, that.inputs);
+                Objects.equals(this.inputs, that.inputs) &&
+                Objects.equals(this.outputs, that.outputs);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), name, description, command, inputs);
+        return Objects.hash(super.hashCode(), name, description, command, inputs, outputs);
     }
 
     @Override
@@ -107,6 +118,7 @@ public class Action extends AbstractHibernateEntity {
                 .add("description", description)
                 .add("command", command)
                 .add("inputs", inputs)
+                .add("outputs", outputs)
                 .toString();
     }
 }

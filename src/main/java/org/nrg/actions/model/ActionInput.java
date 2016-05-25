@@ -19,7 +19,7 @@ public class ActionInput implements Serializable {
     @JsonProperty("command-input-name") private String commandInputName;
     @JsonProperty("root-context-property-name") private String rootContextPropertyName;
     @JsonIgnore private String rootContextProperty;
-    private MatchTreeNode root;
+    @JsonProperty("match-tree") private MatchTreeNode root;
     private Boolean required;
     private Action parent;
 

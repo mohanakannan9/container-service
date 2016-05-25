@@ -144,7 +144,7 @@ public class DockerServiceImpl implements DockerService {
         imageService.delete(dbImage);
     }
 
-    public void createImage(final DockerImageDto dtoRequestIn)
+    public DockerImageDto createImage(final DockerImageDto dtoRequestIn)
             throws DockerServerException, NoServerPrefException, NotFoundException {
 
         final String imageId = dtoRequestIn.getImageId();
@@ -168,6 +168,6 @@ public class DockerServiceImpl implements DockerService {
 
         retrievedFromServer.setName(name);
 
-        imageService.create(retrievedFromServer);
+        return imageService.create(retrievedFromServer);
     }
 }

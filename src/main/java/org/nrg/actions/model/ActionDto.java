@@ -12,6 +12,7 @@ public class ActionDto {
     private String description;
     @JsonProperty("command-id") private Long commandId;
     private List<ActionInput> inputs;
+    private List<ActionOutput> outputs;
 
     public Long getId() {
         return id;
@@ -53,21 +54,30 @@ public class ActionDto {
         this.inputs = inputs;
     }
 
+    public List<ActionOutput> getOutputs() {
+        return outputs;
+    }
+
+    public void setOutputs(List<ActionOutput> outputs) {
+        this.outputs = outputs;
+    }
+
     @Override
-    public boolean equals(final Object o) {
+    public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final ActionDto that = (ActionDto) o;
-        return Objects.equals(this.id, that.id) &&
-                Objects.equals(this.name, that.name) &&
-                Objects.equals(this.description, that.description) &&
-                Objects.equals(this.commandId, that.commandId) &&
-                Objects.equals(this.inputs, that.inputs);
+        ActionDto actionDto = (ActionDto) o;
+        return Objects.equals(this.id, actionDto.id) &&
+                Objects.equals(this.name, actionDto.name) &&
+                Objects.equals(this.description, actionDto.description) &&
+                Objects.equals(this.commandId, actionDto.commandId) &&
+                Objects.equals(this.inputs, actionDto.inputs) &&
+                Objects.equals(this.outputs, actionDto.outputs);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, description, commandId, inputs);
+        return Objects.hash(id, name, description, commandId, inputs, outputs);
     }
 
     @Override
@@ -78,6 +88,8 @@ public class ActionDto {
                 .add("description", description)
                 .add("commandId", commandId)
                 .add("inputs", inputs)
+                .add("outputs", outputs)
                 .toString();
     }
+
 }
