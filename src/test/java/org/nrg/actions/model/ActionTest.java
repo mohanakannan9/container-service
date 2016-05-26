@@ -129,6 +129,7 @@ public class ActionTest {
         assertEquals("some_identifier", actionInput.getRootContextPropertyName());
         assertEquals(scanMtNode, actionInput.getRoot());
         assertEquals(commandLineInput.getName(), actionInput.getCommandInputName());
+        assertEquals(commandLineInput.getName(), actionInput.getName());
     }
 
     @Test
@@ -141,6 +142,7 @@ public class ActionTest {
 
         assertEquals("MY_SWEET_RESOURCE", actionOutput.getResourceName());
         assertEquals(output.getName(), actionOutput.getCommandOutputName());
+        assertEquals(output.getName(), actionOutput.getName());
     }
 
     @Test

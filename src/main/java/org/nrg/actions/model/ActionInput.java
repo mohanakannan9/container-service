@@ -16,12 +16,20 @@ import java.util.Objects;
 @Embeddable
 public class ActionInput implements Serializable {
 
+    private String name;
     @JsonProperty("command-input-name") private String commandInputName;
     @JsonProperty("root-context-property-name") private String rootContextPropertyName;
     @JsonIgnore private String rootContextProperty;
     @JsonProperty("match-tree") private MatchTreeNode root;
     private Boolean required;
-    private Action parent;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
 
     public String getRootContextPropertyName() {
         return rootContextPropertyName;
@@ -45,6 +53,9 @@ public class ActionInput implements Serializable {
     }
 
     public void setCommandInputName(final String commandInputName) {
+        if (this.name == null) {
+            this.name = commandInputName;
+        }
         this.commandInputName = commandInputName;
     }
 
@@ -70,11 +81,6 @@ public class ActionInput implements Serializable {
         this.root = root;
     }
 
-    @Transient
-    public CommandLineInput getCommandInput() {
-        return parent.getCommandInputByName(commandInputName);
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -85,27 +91,27 @@ public class ActionInput implements Serializable {
         }
 
         ActionInput that = (ActionInput) o;
-        return Objects.equals(this.rootContextPropertyName, that.rootContextPropertyName) &&
+        return Objects.equals(this.name, that.name) &&
+                Objects.equals(this.rootContextPropertyName, that.rootContextPropertyName) &&
                 Objects.equals(this.required, that.required) &&
                 Objects.equals(this.commandInputName, that.commandInputName) &&
-                Objects.equals(this.root, that.root) &&
-                Objects.equals(this.parent, that.parent);
+                Objects.equals(this.root, that.root);
 
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(rootContextPropertyName, required, commandInputName, root, parent);
+        return Objects.hash(name, rootContextPropertyName, required, commandInputName, root);
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("name", name)
                 .add("rootContextPropertyName", rootContextPropertyName)
                 .add("required", required)
                 .add("commandInputName", commandInputName)
                 .add("root", root)
-                .add("parent", parent)
                 .toString();
     }
 
