@@ -173,7 +173,7 @@ public class DefaultContainerService implements ContainerService {
         final String filename = "script";
         final File filenameWithPath = new File(buildDir, filename);
         FileUtils.writeStringToFile(filenameWithPath, script.getContent());
-        final Path scriptPath = transportService.transport(server, filenameWithPath.toPath()).get(0);
+        final Path scriptPath = transportService.transport(server, filenameWithPath.toPath());
 
 //        final List<String> command = Lists.newArrayList("python", "/data/output/"+filename,
 //            "-h", host, "-u", "admin", "-p", "admin",
