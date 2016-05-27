@@ -34,7 +34,7 @@ public abstract class Command extends AbstractHibernateEntity {
     private String description;
     @JsonProperty("info-url") private String infoUrl;
     private String template;
-    @JsonProperty("command-line-inputs") private List<CommandLineInput> commandLineInputs
+    @JsonProperty("command-line-inputs") private List<CommandVariable> commandVariables
             = Lists.newArrayList();
     private List<Output> outputs = Lists.newArrayList();
 
@@ -71,12 +71,12 @@ public abstract class Command extends AbstractHibernateEntity {
     }
 
     @ElementCollection
-    public List<CommandLineInput> getCommandLineInputs() {
-        return commandLineInputs;
+    public List<CommandVariable> getCommandVariables() {
+        return commandVariables;
     }
 
-    void setCommandLineInputs(final List<CommandLineInput> commandLineInputs) {
-        this.commandLineInputs = commandLineInputs;
+    void setCommandVariables(final List<CommandVariable> commandVariables) {
+        this.commandVariables = commandVariables;
     }
 
     @ElementCollection
@@ -91,10 +91,10 @@ public abstract class Command extends AbstractHibernateEntity {
     public abstract void run();
 
     @Transient
-    public CommandLineInput getInputWithName(final String name) {
-        for (final CommandLineInput commandLineInput : commandLineInputs) {
-            if (commandLineInput.getName().equals(name)) {
-                return commandLineInput;
+    public CommandVariable getInputWithName(final String name) {
+        for (final CommandVariable commandVariable : commandVariables) {
+            if (commandVariable.getName().equals(name)) {
+                return commandVariable;
             }
         }
         return null;
@@ -109,13 +109,13 @@ public abstract class Command extends AbstractHibernateEntity {
                 Objects.equals(this.description, that.description) &&
                 Objects.equals(this.infoUrl, that.infoUrl) &&
                 Objects.equals(this.template, that.template) &&
-                Objects.equals(this.commandLineInputs, that.commandLineInputs) &&
+                Objects.equals(this.commandVariables, that.commandVariables) &&
                 Objects.equals(this.outputs, that.outputs);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), name, description, infoUrl, template, commandLineInputs, outputs);
+        return Objects.hash(super.hashCode(), name, description, infoUrl, template, commandVariables, outputs);
     }
 
     @Override
@@ -130,7 +130,7 @@ public abstract class Command extends AbstractHibernateEntity {
                 .add("description", description)
                 .add("infoUrl", infoUrl)
                 .add("template", template)
-                .add("commandLineInputs", commandLineInputs)
+                .add("commandVariables", commandVariables)
                 .add("outputs", outputs);
     }
 }

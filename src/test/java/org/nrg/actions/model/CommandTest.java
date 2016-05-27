@@ -105,26 +105,26 @@ public class CommandTest {
 
     @Test
     public void testDeserializeCommandInput() throws Exception {
-        final CommandLineInput commandLineInput0 =
-                mapper.readValue(COMMAND_LINE_INPUT_0_JSON, CommandLineInput.class);
-        final CommandLineInput commandLineInput1 =
-                mapper.readValue(COMMAND_LINE_INPUT_1_JSON, CommandLineInput.class);
+        final CommandVariable commandVariable0 =
+                mapper.readValue(COMMAND_LINE_INPUT_0_JSON, CommandVariable.class);
+        final CommandVariable commandVariable1 =
+                mapper.readValue(COMMAND_LINE_INPUT_1_JSON, CommandVariable.class);
 
-        assertEquals("my_cool_input", commandLineInput0.getName());
-        assertEquals("A boolean value", commandLineInput0.getDescription());
-        assertEquals("boolean", commandLineInput0.getType());
-        assertEquals(true, commandLineInput0.isRequired());
-        assertEquals("-b", commandLineInput0.getTrueValue());
-        assertEquals("", commandLineInput0.getFalseValue());
-        assertNull(commandLineInput0.getArgTemplate());
+        assertEquals("my_cool_input", commandVariable0.getName());
+        assertEquals("A boolean value", commandVariable0.getDescription());
+        assertEquals("boolean", commandVariable0.getType());
+        assertEquals(true, commandVariable0.isRequired());
+        assertEquals("-b", commandVariable0.getTrueValue());
+        assertEquals("", commandVariable0.getFalseValue());
+        assertNull(commandVariable0.getArgTemplate());
 
-        assertEquals("my_uncool_input", commandLineInput1.getName());
-        assertEquals("No one loves me :(", commandLineInput1.getDescription());
-        assertEquals("string", commandLineInput1.getType());
-        assertEquals(false, commandLineInput1.isRequired());
-        assertNull(commandLineInput1.getTrueValue());
-        assertNull(commandLineInput1.getFalseValue());
-        assertEquals("--uncool=#value#", commandLineInput1.getArgTemplate());
+        assertEquals("my_uncool_input", commandVariable1.getName());
+        assertEquals("No one loves me :(", commandVariable1.getDescription());
+        assertEquals("string", commandVariable1.getType());
+        assertEquals(false, commandVariable1.isRequired());
+        assertNull(commandVariable1.getTrueValue());
+        assertNull(commandVariable1.getFalseValue());
+        assertEquals("--uncool=#value#", commandVariable1.getArgTemplate());
     }
 
     @Test
@@ -142,8 +142,8 @@ public class CommandTest {
     @Test
     public void testDeserializeDockerImageCommand() throws Exception {
 
-        final List<CommandLineInput> commandLineInputList =
-                mapper.readValue(COMMAND_LINE_INPUT_LIST_JSON, new TypeReference<List<CommandLineInput>>() {});
+        final List<CommandVariable> commandVariableList =
+                mapper.readValue(COMMAND_LINE_INPUT_LIST_JSON, new TypeReference<List<CommandVariable>>() {});
 
         final Output output = mapper.readValue(COMMAND_OUTPUT_JSON, Output.class);
 
@@ -160,8 +160,8 @@ public class CommandTest {
         assertEquals("foo", dockerImageCommand.getTemplate());
         assertEquals(ImmutableMap.of("foo", "bar"), dockerImageCommand.getEnvironmentVariables());
 
-        assertThat(dockerImageCommand.getCommandLineInputs(), hasSize(2));
-        assertThat(commandLineInputList, everyItem(isIn(dockerImageCommand.getCommandLineInputs())));
+        assertThat(dockerImageCommand.getCommandVariables(), hasSize(2));
+        assertThat(commandVariableList, everyItem(isIn(dockerImageCommand.getCommandVariables())));
 
         assertEquals(output, dockerImageCommand.getOutputs().get(0));
 
@@ -193,8 +193,8 @@ public class CommandTest {
     @Test
     public void testDeserializeScriptCommand() throws Exception {
 
-        final List<CommandLineInput> commandLineInputList =
-                mapper.readValue(COMMAND_LINE_INPUT_LIST_JSON, new TypeReference<List<CommandLineInput>>() {});
+        final List<CommandVariable> commandVariableList =
+                mapper.readValue(COMMAND_LINE_INPUT_LIST_JSON, new TypeReference<List<CommandVariable>>() {});
 
         final Output output = mapper.readValue(COMMAND_OUTPUT_JSON, Output.class);
 
@@ -210,8 +210,8 @@ public class CommandTest {
         assertEquals("http://abc.xyz", scriptCommand.getInfoUrl());
         assertEquals("foo", scriptCommand.getTemplate());
 
-        assertThat(scriptCommand.getCommandLineInputs(), hasSize(2));
-        assertThat(commandLineInputList, everyItem(isIn(scriptCommand.getCommandLineInputs())));
+        assertThat(scriptCommand.getCommandVariables(), hasSize(2));
+        assertThat(commandVariableList, everyItem(isIn(scriptCommand.getCommandVariables())));
 
         assertEquals(output, scriptCommand.getOutputs().get(0));
 

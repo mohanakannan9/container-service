@@ -70,7 +70,7 @@ public class ActionTestConfig {
                 ActionInput.class,
                 MatchTreeNode.class,
                 Matcher.class,
-                CommandLineInput.class,
+                CommandVariable.class,
                 DockerImage.class,
                 DockerImageCommand.class,
                 Output.class,

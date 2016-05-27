@@ -122,14 +122,14 @@ public class ActionTest {
 
         final String commandJson = String.format(COMMAND_JSON_TEMPLATE, 0);
         final Command command = mapper.readValue(commandJson, Command.class);
-        final CommandLineInput commandLineInput = command.getCommandLineInputs().get(0);
+        final CommandVariable commandVariable = command.getCommandVariables().get(0);
 
         final ActionInput actionInput = mapper.readValue(ACTION_INPUT_JSON, ActionInput.class);
 
         assertEquals("some_identifier", actionInput.getRootContextPropertyName());
         assertEquals(scanMtNode, actionInput.getRoot());
-        assertEquals(commandLineInput.getName(), actionInput.getCommandInputName());
-        assertEquals(commandLineInput.getName(), actionInput.getName());
+        assertEquals(commandVariable.getName(), actionInput.getCommandInputName());
+        assertEquals(commandVariable.getName(), actionInput.getName());
     }
 
     @Test

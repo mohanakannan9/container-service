@@ -8,7 +8,7 @@ import java.io.Serializable;
 import java.util.Objects;
 
 @Embeddable
-public class CommandLineInput implements Serializable {
+public class CommandVariable implements Serializable {
     private String name;
     private String description;
     private String type;
@@ -81,7 +81,7 @@ public class CommandLineInput implements Serializable {
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final CommandLineInput that = (CommandLineInput) o;
+        final CommandVariable that = (CommandVariable) o;
         return Objects.equals(this.name, that.name) &&
                 Objects.equals(this.description, that.description) &&
                 Objects.equals(this.type, that.type) &&

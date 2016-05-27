@@ -4,7 +4,7 @@
 //import com.google.common.collect.Lists;
 //import org.nrg.actions.model.Action;
 //import org.nrg.actions.model.ActionContextExection;
-//import org.nrg.actions.model.CommandLineInput;
+//import org.nrg.actions.model.CommandVariable;
 //import org.nrg.actions.model.Context;
 //import org.nrg.actions.model.ActionInput;
 //import org.nrg.actions.model.tree.RuntimeTree;
@@ -22,7 +22,7 @@
 //        // Get required properties from context
 //        final List<ActionInput> toResolve = Lists.newArrayList();
 //        for (final ActionInput actionInput : action.getInputs()) {
-//            final CommandLineInput commandLineInput = actionInput.getCommandInput();
+//            final CommandVariable commandLineInput = actionInput.getCommandInput();
 //            final String rootContextPropertyName = actionInput.getRootContextPropertyName();
 //            if (!context.containsKey(rootContextPropertyName)) {
 //                if (commandLineInput.isRequired()) {

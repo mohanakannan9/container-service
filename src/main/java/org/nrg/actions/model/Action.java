@@ -76,15 +76,15 @@ public class Action extends AbstractHibernateEntity {
     }
 
     @Transient
-    public CommandLineInput getCommandInput(final ActionInput actionInput) {
+    public CommandVariable getCommandInput(final ActionInput actionInput) {
         return getCommandInputByName(actionInput.getCommandInputName());
     }
 
     @Transient
-    public CommandLineInput getCommandInputByName(final String name) {
-        for (final CommandLineInput commandLineInput : command.getCommandLineInputs()) {
-            if (commandLineInput.getName().equals(name)) {
-                return commandLineInput;
+    public CommandVariable getCommandInputByName(final String name) {
+        for (final CommandVariable commandVariable : command.getCommandVariables()) {
+            if (commandVariable.getName().equals(name)) {
+                return commandVariable;
             }
         }
         return null;
