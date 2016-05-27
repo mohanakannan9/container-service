@@ -11,7 +11,7 @@ import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 
 @Configuration
-@XnatPlugin(value = "container-service", description = "XNAT Container Service", config = ContainersSpringConfig.class)
+@XnatPlugin(value = "container-service", description = "XNAT Container Service", entityPackages = "org.nrg.containers")
 @ComponentScan(value = "org.nrg.containers",
         excludeFilters = @Filter(type = FilterType.REGEX, pattern = ".*TestConfig.*", value = {}))
 @Import({PreferencesConfig.class, AutomationConfig.class, TransporterConfig.class})
