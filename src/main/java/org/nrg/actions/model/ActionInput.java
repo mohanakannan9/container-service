@@ -17,7 +17,7 @@ import java.util.Objects;
 public class ActionInput implements Serializable {
 
     private String name;
-    @JsonProperty("command-input-name") private String commandInputName;
+    @JsonProperty("command-variable") private String commandVariable;
     @JsonProperty("root-context-property-name") private String rootContextPropertyName;
     @JsonIgnore private String rootContextProperty;
     @JsonProperty("match-tree") private MatchTreeNode root;
@@ -48,15 +48,15 @@ public class ActionInput implements Serializable {
         this.rootContextProperty = rootContextProperty;
     }
 
-    public String getCommandInputName() {
-        return commandInputName;
+    public String getCommandVariable() {
+        return commandVariable;
     }
 
-    public void setCommandInputName(final String commandInputName) {
+    public void setCommandVariable(final String commandVariable) {
         if (this.name == null) {
-            this.name = commandInputName;
+            this.name = commandVariable;
         }
-        this.commandInputName = commandInputName;
+        this.commandVariable = commandVariable;
     }
 
     public Boolean getRequired() {
@@ -94,14 +94,14 @@ public class ActionInput implements Serializable {
         return Objects.equals(this.name, that.name) &&
                 Objects.equals(this.rootContextPropertyName, that.rootContextPropertyName) &&
                 Objects.equals(this.required, that.required) &&
-                Objects.equals(this.commandInputName, that.commandInputName) &&
+                Objects.equals(this.commandVariable, that.commandVariable) &&
                 Objects.equals(this.root, that.root);
 
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, rootContextPropertyName, required, commandInputName, root);
+        return Objects.hash(name, rootContextPropertyName, required, commandVariable, root);
     }
 
     @Override
@@ -110,7 +110,7 @@ public class ActionInput implements Serializable {
                 .add("name", name)
                 .add("rootContextPropertyName", rootContextPropertyName)
                 .add("required", required)
-                .add("commandInputName", commandInputName)
+                .add("commandVariable", commandVariable)
                 .add("root", root)
                 .toString();
     }

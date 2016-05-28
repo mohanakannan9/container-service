@@ -6,7 +6,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.MoreObjects.ToStringHelper;
-import com.google.common.collect.Lists;
 import org.hibernate.envers.Audited;
 import org.nrg.containers.model.DockerImageCommand;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
@@ -34,9 +33,9 @@ public abstract class Command extends AbstractHibernateEntity {
     private String description;
     @JsonProperty("info-url") private String infoUrl;
     private String template;
-    @JsonProperty("command-line-inputs") private List<CommandVariable> commandVariables
-            = Lists.newArrayList();
-    private List<Output> outputs = Lists.newArrayList();
+    private List<CommandVariable> variables;
+    @JsonProperty("mounts") private CommandMounts commandMounts;
+
 
     public String getName() {
         return name;
@@ -71,28 +70,27 @@ public abstract class Command extends AbstractHibernateEntity {
     }
 
     @ElementCollection
-    public List<CommandVariable> getCommandVariables() {
-        return commandVariables;
+    public List<CommandVariable> getVariables() {
+        return variables;
     }
 
-    void setCommandVariables(final List<CommandVariable> commandVariables) {
-        this.commandVariables = commandVariables;
+    void setVariables(final List<CommandVariable> commandVariables) {
+        this.variables = commandVariables;
     }
 
-    @ElementCollection
-    public List<Output> getOutputs() {
-        return outputs;
+    public CommandMounts getCommandMounts() {
+        return commandMounts;
     }
 
-    void setOutputs(final List<Output> outputs) {
-        this.outputs = outputs;
+    public void setCommandMounts(final CommandMounts commandMounts) {
+        this.commandMounts = commandMounts;
     }
 
     public abstract void run();
 
     @Transient
     public CommandVariable getInputWithName(final String name) {
-        for (final CommandVariable commandVariable : commandVariables) {
+        for (final CommandVariable commandVariable : variables) {
             if (commandVariable.getName().equals(name)) {
                 return commandVariable;
             }
@@ -101,26 +99,34 @@ public abstract class Command extends AbstractHibernateEntity {
     }
 
     @Override
-    public boolean equals(final Object o) {
+    public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || !super.equals(o) || getClass() != o.getClass()) return false;
-        final Command that = (Command) o;
-        return Objects.equals(this.name, that.name) &&
-                Objects.equals(this.description, that.description) &&
-                Objects.equals(this.infoUrl, that.infoUrl) &&
-                Objects.equals(this.template, that.template) &&
-                Objects.equals(this.commandVariables, that.commandVariables) &&
-                Objects.equals(this.outputs, that.outputs);
+        if (!super.equals(o)) return false;
+        Command command = (Command) o;
+        return Objects.equals(this.name, command.name) &&
+                Objects.equals(this.description, command.description) &&
+                Objects.equals(this.infoUrl, command.infoUrl) &&
+                Objects.equals(this.template, command.template) &&
+                Objects.equals(this.variables, command.variables) &&
+                Objects.equals(this.commandMounts, command.commandMounts);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), name, description, infoUrl, template, commandVariables, outputs);
+        return Objects.hash(super.hashCode(), name, description, infoUrl, template, variables, commandMounts);
     }
 
     @Override
     public String toString() {
-        return addParentPropertiesToString(MoreObjects.toStringHelper(this)).toString();
+        return MoreObjects.toStringHelper(this)
+                .add("name", name)
+                .add("description", description)
+                .add("infoUrl", infoUrl)
+                .add("template", template)
+                .add("variables", variables)
+                .add("commandMounts", commandMounts)
+                .toString();
     }
 
     @Override
@@ -130,7 +136,6 @@ public abstract class Command extends AbstractHibernateEntity {
                 .add("description", description)
                 .add("infoUrl", infoUrl)
                 .add("template", template)
-                .add("commandVariables", commandVariables)
-                .add("outputs", outputs);
+                .add("variables", variables);
     }
 }
