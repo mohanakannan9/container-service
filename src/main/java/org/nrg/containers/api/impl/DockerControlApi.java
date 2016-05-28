@@ -308,6 +308,23 @@ public class DockerControlApi implements ContainerControlApi {
     @Override
     public String launchImage(final String imageName, final List<String> runCommand, final List<String> volumes)
         throws NoServerPrefException {
+        return launchImage(getServer(), imageName, runCommand, volumes);
+    }
+
+    /**
+     * Launch image on Docker server
+     *
+     * @param server DockerServer on which to launch
+     * @param imageName name of image to launch
+     * @param runCommand Command string list to execute
+     * @param volumes Volume mounts, in the form "/path/on/server:/path/in/container"
+     * @return ID of created Container
+     **/
+    @Override
+    public String launchImage(final DockerServer server,
+                              final String imageName,
+                              final List<String> runCommand,
+                              final List<String> volumes) {
 
          final HostConfig hostConfig =
                 HostConfig.builder()
@@ -325,7 +342,7 @@ public class DockerControlApi implements ContainerControlApi {
         if (_log.isDebugEnabled()) {
             final String message = String.format(
                     "Starting container: server %s, image %s, command \"%s\", volumes [%s]",
-                    getServer(),
+                    server,
                     imageName,
                     StringUtils.join(runCommand, " "),
                     StringUtils.join(volumes, ", ")
@@ -334,7 +351,7 @@ public class DockerControlApi implements ContainerControlApi {
         }
 
         final ContainerCreation container;
-        try (final DockerClient client = getClient()) {
+        try (final DockerClient client = getClient(server)) {
             container = client.createContainer(containerConfig);
 
             _log.info("Starting container: id "+container.id());
@@ -387,8 +404,15 @@ public class DockerControlApi implements ContainerControlApi {
      * @return DockerClient object using default authConfig
      **/
     public DockerClient getClient() throws NoServerPrefException {
-        final DockerServer server = getServer();
+        return getClient(getServer());
+    }
 
+    /**
+         * Create a client connection to a Docker server using default image repository configuration
+         *
+         * @return DockerClient object using default authConfig
+         **/
+    public DockerClient getClient(final DockerServer server) {
         if (_log.isDebugEnabled()) {
             _log.debug("method getClient, Create server connection, server " + server.getHost());
         }
