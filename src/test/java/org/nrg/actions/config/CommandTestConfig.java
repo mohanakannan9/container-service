@@ -5,7 +5,6 @@ import org.nrg.actions.daos.CommandDao;
 import org.nrg.actions.daos.ScriptEnvironmentDao;
 import org.nrg.actions.model.Command;
 import org.nrg.actions.model.CommandVariable;
-import org.nrg.actions.model.Output;
 import org.nrg.actions.model.ScriptEnvironment;
 import org.nrg.actions.services.CommandService;
 import org.nrg.actions.services.HibernateCommandService;
@@ -89,8 +88,7 @@ public class CommandTestConfig {
                 ScriptCommand.class,
                 Script.class,
                 ScriptEnvironment.class,
-                CommandVariable.class,
-                Output.class);
+                CommandVariable.class);
         return bean;
     }
 

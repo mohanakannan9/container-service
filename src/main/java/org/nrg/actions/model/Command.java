@@ -34,8 +34,8 @@ public abstract class Command extends AbstractHibernateEntity {
     @JsonProperty("info-url") private String infoUrl;
     private String template;
     private List<CommandVariable> variables;
-    @JsonProperty("mounts") private CommandMounts commandMounts;
-
+    @JsonProperty("mounts-in") private List<CommandMount> mountsIn;
+    @JsonProperty("mounts-out") private List<CommandMount> mountsOut;
 
     public String getName() {
         return name;
@@ -78,12 +78,22 @@ public abstract class Command extends AbstractHibernateEntity {
         this.variables = commandVariables;
     }
 
-    public CommandMounts getCommandMounts() {
-        return commandMounts;
+    @ElementCollection
+    public List<CommandMount> getMountsIn() {
+        return mountsIn;
     }
 
-    public void setCommandMounts(final CommandMounts commandMounts) {
-        this.commandMounts = commandMounts;
+    public void setMountsIn(final List<CommandMount> mountsIn) {
+        this.mountsIn = mountsIn;
+    }
+
+    @ElementCollection
+    public List<CommandMount> getMountsOut() {
+        return mountsOut;
+    }
+
+    public void setMountsOut(final List<CommandMount> mountsOut) {
+        this.mountsOut = mountsOut;
     }
 
     public abstract void run();
@@ -99,43 +109,40 @@ public abstract class Command extends AbstractHibernateEntity {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || !super.equals(o) || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
-        Command command = (Command) o;
-        return Objects.equals(this.name, command.name) &&
-                Objects.equals(this.description, command.description) &&
-                Objects.equals(this.infoUrl, command.infoUrl) &&
-                Objects.equals(this.template, command.template) &&
-                Objects.equals(this.variables, command.variables) &&
-                Objects.equals(this.commandMounts, command.commandMounts);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), name, description, infoUrl, template, variables, commandMounts);
-    }
-
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("name", name)
-                .add("description", description)
-                .add("infoUrl", infoUrl)
-                .add("template", template)
-                .add("variables", variables)
-                .add("commandMounts", commandMounts)
-                .toString();
-    }
-
-    @Override
     public ToStringHelper addParentPropertiesToString(final ToStringHelper helper) {
         return super.addParentPropertiesToString(helper)
                 .add("name", name)
                 .add("description", description)
                 .add("infoUrl", infoUrl)
                 .add("template", template)
-                .add("variables", variables);
+                .add("variables", variables)
+                .add("mountsIn", mountsIn)
+                .add("mountsOut", mountsOut);
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        final Command that = (Command) o;
+        return Objects.equals(this.name, that.name) &&
+                Objects.equals(this.description, that.description) &&
+                Objects.equals(this.infoUrl, that.infoUrl) &&
+                Objects.equals(this.template, that.template) &&
+                Objects.equals(this.variables, that.variables) &&
+                Objects.equals(this.mountsIn, that.mountsIn) &&
+                Objects.equals(this.mountsOut, that.mountsOut);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), name, description, infoUrl, template, variables, mountsIn, mountsOut);
+    }
+
+    @Override
+    public String toString() {
+        return addParentPropertiesToString(MoreObjects.toStringHelper(this))
+                .toString();
     }
 }

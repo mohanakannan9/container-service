@@ -67,13 +67,8 @@ public class ActionTestConfig {
         bean.setHibernateProperties(properties);
         bean.setAnnotatedClasses(
                 Action.class,
-                ActionInput.class,
-                MatchTreeNode.class,
-                Matcher.class,
-                CommandVariable.class,
                 DockerImage.class,
                 DockerImageCommand.class,
-                Output.class,
                 Command.class);
         return bean;
     }

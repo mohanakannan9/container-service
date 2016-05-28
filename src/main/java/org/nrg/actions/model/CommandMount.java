@@ -6,7 +6,7 @@ import javax.persistence.Embeddable;
 import java.util.Objects;
 
 @Embeddable
-public class Mount {
+public class CommandMount {
 
     private String name;
     private String path;
@@ -31,7 +31,7 @@ public class Mount {
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final Mount that = (Mount) o;
+        final CommandMount that = (CommandMount) o;
         return Objects.equals(this.name, that.name) &&
                 Objects.equals(this.path, that.path);
     }

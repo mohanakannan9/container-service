@@ -2,6 +2,7 @@ package org.nrg.actions.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.Lists;
 
 import java.util.List;
 import java.util.Objects;
@@ -11,8 +12,10 @@ public class ActionDto {
     private String name;
     private String description;
     @JsonProperty("command-id") private Long commandId;
+    private ActionRoot root;
     private List<ActionInput> inputs;
-    private List<ActionOutput> outputs;
+    @JsonProperty("resources-staged") private List<ActionResource> resourcesStaged;
+    @JsonProperty("resources-created") private List<ActionResource> resourcesCreated;
 
     public Long getId() {
         return id;
@@ -46,6 +49,14 @@ public class ActionDto {
         this.commandId = commandId;
     }
 
+    public ActionRoot getRoot() {
+        return root;
+    }
+
+    public void setRoot(final ActionRoot root) {
+        this.root = root;
+    }
+
     public List<ActionInput> getInputs() {
         return inputs;
     }
@@ -54,30 +65,47 @@ public class ActionDto {
         this.inputs = inputs;
     }
 
-    public List<ActionOutput> getOutputs() {
-        return outputs;
+    public List<ActionResource> getResourcesStaged() {
+        return resourcesStaged;
     }
 
-    public void setOutputs(List<ActionOutput> outputs) {
-        this.outputs = outputs;
+    public void setResourcesStaged(final List<ActionResource> resourcesStaged) {
+        this.resourcesStaged = resourcesStaged;
+    }
+
+    public List<ActionResource> getResourcesCreated() {
+        return resourcesCreated;
+    }
+
+    public void setResourcesCreated(final List<ActionResource> resourcesCreated) {
+        this.resourcesCreated = resourcesCreated;
+    }
+
+    public void addCreated(final ActionResource created) {
+        if (this.resourcesCreated == null) {
+            this.resourcesCreated = Lists.newArrayList();
+        }
+        this.resourcesCreated.add(created);
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        ActionDto actionDto = (ActionDto) o;
+        final ActionDto actionDto = (ActionDto) o;
         return Objects.equals(this.id, actionDto.id) &&
                 Objects.equals(this.name, actionDto.name) &&
                 Objects.equals(this.description, actionDto.description) &&
                 Objects.equals(this.commandId, actionDto.commandId) &&
+                Objects.equals(this.root, actionDto.root) &&
                 Objects.equals(this.inputs, actionDto.inputs) &&
-                Objects.equals(this.outputs, actionDto.outputs);
+                Objects.equals(this.resourcesStaged, actionDto.resourcesStaged) &&
+                Objects.equals(this.resourcesCreated, actionDto.resourcesCreated);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, description, commandId, inputs, outputs);
+        return Objects.hash(id, name, description, commandId, root, inputs, resourcesStaged, resourcesCreated);
     }
 
     @Override
@@ -87,9 +115,10 @@ public class ActionDto {
                 .add("name", name)
                 .add("description", description)
                 .add("commandId", commandId)
+                .add("root", root)
                 .add("inputs", inputs)
-                .add("outputs", outputs)
+                .add("staged", resourcesStaged)
+                .add("created", resourcesCreated)
                 .toString();
     }
-
 }

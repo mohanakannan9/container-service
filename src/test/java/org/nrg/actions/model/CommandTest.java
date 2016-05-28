@@ -64,8 +64,6 @@ public class CommandTest {
 
     private static final String MOUNT_IN = "{\"name\":\"in\", \"path\":\"/input\"}";
     private static final String MOUNT_OUT = "{\"name\":\"out\", \"path\":\"/output\"}";
-    private static final String MOUNTS =
-            "{\"inputs\":[" + MOUNT_IN + "], \"outputs\":[" + MOUNT_OUT + "]}";
 
     private static final String DOCKER_IMAGE_COMMAND_JSON_TEMPLATE =
             "{\"name\":\"docker_image_command\", \"description\":\"Docker Image command for the test\", " +
@@ -73,7 +71,8 @@ public class CommandTest {
                     "\"variables\":" + VARIABLE_LIST_JSON + ", " +
                     "\"template\":\"foo\", \"type\":\"docker-image\", " +
                     "\"docker-image\":{\"id\":%d}, " +
-                    "\"mounts\": " + MOUNTS + "}";
+                    "\"mounts-in\":[" + MOUNT_IN + "]," +
+                    "\"mounts-out\":[" + MOUNT_OUT + "]}";
 
     private static final String SCRIPT_COMMAND_JSON_TEMPLATE =
             "{\"name\":\"script_command\", \"description\":\"The Script command for the test\", " +
@@ -133,8 +132,8 @@ public class CommandTest {
         final List<CommandVariable> commandVariableList =
                 mapper.readValue(VARIABLE_LIST_JSON, new TypeReference<List<CommandVariable>>() {});
 
-        final Mount input = mapper.readValue(MOUNT_IN, Mount.class);
-        final Mount output = mapper.readValue(MOUNT_OUT, Mount.class);
+        final CommandMount input = mapper.readValue(MOUNT_IN, CommandMount.class);
+        final CommandMount output = mapper.readValue(MOUNT_OUT, CommandMount.class);
 
         final String dockerImageCommandJson =
                 String.format(DOCKER_IMAGE_COMMAND_JSON_TEMPLATE, 0);
@@ -152,10 +151,10 @@ public class CommandTest {
         assertThat(dockerImageCommand.getVariables(), hasSize(2));
         assertThat(commandVariableList, everyItem(isIn(dockerImageCommand.getVariables())));
 
-        assertThat(dockerImageCommand.getCommandMounts().getInputs(), hasSize(1));
-        assertEquals(input, dockerImageCommand.getCommandMounts().getInputs().get(0));
-        assertThat(dockerImageCommand.getCommandMounts().getOutputs(), hasSize(1));
-        assertEquals(output, dockerImageCommand.getCommandMounts().getOutputs().get(0));
+        assertThat(dockerImageCommand.getMountsIn(), hasSize(1));
+        assertEquals(input, dockerImageCommand.getMountsIn().get(0));
+        assertThat(dockerImageCommand.getMountsOut(), hasSize(1));
+        assertEquals(output, dockerImageCommand.getMountsOut().get(0));
 
         assertEquals(0L, dockerImageCommand.getDockerImage().getId());
     }
