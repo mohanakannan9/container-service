@@ -7,11 +7,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.List;
 
+import static org.springframework.web.bind.annotation.RequestMethod.DELETE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
@@ -31,8 +33,26 @@ public class CommandRestApi {
     }
 
     @RequestMapping(value = {}, method = POST, consumes = JSON, produces = TEXT)
-    public ResponseEntity<String> postCommand(final @RequestBody Command command) {
+    public ResponseEntity<String> createCommand(final @RequestBody Command command) {
         final Command created = commandService.create(command);
         return new ResponseEntity<>(String.valueOf(created.getId()), HttpStatus.CREATED);
+    }
+
+    @RequestMapping(value = {"/{id}"}, method = GET, produces = JSON)
+    public Command retrieveCommand(final @PathVariable Long id) {
+        return commandService.retrieve(id);
+    }
+
+    @RequestMapping(value = {"/{id}"}, method = POST, consumes = JSON, produces = TEXT)
+    public ResponseEntity<String> updateCommand(final @RequestBody Command command,
+                                                final @PathVariable Long id) {
+        command.setId(id);
+        commandService.update(command);
+        return new ResponseEntity<>(String.valueOf(id), HttpStatus.OK);
+    }
+
+    @RequestMapping(value = {"/{id}"}, method = DELETE, produces = JSON)
+    public void deleteCommand(final @PathVariable Long id) {
+        commandService.delete(id);
     }
 }
