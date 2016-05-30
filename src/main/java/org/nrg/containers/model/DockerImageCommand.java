@@ -45,11 +45,6 @@ public class DockerImageCommand extends Command {
     }
 
     @Override
-    public void run() {
-        // TODO
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;

@@ -96,8 +96,6 @@ public abstract class Command extends AbstractHibernateEntity {
         this.mountsOut = mountsOut;
     }
 
-    public abstract void run();
-
     @Transient
     public CommandVariable getInputWithName(final String name) {
         for (final CommandVariable commandVariable : variables) {

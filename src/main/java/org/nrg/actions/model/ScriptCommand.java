@@ -40,11 +40,6 @@ public class ScriptCommand extends Command {
     }
 
     @Override
-    public void run() {
-        // TODO
-    }
-
-    @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || !super.equals(o) || getClass() != o.getClass()) return false;
@@ -66,5 +61,4 @@ public class ScriptCommand extends Command {
                 .add("scriptEnvironment", scriptEnvironment)
                 .toString();
     }
-
 }
