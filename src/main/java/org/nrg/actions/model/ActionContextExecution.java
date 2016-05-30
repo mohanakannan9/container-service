@@ -7,22 +7,37 @@ import com.google.common.collect.Lists;
 import java.util.List;
 import java.util.Objects;
 
-public class ActionDto {
-    private Long id;
+public class ActionContextExecution {
     private String name;
     private String description;
+    @JsonProperty("action-id") private Long actionId;
     @JsonProperty("command-id") private Long commandId;
-    private ActionRoot root;
+    @JsonProperty("root-id") private String rootId;
     private List<ActionInput> inputs;
     @JsonProperty("resources-staged") private List<ActionResource> resourcesStaged;
     @JsonProperty("resources-created") private List<ActionResource> resourcesCreated;
 
-    public Long getId() {
-        return id;
+    public ActionContextExecution() {}
+
+    public ActionContextExecution(final Action action, final String rootId) {
+        if (action == null) {
+            return;
+        }
+        this.name = action.getName();
+        this.description = action.getDescription();
+        this.actionId = action.getId();
+        this.commandId = action.getCommand() != null ?
+                action.getCommand().getId() : null;
+
+        this.inputs = action.getInputs();
+        this.resourcesCreated = action.getResourcesCreated();
+        this.resourcesStaged = action.getResourcesStaged();
+
+        this.rootId = rootId;
     }
 
-    public void setId(final Long id) {
-        this.id = id;
+    public ActionContextExecution(final Action action) {
+        this(action, null);
     }
 
     public String getName() {
@@ -41,6 +56,14 @@ public class ActionDto {
         this.description = description;
     }
 
+    public Long getActionId() {
+        return actionId;
+    }
+
+    public void setActionId(final Long actionId) {
+        this.actionId = actionId;
+    }
+
     public Long getCommandId() {
         return commandId;
     }
@@ -49,12 +72,12 @@ public class ActionDto {
         this.commandId = commandId;
     }
 
-    public ActionRoot getRoot() {
-        return root;
+    public String getRootId() {
+        return rootId;
     }
 
-    public void setRoot(final ActionRoot root) {
-        this.root = root;
+    public void setRootId(final String rootId) {
+        this.rootId = rootId;
     }
 
     public List<ActionInput> getInputs() {
@@ -99,30 +122,30 @@ public class ActionDto {
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final ActionDto actionDto = (ActionDto) o;
-        return Objects.equals(this.id, actionDto.id) &&
-                Objects.equals(this.name, actionDto.name) &&
-                Objects.equals(this.description, actionDto.description) &&
-                Objects.equals(this.commandId, actionDto.commandId) &&
-                Objects.equals(this.root, actionDto.root) &&
-                Objects.equals(this.inputs, actionDto.inputs) &&
-                Objects.equals(this.resourcesStaged, actionDto.resourcesStaged) &&
-                Objects.equals(this.resourcesCreated, actionDto.resourcesCreated);
+        final ActionContextExecution that = (ActionContextExecution) o;
+        return Objects.equals(this.actionId, that.actionId) &&
+                Objects.equals(this.name, that.name) &&
+                Objects.equals(this.description, that.description) &&
+                Objects.equals(this.commandId, that.commandId) &&
+                Objects.equals(this.rootId, that.rootId) &&
+                Objects.equals(this.inputs, that.inputs) &&
+                Objects.equals(this.resourcesStaged, that.resourcesStaged) &&
+                Objects.equals(this.resourcesCreated, that.resourcesCreated);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, description, commandId, root, inputs, resourcesStaged, resourcesCreated);
+        return Objects.hash(actionId, name, description, commandId, rootId, inputs, resourcesStaged, resourcesCreated);
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-                .add("id", id)
                 .add("name", name)
                 .add("description", description)
+                .add("actionId", actionId)
                 .add("commandId", commandId)
-                .add("root", root)
+                .add("rootId", rootId)
                 .add("inputs", inputs)
                 .add("staged", resourcesStaged)
                 .add("created", resourcesCreated)

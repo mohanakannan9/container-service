@@ -50,9 +50,7 @@ dependencies {
     compile ("org.nrg.xnat:xnat-data-models:${vXnat}") {
         transitive = false
     }
-    compile ("org.nrg.xdat:core:${vXnat}") {
-        transitive = false
-    }
+    compile "org.nrg.xdat:core:${vXnat}"
     compile ("org.nrg:prefs:${vXnat}") {
         transitive = false
     }

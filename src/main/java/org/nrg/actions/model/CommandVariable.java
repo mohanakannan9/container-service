@@ -13,6 +13,7 @@ public class CommandVariable implements Serializable {
     private String description;
     private String type;
     private Boolean required;
+    private String value;
     @JsonProperty("arg-template") private String argTemplate;
     @JsonProperty("true-value") private String trueValue;
     @JsonProperty("false-value") private String falseValue;
@@ -53,6 +54,14 @@ public class CommandVariable implements Serializable {
         this.required = required;
     }
 
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(final String value) {
+        this.value = value;
+    }
+
     public String getArgTemplate() {
         return argTemplate;
     }
@@ -86,6 +95,7 @@ public class CommandVariable implements Serializable {
                 Objects.equals(this.description, that.description) &&
                 Objects.equals(this.type, that.type) &&
                 Objects.equals(this.required, that.required) &&
+                Objects.equals(this.value, that.value) &&
                 Objects.equals(this.argTemplate, that.argTemplate) &&
                 Objects.equals(this.trueValue, that.trueValue) &&
                 Objects.equals(this.falseValue, that.falseValue);
@@ -93,7 +103,7 @@ public class CommandVariable implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, description, type, required, argTemplate, trueValue, falseValue);
+        return Objects.hash(name, description, type, required, value, argTemplate, trueValue, falseValue);
     }
 
     @Override
@@ -103,6 +113,7 @@ public class CommandVariable implements Serializable {
                 .add("description", description)
                 .add("type", type)
                 .add("required", required)
+                .add("value", value)
                 .add("argTemplate", argTemplate)
                 .add("trueValue", trueValue)
                 .add("falseValue", falseValue)

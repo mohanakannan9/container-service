@@ -8,15 +8,23 @@ import java.util.Objects;
 
 @Embeddable
 public class ActionResource {
-
+    @JsonProperty("id") private Integer resourceId;
     @JsonProperty("name") private String resourceName;
     @JsonProperty("mount") private String mountName;
 
-    public ActionResource() {};
+    public ActionResource() {}
 
     public ActionResource(final CommandMount commandMount) {
         this.resourceName = commandMount.getName();
         this.mountName = commandMount.getName();
+    }
+
+    public Integer getResourceId() {
+        return resourceId;
+    }
+
+    public void setResourceId(final Integer resourceId) {
+        this.resourceId = resourceId;
     }
 
     public String getResourceName() {
@@ -40,18 +48,20 @@ public class ActionResource {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final ActionResource that = (ActionResource) o;
-        return Objects.equals(this.resourceName, that.resourceName) &&
+        return Objects.equals(this.resourceId, that.resourceId) &&
+                Objects.equals(this.resourceName, that.resourceName) &&
                 Objects.equals(this.mountName, that.mountName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(resourceName, mountName);
+        return Objects.hash(resourceId, resourceName, mountName);
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("resourceId", resourceId)
                 .add("resourceName", resourceName)
                 .add("mountName", mountName)
                 .toString();

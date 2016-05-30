@@ -3,7 +3,7 @@
 //import com.google.common.base.Function;
 //import com.google.common.collect.Lists;
 //import org.nrg.actions.model.Action;
-//import org.nrg.actions.model.ActionContextExection;
+//import org.nrg.actions.model.ActionContextExecution;
 //import org.nrg.actions.model.CommandVariable;
 //import org.nrg.actions.model.Context;
 //import org.nrg.actions.model.ActionInput;
@@ -17,7 +17,7 @@
 //@Service
 //public class ActionContextExecutionResolverService {
 //
-//    public ActionContextExection resolve(final Context context, final Action action) {
+//    public ActionContextExecution resolve(final Context context, final Action action) {
 //
 //        // Get required properties from context
 //        final List<ActionInput> toResolve = Lists.newArrayList();
@@ -39,7 +39,7 @@
 //        final List<RuntimeTree> runtimeTrees = resolve(toResolve);
 //
 //        // TODO make an ACE from the runtime trees and whatever else an ACE needs
-//        return new ActionContextExection();
+//        return new ActionContextExecution();
 //    }
 //
 //    private List<RuntimeTree> resolve(final List<ActionInput> actionInputs) {

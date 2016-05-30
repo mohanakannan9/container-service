@@ -7,7 +7,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.actions.config.ActionTestConfig;
 import org.nrg.actions.model.matcher.Matcher;
-import org.nrg.actions.model.tree.MatchTreeNode;
 import org.nrg.actions.services.ActionService;
 import org.nrg.actions.services.CommandService;
 import org.nrg.containers.model.DockerImage;
@@ -19,11 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-import static org.hamcrest.Matchers.emptyCollectionOf;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.isIn;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
@@ -40,19 +37,14 @@ public class ActionTest {
             "{\"name\":\"name\", \"repo-tags\":[\"a\", \"b\"], \"image-id\":\"abc123\"," +
                     "\"labels\":{\"foo\":\"bar\"}}";
 
-    private static final String DICOM_RESOURCE_MATCHER_JSON =
-            "{\"value\":\"RESOURCE_NAME\", \"type\":\"string\", \"operator\":\"equals\", \"property\":\"name\"}";
-    private static final String RESOURCE_MATCH_TREE_NODE_JSON =
-            "{\"provides-input-value\":true, \"type\":\"resource\", " +
-                    "\"input-property\":\"files\", \"matchers\":[" + DICOM_RESOURCE_MATCHER_JSON + "]}";
-    private static final String SCAN_MATCH_TREE_NODE_JSON =
-            "{\"provides-input-value\":false, \"type\":\"scan\", " +
-                    "\"matchers\":[], \"children\":[" + RESOURCE_MATCH_TREE_NODE_JSON + "]}";
+    private static final String SCAN_MATCHER_JSON =
+            "{\"property\":\"type\", \"operator\":\"equals\", \"value\":\"T1|MPRAGE\"}";
 
     private static final String VARIABLE_0_JSON =
             "{\"name\":\"my_cool_input\", \"description\":\"A boolean value\", " +
                     "\"type\":\"boolean\", \"required\":true," +
-                    "\"true-value\":\"-b\", \"false-value\":\"\"}";
+                    "\"true-value\":\"-b\", \"false-value\":\"\"," +
+                    "\"value\":\"true\"}";
     private static final String VARIABLE_1_JSON =
             "{\"name\":\"my_uncool_input\", \"description\":\"No one loves me :(\", " +
                     "\"type\":\"string\", \"required\":false," +
@@ -61,8 +53,9 @@ public class ActionTest {
             "[" + VARIABLE_0_JSON + ", " + VARIABLE_1_JSON + "]";
     private static final String ACTION_INPUT_JSON =
             "{\"name\":\"some_identifier\", \"command-variable-name\":\"my_cool_input\", " +
-                    "\"match-tree\":" + SCAN_MATCH_TREE_NODE_JSON + ", " +
-                    "\"required\":true}";
+                    "\"root-property\":\"label\", " +
+                    "\"required\":true, \"type\":\"string\"," +
+                    "\"value\":\"something\"}";
 
     private static final String COMMAND_MOUNT_IN_JSON =
             "{\"name\":\"in\", \"path\":\"/input\"}";
@@ -84,7 +77,7 @@ public class ActionTest {
 
     private static final String ACTION_ROOT_JSON =
             "{\"name\":\"scan\", \"xsiType\":\"xnat:imageScanData\"," +
-                    "\"matchers\": [{\"property\":\"type\", \"operator\":\"equals\", \"value\":\"T1|MPRAGE\"}]}";
+                    "\"matchers\": [" + SCAN_MATCHER_JSON + "]}";
     private static final String ACTION_JSON_TEMPLATE =
             "{\"name\":\"an_action\", \"description\":\"Yep, it's an action all right\", " +
                     "\"command-id\":%d, " +
@@ -112,42 +105,16 @@ public class ActionTest {
     @Test
     public void testDeserializeMatcher() throws Exception {
         final Matcher matcher =
-                mapper.readValue(DICOM_RESOURCE_MATCHER_JSON, Matcher.class);
+                mapper.readValue(SCAN_MATCHER_JSON, Matcher.class);
 
         //assertTrue(StringMatcher.class.isAssignableFrom(matcher.getClass()));
-        assertEquals("RESOURCE_NAME", matcher.getValue());
+        assertEquals("T1|MPRAGE", matcher.getValue());
         assertEquals("equals", matcher.getOperator());
-        assertEquals("name", matcher.getProperty());
-    }
-
-    @Test
-    public void testDeserializeMatchTreeNodeNoParentNoChild() throws Exception {
-        final Matcher resourceMatcher =
-                mapper.readValue(DICOM_RESOURCE_MATCHER_JSON, Matcher.class);
-        final MatchTreeNode resourceMtNode = mapper.readValue(RESOURCE_MATCH_TREE_NODE_JSON, MatchTreeNode.class);
-
-        assertEquals(true, resourceMtNode.getProvidesInputValue());
-        assertEquals("resource", resourceMtNode.getType());
-        assertEquals("files", resourceMtNode.getInputProperty());
-        assertEquals(Lists.newArrayList(resourceMatcher), resourceMtNode.getMatchers());
-        assertEquals(null, resourceMtNode.getChildren());
-    }
-
-    @Test
-    public void testDeserializeMatchTreeNodeWithChild() throws Exception {
-        final MatchTreeNode resourceMtNode = mapper.readValue(RESOURCE_MATCH_TREE_NODE_JSON, MatchTreeNode.class);
-        final MatchTreeNode scanMtNode = mapper.readValue(SCAN_MATCH_TREE_NODE_JSON, MatchTreeNode.class);
-
-        assertEquals(false, scanMtNode.getProvidesInputValue());
-        assertEquals("scan", scanMtNode.getType());
-        assertThat(scanMtNode.getInputProperty(), isEmptyOrNullString());
-        assertThat(scanMtNode.getMatchers(), emptyCollectionOf(Matcher.class));
-        assertEquals(Lists.newArrayList(resourceMtNode), scanMtNode.getChildren());
+        assertEquals("type", matcher.getProperty());
     }
 
     @Test
     public void testDeserializeActionInput() throws Exception {
-        final MatchTreeNode scanMtNode = mapper.readValue(SCAN_MATCH_TREE_NODE_JSON, MatchTreeNode.class);
 
         final String commandJson = String.format(COMMAND_JSON_TEMPLATE, 0);
         final Command command = mapper.readValue(commandJson, Command.class);
@@ -156,9 +123,11 @@ public class ActionTest {
         final ActionInput actionInput = mapper.readValue(ACTION_INPUT_JSON, ActionInput.class);
 
         assertEquals("some_identifier", actionInput.getInputName());
-        assertEquals(scanMtNode, actionInput.getRoot());
         assertEquals(commandVariable.getName(), actionInput.getCommandVariableName());
         assertTrue(actionInput.getRequired());
+        assertEquals("string", actionInput.getType());
+        assertEquals("something", actionInput.getValue());
+        assertEquals("label", actionInput.getRootProperty());
     }
 
     @Test
@@ -169,6 +138,7 @@ public class ActionTest {
         assertEquals("scan", root.getRootName());
         assertEquals("xnat:imageScanData", root.getXsiType());
 
+        assertThat(root.getMatchers(), hasSize(1));
         final Matcher matcher = root.getMatchers().get(0);
         assertThat(matcher.getType(), is(nullValue()));
         assertEquals("type", matcher.getProperty());
