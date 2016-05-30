@@ -70,7 +70,7 @@ public class CommandTest {
             "{\"name\":\"docker_image_command\", \"description\":\"Docker Image command for the test\", " +
                     "\"info-url\":\"http://abc.xyz\", \"env\":{\"foo\":\"bar\"}, " +
                     "\"variables\":" + VARIABLE_LIST_JSON + ", " +
-                    "\"template\":\"foo\", \"type\":\"docker-image\", " +
+                    "\"run-template\":\"foo\", \"type\":\"docker-image\", " +
                     "\"docker-image\":{\"id\":%d}, " +
                     "\"mounts-in\":[" + MOUNT_IN + "]," +
                     "\"mounts-out\":[" + MOUNT_OUT + "]}";
@@ -79,7 +79,7 @@ public class CommandTest {
             "{\"name\":\"script_command\", \"description\":\"The Script command for the test\", " +
                     "\"info-url\":\"http://abc.xyz\", " +
                     "\"variables\":" + VARIABLE_LIST_JSON + ", " +
-                    "\"template\":\"foo\", \"type\":\"script\", " +
+                    "\"run-template\":\"foo\", \"type\":\"script\", " +
                     "\"script\":{\"id\":%d}," +
                     "\"script-environment\":{\"id\":%d}}";
 
@@ -146,7 +146,7 @@ public class CommandTest {
         assertEquals("docker_image_command", dockerImageCommand.getName());
         assertEquals("Docker Image command for the test", dockerImageCommand.getDescription());
         assertEquals("http://abc.xyz", dockerImageCommand.getInfoUrl());
-        assertEquals("foo", dockerImageCommand.getTemplate());
+        assertEquals("foo", dockerImageCommand.getRunTemplate());
         assertEquals(ImmutableMap.of("foo", "bar"), dockerImageCommand.getEnvironmentVariables());
 
         assertThat(dockerImageCommand.getVariables(), hasSize(2));
@@ -198,7 +198,7 @@ public class CommandTest {
         assertEquals("script_command", scriptCommand.getName());
         assertEquals("The Script command for the test", scriptCommand.getDescription());
         assertEquals("http://abc.xyz", scriptCommand.getInfoUrl());
-        assertEquals("foo", scriptCommand.getTemplate());
+        assertEquals("foo", scriptCommand.getRunTemplate());
 
         assertThat(scriptCommand.getVariables(), hasSize(2));
         assertThat(commandVariableList, everyItem(isIn(scriptCommand.getVariables())));

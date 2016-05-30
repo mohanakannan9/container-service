@@ -71,7 +71,7 @@ public class ActionTest {
             "{\"name\":\"docker_image_command\", \"description\":\"Docker Image command for the test\", " +
                     "\"info-url\":\"http://abc.xyz\", \"env\":{\"foo\":\"bar\"}, " +
                     "\"variables\":" + VARIABLE_LIST_JSON + ", " +
-                    "\"template\":\"foo\", \"type\":\"docker-image\", " +
+                    "\"run-template\":\"foo\", \"type\":\"docker-image\", " +
                     "\"docker-image\":{\"id\":%d}, " +
                     "\"mounts-in\":[" + COMMAND_MOUNT_IN_JSON + "]," +
                     "\"mounts-out\":[" + COMMAND_MOUNT_OUT_JSON + "]}";

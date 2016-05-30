@@ -32,7 +32,7 @@ public abstract class Command extends AbstractHibernateEntity {
     private String name;
     private String description;
     @JsonProperty("info-url") private String infoUrl;
-    private String template;
+    @JsonProperty("run-template") private String runTemplate;
     private List<CommandVariable> variables;
     @JsonProperty("mounts-in") private List<CommandMount> mountsIn;
     @JsonProperty("mounts-out") private List<CommandMount> mountsOut;
@@ -61,12 +61,12 @@ public abstract class Command extends AbstractHibernateEntity {
         this.infoUrl = infoUrl;
     }
 
-    public String getTemplate() {
-        return template;
+    public String getRunTemplate() {
+        return runTemplate;
     }
 
-    public void setTemplate(final String template) {
-        this.template = template;
+    public void setRunTemplate(final String runTemplate) {
+        this.runTemplate = runTemplate;
     }
 
     @ElementCollection
@@ -112,7 +112,7 @@ public abstract class Command extends AbstractHibernateEntity {
                 .add("name", name)
                 .add("description", description)
                 .add("infoUrl", infoUrl)
-                .add("template", template)
+                .add("runTemplate", runTemplate)
                 .add("variables", variables)
                 .add("mountsIn", mountsIn)
                 .add("mountsOut", mountsOut);
@@ -127,7 +127,7 @@ public abstract class Command extends AbstractHibernateEntity {
         return Objects.equals(this.name, that.name) &&
                 Objects.equals(this.description, that.description) &&
                 Objects.equals(this.infoUrl, that.infoUrl) &&
-                Objects.equals(this.template, that.template) &&
+                Objects.equals(this.runTemplate, that.runTemplate) &&
                 Objects.equals(this.variables, that.variables) &&
                 Objects.equals(this.mountsIn, that.mountsIn) &&
                 Objects.equals(this.mountsOut, that.mountsOut);
@@ -135,7 +135,7 @@ public abstract class Command extends AbstractHibernateEntity {
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), name, description, infoUrl, template, variables, mountsIn, mountsOut);
+        return Objects.hash(super.hashCode(), name, description, infoUrl, runTemplate, variables, mountsIn, mountsOut);
     }
 
     @Override
