@@ -11,6 +11,7 @@ public class ActionResource {
     @JsonProperty("id") private Integer resourceId;
     @JsonProperty("name") private String resourceName;
     @JsonProperty("mount") private String mountName;
+    private Boolean overwrite = false;
 
     public ActionResource() {}
 
@@ -43,6 +44,14 @@ public class ActionResource {
         this.mountName = mountName;
     }
 
+    public Boolean getOverwrite() {
+        return overwrite;
+    }
+
+    public void setOverwrite(final Boolean overwrite) {
+        this.overwrite = overwrite;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
@@ -50,12 +59,13 @@ public class ActionResource {
         final ActionResource that = (ActionResource) o;
         return Objects.equals(this.resourceId, that.resourceId) &&
                 Objects.equals(this.resourceName, that.resourceName) &&
-                Objects.equals(this.mountName, that.mountName);
+                Objects.equals(this.mountName, that.mountName) &&
+                Objects.equals(this.overwrite, that.overwrite);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(resourceId, resourceName, mountName);
+        return Objects.hash(resourceId, resourceName, mountName, overwrite);
     }
 
     @Override
@@ -64,6 +74,7 @@ public class ActionResource {
                 .add("resourceId", resourceId)
                 .add("resourceName", resourceName)
                 .add("mountName", mountName)
+                .add("overwrite", overwrite)
                 .toString();
     }
 }

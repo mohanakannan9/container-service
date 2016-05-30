@@ -25,6 +25,7 @@ import static org.hamcrest.Matchers.isIn;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -62,9 +63,9 @@ public class ActionTest {
     private static final String COMMAND_MOUNT_OUT_JSON =
             "{\"name\":\"out\", \"path\":\"/output\"}";
     private static final String ACTION_RESOURCE_STAGED_JSON =
-            "{\"name\":\"DICOM\", \"mount\":\"in\"}";
+            "{\"name\":\"DICOM\", \"mount\":\"in\", \"id\":10}";
     private static final String ACTION_RESOURCE_CREATED_JSON =
-            "{\"name\":\"NIFTI\", \"mount\":\"out\"}";
+            "{\"name\":\"NIFTI\", \"mount\":\"out\", \"overwrite\":true}";
 
     private static final String COMMAND_JSON_TEMPLATE =
             "{\"name\":\"docker_image_command\", \"description\":\"Docker Image command for the test\", " +
@@ -155,9 +156,13 @@ public class ActionTest {
 
         assertEquals("DICOM", staged.getResourceName());
         assertEquals("in", staged.getMountName());
+        assertEquals(Integer.valueOf(10), staged.getResourceId());
+        assertFalse(staged.getOverwrite());
 
         assertEquals("NIFTI", created.getResourceName());
         assertEquals("out", created.getMountName());
+        assertThat(created.getResourceId(), is(nullValue()));
+        assertTrue(created.getOverwrite());
     }
 
     @Test
