@@ -19,6 +19,7 @@ public class ScriptEnvironment extends AbstractHibernateEntity {
     private String name;
     private String description;
     @JsonProperty("docker-image") private DockerImage dockerImage;
+    @JsonProperty("run-prefix") private String runPrefix;
 
     public String getName() {
         return name;
@@ -45,28 +46,38 @@ public class ScriptEnvironment extends AbstractHibernateEntity {
         this.dockerImage = dockerImage;
     }
 
+    public String getRunPrefix() {
+        return runPrefix;
+    }
+
+    public void setRunPrefix(final String runPrefix) {
+        this.runPrefix = runPrefix;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         final ScriptEnvironment that = (ScriptEnvironment) o;
-        return Objects.equals(name, that.name) &&
-                Objects.equals(description, that.description) &&
-                Objects.equals(dockerImage, that.dockerImage);
+        return Objects.equals(this.name, that.name) &&
+                Objects.equals(this.description, that.description) &&
+                Objects.equals(this.dockerImage, that.dockerImage) &&
+                Objects.equals(this.runPrefix, that.runPrefix);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), name, description, dockerImage);
+        return Objects.hash(super.hashCode(), name, description, dockerImage, runPrefix);
     }
 
     @Override
     public String toString() {
-        return addParentPropertiesToString(MoreObjects.toStringHelper(this))
+        return MoreObjects.toStringHelper(this)
                 .add("name", name)
                 .add("description", description)
                 .add("dockerImage", dockerImage)
+                .add("runPrefix", runPrefix)
                 .toString();
     }
 }

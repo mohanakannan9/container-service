@@ -43,7 +43,8 @@ public class CommandTest {
 
     private static final String SCRIPT_ENVIRONMENT_JSON_TEMPLATE =
             "{\"name\":\"Mr. Big Stuff\", \"description\":\"Who do you think you are?\", " +
-                    "\"docker-image\":{\"id\":%d}}";
+                    "\"docker-image\":{\"id\":%d}," +
+                    "\"run-prefix\":\"/bin/bash \"}";
 
     private static final String SCRIPT_JSON =
             "{\"scriptId\":\"abc123\", \"scriptLabel\":\"a-script\", " +
