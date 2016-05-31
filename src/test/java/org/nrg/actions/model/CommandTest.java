@@ -71,6 +71,9 @@ public class CommandTest {
 
     private static final String MOUNT_IN = "{\"name\":\"in\", \"path\":\"/input\"}";
     private static final String MOUNT_OUT = "{\"name\":\"out\", \"path\":\"/output\"}";
+    private static final String RESOLVED_MOUNT_IN = "{\"name\":\"in\", \"remote-path\":\"/input\"}";
+    private static final String RESOLVED_MOUNT_OUT = "{\"name\":\"out\", \"remote-path\":\"/output\", \"read-only\":false}";
+
 
     private static final String DOCKER_IMAGE_COMMAND_JSON_TEMPLATE =
             "{\"name\":\"docker_image_command\", \"description\":\"Docker Image command for the test\", " +
@@ -93,12 +96,12 @@ public class CommandTest {
                     "\"script-environment\":{\"id\":%d}}";
 
     private static final String RESOLVED_DOCKER_IMAGE_COMMAND_JSON_TEMPLATE =
-            "{\"command\":{\"id\":%d, \"type\":\"docker-image\"}, " +
-                    "\"docker-image\":{\"id\":%d}, " +
+            "{\"command-id\":%d, " +
+                    "\"docker-image-id\":%d, " +
                     "\"env\":{\"foo\":\"bar\"}, " +
                     "\"run\":\"cmd --flag=bar\", " +
-                    "\"mounts-in\":[" + MOUNT_IN + "]," +
-                    "\"mounts-out\":[" + MOUNT_OUT + "]}";
+                    "\"mounts-in\":[" + RESOLVED_MOUNT_IN + "]," +
+                    "\"mounts-out\":[" + RESOLVED_MOUNT_OUT + "]}";
 
     private final ObjectMapper mapper = new ObjectMapper();
 

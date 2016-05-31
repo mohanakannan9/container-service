@@ -1,5 +1,6 @@
 package org.nrg.actions.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import org.apache.commons.lang3.StringUtils;
 
@@ -12,16 +13,15 @@ import java.util.Objects;
 public class ResolvedCommandMount implements Serializable {
 
     private String name;
-    private String localPath;
-    private String remotePath;
-    private Boolean readOnly;
+    @JsonProperty("local-path") private String localPath;
+    @JsonProperty("remote-path") private String remotePath;
+    @JsonProperty("read-only") private Boolean readOnly = true;
 
     public ResolvedCommandMount() {}
 
     public ResolvedCommandMount(final CommandMount commandMount) {
         this.name = commandMount.getName();
         this.remotePath = commandMount.getPath();
-        this.readOnly = true;
     }
 
     public ResolvedCommandMount(final CommandMount commandMount,
