@@ -16,6 +16,7 @@ import javax.persistence.Entity;
 import javax.persistence.Inheritance;
 import javax.persistence.Transient;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @Entity
@@ -36,6 +37,7 @@ public abstract class Command extends AbstractHibernateEntity {
     private List<CommandVariable> variables;
     @JsonProperty("mounts-in") private List<CommandMount> mountsIn;
     @JsonProperty("mounts-out") private List<CommandMount> mountsOut;
+    @JsonProperty("env") private Map<String, String> environmentVariables;
 
     public String getName() {
         return name;
@@ -96,6 +98,15 @@ public abstract class Command extends AbstractHibernateEntity {
         this.mountsOut = mountsOut;
     }
 
+    @ElementCollection
+    public Map<String, String> getEnvironmentVariables() {
+        return environmentVariables;
+    }
+
+    public void setEnvironmentVariables(final Map<String, String> environmentVariables) {
+        this.environmentVariables = environmentVariables;
+    }
+
     @Transient
     public CommandVariable getInputWithName(final String name) {
         for (final CommandVariable commandVariable : variables) {
@@ -115,7 +126,8 @@ public abstract class Command extends AbstractHibernateEntity {
                 .add("runTemplate", runTemplate)
                 .add("variables", variables)
                 .add("mountsIn", mountsIn)
-                .add("mountsOut", mountsOut);
+                .add("mountsOut", mountsOut)
+                .add("environmentVariables", environmentVariables);
     }
 
     @Override
@@ -130,12 +142,14 @@ public abstract class Command extends AbstractHibernateEntity {
                 Objects.equals(this.runTemplate, that.runTemplate) &&
                 Objects.equals(this.variables, that.variables) &&
                 Objects.equals(this.mountsIn, that.mountsIn) &&
-                Objects.equals(this.mountsOut, that.mountsOut);
+                Objects.equals(this.mountsOut, that.mountsOut) &&
+                Objects.equals(this.environmentVariables, that.environmentVariables);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), name, description, infoUrl, runTemplate, variables, mountsIn, mountsOut);
+        return Objects.hash(super.hashCode(), name, description, infoUrl,
+                variables, runTemplate, mountsIn, mountsOut, environmentVariables);
     }
 
     @Override

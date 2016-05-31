@@ -24,7 +24,7 @@ public class DockerImageCommand extends Command {
     static final String COMMAND_TYPE = "docker-image";
 
     @JsonProperty("docker-image") private DockerImage dockerImage;
-    @JsonProperty("env") private Map<String, String> environmentVariables;
+
 
     @ManyToOne(fetch = FetchType.EAGER)
     public DockerImage getDockerImage() {
@@ -33,15 +33,6 @@ public class DockerImageCommand extends Command {
 
     public void setDockerImage(final DockerImage dockerImage) {
         this.dockerImage = dockerImage;
-    }
-
-    @ElementCollection
-    public Map<String, String> getEnvironmentVariables() {
-        return environmentVariables;
-    }
-
-    public void setEnvironmentVariables(final Map<String, String> environmentVariables) {
-        this.environmentVariables = environmentVariables;
     }
 
     @Override
@@ -55,14 +46,12 @@ public class DockerImageCommand extends Command {
 
         DockerImageCommand that = (DockerImageCommand) o;
 
-
-        return Objects.equals(this.dockerImage, that.dockerImage) &&
-            Objects.equals(this.environmentVariables, that.environmentVariables);
+        return Objects.equals(this.dockerImage, that.dockerImage);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), dockerImage, environmentVariables);
+        return Objects.hash(super.hashCode(), dockerImage);
     }
 
 
@@ -70,7 +59,6 @@ public class DockerImageCommand extends Command {
     public String toString() {
         return addParentPropertiesToString(MoreObjects.toStringHelper(this))
                 .add("dockerImage", dockerImage)
-                .add("environmentVariables", environmentVariables)
                 .toString();
     }
 }

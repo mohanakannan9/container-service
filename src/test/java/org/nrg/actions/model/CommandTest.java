@@ -3,6 +3,7 @@ package org.nrg.actions.model;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.actions.config.CommandTestConfig;
@@ -20,10 +21,13 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
+import static org.hamcrest.Matchers.either;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isIn;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
@@ -68,9 +72,11 @@ public class CommandTest {
 
     private static final String DOCKER_IMAGE_COMMAND_JSON_TEMPLATE =
             "{\"name\":\"docker_image_command\", \"description\":\"Docker Image command for the test\", " +
-                    "\"info-url\":\"http://abc.xyz\", \"env\":{\"foo\":\"bar\"}, " +
+                    "\"info-url\":\"http://abc.xyz\", " +
+                    "\"env\":{\"foo\":\"bar\"}, " +
                     "\"variables\":" + VARIABLE_LIST_JSON + ", " +
-                    "\"run-template\":\"foo\", \"type\":\"docker-image\", " +
+                    "\"run-template\":\"foo\", " +
+                    "\"type\":\"docker-image\", " +
                     "\"docker-image\":{\"id\":%d}, " +
                     "\"mounts-in\":[" + MOUNT_IN + "]," +
                     "\"mounts-out\":[" + MOUNT_OUT + "]}";
@@ -79,7 +85,8 @@ public class CommandTest {
             "{\"name\":\"script_command\", \"description\":\"The Script command for the test\", " +
                     "\"info-url\":\"http://abc.xyz\", " +
                     "\"variables\":" + VARIABLE_LIST_JSON + ", " +
-                    "\"run-template\":\"foo\", \"type\":\"script\", " +
+                    "\"run-template\":\"foo\", " +
+                    "\"type\":\"script\", " +
                     "\"script\":{\"id\":%d}," +
                     "\"script-environment\":{\"id\":%d}}";
 
@@ -140,23 +147,22 @@ public class CommandTest {
                 String.format(DOCKER_IMAGE_COMMAND_JSON_TEMPLATE, 0);
         final Command command = mapper.readValue(dockerImageCommandJson, Command.class);
 
+        assertEquals("docker_image_command", command.getName());
+        assertEquals("Docker Image command for the test", command.getDescription());
+        assertEquals("http://abc.xyz", command.getInfoUrl());
+        assertEquals("foo", command.getRunTemplate());
+        assertEquals(ImmutableMap.of("foo", "bar"), command.getEnvironmentVariables());
+
+        assertThat(command.getVariables(), hasSize(2));
+        assertThat(commandVariableList, everyItem(isIn(command.getVariables())));
+
+        assertThat(command.getMountsIn(), hasSize(1));
+        assertEquals(input, command.getMountsIn().get(0));
+        assertThat(command.getMountsOut(), hasSize(1));
+        assertEquals(output, command.getMountsOut().get(0));
+
         assertThat(command, instanceOf(DockerImageCommand.class));
         final DockerImageCommand dockerImageCommand = (DockerImageCommand) command;
-
-        assertEquals("docker_image_command", dockerImageCommand.getName());
-        assertEquals("Docker Image command for the test", dockerImageCommand.getDescription());
-        assertEquals("http://abc.xyz", dockerImageCommand.getInfoUrl());
-        assertEquals("foo", dockerImageCommand.getRunTemplate());
-        assertEquals(ImmutableMap.of("foo", "bar"), dockerImageCommand.getEnvironmentVariables());
-
-        assertThat(dockerImageCommand.getVariables(), hasSize(2));
-        assertThat(commandVariableList, everyItem(isIn(dockerImageCommand.getVariables())));
-
-        assertThat(dockerImageCommand.getMountsIn(), hasSize(1));
-        assertEquals(input, dockerImageCommand.getMountsIn().get(0));
-        assertThat(dockerImageCommand.getMountsOut(), hasSize(1));
-        assertEquals(output, dockerImageCommand.getMountsOut().get(0));
-
         assertEquals(0L, dockerImageCommand.getDockerImage().getId());
     }
 
@@ -192,17 +198,16 @@ public class CommandTest {
                 String.format(SCRIPT_COMMAND_JSON_TEMPLATE, 0, 0);
         final Command command = mapper.readValue(scriptCommandJson, Command.class);
 
+        assertEquals("script_command", command.getName());
+        assertEquals("The Script command for the test", command.getDescription());
+        assertEquals("http://abc.xyz", command.getInfoUrl());
+        assertEquals("foo", command.getRunTemplate());
+
+        assertThat(command.getVariables(), hasSize(2));
+        assertThat(commandVariableList, everyItem(isIn(command.getVariables())));
+
         assertThat(command, instanceOf(ScriptCommand.class));
         final ScriptCommand scriptCommand = (ScriptCommand) command;
-
-        assertEquals("script_command", scriptCommand.getName());
-        assertEquals("The Script command for the test", scriptCommand.getDescription());
-        assertEquals("http://abc.xyz", scriptCommand.getInfoUrl());
-        assertEquals("foo", scriptCommand.getRunTemplate());
-
-        assertThat(scriptCommand.getVariables(), hasSize(2));
-        assertThat(commandVariableList, everyItem(isIn(scriptCommand.getVariables())));
-
         assertEquals(0L, scriptCommand.getScript().getId());
         assertEquals(0L, scriptCommand.getScriptEnvironment().getId());
     }
