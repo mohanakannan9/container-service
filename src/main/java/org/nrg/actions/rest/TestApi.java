@@ -18,7 +18,7 @@ public class TestApi {
   public static final String JSON = MediaType.APPLICATION_JSON_UTF8_VALUE;
   public static final String PLAIN_TEXT = MediaType.TEXT_PLAIN_VALUE;
 
-  @RequestMapping(method = GET, produces = {JSON, PLAIN_TEXT})
+  @RequestMapping(method = GET, produces = PLAIN_TEXT)
   public String getTest()
       throws NoServerPrefException {
     _log.debug("getTest: I hit the test method");

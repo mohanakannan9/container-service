@@ -53,9 +53,11 @@ public class DockerImagesRestApi {
     public static final String JSON = MediaType.APPLICATION_JSON_UTF8_VALUE;
     public static final String TEXT = MediaType.TEXT_PLAIN_VALUE;
 
-    @ApiOperation(value = "Get list of images.", notes = "Returns a list of all images on the container server.", response = DockerImageDto.class, responseContainer = "List")
+    @ApiOperation(value = "Get list of images.", notes = "Returns a list of all Docker images.", response = DockerImageDto.class, responseContainer = "List")
     @ApiResponses({
             @ApiResponse(code = 200, message = "A list of images on the server"),
+            @ApiResponse(code = 404, message = "At least one of from-db or from-docker-server must be true"),
+            @ApiResponse(code = 424, message = "Admin must set up Docker server."),
             @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(method = GET, produces = JSON)
     @ResponseBody
@@ -68,6 +70,14 @@ public class DockerImagesRestApi {
         return dockerService.getImages(fromDb, fromDockerServer);
     }
 
+    @ApiOperation(value = "Create Docker image",
+            notes = "Save information about a Docker image to the database", response = String.class)
+    @ApiResponses({
+            @ApiResponse(code = 201, message = "Image was saved"),
+            @ApiResponse(code = 400, message = "Set image-id on request body to your Docker image's id."),
+            @ApiResponse(code = 404, message = "No docker image with given id on docker server"),
+            @ApiResponse(code = 424, message = "Admin must set up Docker server."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = {}, method = POST, consumes = JSON, produces = TEXT)
     public ResponseEntity<String> postImage(final @RequestBody DockerImageDto dockerImageDto)
             throws BadRequestException, DockerServerException, NotFoundException, NoServerPrefException {
@@ -78,6 +88,13 @@ public class DockerImagesRestApi {
         return new ResponseEntity<>(String.valueOf(created.getId()), HttpStatus.CREATED);
     }
 
+    @ApiOperation(value = "Get Docker image",
+            notes = "Retrieve information about a Docker image from the database", response = DockerImageDto.class)
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "Found the image"),
+            @ApiResponse(code = 404, message = "No docker image with given id in xnat database"),
+            @ApiResponse(code = 424, message = "Admin must set up Docker server."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = "/{id}", method = GET, produces = JSON)
     @ResponseBody
     public DockerImageDto getImage(final @PathVariable("id") Long id,
@@ -86,6 +103,13 @@ public class DockerImagesRestApi {
         return dockerService.getImage(id, fromDockerServer);
     }
 
+    @ApiOperation(value = "Delete Docker image",
+            notes = "Remove information about a Docker image")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "Image was removed"),
+            @ApiResponse(code = 404, message = "No docker image with given id in xnat database"),
+            @ApiResponse(code = 424, message = "Admin must set up Docker server."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = "/{id}", method = DELETE)
     @ResponseBody
     public void deleteImage(final @PathVariable("id") Long id,
