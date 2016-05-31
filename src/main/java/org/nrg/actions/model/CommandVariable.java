@@ -2,8 +2,10 @@ package org.nrg.actions.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.persistence.Embeddable;
+import javax.persistence.Transient;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -84,6 +86,30 @@ public class CommandVariable implements Serializable {
 
     public void setFalseValue(final String falseValue) {
         this.falseValue = falseValue;
+    }
+
+    @Transient
+    public String getValueWithTrueOrFalseValue() {
+        if (value == null) {
+            return null;
+        }
+
+        if (type != null && type.equalsIgnoreCase("boolean")) {
+            return Boolean.valueOf(value) ? trueValue : falseValue;
+        } else {
+            return value;
+        }
+    }
+
+    @Transient
+    public String getArgTemplateValue() {
+        final String valString = getValueWithTrueOrFalseValue();
+
+        if (StringUtils.isBlank(argTemplate)) {
+            return valString;
+        } else {
+            return argTemplate.replaceAll("#value#", valString);
+        }
     }
 
     @Override

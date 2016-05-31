@@ -9,7 +9,9 @@ import org.nrg.actions.model.ActionInput;
 import org.nrg.actions.model.ActionResource;
 import org.nrg.actions.model.Context;
 import org.nrg.actions.model.ItemQueryCacheKey;
+import org.nrg.actions.model.ResolvedCommand;
 import org.nrg.actions.model.matcher.Matcher;
+import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.model.XnatImagescandataI;
@@ -34,6 +36,9 @@ public class AceServiceImpl implements AceService {
 
     @Autowired
     private ActionService actionService;
+
+    @Autowired
+    private CommandService commandService;
 
     public List<ActionContextExecution> resolveAces(final Context context) throws XFTInitException {
         final String xsiType = context.get("xsiType");
@@ -97,18 +102,58 @@ public class AceServiceImpl implements AceService {
         return null;
     }
 
+    public String launchAce(final ActionContextExecution ace) throws NotFoundException {
+        if (ace == null) return null;
+
+        // TODO Check that all required inputs have values
+        if (ace.getInputs() != null && !ace.getInputs().isEmpty()) {
+            for (final ActionInput input : ace.getInputs()) {
+                if (input.isRequired() && StringUtils.isBlank(input.getValue())) {
+                    // TODO throw an error. Required input cannot be blank.
+                }
+            }
+        }
+
+        // TODO Check that all staged resources have ids
+        if (ace.getResourcesStaged() != null && !ace.getResourcesStaged().isEmpty()) {
+            for (final ActionResource resource : ace.getResourcesStaged()) {
+                if (resource.getResourceId() == null || resource.getResourceId().equals(0)) {
+                    // TODO throw an error. All staged resources need ids. (This should have happened during resolveAce())
+                }
+            }
+        }
+
+        // TODO Check that, if created resources have ids, they are overwritable
+        if (ace.getResourcesCreated() != null && !ace.getResourcesCreated().isEmpty()) {
+            for (final ActionResource resource : ace.getResourcesCreated()) {
+                if (!resource.getOverwrite() &&
+                        !(resource.getResourceId() == null || resource.getResourceId().equals(0))) {
+                    // TODO throw an error. If a "created" resource already exists, we need to be able to overwrite it.
+                }
+            }
+        }
+
+        final ResolvedCommand resolvedCommand = commandService.resolveCommand(ace);
+
+        // TODO Use Transporter to stage staged resources
+        // TODO Use Transporter to create writable space for created resources
+
+        return null;
+    }
+
     private ActionContextExecution resolve(final Action action,
                                            final XFTItem item,
                                            final Context context,
                                            final Map<ItemQueryCacheKey, String> cache)
             throws XFTInitException {
 
-        if (!match(item, action.getRoot().getMatchers(), cache)) {
+        if (!doesItemMatchMatchers(item, action.getRoot().getMatchers(), cache)) {
             return null;
         }
 
         final ActionContextExecution ace = new ActionContextExecution(action);
 
+        // Find values for any inputs that we can.
         if (ace.getInputs() != null) {
             for (final ActionInput input : ace.getInputs()) {
                 // Try to get inputs of type=property out of the root object
@@ -133,6 +178,7 @@ public class AceServiceImpl implements AceService {
         }
 
 
+        // Get all the item's resources, and figure out which ones the ACE needs.
         List<XnatAbstractresource> resources = null;
         try {
             // Stolen from XnatImagescandata.getFile()
@@ -146,9 +192,8 @@ public class AceServiceImpl implements AceService {
                 return null;
             }
         } else {
-
             if(ace.getResourcesStaged() != null) {
-                checkResources(ace.getResourcesStaged(), resources);
+                setResourceIds(ace.getResourcesStaged(), resources);
                 for (final ActionResource actionResource : ace.getResourcesStaged()) {
                     if (actionResource.getResourceId() == null) {
                         // We needed to find an item resource to mount, but we didn't.
@@ -157,7 +202,7 @@ public class AceServiceImpl implements AceService {
                 }
             }
             if(ace.getResourcesCreated() != null) {
-                checkResources(ace.getResourcesCreated(), resources);
+                setResourceIds(ace.getResourcesCreated(), resources);
                 // It's ok if there are null ids. These will be created, so they
                 // don't have to exist yet.
             }
@@ -166,7 +211,7 @@ public class AceServiceImpl implements AceService {
         return ace;
     }
 
-    private void checkResources(final List<ActionResource> aceResources,
+    private void setResourceIds(final List<ActionResource> aceResources,
                                 final List<XnatAbstractresource> itemResources) {
         for (final ActionResource aceResource : aceResources) {
             for (final XnatAbstractresource itemResource : itemResources) {
@@ -206,22 +251,22 @@ public class AceServiceImpl implements AceService {
         return null;
     }
 
-    private Boolean match(final XFTItem item, final List<Matcher> matchers,
-                          final Map<ItemQueryCacheKey, String> cache)
+    private Boolean doesItemMatchMatchers(final XFTItem item, final List<Matcher> matchers,
+                                          final Map<ItemQueryCacheKey, String> cache)
             throws XFTInitException {
         if (matchers == null || matchers.isEmpty()) {
             return true;
         }
 
         for (final Matcher matcher : matchers) {
-            if (!match(item, matcher, cache)) {
+            if (!doesItemMatchMatchers(item, matcher, cache)) {
                 return false;
             }
         }
         return true;
     }
-    private Boolean match(final XFTItem item, final Matcher matcher,
-                          final Map<ItemQueryCacheKey, String> cache)
+    private Boolean doesItemMatchMatchers(final XFTItem item, final Matcher matcher,
+                                          final Map<ItemQueryCacheKey, String> cache)
             throws XFTInitException {
         if (matcher == null || StringUtils.isBlank(matcher.getValue())) {
             return true;

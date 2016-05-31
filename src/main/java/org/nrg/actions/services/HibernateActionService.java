@@ -1,6 +1,5 @@
 package org.nrg.actions.services;
 
-import org.apache.commons.lang3.StringUtils;
 import org.nrg.actions.daos.ActionDao;
 import org.nrg.actions.model.Action;
 import org.nrg.actions.model.ActionDto;

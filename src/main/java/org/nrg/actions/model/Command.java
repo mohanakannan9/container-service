@@ -33,8 +33,8 @@ public abstract class Command extends AbstractHibernateEntity {
     private String name;
     private String description;
     @JsonProperty("info-url") private String infoUrl;
-    @JsonProperty("run-template") private String runTemplate;
     private List<CommandVariable> variables;
+    @JsonProperty("run-template") private String runTemplate;
     @JsonProperty("mounts-in") private List<CommandMount> mountsIn;
     @JsonProperty("mounts-out") private List<CommandMount> mountsOut;
     @JsonProperty("env") private Map<String, String> environmentVariables;
@@ -63,14 +63,6 @@ public abstract class Command extends AbstractHibernateEntity {
         this.infoUrl = infoUrl;
     }
 
-    public String getRunTemplate() {
-        return runTemplate;
-    }
-
-    public void setRunTemplate(final String runTemplate) {
-        this.runTemplate = runTemplate;
-    }
-
     @ElementCollection
     public List<CommandVariable> getVariables() {
         return variables;
@@ -78,6 +70,14 @@ public abstract class Command extends AbstractHibernateEntity {
 
     void setVariables(final List<CommandVariable> commandVariables) {
         this.variables = commandVariables;
+    }
+
+    public String getRunTemplate() {
+        return runTemplate;
+    }
+
+    public void setRunTemplate(final String runTemplate) {
+        this.runTemplate = runTemplate;
     }
 
     @ElementCollection
@@ -123,8 +123,8 @@ public abstract class Command extends AbstractHibernateEntity {
                 .add("name", name)
                 .add("description", description)
                 .add("infoUrl", infoUrl)
-                .add("runTemplate", runTemplate)
                 .add("variables", variables)
+                .add("runTemplate", runTemplate)
                 .add("mountsIn", mountsIn)
                 .add("mountsOut", mountsOut)
                 .add("environmentVariables", environmentVariables);

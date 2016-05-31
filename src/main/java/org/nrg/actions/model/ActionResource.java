@@ -16,6 +16,9 @@ public class ActionResource {
     public ActionResource() {}
 
     public ActionResource(final CommandMount commandMount) {
+        // In lieu of any explicit user-provided information,
+        // assume the command mount was named the same as the resource.
+        // This provides an easy default for users.
         this.resourceName = commandMount.getName();
         this.mountName = commandMount.getName();
     }
