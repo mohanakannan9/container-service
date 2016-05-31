@@ -2,6 +2,7 @@ package org.nrg.actions.config;
 
 
 import org.hibernate.SessionFactory;
+import org.mockito.Mockito;
 import org.nrg.actions.daos.ActionDao;
 import org.nrg.actions.daos.CommandDao;
 import org.nrg.actions.model.*;
@@ -11,6 +12,7 @@ import org.nrg.actions.services.ActionService;
 import org.nrg.actions.services.CommandService;
 import org.nrg.actions.services.HibernateActionService;
 import org.nrg.actions.services.HibernateCommandService;
+import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.daos.DockerImageDao;
 import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.model.DockerImageCommand;
@@ -58,6 +60,11 @@ public class ActionTestConfig {
     @Bean
     public DockerImageDao dockerImageDao() {
         return new DockerImageDao();
+    }
+
+    @Bean
+    public ContainerControlApi controlApi() {
+        return Mockito.mock(ContainerControlApi.class);
     }
 
     @Bean

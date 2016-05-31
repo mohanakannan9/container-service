@@ -1,8 +1,12 @@
 package org.nrg.actions.rest;
 
+import org.nrg.actions.model.ActionContextExecution;
 import org.nrg.actions.model.ActionContextExecutionDto;
 import org.nrg.actions.model.Context;
 import org.nrg.actions.services.AceService;
+import org.nrg.containers.exceptions.DockerServerException;
+import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
@@ -18,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
+import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 @XapiRestController
 @RequestMapping("/aces")
@@ -35,12 +40,11 @@ public class AceRestApi {
         return aceService.resolveAces(Context.fromMap(allRequestParams));
     }
 
-//    @RequestMapping(value = {}, method = POST, produces = TEXT)
-//    public ResponseEntity<String> executeAce(final @RequestParam Map<String,String> allRequestParams) {
-//
-//        final Action created = actionService.createFromDto(actionDto);
-//        return new ResponseEntity<>(String.valueOf(created.getId()), HttpStatus.CREATED);
-//    }
+    @RequestMapping(value = {}, method = POST, produces = TEXT)
+    public ActionContextExecution executeAce(final @RequestParam ActionContextExecutionDto aceDto)
+            throws NoServerPrefException, ElementNotFoundException, NotFoundException, DockerServerException {
+        return aceService.executeAce(aceDto);
+    }
 //
 //    @RequestMapping(value = {"/{id}"}, method = GET, produces = JSON)
 //    public Action retrieveAction(final @PathVariable Long id) {
@@ -64,5 +68,17 @@ public class AceRestApi {
     @ExceptionHandler(value = {XFTInitException.class})
     public String internalServerError(final Exception e) {
         return "There was an error:\n" + e.getMessage();
+    }
+
+    @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
+    @ExceptionHandler(value = {DockerServerException.class})
+    public String handleDockerServerError(final Exception e) {
+        return "The Docker server returned an error:\n" + e.getMessage();
+    }
+
+    @ResponseStatus(value = HttpStatus.FAILED_DEPENDENCY)
+    @ExceptionHandler(value = {NoServerPrefException.class})
+    public String handleFailedDependency() {
+        return "Set up Docker server before using this REST endpoint.";
     }
 }

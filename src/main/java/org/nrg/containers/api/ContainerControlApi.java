@@ -1,5 +1,6 @@
 package org.nrg.containers.api;
 
+import org.nrg.actions.model.ResolvedCommand;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
@@ -43,14 +44,16 @@ public interface ContainerControlApi {
 
     String getContainerStatus(final String id) throws NotFoundException, NoServerPrefException, DockerServerException;
 
-    String launchImage(final String imageName, final List<String> runCommand, final List <String> volumes) throws NoServerPrefException;
+    String launchImage(final ResolvedCommand command) throws NoServerPrefException, DockerServerException;
+
+    String launchImage(final String imageName, final List<String> runCommand, final List <String> volumes) throws NoServerPrefException, DockerServerException;
 
     String launchImage(final DockerServer server, final String imageName,
-                       final List<String> runCommand, final List <String> volumes);
+                       final List<String> runCommand, final List <String> volumes) throws DockerServerException;
 
     String launchImage(final DockerServer server, final String imageName,
                        final List<String> runCommand, final List <String> volumes,
-                       final List<String> environmentVariables);
+                       final List<String> environmentVariables) throws DockerServerException;
 
     String getContainerLogs(String id) throws NoServerPrefException, DockerServerException;
 

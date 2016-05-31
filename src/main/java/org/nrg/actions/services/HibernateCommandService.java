@@ -10,10 +10,14 @@ import org.nrg.actions.model.CommandVariable;
 import org.nrg.actions.model.ResolvedCommand;
 import org.nrg.actions.model.ScriptCommand;
 import org.nrg.actions.model.ScriptEnvironment;
+import org.nrg.containers.api.ContainerControlApi;
+import org.nrg.containers.exceptions.DockerServerException;
+import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.model.DockerImageCommand;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -24,6 +28,9 @@ import java.util.regex.Pattern;
 @Service
 public class HibernateCommandService extends AbstractHibernateEntityService<Command, CommandDao>
         implements CommandService {
+    @Autowired
+    private ContainerControlApi controlApi;
+
     @Override
     public ResolvedCommand resolveCommand(final Long id,
                                           final Map<String, String> variableRuntimeValues) throws NotFoundException {
@@ -89,6 +96,12 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         // TODO What else do I need to do to resolve the command?
 
         return resolvedCommand;
+    }
+
+    @Override
+    public String launchCommand(final ResolvedCommand resolvedCommand)
+            throws NoServerPrefException, DockerServerException {
+        return controlApi.launchImage(resolvedCommand);
     }
 
     @VisibleForTesting

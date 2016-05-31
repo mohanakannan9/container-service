@@ -1,6 +1,7 @@
 package org.nrg.actions.config;
 
 import org.hibernate.SessionFactory;
+import org.mockito.Mockito;
 import org.nrg.actions.daos.CommandDao;
 import org.nrg.actions.daos.ScriptEnvironmentDao;
 import org.nrg.actions.model.Command;
@@ -15,6 +16,7 @@ import org.nrg.actions.model.ScriptCommand;
 import org.nrg.automation.repositories.ScriptRepository;
 import org.nrg.automation.services.ScriptService;
 import org.nrg.automation.services.impl.hibernate.HibernateScriptService;
+import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.config.ContainersHibernateEntityTestConfig;
 import org.nrg.containers.daos.DockerImageDao;
 import org.nrg.containers.model.DockerImageCommand;
@@ -74,6 +76,11 @@ public class CommandTestConfig {
     @Bean
     public CommandDao commandDao() {
         return new CommandDao();
+    }
+
+    @Bean
+    public ContainerControlApi controlApi() {
+        return Mockito.mock(ContainerControlApi.class);
     }
 
     @Bean

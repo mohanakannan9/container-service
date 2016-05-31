@@ -16,6 +16,7 @@ import org.nrg.actions.model.ItemQueryCacheKey;
 import org.nrg.actions.model.ResolvedCommand;
 import org.nrg.actions.model.matcher.Matcher;
 import org.nrg.containers.api.ContainerControlApi;
+import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.DockerServer;
@@ -126,8 +127,8 @@ public class HibernateAceService
         }
     }
 
-    public ActionContextExecution launchAce(final ActionContextExecutionDto aceDto)
-            throws NotFoundException, NoServerPrefException, ElementNotFoundException {
+    public ActionContextExecution executeAce(final ActionContextExecutionDto aceDto)
+            throws NotFoundException, NoServerPrefException, ElementNotFoundException, DockerServerException {
         final ActionContextExecution ace = aceFromDto(aceDto);
         final ResolvedCommand resolvedCommand = ace.getResolvedCommand();
 
@@ -188,25 +189,10 @@ public class HibernateAceService
 
         // TODO If it's a script command, need to prepend the script environment's "run" to the command's "run"
 
-        // Prepare for launch
-        final String dockerImageId = resolvedCommand.getDockerImage().getImageId();
-        final List<String> runCommand = Lists.newArrayList(resolvedCommand.getRun());
-        final List<String> bindMounts = Lists.newArrayList();
-        for (final CommandMount mount : resolvedCommand.getMountsIn()) {
-            bindMounts.add(mount.getPath());
-        }
-        for (final CommandMount mount : resolvedCommand.getMountsOut()) {
-            bindMounts.add(mount.getPath());
-        }
-        final List<String> environmentVariables = Lists.newArrayList();
-        for (final Map.Entry<String, String> env : resolvedCommand.getEnvironmentVariables().entrySet()) {
-            environmentVariables.add(StringUtils.join(env.getKey(), env.getValue(), "="));
-        }
-
         // Save the ace before launching
         final ActionContextExecution created = create(ace);
 
-        final String containerId = containerControlApi.launchImage(dockerServer, dockerImageId, runCommand, bindMounts, environmentVariables);
+        final String containerId = commandService.launchCommand(resolvedCommand);
 
         // Add the container ID after launching
         created.setContainerId(containerId);

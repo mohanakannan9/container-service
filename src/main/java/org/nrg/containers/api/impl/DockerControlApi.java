@@ -17,6 +17,8 @@ import com.spotify.docker.client.messages.ContainerInfo;
 import com.spotify.docker.client.messages.HostConfig;
 import com.spotify.docker.client.messages.Image;
 import org.apache.commons.lang.StringUtils;
+import org.nrg.actions.model.CommandMount;
+import org.nrg.actions.model.ResolvedCommand;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
@@ -300,6 +302,31 @@ public class DockerControlApi implements ContainerControlApi {
     /**
      * Launch image on Docker server
      *
+     * @param command A ResolvedCommand. All templates are resolved, all mount paths exist.
+     * @return ID of created Container
+     **/
+    @Override
+    public String launchImage(final ResolvedCommand command)
+            throws NoServerPrefException, DockerServerException {
+        final String dockerImageId = command.getDockerImage().getImageId();
+        final List<String> runCommand = Lists.newArrayList(command.getRun());
+        final List<String> bindMounts = Lists.newArrayList();
+        for (final CommandMount mount : command.getMountsIn()) {
+            bindMounts.add(mount.getPath());
+        }
+        for (final CommandMount mount : command.getMountsOut()) {
+            bindMounts.add(mount.getPath());
+        }
+        final List<String> environmentVariables = Lists.newArrayList();
+        for (final Map.Entry<String, String> env : command.getEnvironmentVariables().entrySet()) {
+            environmentVariables.add(org.apache.commons.lang3.StringUtils.join(env.getKey(), env.getValue(), "="));
+        }
+        return launchImage(getServer(), dockerImageId, runCommand, bindMounts, environmentVariables);
+    }
+
+    /**
+     * Launch image on Docker server
+     *
      * @param imageName name of image to launch
      * @param runCommand Command string to execute
      * @param volumes Volume mounts, in the form "/path/on/server:/path/in/container"
@@ -307,7 +334,7 @@ public class DockerControlApi implements ContainerControlApi {
      **/
     @Override
     public String launchImage(final String imageName, final List<String> runCommand, final List<String> volumes)
-        throws NoServerPrefException {
+            throws NoServerPrefException, DockerServerException {
         return launchImage(getServer(), imageName, runCommand, volumes);
     }
 
@@ -324,7 +351,7 @@ public class DockerControlApi implements ContainerControlApi {
     public String launchImage(final DockerServer server,
                               final String imageName,
                               final List<String> runCommand,
-                              final List<String> volumes) {
+                              final List<String> volumes) throws DockerServerException {
         return launchImage(server, imageName, runCommand, volumes, null);
     }
     /**
@@ -341,7 +368,7 @@ public class DockerControlApi implements ContainerControlApi {
                               final String imageName,
                               final List<String> runCommand,
                               final List<String> volumes,
-                              final List<String> environmentVariables) {
+                              final List<String> environmentVariables) throws DockerServerException {
 
          final HostConfig hostConfig =
                 HostConfig.builder()
@@ -384,9 +411,8 @@ public class DockerControlApi implements ContainerControlApi {
             return container.id();
         } catch (DockerException | InterruptedException e) {
             _log.error(e.getMessage());
+            throw new DockerServerException("Could not start container from image " + imageName, e);
         }
-
-        return "";
     }
 
     @Override
