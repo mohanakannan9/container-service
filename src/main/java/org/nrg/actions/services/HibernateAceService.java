@@ -3,8 +3,10 @@ package org.nrg.actions.services;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.actions.daos.AceDao;
 import org.nrg.actions.model.Action;
 import org.nrg.actions.model.ActionContextExecution;
+import org.nrg.actions.model.ActionContextExecutionDto;
 import org.nrg.actions.model.ActionInput;
 import org.nrg.actions.model.ActionResource;
 import org.nrg.actions.model.Context;
@@ -12,6 +14,7 @@ import org.nrg.actions.model.ItemQueryCacheKey;
 import org.nrg.actions.model.ResolvedCommand;
 import org.nrg.actions.model.matcher.Matcher;
 import org.nrg.containers.exceptions.NotFoundException;
+import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.model.XnatImagescandataI;
@@ -31,8 +34,10 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-public class AceServiceImpl implements AceService {
-    private static Logger logger = LoggerFactory.getLogger(AceServiceImpl.class);
+public class HibernateAceService
+        extends AbstractHibernateEntityService<ActionContextExecution, AceDao>
+        implements AceService {
+    private static Logger logger = LoggerFactory.getLogger(HibernateAceService.class);
 
     @Autowired
     private ActionService actionService;
@@ -40,7 +45,7 @@ public class AceServiceImpl implements AceService {
     @Autowired
     private CommandService commandService;
 
-    public List<ActionContextExecution> resolveAces(final Context context) throws XFTInitException {
+    public List<ActionContextExecutionDto> resolveAces(final Context context) throws XFTInitException {
         final String xsiType = context.get("xsiType");
         final String id = context.get("id");
 
@@ -90,33 +95,35 @@ public class AceServiceImpl implements AceService {
                 return null;
             }
 
-            final List<ActionContextExecution> resolvedAces = Lists.newArrayList();
+            final List<ActionContextExecutionDto> resolvedAces = Lists.newArrayList();
             final Map<ItemQueryCacheKey, String> cache = Maps.newHashMap();
             for (final Action candidate : actionCandidates) {
-                final ActionContextExecution ace = resolve(candidate, item, context, cache);
+                final ActionContextExecutionDto ace = resolve(candidate, item, context, cache);
                 if (ace != null) {
                     resolvedAces.add(ace);
                 }
             }
+            return resolvedAces;
         }
-        return null;
     }
 
-    public String launchAce(final ActionContextExecution ace) throws NotFoundException {
-        if (ace == null) return null;
+    public ActionContextExecution launchAce(final ActionContextExecutionDto aceDto) throws NotFoundException {
+        if (aceDto == null) return null;
 
         // TODO Check that all required inputs have values
-        if (ace.getInputs() != null && !ace.getInputs().isEmpty()) {
-            for (final ActionInput input : ace.getInputs()) {
+        final Map<String, String> aceInputValues = Maps.newHashMap();
+        if (aceDto.getInputs() != null && !aceDto.getInputs().isEmpty()) {
+            for (final ActionInput input : aceDto.getInputs()) {
                 if (input.isRequired() && StringUtils.isBlank(input.getValue())) {
                     // TODO throw an error. Required input cannot be blank.
                 }
+                aceInputValues.put(input.getCommandVariableName(), input.getValue());
             }
         }
 
         // TODO Check that all staged resources have ids
-        if (ace.getResourcesStaged() != null && !ace.getResourcesStaged().isEmpty()) {
-            for (final ActionResource resource : ace.getResourcesStaged()) {
+        if (aceDto.getResourcesStaged() != null && !aceDto.getResourcesStaged().isEmpty()) {
+            for (final ActionResource resource : aceDto.getResourcesStaged()) {
                 if (resource.getResourceId() == null || resource.getResourceId().equals(0)) {
                     // TODO throw an error. All staged resources need ids. (This should have happened during resolveAce())
                 }
@@ -124,8 +131,8 @@ public class AceServiceImpl implements AceService {
         }
 
         // TODO Check that, if created resources have ids, they are overwritable
-        if (ace.getResourcesCreated() != null && !ace.getResourcesCreated().isEmpty()) {
-            for (final ActionResource resource : ace.getResourcesCreated()) {
+        if (aceDto.getResourcesCreated() != null && !aceDto.getResourcesCreated().isEmpty()) {
+            for (final ActionResource resource : aceDto.getResourcesCreated()) {
                 if (!resource.getOverwrite() &&
                         !(resource.getResourceId() == null || resource.getResourceId().equals(0))) {
                     // TODO throw an error. If a "created" resource already exists, we need to be able to overwrite it.
@@ -133,7 +140,10 @@ public class AceServiceImpl implements AceService {
             }
         }
 
-        final ResolvedCommand resolvedCommand = commandService.resolveCommand(ace);
+        final ResolvedCommand resolvedCommand =
+                commandService.resolveCommand(aceDto.getCommandId(), aceInputValues);
+
+        final ActionContextExecution ace = new ActionContextExecution(aceDto, resolvedCommand);
 
         // TODO Use Transporter to stage staged resources
         // TODO Use Transporter to create writable space for created resources
@@ -141,7 +151,7 @@ public class AceServiceImpl implements AceService {
         return null;
     }
 
-    private ActionContextExecution resolve(final Action action,
+    private ActionContextExecutionDto resolve(final Action action,
                                            final XFTItem item,
                                            final Context context,
                                            final Map<ItemQueryCacheKey, String> cache)
@@ -151,7 +161,7 @@ public class AceServiceImpl implements AceService {
             return null;
         }
 
-        final ActionContextExecution ace = new ActionContextExecution(action);
+        final ActionContextExecutionDto ace = new ActionContextExecutionDto(action);
 
         // Find values for any inputs that we can.
         if (ace.getInputs() != null) {

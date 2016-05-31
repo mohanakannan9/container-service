@@ -70,7 +70,7 @@ public class AceTest {
     }
 
     @Test
-    public void testDeserializeAce() throws Exception {
+    public void testDeserializeAceDto() throws Exception {
 
         final ActionInput input = mapper.readValue(ACTION_INPUT_JSON, ActionInput.class);
         final ActionResource created =
@@ -78,8 +78,8 @@ public class AceTest {
         final ActionResource staged =
                 mapper.readValue(ACE_RESOURCE_STAGED_JSON, ActionResource.class);
 
-        final ActionContextExecution ace =
-                mapper.readValue(ACE_JSON, ActionContextExecution.class);
+        final ActionContextExecutionDto ace =
+                mapper.readValue(ACE_JSON, ActionContextExecutionDto.class);
 
         assertEquals("an_ace", ace.getName());
         assertEquals("Aces!", ace.getDescription());

@@ -10,16 +10,15 @@ import org.nrg.containers.model.DockerImage;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.ElementCollection;
+import javax.persistence.Embeddable;
 import javax.persistence.Entity;
 import javax.persistence.Transient;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-@Entity
-@Audited
-@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
-public class ResolvedCommand extends AbstractHibernateEntity {
+@Embeddable
+public class ResolvedCommand {
 
     private Command command;
     @JsonProperty("run") private String run;
@@ -58,6 +57,7 @@ public class ResolvedCommand extends AbstractHibernateEntity {
         this.dockerImage = dockerImage;
     }
 
+    @ElementCollection
     public Map<String, String> getEnvironmentVariables() {
         return environmentVariables;
     }
@@ -105,7 +105,7 @@ public class ResolvedCommand extends AbstractHibernateEntity {
 
     @Override
     public String toString() {
-        return addParentPropertiesToString(MoreObjects.toStringHelper(this))
+        return MoreObjects.toStringHelper(this)
                 .add("command", command)
                 .add("run", run)
                 .add("dockerImage", dockerImage)

@@ -1,8 +1,6 @@
 package org.nrg.actions.rest;
 
-import org.nrg.actions.model.Action;
-import org.nrg.actions.model.ActionContextExecution;
-import org.nrg.actions.model.ActionDto;
+import org.nrg.actions.model.ActionContextExecutionDto;
 import org.nrg.actions.model.Context;
 import org.nrg.actions.services.AceService;
 import org.nrg.framework.annotations.XapiRestController;
@@ -10,10 +8,7 @@ import org.nrg.xft.exception.XFTInitException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -21,9 +16,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import java.util.List;
 import java.util.Map;
 
-import static org.springframework.web.bind.annotation.RequestMethod.DELETE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
-import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 @XapiRestController
 @RequestMapping("/aces")
@@ -36,7 +29,7 @@ public class AceRestApi {
     private AceService aceService;
 
     @RequestMapping(value = {}, method = GET, produces = JSON)
-    public List<ActionContextExecution> getAces(final @RequestParam Map<String,String> allRequestParams)
+    public List<ActionContextExecutionDto> getAces(final @RequestParam Map<String,String> allRequestParams)
             throws XFTInitException {
         return aceService.resolveAces(Context.fromMap(allRequestParams));
     }
