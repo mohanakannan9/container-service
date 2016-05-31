@@ -75,8 +75,7 @@ public class DefaultContainerService implements ContainerService {
 //    }
 
     @Override
-    public List<Container> getContainers(final Map<String, List<String>> params) throws NoServerPrefException, DockerServerException {
-        // TODO do stuff with queryParams
+    public List<Container> getContainers() throws NoServerPrefException, DockerServerException {
         return controlApi.getAllContainers();
     }
 

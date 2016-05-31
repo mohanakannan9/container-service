@@ -26,7 +26,7 @@ public interface ContainerService {
 //
 //    String deleteImageByName(String name, Boolean onServer) throws NoServerPrefException, NotFoundException, DockerServerException;
 
-    List<Container> getContainers(Map<String, List<String>> queryParams) throws NoServerPrefException, DockerServerException;
+    List<Container> getContainers() throws NoServerPrefException, DockerServerException;
 
     String getContainerStatus(String id) throws NoServerPrefException, NotFoundException, DockerServerException;
 
