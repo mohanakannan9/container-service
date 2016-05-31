@@ -12,6 +12,7 @@ public class ActionContextExecutionDto {
     private String description;
     @JsonProperty("action-id") private Long actionId;
     @JsonProperty("command-id") private Long commandId;
+    @JsonProperty("project") private String project;
     @JsonProperty("root-id") private String rootId;
     private List<ActionInput> inputs;
     @JsonProperty("resources-staged") private List<ActionResource> resourcesStaged;
@@ -118,15 +119,24 @@ public class ActionContextExecutionDto {
         this.resourcesCreated.add(created);
     }
 
+    public String getProject() {
+        return project;
+    }
+
+    public void setProject(final String project) {
+        this.project = project;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final ActionContextExecutionDto that = (ActionContextExecutionDto) o;
-        return Objects.equals(this.actionId, that.actionId) &&
-                Objects.equals(this.name, that.name) &&
+        return Objects.equals(this.name, that.name) &&
                 Objects.equals(this.description, that.description) &&
+                Objects.equals(this.actionId, that.actionId) &&
                 Objects.equals(this.commandId, that.commandId) &&
+                Objects.equals(this.project, that.project) &&
                 Objects.equals(this.rootId, that.rootId) &&
                 Objects.equals(this.inputs, that.inputs) &&
                 Objects.equals(this.resourcesStaged, that.resourcesStaged) &&
@@ -135,7 +145,7 @@ public class ActionContextExecutionDto {
 
     @Override
     public int hashCode() {
-        return Objects.hash(actionId, name, description, commandId, rootId, inputs, resourcesStaged, resourcesCreated);
+        return Objects.hash(name, description, actionId, commandId, project, rootId, inputs, resourcesStaged, resourcesCreated);
     }
 
     @Override
@@ -145,10 +155,11 @@ public class ActionContextExecutionDto {
                 .add("description", description)
                 .add("actionId", actionId)
                 .add("commandId", commandId)
+                .add("project", project)
                 .add("rootId", rootId)
                 .add("inputs", inputs)
-                .add("staged", resourcesStaged)
-                .add("created", resourcesCreated)
+                .add("resourcesStaged", resourcesStaged)
+                .add("resourcesCreated", resourcesCreated)
                 .toString();
     }
 }

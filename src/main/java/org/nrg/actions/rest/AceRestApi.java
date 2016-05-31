@@ -4,6 +4,7 @@ import org.nrg.actions.model.ActionContextExecutionDto;
 import org.nrg.actions.model.Context;
 import org.nrg.actions.services.AceService;
 import org.nrg.framework.annotations.XapiRestController;
+import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -30,7 +31,7 @@ public class AceRestApi {
 
     @RequestMapping(value = {}, method = GET, produces = JSON)
     public List<ActionContextExecutionDto> getAces(final @RequestParam Map<String,String> allRequestParams)
-            throws XFTInitException {
+            throws XFTInitException, ElementNotFoundException {
         return aceService.resolveAces(Context.fromMap(allRequestParams));
     }
 

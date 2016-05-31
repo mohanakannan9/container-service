@@ -48,6 +48,10 @@ public interface ContainerControlApi {
     String launchImage(final DockerServer server, final String imageName,
                        final List<String> runCommand, final List <String> volumes);
 
+    String launchImage(final DockerServer server, final String imageName,
+                       final List<String> runCommand, final List <String> volumes,
+                       final List<String> environmentVariables);
+
     String getContainerLogs(String id) throws NoServerPrefException, DockerServerException;
 
     void deleteImageByName(String name) throws NoServerPrefException, DockerServerException;

@@ -13,11 +13,13 @@ public class ActionContextExecution extends AbstractHibernateEntity {
     private String name;
     private String description;
     @JsonProperty("action-id") private Long actionId;
+    @JsonProperty("project") private String project;
     @JsonProperty("root-id") private String rootId;
     private List<ActionInput> inputs;
     @JsonProperty("resources-staged") private List<ActionResource> resourcesStaged;
     @JsonProperty("resources-created") private List<ActionResource> resourcesCreated;
     @JsonProperty("resolved-command") private ResolvedCommand resolvedCommand;
+    @JsonProperty("container-id") private String containerId;
 
     public ActionContextExecution() {}
 
@@ -101,36 +103,58 @@ public class ActionContextExecution extends AbstractHibernateEntity {
         this.resolvedCommand = resolvedCommand;
     }
 
+    public String getProject() {
+        return project;
+    }
+
+    public void setProject(final String project) {
+        this.project = project;
+    }
+
+    public String getContainerId() {
+        return containerId;
+    }
+
+    public void setContainerId(final String containerId) {
+        this.containerId = containerId;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
         final ActionContextExecution that = (ActionContextExecution) o;
-        return Objects.equals(this.actionId, that.actionId) &&
-                Objects.equals(this.name, that.name) &&
+        return Objects.equals(this.name, that.name) &&
                 Objects.equals(this.description, that.description) &&
+                Objects.equals(this.actionId, that.actionId) &&
+                Objects.equals(this.project, that.project) &&
                 Objects.equals(this.rootId, that.rootId) &&
                 Objects.equals(this.inputs, that.inputs) &&
                 Objects.equals(this.resourcesStaged, that.resourcesStaged) &&
-                Objects.equals(this.resourcesCreated, that.resourcesCreated);
+                Objects.equals(this.resourcesCreated, that.resourcesCreated) &&
+                Objects.equals(this.resolvedCommand, that.resolvedCommand) &&
+                Objects.equals(this.containerId, that.containerId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(actionId, name, description, rootId, inputs, resourcesStaged, resourcesCreated, resolvedCommand);
+        return Objects.hash(super.hashCode(), name, description, actionId, project, rootId, inputs, resourcesStaged, resourcesCreated, resolvedCommand, containerId);
     }
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this)
+        return addParentPropertiesToString(MoreObjects.toStringHelper(this))
                 .add("name", name)
                 .add("description", description)
                 .add("actionId", actionId)
+                .add("project", project)
                 .add("rootId", rootId)
                 .add("inputs", inputs)
                 .add("resourcesStaged", resourcesStaged)
                 .add("resourcesCreated", resourcesCreated)
                 .add("resolvedCommand", resolvedCommand)
+                .add("containerId", containerId)
                 .toString();
     }
 }

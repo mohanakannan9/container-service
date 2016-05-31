@@ -325,6 +325,23 @@ public class DockerControlApi implements ContainerControlApi {
                               final String imageName,
                               final List<String> runCommand,
                               final List<String> volumes) {
+        return launchImage(server, imageName, runCommand, volumes, null);
+    }
+    /**
+     * Launch image on Docker server
+     *
+     * @param server DockerServer on which to launch
+     * @param imageName name of image to launch
+     * @param runCommand Command string list to execute
+     * @param volumes Volume mounts, in the form "/path/on/server:/path/in/container"
+     * @return ID of created Container
+     **/
+    @Override
+    public String launchImage(final DockerServer server,
+                              final String imageName,
+                              final List<String> runCommand,
+                              final List<String> volumes,
+                              final List<String> environmentVariables) {
 
          final HostConfig hostConfig =
                 HostConfig.builder()
@@ -332,20 +349,22 @@ public class DockerControlApi implements ContainerControlApi {
                 .build();
         final ContainerConfig containerConfig =
                 ContainerConfig.builder()
-                .hostConfig(hostConfig)
-                .image(imageName)
-                .attachStdout(true)
-                .attachStderr(true)
-                .cmd(runCommand)
-                .build();
+                        .hostConfig(hostConfig)
+                        .image(imageName)
+                        .attachStdout(true)
+                        .attachStderr(true)
+                        .cmd(runCommand)
+                        .env(environmentVariables)
+                        .build();
 
         if (_log.isDebugEnabled()) {
             final String message = String.format(
-                    "Starting container: server %s, image %s, command \"%s\", volumes [%s]",
+                    "Starting container: server %s, image %s, command \"%s\", volumes [%s], environment variables %s",
                     server,
                     imageName,
                     StringUtils.join(runCommand, " "),
-                    StringUtils.join(volumes, ", ")
+                    StringUtils.join(volumes, ", "),
+                    StringUtils.join(environmentVariables, ", ")
             );
             _log.debug(message);
         }

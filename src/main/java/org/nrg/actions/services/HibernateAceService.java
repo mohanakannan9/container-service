@@ -2,6 +2,7 @@ package org.nrg.actions.services;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.actions.daos.AceDao;
 import org.nrg.actions.model.Action;
@@ -9,29 +10,38 @@ import org.nrg.actions.model.ActionContextExecution;
 import org.nrg.actions.model.ActionContextExecutionDto;
 import org.nrg.actions.model.ActionInput;
 import org.nrg.actions.model.ActionResource;
+import org.nrg.actions.model.CommandMount;
 import org.nrg.actions.model.Context;
 import org.nrg.actions.model.ItemQueryCacheKey;
 import org.nrg.actions.model.ResolvedCommand;
 import org.nrg.actions.model.matcher.Matcher;
+import org.nrg.containers.api.ContainerControlApi;
+import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
+import org.nrg.containers.model.DockerServer;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
+import org.nrg.transporter.TransportService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.om.XnatAbstractresource;
 import org.nrg.xdat.om.XnatImagesessiondata;
+import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
-import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 public class HibernateAceService
@@ -45,7 +55,13 @@ public class HibernateAceService
     @Autowired
     private CommandService commandService;
 
-    public List<ActionContextExecutionDto> resolveAces(final Context context) throws XFTInitException {
+    @Autowired
+    private TransportService transporter;
+
+    @Autowired
+    private ContainerControlApi containerControlApi;
+
+    public List<ActionContextExecutionDto> resolveAces(final Context context) throws XFTInitException, ElementNotFoundException {
         final String xsiType = context.get("xsiType");
         final String id = context.get("id");
 
@@ -66,7 +82,7 @@ public class HibernateAceService
             // We know xsiType and id are both not blank.
             // Find the item with the given xsiType and id
             XFTItem item = null;
-            final UserI user = XDAT.getUserDetails();
+            final String project;
             if (xsiType.matches("^[a-zA-Z]+:[a-zA-Z]+ScanData$")) {
                 // If we are looking for a scan, assume the id is formatted "sessionid.scanid"
                 final String[] splitId = id.split(".");
@@ -77,7 +93,8 @@ public class HibernateAceService
                 final String sessionId = splitId[0];
                 final String scanId = splitId[1];
                 final XnatImagesessiondata session =
-                        XnatImagesessiondata.getXnatImagesessiondatasById(sessionId, user, false);
+                        XnatImagesessiondata.getXnatImagesessiondatasById(sessionId, XDAT.getUserDetails(), false);
+                project = session.getProject();
                 for (final XnatImagescandataI scan : session.getScans_scan()) {
                     if (scan.getId().equals(scanId)) {
                         item = (XFTItem) scan;
@@ -100,6 +117,8 @@ public class HibernateAceService
             for (final Action candidate : actionCandidates) {
                 final ActionContextExecutionDto ace = resolve(candidate, item, context, cache);
                 if (ace != null) {
+                    ace.setRootId(id);
+                    ace.setProject(project);
                     resolvedAces.add(ace);
                 }
             }
@@ -107,7 +126,95 @@ public class HibernateAceService
         }
     }
 
-    public ActionContextExecution launchAce(final ActionContextExecutionDto aceDto) throws NotFoundException {
+    public ActionContextExecution launchAce(final ActionContextExecutionDto aceDto)
+            throws NotFoundException, NoServerPrefException, ElementNotFoundException {
+        final ActionContextExecution ace = aceFromDto(aceDto);
+        final ResolvedCommand resolvedCommand = ace.getResolvedCommand();
+
+        final DockerServer dockerServer = containerControlApi.getServer();
+
+        // TODO Use Transporter to stage staged resources
+        if (ace.getResourcesStaged() != null && resolvedCommand.getMountsIn() != null) {
+            final List<ActionResource> staged = ace.getResourcesStaged();
+            final List<CommandMount> mountsIn = resolvedCommand.getMountsIn();
+
+            final XnatProjectdata project = XnatProjectdata.getProjectByIDorAlias(ace.getProject(), XDAT.getUserDetails(), false);
+            final String rootPath = project.getArchiveRootPath();
+
+            final Set<Path> resourcePathsToTransport = Sets.newHashSet();
+            final Map<Path, CommandMount> localPathToMount = Maps.newHashMap();
+            for (final ActionResource resourceToStage : staged) {
+                final XnatAbstractresource resource =
+                        XnatAbstractresource.getXnatAbstractresourcesByXnatAbstractresourceId(resourceToStage.getResourceId(),
+                                XDAT.getUserDetails(), false);
+                if (!resource.getItem().instanceOf("xnat:resourceCatalog")) {
+                    continue;
+                }
+                final XnatResourcecatalog catResource = (XnatResourcecatalog) resource;
+                final Path localPath = Paths.get(catResource.getFullPath(rootPath));
+                resourcePathsToTransport.add(localPath);
+                for (final CommandMount mountIn : mountsIn) {
+                    if (resourceToStage.getMountName().equals(mountIn.getName())) {
+                        localPathToMount.put(localPath, mountIn);
+                    }
+                }
+            }
+            final Map<Path, Path> localPathToTransportedPath =
+                    transporter.transport(dockerServer.getHost(),
+                            resourcePathsToTransport.toArray(new Path[resourcePathsToTransport.size()]));
+
+            for (final Path localPath : localPathToMount.keySet()) {
+                final CommandMount mountIn = localPathToMount.get(localPath);
+                final Path transportedResourcePath = localPathToTransportedPath.get(localPath);
+
+                final String remotePath = mountIn.getPath();
+                mountIn.setPath(transportedResourcePath + ":" + remotePath + ":ro");
+            }
+        }
+        // TODO If it's a script command, need to write out the script and transport it
+
+        // TODO Use Transporter to create writable space for output mounts
+        if (resolvedCommand.getMountsOut() != null) {
+            final List<CommandMount> mountsOut = resolvedCommand.getMountsOut();
+            final List<Path> buildPaths = transporter.getWritableDirectories(dockerServer.getHost(), mountsOut.size());
+            for (int i=0; i<mountsOut.size(); i++) {
+                final CommandMount mountOut = mountsOut.get(i);
+                final Path buildPath = buildPaths.get(i);
+
+                final String remotePath = mountOut.getPath();
+                mountOut.setPath(buildPath + ":" + remotePath);
+            }
+        }
+
+        // TODO If it's a script command, need to prepend the script environment's "run" to the command's "run"
+
+        // Prepare for launch
+        final String dockerImageId = resolvedCommand.getDockerImage().getImageId();
+        final List<String> runCommand = Lists.newArrayList(resolvedCommand.getRun());
+        final List<String> bindMounts = Lists.newArrayList();
+        for (final CommandMount mount : resolvedCommand.getMountsIn()) {
+            bindMounts.add(mount.getPath());
+        }
+        for (final CommandMount mount : resolvedCommand.getMountsOut()) {
+            bindMounts.add(mount.getPath());
+        }
+        final List<String> environmentVariables = Lists.newArrayList();
+        for (final Map.Entry<String, String> env : resolvedCommand.getEnvironmentVariables().entrySet()) {
+            environmentVariables.add(StringUtils.join(env.getKey(), env.getValue(), "="));
+        }
+
+        // Save the ace before launching
+        final ActionContextExecution created = create(ace);
+
+        final String containerId = containerControlApi.launchImage(dockerServer, dockerImageId, runCommand, bindMounts, environmentVariables);
+
+        // Add the container ID after launching
+        created.setContainerId(containerId);
+        update(created);
+        return created;
+    }
+
+    public ActionContextExecution aceFromDto(final ActionContextExecutionDto aceDto) throws NotFoundException {
         if (aceDto == null) return null;
 
         // TODO Check that all required inputs have values
@@ -143,19 +250,14 @@ public class HibernateAceService
         final ResolvedCommand resolvedCommand =
                 commandService.resolveCommand(aceDto.getCommandId(), aceInputValues);
 
-        final ActionContextExecution ace = new ActionContextExecution(aceDto, resolvedCommand);
-
-        // TODO Use Transporter to stage staged resources
-        // TODO Use Transporter to create writable space for created resources
-
-        return null;
+        return new ActionContextExecution(aceDto, resolvedCommand);
     }
 
     private ActionContextExecutionDto resolve(final Action action,
                                            final XFTItem item,
                                            final Context context,
                                            final Map<ItemQueryCacheKey, String> cache)
-            throws XFTInitException {
+            throws XFTInitException, ElementNotFoundException {
 
         if (!doesItemMatchMatchers(item, action.getRoot().getMatchers(), cache)) {
             return null;
@@ -189,14 +291,18 @@ public class HibernateAceService
 
 
         // Get all the item's resources, and figure out which ones the ACE needs.
-        List<XnatAbstractresource> resources = null;
+        List<XnatAbstractresource> resources = Lists.newArrayList();
         try {
             // Stolen from XnatImagescandata.getFile()
-            resources = BaseElement.WrapItems(item.getChildItems("File"));
+            for (final XnatAbstractresource resource : (List<XnatAbstractresource>)BaseElement.WrapItems(item.getChildItems("File"))) {
+                if (resource.getItem().instanceOf("xnat:resourceCatalog")) {
+                    resources.add(resource);
+                }
+            }
         } catch (ElementNotFoundException | FieldNotFoundException e) {
             // No problem, necessarily. Item just has no resources
         }
-        if (resources == null || resources.isEmpty()) {
+        if (resources.isEmpty()) {
             if (ace.getResourcesStaged() != null && !ace.getResourcesStaged().isEmpty()) {
                 // Now there is a problem. item has no resources, but we need some staged.
                 return null;
