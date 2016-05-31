@@ -4,9 +4,11 @@ import org.hibernate.Criteria;
 import org.hibernate.criterion.Restrictions;
 import org.nrg.actions.model.Action;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+@Repository
 public class ActionDao extends AbstractHibernateDAO<Action> {
 
     /**
