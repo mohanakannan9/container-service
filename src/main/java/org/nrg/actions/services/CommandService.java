@@ -10,8 +10,14 @@ import org.nrg.framework.orm.hibernate.BaseHibernateService;
 import java.util.Map;
 
 public interface CommandService extends BaseHibernateService<Command> {
-    ResolvedCommand resolveCommand(final Long id,
+    ResolvedCommand resolveCommand(final Long commandId) throws NotFoundException;
+    ResolvedCommand resolveCommand(final Long commandId,
                                    final Map<String, String> variableRuntimeValues)
             throws NotFoundException;
+    ResolvedCommand resolveCommand(final Command command) throws NotFoundException;
+    ResolvedCommand resolveCommand(final Command command,
+                                   final Map<String, String> variableRuntimeValues)
+            throws NotFoundException;
+
     String launchCommand(final ResolvedCommand resolvedCommand) throws NoServerPrefException, DockerServerException;
 }

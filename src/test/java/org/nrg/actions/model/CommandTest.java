@@ -8,6 +8,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.actions.config.CommandTestConfig;
 import org.nrg.actions.services.CommandService;
+import org.nrg.actions.services.HibernateCommandService;
 import org.nrg.actions.services.ScriptEnvironmentService;
 import org.nrg.automation.entities.Script;
 import org.nrg.automation.services.ScriptService;
@@ -60,12 +61,13 @@ public class CommandTest {
             "{\"name\":\"my_cool_input\", \"description\":\"A boolean value\", " +
                     "\"type\":\"boolean\", \"required\":true," +
                     "\"true-value\":\"-b\", \"false-value\":\"\"}";
-    private static final String VARIABLE_1_JSON =
-            "{\"name\":\"my_uncool_input\", \"description\":\"No one loves me :(\", " +
-                    "\"type\":\"string\", \"required\":false," +
-                    "\"arg-template\":\"--uncool=#value#\"}";
+    private static final String FOO_VARIABLE =
+            "{\"name\":\"foo\", \"description\":\"A foo that bars\", " +
+                    "\"required\":false," +
+                    "\"value\":\"bar\"," +
+                    "\"arg-template\":\"--flag=#value#\"}";
     private static final String VARIABLE_LIST_JSON =
-            "[" + VARIABLE_0_JSON + ", " + VARIABLE_1_JSON + "]";
+            "[" + VARIABLE_0_JSON + ", " + FOO_VARIABLE + "]";
 
     private static final String MOUNT_IN = "{\"name\":\"in\", \"path\":\"/input\"}";
     private static final String MOUNT_OUT = "{\"name\":\"out\", \"path\":\"/output\"}";
@@ -75,7 +77,7 @@ public class CommandTest {
                     "\"info-url\":\"http://abc.xyz\", " +
                     "\"env\":{\"foo\":\"bar\"}, " +
                     "\"variables\":" + VARIABLE_LIST_JSON + ", " +
-                    "\"run-template\":\"foo\", " +
+                    "\"run-template\":\"cmd #foo#\", " +
                     "\"type\":\"docker-image\", " +
                     "\"docker-image\":{\"id\":%d}, " +
                     "\"mounts-in\":[" + MOUNT_IN + "]," +
@@ -89,6 +91,14 @@ public class CommandTest {
                     "\"type\":\"script\", " +
                     "\"script\":{\"id\":%d}," +
                     "\"script-environment\":{\"id\":%d}}";
+
+    private static final String RESOLVED_DOCKER_IMAGE_COMMAND_JSON_TEMPLATE =
+            "{\"command\":{\"id\":%d, \"type\":\"docker-image\"}, " +
+                    "\"docker-image\":{\"id\":%d}, " +
+                    "\"env\":{\"foo\":\"bar\"}, " +
+                    "\"run\":\"cmd --flag=bar\", " +
+                    "\"mounts-in\":[" + MOUNT_IN + "]," +
+                    "\"mounts-out\":[" + MOUNT_OUT + "]}";
 
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -114,8 +124,8 @@ public class CommandTest {
     public void testDeserializeCommandInput() throws Exception {
         final CommandVariable commandVariable0 =
                 mapper.readValue(VARIABLE_0_JSON, CommandVariable.class);
-        final CommandVariable commandVariable1 =
-                mapper.readValue(VARIABLE_1_JSON, CommandVariable.class);
+        final CommandVariable fooVariable =
+                mapper.readValue(FOO_VARIABLE, CommandVariable.class);
 
         assertEquals("my_cool_input", commandVariable0.getName());
         assertEquals("A boolean value", commandVariable0.getDescription());
@@ -124,14 +134,16 @@ public class CommandTest {
         assertEquals("-b", commandVariable0.getTrueValue());
         assertEquals("", commandVariable0.getFalseValue());
         assertNull(commandVariable0.getArgTemplate());
+        assertNull(commandVariable0.getValue());
 
-        assertEquals("my_uncool_input", commandVariable1.getName());
-        assertEquals("No one loves me :(", commandVariable1.getDescription());
-        assertEquals("string", commandVariable1.getType());
-        assertEquals(false, commandVariable1.isRequired());
-        assertNull(commandVariable1.getTrueValue());
-        assertNull(commandVariable1.getFalseValue());
-        assertEquals("--uncool=#value#", commandVariable1.getArgTemplate());
+        assertEquals("foo", fooVariable.getName());
+        assertEquals("A foo that bars", fooVariable.getDescription());
+        assertNull(fooVariable.getType());
+        assertEquals(false, fooVariable.isRequired());
+        assertNull(fooVariable.getTrueValue());
+        assertNull(fooVariable.getFalseValue());
+        assertEquals("--flag=#value#", fooVariable.getArgTemplate());
+        assertEquals("bar", fooVariable.getValue());
     }
 
     @Test
@@ -150,7 +162,7 @@ public class CommandTest {
         assertEquals("docker_image_command", command.getName());
         assertEquals("Docker Image command for the test", command.getDescription());
         assertEquals("http://abc.xyz", command.getInfoUrl());
-        assertEquals("foo", command.getRunTemplate());
+        assertEquals("cmd #foo#", command.getRunTemplate());
         assertEquals(ImmutableMap.of("foo", "bar"), command.getEnvironmentVariables());
 
         assertThat(command.getVariables(), hasSize(2));
@@ -253,5 +265,24 @@ public class CommandTest {
         assertEquals(retrievedScript, retrievedCommand.getScript());
         assertNotNull(retrievedCommand.getScriptEnvironment());
         assertEquals(retrievedScriptEnvironment, retrievedCommand.getScriptEnvironment());
+    }
+
+    @Test
+    public void testResolveCommand() throws Exception {
+        final Long dockerImageId = 0L;
+        final String dockerImageCommandJson =
+                String.format(DOCKER_IMAGE_COMMAND_JSON_TEMPLATE, dockerImageId);
+        final Command command = mapper.readValue(dockerImageCommandJson, Command.class);
+
+        final String resolvedCommandJson =
+                String.format(RESOLVED_DOCKER_IMAGE_COMMAND_JSON_TEMPLATE, command.getId(), dockerImageId);
+        final ResolvedCommand expected = mapper.readValue(resolvedCommandJson, ResolvedCommand.class);
+
+        final ResolvedCommand resolvedCommand = commandService.resolveCommand(command);
+
+        assertEquals(expected.getRun(), resolvedCommand.getRun());
+        assertEquals(expected.getEnvironmentVariables(), resolvedCommand.getEnvironmentVariables());
+        assertEquals(expected.getMountsIn(), resolvedCommand.getMountsIn());
+        assertEquals(expected.getMountsOut(), resolvedCommand.getMountsOut());
     }
 }

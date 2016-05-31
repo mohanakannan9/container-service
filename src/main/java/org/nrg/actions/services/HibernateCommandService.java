@@ -1,6 +1,5 @@
 package org.nrg.actions.services;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.nrg.actions.daos.CommandDao;
@@ -31,12 +30,33 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     @Autowired
     private ContainerControlApi controlApi;
 
+
     @Override
-    public ResolvedCommand resolveCommand(final Long id,
+    public ResolvedCommand resolveCommand(final Long commandId) throws NotFoundException {
+        return resolveCommand(commandId, Maps.<String, String>newHashMap());
+    }
+
+    @Override
+    public ResolvedCommand resolveCommand(final Long commandId,
                                           final Map<String, String> variableRuntimeValues) throws NotFoundException {
-        final Command command = retrieve(id);
+        final Command command = retrieve(commandId);
         if (command == null) {
-            throw new NotFoundException("Could not find Command with id " + id);
+            throw new NotFoundException("Could not find Command with id " + commandId);
+        }
+        return resolveCommand(command, variableRuntimeValues);
+    }
+
+    @Override
+    public ResolvedCommand resolveCommand(final Command command) throws NotFoundException {
+        return resolveCommand(command, Maps.<String, String>newHashMap());
+    }
+
+    @Override
+    public ResolvedCommand resolveCommand(final Command command,
+                                          final Map<String, String> variableRuntimeValues) throws NotFoundException {
+
+        if (variableRuntimeValues == null) {
+            return resolveCommand(command);
         }
 
         final ResolvedCommand resolvedCommand = new ResolvedCommand(command);
@@ -51,7 +71,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             dockerImage = scriptEnvironment.getDockerImage();
         } else {
             // TODO There are no other kinds of command. How did we get here?
-            throw new NotFoundException("Cannot find docker image id for command " + id);
+            throw new NotFoundException("Cannot find docker image id for command " + command.getId());
         }
         resolvedCommand.setDockerImage(dockerImage);
 
@@ -104,8 +124,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         return controlApi.launchImage(resolvedCommand);
     }
 
-    @VisibleForTesting
-    String resolveTemplate(final String template,
+    private static String resolveTemplate(final String template,
                            final Map<String, String> variableArgTemplateValues) {
         String toResolve = template;
         final Set<String> matches = Sets.newHashSet();
