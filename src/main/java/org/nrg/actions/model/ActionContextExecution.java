@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import java.util.List;
 import java.util.Objects;
@@ -71,6 +72,7 @@ public class ActionContextExecution extends AbstractHibernateEntity {
         this.rootId = rootId;
     }
 
+    @ElementCollection
     public List<ActionInput> getInputs() {
         return inputs;
     }
@@ -79,6 +81,7 @@ public class ActionContextExecution extends AbstractHibernateEntity {
         this.inputs = inputs;
     }
 
+    @ElementCollection
     public List<ActionResource> getResourcesStaged() {
         return resourcesStaged;
     }
@@ -87,6 +90,7 @@ public class ActionContextExecution extends AbstractHibernateEntity {
         this.resourcesStaged = resourcesStaged;
     }
 
+    @ElementCollection
     public List<ActionResource> getResourcesCreated() {
         return resourcesCreated;
     }

@@ -4,9 +4,9 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.nrg.actions.daos.CommandDao;
 import org.nrg.actions.model.Command;
-import org.nrg.actions.model.CommandMount;
 import org.nrg.actions.model.CommandVariable;
 import org.nrg.actions.model.ResolvedCommand;
+import org.nrg.actions.model.ResolvedCommandMount;
 import org.nrg.actions.model.ScriptCommand;
 import org.nrg.actions.model.ScriptEnvironment;
 import org.nrg.containers.api.ContainerControlApi;
@@ -59,7 +59,8 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             return resolveCommand(command);
         }
 
-        final ResolvedCommand resolvedCommand = new ResolvedCommand(command);
+        final ResolvedCommand resolvedCommand = new ResolvedCommand();
+        resolvedCommand.setCommandId(command.getId());
 
         final DockerImage dockerImage;
         if (DockerImageCommand.class.isAssignableFrom(command.getClass())) {
@@ -73,7 +74,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             // TODO There are no other kinds of command. How did we get here?
             throw new NotFoundException("Cannot find docker image id for command " + command.getId());
         }
-        resolvedCommand.setDockerImage(dockerImage);
+        resolvedCommand.setDockerImageId(dockerImage.getImageId());
 
         // Replace variable names in runTemplate, mounts, and environment variables
         final Map<String, String> variableValues = Maps.newHashMap();
@@ -92,15 +93,15 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         resolvedCommand.setRun(run);
 
         if (command.getMountsIn() != null) {
-            resolvedCommand.setMountsIn(command.getMountsIn());
-            for (final CommandMount mount : resolvedCommand.getMountsIn()) {
-                mount.setPath(resolveTemplate(mount.getPath(), variableValues));
+            resolvedCommand.setMountsInFromCommandMounts(command.getMountsIn());
+            for (final ResolvedCommandMount mount : resolvedCommand.getMountsIn()) {
+                mount.setRemotePath(resolveTemplate(mount.getRemotePath(), variableValues));
             }
         }
         if (command.getMountsOut() != null) {
-            resolvedCommand.setMountsOut(command.getMountsOut());
-            for (final CommandMount mount : resolvedCommand.getMountsOut()) {
-                mount.setPath(resolveTemplate(mount.getPath(), variableValues));
+            resolvedCommand.setMountsOutFromCommandMounts(command.getMountsOut());
+            for (final ResolvedCommandMount mount : resolvedCommand.getMountsOut()) {
+                mount.setRemotePath(resolveTemplate(mount.getRemotePath(), variableValues));
             }
         }
 
@@ -124,8 +125,8 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         return controlApi.launchImage(resolvedCommand);
     }
 
-    private static String resolveTemplate(final String template,
-                           final Map<String, String> variableArgTemplateValues) {
+    private String resolveTemplate(final String template,
+                                   final Map<String, String> variableArgTemplateValues) {
         String toResolve = template;
         final Set<String> matches = Sets.newHashSet();
 
@@ -136,9 +137,8 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         }
 
         for (final String match : matches) {
-            if (variableArgTemplateValues.containsKey(match)) {
-                toResolve = toResolve.replaceAll("#"+ match +"#",
-                        variableArgTemplateValues.get(match));
+            if (variableArgTemplateValues.containsKey(match) && variableArgTemplateValues.get(match) != null) {
+                toResolve = toResolve.replaceAll("#"+ match +"#", variableArgTemplateValues.get(match));
             }
         }
         return toResolve;

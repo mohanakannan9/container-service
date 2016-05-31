@@ -104,6 +104,9 @@ public class CommandVariable implements Serializable {
     @Transient
     public String getArgTemplateValue() {
         final String valString = getValueWithTrueOrFalseValue();
+        if (valString == null) {
+            return null;
+        }
 
         if (StringUtils.isBlank(argTemplate)) {
             return valString;

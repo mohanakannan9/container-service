@@ -17,8 +17,8 @@ import com.spotify.docker.client.messages.ContainerInfo;
 import com.spotify.docker.client.messages.HostConfig;
 import com.spotify.docker.client.messages.Image;
 import org.apache.commons.lang.StringUtils;
-import org.nrg.actions.model.CommandMount;
 import org.nrg.actions.model.ResolvedCommand;
+import org.nrg.actions.model.ResolvedCommandMount;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
@@ -308,14 +308,14 @@ public class DockerControlApi implements ContainerControlApi {
     @Override
     public String launchImage(final ResolvedCommand command)
             throws NoServerPrefException, DockerServerException {
-        final String dockerImageId = command.getDockerImage().getImageId();
+        final String dockerImageId = command.getDockerImageId();
         final List<String> runCommand = Lists.newArrayList(command.getRun());
         final List<String> bindMounts = Lists.newArrayList();
-        for (final CommandMount mount : command.getMountsIn()) {
-            bindMounts.add(mount.getPath());
+        for (final ResolvedCommandMount mount : command.getMountsIn()) {
+            bindMounts.add(mount.toBindMountString());
         }
-        for (final CommandMount mount : command.getMountsOut()) {
-            bindMounts.add(mount.getPath());
+        for (final ResolvedCommandMount mount : command.getMountsOut()) {
+            bindMounts.add(mount.toBindMountString());
         }
         final List<String> environmentVariables = Lists.newArrayList();
         for (final Map.Entry<String, String> env : command.getEnvironmentVariables().entrySet()) {

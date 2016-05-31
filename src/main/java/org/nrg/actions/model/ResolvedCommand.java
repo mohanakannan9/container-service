@@ -2,43 +2,33 @@ package org.nrg.actions.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
-import com.google.common.base.MoreObjects.ToStringHelper;
-import org.hibernate.annotations.Cache;
-import org.hibernate.annotations.CacheConcurrencyStrategy;
-import org.hibernate.envers.Audited;
+import com.google.common.collect.Lists;
 import org.nrg.containers.model.DockerImage;
-import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.ElementCollection;
 import javax.persistence.Embeddable;
-import javax.persistence.Entity;
 import javax.persistence.Transient;
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 @Embeddable
-public class ResolvedCommand {
+public class ResolvedCommand implements Serializable {
 
-    private Command command;
+    @JsonProperty("command-id") private Long commandId;
     @JsonProperty("run") private String run;
-    @JsonProperty("docker-image") private DockerImage dockerImage;
+    @JsonProperty("docker-image-id") private String dockerImageId;
     @JsonProperty("env") private Map<String, String> environmentVariables;
-    @JsonProperty("mounts-in") private List<CommandMount> mountsIn;
-    @JsonProperty("mounts-out") private List<CommandMount> mountsOut;
+    @JsonProperty("mounts-in") private List<ResolvedCommandMount> mountsIn;
+    @JsonProperty("mounts-out") private List<ResolvedCommandMount> mountsOut;
 
-    public ResolvedCommand() {}
-
-    public ResolvedCommand(final Command command) {
-        this.command = command;
+    public Long getCommandId() {
+        return commandId;
     }
 
-    public Command getCommand() {
-        return command;
-    }
-
-    public void setCommand(final Command command) {
-        this.command = command;
+    public void setCommandId(final Long commandId) {
+        this.commandId = commandId;
     }
 
     public String getRun() {
@@ -49,12 +39,12 @@ public class ResolvedCommand {
         this.run = run;
     }
 
-    public DockerImage getDockerImage() {
-        return dockerImage;
+    public String getDockerImageId() {
+        return dockerImageId;
     }
 
-    public void setDockerImage(final DockerImage dockerImage) {
-        this.dockerImage = dockerImage;
+    public void setDockerImageId(final String dockerImageId) {
+        this.dockerImageId = dockerImageId;
     }
 
     @ElementCollection
@@ -67,21 +57,36 @@ public class ResolvedCommand {
     }
 
     @ElementCollection
-    public List<CommandMount> getMountsIn() {
+    public List<ResolvedCommandMount> getMountsIn() {
         return mountsIn;
     }
 
-    public void setMountsIn(final List<CommandMount> mountsIn) {
+    public void setMountsIn(final List<ResolvedCommandMount> mountsIn) {
         this.mountsIn = mountsIn;
     }
 
+    public void setMountsInFromCommandMounts(final List<CommandMount> commandMounts) {
+        this.mountsIn = Lists.newArrayList();
+        for (final CommandMount mount : commandMounts) {
+            this.mountsIn.add(new ResolvedCommandMount(mount, true));
+        }
+    }
+
     @ElementCollection
-    public List<CommandMount> getMountsOut() {
+    public List<ResolvedCommandMount> getMountsOut() {
         return mountsOut;
     }
 
-    public void setMountsOut(final List<CommandMount> mountsOut) {
+    public void setMountsOut(final List<ResolvedCommandMount> mountsOut) {
         this.mountsOut = mountsOut;
+    }
+
+    @Transient
+    public void setMountsOutFromCommandMounts(final List<CommandMount> commandMounts) {
+        this.mountsOut = Lists.newArrayList();
+        for (final CommandMount mount : commandMounts) {
+            this.mountsOut.add(new ResolvedCommandMount(mount, false));
+        }
     }
 
     @Override
@@ -90,9 +95,9 @@ public class ResolvedCommand {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         final ResolvedCommand that = (ResolvedCommand) o;
-        return Objects.equals(this.command, that.command) &&
+        return Objects.equals(this.commandId, that.commandId) &&
                 Objects.equals(this.run, that.run) &&
-                Objects.equals(this.dockerImage, that.dockerImage) &&
+                Objects.equals(this.dockerImageId, that.dockerImageId) &&
                 Objects.equals(this.environmentVariables, that.environmentVariables) &&
                 Objects.equals(this.mountsIn, that.mountsIn) &&
                 Objects.equals(this.mountsOut, that.mountsOut);
@@ -100,15 +105,15 @@ public class ResolvedCommand {
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), command, run, dockerImage, environmentVariables, mountsIn, mountsOut);
+        return Objects.hash(super.hashCode(), commandId, run, dockerImageId, environmentVariables, mountsIn, mountsOut);
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-                .add("command", command)
+                .add("commandId", commandId)
                 .add("run", run)
-                .add("dockerImage", dockerImage)
+                .add("dockerImageId", dockerImageId)
                 .add("environmentVariables", environmentVariables)
                 .add("mountsIn", mountsIn)
                 .add("mountsOut", mountsOut)

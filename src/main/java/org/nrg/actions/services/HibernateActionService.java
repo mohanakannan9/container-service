@@ -32,7 +32,6 @@ public class HibernateActionService extends AbstractHibernateEntityService<Actio
 
     @Override
     public List<Action> findByRootXsiType(final String xsiType) {
-        // TODO What is the property for root.xsiType?
         return getDao().findByRootXsiType(xsiType);
     }
 

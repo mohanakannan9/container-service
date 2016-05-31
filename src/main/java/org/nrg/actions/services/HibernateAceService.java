@@ -14,6 +14,7 @@ import org.nrg.actions.model.CommandMount;
 import org.nrg.actions.model.Context;
 import org.nrg.actions.model.ItemQueryCacheKey;
 import org.nrg.actions.model.ResolvedCommand;
+import org.nrg.actions.model.ResolvedCommandMount;
 import org.nrg.actions.model.matcher.Matcher;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.exceptions.DockerServerException;
@@ -137,13 +138,13 @@ public class HibernateAceService
         // TODO Use Transporter to stage staged resources
         if (ace.getResourcesStaged() != null && resolvedCommand.getMountsIn() != null) {
             final List<ActionResource> staged = ace.getResourcesStaged();
-            final List<CommandMount> mountsIn = resolvedCommand.getMountsIn();
+            final List<ResolvedCommandMount> mountsIn = resolvedCommand.getMountsIn();
 
             final XnatProjectdata project = XnatProjectdata.getProjectByIDorAlias(ace.getProject(), XDAT.getUserDetails(), false);
             final String rootPath = project.getArchiveRootPath();
 
             final Set<Path> resourcePathsToTransport = Sets.newHashSet();
-            final Map<Path, CommandMount> localPathToMount = Maps.newHashMap();
+            final Map<Path, ResolvedCommandMount> localPathToMount = Maps.newHashMap();
             for (final ActionResource resourceToStage : staged) {
                 final XnatAbstractresource resource =
                         XnatAbstractresource.getXnatAbstractresourcesByXnatAbstractresourceId(resourceToStage.getResourceId(),
@@ -154,7 +155,7 @@ public class HibernateAceService
                 final XnatResourcecatalog catResource = (XnatResourcecatalog) resource;
                 final Path localPath = Paths.get(catResource.getFullPath(rootPath));
                 resourcePathsToTransport.add(localPath);
-                for (final CommandMount mountIn : mountsIn) {
+                for (final ResolvedCommandMount mountIn : mountsIn) {
                     if (resourceToStage.getMountName().equals(mountIn.getName())) {
                         localPathToMount.put(localPath, mountIn);
                     }
@@ -165,25 +166,23 @@ public class HibernateAceService
                             resourcePathsToTransport.toArray(new Path[resourcePathsToTransport.size()]));
 
             for (final Path localPath : localPathToMount.keySet()) {
-                final CommandMount mountIn = localPathToMount.get(localPath);
+                final ResolvedCommandMount mountIn = localPathToMount.get(localPath);
                 final Path transportedResourcePath = localPathToTransportedPath.get(localPath);
 
-                final String remotePath = mountIn.getPath();
-                mountIn.setPath(transportedResourcePath + ":" + remotePath + ":ro");
+                mountIn.setRemotePath(transportedResourcePath.toString());
             }
         }
         // TODO If it's a script command, need to write out the script and transport it
 
         // TODO Use Transporter to create writable space for output mounts
         if (resolvedCommand.getMountsOut() != null) {
-            final List<CommandMount> mountsOut = resolvedCommand.getMountsOut();
+            final List<ResolvedCommandMount> mountsOut = resolvedCommand.getMountsOut();
             final List<Path> buildPaths = transporter.getWritableDirectories(dockerServer.getHost(), mountsOut.size());
             for (int i=0; i<mountsOut.size(); i++) {
-                final CommandMount mountOut = mountsOut.get(i);
+                final ResolvedCommandMount mountOut = mountsOut.get(i);
                 final Path buildPath = buildPaths.get(i);
 
-                final String remotePath = mountOut.getPath();
-                mountOut.setPath(buildPath + ":" + remotePath);
+                mountOut.setLocalPath(buildPath.toString());
             }
         }
 

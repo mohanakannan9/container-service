@@ -4,6 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.actions.config.AceModelTestConfig;
+import org.nrg.actions.services.AceService;
+import org.nrg.actions.services.CommandService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +21,44 @@ import static org.junit.Assert.assertTrue;
 @Transactional
 @ContextConfiguration(classes = AceModelTestConfig.class)
 public class AceTest {
+    private static final String DOCKER_IMAGE_JSON =
+            "{\"name\":\"name\", \"repo-tags\":[\"a\", \"b\"], \"image-id\":\"abc123\"," +
+                    "\"labels\":{\"foo\":\"bar\"}}";
+
+    private static final String SCAN_MATCHER_JSON =
+            "{\"property\":\"type\", \"operator\":\"equals\", \"value\":\"T1|MPRAGE\"}";
+
+    private static final String VARIABLE_0_JSON =
+            "{\"name\":\"my_cool_input\", \"description\":\"A boolean value\", " +
+                    "\"type\":\"boolean\", \"required\":true," +
+                    "\"true-value\":\"-b\", \"false-value\":\"\"," +
+                    "\"value\":\"true\"}";
+    private static final String VARIABLE_1_JSON =
+            "{\"name\":\"foo\", \"description\":\"No one loves me :(\", " +
+                    "\"type\":\"string\", \"required\":false," +
+                    "\"arg-template\":\"--uncool=#value#\"}";
+    private static final String VARIABLE_LIST_JSON =
+            "[" + VARIABLE_0_JSON + ", " + VARIABLE_1_JSON + "]";
+
+    private static final String COMMAND_MOUNT_IN_JSON =
+            "{\"name\":\"in\", \"path\":\"/input\"}";
+    private static final String COMMAND_MOUNT_OUT_JSON =
+            "{\"name\":\"out\", \"path\":\"/output\"}";
+
+    private static final String DOCKER_IMAGE_COMMAND_JSON_TEMPLATE =
+            "{\"name\":\"docker_image_command\", \"description\":\"Docker Image command for the test\", " +
+                    "\"info-url\":\"http://abc.xyz\", " +
+                    "\"env\":{\"foo\":\"bar\"}, " +
+                    "\"variables\":" + VARIABLE_LIST_JSON + ", " +
+                    "\"run-template\":\"cmd #foo#\", " +
+                    "\"type\":\"docker-image\", " +
+                    "\"docker-image\":{\"id\":%d}, " +
+                    "\"mounts-in\":[" + COMMAND_MOUNT_IN_JSON + "]," +
+                    "\"mounts-out\":[" + COMMAND_MOUNT_OUT_JSON + "]}";
+
+    private static final String ACTION_ROOT_JSON =
+            "{\"name\":\"scan\", \"xsiType\":\"xnat:imageScanData\"," +
+                    "\"matchers\": [" + SCAN_MATCHER_JSON + "]}";
 
     private static final String ACTION_INPUT_JSON =
             "{\"name\":\"some_identifier\", \"command-variable-name\":\"my_cool_input\", " +
@@ -25,21 +66,32 @@ public class AceTest {
                     "\"required\":true, \"type\":\"property\"," +
                     "\"value\":\"something\"}";
 
+    private static final String ACTION_MINIMAL_JSON_TEMPLATE =
+            "{\"name\":\"an_action\", \"description\":\"Yep, it's an action all right\", " +
+                    "\"command-id\":%d, " +
+                    "\"root\": " + ACTION_ROOT_JSON + "}";
+
     private static final String ACE_RESOURCE_STAGED_JSON =
             "{\"name\":\"DICOM\", \"mount\":\"in\", \"id\":123}";
     private static final String ACE_RESOURCE_CREATED_JSON =
             "{\"name\":\"NIFTI\", \"mount\":\"out\"}";
 
-    private static final String ACE_JSON =
+    private static final String ACE_JSON_TEMPLATE =
             "{\"name\":\"an_ace\", \"description\":\"Aces!\", " +
-                    "\"action-id\":100, " +
-                    "\"command-id\":10, " +
+                    "\"action-id\":%d, " +
+                    "\"command-id\":%d, " +
                     "\"root-id\":\"XNAT_123.1\"," +
                     "\"inputs\":[" + ACTION_INPUT_JSON + "]," +
                     "\"resources-created\":[" + ACE_RESOURCE_CREATED_JSON + "]," +
                     "\"resources-staged\":[" + ACE_RESOURCE_STAGED_JSON + "]}";
 
     private final ObjectMapper mapper = new ObjectMapper();
+
+    @Autowired
+    private CommandService commandService;
+
+    @Autowired
+    private AceService aceService;
 
     @Test
     public void testDeserializeActionInput() throws Exception {
@@ -78,8 +130,10 @@ public class AceTest {
         final ActionResource staged =
                 mapper.readValue(ACE_RESOURCE_STAGED_JSON, ActionResource.class);
 
+        final String aceJson =
+                String.format(ACE_JSON_TEMPLATE, 100, 10);
         final ActionContextExecutionDto ace =
-                mapper.readValue(ACE_JSON, ActionContextExecutionDto.class);
+                mapper.readValue(aceJson, ActionContextExecutionDto.class);
 
         assertEquals("an_ace", ace.getName());
         assertEquals("Aces!", ace.getDescription());
@@ -90,5 +144,23 @@ public class AceTest {
         assertEquals(input, ace.getInputs().get(0));
         assertEquals(created, ace.getResourcesCreated().get(0));
         assertEquals(staged, ace.getResourcesStaged().get(0));
+    }
+
+    @Test
+    public void testPersistAce() throws Exception {
+        final Long dockerImageId = 0L;
+        final String dockerImageCommandJson =
+                String.format(DOCKER_IMAGE_COMMAND_JSON_TEMPLATE, dockerImageId);
+        final Command command = mapper.readValue(dockerImageCommandJson, Command.class);
+
+        final ResolvedCommand resolvedCommand = commandService.resolveCommand(command);
+
+        final String aceDtoJson =
+                String.format(ACE_JSON_TEMPLATE, 100, 10);
+        final ActionContextExecutionDto aceDto =
+                mapper.readValue(aceDtoJson, ActionContextExecutionDto.class);
+
+        final ActionContextExecution ace = new ActionContextExecution(aceDto, resolvedCommand);
+        aceService.create(ace);
     }
 }

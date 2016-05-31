@@ -3,10 +3,11 @@ package org.nrg.actions.model;
 import com.google.common.base.MoreObjects;
 
 import javax.persistence.Embeddable;
+import java.io.Serializable;
 import java.util.Objects;
 
 @Embeddable
-public class CommandMount {
+public class CommandMount implements Serializable {
 
     private String name;
     private String path;
