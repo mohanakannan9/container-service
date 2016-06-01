@@ -56,7 +56,7 @@ public class ResolvedCommand implements Serializable {
     public void setEnvironmentVariables(final Map<String, String> environmentVariables) {
         this.environmentVariables = environmentVariables == null ?
                 Maps.<String, String>newHashMap() :
-                Maps.newHashMap(environmentVariables);
+                environmentVariables;
     }
 
     @ElementCollection(fetch = FetchType.EAGER)
@@ -67,7 +67,7 @@ public class ResolvedCommand implements Serializable {
     public void setMountsIn(final List<ResolvedCommandMount> mountsIn) {
         this.mountsIn = mountsIn == null ?
                 Lists.<ResolvedCommandMount>newArrayList() :
-                Lists.newArrayList(mountsIn);
+                mountsIn;
     }
 
     public void setMountsInFromCommandMounts(final List<CommandMount> commandMounts) {
@@ -86,7 +86,7 @@ public class ResolvedCommand implements Serializable {
     public void setMountsOut(final List<ResolvedCommandMount> mountsOut) {
         this.mountsOut = mountsOut == null ?
                 Lists.<ResolvedCommandMount>newArrayList() :
-                Lists.newArrayList(mountsOut);
+                mountsOut;
     }
 
     @Transient

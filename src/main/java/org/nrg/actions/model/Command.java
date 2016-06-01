@@ -73,7 +73,7 @@ public abstract class Command extends AbstractHibernateEntity {
     void setVariables(final List<CommandVariable> variables) {
         this.variables = variables == null ?
                 Lists.<CommandVariable>newArrayList() :
-                Lists.newArrayList(variables);
+                variables;
     }
 
     public String getRunTemplate() {
@@ -92,7 +92,7 @@ public abstract class Command extends AbstractHibernateEntity {
     public void setMountsIn(final List<CommandMount> mountsIn) {
         this.mountsIn = mountsIn == null ?
                 Lists.<CommandMount>newArrayList() :
-                Lists.newArrayList(mountsIn);
+                mountsIn;
     }
 
     @ElementCollection(fetch = FetchType.EAGER)
@@ -103,7 +103,7 @@ public abstract class Command extends AbstractHibernateEntity {
     public void setMountsOut(final List<CommandMount> mountsOut) {
         this.mountsOut = mountsOut == null ?
                 Lists.<CommandMount>newArrayList() :
-                Lists.newArrayList(mountsOut);
+                mountsOut;
     }
 
     @ElementCollection(fetch = FetchType.EAGER)
@@ -114,7 +114,7 @@ public abstract class Command extends AbstractHibernateEntity {
     public void setEnvironmentVariables(final Map<String, String> environmentVariables) {
         this.environmentVariables = environmentVariables == null ?
                 Maps.<String, String>newHashMap() :
-                Maps.newHashMap(environmentVariables);
+                environmentVariables;
     }
 
     @Override

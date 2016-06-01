@@ -71,7 +71,7 @@ public class DockerImage extends AbstractHibernateEntity {
     public void setRepoTags(final List<String> repoTags) {
         this.repoTags = repoTags == null ?
                 Lists.<String>newArrayList() :
-                Lists.newArrayList(repoTags);
+                repoTags;
     }
 
     /**
@@ -84,7 +84,7 @@ public class DockerImage extends AbstractHibernateEntity {
     public void setLabels(final Map<String, String> labels) {
         this.labels = labels == null ?
                 Maps.<String, String>newHashMap() :
-                Maps.newHashMap(labels);
+                labels;
     }
 
     public String toString() {

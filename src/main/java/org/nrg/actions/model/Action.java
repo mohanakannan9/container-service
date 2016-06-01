@@ -43,11 +43,11 @@ public class Action extends AbstractHibernateEntity {
     public Action(final ActionDto dto, final Command command) {
         this.name = dto.getName();
         this.description = dto.getDescription();
-        setInputs(dto.getInputs());
-        setResourcesStaged(dto.getResourcesStaged());
-        setResourcesCreated(dto.getResourcesCreated());
+        setInputs(Lists.newArrayList(dto.getInputs()));
+        setResourcesStaged(Lists.newArrayList(dto.getResourcesStaged()));
+        setResourcesCreated(Lists.newArrayList(dto.getResourcesCreated()));
         this.rootXsiType = dto.getRootXsiType();
-        setRootMatchers(dto.getRootMatchers());
+        setRootMatchers(Lists.newArrayList(dto.getRootMatchers()));
 
         this.command = command;
 
@@ -117,7 +117,7 @@ public class Action extends AbstractHibernateEntity {
     public void setInputs(final List<ActionInput> inputs) {
         this.inputs = inputs == null ?
                 Lists.<ActionInput>newArrayList() :
-                Lists.newArrayList(inputs);
+                inputs;
     }
 
     public String getRootXsiType() {
@@ -136,7 +136,7 @@ public class Action extends AbstractHibernateEntity {
     public void setRootMatchers(final List<Matcher> rootMatchers) {
         this.rootMatchers = rootMatchers == null ?
                 Lists.<Matcher>newArrayList() :
-                Lists.newArrayList(rootMatchers);
+                rootMatchers;
     }
 
     @ElementCollection(fetch = FetchType.EAGER)
@@ -147,7 +147,7 @@ public class Action extends AbstractHibernateEntity {
     public void setResourcesStaged(final List<ActionResource> resourcesStaged) {
         this.resourcesStaged = resourcesStaged == null ?
                 Lists.<ActionResource>newArrayList() :
-                Lists.newArrayList(resourcesStaged);
+                resourcesStaged;
     }
 
     @Transient
@@ -169,7 +169,7 @@ public class Action extends AbstractHibernateEntity {
     public void setResourcesCreated(final List<ActionResource> resourcesCreated) {
         this.resourcesCreated = resourcesCreated == null ?
                 Lists.<ActionResource>newArrayList() :
-                Lists.newArrayList(resourcesCreated);
+                resourcesCreated;
     }
 
     @Transient

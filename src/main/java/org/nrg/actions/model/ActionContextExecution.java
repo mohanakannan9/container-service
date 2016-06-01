@@ -82,7 +82,7 @@ public class ActionContextExecution extends AbstractHibernateEntity {
     public void setInputs(final List<ActionInput> inputs) {
         this.inputs = inputs == null ?
                 Lists.<ActionInput>newArrayList() :
-                Lists.newArrayList(inputs);
+                inputs;
     }
 
     @ElementCollection(fetch = FetchType.EAGER)
@@ -93,7 +93,7 @@ public class ActionContextExecution extends AbstractHibernateEntity {
     public void setResourcesStaged(final List<ActionResource> resourcesStaged) {
         this.resourcesStaged = resourcesStaged == null ?
                 Lists.<ActionResource>newArrayList() :
-                Lists.newArrayList(resourcesStaged);
+                resourcesStaged;
     }
 
     @ElementCollection(fetch = FetchType.EAGER)
@@ -104,7 +104,7 @@ public class ActionContextExecution extends AbstractHibernateEntity {
     public void setResourcesCreated(final List<ActionResource> resourcesCreated) {
         this.resourcesCreated = resourcesCreated == null ?
                 Lists.<ActionResource>newArrayList() :
-                Lists.newArrayList(resourcesCreated);
+                resourcesCreated;
     }
 
     public ResolvedCommand getResolvedCommand() {
