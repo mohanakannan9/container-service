@@ -6,6 +6,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.MoreObjects.ToStringHelper;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.hibernate.envers.Audited;
 import org.nrg.containers.model.DockerImageCommand;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
@@ -13,8 +15,8 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.Inheritance;
-import javax.persistence.Transient;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -33,11 +35,11 @@ public abstract class Command extends AbstractHibernateEntity {
     private String name;
     private String description;
     @JsonProperty("info-url") private String infoUrl;
-    private List<CommandVariable> variables;
+    private List<CommandVariable> variables = Lists.newArrayList();
     @JsonProperty("run-template") private String runTemplate;
-    @JsonProperty("mounts-in") private List<CommandMount> mountsIn;
-    @JsonProperty("mounts-out") private List<CommandMount> mountsOut;
-    @JsonProperty("env") private Map<String, String> environmentVariables;
+    @JsonProperty("mounts-in") private List<CommandMount> mountsIn = Lists.newArrayList();
+    @JsonProperty("mounts-out") private List<CommandMount> mountsOut = Lists.newArrayList();
+    @JsonProperty("env") private Map<String, String> environmentVariables = Maps.newHashMap();
 
     public String getName() {
         return name;
@@ -63,13 +65,15 @@ public abstract class Command extends AbstractHibernateEntity {
         this.infoUrl = infoUrl;
     }
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     public List<CommandVariable> getVariables() {
         return variables;
     }
 
-    void setVariables(final List<CommandVariable> commandVariables) {
-        this.variables = commandVariables;
+    void setVariables(final List<CommandVariable> variables) {
+        this.variables = variables == null ?
+                Lists.<CommandVariable>newArrayList() :
+                Lists.newArrayList(variables);
     }
 
     public String getRunTemplate() {
@@ -80,41 +84,37 @@ public abstract class Command extends AbstractHibernateEntity {
         this.runTemplate = runTemplate;
     }
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     public List<CommandMount> getMountsIn() {
         return mountsIn;
     }
 
     public void setMountsIn(final List<CommandMount> mountsIn) {
-        this.mountsIn = mountsIn;
+        this.mountsIn = mountsIn == null ?
+                Lists.<CommandMount>newArrayList() :
+                Lists.newArrayList(mountsIn);
     }
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     public List<CommandMount> getMountsOut() {
         return mountsOut;
     }
 
     public void setMountsOut(final List<CommandMount> mountsOut) {
-        this.mountsOut = mountsOut;
+        this.mountsOut = mountsOut == null ?
+                Lists.<CommandMount>newArrayList() :
+                Lists.newArrayList(mountsOut);
     }
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     public Map<String, String> getEnvironmentVariables() {
         return environmentVariables;
     }
 
     public void setEnvironmentVariables(final Map<String, String> environmentVariables) {
-        this.environmentVariables = environmentVariables;
-    }
-
-    @Transient
-    public CommandVariable getInputWithName(final String name) {
-        for (final CommandVariable commandVariable : variables) {
-            if (commandVariable.getName().equals(name)) {
-                return commandVariable;
-            }
-        }
-        return null;
+        this.environmentVariables = environmentVariables == null ?
+                Maps.<String, String>newHashMap() :
+                Maps.newHashMap(environmentVariables);
     }
 
     @Override

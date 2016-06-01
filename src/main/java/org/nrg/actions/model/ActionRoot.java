@@ -2,19 +2,21 @@ package org.nrg.actions.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
-import org.nrg.actions.model.matcher.Matcher;
+import com.google.common.collect.Lists;
 
 import javax.persistence.ElementCollection;
 import javax.persistence.Embeddable;
+import javax.persistence.FetchType;
+import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 
 @Embeddable
-public class ActionRoot {
+public class ActionRoot implements Serializable {
 
     @JsonProperty("name") private String rootName;
     private String xsiType;
-    private List<Matcher> matchers;
+    private List<Matcher> matchers = Lists.newArrayList();
 
     public String getRootName() {
         return rootName;
@@ -32,13 +34,15 @@ public class ActionRoot {
         this.xsiType = xsiType;
     }
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     public List<Matcher> getMatchers() {
         return matchers;
     }
 
     public void setMatchers(final List<Matcher> matchers) {
-        this.matchers = matchers;
+        this.matchers = matchers == null ?
+                Lists.<Matcher>newArrayList() :
+                Lists.newArrayList(matchers);
     }
 
     @Override

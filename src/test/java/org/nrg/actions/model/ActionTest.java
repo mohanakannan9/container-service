@@ -3,10 +3,10 @@ package org.nrg.actions.model;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.actions.config.ActionTestConfig;
-import org.nrg.actions.model.matcher.Matcher;
 import org.nrg.actions.services.ActionService;
 import org.nrg.actions.services.CommandService;
 import org.nrg.containers.model.DockerImage;
@@ -22,6 +22,7 @@ import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isIn;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
@@ -107,8 +108,6 @@ public class ActionTest {
     public void testDeserializeMatcher() throws Exception {
         final Matcher matcher =
                 mapper.readValue(SCAN_MATCHER_JSON, Matcher.class);
-
-        //assertTrue(StringMatcher.class.isAssignableFrom(matcher.getClass()));
         assertEquals("T1|MPRAGE", matcher.getValue());
         assertEquals("equals", matcher.getOperator());
         assertEquals("type", matcher.getProperty());
@@ -227,14 +226,14 @@ public class ActionTest {
         assertEquals(root, actionDto.getRoot());
         assertEquals(root, minimalAction.getRoot());
 
-        assertThat(actionDto.getInputs(), nullValue());
-        assertThat(minimalAction.getInputs(), notNullValue());
+        assertThat(actionDto.getInputs(), Matchers.<ActionInput>empty());
+        assertThat(minimalAction.getInputs(), not(Matchers.<ActionInput>empty()));
         assertThat(defaultInputs, everyItem(isIn(minimalAction.getInputs())));
 
-        assertThat(actionDto.getResourcesStaged(), nullValue());
+        assertThat(actionDto.getResourcesStaged(), Matchers.<ActionResource>empty());
         assertThat(minimalAction.getResourcesStaged(), hasSize(1));
         assertEquals(defaultResourceStaged, minimalAction.getResourcesStaged().get(0));
-        assertThat(actionDto.getResourcesCreated(), nullValue());
+        assertThat(actionDto.getResourcesCreated(), Matchers.<ActionResource>empty());
         assertThat(minimalAction.getResourcesCreated(), hasSize(1));
         assertEquals(defaultResourceCreated, minimalAction.getResourcesCreated().get(0));
     }

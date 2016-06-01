@@ -1,7 +1,5 @@
 package org.nrg.actions.model;
 
-import com.google.common.collect.Maps;
-
 import java.util.HashMap;
 import java.util.Map;
 

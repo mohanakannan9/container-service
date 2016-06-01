@@ -16,6 +16,8 @@ public interface DockerService {
     List<DockerHub> getHubs();
     DockerHub setHub(DockerHub hub);
     String pingHub(DockerHub hub) throws DockerServerException, NoServerPrefException;
+    DockerImageDto pullFromHub(Long hubId, String image) throws DockerServerException, NoServerPrefException, NotFoundException;
+    DockerImageDto pullFromHub(String image) throws DockerServerException, NoServerPrefException, NotFoundException;
 
     DockerServer getServer() throws NotFoundException;
     DockerServer setServer(DockerServer server) throws InvalidPreferenceName;

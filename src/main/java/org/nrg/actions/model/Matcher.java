@@ -1,9 +1,8 @@
-package org.nrg.actions.model.matcher;
+package org.nrg.actions.model;
 
 import com.google.common.base.MoreObjects;
 
 import javax.persistence.Embeddable;
-import javax.persistence.MappedSuperclass;
 import java.io.Serializable;
 import java.util.Objects;
 

@@ -2,10 +2,12 @@ package org.nrg.actions.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.Lists;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import java.util.List;
 import java.util.Objects;
 
@@ -16,9 +18,9 @@ public class ActionContextExecution extends AbstractHibernateEntity {
     @JsonProperty("action-id") private Long actionId;
     @JsonProperty("project") private String project;
     @JsonProperty("root-id") private String rootId;
-    private List<ActionInput> inputs;
-    @JsonProperty("resources-staged") private List<ActionResource> resourcesStaged;
-    @JsonProperty("resources-created") private List<ActionResource> resourcesCreated;
+    private List<ActionInput> inputs = Lists.newArrayList();
+    @JsonProperty("resources-staged") private List<ActionResource> resourcesStaged = Lists.newArrayList();
+    @JsonProperty("resources-created") private List<ActionResource> resourcesCreated = Lists.newArrayList();
     @JsonProperty("resolved-command") private ResolvedCommand resolvedCommand;
     @JsonProperty("container-id") private String containerId;
 
@@ -33,9 +35,9 @@ public class ActionContextExecution extends AbstractHibernateEntity {
         this.description = aceDto.getDescription();
         this.actionId = aceDto.getActionId();
         this.rootId = aceDto.getRootId();
-        this.inputs = aceDto.getInputs();
-        this.resourcesCreated = aceDto.getResourcesCreated();
-        this.resourcesStaged = aceDto.getResourcesStaged();
+        setInputs(aceDto.getInputs());
+        setResourcesCreated(aceDto.getResourcesCreated());
+        setResourcesStaged(aceDto.getResourcesStaged());
 
         this.resolvedCommand = resolvedCommand;
     }
@@ -72,31 +74,37 @@ public class ActionContextExecution extends AbstractHibernateEntity {
         this.rootId = rootId;
     }
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     public List<ActionInput> getInputs() {
         return inputs;
     }
 
     public void setInputs(final List<ActionInput> inputs) {
-        this.inputs = inputs;
+        this.inputs = inputs == null ?
+                Lists.<ActionInput>newArrayList() :
+                Lists.newArrayList(inputs);
     }
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     public List<ActionResource> getResourcesStaged() {
         return resourcesStaged;
     }
 
     public void setResourcesStaged(final List<ActionResource> resourcesStaged) {
-        this.resourcesStaged = resourcesStaged;
+        this.resourcesStaged = resourcesStaged == null ?
+                Lists.<ActionResource>newArrayList() :
+                Lists.newArrayList(resourcesStaged);
     }
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     public List<ActionResource> getResourcesCreated() {
         return resourcesCreated;
     }
 
     public void setResourcesCreated(final List<ActionResource> resourcesCreated) {
-        this.resourcesCreated = resourcesCreated;
+        this.resourcesCreated = resourcesCreated == null ?
+                Lists.<ActionResource>newArrayList() :
+                Lists.newArrayList(resourcesCreated);
     }
 
     public ResolvedCommand getResolvedCommand() {

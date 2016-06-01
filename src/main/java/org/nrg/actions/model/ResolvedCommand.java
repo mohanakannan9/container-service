@@ -3,10 +3,11 @@ package org.nrg.actions.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
-import org.nrg.containers.model.DockerImage;
+import com.google.common.collect.Maps;
 
 import javax.persistence.ElementCollection;
 import javax.persistence.Embeddable;
+import javax.persistence.FetchType;
 import javax.persistence.Transient;
 import java.io.Serializable;
 import java.util.List;
@@ -19,9 +20,9 @@ public class ResolvedCommand implements Serializable {
     @JsonProperty("command-id") private Long commandId;
     @JsonProperty("run") private String run;
     @JsonProperty("docker-image-id") private String dockerImageId;
-    @JsonProperty("env") private Map<String, String> environmentVariables;
-    @JsonProperty("mounts-in") private List<ResolvedCommandMount> mountsIn;
-    @JsonProperty("mounts-out") private List<ResolvedCommandMount> mountsOut;
+    @JsonProperty("env") private Map<String, String> environmentVariables = Maps.newHashMap();
+    @JsonProperty("mounts-in") private List<ResolvedCommandMount> mountsIn = Lists.newArrayList();
+    @JsonProperty("mounts-out") private List<ResolvedCommandMount> mountsOut = Lists.newArrayList();
 
     public Long getCommandId() {
         return commandId;
@@ -47,46 +48,54 @@ public class ResolvedCommand implements Serializable {
         this.dockerImageId = dockerImageId;
     }
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     public Map<String, String> getEnvironmentVariables() {
         return environmentVariables;
     }
 
     public void setEnvironmentVariables(final Map<String, String> environmentVariables) {
-        this.environmentVariables = environmentVariables;
+        this.environmentVariables = environmentVariables == null ?
+                Maps.<String, String>newHashMap() :
+                Maps.newHashMap(environmentVariables);
     }
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     public List<ResolvedCommandMount> getMountsIn() {
         return mountsIn;
     }
 
     public void setMountsIn(final List<ResolvedCommandMount> mountsIn) {
-        this.mountsIn = mountsIn;
+        this.mountsIn = mountsIn == null ?
+                Lists.<ResolvedCommandMount>newArrayList() :
+                Lists.newArrayList(mountsIn);
     }
 
     public void setMountsInFromCommandMounts(final List<CommandMount> commandMounts) {
-        this.mountsIn = Lists.newArrayList();
+        final List<ResolvedCommandMount> mountsIn = Lists.newArrayList();
         for (final CommandMount mount : commandMounts) {
-            this.mountsIn.add(new ResolvedCommandMount(mount, true));
+            mountsIn.add(new ResolvedCommandMount(mount, true));
         }
+        setMountsIn(mountsIn);
     }
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     public List<ResolvedCommandMount> getMountsOut() {
         return mountsOut;
     }
 
     public void setMountsOut(final List<ResolvedCommandMount> mountsOut) {
-        this.mountsOut = mountsOut;
+        this.mountsOut = mountsOut == null ?
+                Lists.<ResolvedCommandMount>newArrayList() :
+                Lists.newArrayList(mountsOut);
     }
 
     @Transient
     public void setMountsOutFromCommandMounts(final List<CommandMount> commandMounts) {
-        this.mountsOut = Lists.newArrayList();
+        final List<ResolvedCommandMount> mountsOut = Lists.newArrayList();
         for (final CommandMount mount : commandMounts) {
-            this.mountsOut.add(new ResolvedCommandMount(mount, false));
+            mountsOut.add(new ResolvedCommandMount(mount, false));
         }
+        setMountsOut(mountsOut);
     }
 
     @Override

@@ -14,9 +14,9 @@ public class ActionContextExecutionDto {
     @JsonProperty("command-id") private Long commandId;
     @JsonProperty("project") private String project;
     @JsonProperty("root-id") private String rootId;
-    private List<ActionInput> inputs;
-    @JsonProperty("resources-staged") private List<ActionResource> resourcesStaged;
-    @JsonProperty("resources-created") private List<ActionResource> resourcesCreated;
+    private List<ActionInput> inputs = Lists.newArrayList();
+    @JsonProperty("resources-staged") private List<ActionResource> resourcesStaged = Lists.newArrayList();
+    @JsonProperty("resources-created") private List<ActionResource> resourcesCreated = Lists.newArrayList();
 
     public ActionContextExecutionDto() {}
 
@@ -30,9 +30,9 @@ public class ActionContextExecutionDto {
         this.commandId = action.getCommand() != null ?
                 action.getCommand().getId() : null;
 
-        this.inputs = action.getInputs();
-        this.resourcesCreated = action.getResourcesCreated();
-        this.resourcesStaged = action.getResourcesStaged();
+        setInputs(action.getInputs());
+        setResourcesCreated(action.getResourcesCreated());
+        setResourcesStaged(action.getResourcesStaged());
 
         this.rootId = rootId;
     }
@@ -86,7 +86,9 @@ public class ActionContextExecutionDto {
     }
 
     public void setInputs(final List<ActionInput> inputs) {
-        this.inputs = inputs;
+        this.inputs = inputs == null ?
+                Lists.<ActionInput>newArrayList() :
+                Lists.newArrayList(inputs);
     }
 
     public List<ActionResource> getResourcesStaged() {
@@ -94,10 +96,12 @@ public class ActionContextExecutionDto {
     }
 
     public void setResourcesStaged(final List<ActionResource> resourcesStaged) {
-        this.resourcesStaged = resourcesStaged;
+        this.resourcesStaged = resourcesStaged == null ?
+                Lists.<ActionResource>newArrayList() :
+                Lists.newArrayList(resourcesStaged);
     }
 
-    public void addStaged(final ActionResource staged) {
+    public void addResourceStaged(final ActionResource staged) {
         if (this.resourcesStaged == null) {
             this.resourcesStaged = Lists.newArrayList();
         }
@@ -109,10 +113,12 @@ public class ActionContextExecutionDto {
     }
 
     public void setResourcesCreated(final List<ActionResource> resourcesCreated) {
-        this.resourcesCreated = resourcesCreated;
+        this.resourcesCreated = resourcesCreated == null ?
+                Lists.<ActionResource>newArrayList() :
+                Lists.newArrayList(resourcesCreated);
     }
 
-    public void addCreated(final ActionResource created) {
+    public void addResourceCreated(final ActionResource created) {
         if (this.resourcesCreated == null) {
             this.resourcesCreated = Lists.newArrayList();
         }

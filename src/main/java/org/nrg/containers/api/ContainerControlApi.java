@@ -28,9 +28,11 @@ public interface ContainerControlApi {
 
     void pullImage(String name, DockerHub hub) throws NoServerPrefException, DockerServerException;
 
-    List<DockerImageDto> getAllImages() throws NoServerPrefException, DockerServerException;
+    DockerImageDto pullAndReturnImage(String name) throws NoServerPrefException, DockerServerException;
 
-    DockerImageDto getImageByName(final String imageName) throws DockerServerException, NotFoundException, NoServerPrefException;
+    DockerImageDto pullAndReturnImage(String name, DockerHub hub) throws NoServerPrefException, DockerServerException;
+
+    List<DockerImageDto> getAllImages() throws NoServerPrefException, DockerServerException;
 
     DockerImageDto getImageById(final String imageId) throws NotFoundException, DockerServerException, NoServerPrefException;
 
@@ -56,8 +58,6 @@ public interface ContainerControlApi {
                        final List<String> environmentVariables) throws DockerServerException;
 
     String getContainerLogs(String id) throws NoServerPrefException, DockerServerException;
-
-    void deleteImageByName(String name) throws NoServerPrefException, DockerServerException;
 
     void deleteImageById(String id) throws NoServerPrefException, DockerServerException;
 }

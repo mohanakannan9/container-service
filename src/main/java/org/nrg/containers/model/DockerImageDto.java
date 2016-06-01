@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
@@ -22,8 +24,8 @@ public class DockerImageDto {
     private Date disabled;
     private String name;
     @JsonProperty("image-id") private String imageId;
-    @JsonProperty("repo-tags") private ImmutableList<String> repoTags;
-    private ImmutableMap<String, String> labels;
+    @JsonProperty("repo-tags") private List<String> repoTags = Lists.newArrayList();
+    private Map<String, String> labels = Maps.newHashMap();
     @JsonProperty("in-database") private Boolean inDatabase;
     @JsonProperty("on-docker-server") private Boolean onDockerServer;
 
@@ -51,10 +53,8 @@ public class DockerImageDto {
         this.disabled = dockerImage.getDisabled();
         this.name = dockerImage.getName();
         this.imageId = dockerImage.getImageId();
-        this.repoTags = dockerImage.getRepoTags() == null ?
-                null : ImmutableList.copyOf(dockerImage.getRepoTags());
-        this.labels = dockerImage.getLabels() == null ?
-                null : ImmutableMap.copyOf(dockerImage.getLabels());
+        setRepoTags(dockerImage.getRepoTags());
+        setLabels(dockerImage.getLabels());
         this.inDatabase = inDatabase;
         this.onDockerServer = onDockerServer;
     }
@@ -149,7 +149,9 @@ public class DockerImageDto {
     public List<String> getRepoTags() { return repoTags; }
 
     public void setRepoTags(final List<String> repoTags) {
-        this.repoTags = repoTags == null ? null : ImmutableList.copyOf(repoTags);
+        this.repoTags = repoTags == null ?
+                Lists.<String>newArrayList() :
+                Lists.newArrayList(repoTags);
     }
 
     /**
@@ -159,7 +161,9 @@ public class DockerImageDto {
     public Map<String, String> getLabels() { return labels; }
 
     public void setLabels(final Map<String, String> labels) {
-        this.labels = labels == null ? null : ImmutableMap.copyOf(labels);
+        this.labels = labels == null ?
+                Maps.<String, String>newHashMap() :
+                Maps.newHashMap(labels);
     }
 
     public Boolean getInDatabase() {
@@ -236,8 +240,8 @@ public class DockerImageDto {
         private Date disabled;
         private String name;
         private String imageId;
-        private ImmutableList<String> repoTags;
-        private ImmutableMap<String, String> labels;
+        private List<String> repoTags;
+        private Map<String, String> labels;
         private Boolean inDatabase;
         private Boolean onDockerServer;
 
@@ -297,12 +301,16 @@ public class DockerImageDto {
         }
 
         public Builder setRepoTags(final List<String> repoTags) {
-            this.repoTags = repoTags == null ? null : ImmutableList.copyOf(repoTags);
+            this.repoTags = repoTags == null ?
+                    Lists.<String>newArrayList():
+                    repoTags;
             return this;
         }
 
         public Builder setLabels(final Map<String, String> labels) {
-            this.labels = labels == null ? null : ImmutableMap.copyOf(labels);
+            this.labels = labels == null ?
+                    Maps.<String, String>newHashMap() :
+                    labels;
             return this;
         }
 

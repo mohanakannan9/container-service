@@ -15,6 +15,7 @@ import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.DockerHub;
 import org.nrg.containers.model.DockerImageDto;
+import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +25,9 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import java.util.List;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.isIn;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
@@ -46,9 +49,6 @@ public class DockerControlApiTest {
 
     @Autowired
     private DockerControlApi controlApi;
-
-    @Autowired
-    private DockerServerPrefsBean dockerServerPrefsBean;
 
     @Autowired
     private NrgPreferenceService mockPrefsService;
@@ -88,8 +88,6 @@ public class DockerControlApiTest {
         when(mockPrefsService.hasPreference("container-server", "certPath"))
             .thenReturn(true);
 
-        dockerServerPrefsBean.initialize();
-
         client = controlApi.getClient();
     }
 
@@ -106,14 +104,9 @@ public class DockerControlApiTest {
 //                CERT_PATH + "\"}";
 //        final ContainerServerPrefsBean expectedServer = mapper.readValue(containerServerJson, ContainerServerPrefsBean.class);
 
-        assertEquals(dockerServerPrefsBean.toDto(), controlApi.getServer());
-    }
-
-    @Test
-    public void testGetImageByName() throws Exception {
-        client.pull(BUSYBOX_LATEST);
-        final DockerImageDto image = controlApi.getImageByName(BUSYBOX_LATEST);
-        assertThat(image.getName(), containsString(BUSYBOX_LATEST));
+        final DockerServer server = controlApi.getServer();
+        assertEquals(CONTAINER_HOST, server.getHost());
+        assertEquals(CERT_PATH, server.getCertPath());
     }
 
     @Test
@@ -137,16 +130,6 @@ public class DockerControlApiTest {
         return tags;
     }
 
-    private List<String> imagesToNames(final List<DockerImageDto> images) {
-        final Function<DockerImageDto, String> imageToName = new Function<DockerImageDto, String>() {
-            @Override
-            public String apply(final DockerImageDto image) {
-                return image.getName();
-            }
-        };
-        return Lists.transform(images, imageToName);
-    }
-
     @Test
     public void testLaunchImage() throws Exception {
         final List<String> cmd = Lists.newArrayList("ls", "/data/pyscript.py");
@@ -155,6 +138,7 @@ public class DockerControlApiTest {
 
         client.pull(KELSEYM_PYDICOM);
         String containerId = controlApi.launchImage(KELSEYM_PYDICOM, cmd, vol);
+        assertThat(containerId, not(isEmptyOrNullString()));
     }
 
     @Test

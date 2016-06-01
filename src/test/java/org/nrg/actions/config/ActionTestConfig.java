@@ -6,8 +6,6 @@ import org.mockito.Mockito;
 import org.nrg.actions.daos.ActionDao;
 import org.nrg.actions.daos.CommandDao;
 import org.nrg.actions.model.*;
-import org.nrg.actions.model.matcher.Matcher;
-import org.nrg.actions.model.tree.MatchTreeNode;
 import org.nrg.actions.services.ActionService;
 import org.nrg.actions.services.CommandService;
 import org.nrg.actions.services.HibernateActionService;

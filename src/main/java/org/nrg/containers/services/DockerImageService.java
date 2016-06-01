@@ -11,5 +11,6 @@ public interface DockerImageService extends BaseHibernateService<DockerImage> {
     DockerImage getByDbId(Long id) throws NotFoundException;
     List<DockerImage> getByImageId(String imageId);
 
+    DockerImageDto create(DockerImageDto dto, Boolean onDockerServer);
     DockerImageDto create(DockerImageDto dto);
 }

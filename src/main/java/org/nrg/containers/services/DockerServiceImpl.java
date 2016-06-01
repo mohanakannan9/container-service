@@ -46,6 +46,23 @@ public class DockerServiceImpl implements DockerService {
     }
 
     @Override
+    public DockerImageDto pullFromHub(Long hubId, String image)
+            throws DockerServerException, NoServerPrefException, NotFoundException {
+        final DockerHub hub = dockerHubService.retrieve(hubId);
+        if (hub == null) {
+            throw new NotFoundException("No Docker Hub with id " + hubId);
+        }
+
+        return controlApi.pullAndReturnImage(image, hub);
+    }
+
+    @Override
+    public DockerImageDto pullFromHub(String image)
+            throws DockerServerException, NoServerPrefException {
+        return controlApi.pullAndReturnImage(image);
+    }
+
+    @Override
     public DockerServer getServer() throws NotFoundException {
         try {
             return controlApi.getServer();
@@ -168,6 +185,6 @@ public class DockerServiceImpl implements DockerService {
 
         retrievedFromServer.setName(name);
 
-        return imageService.create(retrievedFromServer);
+        return imageService.create(retrievedFromServer, true);
     }
 }

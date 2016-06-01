@@ -64,7 +64,7 @@ public class DockerRestApi {
         return dockerService.pingServer();
     }
 
-    @RequestMapping(value = "/hubs", method = GET, produces = {JSON, TEXT})
+    @RequestMapping(value = "/hubs", method = GET, produces = JSON)
     @ResponseBody
     public List<DockerHub> getHubs() {
         return dockerService.getHubs();
@@ -72,9 +72,8 @@ public class DockerRestApi {
 
     @RequestMapping(value = "/hubs", method = POST, consumes = JSON)
     @ResponseBody
-    public ResponseEntity<String> setHub(final @RequestBody DockerHub hub) throws NrgServiceRuntimeException {
-        dockerService.setHub(hub);
-        return new ResponseEntity<>("", HttpStatus.CREATED);
+    public ResponseEntity<DockerHub> setHub(final @RequestBody DockerHub hub) throws NrgServiceRuntimeException {
+        return new ResponseEntity<>(dockerService.setHub(hub), HttpStatus.CREATED);
     }
 
     @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)

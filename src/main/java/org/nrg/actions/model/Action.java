@@ -11,6 +11,7 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.ManyToOne;
 import javax.persistence.Transient;
 import java.util.List;
@@ -25,32 +26,32 @@ public class Action extends AbstractHibernateEntity {
     private String description;
     private Command command;
     private ActionRoot root;
-    private List<ActionInput> inputs;
-    @JsonProperty("resources-staged") private List<ActionResource> resourcesStaged;
-    @JsonProperty("resources-created") private List<ActionResource> resourcesCreated;
+    private List<ActionInput> inputs = Lists.newArrayList();
+    @JsonProperty("resources-staged") private List<ActionResource> resourcesStaged = Lists.newArrayList();
+    @JsonProperty("resources-created") private List<ActionResource> resourcesCreated = Lists.newArrayList();
 
     private Map<String, ActionInput> inputsByCommandVariableName = Maps.newHashMap();
-    private int inputCachedHash;
+    private int inputCachedHash = 0;
     private Map<String, ActionResource> stagedByMountName = Maps.newHashMap();
-    private int stagedCacheHash;
+    private int stagedCacheHash = 0;
     private Map<String, ActionResource> createdByMountName = Maps.newHashMap();
-    private int createdCacheHash;
+    private int createdCacheHash = 0;
 
     public Action() {}
 
     public Action(final ActionDto dto, final Command command) {
         this.name = dto.getName();
         this.description = dto.getDescription();
-        this.inputs = dto.getInputs() == null ? Lists.<ActionInput>newArrayList() : dto.getInputs();
-        this.resourcesStaged = dto.getResourcesStaged();
-        this.resourcesCreated = dto.getResourcesCreated();
+        setInputs(dto.getInputs());
+        setResourcesStaged(dto.getResourcesStaged());
+        setResourcesCreated(dto.getResourcesCreated());
         this.root = dto.getRoot();
 
         this.command = command;
 
-        // If there are any command variables that weren't referenced
-        // explicitly as action inputs, create default inputs for them
-        if (command != null && command.getVariables() != null) {
+        if (command != null) {
+            // If there are any command variables that weren't referenced
+            // explicitly as action inputs, create default inputs for them
             final Map<String, ActionInput> inputMap =
                     getInputsByCommandVariableName() != null ?
                             getInputsByCommandVariableName() :
@@ -62,19 +63,16 @@ public class Action extends AbstractHibernateEntity {
                     inputMap.put(variable.getName(), input);
                 }
             }
-        }
 
-        // If there are any command mounts that weren't referenced
-        // explicitly as action resources, create default resources for them
-        if (command != null && command.getMountsIn() != null) {
+            // If there are any command mounts that weren't referenced
+            // explicitly as action resources, create default resources for them
             for (final CommandMount input : command.getMountsIn()) {
                 if (getStagedByMountName(input.getName()) == null) {
                     final ActionResource staged = new ActionResource(input);
                     addResourceStaged(staged);
                 }
             }
-        }
-        if (command != null && command.getMountsOut() != null) {
+
             for (final CommandMount output : command.getMountsOut()) {
                 if (getCreatedByMountName(output.getName()) == null) {
                     final ActionResource created = new ActionResource(output);
@@ -100,7 +98,7 @@ public class Action extends AbstractHibernateEntity {
         this.description = description;
     }
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     public Command getCommand() {
         return command;
     }
@@ -109,13 +107,15 @@ public class Action extends AbstractHibernateEntity {
         this.command = command;
     }
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     public List<ActionInput> getInputs() {
         return inputs;
     }
 
     public void setInputs(final List<ActionInput> inputs) {
-        this.inputs = inputs;
+        this.inputs = inputs == null ?
+                Lists.<ActionInput>newArrayList() :
+                Lists.newArrayList(inputs);
     }
 
     public ActionRoot getRoot() {
@@ -126,13 +126,15 @@ public class Action extends AbstractHibernateEntity {
         this.root = root;
     }
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     public List<ActionResource> getResourcesStaged() {
         return resourcesStaged;
     }
 
     public void setResourcesStaged(final List<ActionResource> resourcesStaged) {
-        this.resourcesStaged = resourcesStaged;
+        this.resourcesStaged = resourcesStaged == null ?
+                Lists.<ActionResource>newArrayList() :
+                Lists.newArrayList(resourcesStaged);
     }
 
     @Transient
@@ -146,14 +148,15 @@ public class Action extends AbstractHibernateEntity {
         this.stagedCacheHash = staged.hashCode();
     }
 
-
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     public List<ActionResource> getResourcesCreated() {
         return resourcesCreated;
     }
 
     public void setResourcesCreated(final List<ActionResource> resourcesCreated) {
-        this.resourcesCreated = resourcesCreated;
+        this.resourcesCreated = resourcesCreated == null ?
+                Lists.<ActionResource>newArrayList() :
+                Lists.newArrayList(resourcesCreated);
     }
 
     @Transient
@@ -168,21 +171,6 @@ public class Action extends AbstractHibernateEntity {
     }
 
     @Transient
-    public CommandVariable getCommandInput(final ActionInput actionInput) {
-        return getCommandVariableByName(actionInput.getCommandVariableName());
-    }
-
-    @Transient
-    public CommandVariable getCommandVariableByName(final String name) {
-        for (final CommandVariable commandVariable : command.getVariables()) {
-            if (commandVariable.getName().equals(name)) {
-                return commandVariable;
-            }
-        }
-        return null;
-    }
-
-    @Transient
     private Map<String, ActionInput> getInputsByCommandVariableName() {
         if (inputs == null) {
             inputCachedHash = 0;
@@ -191,7 +179,7 @@ public class Action extends AbstractHibernateEntity {
         if (inputCachedHash != inputs.hashCode() || inputsByCommandVariableName == null || inputsByCommandVariableName.isEmpty()) {
             final Map<String, ActionInput> map = Maps.newHashMap();
             for (final ActionInput input : inputs) {
-                map.put(input.getInputName(), input);
+                map.put(input.getCommandVariableName(), input);
             }
             inputsByCommandVariableName = map;
             inputCachedHash = inputs.hashCode();
@@ -247,10 +235,6 @@ public class Action extends AbstractHibernateEntity {
         return getStagedByMountNameMap().containsKey(mountName) ?
                 getStagedByMountNameMap().get(mountName) :
                 null;
-    }
-
-    public void run() {
-        // TODO
     }
 
     @Override
