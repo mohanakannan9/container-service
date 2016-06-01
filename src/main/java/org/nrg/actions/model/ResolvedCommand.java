@@ -18,7 +18,7 @@ import java.util.Objects;
 public class ResolvedCommand implements Serializable {
 
     @JsonProperty("command-id") private Long commandId;
-    @JsonProperty("run") private String run;
+    @JsonProperty("run") private List<String> run;
     @JsonProperty("docker-image-id") private String dockerImageId;
     @JsonProperty("env") private Map<String, String> environmentVariables = Maps.newHashMap();
     @JsonProperty("mounts-in") private List<ResolvedCommandMount> mountsIn = Lists.newArrayList();
@@ -32,12 +32,15 @@ public class ResolvedCommand implements Serializable {
         this.commandId = commandId;
     }
 
-    public String getRun() {
+    @ElementCollection
+    public List<String> getRun() {
         return run;
     }
 
-    public void setRun(final String run) {
-        this.run = run;
+    public void setRun(final List<String> run) {
+        this.run = run == null ?
+                Lists.<String>newArrayList() :
+                run;
     }
 
     public String getDockerImageId() {
@@ -48,7 +51,7 @@ public class ResolvedCommand implements Serializable {
         this.dockerImageId = dockerImageId;
     }
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection
     public Map<String, String> getEnvironmentVariables() {
         return environmentVariables;
     }

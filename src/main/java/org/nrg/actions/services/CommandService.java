@@ -20,4 +20,9 @@ public interface CommandService extends BaseHibernateService<Command> {
             throws NotFoundException;
 
     String launchCommand(final ResolvedCommand resolvedCommand) throws NoServerPrefException, DockerServerException;
+    String launchCommand(final Long commandId)
+            throws NoServerPrefException, DockerServerException, NotFoundException;
+    String launchCommand(final Long commandId,
+                         final Map<String, String> variableRuntimeValues)
+            throws NoServerPrefException, DockerServerException, NotFoundException;
 }

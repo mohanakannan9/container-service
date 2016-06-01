@@ -1,5 +1,7 @@
 package org.nrg.actions.services;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.nrg.actions.daos.CommandDao;
@@ -20,6 +22,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.Nullable;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -91,7 +95,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             }
         }
 
-        final String run = resolveTemplate(command.getRunTemplate(), variableArgTemplateValues);
+        final List<String> run = resolveTemplate(command.getRunTemplate(), variableArgTemplateValues);
         resolvedCommand.setRun(run);
 
         if (command.getMountsIn() != null) {
@@ -125,6 +129,30 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     public String launchCommand(final ResolvedCommand resolvedCommand)
             throws NoServerPrefException, DockerServerException {
         return controlApi.launchImage(resolvedCommand);
+    }
+
+    @Override
+    public String launchCommand(final Long commandId)
+            throws NoServerPrefException, DockerServerException, NotFoundException {
+        return launchCommand(commandId, Maps.<String, String>newHashMap());
+    }
+
+    @Override
+    public String launchCommand(final Long commandId, final Map<String, String> variableRuntimeValues)
+            throws NoServerPrefException, DockerServerException, NotFoundException {
+        final ResolvedCommand resolvedCommand = resolveCommand(commandId, variableRuntimeValues);
+        return controlApi.launchImage(resolvedCommand);
+    }
+
+    private List<String> resolveTemplate(final List<String> template,
+                                         final Map<String, String> variableArgTemplateValues) {
+        return Lists.transform(template, new Function<String, String>() {
+            @Nullable
+            @Override
+            public String apply(@Nullable final String input) {
+                return resolveTemplate(input, variableArgTemplateValues);
+            }
+        });
     }
 
     private String resolveTemplate(final String template,

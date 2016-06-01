@@ -1,10 +1,12 @@
 package org.nrg.actions.rest;
 
 import org.nrg.actions.model.Command;
+import org.nrg.actions.model.Context;
 import org.nrg.actions.model.ResolvedCommand;
 import org.nrg.actions.services.CommandService;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.framework.annotations.XapiRestController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -65,6 +67,19 @@ public class CommandRestApi {
     public String launchCommand(final @RequestBody ResolvedCommand resolvedCommand)
             throws NoServerPrefException, DockerServerException {
         return commandService.launchCommand(resolvedCommand);
+    }
+
+    @RequestMapping(value = {"/{id}/launch"}, method = POST, consumes = JSON, produces = TEXT)
+    public String launchCommand(final @PathVariable Long id,
+                                final @RequestBody Context context)
+            throws NoServerPrefException, DockerServerException, NotFoundException {
+        return commandService.launchCommand(id, context);
+    }
+
+    @RequestMapping(value = {"/{id}/launch"}, method = POST, produces = TEXT)
+    public String launchCommand(final @PathVariable Long id)
+            throws NoServerPrefException, DockerServerException, NotFoundException {
+        return commandService.launchCommand(id);
     }
 
     @ResponseStatus(value = HttpStatus.FAILED_DEPENDENCY)

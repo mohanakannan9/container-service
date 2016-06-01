@@ -36,7 +36,7 @@ public abstract class Command extends AbstractHibernateEntity {
     private String description;
     @JsonProperty("info-url") private String infoUrl;
     private List<CommandVariable> variables = Lists.newArrayList();
-    @JsonProperty("run-template") private String runTemplate;
+    @JsonProperty("run-template") private List<String> runTemplate;
     @JsonProperty("mounts-in") private List<CommandMount> mountsIn = Lists.newArrayList();
     @JsonProperty("mounts-out") private List<CommandMount> mountsOut = Lists.newArrayList();
     @JsonProperty("env") private Map<String, String> environmentVariables = Maps.newHashMap();
@@ -76,12 +76,15 @@ public abstract class Command extends AbstractHibernateEntity {
                 variables;
     }
 
-    public String getRunTemplate() {
+    @ElementCollection
+    public List<String> getRunTemplate() {
         return runTemplate;
     }
 
-    public void setRunTemplate(final String runTemplate) {
-        this.runTemplate = runTemplate;
+    public void setRunTemplate(final List<String> runTemplate) {
+        this.runTemplate = runTemplate == null ?
+                Lists.<String>newArrayList() :
+                runTemplate;
     }
 
     @ElementCollection

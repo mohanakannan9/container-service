@@ -3,6 +3,7 @@ package org.nrg.actions.model;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -74,13 +75,12 @@ public class CommandTest {
     private static final String RESOLVED_MOUNT_IN = "{\"name\":\"in\", \"remote-path\":\"/input\"}";
     private static final String RESOLVED_MOUNT_OUT = "{\"name\":\"out\", \"remote-path\":\"/output\", \"read-only\":false}";
 
-
     private static final String DOCKER_IMAGE_COMMAND_JSON_TEMPLATE =
             "{\"name\":\"docker_image_command\", \"description\":\"Docker Image command for the test\", " +
                     "\"info-url\":\"http://abc.xyz\", " +
                     "\"env\":{\"foo\":\"bar\"}, " +
                     "\"variables\":" + VARIABLE_LIST_JSON + ", " +
-                    "\"run-template\":\"cmd #foo#\", " +
+                    "\"run-template\":[\"cmd\",\"#foo#\"], " +
                     "\"type\":\"docker-image\", " +
                     "\"docker-image\":{\"id\":%d}, " +
                     "\"mounts-in\":[" + MOUNT_IN + "]," +
@@ -90,7 +90,7 @@ public class CommandTest {
             "{\"name\":\"script_command\", \"description\":\"The Script command for the test\", " +
                     "\"info-url\":\"http://abc.xyz\", " +
                     "\"variables\":" + VARIABLE_LIST_JSON + ", " +
-                    "\"run-template\":\"foo\", " +
+                    "\"run-template\":[\"foo\"], " +
                     "\"type\":\"script\", " +
                     "\"script\":{\"id\":%d}," +
                     "\"script-environment\":{\"id\":%d}}";
@@ -99,7 +99,7 @@ public class CommandTest {
             "{\"command-id\":%d, " +
                     "\"docker-image-id\":%d, " +
                     "\"env\":{\"foo\":\"bar\"}, " +
-                    "\"run\":\"cmd --flag=bar\", " +
+                    "\"run\":[\"cmd\", \"--flag=bar\"], " +
                     "\"mounts-in\":[" + RESOLVED_MOUNT_IN + "]," +
                     "\"mounts-out\":[" + RESOLVED_MOUNT_OUT + "]}";
 
@@ -165,7 +165,7 @@ public class CommandTest {
         assertEquals("docker_image_command", command.getName());
         assertEquals("Docker Image command for the test", command.getDescription());
         assertEquals("http://abc.xyz", command.getInfoUrl());
-        assertEquals("cmd #foo#", command.getRunTemplate());
+        assertEquals(Lists.newArrayList("cmd", "#foo#"), command.getRunTemplate());
         assertEquals(ImmutableMap.of("foo", "bar"), command.getEnvironmentVariables());
 
         assertThat(command.getVariables(), hasSize(2));
@@ -216,7 +216,7 @@ public class CommandTest {
         assertEquals("script_command", command.getName());
         assertEquals("The Script command for the test", command.getDescription());
         assertEquals("http://abc.xyz", command.getInfoUrl());
-        assertEquals("foo", command.getRunTemplate());
+        assertEquals(Lists.newArrayList("foo"), command.getRunTemplate());
 
         assertThat(command.getVariables(), hasSize(2));
         assertThat(commandVariableList, everyItem(isIn(command.getVariables())));

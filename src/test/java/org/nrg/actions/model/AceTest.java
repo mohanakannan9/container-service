@@ -50,7 +50,7 @@ public class AceTest {
                     "\"info-url\":\"http://abc.xyz\", " +
                     "\"env\":{\"foo\":\"bar\"}, " +
                     "\"variables\":" + VARIABLE_LIST_JSON + ", " +
-                    "\"run-template\":\"cmd #foo#\", " +
+                    "\"run-template\":[\"cmd\", \"#foo#\"], " +
                     "\"type\":\"docker-image\", " +
                     "\"docker-image\":{\"id\":%d}, " +
                     "\"mounts-in\":[" + COMMAND_MOUNT_IN_JSON + "]," +

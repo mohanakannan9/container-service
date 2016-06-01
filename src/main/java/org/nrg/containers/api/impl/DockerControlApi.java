@@ -261,7 +261,7 @@ public class DockerControlApi implements ContainerControlApi {
     public String launchImage(final ResolvedCommand command)
             throws NoServerPrefException, DockerServerException {
         final String dockerImageId = command.getDockerImageId();
-        final List<String> runCommand = Lists.newArrayList(command.getRun());
+        final List<String> runCommand = command.getRun();
         final List<String> bindMounts = Lists.newArrayList();
         for (final ResolvedCommandMount mount : command.getMountsIn()) {
             bindMounts.add(mount.toBindMountString());
@@ -348,9 +348,8 @@ public class DockerControlApi implements ContainerControlApi {
             _log.debug(message);
         }
 
-        final ContainerCreation container;
         try (final DockerClient client = getClient(server)) {
-            container = client.createContainer(containerConfig);
+            final ContainerCreation container = client.createContainer(containerConfig);
 
             _log.info("Starting container: id "+container.id());
             if (container.getWarnings() != null) {
