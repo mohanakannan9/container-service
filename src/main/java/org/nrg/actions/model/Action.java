@@ -25,7 +25,8 @@ public class Action extends AbstractHibernateEntity {
     private String name;
     private String description;
     private Command command;
-    private ActionRoot root;
+    @JsonProperty("root-xsi-type") private String rootXsiType;
+    @JsonProperty("root-matchers") private List<Matcher> rootMatchers = Lists.newArrayList();
     private List<ActionInput> inputs = Lists.newArrayList();
     @JsonProperty("resources-staged") private List<ActionResource> resourcesStaged = Lists.newArrayList();
     @JsonProperty("resources-created") private List<ActionResource> resourcesCreated = Lists.newArrayList();
@@ -45,7 +46,8 @@ public class Action extends AbstractHibernateEntity {
         setInputs(dto.getInputs());
         setResourcesStaged(dto.getResourcesStaged());
         setResourcesCreated(dto.getResourcesCreated());
-        this.root = dto.getRoot();
+        this.rootXsiType = dto.getRootXsiType();
+        setRootMatchers(dto.getRootMatchers());
 
         this.command = command;
 
@@ -118,12 +120,23 @@ public class Action extends AbstractHibernateEntity {
                 Lists.newArrayList(inputs);
     }
 
-    public ActionRoot getRoot() {
-        return root;
+    public String getRootXsiType() {
+        return rootXsiType;
     }
 
-    public void setRoot(final ActionRoot root) {
-        this.root = root;
+    public void setRootXsiType(final String rootXsiType) {
+        this.rootXsiType = rootXsiType;
+    }
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    public List<Matcher> getRootMatchers() {
+        return rootMatchers;
+    }
+
+    public void setRootMatchers(final List<Matcher> rootMatchers) {
+        this.rootMatchers = rootMatchers == null ?
+                Lists.<Matcher>newArrayList() :
+                Lists.newArrayList(rootMatchers);
     }
 
     @ElementCollection(fetch = FetchType.EAGER)
@@ -242,19 +255,20 @@ public class Action extends AbstractHibernateEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
-        final Action action = (Action) o;
-        return Objects.equals(this.name, action.name) &&
-                Objects.equals(this.description, action.description) &&
-                Objects.equals(this.command, action.command) &&
-                Objects.equals(this.root, action.root) &&
-                Objects.equals(this.inputs, action.inputs) &&
-                Objects.equals(this.resourcesStaged, action.resourcesStaged) &&
-                Objects.equals(this.resourcesCreated, action.resourcesCreated);
+        final Action that = (Action) o;
+        return Objects.equals(this.name, that.name) &&
+                Objects.equals(this.description, that.description) &&
+                Objects.equals(this.command, that.command) &&
+                Objects.equals(this.rootXsiType, that.rootXsiType) &&
+                Objects.equals(this.rootMatchers, that.rootMatchers) &&
+                Objects.equals(this.inputs, that.inputs) &&
+                Objects.equals(this.resourcesStaged, that.resourcesStaged) &&
+                Objects.equals(this.resourcesCreated, that.resourcesCreated);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), name, description, command, root, inputs, resourcesStaged, resourcesCreated);
+        return Objects.hash(super.hashCode(), name, description, command, rootXsiType, rootMatchers, inputs, resourcesStaged, resourcesCreated);
     }
 
     @Override
@@ -263,7 +277,8 @@ public class Action extends AbstractHibernateEntity {
                 .add("name", name)
                 .add("description", description)
                 .add("command", command)
-                .add("root", root)
+                .add("rootXsiType", rootXsiType)
+                .add("rootMatchers", rootMatchers)
                 .add("inputs", inputs)
                 .add("resourcesStaged", resourcesStaged)
                 .add("resourcesCreated", resourcesCreated)

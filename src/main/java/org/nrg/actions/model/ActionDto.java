@@ -12,7 +12,8 @@ public class ActionDto {
     private String name;
     private String description;
     @JsonProperty("command-id") private Long commandId;
-    private ActionRoot root;
+    @JsonProperty("root-xsi-type") private String rootXsiType;
+    @JsonProperty("root-matchers") private List<Matcher> rootMatchers = Lists.newArrayList();
     private List<ActionInput> inputs = Lists.newArrayList();
     @JsonProperty("resources-staged") private List<ActionResource> resourcesStaged = Lists.newArrayList();
     @JsonProperty("resources-created") private List<ActionResource> resourcesCreated = Lists.newArrayList();
@@ -49,12 +50,22 @@ public class ActionDto {
         this.commandId = commandId;
     }
 
-    public ActionRoot getRoot() {
-        return root;
+    public String getRootXsiType() {
+        return rootXsiType;
     }
 
-    public void setRoot(final ActionRoot root) {
-        this.root = root;
+    public void setRootXsiType(final String rootXsiType) {
+        this.rootXsiType = rootXsiType;
+    }
+
+    public List<Matcher> getRootMatchers() {
+        return rootMatchers;
+    }
+
+    public void setRootMatchers(final List<Matcher> rootMatchers) {
+        this.rootMatchers = rootMatchers == null ?
+                Lists.<Matcher>newArrayList() :
+                Lists.newArrayList(rootMatchers);
     }
 
     public List<ActionInput> getInputs() {
@@ -105,20 +116,21 @@ public class ActionDto {
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final ActionDto actionDto = (ActionDto) o;
-        return Objects.equals(this.id, actionDto.id) &&
-                Objects.equals(this.name, actionDto.name) &&
-                Objects.equals(this.description, actionDto.description) &&
-                Objects.equals(this.commandId, actionDto.commandId) &&
-                Objects.equals(this.root, actionDto.root) &&
-                Objects.equals(this.inputs, actionDto.inputs) &&
-                Objects.equals(this.resourcesStaged, actionDto.resourcesStaged) &&
-                Objects.equals(this.resourcesCreated, actionDto.resourcesCreated);
+        final ActionDto that = (ActionDto) o;
+        return Objects.equals(this.id, that.id) &&
+                Objects.equals(this.name, that.name) &&
+                Objects.equals(this.description, that.description) &&
+                Objects.equals(this.commandId, that.commandId) &&
+                Objects.equals(this.rootXsiType, that.rootXsiType) &&
+                Objects.equals(this.rootMatchers, that.rootMatchers) &&
+                Objects.equals(this.inputs, that.inputs) &&
+                Objects.equals(this.resourcesStaged, that.resourcesStaged) &&
+                Objects.equals(this.resourcesCreated, that.resourcesCreated);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, description, commandId, root, inputs, resourcesStaged, resourcesCreated);
+        return Objects.hash(id, name, description, commandId, rootXsiType, rootMatchers, inputs, resourcesStaged, resourcesCreated);
     }
 
     @Override
@@ -128,7 +140,8 @@ public class ActionDto {
                 .add("name", name)
                 .add("description", description)
                 .add("commandId", commandId)
-                .add("root", root)
+                .add("rootXiType", rootXsiType)
+                .add("rootMatchers", rootMatchers)
                 .add("inputs", inputs)
                 .add("staged", resourcesStaged)
                 .add("created", resourcesCreated)

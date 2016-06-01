@@ -77,13 +77,11 @@ public class ActionTest {
                     "\"mounts-in\":[" + COMMAND_MOUNT_IN_JSON + "]," +
                     "\"mounts-out\":[" + COMMAND_MOUNT_OUT_JSON + "]}";
 
-    private static final String ACTION_ROOT_JSON =
-            "{\"name\":\"scan\", \"xsiType\":\"xnat:imageScanData\"," +
-                    "\"matchers\": [" + SCAN_MATCHER_JSON + "]}";
     private static final String ACTION_JSON_TEMPLATE =
             "{\"name\":\"an_action\", \"description\":\"Yep, it's an action all right\", " +
                     "\"command-id\":%d, " +
-                    "\"root\": " + ACTION_ROOT_JSON + "," +
+                    "\"root-xsi-type\": \"xnat:imageScanData\"," +
+                    "\"root-matchers\": [" + SCAN_MATCHER_JSON + "]," +
                     "\"inputs\":[" + ACTION_INPUT_JSON + "]," +
                     "\"resources-created\":[" + ACTION_RESOURCE_CREATED_JSON + "]," +
                     "\"resources-staged\":[" + ACTION_RESOURCE_STAGED_JSON + "]}";
@@ -91,7 +89,8 @@ public class ActionTest {
     private static final String ACTION_MINIMAL_JSON_TEMPLATE =
             "{\"name\":\"an_action\", \"description\":\"Yep, it's an action all right\", " +
                     "\"command-id\":%d, " +
-                    "\"root\": " + ACTION_ROOT_JSON + "}";
+                    "\"root-xsi-type\": \"xnat:imageScanData\"," +
+                    "\"root-matchers\": [" + SCAN_MATCHER_JSON + "]}";
 
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -131,22 +130,6 @@ public class ActionTest {
     }
 
     @Test
-    public void testDeserializeActionRoot() throws Exception {
-        final ActionRoot root =
-                mapper.readValue(ACTION_ROOT_JSON, ActionRoot.class);
-
-        assertEquals("scan", root.getRootName());
-        assertEquals("xnat:imageScanData", root.getXsiType());
-
-        assertThat(root.getMatchers(), hasSize(1));
-        final Matcher matcher = root.getMatchers().get(0);
-        assertThat(matcher.getType(), is(nullValue()));
-        assertEquals("type", matcher.getProperty());
-        assertEquals("equals", matcher.getOperator());
-        assertEquals("T1|MPRAGE", matcher.getValue());
-    }
-
-    @Test
     public void testDeserializeActionResources() throws Exception {
         final ActionResource staged =
                 mapper.readValue(ACTION_RESOURCE_STAGED_JSON, ActionResource.class);
@@ -166,7 +149,7 @@ public class ActionTest {
 
     @Test
     public void testDeserializeAction() throws Exception {
-        final ActionRoot root = mapper.readValue(ACTION_ROOT_JSON, ActionRoot.class);
+        final Matcher scanMatcher = mapper.readValue(SCAN_MATCHER_JSON, Matcher.class);
         final ActionInput input = mapper.readValue(ACTION_INPUT_JSON, ActionInput.class);
         final ActionResource created =
                 mapper.readValue(ACTION_RESOURCE_CREATED_JSON, ActionResource.class);
@@ -179,7 +162,9 @@ public class ActionTest {
         assertEquals("an_action", actionDto.getName());
         assertEquals("Yep, it's an action all right", actionDto.getDescription());
         assertEquals(Long.valueOf(0), actionDto.getCommandId());
-        assertEquals(root, actionDto.getRoot());
+        assertEquals("xnat:imageScanData", actionDto.getRootXsiType());
+        assertThat(actionDto.getRootMatchers(), hasSize(1));
+        assertThat(scanMatcher, isIn(actionDto.getRootMatchers()));
         assertThat(actionDto.getInputs(), hasSize(1));
         assertEquals(input, actionDto.getInputs().get(0));
         assertEquals(created, actionDto.getResourcesCreated().get(0));
@@ -199,7 +184,7 @@ public class ActionTest {
         final String commandJson = String.format(COMMAND_JSON_TEMPLATE, 0);
         final Command command = mapper.readValue(commandJson, Command.class);
 
-        final ActionRoot root = mapper.readValue(ACTION_ROOT_JSON, ActionRoot.class);
+        final Matcher scanMatcher = mapper.readValue(SCAN_MATCHER_JSON, Matcher.class);
         final List<ActionInput> defaultInputs = Lists.newArrayList();
         for (final CommandVariable variable : variables) {
             defaultInputs.add(new ActionInput(variable));
@@ -223,8 +208,12 @@ public class ActionTest {
         assertEquals((Long)command.getId(), actionDto.getCommandId());
         assertEquals(command, minimalAction.getCommand());
 
-        assertEquals(root, actionDto.getRoot());
-        assertEquals(root, minimalAction.getRoot());
+        assertEquals("xnat:imageScanData", actionDto.getRootXsiType());
+        assertEquals("xnat:imageScanData", minimalAction.getRootXsiType());
+        assertThat(actionDto.getRootMatchers(), hasSize(1));
+        assertThat(scanMatcher, isIn(actionDto.getRootMatchers()));
+        assertThat(minimalAction.getRootMatchers(), hasSize(1));
+        assertThat(scanMatcher, isIn(minimalAction.getRootMatchers()));
 
         assertThat(actionDto.getInputs(), Matchers.<ActionInput>empty());
         assertThat(minimalAction.getInputs(), not(Matchers.<ActionInput>empty()));
