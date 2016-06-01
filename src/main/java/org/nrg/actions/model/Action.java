@@ -100,7 +100,7 @@ public class Action extends AbstractHibernateEntity {
         this.description = description;
     }
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne
     public Command getCommand() {
         return command;
     }
@@ -109,7 +109,7 @@ public class Action extends AbstractHibernateEntity {
         this.command = command;
     }
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection
     public List<ActionInput> getInputs() {
         return inputs;
     }
@@ -128,7 +128,7 @@ public class Action extends AbstractHibernateEntity {
         this.rootXsiType = rootXsiType;
     }
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection
     public List<Matcher> getRootMatchers() {
         return rootMatchers;
     }
@@ -139,7 +139,7 @@ public class Action extends AbstractHibernateEntity {
                 rootMatchers;
     }
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection
     public List<ActionResource> getResourcesStaged() {
         return resourcesStaged;
     }
@@ -161,7 +161,7 @@ public class Action extends AbstractHibernateEntity {
         this.stagedCacheHash = staged.hashCode();
     }
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection
     public List<ActionResource> getResourcesCreated() {
         return resourcesCreated;
     }

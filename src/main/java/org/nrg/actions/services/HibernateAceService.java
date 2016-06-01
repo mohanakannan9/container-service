@@ -12,9 +12,9 @@ import org.nrg.actions.model.ActionInput;
 import org.nrg.actions.model.ActionResource;
 import org.nrg.actions.model.Context;
 import org.nrg.actions.model.ItemQueryCacheKey;
+import org.nrg.actions.model.Matcher;
 import org.nrg.actions.model.ResolvedCommand;
 import org.nrg.actions.model.ResolvedCommandMount;
-import org.nrg.actions.model.Matcher;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
@@ -24,9 +24,7 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.transporter.TransportService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
-import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.om.XnatAbstractresource;
-import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xft.XFTItem;
@@ -37,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -45,6 +44,7 @@ import java.util.Map;
 import java.util.Set;
 
 @Service
+@Transactional
 public class HibernateAceService
         extends AbstractHibernateEntityService<ActionContextExecution, AceDao>
         implements AceService {

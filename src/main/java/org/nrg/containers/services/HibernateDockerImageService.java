@@ -9,12 +9,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Properties;
 
 @Service
 @Transactional
 public class HibernateDockerImageService extends AbstractHibernateEntityService<DockerImage, DockerImageDao>
         implements DockerImageService {
 
+    @Override
+    public void afterPropertiesSet() {
+        setInitialize(true);
+    }
+
+    @Override
     public DockerImage getByDbId(final Long id) throws NotFoundException {
         final DockerImage dbImage = retrieve(id);
         if (dbImage == null) {

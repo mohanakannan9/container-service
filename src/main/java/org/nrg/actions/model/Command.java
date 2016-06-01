@@ -65,7 +65,7 @@ public abstract class Command extends AbstractHibernateEntity {
         this.infoUrl = infoUrl;
     }
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection
     public List<CommandVariable> getVariables() {
         return variables;
     }
@@ -84,7 +84,7 @@ public abstract class Command extends AbstractHibernateEntity {
         this.runTemplate = runTemplate;
     }
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection
     public List<CommandMount> getMountsIn() {
         return mountsIn;
     }
@@ -95,7 +95,7 @@ public abstract class Command extends AbstractHibernateEntity {
                 mountsIn;
     }
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection
     public List<CommandMount> getMountsOut() {
         return mountsOut;
     }
@@ -106,7 +106,7 @@ public abstract class Command extends AbstractHibernateEntity {
                 mountsOut;
     }
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection
     public Map<String, String> getEnvironmentVariables() {
         return environmentVariables;
     }

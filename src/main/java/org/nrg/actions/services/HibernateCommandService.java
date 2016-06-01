@@ -18,6 +18,7 @@ import org.nrg.containers.model.DockerImageCommand;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 import java.util.Set;
@@ -25,6 +26,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
+@Transactional
 public class HibernateCommandService extends AbstractHibernateEntityService<Command, CommandDao>
         implements CommandService {
     @Autowired
