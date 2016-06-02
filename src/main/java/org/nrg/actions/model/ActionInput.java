@@ -13,7 +13,7 @@ public class ActionInput implements Serializable {
     @JsonProperty("name") private String inputName;
     @JsonProperty("command-variable-name") private String commandVariableName;
     private String type;
-    private Boolean required;
+    private Boolean required = false;
     private String value;
     @JsonProperty("root-property") private String rootProperty;
 
@@ -24,7 +24,7 @@ public class ActionInput implements Serializable {
         this.commandVariableName = commandVariable.getName();
         //this.rootProperty = commandVariable.getName();
 
-        this.required = commandVariable.getRequired();
+        setRequired(commandVariable.getRequired());
         this.type = commandVariable.getType();
         this.value = commandVariable.getValue();
     }
@@ -57,7 +57,7 @@ public class ActionInput implements Serializable {
     }
 
     public void setRequired(final Boolean required) {
-        this.required = required;
+        this.required = required == null ? false : required;
     }
 
     public String getType() {

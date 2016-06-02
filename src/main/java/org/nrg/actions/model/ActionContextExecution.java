@@ -35,6 +35,7 @@ public class ActionContextExecution extends AbstractHibernateEntity {
         this.description = aceDto.getDescription();
         this.actionId = aceDto.getActionId();
         this.rootId = aceDto.getRootId();
+        this.project = aceDto.getProject();
         setInputs(aceDto.getInputs());
         setResourcesCreated(aceDto.getResourcesCreated());
         setResourcesStaged(aceDto.getResourcesStaged());

@@ -130,7 +130,8 @@ public class HibernateAceService
         final DockerServer dockerServer = containerControlApi.getServer();
 
         // TODO Use Transporter to stage staged resources
-        if (ace.getResourcesStaged() != null && resolvedCommand.getMountsIn() != null) {
+        if (!(ace.getResourcesStaged() == null || ace.getResourcesStaged().isEmpty() ||
+                resolvedCommand.getMountsIn() == null || resolvedCommand.getMountsIn().isEmpty()) ) {
             final List<ActionResource> staged = ace.getResourcesStaged();
             final List<ResolvedCommandMount> mountsIn = resolvedCommand.getMountsIn();
 
@@ -169,7 +170,7 @@ public class HibernateAceService
         // TODO If it's a script command, need to write out the script and transport it
 
         // TODO Use Transporter to create writable space for output mounts
-        if (resolvedCommand.getMountsOut() != null) {
+        if (!(resolvedCommand.getMountsOut() == null || resolvedCommand.getMountsOut().isEmpty())) {
             final List<ResolvedCommandMount> mountsOut = resolvedCommand.getMountsOut();
             final List<Path> buildPaths = transporter.getWritableDirectories(dockerServer.getHost(), mountsOut.size());
             for (int i=0; i<mountsOut.size(); i++) {
