@@ -1,6 +1,5 @@
 package org.nrg.actions.daos;
 
-import org.hibernate.Criteria;
 import org.hibernate.criterion.Restrictions;
 import org.nrg.actions.model.Action;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
@@ -19,11 +18,9 @@ public class ActionDao extends AbstractHibernateDAO<Action> {
      * @return List of Actions that can run on given xsiType.
      */
     public List<Action> findByRootXsiType(final String xsiType) {
-        Criteria criteria = getCriteriaForType();
-        criteria.add(Restrictions.eqOrIsNull("??????", xsiType));
-        criteria.add(Restrictions.eq("enabled", true));
-
-        final List list = criteria.list();
+        final List list =
+                findByCriteria(Restrictions.like("rootXsiType", xsiType),
+                        Restrictions.eq("enabled", true));
         if (list == null || list.size() == 0) {
             return null;
         } else {

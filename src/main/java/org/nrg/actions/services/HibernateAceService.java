@@ -16,6 +16,7 @@ import org.nrg.actions.model.Matcher;
 import org.nrg.actions.model.ResolvedCommand;
 import org.nrg.actions.model.ResolvedCommandMount;
 import org.nrg.containers.api.ContainerControlApi;
+import org.nrg.containers.exceptions.BadRequestException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
@@ -24,13 +25,18 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.transporter.TransportService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
+import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.om.XnatAbstractresource;
+import org.nrg.xdat.om.XnatExperimentdata;
+import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatResourcecatalog;
+import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.search.ItemSearch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,64 +68,95 @@ public class HibernateAceService
     @Autowired
     private ContainerControlApi containerControlApi;
 
-    public List<ActionContextExecutionDto> resolveAces(final Context context) throws XFTInitException, ElementNotFoundException {
-//        final String id = context.get("id");
-//
-//        final List<Action> actionCandidates = actionService.findByRootXsiType(xsiType);
-//        if (actionCandidates == null || actionCandidates.isEmpty()) {
-//            return null;
-//        }
-//
-//        if (StringUtils.isBlank(xsiType)) {
-//            // TODO This is ok. We can run site-wide Actions.
-//            return null;
-//        } else {
-//            // We know xsiType and id are both not blank.
-//            // Find the item with the given xsiType and id
-//            XFTItem item = null;
-//            final String project;
-//            if (xsiType.matches("^[a-zA-Z]+:[a-zA-Z]+ScanData$")) {
-//                // If we are looking for a scan, assume the id is formatted "sessionid.scanid"
-//                final String[] splitId = id.split(".");
-//                if (splitId.length != 2) {
-//                    // TODO scan id must be formatted "sessionid.scanid". throw error.
-//                    return null;
-//                }
-//                final String sessionId = splitId[0];
-//                final String scanId = splitId[1];
-//                final XnatImagesessiondata session =
-//                        XnatImagesessiondata.getXnatImagesessiondatasById(sessionId, XDAT.getUserDetails(), false);
-//                project = session.getProject();
-//                for (final XnatImagescandataI scan : session.getScans_scan()) {
-//                    if (scan.getId().equals(scanId)) {
-//                        item = (XFTItem) scan;
-//                        break;
-//                    }
-//                }
-//            } else {
-//                // TODO get a non-scan
-//                // ItemSearch.GetAllItems(id, user, false)
-//                return null;
-//            }
-//
-//            if (item == null) {
-//                // TODO couldn't find the item. Error.
-//                return null;
-//            }
-//
-//            final List<ActionContextExecutionDto> resolvedAces = Lists.newArrayList();
-//            final Map<ItemQueryCacheKey, String> cache = Maps.newHashMap();
-//            for (final Action candidate : actionCandidates) {
-//                final ActionContextExecutionDto ace = resolve(candidate, item, context, cache);
-//                if (ace != null) {
-//                    ace.setRootId(id);
-//                    ace.setProject(project);
-//                    resolvedAces.add(ace);
-//                }
-//            }
-//            return resolvedAces;
-//        }
-        return null;
+    public List<ActionContextExecutionDto> resolveAces(final Context context) throws XFTInitException, BadRequestException, NotFoundException {
+        final String id = context.get("id");
+        if (StringUtils.isBlank(id)) {
+            // TODO we should be able to launch actions that don't need an id. But not right now.
+            throw new BadRequestException("Must set id in the context");
+        }
+
+        final String xsiType = context.get("xsiType");
+        if (StringUtils.isBlank(xsiType)) {
+            // TODO I hope this is not necessary, but right now it is.
+            throw new BadRequestException("Must set xsiType in the context");
+        }
+
+        if (StringUtils.isBlank(xsiType)) {
+            // TODO This is ok. We can run site-wide Actions.
+            return null;
+        } else {
+            final List<Action> actionCandidates = actionService.findByRootXsiType(xsiType);
+            if (actionCandidates == null || actionCandidates.isEmpty()) {
+                return null;
+            }
+
+            // We know xsiType and id are both not blank.
+            // Find the item with the given xsiType and id
+            XFTItem item = null;
+            String project = "";
+            if (xsiType.matches("^[a-zA-Z]+:[a-zA-Z]+ScanData$")) {
+                // If we are looking for a scan, assume the id is formatted "sessionid.scanid"
+                final String[] splitId = id.split(".");
+                if (splitId.length != 2) {
+                    // TODO scan id must be formatted "sessionid.scanid". throw error.
+                    return null;
+                }
+                final String sessionId = splitId[0];
+                final String scanId = splitId[1];
+                final XnatImagesessiondata session =
+                        XnatImagesessiondata.getXnatImagesessiondatasById(sessionId, XDAT.getUserDetails(), false);
+                project = session.getProject();
+                for (final XnatImagescandataI scan : session.getScans_scan()) {
+                    if (scan.getId().equals(scanId)) {
+                        item = (XFTItem) scan;
+                        break;
+                    }
+                }
+            } else {
+                // TODO get a non-scan
+                try {
+                    item = ItemSearch.GetItem(xsiType+".ID", id, XDAT.getUserDetails(), false);
+                } catch (Exception e) {
+                    throw new NotFoundException("Could not find " + xsiType + " with id " + id, e);
+                }
+
+                if (item != null) {
+                    try {
+                        if (item.instanceOf("xnat:projectData")) {
+                            project = id;
+                        } else if (item.instanceOf("xnat:experimentData")) {
+                            final XnatExperimentdata expt =
+                                    XnatExperimentdata.getXnatExperimentdatasById(id, XDAT.getUserDetails(), false);
+                            project = expt.getProject();
+                        } else if (item.instanceOf("xnat:subjectData")) {
+                            final XnatSubjectdata subject =
+                                    XnatSubjectdata.getXnatSubjectdatasById(id, XDAT.getUserDetails(), false);
+                            project = subject.getProject();
+                        } else {
+                            logger.info("Can't figure out the project for an item with xsiType "+xsiType);
+                        }
+                    } catch (ElementNotFoundException e) {
+                        logger.error(e.getMessage());
+                    }
+                }
+            }
+
+            if (item == null) {
+                throw new NotFoundException("Could not find " + xsiType + " with id " + id);
+            }
+
+            final List<ActionContextExecutionDto> resolvedAces = Lists.newArrayList();
+            final Map<ItemQueryCacheKey, String> cache = Maps.newHashMap();
+            for (final Action candidate : actionCandidates) {
+                final ActionContextExecutionDto ace = resolve(candidate, item, context, cache);
+                if (ace != null) {
+                    ace.setRootId(id);
+                    ace.setProject(project);
+                    resolvedAces.add(ace);
+                }
+            }
+            return resolvedAces;
+        }
     }
 
     public ActionContextExecution executeAce(final ActionContextExecutionDto aceDto)
@@ -237,7 +274,7 @@ public class HibernateAceService
                                            final XFTItem item,
                                            final Context context,
                                            final Map<ItemQueryCacheKey, String> cache)
-            throws XFTInitException, ElementNotFoundException {
+            throws XFTInitException {
 
         if (!doesItemMatchMatchers(item, action.getRootMatchers(), cache)) {
             return null;
@@ -249,14 +286,10 @@ public class HibernateAceService
         if (ace.getInputs() != null) {
             for (final ActionInput input : ace.getInputs()) {
                 // Try to get inputs of type=property out of the root object
-                if (StringUtils.isNotBlank(input.getType())) {
-                    if (input.getType().equals("property")) {
-                        final String property = cacheQuery(item, input.getRootProperty(), cache);
-                        if (property != null) {
-                            input.setValue(property);
-                        }
-                    } else {
-                        // TODO Are there other types of input we need to handle specially?
+                if (StringUtils.isNotBlank(input.getRootProperty())) {
+                    final String property = cacheQuery(item, input.getRootProperty(), cache);
+                    if (property != null) {
+                        input.setValue(property);
                     }
                 }
 

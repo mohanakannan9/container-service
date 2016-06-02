@@ -4,6 +4,7 @@ import org.nrg.actions.model.ActionContextExecution;
 import org.nrg.actions.model.ActionContextExecutionDto;
 import org.nrg.actions.model.Context;
 import org.nrg.actions.services.AceService;
+import org.nrg.containers.exceptions.BadRequestException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
@@ -39,19 +40,19 @@ public class AceRestApi {
 
     @RequestMapping(value = {}, method = GET, produces = JSON)
     public List<ActionContextExecutionDto> getAcesWArgsFromQuery(final @RequestParam Map<String,String> allRequestParams)
-            throws XFTInitException, ElementNotFoundException {
+            throws XFTInitException, BadRequestException, NotFoundException {
         return aceService.resolveAces(Context.fromMap(allRequestParams));
     }
 
     @RequestMapping(value = {}, method = GET, consumes = FORM, produces = JSON)
-    public List<ActionContextExecutionDto> getAcesWArgsInBodyAsForm(final @RequestParam MultiValueMap<String,String> allRequestParams)
-            throws XFTInitException, ElementNotFoundException {
+    public List<ActionContextExecutionDto> getAcesWArgsInBodyAsForm(final @RequestBody MultiValueMap<String,String> allRequestParams)
+            throws XFTInitException, BadRequestException, NotFoundException {
         return aceService.resolveAces(Context.fromMap(allRequestParams.toSingleValueMap()));
     }
 
     @RequestMapping(value = {}, method = GET, consumes = JSON, produces = JSON)
-    public List<ActionContextExecutionDto> getAcesWArgsInBodyAsJson(final @RequestParam Map<String,String> allRequestParams)
-            throws XFTInitException, ElementNotFoundException {
+    public List<ActionContextExecutionDto> getAcesWArgsInBodyAsJson(final @RequestBody Map<String,String> allRequestParams)
+            throws XFTInitException, BadRequestException, NotFoundException {
         return aceService.resolveAces(Context.fromMap(allRequestParams));
     }
 

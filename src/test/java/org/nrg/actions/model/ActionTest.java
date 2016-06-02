@@ -249,4 +249,23 @@ public class ActionTest {
         assertNotNull(action.getCommand());
         assertEquals(command, action.getCommand());
     }
+
+    @Test
+    public void testFindActionByXsiType() throws Exception {
+        final DockerImage image = mapper.readValue(DOCKER_IMAGE_JSON, DockerImage.class);
+        dockerImageService.create(image);
+
+        final String commandJson = String.format(COMMAND_JSON_TEMPLATE, image.getId());
+        final Command command = mapper.readValue(commandJson, Command.class);
+        commandService.create(command);
+
+        final String actionJson = String.format(ACTION_JSON_TEMPLATE, command.getId());
+        final ActionDto actionDto = mapper.readValue(actionJson, ActionDto.class);
+        final Action action = actionService.createFromDto(actionDto);
+        actionService.flush();
+        assertEquals("xnat:imageScanData", action.getRootXsiType());
+
+        final List<Action> actions = actionService.findByRootXsiType("xnat:imageScanData");
+        assertThat(action, isIn(actions));
+    }
 }
