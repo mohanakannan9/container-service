@@ -65,7 +65,7 @@ public class ResolvedCommandMount implements Serializable {
 
     @Transient
     public String toBindMountString() {
-        return StringUtils.join(localPath, remotePath, readOnly?"ro":"", ':');
+        return localPath + ":" + remotePath + (readOnly?":ro":"");
     }
 
     @Override
