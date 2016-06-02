@@ -1,5 +1,6 @@
 package org.nrg.actions.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
@@ -93,6 +94,7 @@ public class ResolvedCommand implements Serializable {
     }
 
     @Transient
+    @JsonIgnore
     public void setMountsOutFromCommandMounts(final List<CommandMount> commandMounts) {
         final List<ResolvedCommandMount> mountsOut = Lists.newArrayList();
         for (final CommandMount mount : commandMounts) {
@@ -105,7 +107,6 @@ public class ResolvedCommand implements Serializable {
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
         final ResolvedCommand that = (ResolvedCommand) o;
         return Objects.equals(this.commandId, that.commandId) &&
                 Objects.equals(this.run, that.run) &&
@@ -117,7 +118,7 @@ public class ResolvedCommand implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), commandId, run, dockerImageId, environmentVariables, mountsIn, mountsOut);
+        return Objects.hash(commandId, run, dockerImageId, environmentVariables, mountsIn, mountsOut);
     }
 
     @Override

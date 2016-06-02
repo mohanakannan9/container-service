@@ -13,7 +13,10 @@ import org.nrg.xft.exception.XFTInitException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -35,15 +38,28 @@ public class AceRestApi {
     private AceService aceService;
 
     @RequestMapping(value = {}, method = GET, produces = JSON)
-    public List<ActionContextExecutionDto> getAces(final @RequestParam Map<String,String> allRequestParams)
+    public List<ActionContextExecutionDto> getAcesWArgsFromQuery(final @RequestParam Map<String,String> allRequestParams)
             throws XFTInitException, ElementNotFoundException {
         return aceService.resolveAces(Context.fromMap(allRequestParams));
     }
 
-    @RequestMapping(value = {}, method = POST, produces = TEXT)
-    public ActionContextExecution executeAce(final @RequestParam ActionContextExecutionDto aceDto)
+    @RequestMapping(value = {}, method = GET, consumes = FORM, produces = JSON)
+    public List<ActionContextExecutionDto> getAcesWArgsInBodyAsForm(final @RequestParam MultiValueMap<String,String> allRequestParams)
+            throws XFTInitException, ElementNotFoundException {
+        return aceService.resolveAces(Context.fromMap(allRequestParams.toSingleValueMap()));
+    }
+
+    @RequestMapping(value = {}, method = GET, consumes = JSON, produces = JSON)
+    public List<ActionContextExecutionDto> getAcesWArgsInBodyAsJson(final @RequestParam Map<String,String> allRequestParams)
+            throws XFTInitException, ElementNotFoundException {
+        return aceService.resolveAces(Context.fromMap(allRequestParams));
+    }
+
+    @RequestMapping(value = {}, method = POST, consumes = JSON, produces = JSON)
+    public ResponseEntity<ActionContextExecution> executeAce(final @RequestBody ActionContextExecutionDto aceDto)
             throws NoServerPrefException, ElementNotFoundException, NotFoundException, DockerServerException {
-        return aceService.executeAce(aceDto);
+        final ActionContextExecution ace = aceService.executeAce(aceDto);
+        return new ResponseEntity<>(ace, HttpStatus.CREATED);
     }
 //
 //    @RequestMapping(value = {"/{id}"}, method = GET, produces = JSON)
