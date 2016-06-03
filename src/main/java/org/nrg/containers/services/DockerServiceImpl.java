@@ -42,6 +42,15 @@ public class DockerServiceImpl implements DockerService {
     }
 
     @Override
+    public String pingHub(final Long hubId) throws DockerServerException, NoServerPrefException, NotFoundException {
+        final DockerHub hub = dockerHubService.retrieve(hubId);
+        if (hub == null) {
+            throw new NotFoundException(String.format("Hub with it %d not found", hubId));
+        }
+        return pingHub(hub);
+    }
+
+    @Override
     public String pingHub(final DockerHub hub) throws DockerServerException, NoServerPrefException {
         return controlApi.pingHub(hub);
     }

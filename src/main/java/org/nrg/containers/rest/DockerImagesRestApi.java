@@ -53,7 +53,8 @@ public class DockerImagesRestApi {
     public static final String JSON = MediaType.APPLICATION_JSON_UTF8_VALUE;
     public static final String TEXT = MediaType.TEXT_PLAIN_VALUE;
 
-    @ApiOperation(value = "Get list of images.", notes = "Returns a list of all Docker images.", response = DockerImageDto.class, responseContainer = "List")
+    @ApiOperation(value = "Get list of images.", notes = "Returns a list of all Docker images.",
+            response = DockerImageDto.class, responseContainer = "List")
     @ApiResponses({
             @ApiResponse(code = 200, message = "A list of images on the server"),
             @ApiResponse(code = 404, message = "At least one of from-db or from-docker-server must be true"),
@@ -78,7 +79,7 @@ public class DockerImagesRestApi {
             @ApiResponse(code = 404, message = "No docker image with given id on docker server"),
             @ApiResponse(code = 424, message = "Admin must set up Docker server."),
             @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {}, method = POST, consumes = JSON, produces = TEXT)
+    @RequestMapping(value = {}, method = POST, produces = TEXT)
     public ResponseEntity<String> postImage(final @RequestBody DockerImageDto dockerImageDto)
             throws BadRequestException, DockerServerException, NotFoundException, NoServerPrefException {
         if (StringUtils.isBlank(dockerImageDto.getImageId())) {

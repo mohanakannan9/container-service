@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.util.List;
@@ -38,25 +39,29 @@ public class AceRestApi {
     @Autowired
     private AceService aceService;
 
-    @RequestMapping(value = {}, method = GET, produces = JSON)
+    @RequestMapping(value = {}, method = GET)
+    @ResponseBody
     public List<ActionContextExecutionDto> getAcesWArgsFromQuery(final @RequestParam Map<String,String> allRequestParams)
             throws XFTInitException, BadRequestException, NotFoundException {
         return aceService.resolveAces(Context.fromMap(allRequestParams));
     }
 
     @RequestMapping(value = {}, method = GET, consumes = FORM, produces = JSON)
+    @ResponseBody
     public List<ActionContextExecutionDto> getAcesWArgsInBodyAsForm(final @RequestBody MultiValueMap<String,String> allRequestParams)
             throws XFTInitException, BadRequestException, NotFoundException {
         return aceService.resolveAces(Context.fromMap(allRequestParams.toSingleValueMap()));
     }
 
     @RequestMapping(value = {}, method = GET, consumes = JSON, produces = JSON)
+    @ResponseBody
     public List<ActionContextExecutionDto> getAcesWArgsInBodyAsJson(final @RequestBody Map<String,String> allRequestParams)
             throws XFTInitException, BadRequestException, NotFoundException {
         return aceService.resolveAces(Context.fromMap(allRequestParams));
     }
 
     @RequestMapping(value = {}, method = POST, consumes = JSON, produces = JSON)
+    @ResponseBody
     public ResponseEntity<ActionContextExecution> executeAce(final @RequestBody ActionContextExecutionDto aceDto)
             throws NoServerPrefException, ElementNotFoundException, NotFoundException, DockerServerException {
         final ActionContextExecution ace = aceService.executeAce(aceDto);

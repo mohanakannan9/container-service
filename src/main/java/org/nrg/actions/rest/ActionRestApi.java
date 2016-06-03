@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.List;
 
@@ -30,22 +31,24 @@ public class ActionRestApi {
     private ActionService actionService;
 
     @RequestMapping(value = {}, method = GET, produces = {JSON, TEXT})
+    @ResponseBody
     public List<Action> getCommands() {
         return actionService.getAll();
     }
 
-    @RequestMapping(value = {}, method = POST, consumes = JSON, produces = TEXT)
+    @RequestMapping(value = {}, method = POST, produces = TEXT)
     public ResponseEntity<String> createCommand(final @RequestBody ActionDto actionDto) {
         final Action created = actionService.createFromDto(actionDto);
         return new ResponseEntity<>(String.valueOf(created.getId()), HttpStatus.CREATED);
     }
 
     @RequestMapping(value = {"/{id}"}, method = GET, produces = JSON)
+    @ResponseBody
     public Action retrieveAction(final @PathVariable Long id) {
         return actionService.retrieve(id);
     }
 
-    @RequestMapping(value = {"/{id}"}, method = POST, consumes = JSON, produces = TEXT)
+    @RequestMapping(value = {"/{id}"}, method = POST, produces = TEXT)
     public ResponseEntity<String> updateAction(final @RequestBody ActionDto actionDto,
                                                 final @PathVariable Long id) {
         actionDto.setId(id);
@@ -53,7 +56,7 @@ public class ActionRestApi {
         return new ResponseEntity<>(String.valueOf(id), HttpStatus.OK);
     }
 
-    @RequestMapping(value = {"/{id}"}, method = DELETE, produces = JSON)
+    @RequestMapping(value = {"/{id}"}, method = DELETE)
     public void deleteAction(final @PathVariable Long id) {
         actionService.delete(id);
     }

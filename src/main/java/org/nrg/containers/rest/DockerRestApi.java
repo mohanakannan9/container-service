@@ -1,10 +1,15 @@
 package org.nrg.containers.rest;
 
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.DockerHub;
+import org.nrg.containers.model.DockerImageDto;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.services.DockerService;
 import org.nrg.framework.annotations.XapiRestController;
@@ -17,8 +22,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
@@ -38,12 +45,24 @@ public class DockerRestApi {
     @Autowired
     private DockerService dockerService;
 
+    @ApiOperation(value = "Docker server", notes = "Returns Docker server configuration values",
+            response = DockerServer.class)
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "The Docker server configuration"),
+            @ApiResponse(code = 400, message = "The server has not been configured"),
+            @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = "/server", method = GET, produces = JSON)
     @ResponseBody
     public DockerServer getServer() throws NotFoundException {
         return dockerService.getServer();
     }
 
+    @ApiOperation(value = "Set Docker server configuration",
+            notes = "Save new Docker server configuration values")
+    @ApiResponses({
+            @ApiResponse(code = 202, message = "The Docker server configuration was saved"),
+            @ApiResponse(code = 400, message = "Must set the \"host\" property in request body"),
+            @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = "/server", method = POST)
     public ResponseEntity<String> setServer(final @RequestBody DockerServer dockerServer)
             throws InvalidPreferenceName {
@@ -54,7 +73,7 @@ public class DockerRestApi {
 
         dockerService.setServer(dockerServer);
 
-        return new ResponseEntity<>("", HttpStatus.CREATED);
+        return new ResponseEntity<>("", HttpStatus.ACCEPTED);
     }
 
     @RequestMapping(value = "/server/ping", method = GET)
@@ -64,16 +83,36 @@ public class DockerRestApi {
         return dockerService.pingServer();
     }
 
-    @RequestMapping(value = "/hubs", method = GET, produces = JSON)
+    @RequestMapping(value = "/hubs", method = GET)
     @ResponseBody
     public List<DockerHub> getHubs() {
         return dockerService.getHubs();
     }
 
-    @RequestMapping(value = "/hubs", method = POST, consumes = JSON)
+    @RequestMapping(value = "/hubs", method = POST)
     @ResponseBody
     public ResponseEntity<DockerHub> setHub(final @RequestBody DockerHub hub) throws NrgServiceRuntimeException {
         return new ResponseEntity<>(dockerService.setHub(hub), HttpStatus.CREATED);
+    }
+
+    @RequestMapping(value = "/hubs/{id}/ping", method = GET)
+    @ResponseBody
+    public String pingHub(final @PathVariable Long id)
+            throws NoServerPrefException, DockerServerException, NotFoundException {
+        return dockerService.pingHub(id);
+    }
+
+    @RequestMapping(value = "/hubs/{id}/pull", params = {"image"}, method = POST)
+    public void pullImageFromHub(final @PathVariable Long hubId,
+                          final @RequestParam(value = "image") String image)
+            throws DockerServerException, NotFoundException, NoServerPrefException {
+        dockerService.pullFromHub(hubId, image);
+    }
+
+    @RequestMapping(value = "/pull", params = {"image"}, method = POST)
+    public void pullImageFromDefaultHub(final @RequestParam(value = "image") String image)
+            throws DockerServerException, NotFoundException, NoServerPrefException {
+        dockerService.pullFromHub(image);
     }
 
     @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)

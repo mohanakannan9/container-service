@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.util.List;
@@ -35,22 +36,24 @@ public class CommandRestApi {
     private CommandService commandService;
 
     @RequestMapping(value = {}, method = GET, produces = {JSON, TEXT})
+    @ResponseBody
     public List<Command> getCommands() {
         return commandService.getAll();
     }
 
-    @RequestMapping(value = {}, method = POST, consumes = JSON, produces = TEXT)
+    @RequestMapping(value = {}, method = POST, produces = TEXT)
     public ResponseEntity<String> createCommand(final @RequestBody Command command) {
         final Command created = commandService.create(command);
         return new ResponseEntity<>(String.valueOf(created.getId()), HttpStatus.CREATED);
     }
 
-    @RequestMapping(value = {"/{id}"}, method = GET, produces = JSON)
+    @RequestMapping(value = {"/{id}"}, method = GET)
+    @ResponseBody
     public Command retrieveCommand(final @PathVariable Long id) {
         return commandService.retrieve(id);
     }
 
-    @RequestMapping(value = {"/{id}"}, method = POST, consumes = JSON, produces = TEXT)
+    @RequestMapping(value = {"/{id}"}, method = POST, produces = TEXT)
     public ResponseEntity<String> updateCommand(final @RequestBody Command command,
                                                 final @PathVariable Long id) {
         command.setId(id);
@@ -58,25 +61,28 @@ public class CommandRestApi {
         return new ResponseEntity<>(String.valueOf(id), HttpStatus.OK);
     }
 
-    @RequestMapping(value = {"/{id}"}, method = DELETE, produces = JSON)
+    @RequestMapping(value = {"/{id}"}, method = DELETE)
     public void deleteCommand(final @PathVariable Long id) {
         commandService.delete(id);
     }
 
-    @RequestMapping(value = {"/launch"}, method = POST, consumes = JSON, produces = TEXT)
+    @RequestMapping(value = {"/launch"}, method = POST, produces = TEXT)
+    @ResponseBody
     public String launchCommand(final @RequestBody ResolvedCommand resolvedCommand)
             throws NoServerPrefException, DockerServerException {
         return commandService.launchCommand(resolvedCommand);
     }
 
-    @RequestMapping(value = {"/{id}/launch"}, method = POST, consumes = JSON, produces = TEXT)
+    @RequestMapping(value = {"/{id}/launch"}, method = POST, consumes = JSON)
+    @ResponseBody
     public String launchCommand(final @PathVariable Long id,
                                 final @RequestBody Context context)
             throws NoServerPrefException, DockerServerException, NotFoundException {
         return commandService.launchCommand(id, context);
     }
 
-    @RequestMapping(value = {"/{id}/launch"}, method = POST, produces = TEXT)
+    @RequestMapping(value = {"/{id}/launch"}, method = POST)
+    @ResponseBody
     public String launchCommand(final @PathVariable Long id)
             throws NoServerPrefException, DockerServerException, NotFoundException {
         return commandService.launchCommand(id);
