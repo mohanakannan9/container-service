@@ -1,5 +1,6 @@
 package org.nrg.actions.services;
 
+import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -46,6 +47,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -97,7 +99,7 @@ public class HibernateAceService
             // We know xsiType and id are both not blank.
             // Find the item with the given xsiType and id
             ItemI itemI = null;
-            String project = "";
+
             if (xsiType.matches("^[a-zA-Z]+:[a-zA-Z]+ScanData$")) {
                 // If we are looking for a scan, assume the id is formatted "sessionid.scanid"
                 final String[] splitId = id.split(".");
@@ -109,7 +111,6 @@ public class HibernateAceService
                 final String scanId = splitId[1];
                 final XnatImagesessiondata session =
                         XnatImagesessiondata.getXnatImagesessiondatasById(sessionId, XDAT.getUserDetails(), false);
-                project = session.getProject();
                 for (final XnatImagescandataI scan : session.getScans_scan()) {
                     if (scan.getId().equals(scanId)) {
                         itemI = (XnatImagescandata) scan;
@@ -130,25 +131,56 @@ public class HibernateAceService
                 throw new NotFoundException("Could not find " + xsiType + " with id " + id);
             }
 
+            final String projectId;
+            final String rootArchivePath;
+            final List<XnatAbstractresource> resources;
             if (itemI instanceof XnatProjectdata) {
-                project = id;
+                projectId = id;
+                final XnatProjectdata proj = XnatProjectdata.getXnatProjectdatasById(projectId, XDAT.getUserDetails(), false);
+                rootArchivePath = proj.getRootArchivePath();
+                resources = ((XnatProjectdata) itemI).getResources_resource();
             } else if (itemI instanceof XnatImagesessiondata) {
-                project = ((XnatImagesessiondata)itemI).getProject();
+                projectId = ((XnatImagesessiondata)itemI).getProject();
+                final XnatProjectdata proj = XnatProjectdata.getXnatProjectdatasById(projectId, XDAT.getUserDetails(), false);
+                rootArchivePath = proj.getRootArchivePath();
+                resources = ((XnatImagesessiondata) itemI).getResources_resource();
             } else if (itemI instanceof XnatSubjectdata) {
-                project = ((XnatSubjectdata)itemI).getProject();
+                projectId = ((XnatSubjectdata)itemI).getProject();
+                final XnatProjectdata proj = XnatProjectdata.getXnatProjectdatasById(projectId, XDAT.getUserDetails(), false);
+                rootArchivePath = proj.getRootArchivePath();
+                resources = ((XnatSubjectdata) itemI).getResources_resource();
             } else if (itemI instanceof XnatExperimentdata) {
-                project = ((XnatExperimentdata)itemI).getProject();
+                projectId = ((XnatExperimentdata)itemI).getProject();
+                final XnatProjectdata proj = XnatProjectdata.getXnatProjectdatasById(projectId, XDAT.getUserDetails(), false);
+                rootArchivePath = proj.getRootArchivePath();
+                resources = ((XnatExperimentdata) itemI).getResources_resource();
             } else {
                 logger.info("Can't figure out the project for item with id " + id);
+                projectId = "";
+                rootArchivePath = "";
+                resources = null;
+            }
+            final List<XnatResourcecatalog> resourceCatalogs = Lists.newArrayList();
+            final Map<String, String> resourceLabelToCatalogPath = Maps.newHashMap();
+            if (resources != null && StringUtils.isNotBlank(rootArchivePath)) {
+                for (final XnatAbstractresource resource : resources) {
+                    if (resource instanceof XnatResourcecatalog) {
+                        final XnatResourcecatalog resourceCatalog = (XnatResourcecatalog) resource;
+                        resourceLabelToCatalogPath.put(resourceCatalog.getLabel(),
+                                resourceCatalog.getCatalogFile(rootArchivePath).getParent());
+                    }
+                }
+            } else {
+                logger.info("Item with id " + id + " has no resources or a blank archive path");
             }
 
             final List<ActionContextExecutionDto> resolvedAces = Lists.newArrayList();
             final Map<ItemQueryCacheKey, String> cache = Maps.newHashMap();
             for (final Action candidate : actionCandidates) {
-                final ActionContextExecutionDto ace = resolve(candidate, itemI, context, cache);
+                final ActionContextExecutionDto ace = resolve(candidate, itemI, resourceLabelToCatalogPath, context, cache);
                 if (ace != null) {
                     ace.setRootId(id);
-                    ace.setProject(project);
+                    ace.setProject(projectId);
                     resolvedAces.add(ace);
                 }
             }
@@ -190,7 +222,7 @@ public class HibernateAceService
                 final ResolvedCommandMount mountIn = localPathToMount.get(localPath);
                 final Path transportedResourcePath = localPathToTransportedPath.get(localPath);
 
-                mountIn.setRemotePath(transportedResourcePath.toString());
+                mountIn.setLocalPath(transportedResourcePath.toString());
             }
         }
         // TODO If it's a script command, need to write out the script and transport it
@@ -260,6 +292,7 @@ public class HibernateAceService
 
     private ActionContextExecutionDto resolve(final Action action,
                                               final ItemI itemI,
+                                              final Map<String, String> resourceLabelToCatalogPath,
                                               final Context context,
                                               final Map<ItemQueryCacheKey, String> cache)
             throws XFTInitException {
@@ -290,65 +323,52 @@ public class HibernateAceService
             }
         }
 
-        // Get all the item's resources, and figure out which ones the ACE needs.
-        List<XnatAbstractresource> resources = Lists.newArrayList();
-        if (itemI instanceof XnatProjectdata) {
-            resources = ((XnatProjectdata)itemI).getResources_resource();
-        } else if (itemI instanceof XnatImagesessiondata) {
-            resources = ((XnatImagesessiondata)itemI).getResources_resource();
-        } else if (itemI instanceof XnatSubjectdata) {
-            resources = ((XnatSubjectdata)itemI).getResources_resource();
-        } else if (itemI instanceof XnatExperimentdata) {
-            resources = ((XnatExperimentdata) itemI).getResources_resource();
-        }
+        if (ace.getResourcesStaged() != null && !ace.getResourcesStaged().isEmpty()) {
+            // Item needs resources
 
-        List<XnatResourcecatalog> resourceCatalogs = Lists.newArrayList();
-        for (final XnatAbstractresource resource : resources) {
-            if (resource instanceof XnatResourcecatalog) {
-                resourceCatalogs.add((XnatResourcecatalog)resource);
-            }
-        }
-
-        if (resourceCatalogs.isEmpty()) {
-            if (ace.getResourcesStaged() != null && !ace.getResourcesStaged().isEmpty()) {
-                // Now there is a problem. item has no resources, but we need some staged.
+            if (resourceLabelToCatalogPath == null || resourceLabelToCatalogPath.isEmpty()) {
+                // Item has no resources, but we need some staged. Action does not work.
                 return null;
-            }
-        } else {
-            if (ace.getResourcesStaged() != null && !ace.getResourcesStaged().isEmpty()) {
-                setResourcePaths(ace.getResourcesStaged(), resourceCatalogs, ace.getProject());
-                for (final ActionResource actionResource : ace.getResourcesStaged()) {
-                    if (StringUtils.isBlank(actionResource.getPath())) {
-                        // We needed to find an item resource to mount, but we didn't.
+            } else {
+                for (final ActionResource aceResource : ace.getResourcesStaged()) {
+                    final String resourceCatalogPath = resourceLabelToCatalogPath.get(aceResource.getResourceName());
+                    if (StringUtils.isNotBlank(resourceCatalogPath)) {
+                        aceResource.setPath(resourceLabelToCatalogPath.get(aceResource.getResourceName()));
+                    } else {
+                        if(logger.isDebugEnabled()) {
+                            final String message =
+                                    String.format("Action %d needed resource, but item has no resource named %s",
+                                            action.getId(), aceResource.getResourceName());
+                            logger.debug(message);
+                        }
                         return null;
                     }
                 }
             }
-            if(ace.getResourcesCreated() != null) {
-                setResourcePaths(ace.getResourcesCreated(), resourceCatalogs, ace.getProject());
-                // It's ok if there are null ids. These will be created, so they
-                // don't have to exist yet.
+        }
+
+        if (ace.getResourcesCreated() != null && !ace.getResourcesCreated().isEmpty()) {
+            // Item needs resources
+
+            if (!(resourceLabelToCatalogPath == null || resourceLabelToCatalogPath.isEmpty())) {
+                for (final ActionResource aceResource : ace.getResourcesCreated()) {
+
+                    if (resourceLabelToCatalogPath.containsKey(aceResource.getResourceName()) &&
+                            !aceResource.getOverwrite()) {
+                        if(logger.isDebugEnabled()) {
+                            final String message =
+                                    String.format("Action %d will create resource, but item already has " +
+                                            "a resource named %s and action cannot overwrite it.",
+                                            action.getId(), aceResource.getResourceName());
+                            logger.debug(message);
+                        }
+                        return null;
+                    }
+                }
             }
         }
 
         return ace;
-    }
-
-    private void setResourcePaths(final List<ActionResource> aceResources,
-                                  final List<XnatResourcecatalog> itemResources,
-                                  final String projectId) {
-        XnatProjectdata proj = null;
-        for (final ActionResource aceResource : aceResources) {
-            for (final XnatResourcecatalog itemResource : itemResources) {
-                if (aceResource.getResourceName().equals(itemResource.getLabel())) {
-                    if (proj == null) {
-                        proj = XnatProjectdata.getXnatProjectdatasById(projectId, XDAT.getUserDetails(), false);
-                    }
-                    final File catalogFile = itemResource.getCatalogFile(proj.getRootArchivePath());
-                    aceResource.setPath(catalogFile.getParent());
-                }
-            }
-        }
     }
 
     private String cacheQuery(final ItemI itemI, final String propertyName,
