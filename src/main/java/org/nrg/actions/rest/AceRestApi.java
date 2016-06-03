@@ -39,19 +39,19 @@ public class AceRestApi {
     @Autowired
     private AceService aceService;
 
-    @RequestMapping(value = {}, method = GET)
-    @ResponseBody
-    public List<ActionContextExecutionDto> getAcesWArgsFromQuery(final @RequestParam Map<String,String> allRequestParams)
-            throws XFTInitException, BadRequestException, NotFoundException {
-        return aceService.resolveAces(Context.fromMap(allRequestParams));
-    }
+//    @RequestMapping(value = {}, method = GET)
+//    @ResponseBody
+//    public List<ActionContextExecutionDto> getAcesWArgsFromQuery(final @RequestParam Map<String,String> allRequestParams)
+//            throws XFTInitException, BadRequestException, NotFoundException {
+//        return aceService.resolveAces(Context.fromMap(allRequestParams));
+//    }
 
-    @RequestMapping(value = {}, method = GET, consumes = FORM, produces = JSON)
-    @ResponseBody
-    public List<ActionContextExecutionDto> getAcesWArgsInBodyAsForm(final @RequestBody MultiValueMap<String,String> allRequestParams)
-            throws XFTInitException, BadRequestException, NotFoundException {
-        return aceService.resolveAces(Context.fromMap(allRequestParams.toSingleValueMap()));
-    }
+//    @RequestMapping(value = {}, method = GET, consumes = FORM, produces = JSON)
+//    @ResponseBody
+//    public List<ActionContextExecutionDto> getAcesWArgsInBodyAsForm(final @RequestBody MultiValueMap<String,String> allRequestParams)
+//            throws XFTInitException, BadRequestException, NotFoundException {
+//        return aceService.resolveAces(Context.fromMap(allRequestParams.toSingleValueMap()));
+//    }
 
     @RequestMapping(value = {}, method = GET, consumes = JSON, produces = JSON)
     @ResponseBody
