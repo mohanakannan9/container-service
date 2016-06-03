@@ -64,7 +64,7 @@ public class ActionTest {
     private static final String COMMAND_MOUNT_OUT_JSON =
             "{\"name\":\"out\", \"path\":\"/output\"}";
     private static final String ACTION_RESOURCE_STAGED_JSON =
-            "{\"name\":\"DICOM\", \"mount\":\"in\", \"id\":10}";
+            "{\"name\":\"DICOM\", \"mount\":\"in\", \"path\":\"/path\"}";
     private static final String ACTION_RESOURCE_CREATED_JSON =
             "{\"name\":\"NIFTI\", \"mount\":\"out\", \"overwrite\":true}";
 
@@ -139,12 +139,12 @@ public class ActionTest {
 
         assertEquals("DICOM", staged.getResourceName());
         assertEquals("in", staged.getMountName());
-        assertEquals(Integer.valueOf(10), staged.getResourceId());
+        assertEquals("/path", staged.getPath());
         assertFalse(staged.getOverwrite());
 
         assertEquals("NIFTI", created.getResourceName());
         assertEquals("out", created.getMountName());
-        assertThat(created.getResourceId(), is(nullValue()));
+        assertThat(created.getPath(), is(nullValue()));
         assertTrue(created.getOverwrite());
     }
 

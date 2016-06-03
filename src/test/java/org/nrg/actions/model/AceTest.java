@@ -56,23 +56,14 @@ public class AceTest {
                     "\"mounts-in\":[" + COMMAND_MOUNT_IN_JSON + "]," +
                     "\"mounts-out\":[" + COMMAND_MOUNT_OUT_JSON + "]}";
 
-    private static final String ACTION_ROOT_JSON =
-            "{\"name\":\"scan\", \"xsiType\":\"xnat:imageScanData\"," +
-                    "\"matchers\": [" + SCAN_MATCHER_JSON + "]}";
-
     private static final String ACTION_INPUT_JSON =
             "{\"name\":\"some_identifier\", \"command-variable-name\":\"my_cool_input\", " +
                     "\"root-property\":\"label\", " +
                     "\"required\":true, \"type\":\"property\"," +
                     "\"value\":\"something\"}";
 
-    private static final String ACTION_MINIMAL_JSON_TEMPLATE =
-            "{\"name\":\"an_action\", \"description\":\"Yep, it's an action all right\", " +
-                    "\"command-id\":%d, " +
-                    "\"root\": " + ACTION_ROOT_JSON + "}";
-
     private static final String ACE_RESOURCE_STAGED_JSON =
-            "{\"name\":\"DICOM\", \"mount\":\"in\", \"id\":123}";
+            "{\"name\":\"DICOM\", \"mount\":\"in\", \"path\":\"/path\"}";
     private static final String ACE_RESOURCE_CREATED_JSON =
             "{\"name\":\"NIFTI\", \"mount\":\"out\"}";
 
@@ -114,11 +105,11 @@ public class AceTest {
 
         assertEquals("DICOM", staged.getResourceName());
         assertEquals("in", staged.getMountName());
-        assertEquals(Integer.valueOf(123), staged.getResourceId());
+        assertEquals("/path", staged.getPath());
 
         assertEquals("NIFTI", created.getResourceName());
         assertEquals("out", created.getMountName());
-        assertThat(created.getResourceId(), nullValue());
+        assertThat(created.getPath(), nullValue());
     }
 
     @Test

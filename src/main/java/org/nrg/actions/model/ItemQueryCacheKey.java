@@ -1,12 +1,12 @@
 package org.nrg.actions.model;
 
-import org.nrg.xft.XFTItem;
+import org.nrg.xft.ItemI;
 
 import java.util.Objects;
 
 public class ItemQueryCacheKey {
-    public ItemQueryCacheKey(final XFTItem item, final String property) {
-        this.item = item;
+    public ItemQueryCacheKey(final ItemI itemI, final String property) {
+        this.itemI = itemI;
         this.property = property;
     }
 
@@ -15,15 +15,15 @@ public class ItemQueryCacheKey {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final ItemQueryCacheKey that = (ItemQueryCacheKey) o;
-        return Objects.equals(this.item, that.item) &&
+        return Objects.equals(this.itemI, that.itemI) &&
                 Objects.equals(this.property, that.property);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(item, property);
+        return Objects.hash(itemI, property);
     }
 
-    private XFTItem item;
+    private ItemI itemI;
     private String property;
 }

@@ -25,13 +25,16 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.transporter.TransportService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
+import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.om.XnatAbstractresource;
 import org.nrg.xdat.om.XnatExperimentdata;
+import org.nrg.xdat.om.XnatImagescandata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xdat.om.XnatSubjectdata;
+import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
@@ -43,6 +46,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -92,7 +96,7 @@ public class HibernateAceService
 
             // We know xsiType and id are both not blank.
             // Find the item with the given xsiType and id
-            XFTItem item = null;
+            ItemI itemI = null;
             String project = "";
             if (xsiType.matches("^[a-zA-Z]+:[a-zA-Z]+ScanData$")) {
                 // If we are looking for a scan, assume the id is formatted "sessionid.scanid"
@@ -108,47 +112,40 @@ public class HibernateAceService
                 project = session.getProject();
                 for (final XnatImagescandataI scan : session.getScans_scan()) {
                     if (scan.getId().equals(scanId)) {
-                        item = (XFTItem) scan;
+                        itemI = (XnatImagescandata) scan;
                         break;
                     }
                 }
             } else {
                 // TODO get a non-scan
                 try {
-                    item = ItemSearch.GetItem(xsiType+".ID", id, XDAT.getUserDetails(), false);
+                    final XFTItem item = ItemSearch.GetItem(xsiType+".ID", id, XDAT.getUserDetails(), false);
+                    itemI = BaseElement.GetGeneratedItem(item);
                 } catch (Exception e) {
                     throw new NotFoundException("Could not find " + xsiType + " with id " + id, e);
                 }
-
-                if (item != null) {
-                    try {
-                        if (item.instanceOf("xnat:projectData")) {
-                            project = id;
-                        } else if (item.instanceOf("xnat:experimentData")) {
-                            final XnatExperimentdata expt =
-                                    XnatExperimentdata.getXnatExperimentdatasById(id, XDAT.getUserDetails(), false);
-                            project = expt.getProject();
-                        } else if (item.instanceOf("xnat:subjectData")) {
-                            final XnatSubjectdata subject =
-                                    XnatSubjectdata.getXnatSubjectdatasById(id, XDAT.getUserDetails(), false);
-                            project = subject.getProject();
-                        } else {
-                            logger.info("Can't figure out the project for an item with xsiType "+xsiType);
-                        }
-                    } catch (ElementNotFoundException e) {
-                        logger.error(e.getMessage());
-                    }
-                }
             }
 
-            if (item == null) {
+            if (itemI == null) {
                 throw new NotFoundException("Could not find " + xsiType + " with id " + id);
+            }
+
+            if (itemI instanceof XnatProjectdata) {
+                project = id;
+            } else if (itemI instanceof XnatImagesessiondata) {
+                project = ((XnatImagesessiondata)itemI).getProject();
+            } else if (itemI instanceof XnatSubjectdata) {
+                project = ((XnatSubjectdata)itemI).getProject();
+            } else if (itemI instanceof XnatExperimentdata) {
+                project = ((XnatExperimentdata)itemI).getProject();
+            } else {
+                logger.info("Can't figure out the project for item with id " + id);
             }
 
             final List<ActionContextExecutionDto> resolvedAces = Lists.newArrayList();
             final Map<ItemQueryCacheKey, String> cache = Maps.newHashMap();
             for (final Action candidate : actionCandidates) {
-                final ActionContextExecutionDto ace = resolve(candidate, item, context, cache);
+                final ActionContextExecutionDto ace = resolve(candidate, itemI, context, cache);
                 if (ace != null) {
                     ace.setRootId(id);
                     ace.setProject(project);
@@ -172,21 +169,13 @@ public class HibernateAceService
             final List<ActionResource> staged = ace.getResourcesStaged();
             final List<ResolvedCommandMount> mountsIn = resolvedCommand.getMountsIn();
 
-            final XnatProjectdata project = XnatProjectdata.getProjectByIDorAlias(ace.getProject(), XDAT.getUserDetails(), false);
-            final String rootPath = project.getArchiveRootPath();
-
             final Set<Path> resourcePathsToTransport = Sets.newHashSet();
             final Map<Path, ResolvedCommandMount> localPathToMount = Maps.newHashMap();
             for (final ActionResource resourceToStage : staged) {
-                final XnatAbstractresource resource =
-                        XnatAbstractresource.getXnatAbstractresourcesByXnatAbstractresourceId(resourceToStage.getResourceId(),
-                                XDAT.getUserDetails(), false);
-                if (!resource.getItem().instanceOf("xnat:resourceCatalog")) {
-                    continue;
-                }
-                final XnatResourcecatalog catResource = (XnatResourcecatalog) resource;
-                final Path localPath = Paths.get(catResource.getFullPath(rootPath));
+                final Path localPath = Paths.get(resourceToStage.getPath());
+
                 resourcePathsToTransport.add(localPath);
+
                 for (final ResolvedCommandMount mountIn : mountsIn) {
                     if (resourceToStage.getMountName().equals(mountIn.getName())) {
                         localPathToMount.put(localPath, mountIn);
@@ -207,7 +196,7 @@ public class HibernateAceService
         // TODO If it's a script command, need to write out the script and transport it
 
         // TODO Use Transporter to create writable space for output mounts
-        if (!(resolvedCommand.getMountsOut() == null || resolvedCommand.getMountsOut().isEmpty())) {
+        if (resolvedCommand.getMountsOut() != null && !resolvedCommand.getMountsOut().isEmpty()) {
             final List<ResolvedCommandMount> mountsOut = resolvedCommand.getMountsOut();
             final List<Path> buildPaths = transporter.getWritableDirectories(dockerServer.getHost(), mountsOut.size());
             for (int i=0; i<mountsOut.size(); i++) {
@@ -245,10 +234,10 @@ public class HibernateAceService
             }
         }
 
-        // TODO Check that all staged resources have ids
+        // TODO Check that all staged resources have paths
         if (aceDto.getResourcesStaged() != null && !aceDto.getResourcesStaged().isEmpty()) {
             for (final ActionResource resource : aceDto.getResourcesStaged()) {
-                if (resource.getResourceId() == null || resource.getResourceId().equals(0)) {
+                if (StringUtils.isBlank(resource.getPath())) {
                     // TODO throw an error. All staged resources need ids. (This should have happened during resolveAce())
                 }
             }
@@ -257,8 +246,7 @@ public class HibernateAceService
         // TODO Check that, if created resources have ids, they are overwritable
         if (aceDto.getResourcesCreated() != null && !aceDto.getResourcesCreated().isEmpty()) {
             for (final ActionResource resource : aceDto.getResourcesCreated()) {
-                if (!resource.getOverwrite() &&
-                        !(resource.getResourceId() == null || resource.getResourceId().equals(0))) {
+                if (!resource.getOverwrite() && !StringUtils.isBlank(resource.getPath())) {
                     // TODO throw an error. If a "created" resource already exists, we need to be able to overwrite it.
                 }
             }
@@ -271,12 +259,12 @@ public class HibernateAceService
     }
 
     private ActionContextExecutionDto resolve(final Action action,
-                                           final XFTItem item,
-                                           final Context context,
-                                           final Map<ItemQueryCacheKey, String> cache)
+                                              final ItemI itemI,
+                                              final Context context,
+                                              final Map<ItemQueryCacheKey, String> cache)
             throws XFTInitException {
 
-        if (!doesItemMatchMatchers(item, action.getRootMatchers(), cache)) {
+        if (!doesItemMatchMatchers(itemI, action.getRootMatchers(), cache)) {
             return null;
         }
 
@@ -287,7 +275,7 @@ public class HibernateAceService
             for (final ActionInput input : ace.getInputs()) {
                 // Try to get inputs of type=property out of the root object
                 if (StringUtils.isNotBlank(input.getRootProperty())) {
-                    final String property = cacheQuery(item, input.getRootProperty(), cache);
+                    final String property = cacheQuery(itemI, input.getRootProperty(), cache);
                     if (property != null) {
                         input.setValue(property);
                     }
@@ -302,36 +290,42 @@ public class HibernateAceService
             }
         }
 
-
         // Get all the item's resources, and figure out which ones the ACE needs.
         List<XnatAbstractresource> resources = Lists.newArrayList();
-        try {
-            // Stolen from XnatImagescandata.getFile()
-            for (final XnatAbstractresource resource : (List<XnatAbstractresource>)BaseElement.WrapItems(item.getChildItems("File"))) {
-                if (resource.getItem().instanceOf("xnat:resourceCatalog")) {
-                    resources.add(resource);
-                }
-            }
-        } catch (ElementNotFoundException | FieldNotFoundException e) {
-            // No problem, necessarily. Item just has no resources
+        if (itemI instanceof XnatProjectdata) {
+            resources = ((XnatProjectdata)itemI).getResources_resource();
+        } else if (itemI instanceof XnatImagesessiondata) {
+            resources = ((XnatImagesessiondata)itemI).getResources_resource();
+        } else if (itemI instanceof XnatSubjectdata) {
+            resources = ((XnatSubjectdata)itemI).getResources_resource();
+        } else if (itemI instanceof XnatExperimentdata) {
+            resources = ((XnatExperimentdata) itemI).getResources_resource();
         }
-        if (resources.isEmpty()) {
+
+        List<XnatResourcecatalog> resourceCatalogs = Lists.newArrayList();
+        for (final XnatAbstractresource resource : resources) {
+            if (resource instanceof XnatResourcecatalog) {
+                resourceCatalogs.add((XnatResourcecatalog)resource);
+            }
+        }
+
+        if (resourceCatalogs.isEmpty()) {
             if (ace.getResourcesStaged() != null && !ace.getResourcesStaged().isEmpty()) {
                 // Now there is a problem. item has no resources, but we need some staged.
                 return null;
             }
         } else {
-            if(ace.getResourcesStaged() != null) {
-                setResourceIds(ace.getResourcesStaged(), resources);
+            if (ace.getResourcesStaged() != null && !ace.getResourcesStaged().isEmpty()) {
+                setResourcePaths(ace.getResourcesStaged(), resourceCatalogs, ace.getProject());
                 for (final ActionResource actionResource : ace.getResourcesStaged()) {
-                    if (actionResource.getResourceId() == null) {
+                    if (StringUtils.isBlank(actionResource.getPath())) {
                         // We needed to find an item resource to mount, but we didn't.
                         return null;
                     }
                 }
             }
             if(ace.getResourcesCreated() != null) {
-                setResourceIds(ace.getResourcesCreated(), resources);
+                setResourcePaths(ace.getResourcesCreated(), resourceCatalogs, ace.getProject());
                 // It's ok if there are null ids. These will be created, so they
                 // don't have to exist yet.
             }
@@ -340,31 +334,37 @@ public class HibernateAceService
         return ace;
     }
 
-    private void setResourceIds(final List<ActionResource> aceResources,
-                                final List<XnatAbstractresource> itemResources) {
+    private void setResourcePaths(final List<ActionResource> aceResources,
+                                  final List<XnatResourcecatalog> itemResources,
+                                  final String projectId) {
+        XnatProjectdata proj = null;
         for (final ActionResource aceResource : aceResources) {
-            for (final XnatAbstractresource itemResource : itemResources) {
+            for (final XnatResourcecatalog itemResource : itemResources) {
                 if (aceResource.getResourceName().equals(itemResource.getLabel())) {
-                    aceResource.setResourceId(itemResource.getXnatAbstractresourceId());
+                    if (proj == null) {
+                        proj = XnatProjectdata.getXnatProjectdatasById(projectId, XDAT.getUserDetails(), false);
+                    }
+                    final File catalogFile = itemResource.getCatalogFile(proj.getRootArchivePath());
+                    aceResource.setPath(catalogFile.getParent());
                 }
             }
         }
     }
 
-    private String cacheQuery(final XFTItem item, final String propertyName,
+    private String cacheQuery(final ItemI itemI, final String propertyName,
                             final Map<ItemQueryCacheKey, String> cache)
             throws XFTInitException {
-        final ItemQueryCacheKey query = new ItemQueryCacheKey(item, propertyName);
+        final ItemQueryCacheKey query = new ItemQueryCacheKey(itemI, propertyName);
         if (cache.containsKey(query)) {
             return cache.get(query);
         }
 
         final Object propertyObj;
         try {
-            propertyObj = item.getProperty(propertyName);
+            propertyObj = itemI.getProperty(propertyName);
         } catch (ElementNotFoundException | FieldNotFoundException e) {
             logger.debug("Could not find property %s on item %s.",
-                    propertyName, item.toString());
+                    propertyName, itemI.toString());
             return null;
         }
 
@@ -375,12 +375,12 @@ public class HibernateAceService
         } else {
             // TODO Do we allow a non-string property here?
             logger.debug("Non-string property found for %s on item %s: %s",
-                    propertyName, item.toString(), propertyObj.toString());
+                    propertyName, itemI.toString(), propertyObj.toString());
         }
         return null;
     }
 
-    private Boolean doesItemMatchMatchers(final XFTItem item, final List<Matcher> matchers,
+    private Boolean doesItemMatchMatchers(final ItemI itemI, final List<Matcher> matchers,
                                           final Map<ItemQueryCacheKey, String> cache)
             throws XFTInitException {
         if (matchers == null || matchers.isEmpty()) {
@@ -388,20 +388,20 @@ public class HibernateAceService
         }
 
         for (final Matcher matcher : matchers) {
-            if (!doesItemMatchMatchers(item, matcher, cache)) {
+            if (!doesItemMatchMatchers(itemI, matcher, cache)) {
                 return false;
             }
         }
         return true;
     }
-    private Boolean doesItemMatchMatchers(final XFTItem item, final Matcher matcher,
+    private Boolean doesItemMatchMatchers(final ItemI itemI, final Matcher matcher,
                                           final Map<ItemQueryCacheKey, String> cache)
             throws XFTInitException {
         if (matcher == null || StringUtils.isBlank(matcher.getValue())) {
             return true;
         }
 
-        final String property = cacheQuery(item, matcher.getProperty(), cache);
+        final String property = cacheQuery(itemI, matcher.getProperty(), cache);
         for (final String matcherOrValue : matcher.getValue().split("|")) {
             if (matcher.getOperator().equalsIgnoreCase("equals")) {
                 if (matcherOrValue.equals(property)) {
