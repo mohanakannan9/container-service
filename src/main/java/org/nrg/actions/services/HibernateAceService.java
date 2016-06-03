@@ -1,6 +1,5 @@
 package org.nrg.actions.services;
 
-import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -26,7 +25,6 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.transporter.TransportService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
-import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.om.XnatAbstractresource;
 import org.nrg.xdat.om.XnatExperimentdata;
@@ -47,10 +45,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.annotation.Nullable;
-import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -99,18 +96,26 @@ public class HibernateAceService
             // We know xsiType and id are both not blank.
             // Find the item with the given xsiType and id
             ItemI itemI = null;
+            String projectId = "";
+            final String rootArchivePath;
+            final List<XnatAbstractresource> resources;
 
-            if (xsiType.matches("^[a-zA-Z]+:[a-zA-Z]+ScanData$")) {
+            if (xsiType.matches("^[a-zA-Z]+:[a-zA-Z]+[Ss]can[Dd]ata$")) {
                 // If we are looking for a scan, assume the id is formatted "sessionid.scanid"
-                final String[] splitId = id.split(".");
-                if (splitId.length != 2) {
+                final String[] splitId = id.split(":");
+                final String sessionId;
+                final String scanId;
+                if (splitId.length < 2) {
                     // TODO scan id must be formatted "sessionid.scanid". throw error.
                     return null;
+                } else {
+                    sessionId = splitId[0];
+                    scanId = StringUtils.join(Arrays.copyOfRange(splitId, 1, splitId.length), ':');
                 }
-                final String sessionId = splitId[0];
-                final String scanId = splitId[1];
+
                 final XnatImagesessiondata session =
                         XnatImagesessiondata.getXnatImagesessiondatasById(sessionId, XDAT.getUserDetails(), false);
+                projectId = session.getProject();
                 for (final XnatImagescandataI scan : session.getScans_scan()) {
                     if (scan.getId().equals(scanId)) {
                         itemI = (XnatImagescandata) scan;
@@ -118,7 +123,6 @@ public class HibernateAceService
                     }
                 }
             } else {
-                // TODO get a non-scan
                 try {
                     final XFTItem item = ItemSearch.GetItem(xsiType+".ID", id, XDAT.getUserDetails(), false);
                     itemI = BaseElement.GetGeneratedItem(item);
@@ -131,36 +135,43 @@ public class HibernateAceService
                 throw new NotFoundException("Could not find " + xsiType + " with id " + id);
             }
 
-            final String projectId;
-            final String rootArchivePath;
-            final List<XnatAbstractresource> resources;
             if (itemI instanceof XnatProjectdata) {
                 projectId = id;
                 final XnatProjectdata proj = XnatProjectdata.getXnatProjectdatasById(projectId, XDAT.getUserDetails(), false);
                 rootArchivePath = proj.getRootArchivePath();
                 resources = ((XnatProjectdata) itemI).getResources_resource();
             } else if (itemI instanceof XnatImagesessiondata) {
-                projectId = ((XnatImagesessiondata)itemI).getProject();
+                projectId = ((XnatImagesessiondata) itemI).getProject();
                 final XnatProjectdata proj = XnatProjectdata.getXnatProjectdatasById(projectId, XDAT.getUserDetails(), false);
                 rootArchivePath = proj.getRootArchivePath();
                 resources = ((XnatImagesessiondata) itemI).getResources_resource();
             } else if (itemI instanceof XnatSubjectdata) {
-                projectId = ((XnatSubjectdata)itemI).getProject();
+                projectId = ((XnatSubjectdata) itemI).getProject();
                 final XnatProjectdata proj = XnatProjectdata.getXnatProjectdatasById(projectId, XDAT.getUserDetails(), false);
                 rootArchivePath = proj.getRootArchivePath();
                 resources = ((XnatSubjectdata) itemI).getResources_resource();
             } else if (itemI instanceof XnatExperimentdata) {
-                projectId = ((XnatExperimentdata)itemI).getProject();
+                projectId = ((XnatExperimentdata) itemI).getProject();
                 final XnatProjectdata proj = XnatProjectdata.getXnatProjectdatasById(projectId, XDAT.getUserDetails(), false);
                 rootArchivePath = proj.getRootArchivePath();
                 resources = ((XnatExperimentdata) itemI).getResources_resource();
+            } else if (itemI instanceof XnatImagescandata) {
+                if (StringUtils.isBlank(projectId)) {
+                    logger.error("Did not find the project ID for scan with ID " + id);
+                    rootArchivePath = "";
+                    resources = null;
+                } else {
+                    final XnatProjectdata proj = XnatProjectdata.getXnatProjectdatasById(projectId, XDAT.getUserDetails(), false);
+                    rootArchivePath = proj.getRootArchivePath();
+                    resources = ((XnatImagescandata) itemI).getFile();
+                }
             } else {
                 logger.info("Can't figure out the project for item with id " + id);
                 projectId = "";
                 rootArchivePath = "";
                 resources = null;
             }
-            final List<XnatResourcecatalog> resourceCatalogs = Lists.newArrayList();
+
             final Map<String, String> resourceLabelToCatalogPath = Maps.newHashMap();
             if (resources != null && StringUtils.isNotBlank(rootArchivePath)) {
                 for (final XnatAbstractresource resource : resources) {
