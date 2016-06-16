@@ -8,6 +8,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.actions.config.CommandTestConfig;
 import org.nrg.actions.services.CommandService;
+import org.nrg.actions.services.ScriptEnvironmentService;
+import org.nrg.automation.entities.Script;
+import org.nrg.automation.services.ScriptService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -32,16 +35,16 @@ import static org.junit.Assert.assertThat;
 @ContextConfiguration(classes = CommandTestConfig.class)
 public class CommandTest {
 
-//    private static final String SCRIPT_ENVIRONMENT_JSON_TEMPLATE =
+//    private static final String SCRIPT_ENVIRONMENT_JSON =
 //            "{\"name\":\"Mr. Big Stuff\", \"description\":\"Who do you think you are?\", " +
-//                    "\"docker-image\":{\"id\":%d}," +
-//                    "\"run-prefix\":\"/bin/bash \"}";
-//
-//    private static final String SCRIPT_JSON =
-//            "{\"scriptId\":\"123\", \"scriptLabel\":\"a-script\", " +
-//                    "\"description\":\"The script for the test\"," +
-//                    "\"language\":\"English\"," +
-//                    "\"content\":\"It was the best of times, it was the *blurst* of times? You stupid monkey!\"}";
+//                    "\"docker-image\":\"abc123\"," +
+//                    "\"run-prefix\":[\"/bin/bash\"]}";
+
+    private static final String SCRIPT_JSON =
+            "{\"scriptId\":\"123\", \"scriptLabel\":\"a-script\", " +
+                    "\"description\":\"The script for the test\"," +
+                    "\"language\":\"English\"," +
+                    "\"content\":\"It was the best of times, it was the *blurst* of times? You stupid monkey!\"}";
 
     private static final String VARIABLE_0_JSON =
             "{\"name\":\"my_cool_input\", \"description\":\"A boolean value\", " +
@@ -70,14 +73,13 @@ public class CommandTest {
                     "\"mounts-in\":" + MOUNT_IN + "," +
                     "\"mounts-out\":" + MOUNT_OUT + "}";
 
-//    private static final String SCRIPT_COMMAND_JSON_TEMPLATE =
-//            "{\"name\":\"script_command\", \"description\":\"The Script command for the test\", " +
-//                    "\"info-url\":\"http://abc.xyz\", " +
-//                    "\"variables\":" + VARIABLE_LIST_JSON + ", " +
-//                    "\"run-template\":[\"foo\"], " +
-//                    "\"type\":\"script\", " +
-//                    "\"script\":{\"id\":%d}," +
-//                    "\"script-environment\":{\"id\":%d}}";
+    private static final String SCRIPT_COMMAND_JSON_TEMPLATE =
+            "{\"name\":\"script_command\", \"description\":\"The Script command for the test\", " +
+                    "\"info-url\":\"http://abc.xyz\", " +
+                    "\"variables\":" + VARIABLE_LIST_JSON + ", " +
+                    "\"run-template\":[\"foo\"], " +
+                    "\"docker-image\":\"abc123\", " +
+                    "\"script-id\":%d}me";
 
 //    private static final String RESOLVED_DOCKER_IMAGE_COMMAND_JSON_TEMPLATE =
 //            "{\"command-id\":%d, " +
@@ -89,9 +91,9 @@ public class CommandTest {
 
     private final ObjectMapper mapper = new ObjectMapper();
 
-//    @Autowired
-//    private ScriptService scriptService;
-//
+    @Autowired
+    private ScriptService scriptService;
+
 //    @Autowired
 //    private ScriptEnvironmentService scriptEnvironmentService;
 
@@ -172,72 +174,61 @@ public class CommandTest {
         assertEquals(command, retrievedCommand);
     }
 
-//    @Test
-//    public void testDeserializeScriptCommand() throws Exception {
-//
-//        final List<CommandVariable> commandVariableList =
-//                mapper.readValue(VARIABLE_LIST_JSON, new TypeReference<List<CommandVariable>>() {});
-//
-//        final String scriptCommandJson =
-//                String.format(SCRIPT_COMMAND_JSON_TEMPLATE, 0, 0);
-//        final Command command = mapper.readValue(scriptCommandJson, Command.class);
-//
-//        assertEquals("script_command", command.getName());
-//        assertEquals("The Script command for the test", command.getDescription());
-//        assertEquals("http://abc.xyz", command.getInfoUrl());
-//        assertEquals(Lists.newArrayList("foo"), command.getRunTemplate());
-//
-//        assertThat(command.getVariables(), hasSize(2));
-//        assertThat(commandVariableList, everyItem(isIn(command.getVariables())));
-//
-//        assertThat(command, instanceOf(ScriptCommand.class));
-//        final ScriptCommand scriptCommand = (ScriptCommand) command;
-//        assertEquals(0L, scriptCommand.getScript().getId());
-//        assertEquals(0L, scriptCommand.getScriptEnvironment().getId());
-//    }
-//
-//    @Test
-//    public void testPersistScriptCommand() throws Exception {
-//
-//        final Script script = mapper.readValue(SCRIPT_JSON, Script.class);
-//        scriptService.create(script);
-//        final Script retrievedScript = scriptService.retrieve(script.getId());
-//
-//        final DockerImageDto imageDto = mapper.readValue(DOCKER_IMAGE_JSON, DockerImageDto.class);
-//        final DockerImage image = imageDto.toDbImage();
-//        dockerImageService.create(image);
-//
-//        final String scriptEnvironmentJson =
-//                String.format(SCRIPT_ENVIRONMENT_JSON_TEMPLATE, image.getId());
+    @Test
+    public void testDeserializeScriptCommand() throws Exception {
+
+        final List<CommandVariable> commandVariableList =
+                mapper.readValue(VARIABLE_LIST_JSON, new TypeReference<List<CommandVariable>>() {});
+
+        final String scriptCommandJson =
+                String.format(SCRIPT_COMMAND_JSON_TEMPLATE, 0);
+        final Command command = mapper.readValue(scriptCommandJson, Command.class);
+
+        assertEquals("script_command", command.getName());
+        assertEquals("The Script command for the test", command.getDescription());
+        assertEquals("http://abc.xyz", command.getInfoUrl());
+        assertEquals(Lists.newArrayList("foo"), command.getRunTemplate());
+
+        assertThat(command.getVariables(), hasSize(2));
+        assertThat(commandVariableList, everyItem(isIn(command.getVariables())));
+
+        assertEquals((Long)0L, command.getScriptId());
+        assertEquals("abc123", command.getDockerImage());
+    }
+
+    @Test
+    public void testPersistScriptCommand() throws Exception {
+
+        final Script script = mapper.readValue(SCRIPT_JSON, Script.class);
+        scriptService.create(script);
+        final Script retrievedScript = scriptService.retrieve(script.getId());
+
 //        final ScriptEnvironment scriptEnvironment =
-//                mapper.readValue(scriptEnvironmentJson, ScriptEnvironment.class);
+//                mapper.readValue(SCRIPT_ENVIRONMENT_JSON, ScriptEnvironment.class);
 //        scriptEnvironmentService.create(scriptEnvironment);
 //        scriptEnvironmentService.flush();
 //        scriptEnvironmentService.refresh(scriptEnvironment);
-//
+
 //        final ScriptEnvironment retrievedScriptEnvironment =
 //                scriptEnvironmentService.retrieve(scriptEnvironment.getId());
-//        assertEquals(image, retrievedScriptEnvironment.getDockerImage());
-//
-//        final String scriptCommandJson =
-//                String.format(SCRIPT_COMMAND_JSON_TEMPLATE,
-//                        script.getId(), scriptEnvironment.getId());
-//        final Command command = mapper.readValue(scriptCommandJson, Command.class);
-//
-//        assertThat(command, instanceOf(ScriptCommand.class));
-//        final ScriptCommand scriptCommand = (ScriptCommand) command;
-//        commandService.create(scriptCommand);
-//        commandService.flush();
-//        commandService.refresh(scriptCommand);
-//
-//        final ScriptCommand retrievedCommand = (ScriptCommand) commandService.retrieve(scriptCommand.getId());
-//
-//        assertEquals(scriptCommand, retrievedCommand);
-//        assertNotNull(retrievedCommand.getScript());
-//        assertEquals(retrievedScript, retrievedCommand.getScript());
+//        assertEquals(scriptEnvironment, retrievedScriptEnvironment);
+
+        final String scriptCommandJson =
+                String.format(SCRIPT_COMMAND_JSON_TEMPLATE, script.getId());
+        final Command command = mapper.readValue(scriptCommandJson, Command.class);
+
+        commandService.create(command);
+        commandService.flush();
+        commandService.refresh(command);
+
+        final Command retrievedCommand = commandService.retrieve(command.getId());
+
+        assertEquals(command, retrievedCommand);
+        assertNotNull(retrievedCommand.getScript());
+        assertEquals(retrievedScript, retrievedCommand.getScript());
 //        assertNotNull(retrievedCommand.getScriptEnvironment());
 //        assertEquals(retrievedScriptEnvironment, retrievedCommand.getScriptEnvironment());
-//    }
+    }
 
 //    @Test
 //    public void testResolveCommand() throws Exception {

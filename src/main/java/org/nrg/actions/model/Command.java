@@ -1,15 +1,21 @@
 package org.nrg.actions.model;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.MoreObjects.ToStringHelper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.hibernate.envers.Audited;
+import org.nrg.automation.entities.Script;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.ManyToOne;
+import javax.persistence.Transient;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -21,7 +27,7 @@ public class Command extends AbstractHibernateEntity {
     private String description;
     @JsonProperty("info-url") private String infoUrl;
     @JsonProperty("docker-image") private String dockerImage;
-    @JsonProperty("script-id") private Long scriptId;
+    @JsonIgnore private Script script;
     private List<CommandVariable> variables = Lists.newArrayList();
     @JsonProperty("run-template") private List<String> runTemplate;
     @JsonProperty("mounts-in") private Map<String, String> mountsIn = Maps.newHashMap();
@@ -56,16 +62,33 @@ public class Command extends AbstractHibernateEntity {
         return dockerImage;
     }
 
-    public void setDockerImage(String dockerImage) {
+    public void setDockerImage(final String dockerImage) {
         this.dockerImage = dockerImage;
     }
 
+    @Transient
+    @JsonGetter("script-id")
     public Long getScriptId() {
-        return scriptId;
+        return script == null ? null : script.getId();
     }
 
-    public void setScriptId(Long scriptId) {
-        this.scriptId = scriptId;
+    @JsonSetter("script-id")
+    public void setScriptId(final Long scriptId) {
+        if (scriptId == null) {
+            script = null;
+        } else {
+            script = new Script();
+            script.setId(scriptId);
+        }
+    }
+
+    @ManyToOne
+    public Script getScript() {
+        return script;
+    }
+
+    public void setScript(final Script script) {
+        this.script = script;
     }
 
     @ElementCollection
@@ -130,7 +153,7 @@ public class Command extends AbstractHibernateEntity {
                 .add("description", description)
                 .add("infoUrl", infoUrl)
                 .add("dockerImage", dockerImage)
-                .add("scriptId", scriptId)
+                .add("script", script)
                 .add("variables", variables)
                 .add("runTemplate", runTemplate)
                 .add("mountsIn", mountsIn)
@@ -148,7 +171,7 @@ public class Command extends AbstractHibernateEntity {
                 Objects.equals(this.description, that.description) &&
                 Objects.equals(this.infoUrl, that.infoUrl) &&
                 Objects.equals(this.dockerImage, that.dockerImage) &&
-                Objects.equals(this.scriptId, that.scriptId) &&
+                Objects.equals(this.script, that.script) &&
                 Objects.equals(this.runTemplate, that.runTemplate) &&
                 Objects.equals(this.variables, that.variables) &&
                 Objects.equals(this.mountsIn, that.mountsIn) &&
@@ -158,7 +181,7 @@ public class Command extends AbstractHibernateEntity {
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, description, infoUrl, dockerImage, scriptId,
+        return Objects.hash(name, description, infoUrl, dockerImage,
                 variables, runTemplate, mountsIn, mountsOut, environmentVariables);
     }
 

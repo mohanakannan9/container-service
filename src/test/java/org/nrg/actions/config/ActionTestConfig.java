@@ -10,6 +10,7 @@ import org.nrg.actions.services.ActionService;
 import org.nrg.actions.services.CommandService;
 import org.nrg.actions.services.HibernateActionService;
 import org.nrg.actions.services.HibernateCommandService;
+import org.nrg.automation.entities.Script;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.daos.DockerImageDao;
 import org.nrg.containers.services.DockerImageService;
@@ -48,15 +49,15 @@ public class ActionTestConfig {
         return new CommandDao();
     }
 
-    @Bean
-    public DockerImageService dockerImageService() {
-        return new HibernateDockerImageService();
-    }
-
-    @Bean
-    public DockerImageDao dockerImageDao() {
-        return new DockerImageDao();
-    }
+//    @Bean
+//    public DockerImageService dockerImageService() {
+//        return new HibernateDockerImageService();
+//    }
+//
+//    @Bean
+//    public DockerImageDao dockerImageDao() {
+//        return new DockerImageDao();
+//    }
 
     @Bean
     public ContainerControlApi controlApi() {
@@ -70,7 +71,8 @@ public class ActionTestConfig {
         bean.setHibernateProperties(properties);
         bean.setAnnotatedClasses(
                 Action.class,
-                Command.class);
+                Command.class,
+                Script.class);
         return bean;
     }
 

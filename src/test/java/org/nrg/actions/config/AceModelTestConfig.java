@@ -15,6 +15,7 @@ import org.nrg.actions.services.CommandService;
 import org.nrg.actions.services.HibernateAceService;
 import org.nrg.actions.services.HibernateActionService;
 import org.nrg.actions.services.HibernateCommandService;
+import org.nrg.automation.entities.Script;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.framework.orm.hibernate.AggregatedAnnotationSessionFactoryBean;
 import org.nrg.transporter.TransportService;
@@ -79,6 +80,7 @@ public class AceModelTestConfig {
         bean.setAnnotatedClasses(
                 Action.class,
                 Command.class,
+                Script.class,
                 ActionContextExecution.class);
         return bean;
     }

@@ -6,10 +6,12 @@ import org.nrg.actions.daos.CommandDao;
 import org.nrg.actions.daos.ScriptEnvironmentDao;
 import org.nrg.actions.model.Command;
 import org.nrg.actions.model.CommandVariable;
+import org.nrg.actions.model.ScriptEnvironment;
 import org.nrg.actions.services.CommandService;
 import org.nrg.actions.services.HibernateCommandService;
 import org.nrg.actions.services.HibernateScriptEnvironmentService;
 import org.nrg.actions.services.ScriptEnvironmentService;
+import org.nrg.automation.entities.Script;
 import org.nrg.automation.repositories.ScriptRepository;
 import org.nrg.automation.services.ScriptService;
 import org.nrg.automation.services.impl.hibernate.HibernateScriptService;
@@ -33,15 +35,15 @@ import java.util.Properties;
 //@EnableTransactionManagement
 @Import(ContainersHibernateEntityTestConfig.class)
 public class CommandTestConfig {
-    @Bean
-    public DockerImageService dockerImageService() {
-        return new HibernateDockerImageService();
-    }
-
-    @Bean
-    public DockerImageDao dockerImageDao() {
-        return new DockerImageDao();
-    }
+//    @Bean
+//    public DockerImageService dockerImageService() {
+//        return new HibernateDockerImageService();
+//    }
+//
+//    @Bean
+//    public DockerImageDao dockerImageDao() {
+//        return new DockerImageDao();
+//    }
 
     @Bean
     public ScriptService scriptService() {
@@ -53,15 +55,15 @@ public class CommandTestConfig {
         return new ScriptRepository();
     }
 
-    @Bean
-    public ScriptEnvironmentService scriptEnvironmentService() {
-        return new HibernateScriptEnvironmentService();
-    }
-
-    @Bean
-    public ScriptEnvironmentDao scriptEnvironmentDao() {
-        return new ScriptEnvironmentDao();
-    }
+//    @Bean
+//    public ScriptEnvironmentService scriptEnvironmentService() {
+//        return new HibernateScriptEnvironmentService();
+//    }
+//
+//    @Bean
+//    public ScriptEnvironmentDao scriptEnvironmentDao() {
+//        return new ScriptEnvironmentDao();
+//    }
 
     @Bean
     public CommandService commandService() {
@@ -85,10 +87,7 @@ public class CommandTestConfig {
         bean.setHibernateProperties(properties);
         bean.setAnnotatedClasses(
                 Command.class,
-//                ScriptCommand.class,
-//                Script.class,
-//                ScriptEnvironment.class,
-                CommandVariable.class);
+                Script.class);
         return bean;
     }
 

@@ -8,8 +8,10 @@ import org.hibernate.envers.Audited;
 import org.nrg.containers.model.DockerImage;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
+import java.util.List;
 import java.util.Objects;
 
 @Audited
@@ -18,8 +20,8 @@ import java.util.Objects;
 public class ScriptEnvironment extends AbstractHibernateEntity {
     private String name;
     private String description;
-    @JsonProperty("docker-image") private DockerImage dockerImage;
-    @JsonProperty("run-prefix") private String runPrefix;
+    @JsonProperty("docker-image") private String dockerImage;
+    @JsonProperty("run-prefix") private List<String> runPrefix;
 
     public String getName() {
         return name;
@@ -37,20 +39,20 @@ public class ScriptEnvironment extends AbstractHibernateEntity {
         this.description = description;
     }
 
-    @ManyToOne
-    public DockerImage getDockerImage() {
+    public String getDockerImage() {
         return dockerImage;
     }
 
-    public void setDockerImage(final DockerImage dockerImage) {
+    public void setDockerImage(final String dockerImage) {
         this.dockerImage = dockerImage;
     }
 
-    public String getRunPrefix() {
+    @ElementCollection
+    public List<String> getRunPrefix() {
         return runPrefix;
     }
 
-    public void setRunPrefix(final String runPrefix) {
+    public void setRunPrefix(final List<String> runPrefix) {
         this.runPrefix = runPrefix;
     }
 

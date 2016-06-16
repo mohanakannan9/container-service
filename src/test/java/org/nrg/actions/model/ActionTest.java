@@ -100,8 +100,8 @@ public class ActionTest {
     @Autowired
     private CommandService commandService;
 
-    @Autowired
-    private DockerImageService dockerImageService;
+//    @Autowired
+//    private DockerImageService dockerImageService;
 
     @Test
     public void testDeserializeMatcher() throws Exception {
