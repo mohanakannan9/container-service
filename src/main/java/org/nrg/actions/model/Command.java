@@ -1,44 +1,31 @@
 package org.nrg.actions.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.MoreObjects.ToStringHelper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.hibernate.envers.Audited;
-import org.nrg.containers.model.DockerImageCommand;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
-import javax.persistence.DiscriminatorColumn;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Inheritance;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 @Entity
 @Audited
-@Inheritance
-@DiscriminatorColumn(name = "COMMAND_TYPE")
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-@JsonSubTypes({
-        @JsonSubTypes.Type(value = DockerImageCommand.class, name = "docker-image"),
-        @JsonSubTypes.Type(value = ScriptCommand.class, name = "script")
-})
-@JsonTypeName("command")
-public abstract class Command extends AbstractHibernateEntity {
+public class Command extends AbstractHibernateEntity {
     private String name;
     private String description;
     @JsonProperty("info-url") private String infoUrl;
+    @JsonProperty("docker-image") private String dockerImage;
+    @JsonProperty("script-id") private Long scriptId;
     private List<CommandVariable> variables = Lists.newArrayList();
     @JsonProperty("run-template") private List<String> runTemplate;
-    @JsonProperty("mounts-in") private List<CommandMount> mountsIn = Lists.newArrayList();
-    @JsonProperty("mounts-out") private List<CommandMount> mountsOut = Lists.newArrayList();
+    @JsonProperty("mounts-in") private Map<String, String> mountsIn = Maps.newHashMap();
+    @JsonProperty("mounts-out") private Map<String, String> mountsOut = Maps.newHashMap();
     @JsonProperty("env") private Map<String, String> environmentVariables = Maps.newHashMap();
 
     public String getName() {
@@ -65,6 +52,22 @@ public abstract class Command extends AbstractHibernateEntity {
         this.infoUrl = infoUrl;
     }
 
+    public String getDockerImage() {
+        return dockerImage;
+    }
+
+    public void setDockerImage(String dockerImage) {
+        this.dockerImage = dockerImage;
+    }
+
+    public Long getScriptId() {
+        return scriptId;
+    }
+
+    public void setScriptId(Long scriptId) {
+        this.scriptId = scriptId;
+    }
+
     @ElementCollection
     public List<CommandVariable> getVariables() {
         return variables;
@@ -88,24 +91,24 @@ public abstract class Command extends AbstractHibernateEntity {
     }
 
     @ElementCollection
-    public List<CommandMount> getMountsIn() {
+    public Map<String, String> getMountsIn() {
         return mountsIn;
     }
 
-    public void setMountsIn(final List<CommandMount> mountsIn) {
+    public void setMountsIn(final Map<String, String> mountsIn) {
         this.mountsIn = mountsIn == null ?
-                Lists.<CommandMount>newArrayList() :
+                Maps.<String, String>newHashMap() :
                 mountsIn;
     }
 
     @ElementCollection
-    public List<CommandMount> getMountsOut() {
+    public Map<String, String> getMountsOut() {
         return mountsOut;
     }
 
-    public void setMountsOut(final List<CommandMount> mountsOut) {
+    public void setMountsOut(final Map<String, String> mountsOut) {
         this.mountsOut = mountsOut == null ?
-                Lists.<CommandMount>newArrayList() :
+                Maps.<String, String>newHashMap() :
                 mountsOut;
     }
 
@@ -126,6 +129,8 @@ public abstract class Command extends AbstractHibernateEntity {
                 .add("name", name)
                 .add("description", description)
                 .add("infoUrl", infoUrl)
+                .add("dockerImage", dockerImage)
+                .add("scriptId", scriptId)
                 .add("variables", variables)
                 .add("runTemplate", runTemplate)
                 .add("mountsIn", mountsIn)
@@ -142,6 +147,8 @@ public abstract class Command extends AbstractHibernateEntity {
         return Objects.equals(this.name, that.name) &&
                 Objects.equals(this.description, that.description) &&
                 Objects.equals(this.infoUrl, that.infoUrl) &&
+                Objects.equals(this.dockerImage, that.dockerImage) &&
+                Objects.equals(this.scriptId, that.scriptId) &&
                 Objects.equals(this.runTemplate, that.runTemplate) &&
                 Objects.equals(this.variables, that.variables) &&
                 Objects.equals(this.mountsIn, that.mountsIn) &&
@@ -151,7 +158,7 @@ public abstract class Command extends AbstractHibernateEntity {
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), name, description, infoUrl,
+        return Objects.hash(name, description, infoUrl, dockerImage, scriptId,
                 variables, runTemplate, mountsIn, mountsOut, environmentVariables);
     }
 

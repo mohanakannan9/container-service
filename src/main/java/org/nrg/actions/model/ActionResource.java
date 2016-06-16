@@ -17,12 +17,12 @@ public class ActionResource implements Serializable {
 
     public ActionResource() {}
 
-    public ActionResource(final CommandMount commandMount) {
+    public ActionResource(final String name) {
         // In lieu of any explicit user-provided information,
         // assume the command mount was named the same as the resource.
         // This provides an easy default for users.
-        this.resourceName = commandMount.getName();
-        this.mountName = commandMount.getName();
+        this.resourceName = name;
+        this.mountName = name;
     }
 
     public String getPath() {

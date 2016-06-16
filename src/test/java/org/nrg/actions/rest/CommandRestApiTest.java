@@ -55,7 +55,7 @@ public class CommandRestApiTest {
         final String path = "/commands";
 
         final String commandJson =
-                "{\"id\": 1, \"name\": \"one\", \"type\":\"docker-image\"}";
+                "{\"id\": 1, \"name\": \"one\", \"docker-image\":\"abc123\"}";
         final Command command = mapper.readValue(commandJson, Command.class);
 
         when(mockCommandService.getAll()).thenReturn(Lists.newArrayList(command));
@@ -76,5 +76,6 @@ public class CommandRestApiTest {
         final Command commandResponse = commandResponseList.get(0);
         assertEquals(Long.valueOf(1), (Long)commandResponse.getId());
         assertEquals("one", commandResponse.getName());
+        assertEquals("abc123", commandResponse.getDockerImage());
     }
 }

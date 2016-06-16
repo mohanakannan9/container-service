@@ -8,15 +8,10 @@ import org.nrg.actions.daos.CommandDao;
 import org.nrg.actions.model.Command;
 import org.nrg.actions.model.CommandVariable;
 import org.nrg.actions.model.ResolvedCommand;
-import org.nrg.actions.model.ResolvedCommandMount;
-import org.nrg.actions.model.ScriptCommand;
-import org.nrg.actions.model.ScriptEnvironment;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
-import org.nrg.containers.model.DockerImage;
-import org.nrg.containers.model.DockerImageCommand;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -67,20 +62,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
 
         final ResolvedCommand resolvedCommand = new ResolvedCommand();
         resolvedCommand.setCommandId(command.getId());
-
-        final DockerImage dockerImage;
-        if (DockerImageCommand.class.isAssignableFrom(command.getClass())) {
-            final DockerImageCommand dockerImageCommand = (DockerImageCommand) command;
-            dockerImage = dockerImageCommand.getDockerImage();
-        } else if (ScriptCommand.class.isAssignableFrom(command.getClass())) {
-            final ScriptCommand scriptCommand = (ScriptCommand) command;
-            final ScriptEnvironment scriptEnvironment = scriptCommand.getScriptEnvironment();
-            dockerImage = scriptEnvironment.getDockerImage();
-        } else {
-            // TODO There are no other kinds of command. How did we get here?
-            throw new NotFoundException("Cannot find docker image id for command " + command.getId());
-        }
-        resolvedCommand.setDockerImageId(dockerImage.getImageId());
+        resolvedCommand.setDockerImageId(command.getDockerImage());
 
         // Replace variable names in runTemplate, mounts, and environment variables
         final Map<String, String> variableValues = Maps.newHashMap();
@@ -95,21 +77,11 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             }
         }
 
-        final List<String> run = resolveTemplate(command.getRunTemplate(), variableArgTemplateValues);
-        resolvedCommand.setRun(run);
 
-        if (command.getMountsIn() != null) {
-            resolvedCommand.setMountsInFromCommandMounts(command.getMountsIn());
-            for (final ResolvedCommandMount mount : resolvedCommand.getMountsIn()) {
-                mount.setRemotePath(resolveTemplate(mount.getRemotePath(), variableValues));
-            }
-        }
-        if (command.getMountsOut() != null) {
-            resolvedCommand.setMountsOutFromCommandMounts(command.getMountsOut());
-            for (final ResolvedCommandMount mount : resolvedCommand.getMountsOut()) {
-                mount.setRemotePath(resolveTemplate(mount.getRemotePath(), variableValues));
-            }
-        }
+        resolvedCommand.setRun(resolveTemplate(command.getRunTemplate(), variableArgTemplateValues));
+
+        resolvedCommand.setMountsIn(resolveMounts(command.getMountsIn(), variableValues));
+        resolvedCommand.setMountsOut(resolveMounts(command.getMountsOut(), variableValues));
 
         if (command.getEnvironmentVariables() != null) {
             final Map<String, String> resolvedEnv = Maps.newHashMap();
@@ -123,6 +95,20 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         // TODO What else do I need to do to resolve the command?
 
         return resolvedCommand;
+    }
+
+    private Map<String, String> resolveMounts(final Map<String, String> mounts,
+                                              final Map<String, String> variableValues) {
+        if (mounts == null) {
+            return null;
+        }
+
+        final Map<String, String> resolvedMounts = Maps.newHashMap();
+        for (final Map.Entry<String, String> mount : mounts.entrySet()) {
+            resolvedMounts.put(mount.getKey(),
+                    resolveTemplate(mount.getValue(), variableValues));
+        }
+        return resolvedMounts;
     }
 
     @Override

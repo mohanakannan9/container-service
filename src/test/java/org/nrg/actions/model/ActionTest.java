@@ -3,6 +3,7 @@ package org.nrg.actions.model;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -17,6 +18,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasSize;
@@ -35,9 +37,9 @@ import static org.junit.Assert.assertTrue;
 @Transactional
 @ContextConfiguration(classes = ActionTestConfig.class)
 public class ActionTest {
-    private static final String DOCKER_IMAGE_JSON =
-            "{\"name\":\"name\", \"repo-tags\":[\"a\", \"b\"], \"image-id\":\"abc123\"," +
-                    "\"labels\":{\"foo\":\"bar\"}}";
+//    private static final String DOCKER_IMAGE_JSON =
+//            "{\"name\":\"name\", \"repo-tags\":[\"a\", \"b\"], \"image-id\":\"abc123\"," +
+//                    "\"labels\":{\"foo\":\"bar\"}}";
 
     private static final String SCAN_MATCHER_JSON =
             "{\"property\":\"type\", \"operator\":\"equals\", \"value\":\"T1|MPRAGE\"}";
@@ -59,24 +61,21 @@ public class ActionTest {
                     "\"required\":true, \"type\":\"string\"," +
                     "\"value\":\"something\"}";
 
-    private static final String COMMAND_MOUNT_IN_JSON =
-            "{\"name\":\"in\", \"path\":\"/input\"}";
-    private static final String COMMAND_MOUNT_OUT_JSON =
-            "{\"name\":\"out\", \"path\":\"/output\"}";
+    private static final String COMMAND_MOUNT_IN_JSON = "{\"in\":\"/input\"}";
+    private static final String COMMAND_MOUNT_OUT_JSON = "{\"out\":\"/output\"}";
     private static final String ACTION_RESOURCE_STAGED_JSON =
             "{\"name\":\"DICOM\", \"mount\":\"in\", \"path\":\"/path\"}";
     private static final String ACTION_RESOURCE_CREATED_JSON =
             "{\"name\":\"NIFTI\", \"mount\":\"out\", \"overwrite\":true}";
 
-    private static final String COMMAND_JSON_TEMPLATE =
+    private static final String COMMAND_JSON =
             "{\"name\":\"docker_image_command\", \"description\":\"Docker Image command for the test\", " +
                     "\"info-url\":\"http://abc.xyz\", \"env\":{\"foo\":\"bar\"}, " +
                     "\"variables\":" + VARIABLE_LIST_JSON + ", " +
                     "\"run-template\":[\"foo\"], " +
-                    "\"type\":\"docker-image\", " +
-                    "\"docker-image\":{\"id\":%d}, " +
-                    "\"mounts-in\":[" + COMMAND_MOUNT_IN_JSON + "]," +
-                    "\"mounts-out\":[" + COMMAND_MOUNT_OUT_JSON + "]}";
+                    "\"docker-image\":\"abc123\", " +
+                    "\"mounts-in\":" + COMMAND_MOUNT_IN_JSON + "," +
+                    "\"mounts-out\":" + COMMAND_MOUNT_OUT_JSON + "}";
 
     private static final String ACTION_JSON_TEMPLATE =
             "{\"name\":\"an_action\", \"description\":\"Yep, it's an action all right\", " +
@@ -116,8 +115,7 @@ public class ActionTest {
     @Test
     public void testDeserializeActionInput() throws Exception {
 
-        final String commandJson = String.format(COMMAND_JSON_TEMPLATE, 0);
-        final Command command = mapper.readValue(commandJson, Command.class);
+        final Command command = mapper.readValue(COMMAND_JSON, Command.class);
         final CommandVariable commandVariable = command.getVariables().get(0);
 
         final ActionInput actionInput = mapper.readValue(ACTION_INPUT_JSON, ActionInput.class);
@@ -178,12 +176,11 @@ public class ActionTest {
         final List<CommandVariable> variables =
                 mapper.readValue(VARIABLE_LIST_JSON,
                         new TypeReference<List<CommandVariable>>() {});
-        final CommandMount mountIn =
-                mapper.readValue(COMMAND_MOUNT_IN_JSON, CommandMount.class);
-        final CommandMount mountOut =
-                mapper.readValue(COMMAND_MOUNT_OUT_JSON, CommandMount.class);
-        final String commandJson = String.format(COMMAND_JSON_TEMPLATE, 0);
-        final Command command = mapper.readValue(commandJson, Command.class);
+        final Map<String, String> mountIn = Maps.newHashMap();
+        mountIn.put("in", "/input");
+        final Map<String, String> mountOut = Maps.newHashMap();
+        mountOut.put("out", "/output");
+        final Command command = mapper.readValue(COMMAND_JSON, Command.class);
 
         final Matcher scanMatcher = mapper.readValue(SCAN_MATCHER_JSON, Matcher.class);
         final List<ActionInput> defaultInputs = Lists.newArrayList();
@@ -191,8 +188,8 @@ public class ActionTest {
             defaultInputs.add(new ActionInput(variable));
         }
 
-        final ActionResource defaultResourceStaged = new ActionResource(mountIn);
-        final ActionResource defaultResourceCreated = new ActionResource(mountOut);
+        final ActionResource defaultResourceStaged = new ActionResource("in");
+        final ActionResource defaultResourceCreated = new ActionResource("out");
 
         final String actionJson =
                 String.format(ACTION_MINIMAL_JSON_TEMPLATE, command.getId());
@@ -230,11 +227,8 @@ public class ActionTest {
 
     @Test
     public void testPersistAction() throws Exception {
-        final DockerImage image = mapper.readValue(DOCKER_IMAGE_JSON, DockerImage.class);
-        dockerImageService.create(image);
 
-        final String commandJson = String.format(COMMAND_JSON_TEMPLATE, image.getId());
-        final Command command = mapper.readValue(commandJson, Command.class);
+        final Command command = mapper.readValue(COMMAND_JSON, Command.class);
         commandService.create(command);
 
         final String actionJson = String.format(ACTION_JSON_TEMPLATE, command.getId());
@@ -252,11 +246,8 @@ public class ActionTest {
 
     @Test
     public void testFindActionByXsiType() throws Exception {
-        final DockerImage image = mapper.readValue(DOCKER_IMAGE_JSON, DockerImage.class);
-        dockerImageService.create(image);
 
-        final String commandJson = String.format(COMMAND_JSON_TEMPLATE, image.getId());
-        final Command command = mapper.readValue(commandJson, Command.class);
+        final Command command = mapper.readValue(COMMAND_JSON, Command.class);
         commandService.create(command);
 
         final String actionJson = String.format(ACTION_JSON_TEMPLATE, command.getId());

@@ -6,21 +6,16 @@ import org.nrg.actions.daos.CommandDao;
 import org.nrg.actions.daos.ScriptEnvironmentDao;
 import org.nrg.actions.model.Command;
 import org.nrg.actions.model.CommandVariable;
-import org.nrg.actions.model.ScriptEnvironment;
 import org.nrg.actions.services.CommandService;
 import org.nrg.actions.services.HibernateCommandService;
 import org.nrg.actions.services.HibernateScriptEnvironmentService;
 import org.nrg.actions.services.ScriptEnvironmentService;
-import org.nrg.automation.entities.Script;
-import org.nrg.actions.model.ScriptCommand;
 import org.nrg.automation.repositories.ScriptRepository;
 import org.nrg.automation.services.ScriptService;
 import org.nrg.automation.services.impl.hibernate.HibernateScriptService;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.config.ContainersHibernateEntityTestConfig;
 import org.nrg.containers.daos.DockerImageDao;
-import org.nrg.containers.model.DockerImageCommand;
-import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.services.DockerImageService;
 import org.nrg.containers.services.HibernateDockerImageService;
 import org.nrg.framework.orm.hibernate.AggregatedAnnotationSessionFactoryBean;
@@ -90,11 +85,9 @@ public class CommandTestConfig {
         bean.setHibernateProperties(properties);
         bean.setAnnotatedClasses(
                 Command.class,
-                DockerImageCommand.class,
-                DockerImage.class,
-                ScriptCommand.class,
-                Script.class,
-                ScriptEnvironment.class,
+//                ScriptCommand.class,
+//                Script.class,
+//                ScriptEnvironment.class,
                 CommandVariable.class);
         return bean;
     }

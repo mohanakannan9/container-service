@@ -21,9 +21,6 @@ import static org.junit.Assert.assertTrue;
 @Transactional
 @ContextConfiguration(classes = AceModelTestConfig.class)
 public class AceTest {
-    private static final String DOCKER_IMAGE_JSON =
-            "{\"name\":\"name\", \"repo-tags\":[\"a\", \"b\"], \"image-id\":\"abc123\"," +
-                    "\"labels\":{\"foo\":\"bar\"}}";
 
     private static final String SCAN_MATCHER_JSON =
             "{\"property\":\"type\", \"operator\":\"equals\", \"value\":\"T1|MPRAGE\"}";
@@ -40,21 +37,18 @@ public class AceTest {
     private static final String VARIABLE_LIST_JSON =
             "[" + VARIABLE_0_JSON + ", " + VARIABLE_1_JSON + "]";
 
-    private static final String COMMAND_MOUNT_IN_JSON =
-            "{\"name\":\"in\", \"path\":\"/input\"}";
-    private static final String COMMAND_MOUNT_OUT_JSON =
-            "{\"name\":\"out\", \"path\":\"/output\"}";
+    private static final String COMMAND_MOUNT_IN_JSON = "{\"in\":\"/input\"}";
+    private static final String COMMAND_MOUNT_OUT_JSON = "{\"out\":\"/output\"}";
 
-    private static final String DOCKER_IMAGE_COMMAND_JSON_TEMPLATE =
+    private static final String DOCKER_IMAGE_COMMAND_JSON =
             "{\"name\":\"docker_image_command\", \"description\":\"Docker Image command for the test\", " +
                     "\"info-url\":\"http://abc.xyz\", " +
                     "\"env\":{\"foo\":\"bar\"}, " +
                     "\"variables\":" + VARIABLE_LIST_JSON + ", " +
                     "\"run-template\":[\"cmd\", \"#foo#\"], " +
-                    "\"type\":\"docker-image\", " +
-                    "\"docker-image\":{\"id\":%d}, " +
-                    "\"mounts-in\":[" + COMMAND_MOUNT_IN_JSON + "]," +
-                    "\"mounts-out\":[" + COMMAND_MOUNT_OUT_JSON + "]}";
+                    "\"docker-image\":\"abc123\", " +
+                    "\"mounts-in\":" + COMMAND_MOUNT_IN_JSON + "," +
+                    "\"mounts-out\":" + COMMAND_MOUNT_OUT_JSON + "}";
 
     private static final String ACTION_INPUT_JSON =
             "{\"name\":\"some_identifier\", \"command-variable-name\":\"my_cool_input\", " +
@@ -139,10 +133,7 @@ public class AceTest {
 
     @Test
     public void testPersistAce() throws Exception {
-        final Long dockerImageId = 0L;
-        final String dockerImageCommandJson =
-                String.format(DOCKER_IMAGE_COMMAND_JSON_TEMPLATE, dockerImageId);
-        final Command command = mapper.readValue(dockerImageCommandJson, Command.class);
+        final Command command = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, Command.class);
 
         final ResolvedCommand resolvedCommand = commandService.resolveCommand(command);
 

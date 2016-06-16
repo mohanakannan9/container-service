@@ -74,12 +74,10 @@ public class ResolvedCommand implements Serializable {
                 mountsIn;
     }
 
-    public void setMountsInFromCommandMounts(final List<CommandMount> commandMounts) {
-        final List<ResolvedCommandMount> mountsIn = Lists.newArrayList();
-        for (final CommandMount mount : commandMounts) {
-            mountsIn.add(new ResolvedCommandMount(mount, true));
-        }
-        setMountsIn(mountsIn);
+    @Transient
+    @JsonIgnore
+    public void setMountsIn(final Map<String, String> commandMounts) {
+        setMountsIn(resolveCommandMounts(commandMounts));
     }
 
     @ElementCollection(fetch = FetchType.EAGER)
@@ -95,12 +93,18 @@ public class ResolvedCommand implements Serializable {
 
     @Transient
     @JsonIgnore
-    public void setMountsOutFromCommandMounts(final List<CommandMount> commandMounts) {
-        final List<ResolvedCommandMount> mountsOut = Lists.newArrayList();
-        for (final CommandMount mount : commandMounts) {
-            mountsOut.add(new ResolvedCommandMount(mount, false));
+    public void setMountsOut(final Map<String, String> commandMounts) {
+        setMountsOut(resolveCommandMounts(commandMounts));
+    }
+
+    @Transient
+    @JsonIgnore
+    private List<ResolvedCommandMount> resolveCommandMounts(final Map<String, String> commandMounts) {
+        final List<ResolvedCommandMount> resolvedMounts = Lists.newArrayList();
+        for (final Map.Entry<String, String> mount : commandMounts.entrySet()) {
+            resolvedMounts.add(new ResolvedCommandMount(mount.getKey(), mount.getValue(), true));
         }
-        setMountsOut(mountsOut);
+        return resolvedMounts;
     }
 
     @Override

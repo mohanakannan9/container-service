@@ -12,8 +12,6 @@ import org.nrg.actions.services.HibernateActionService;
 import org.nrg.actions.services.HibernateCommandService;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.daos.DockerImageDao;
-import org.nrg.containers.model.DockerImage;
-import org.nrg.containers.model.DockerImageCommand;
 import org.nrg.containers.services.DockerImageService;
 import org.nrg.containers.services.HibernateDockerImageService;
 import org.nrg.framework.orm.hibernate.AggregatedAnnotationSessionFactoryBean;
@@ -72,8 +70,6 @@ public class ActionTestConfig {
         bean.setHibernateProperties(properties);
         bean.setAnnotatedClasses(
                 Action.class,
-                DockerImage.class,
-                DockerImageCommand.class,
                 Command.class);
         return bean;
     }

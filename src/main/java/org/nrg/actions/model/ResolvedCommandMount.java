@@ -24,10 +24,11 @@ public class ResolvedCommandMount implements Serializable {
         this.remotePath = commandMount.getPath();
     }
 
-    public ResolvedCommandMount(final CommandMount commandMount,
+    public ResolvedCommandMount(final String name,
+                                final String remotePath,
                                 final Boolean readOnly) {
-        this.name = commandMount.getName();
-        this.remotePath = commandMount.getPath();
+        this.name = name;
+        this.remotePath = remotePath;
         this.readOnly = readOnly;
     }
 

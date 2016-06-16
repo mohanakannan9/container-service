@@ -11,7 +11,6 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.ManyToOne;
 import javax.persistence.Transient;
 import java.util.List;
@@ -68,17 +67,15 @@ public class Action extends AbstractHibernateEntity {
 
             // If there are any command mounts that weren't referenced
             // explicitly as action resources, create default resources for them
-            for (final CommandMount input : command.getMountsIn()) {
-                if (getStagedByMountName(input.getName()) == null) {
-                    final ActionResource staged = new ActionResource(input);
-                    addResourceStaged(staged);
+            for (final String mountName : command.getMountsIn().keySet()) {
+                if (getStagedByMountName(mountName) == null) {
+                    addResourceStaged(new ActionResource(mountName));
                 }
             }
 
-            for (final CommandMount output : command.getMountsOut()) {
-                if (getCreatedByMountName(output.getName()) == null) {
-                    final ActionResource created = new ActionResource(output);
-                    addResourceCreated(created);
+            for (final String mountName : command.getMountsOut().keySet()) {
+                if (getCreatedByMountName(mountName) == null) {
+                    addResourceCreated(new ActionResource(mountName));
                 }
             }
         }
