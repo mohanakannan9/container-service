@@ -8,6 +8,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.MoreObjects.ToStringHelper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.envers.Audited;
 import org.nrg.automation.entities.Script;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
@@ -34,6 +35,7 @@ public class Command extends AbstractHibernateEntity {
     @JsonProperty("mounts-out") private Map<String, String> mountsOut = Maps.newHashMap();
     @JsonProperty("env") private Map<String, String> environmentVariables = Maps.newHashMap();
 
+    @ApiModelProperty(value = "The Command's user-readable name. Must be unique for a given docker image.", required = true)
     public String getName() {
         return name;
     }
@@ -42,6 +44,7 @@ public class Command extends AbstractHibernateEntity {
         this.name = name;
     }
 
+    @ApiModelProperty("A brief description of the Command")
     public String getDescription() {
         return description;
     }
@@ -50,6 +53,7 @@ public class Command extends AbstractHibernateEntity {
         this.description = description;
     }
 
+    @ApiModelProperty("A URL where users can get more information about the Command")
     public String getInfoUrl() {
         return infoUrl;
     }
@@ -58,6 +62,7 @@ public class Command extends AbstractHibernateEntity {
         this.infoUrl = infoUrl;
     }
 
+    @ApiModelProperty(value = "The ID of the docker image where this Command will run", required = true)
     public String getDockerImage() {
         return dockerImage;
     }
@@ -68,6 +73,7 @@ public class Command extends AbstractHibernateEntity {
 
     @Transient
     @JsonGetter("script-id")
+    @ApiModelProperty("The ID of a script in XNAT's Script Repository. This script will be run in the container when the Command is executed.")
     public Long getScriptId() {
         return script == null ? null : script.getId();
     }
@@ -83,6 +89,7 @@ public class Command extends AbstractHibernateEntity {
     }
 
     @ManyToOne
+    @ApiModelProperty(hidden = true)
     public Script getScript() {
         return script;
     }
@@ -92,6 +99,9 @@ public class Command extends AbstractHibernateEntity {
     }
 
     @ElementCollection
+    @ApiModelProperty("A list of variables. " +
+            "When the Command is launched, these variables receive values; " +
+            "those values will be used to fill in any template strings in the Command's run-template, mounts, or environment variables.")
     public List<CommandVariable> getVariables() {
         return variables;
     }
@@ -103,6 +113,8 @@ public class Command extends AbstractHibernateEntity {
     }
 
     @ElementCollection
+    @ApiModelProperty("The command that will be executed in the container when the Command is launched. " +
+            "Can use template strings, e.g. #variable-name#, which will be resolved into a value when the Command is launched.")
     public List<String> getRunTemplate() {
         return runTemplate;
     }
@@ -114,6 +126,11 @@ public class Command extends AbstractHibernateEntity {
     }
 
     @ElementCollection
+    @ApiModelProperty(value = "A Map of input mounts. " +
+            "Each key is a unique name for the mount, and each value is a path that will be mounted in the container when the Command is launched. " +
+            "The paths can use template strings, e.g. #variable-name#, which will be resolved into a value when the Command is launched. " +
+            "Input mounts are mounted read-only, and are intended to hold the raw input data your container will expect.",
+            example = "{\"in\":\"/input\"}")
     public Map<String, String> getMountsIn() {
         return mountsIn;
     }
@@ -125,6 +142,11 @@ public class Command extends AbstractHibernateEntity {
     }
 
     @ElementCollection
+    @ApiModelProperty(value = "A Map of output mounts. " +
+            "Each key is a unique name for the mount, and each value is a path that will be mounted in the container when the Command is launched. " +
+            "The paths can use template strings, e.g. #variable-name#, which will be resolved into a value when the Command is launched." +
+            "Output mounts are writable, and are intended to hold any outputs your container produces.",
+            example = "{\"out\":\"/output\"}")
     public Map<String, String> getMountsOut() {
         return mountsOut;
     }
@@ -136,6 +158,8 @@ public class Command extends AbstractHibernateEntity {
     }
 
     @ElementCollection
+    @ApiModelProperty("A Map of environment variables. Each kay is the environment variable's name, and each value is the environment variable's value." +
+            "Both the names and values can use template strings, e.g. #variable-name#, which will be resolved into a value when the Command is launched.")
     public Map<String, String> getEnvironmentVariables() {
         return environmentVariables;
     }

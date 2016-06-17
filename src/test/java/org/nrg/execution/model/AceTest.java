@@ -29,7 +29,7 @@ public class AceTest {
             "{\"name\":\"my_cool_input\", \"description\":\"A boolean value\", " +
                     "\"type\":\"boolean\", \"required\":true," +
                     "\"true-value\":\"-b\", \"false-value\":\"\"," +
-                    "\"value\":\"true\"}";
+                    "\"default-value\":\"true\"}";
     private static final String VARIABLE_1_JSON =
             "{\"name\":\"foo\", \"description\":\"No one loves me :(\", " +
                     "\"type\":\"string\", \"required\":false," +

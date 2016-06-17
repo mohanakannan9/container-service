@@ -1,7 +1,9 @@
 package org.nrg.execution.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
+import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.persistence.Embeddable;
@@ -15,11 +17,12 @@ public class CommandVariable implements Serializable {
     private String description;
     private String type;
     private Boolean required;
-    private String value;
+    @JsonProperty("default-value") private String defaultValue;
     @JsonProperty("arg-template") private String argTemplate;
     @JsonProperty("true-value") private String trueValue;
     @JsonProperty("false-value") private String falseValue;
 
+    @ApiModelProperty(value = "Name of the command variable", required = true)
     public String getName() {
         return name;
     }
@@ -28,6 +31,7 @@ public class CommandVariable implements Serializable {
         this.name = name;
     }
 
+    @ApiModelProperty("Description of the command variable")
     public String getDescription() {
         return description;
     }
@@ -36,6 +40,7 @@ public class CommandVariable implements Serializable {
         this.description = description;
     }
 
+    @ApiModelProperty(value = "Type of the command variable", allowableValues = "string, boolean, number")
     public String getType() {
         return type;
     }
@@ -44,6 +49,7 @@ public class CommandVariable implements Serializable {
         this.type = type;
     }
 
+    @ApiModelProperty("Whether the argument is required. If true, and no value is given as a default or at command launch time, an error is thrown.")
     public Boolean getRequired() {
         return required;
     }
@@ -56,14 +62,17 @@ public class CommandVariable implements Serializable {
         this.required = required;
     }
 
-    public String getValue() {
-        return value;
+    @ApiModelProperty("Default value of the variable")
+    public String getDefaultValue() {
+        return defaultValue;
     }
 
-    public void setValue(final String value) {
-        this.value = value;
+    public void setDefaultValue(final String value) {
+        this.defaultValue = value;
     }
 
+    @ApiModelProperty(value = "When the variable is used in the run-template, its raw value can be modified to the appropriate form it should take on the command line. " +
+            "You can reference the raw variable value as #value#.", example = "--command-line-flag=#value#")
     public String getArgTemplate() {
         return argTemplate;
     }
@@ -72,6 +81,7 @@ public class CommandVariable implements Serializable {
         this.argTemplate = argTemplate;
     }
 
+    @ApiModelProperty(value = "If the variable is a boolean, this string will be used when the value is \"true\".", example = "1")
     public String getTrueValue() {
         return trueValue;
     }
@@ -80,6 +90,7 @@ public class CommandVariable implements Serializable {
         this.trueValue = trueValue;
     }
 
+    @ApiModelProperty(value = "If the variable is a boolean, this string will be used when the value is \"false\".", example = "0")
     public String getFalseValue() {
         return falseValue;
     }
@@ -89,19 +100,23 @@ public class CommandVariable implements Serializable {
     }
 
     @Transient
+    @JsonIgnore
+    @ApiModelProperty(hidden = true)
     public String getValueWithTrueOrFalseValue() {
-        if (value == null) {
+        if (defaultValue == null) {
             return null;
         }
 
         if (type != null && type.equalsIgnoreCase("boolean")) {
-            return Boolean.valueOf(value) ? trueValue : falseValue;
+            return Boolean.valueOf(defaultValue) ? trueValue : falseValue;
         } else {
-            return value;
+            return defaultValue;
         }
     }
 
     @Transient
+    @JsonIgnore
+    @ApiModelProperty(hidden = true)
     public String getArgTemplateValue() {
         final String valString = getValueWithTrueOrFalseValue();
         if (valString == null) {
@@ -124,7 +139,7 @@ public class CommandVariable implements Serializable {
                 Objects.equals(this.description, that.description) &&
                 Objects.equals(this.type, that.type) &&
                 Objects.equals(this.required, that.required) &&
-                Objects.equals(this.value, that.value) &&
+                Objects.equals(this.defaultValue, that.defaultValue) &&
                 Objects.equals(this.argTemplate, that.argTemplate) &&
                 Objects.equals(this.trueValue, that.trueValue) &&
                 Objects.equals(this.falseValue, that.falseValue);
@@ -132,7 +147,7 @@ public class CommandVariable implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, description, type, required, value, argTemplate, trueValue, falseValue);
+        return Objects.hash(name, description, type, required, defaultValue, argTemplate, trueValue, falseValue);
     }
 
     @Override
@@ -142,7 +157,7 @@ public class CommandVariable implements Serializable {
                 .add("description", description)
                 .add("type", type)
                 .add("required", required)
-                .add("value", value)
+                .add("defaultValue", defaultValue)
                 .add("argTemplate", argTemplate)
                 .add("trueValue", trueValue)
                 .add("falseValue", falseValue)

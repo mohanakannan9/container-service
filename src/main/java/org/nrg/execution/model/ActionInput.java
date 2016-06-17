@@ -26,7 +26,7 @@ public class ActionInput implements Serializable {
 
         setRequired(commandVariable.getRequired());
         this.type = commandVariable.getType();
-        this.value = commandVariable.getValue();
+        this.value = commandVariable.getDefaultValue();
     }
 
     public String getInputName() {

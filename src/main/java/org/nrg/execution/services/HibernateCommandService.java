@@ -70,7 +70,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         if (command.getVariables() != null) {
             for (final CommandVariable variable : command.getVariables()) {
                 if (variableRuntimeValues.containsKey(variable.getName())) {
-                    variable.setValue(variableRuntimeValues.get(variable.getName()));
+                    variable.setDefaultValue(variableRuntimeValues.get(variable.getName()));
                 }
                 variableValues.put(variable.getName(), variable.getValueWithTrueOrFalseValue());
                 variableArgTemplateValues.put(variable.getName(), variable.getArgTemplateValue());

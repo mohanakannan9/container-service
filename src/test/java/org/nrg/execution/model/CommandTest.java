@@ -52,7 +52,7 @@ public class CommandTest {
     private static final String FOO_VARIABLE =
             "{\"name\":\"foo\", \"description\":\"A foo that bars\", " +
                     "\"required\":false," +
-                    "\"value\":\"bar\"," +
+                    "\"default-value\":\"bar\"," +
                     "\"arg-template\":\"--flag=#value#\"}";
     private static final String VARIABLE_LIST_JSON =
             "[" + VARIABLE_0_JSON + ", " + FOO_VARIABLE + "]";
@@ -119,7 +119,7 @@ public class CommandTest {
         assertEquals("-b", commandVariable0.getTrueValue());
         assertEquals("", commandVariable0.getFalseValue());
         assertNull(commandVariable0.getArgTemplate());
-        assertNull(commandVariable0.getValue());
+        assertNull(commandVariable0.getDefaultValue());
 
         assertEquals("foo", fooVariable.getName());
         assertEquals("A foo that bars", fooVariable.getDescription());
@@ -128,7 +128,7 @@ public class CommandTest {
         assertNull(fooVariable.getTrueValue());
         assertNull(fooVariable.getFalseValue());
         assertEquals("--flag=#value#", fooVariable.getArgTemplate());
-        assertEquals("bar", fooVariable.getValue());
+        assertEquals("bar", fooVariable.getDefaultValue());
     }
 
     @Test
