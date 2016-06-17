@@ -1,6 +1,6 @@
 package org.nrg.containers.api;
 
-import org.nrg.actions.model.ResolvedCommand;
+import org.nrg.execution.model.ResolvedCommand;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
