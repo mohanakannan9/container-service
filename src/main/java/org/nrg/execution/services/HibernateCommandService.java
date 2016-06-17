@@ -8,7 +8,7 @@ import org.nrg.execution.daos.CommandDao;
 import org.nrg.execution.model.Command;
 import org.nrg.execution.model.CommandVariable;
 import org.nrg.execution.model.ResolvedCommand;
-import org.nrg.containers.api.ContainerControlApi;
+import org.nrg.execution.api.ContainerControlApi;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;

@@ -1,9 +1,9 @@
-package org.nrg.containers.api.impl;
+package org.nrg.execution.api;
 
-import com.google.common.base.Function;
 import com.google.common.collect.Lists;
-import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.exceptions.DockerException;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -16,7 +16,6 @@ import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.DockerHub;
 import org.nrg.containers.model.DockerImageDto;
 import org.nrg.containers.model.DockerServer;
-import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
@@ -24,11 +23,10 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.List;
 
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.isIn;
-import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
@@ -43,8 +41,8 @@ public class DockerControlApiTest {
 
     private static final String BUSYBOX_LATEST = "busybox:latest";
     private static final String UBUNTU_LATEST = "ubuntu:latest";
-    private static final String KELSEYM_PYDICOM = "kelseym/pydicom:latest";
-    private static final String BUSYBOX_ID = "307ac631f1b53c62d39e9c9e81bdbdbb50a2295c35fb0ec672d168a0b129a623";
+    // private static final String KELSEYM_PYDICOM = "kelseym/pydicom:latest";
+    private static final String BUSYBOX_ID = "sha256:47bcc53f74dc94b1920f0b34f6036096526296767650f223433fe65c35f149eb";
     private static final String BUSYBOX_NAME = "busybox:1.24.2-uclibc";
 
     @Autowired
@@ -59,33 +57,34 @@ public class DockerControlApiTest {
     @Before
     public void setup() throws Exception {
 
+        final String defaultHost = "unix:///var/run/docker.sock";
         final String hostEnv = System.getenv("DOCKER_HOST");
-        CONTAINER_HOST = hostEnv != null && !hostEnv.equals("") ?
-            hostEnv.replace("tcp", "https") :
-            "https://192.168.99.100:2376";
+        CONTAINER_HOST = StringUtils.isBlank(hostEnv) ? defaultHost : hostEnv;
 
         final String tlsVerify = System.getenv("DOCKER_TLS_VERIFY");
         final String certPathEnv = System.getenv("DOCKER_CERT_PATH");
         if (tlsVerify != null && tlsVerify.equals("1")) {
-            CERT_PATH = certPathEnv != null && !certPathEnv.equals("") ?
-                certPathEnv : "/Users/Kelsey/.docker/machine/machines/testDocker";
+            if (StringUtils.isBlank(certPathEnv)) {
+                throw new Exception("Must set DOCKER_CERT_PATH if DOCKER_TLS_VERIFY=1.");
+            }
+            CERT_PATH = certPathEnv;
         } else {
             CERT_PATH = "";
         }
 
         // Set up mock prefs service for all the calls that will initialize
         // the ContainerServerPrefsBean
-        when(mockPrefsService.getPreferenceValue("container-server", "host"))
+        when(mockPrefsService.getPreferenceValue("docker-server", "host"))
             .thenReturn(CONTAINER_HOST);
-        when(mockPrefsService.getPreferenceValue("container-server", "certPath"))
+        when(mockPrefsService.getPreferenceValue("docker-server", "certPath"))
             .thenReturn(CERT_PATH);
         doNothing().when(mockPrefsService)
-            .setPreferenceValue("container-server", "host", "");
+            .setPreferenceValue("docker-server", "host", "");
         doNothing().when(mockPrefsService)
-            .setPreferenceValue("container-server", "certPath", "");
-        when(mockPrefsService.hasPreference("container-server", "host"))
+            .setPreferenceValue("docker-server", "certPath", "");
+        when(mockPrefsService.hasPreference("docker-server", "host"))
             .thenReturn(true);
-        when(mockPrefsService.hasPreference("container-server", "certPath"))
+        when(mockPrefsService.hasPreference("docker-server", "certPath"))
             .thenReturn(true);
 
         client = controlApi.getClient();
@@ -98,12 +97,6 @@ public class DockerControlApiTest {
 
     @Test
     public void testGetServer() throws Exception {
-//        final ObjectMapper mapper = new ObjectMapper();
-//        final String containerServerJson =
-//            "{\"host\":\""+ CONTAINER_HOST + "\", \"certPath\":\"" +
-//                CERT_PATH + "\"}";
-//        final ContainerServerPrefsBean expectedServer = mapper.readValue(containerServerJson, ContainerServerPrefsBean.class);
-
         final DockerServer server = controlApi.getServer();
         assertEquals(CONTAINER_HOST, server.getHost());
         assertEquals(CERT_PATH, server.getCertPath());
@@ -130,33 +123,33 @@ public class DockerControlApiTest {
         return tags;
     }
 
-    @Test
-    public void testLaunchImage() throws Exception {
-        final List<String> cmd = Lists.newArrayList("ls", "/data/pyscript.py");
-        final List<String> vol =
-            Lists.newArrayList("/Users/Kelsey/Projects/XNAT/1.7/pydicomDocker/data:/data");
+//    @Test
+//    public void testLaunchImage() throws Exception {
+//        final List<String> cmd = Lists.newArrayList("ls", "/data/pyscript.py");
+//        final List<String> vol =
+//            Lists.newArrayList("/Users/Kelsey/Projects/XNAT/1.7/pydicomDocker/data:/data");
+//
+//        client.pull(KELSEYM_PYDICOM);
+//        String containerId = controlApi.launchImage(KELSEYM_PYDICOM, cmd, vol);
+//        assertThat(containerId, not(isEmptyOrNullString()));
+//    }
 
-        client.pull(KELSEYM_PYDICOM);
-        String containerId = controlApi.launchImage(KELSEYM_PYDICOM, cmd, vol);
-        assertThat(containerId, not(isEmptyOrNullString()));
-    }
-
-    @Test
-    public void testLaunchPythonScript() throws Exception {
-       // python pyscript.py -h <hostname> -u <user> -p <password> -s <session_id>
-        final List<String> cmd = Lists.newArrayList(
-            "python", "/data/pyscript.py",
-            "-h", "https://central.xnat.org",
-            "-u", "admin",
-            "-p", "admin",
-            "-s", "CENTRAL_E07096"
-        );
-        final List<String> vol =
-            Lists.newArrayList("/Users/Kelsey/Projects/XNAT/1.7/pydicomDocker/data:/data");
-
-        client.pull(KELSEYM_PYDICOM);
-        String containerId = controlApi.launchImage(KELSEYM_PYDICOM, cmd, vol);
-    }
+//    @Test
+//    public void testLaunchPythonScript() throws Exception {
+//       // python pyscript.py -h <hostname> -u <user> -p <password> -s <session_id>
+//        final List<String> cmd = Lists.newArrayList(
+//            "python", "/data/pyscript.py",
+//            "-h", "https://central.xnat.org",
+//            "-u", "admin",
+//            "-p", "admin",
+//            "-s", "CENTRAL_E07096"
+//        );
+//        final List<String> vol =
+//            Lists.newArrayList("/Users/Kelsey/Projects/XNAT/1.7/pydicomDocker/data:/data");
+//
+//        client.pull(KELSEYM_PYDICOM);
+//        String containerId = controlApi.launchImage(KELSEYM_PYDICOM, cmd, vol);
+//    }
 
     @Test
     public void testPingServer() throws Exception {

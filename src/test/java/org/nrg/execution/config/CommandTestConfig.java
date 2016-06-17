@@ -10,7 +10,7 @@ import org.nrg.automation.entities.Script;
 import org.nrg.automation.repositories.ScriptRepository;
 import org.nrg.automation.services.ScriptService;
 import org.nrg.automation.services.impl.hibernate.HibernateScriptService;
-import org.nrg.containers.api.ContainerControlApi;
+import org.nrg.execution.api.ContainerControlApi;
 import org.nrg.containers.config.ContainersHibernateEntityTestConfig;
 import org.nrg.framework.orm.hibernate.AggregatedAnnotationSessionFactoryBean;
 import org.springframework.beans.factory.annotation.Qualifier;

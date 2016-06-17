@@ -4,7 +4,7 @@ import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
 import org.nrg.automation.entities.Script;
 import org.nrg.automation.services.ScriptService;
-import org.nrg.containers.api.ContainerControlApi;
+import org.nrg.execution.api.ContainerControlApi;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoHubException;
 import org.nrg.containers.exceptions.NoServerPrefException;

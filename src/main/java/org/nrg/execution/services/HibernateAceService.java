@@ -15,7 +15,7 @@ import org.nrg.execution.model.ItemQueryCacheKey;
 import org.nrg.execution.model.Matcher;
 import org.nrg.execution.model.ResolvedCommand;
 import org.nrg.execution.model.ResolvedCommandMount;
-import org.nrg.containers.api.ContainerControlApi;
+import org.nrg.execution.api.ContainerControlApi;
 import org.nrg.containers.exceptions.BadRequestException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;

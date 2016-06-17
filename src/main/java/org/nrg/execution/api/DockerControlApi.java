@@ -1,4 +1,4 @@
-package org.nrg.containers.api.impl;
+package org.nrg.execution.api;
 
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
@@ -24,7 +24,6 @@ import com.spotify.docker.client.messages.ProgressMessage;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.execution.model.ResolvedCommand;
 import org.nrg.execution.model.ResolvedCommandMount;
-import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
@@ -382,7 +381,7 @@ public class DockerControlApi implements ContainerControlApi {
     @Override
     public void deleteImageById(String id) throws NoServerPrefException, DockerServerException {
         try (final DockerClient dockerClient = getClient()) {
-            dockerClient.removeImage(id);
+            dockerClient.removeImage(id, true, false);
         } catch (DockerException|InterruptedException e) {
             throw new DockerServerException(e);
         }

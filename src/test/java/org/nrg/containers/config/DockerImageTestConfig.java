@@ -2,7 +2,7 @@ package org.nrg.containers.config;
 
 import org.hibernate.SessionFactory;
 import org.mockito.Mockito;
-import org.nrg.containers.api.ContainerControlApi;
+import org.nrg.execution.api.ContainerControlApi;
 import org.nrg.containers.daos.DockerImageDao;
 import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.services.ContainerService;

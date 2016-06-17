@@ -11,7 +11,7 @@ import org.nrg.execution.services.CommandService;
 import org.nrg.execution.services.HibernateActionService;
 import org.nrg.execution.services.HibernateCommandService;
 import org.nrg.automation.entities.Script;
-import org.nrg.containers.api.ContainerControlApi;
+import org.nrg.execution.api.ContainerControlApi;
 import org.nrg.framework.orm.hibernate.AggregatedAnnotationSessionFactoryBean;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;

@@ -1,4 +1,4 @@
-package org.nrg.containers.api;
+package org.nrg.execution.api;
 
 import org.nrg.execution.model.ResolvedCommand;
 import org.nrg.containers.exceptions.DockerServerException;

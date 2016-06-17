@@ -7,7 +7,7 @@ import com.google.common.collect.Lists;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.nrg.containers.api.ContainerControlApi;
+import org.nrg.execution.api.ContainerControlApi;
 import org.nrg.containers.config.DockerImageTestConfig;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.model.DockerImage;
