@@ -4,6 +4,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import org.nrg.containers.exceptions.BadRequestException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
@@ -11,6 +12,7 @@ import org.nrg.execution.model.Command;
 import org.nrg.execution.model.ResolvedCommand;
 import org.nrg.execution.services.CommandService;
 import org.nrg.framework.annotations.XapiRestController;
+import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -62,9 +64,14 @@ public class CommandRestApi {
             @ApiResponse(code = 201, message = "Created", response = Command.class),
             @ApiResponse(code = 415, message = "Set the Content-type header on the request")
     })
-    public ResponseEntity<Command> createCommand(final @RequestBody Command command) {
-        final Command created = commandService.create(command);
-        return new ResponseEntity<>(created, HttpStatus.CREATED);
+    public ResponseEntity<Command> createCommand(final @RequestBody Command command)
+            throws BadRequestException {
+        try {
+            final Command created = commandService.create(command);
+            return new ResponseEntity<>(created, HttpStatus.CREATED);
+        } catch (NrgRuntimeException e) {
+            throw new BadRequestException(e);
+        }
     }
 
     @RequestMapping(value = {"/{id}"}, method = POST)

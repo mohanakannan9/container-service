@@ -16,13 +16,16 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
+import javax.persistence.Table;
 import javax.persistence.Transient;
+import javax.persistence.UniqueConstraint;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 @Entity
 @Audited
+@Table(uniqueConstraints = {@UniqueConstraint(columnNames = {"name", "dockerImage"})})
 public class Command extends AbstractHibernateEntity {
     private String name;
     private String description;

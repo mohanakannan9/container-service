@@ -4,6 +4,7 @@ import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import org.hibernate.exception.ConstraintViolationException;
 import org.nrg.execution.daos.CommandDao;
 import org.nrg.execution.model.Command;
 import org.nrg.execution.model.CommandVariable;
@@ -12,6 +13,8 @@ import org.nrg.execution.api.ContainerControlApi;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
+import org.nrg.framework.exceptions.NrgRuntimeException;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -31,6 +34,14 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     @Autowired
     private ContainerControlApi controlApi;
 
+    @Override
+    public Command create(final Command command) throws NrgRuntimeException {
+        try {
+            return super.create(command);
+        } catch (ConstraintViolationException e) {
+            throw new NrgServiceRuntimeException("A command already exists with this name and docker image ID.");
+        }
+    }
 
     @Override
     public ResolvedCommand resolveCommand(final Long commandId) throws NotFoundException {

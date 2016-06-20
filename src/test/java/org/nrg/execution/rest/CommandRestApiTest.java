@@ -139,10 +139,15 @@ public class CommandRestApiTest {
         assertEquals(retrieved.getDockerImage(), commandResponse.getDockerImage());
 
         // Errors
+        // Violate unique name+docker-image-id constraint (we'll trigger that by performing the same 'create' request again)
+        mockMvc.perform(request).andExpect(status().isBadRequest());
+
+        // No 'Content-type' header
         final MockHttpServletRequestBuilder noContentType = post(path).content(commandJson);
         mockMvc.perform(noContentType)
                 .andExpect(status().isUnsupportedMediaType());
 
+        // Bad 'Accepts' header
         final MockHttpServletRequestBuilder badAccept =
                 post(path).content(commandJson)
                         .contentType(JSON)

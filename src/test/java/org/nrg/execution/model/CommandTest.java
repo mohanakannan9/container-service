@@ -10,6 +10,7 @@ import org.nrg.execution.config.CommandTestConfig;
 import org.nrg.execution.services.CommandService;
 import org.nrg.automation.entities.Script;
 import org.nrg.automation.services.ScriptService;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -28,6 +29,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @Transactional
@@ -171,6 +173,26 @@ public class CommandTest {
         final Command retrievedCommand = commandService.retrieve(command.getId());
 
         assertEquals(command, retrievedCommand);
+    }
+
+    @Test
+    public void testCommandConstraint() throws Exception {
+        // We cannot create two commands with the same name & docker image id
+
+        final Command command = new Command();
+        command.setName("name");
+        command.setDockerImage("abc123");
+        final Command command2 = new Command();
+        command2.setName("name");
+        command2.setDockerImage("abc123");
+
+        commandService.create(command);
+        try {
+            commandService.create(command2);
+            fail("Command should have a unique constraint that prevents this.");
+        } catch (NrgServiceRuntimeException ignored) {
+            //
+        }
     }
 
     @Test
