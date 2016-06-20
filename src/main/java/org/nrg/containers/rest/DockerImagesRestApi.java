@@ -3,13 +3,11 @@ package org.nrg.containers.rest;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.exceptions.BadRequestException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
-import org.nrg.containers.model.DockerImageDto;
-import org.nrg.containers.services.DockerImageService;
+import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.services.DockerService;
 import org.nrg.framework.annotations.XapiRestController;
 import org.slf4j.Logger;
@@ -17,10 +15,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -30,7 +26,6 @@ import java.util.List;
 
 import static org.springframework.web.bind.annotation.RequestMethod.DELETE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
-import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 //@Api(description = "XNAT Container Services REST API")
 @XapiRestController
@@ -45,78 +40,50 @@ public class DockerImagesRestApi {
     @Autowired
     private DockerService dockerService;
 
-    @Autowired
-    private DockerImageService dockerImageService;
-
     public static final String ID_REGEX = "(?:[a-zA-Z0-9-_+.]+:)?[a-fA-F0-9]{6,}";
 
     public static final String JSON = MediaType.APPLICATION_JSON_UTF8_VALUE;
     public static final String TEXT = MediaType.TEXT_PLAIN_VALUE;
 
-    @ApiOperation(value = "Get list of images.", notes = "Returns a list of all Docker images.",
-            response = DockerImageDto.class, responseContainer = "List")
+    @ApiOperation(value = "Get list of images.", notes = "Returns a list of all Docker images.")
     @ApiResponses({
             @ApiResponse(code = 200, message = "A list of images on the server"),
-            @ApiResponse(code = 404, message = "At least one of from-db or from-docker-server must be true"),
             @ApiResponse(code = 424, message = "Admin must set up Docker server."),
             @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(method = GET, produces = JSON)
     @ResponseBody
-    public List<DockerImageDto> getAllImages(final @RequestParam(value = "from-db", defaultValue = "true") Boolean fromDb,
-                                             final @RequestParam(value = "from-docker-server", defaultValue = "true") Boolean fromDockerServer)
-            throws NoServerPrefException, DockerServerException, BadRequestException {
-        if (!(fromDb || fromDockerServer)) {
-            throw new BadRequestException("At least one of the query params \"from-db\" or \"from-docker-server\" must be \"true\".");
-        }
-        return dockerService.getImages(fromDb, fromDockerServer);
-    }
-
-    @ApiOperation(value = "Create Docker image",
-            notes = "Save information about a Docker image to the database", response = String.class)
-    @ApiResponses({
-            @ApiResponse(code = 201, message = "Image was saved"),
-            @ApiResponse(code = 400, message = "Set image-id on request body to your Docker image's id."),
-            @ApiResponse(code = 404, message = "No docker image with given id on docker server"),
-            @ApiResponse(code = 424, message = "Admin must set up Docker server."),
-            @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {}, method = POST, produces = TEXT)
-    public ResponseEntity<String> postImage(final @RequestBody DockerImageDto dockerImageDto)
-            throws BadRequestException, DockerServerException, NotFoundException, NoServerPrefException {
-        if (StringUtils.isBlank(dockerImageDto.getImageId())) {
-            throw new BadRequestException("Cannot add Docker image. Please set image-id on request body.");
-        }
-        final DockerImageDto created = dockerService.createImage(dockerImageDto);
-        return new ResponseEntity<>(String.valueOf(created.getId()), HttpStatus.CREATED);
+    public List<DockerImage> getAllImages()
+            throws NoServerPrefException, DockerServerException {
+        return dockerService.getImages();
     }
 
     @ApiOperation(value = "Get Docker image",
-            notes = "Retrieve information about a Docker image from the database", response = DockerImageDto.class)
+            notes = "Retrieve information about a Docker image from the docker server")
     @ApiResponses({
             @ApiResponse(code = 200, message = "Found the image"),
-            @ApiResponse(code = 404, message = "No docker image with given id in xnat database"),
+            @ApiResponse(code = 404, message = "No docker image with given id on the server"),
             @ApiResponse(code = 424, message = "Admin must set up Docker server."),
             @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = "/{id}", method = GET, produces = JSON)
     @ResponseBody
-    public DockerImageDto getImage(final @PathVariable("id") Long id,
-                                   final @RequestParam(value = "from-docker-server", defaultValue = "true") Boolean fromDockerServer)
-            throws NotFoundException {
-        return dockerService.getImage(id, fromDockerServer);
+    public DockerImage getImage(final @PathVariable("id") String id)
+            throws NoServerPrefException, NotFoundException {
+        return dockerService.getImage(id);
     }
 
     @ApiOperation(value = "Delete Docker image",
             notes = "Remove information about a Docker image")
     @ApiResponses({
             @ApiResponse(code = 200, message = "Image was removed"),
-            @ApiResponse(code = 404, message = "No docker image with given id in xnat database"),
+            @ApiResponse(code = 404, message = "No docker image with given id on docker server"),
             @ApiResponse(code = 424, message = "Admin must set up Docker server."),
             @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = "/{id}", method = DELETE)
     @ResponseBody
-    public void deleteImage(final @PathVariable("id") Long id,
-                            final @RequestParam(value = "from-docker-server", defaultValue = "false") Boolean fromDockerServer)
+    public void deleteImage(final @PathVariable("id") String id,
+                            final @RequestParam(value = "force", defaultValue = "false") Boolean force)
             throws NotFoundException, NoServerPrefException, DockerServerException {
-        dockerService.removeImage(id, fromDockerServer);
+        dockerService.removeImage(id, force);
     }
 
 //    @RequestMapping(value = {"/{name:.*}", "/name/{name}"}, method = GET, produces = {JSON, PLAIN_TEXT})

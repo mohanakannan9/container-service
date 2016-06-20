@@ -1,7 +1,6 @@
 package org.nrg.containers.rest;
 
 import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import org.apache.commons.lang3.StringUtils;
@@ -9,7 +8,6 @@ import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.DockerHub;
-import org.nrg.containers.model.DockerImageDto;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.services.DockerService;
 import org.nrg.framework.annotations.XapiRestController;

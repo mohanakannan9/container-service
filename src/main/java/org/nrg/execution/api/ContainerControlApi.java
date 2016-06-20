@@ -1,12 +1,12 @@
 package org.nrg.execution.api;
 
+import org.nrg.containers.model.DockerImage;
 import org.nrg.execution.model.ResolvedCommand;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Container;
 import org.nrg.containers.model.DockerHub;
-import org.nrg.containers.model.DockerImageDto;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 
@@ -28,13 +28,13 @@ public interface ContainerControlApi {
 
     void pullImage(String name, DockerHub hub) throws NoServerPrefException, DockerServerException;
 
-    DockerImageDto pullAndReturnImage(String name) throws NoServerPrefException, DockerServerException;
+    DockerImage pullAndReturnImage(String name) throws NoServerPrefException, DockerServerException;
 
-    DockerImageDto pullAndReturnImage(String name, DockerHub hub) throws NoServerPrefException, DockerServerException;
+    DockerImage pullAndReturnImage(String name, DockerHub hub) throws NoServerPrefException, DockerServerException;
 
-    List<DockerImageDto> getAllImages() throws NoServerPrefException, DockerServerException;
+    List<DockerImage> getAllImages() throws NoServerPrefException, DockerServerException;
 
-    DockerImageDto getImageById(final String imageId) throws NotFoundException, DockerServerException, NoServerPrefException;
+    DockerImage getImageById(final String imageId) throws NotFoundException, DockerServerException, NoServerPrefException;
 
     List<Container> getAllContainers() throws NoServerPrefException, DockerServerException;
 
@@ -59,5 +59,5 @@ public interface ContainerControlApi {
 
     String getContainerLogs(String id) throws NoServerPrefException, DockerServerException;
 
-    void deleteImageById(String id) throws NoServerPrefException, DockerServerException;
+    void deleteImageById(String id, Boolean force) throws NoServerPrefException, DockerServerException;
 }

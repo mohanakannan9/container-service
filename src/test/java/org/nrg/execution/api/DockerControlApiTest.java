@@ -14,7 +14,7 @@ import org.nrg.containers.config.DockerControlApiTestConfig;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.DockerHub;
-import org.nrg.containers.model.DockerImageDto;
+import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -106,16 +106,16 @@ public class DockerControlApiTest {
     public void testGetAllImages() throws Exception {
         client.pull(BUSYBOX_LATEST);
         client.pull(UBUNTU_LATEST);
-        final List<DockerImageDto> images = controlApi.getAllImages();
+        final List<DockerImage> images = controlApi.getAllImages();
 
         final List<String> imageNames = imagesToTags(images);
         assertThat(BUSYBOX_LATEST, isIn(imageNames));
         assertThat(UBUNTU_LATEST, isIn(imageNames));
     }
 
-    private List<String> imagesToTags(final List<DockerImageDto> images) {
+    private List<String> imagesToTags(final List<DockerImage> images) {
         final List<String> tags = Lists.newArrayList();
-        for (final DockerImageDto image : images) {
+        for (final DockerImage image : images) {
             if (image.getRepoTags() != null) {
                 tags.addAll(image.getRepoTags());
             }
@@ -175,7 +175,7 @@ public class DockerControlApiTest {
     public void testDeleteImage() throws DockerException, InterruptedException, NoServerPrefException, DockerServerException {
         client.pull(BUSYBOX_NAME);
         int beforeImageCount = client.listImages().size();
-        controlApi.deleteImageById(BUSYBOX_ID);
+        controlApi.deleteImageById(BUSYBOX_ID, true);
         List<com.spotify.docker.client.messages.Image> images = client.listImages();
         int afterImageCount = images.size();
         assertEquals(beforeImageCount, afterImageCount+1);

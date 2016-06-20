@@ -53,7 +53,7 @@ public class DockerControlApi implements ContainerControlApi {
      * @return Image objects stored on docker server
      **/
     @Override
-    public List<DockerImageDto> getAllImages() throws NoServerPrefException, DockerServerException {
+    public List<DockerImage> getAllImages() throws NoServerPrefException, DockerServerException {
         return getImages(null);
     }
 
@@ -63,7 +63,7 @@ public class DockerControlApi implements ContainerControlApi {
      * @param params Map of query parameters (name = value)
      * @return Image objects stored on docker server meeting the query parameters
      **/
-    public List<DockerImageDto> getImages(final Map<String, String> params)
+    public List<DockerImage> getImages(final Map<String, String> params)
         throws NoServerPrefException, DockerServerException {
         return DockerImageToNrgImage(_getImages(params));
     }
@@ -152,9 +152,9 @@ public class DockerControlApi implements ContainerControlApi {
      * @return Image stored on docker server with the given name
      **/
     @Override
-    public DockerImageDto getImageById(final String imageId)
+    public DockerImage getImageById(final String imageId)
         throws NotFoundException, DockerServerException, NoServerPrefException {
-        final DockerImageDto image = DockerImageToNrgImage(_getImageById(imageId));
+        final DockerImage image = DockerImageToNrgImage(_getImageById(imageId));
         if (image != null) {
             return image;
         }
@@ -379,9 +379,9 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     @Override
-    public void deleteImageById(String id) throws NoServerPrefException, DockerServerException {
+    public void deleteImageById(final String id, final Boolean force) throws NoServerPrefException, DockerServerException {
         try (final DockerClient dockerClient = getClient()) {
-            dockerClient.removeImage(id, true, false);
+            dockerClient.removeImage(id, force, false);
         } catch (DockerException|InterruptedException e) {
             throw new DockerServerException(e);
         }
@@ -478,7 +478,7 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     @Override
-    public DockerImageDto pullAndReturnImage(final String name) throws NoServerPrefException, DockerServerException {
+    public DockerImage pullAndReturnImage(final String name) throws NoServerPrefException, DockerServerException {
         try (final DockerClient client = getClient()) {
             final LoadProgressHandler handler = new LoadProgressHandler();
             client.pull(name, handler);
@@ -497,7 +497,7 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     @Override
-    public DockerImageDto pullAndReturnImage(final String name, final DockerHub hub)
+    public DockerImage pullAndReturnImage(final String name, final DockerHub hub)
             throws NoServerPrefException, DockerServerException {
         if (hub == null) {
             return pullAndReturnImage(name);
@@ -557,18 +557,12 @@ public class DockerControlApi implements ContainerControlApi {
      * @param image Spotify-Docker Image object
      * @return NRG Image object
      **/
-    private static DockerImageDto DockerImageToNrgImage(final Image image) {
+    private static DockerImage DockerImageToNrgImage(final Image image) {
         if (image == null) {
             return null;
         }
 
-        return DockerImageDto.builder()
-                .setImageId(image.id())
-                .setRepoTags(image.repoTags())
-                .setLabels(image.labels())
-                .setInDatabase(null)
-                .setOnDockerServer(true)
-                .build();
+        return new DockerImage(image.id(), image.repoTags(), image.labels());
     }
 
     /**
@@ -577,17 +571,12 @@ public class DockerControlApi implements ContainerControlApi {
      * @param image Spotify-Docker Image object
      * @return NRG Image object
      **/
-    private static DockerImageDto DockerImageToNrgImage(final ImageInfo image) {
+    private static DockerImage DockerImageToNrgImage(final ImageInfo image) {
         if (image == null) {
             return null;
         }
 
-        return DockerImageDto.builder()
-                .setImageId(image.id())
-                .setLabels(image.config().labels())
-                .setInDatabase(null)
-                .setOnDockerServer(true)
-                .build();
+        return new DockerImage(image.id(), null, image.config().labels());
     }
 
     /**
@@ -596,17 +585,17 @@ public class DockerControlApi implements ContainerControlApi {
      * @param dockerImageList List of Spotify-Docker Image objects
      * @return List of NRG Image objects
      **/
-    private static List<DockerImageDto> DockerImageToNrgImage(final List<Image> dockerImageList) {
+    private static List<DockerImage> DockerImageToNrgImage(final List<Image> dockerImageList) {
         return Lists.transform(dockerImageList, DockerImageToNrgImage);
     }
 
     /**
      * Function to convert list of spotify-docker Image objects to list of xnat-container Image objects
      **/
-    private static Function<Image, DockerImageDto> DockerImageToNrgImage =
-            new Function<Image, DockerImageDto>() {
+    private static Function<Image, DockerImage> DockerImageToNrgImage =
+            new Function<Image, DockerImage>() {
                 @Override
-                public DockerImageDto apply(final Image image) {
+                public DockerImage apply(final Image image) {
                     return DockerImageToNrgImage(image);
                 }
             };
