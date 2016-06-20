@@ -116,8 +116,8 @@ public class DockerControlApiTest {
     private List<String> imagesToTags(final List<DockerImage> images) {
         final List<String> tags = Lists.newArrayList();
         for (final DockerImage image : images) {
-            if (image.getRepoTags() != null) {
-                tags.addAll(image.getRepoTags());
+            if (image.getTags() != null) {
+                tags.addAll(image.getTags());
             }
         }
         return tags;

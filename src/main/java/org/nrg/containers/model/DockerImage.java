@@ -2,13 +2,9 @@ package org.nrg.containers.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
-import javax.persistence.ElementCollection;
-import javax.persistence.FetchType;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -17,8 +13,8 @@ import java.util.Objects;
 public class DockerImage {
 
     @JsonProperty("image-id") private String imageId;
-    @JsonProperty("repo-tags") private List<String> repoTags = Lists.newArrayList();
-    private Map<String, String> labels = Maps.newHashMap();
+    @JsonProperty("tags") private List<String> tags;
+    private Map<String, String> labels;
 
     public DockerImage() {}
 
@@ -26,8 +22,8 @@ public class DockerImage {
                        final List<String> repoTags,
                        final Map<String, String> labels) {
         this.imageId = imageId;
-        setRepoTags(repoTags);
-        setLabels(labels);
+        this.tags = repoTags;
+        this.labels = labels;
     }
 
     /**
@@ -41,33 +37,27 @@ public class DockerImage {
     /**
      * The image's repo tags.
      **/
-    @ElementCollection(fetch = FetchType.EAGER)
     @ApiModelProperty(value = "The image's repo tags.")
-    public List<String> getRepoTags() { return repoTags; }
+    public List<String> getTags() { return tags; }
 
-    public void setRepoTags(final List<String> repoTags) {
-        this.repoTags = repoTags == null ?
-                Lists.<String>newArrayList() :
-                repoTags;
+    public void setTags(final List<String> tags) {
+        this.tags = tags;
     }
 
     /**
      * Image labels
      **/
     @ApiModelProperty(value = "Image labels")
-    @ElementCollection(fetch = FetchType.EAGER)
     public Map<String, String> getLabels() { return labels; }
 
     public void setLabels(final Map<String, String> labels) {
-        this.labels = labels == null ?
-                Maps.<String, String>newHashMap() :
-                labels;
+        this.labels = labels;
     }
 
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("imageId", imageId)
-                .add("tags", repoTags)
+                .add("tags", tags)
                 .add("labels", labels)
                 .toString();
     }
@@ -84,12 +74,12 @@ public class DockerImage {
         DockerImage that = (DockerImage) o;
 
         return Objects.equals(this.imageId, that.imageId) &&
-                Objects.equals(this.repoTags, that.repoTags) &&
+                Objects.equals(this.tags, that.tags) &&
                 Objects.equals(this.labels, that.labels);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(imageId, repoTags, labels);
+        return Objects.hash(imageId, tags, labels);
     }
 }

@@ -73,7 +73,6 @@ public class DockerRestApiTest {
 
         final String path = "/docker/server";
 
-        // REQUEST 0: No "onServer" param (defaults to false)
         final MockHttpServletRequestBuilder request =
                 get(path).accept(JSON);
 
@@ -111,7 +110,6 @@ public class DockerRestApiTest {
 
         final String path = "/docker/server";
 
-        // REQUEST 0: No "onServer" param (defaults to false)
         final MockHttpServletRequestBuilder request =
                 post(path).content(containerServerJson).contentType(JSON);
 
