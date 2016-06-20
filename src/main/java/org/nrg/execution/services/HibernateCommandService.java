@@ -43,6 +43,10 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         }
     }
 
+    public List<Command> findByName(final String name) {
+        return getDao().findByName(name);
+    }
+
     @Override
     public ResolvedCommand resolveCommand(final Long commandId) throws NotFoundException {
         return resolveCommand(commandId, Maps.<String, String>newHashMap());

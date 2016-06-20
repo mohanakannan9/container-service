@@ -7,9 +7,12 @@ import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
 
+import java.util.List;
 import java.util.Map;
 
 public interface CommandService extends BaseHibernateService<Command> {
+    List<Command> findByName(final String name);
+
     ResolvedCommand resolveCommand(final Long commandId) throws NotFoundException;
     ResolvedCommand resolveCommand(final Long commandId,
                                    final Map<String, String> variableRuntimeValues)

@@ -22,9 +22,14 @@ import org.springframework.web.context.WebApplicationContext;
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.either;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -154,5 +159,25 @@ public class CommandRestApiTest {
                         .accept(XML);
         mockMvc.perform(badAccept)
                 .andExpect(status().isNotAcceptable());
+    }
+
+    @Test
+    public void testDelete() throws Exception {
+        final String pathTemplate = "/commands/%d";
+
+        final String commandJson =
+                "{\"name\": \"toDelete\", \"docker-image\":\"abc123\"}";
+        final Command command = mapper.readValue(commandJson, Command.class);
+        commandService.create(command);
+
+        final String path = String.format(pathTemplate, command.getId());
+        final MockHttpServletRequestBuilder request = delete(path);
+
+
+        mockMvc.perform(request)
+                .andExpect(status().isNoContent());
+
+        final List<Command> commandsWithName = commandService.findByName("toDelete");
+        assertNull(commandsWithName);
     }
 }
