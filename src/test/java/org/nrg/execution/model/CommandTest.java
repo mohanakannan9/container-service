@@ -4,6 +4,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.execution.config.CommandTestConfig;
@@ -182,14 +185,22 @@ public class CommandTest {
         final Command command = new Command();
         command.setName("name");
         command.setDockerImage("abc123");
-        final Command command2 = new Command();
-        command2.setName("name");
-        command2.setDockerImage("abc123");
+        final Command commandSameDockerImageId = new Command();
+        commandSameDockerImageId.setName("different_name");
+        commandSameDockerImageId.setDockerImage("abc123");
+        final Command commandSameName = new Command();
+        commandSameName.setName("name");
+        commandSameDockerImageId.setDockerImage("ABC456");
+        final Command commandSameNameAndDockerImageId = new Command();
+        commandSameNameAndDockerImageId.setName("name");
+        commandSameNameAndDockerImageId.setDockerImage("abc123");
 
-        commandService.create(command);
+        commandService.create(command);                  // Initial create
+        commandService.create(commandSameDockerImageId); // Should be ok
+        commandService.create(commandSameName);          // Should be ok
         try {
-            commandService.create(command2);
-            fail("Command should have a unique constraint that prevents this.");
+            commandService.create(commandSameNameAndDockerImageId);
+            fail("Should not be able to create a command with same name and docker image id as one that already exists.");
         } catch (NrgServiceRuntimeException ignored) {
             //
         }
