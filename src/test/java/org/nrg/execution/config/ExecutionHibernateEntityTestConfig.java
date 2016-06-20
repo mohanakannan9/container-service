@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.util.Properties;
 
 @Configuration
-public class ActionsHibernateEntityTestConfig {
+public class ExecutionHibernateEntityTestConfig {
     @Bean
     public Properties hibernateProperties() throws IOException {
         Properties properties = new Properties();

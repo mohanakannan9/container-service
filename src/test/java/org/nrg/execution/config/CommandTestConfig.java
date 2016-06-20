@@ -25,7 +25,7 @@ import java.util.Properties;
 
 @Configuration
 //@EnableTransactionManagement
-@Import(ContainersHibernateEntityTestConfig.class)
+@Import(ExecutionHibernateEntityTestConfig.class)
 public class CommandTestConfig {
 //    @Bean
 //    public DockerImageService dockerImageService() {

@@ -189,9 +189,9 @@ public class Command extends AbstractHibernateEntity {
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
         final Command that = (Command) o;
-        return Objects.equals(this.name, that.name) &&
+        return Objects.equals(this.getId(), that.getId()) &&
+                Objects.equals(this.name, that.name) &&
                 Objects.equals(this.description, that.description) &&
                 Objects.equals(this.infoUrl, that.infoUrl) &&
                 Objects.equals(this.dockerImage, that.dockerImage) &&

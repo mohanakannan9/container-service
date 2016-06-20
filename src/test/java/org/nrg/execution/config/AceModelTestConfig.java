@@ -30,7 +30,7 @@ import javax.sql.DataSource;
 import java.util.Properties;
 
 @Configuration
-@Import(ActionsHibernateEntityTestConfig.class)
+@Import(ExecutionHibernateEntityTestConfig.class)
 public class AceModelTestConfig {
     @Bean
     public AceService aceService() {

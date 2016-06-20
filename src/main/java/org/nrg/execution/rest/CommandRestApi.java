@@ -1,12 +1,15 @@
 package org.nrg.execution.rest;
 
-import org.nrg.execution.model.Command;
-import org.nrg.execution.model.Context;
-import org.nrg.execution.model.ResolvedCommand;
-import org.nrg.execution.services.CommandService;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
+import org.nrg.execution.model.Command;
+import org.nrg.execution.model.ResolvedCommand;
+import org.nrg.execution.services.CommandService;
 import org.nrg.framework.annotations.XapiRestController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -16,17 +19,21 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.springframework.web.bind.annotation.RequestMethod.DELETE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
+import static org.springframework.web.bind.annotation.RequestMethod.PUT;
 
 @XapiRestController
 @RequestMapping("/commands")
+@Api("Command API for XNAT Action/Context Execution service")
 public class CommandRestApi {
     private static final String JSON = MediaType.APPLICATION_JSON_UTF8_VALUE;
     private static final String TEXT = MediaType.TEXT_PLAIN_VALUE;
@@ -35,50 +42,63 @@ public class CommandRestApi {
     @Autowired
     private CommandService commandService;
 
-    @RequestMapping(value = {}, method = GET, produces = {JSON, TEXT})
+    @RequestMapping(value = {}, method = GET)
+    @ApiOperation(value = "Get all Commands")
     @ResponseBody
     public List<Command> getCommands() {
         return commandService.getAll();
     }
 
-    @RequestMapping(value = {}, method = POST, produces = TEXT)
-    public ResponseEntity<String> createCommand(final @RequestBody Command command) {
-        final Command created = commandService.create(command);
-        return new ResponseEntity<>(String.valueOf(created.getId()), HttpStatus.CREATED);
-    }
-
     @RequestMapping(value = {"/{id}"}, method = GET)
+    @ApiOperation(value = "Get a Command")
     @ResponseBody
     public Command retrieveCommand(final @PathVariable Long id) {
         return commandService.retrieve(id);
     }
 
-    @RequestMapping(value = {"/{id}"}, method = POST, produces = TEXT)
-    public ResponseEntity<String> updateCommand(final @RequestBody Command command,
-                                                final @PathVariable Long id) {
+    @RequestMapping(value = {}, method = POST, produces = JSON)
+    @ApiOperation(value = "Create a Command", code = 201)
+    @ApiResponses({
+            @ApiResponse(code = 201, message = "Created", response = Command.class),
+            @ApiResponse(code = 415, message = "Set the Content-type header on the request")
+    })
+    public ResponseEntity<Command> createCommand(final @RequestBody Command command) {
+        final Command created = commandService.create(command);
+        return new ResponseEntity<>(created, HttpStatus.CREATED);
+    }
+
+    @RequestMapping(value = {"/{id}"}, method = POST)
+    @ApiOperation(value = "Update a Command")
+    @ResponseBody
+    public Command updateCommand(final @RequestBody Command command,
+                                 final @PathVariable Long id) {
         command.setId(id);
         commandService.update(command);
-        return new ResponseEntity<>(String.valueOf(id), HttpStatus.OK);
+        return command;
     }
 
     @RequestMapping(value = {"/{id}"}, method = DELETE)
-    public void deleteCommand(final @PathVariable Long id) {
+    @ApiOperation(value = "Delete a Command", code = 204)
+    public ResponseEntity<String> deleteCommand(final @PathVariable Long id) {
         commandService.delete(id);
+        return new ResponseEntity<>("", HttpStatus.NO_CONTENT);
     }
 
-    @RequestMapping(value = {"/launch"}, method = POST, produces = TEXT)
+    @RequestMapping(value = {"/launch"}, method = POST)
+    @ApiOperation(value = "Launch a container from a resolved command")
     @ResponseBody
     public String launchCommand(final @RequestBody ResolvedCommand resolvedCommand)
             throws NoServerPrefException, DockerServerException {
         return commandService.launchCommand(resolvedCommand);
     }
 
-    @RequestMapping(value = {"/{id}/launch"}, method = POST, consumes = JSON)
+    @RequestMapping(value = {"/{id}/launch"}, method = PUT)
+    @ApiOperation(value = "Resolve a command from the variable values in the query string, and launch it")
     @ResponseBody
     public String launchCommand(final @PathVariable Long id,
-                                final @RequestBody Context context)
+                                final @RequestParam Map<String, String> allRequestParams)
             throws NoServerPrefException, DockerServerException, NotFoundException {
-        return commandService.launchCommand(id, context);
+        return commandService.launchCommand(id, allRequestParams);
     }
 
     @RequestMapping(value = {"/{id}/launch"}, method = POST)
@@ -90,7 +110,7 @@ public class CommandRestApi {
 
     @ResponseStatus(value = HttpStatus.FAILED_DEPENDENCY)
     @ExceptionHandler(value = {NoServerPrefException.class})
-    public String handleFailedDependency() {
+    public String handleFailedDependency(final Exception ignored) {
         return "Set up Docker server before using this REST endpoint.";
     }
 
