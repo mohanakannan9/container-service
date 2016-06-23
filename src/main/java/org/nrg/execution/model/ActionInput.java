@@ -10,7 +10,7 @@ import java.util.Objects;
 @Embeddable
 public class ActionInput implements Serializable {
 
-    @JsonProperty("name") private String inputName;
+    @JsonProperty("name") private String name;
     @JsonProperty("command-variable-name") private String commandVariableName;
     private String type;
     private Boolean required = false;
@@ -20,7 +20,7 @@ public class ActionInput implements Serializable {
     public ActionInput() {}
 
     public ActionInput(final CommandVariable commandVariable) {
-        this.inputName = commandVariable.getName();
+        this.name = commandVariable.getName();
         this.commandVariableName = commandVariable.getName();
         //this.rootProperty = commandVariable.getName();
 
@@ -29,12 +29,12 @@ public class ActionInput implements Serializable {
         this.value = commandVariable.getDefaultValue();
     }
 
-    public String getInputName() {
-        return inputName;
+    public String getName() {
+        return name;
     }
 
-    public void setInputName(String inputName) {
-        this.inputName = inputName;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getCommandVariableName() {
@@ -42,8 +42,8 @@ public class ActionInput implements Serializable {
     }
 
     public void setCommandVariableName(final String commandVariableName) {
-        if (this.inputName == null) {
-            this.inputName = commandVariableName;
+        if (this.name == null) {
+            this.name = commandVariableName;
         }
         this.commandVariableName = commandVariableName;
     }
@@ -89,7 +89,7 @@ public class ActionInput implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final ActionInput that = (ActionInput) o;
-        return Objects.equals(this.inputName, that.inputName) &&
+        return Objects.equals(this.name, that.name) &&
                 Objects.equals(this.commandVariableName, that.commandVariableName) &&
                 Objects.equals(this.type, that.type) &&
                 Objects.equals(this.required, that.required) &&
@@ -99,13 +99,13 @@ public class ActionInput implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(inputName, commandVariableName, type, required, value, rootProperty);
+        return Objects.hash(name, commandVariableName, type, required, value, rootProperty);
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-                .add("inputName", inputName)
+                .add("name", name)
                 .add("commandVariableName", commandVariableName)
                 .add("type", type)
                 .add("required", required)

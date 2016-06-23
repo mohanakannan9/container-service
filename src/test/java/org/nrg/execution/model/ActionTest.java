@@ -118,7 +118,7 @@ public class ActionTest {
 
         final ActionInput actionInput = mapper.readValue(ACTION_INPUT_JSON, ActionInput.class);
 
-        assertEquals("some_identifier", actionInput.getInputName());
+        assertEquals("some_identifier", actionInput.getName());
         assertEquals(commandVariable.getName(), actionInput.getCommandVariableName());
         assertTrue(actionInput.getRequired());
         assertEquals("string", actionInput.getType());

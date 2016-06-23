@@ -19,11 +19,18 @@ import java.util.Objects;
 public class ResolvedCommand implements Serializable {
 
     @JsonProperty("command-id") private Long commandId;
+    @JsonProperty("docker-image") private String dockerImage;
     @JsonProperty("run") private List<String> run;
-    @JsonProperty("docker-image-id") private String dockerImageId;
     @JsonProperty("env") private Map<String, String> environmentVariables = Maps.newHashMap();
     @JsonProperty("mounts-in") private List<ResolvedCommandMount> mountsIn = Lists.newArrayList();
     @JsonProperty("mounts-out") private List<ResolvedCommandMount> mountsOut = Lists.newArrayList();
+
+    public ResolvedCommand() {}
+
+    public ResolvedCommand(final Command command) {
+        this.commandId = command.getId();
+        this.dockerImage = command.getDockerImage();
+    }
 
     public Long getCommandId() {
         return commandId;
@@ -44,12 +51,12 @@ public class ResolvedCommand implements Serializable {
                 run;
     }
 
-    public String getDockerImageId() {
-        return dockerImageId;
+    public String getDockerImage() {
+        return dockerImage;
     }
 
-    public void setDockerImageId(final String dockerImageId) {
-        this.dockerImageId = dockerImageId;
+    public void setDockerImage(final String dockerImage) {
+        this.dockerImage = dockerImage;
     }
 
     @ElementCollection
@@ -77,7 +84,7 @@ public class ResolvedCommand implements Serializable {
     @Transient
     @JsonIgnore
     public void setMountsIn(final Map<String, String> commandMounts) {
-        setMountsIn(resolveCommandMounts(commandMounts));
+        setMountsIn(resolveCommandMounts(commandMounts, true));
     }
 
     @ElementCollection(fetch = FetchType.EAGER)
@@ -94,15 +101,16 @@ public class ResolvedCommand implements Serializable {
     @Transient
     @JsonIgnore
     public void setMountsOut(final Map<String, String> commandMounts) {
-        setMountsOut(resolveCommandMounts(commandMounts));
+        setMountsOut(resolveCommandMounts(commandMounts, false));
     }
 
     @Transient
     @JsonIgnore
-    private List<ResolvedCommandMount> resolveCommandMounts(final Map<String, String> commandMounts) {
+    private List<ResolvedCommandMount> resolveCommandMounts(final Map<String, String> commandMounts,
+                                                            final boolean readOnly) {
         final List<ResolvedCommandMount> resolvedMounts = Lists.newArrayList();
         for (final Map.Entry<String, String> mount : commandMounts.entrySet()) {
-            resolvedMounts.add(new ResolvedCommandMount(mount.getKey(), mount.getValue(), true));
+            resolvedMounts.add(new ResolvedCommandMount(mount.getKey(), mount.getValue(), readOnly));
         }
         return resolvedMounts;
     }
@@ -114,7 +122,7 @@ public class ResolvedCommand implements Serializable {
         final ResolvedCommand that = (ResolvedCommand) o;
         return Objects.equals(this.commandId, that.commandId) &&
                 Objects.equals(this.run, that.run) &&
-                Objects.equals(this.dockerImageId, that.dockerImageId) &&
+                Objects.equals(this.dockerImage, that.dockerImage) &&
                 Objects.equals(this.environmentVariables, that.environmentVariables) &&
                 Objects.equals(this.mountsIn, that.mountsIn) &&
                 Objects.equals(this.mountsOut, that.mountsOut);
@@ -122,7 +130,7 @@ public class ResolvedCommand implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(commandId, run, dockerImageId, environmentVariables, mountsIn, mountsOut);
+        return Objects.hash(commandId, run, dockerImage, environmentVariables, mountsIn, mountsOut);
     }
 
     @Override
@@ -130,7 +138,7 @@ public class ResolvedCommand implements Serializable {
         return MoreObjects.toStringHelper(this)
                 .add("commandId", commandId)
                 .add("run", run)
-                .add("dockerImageId", dockerImageId)
+                .add("dockerImage", dockerImage)
                 .add("environmentVariables", environmentVariables)
                 .add("mountsIn", mountsIn)
                 .add("mountsOut", mountsOut)

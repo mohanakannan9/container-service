@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -72,7 +73,7 @@ public class CommandTest {
                     "\"info-url\":\"http://abc.xyz\", " +
                     "\"env\":{\"foo\":\"bar\"}, " +
                     "\"variables\":" + VARIABLE_LIST_JSON + ", " +
-                    "\"run-template\":[\"cmd\",\"#foo#\"], " +
+                    "\"run-template\":[\"cmd\",\"#foo# #my_cool_input#\"], " +
                     "\"docker-image\":\"abc123\", " +
                     "\"mounts-in\":" + MOUNT_IN + "," +
                     "\"mounts-out\":" + MOUNT_OUT + "}";
@@ -85,13 +86,13 @@ public class CommandTest {
                     "\"docker-image\":\"abc123\", " +
                     "\"script-id\":%d}me";
 
-//    private static final String RESOLVED_DOCKER_IMAGE_COMMAND_JSON_TEMPLATE =
-//            "{\"command-id\":%d, " +
-//                    "\"docker-image-id\":%s, " +
-//                    "\"env\":{\"foo\":\"bar\"}, " +
-//                    "\"run\":[\"cmd\", \"--flag=bar\"], " +
-//                    "\"mounts-in\":[" + RESOLVED_MOUNT_IN + "]," +
-//                    "\"mounts-out\":[" + RESOLVED_MOUNT_OUT + "]}";
+    private static final String RESOLVED_DOCKER_IMAGE_COMMAND_JSON_TEMPLATE =
+            "{\"command-id\":%d, " +
+                    "\"docker-image\":\"abc123\", " +
+                    "\"env\":{\"foo\":\"bar\"}, " +
+                    "\"run\":[\"cmd\", \"--flag=bar \"], " +
+                    "\"mounts-in\":[" + RESOLVED_MOUNT_IN + "]," +
+                    "\"mounts-out\":[" + RESOLVED_MOUNT_OUT + "]}";
 
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -152,7 +153,7 @@ public class CommandTest {
         assertEquals("docker_image_command", command.getName());
         assertEquals("Docker Image command for the test", command.getDescription());
         assertEquals("http://abc.xyz", command.getInfoUrl());
-        assertEquals(Lists.newArrayList("cmd", "#foo#"), command.getRunTemplate());
+        assertEquals(Lists.newArrayList("cmd", "#foo# #my_cool_input#"), command.getRunTemplate());
         assertEquals(ImmutableMap.of("foo", "bar"), command.getEnvironmentVariables());
 
         assertThat(command.getVariables(), hasSize(2));
@@ -224,7 +225,7 @@ public class CommandTest {
         assertThat(command.getVariables(), hasSize(2));
         assertThat(commandVariableList, everyItem(isIn(command.getVariables())));
 
-        assertEquals((Long)0L, command.getScriptId());
+        assertEquals(0L, command.getScriptId().longValue());
         assertEquals("abc123", command.getDockerImage());
     }
 
@@ -262,20 +263,33 @@ public class CommandTest {
 //        assertEquals(retrievedScriptEnvironment, retrievedCommand.getScriptEnvironment());
     }
 
-//    @Test
-//    public void testResolveCommand() throws Exception {
-//
-//        final Command command = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, Command.class);
-//
-//        final String resolvedCommandJson =
-//                String.format(RESOLVED_DOCKER_IMAGE_COMMAND_JSON_TEMPLATE, command.getId(), dockerImageId);
-//        final ResolvedCommand expected = mapper.readValue(resolvedCommandJson, ResolvedCommand.class);
-//
-//        final ResolvedCommand resolvedCommand = commandService.resolveCommand(command);
-//
-//        assertEquals(expected.getRun(), resolvedCommand.getRun());
-//        assertEquals(expected.getEnvironmentVariables(), resolvedCommand.getEnvironmentVariables());
-//        assertEquals(expected.getMountsIn(), resolvedCommand.getMountsIn());
-//        assertEquals(expected.getMountsOut(), resolvedCommand.getMountsOut());
-//    }
+    @Test
+    public void testResolveCommand() throws Exception {
+
+        final Command command = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, Command.class);
+
+        final String resolvedCommandJson =
+                String.format(RESOLVED_DOCKER_IMAGE_COMMAND_JSON_TEMPLATE, command.getId());
+        final ResolvedCommand expected = mapper.readValue(resolvedCommandJson, ResolvedCommand.class);
+
+        final Map<String, String> variableRuntimeValues = Maps.newHashMap();
+        variableRuntimeValues.put("my_cool_input", "false");
+        final ResolvedCommand resolvedCommand = commandService.resolveCommand(command, variableRuntimeValues);
+
+        assertEquals(expected.getRun(), resolvedCommand.getRun());
+        assertEquals(expected.getEnvironmentVariables(), resolvedCommand.getEnvironmentVariables());
+        assertEquals(expected.getMountsIn(), resolvedCommand.getMountsIn());
+        assertEquals(expected.getMountsOut(), resolvedCommand.getMountsOut());
+        assertEquals(expected, resolvedCommand);
+
+        variableRuntimeValues.put("my_cool_input", "true");
+        final ResolvedCommand resolvedCommand2 = commandService.resolveCommand(command, variableRuntimeValues);
+
+        assertEquals(expected.getEnvironmentVariables(), resolvedCommand2.getEnvironmentVariables());
+        assertEquals(expected.getMountsIn(), resolvedCommand2.getMountsIn());
+        assertEquals(expected.getMountsOut(), resolvedCommand2.getMountsOut());
+
+        assertEquals(Lists.newArrayList("cmd", "--flag=bar -b"), resolvedCommand2.getRun());
+
+    }
 }

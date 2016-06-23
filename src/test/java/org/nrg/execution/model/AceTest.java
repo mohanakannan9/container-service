@@ -82,7 +82,7 @@ public class AceTest {
     public void testDeserializeActionInput() throws Exception {
         final ActionInput actionInput = mapper.readValue(ACTION_INPUT_JSON, ActionInput.class);
 
-        assertEquals("some_identifier", actionInput.getInputName());
+        assertEquals("some_identifier", actionInput.getName());
         assertEquals("my_cool_input", actionInput.getCommandVariableName());
         assertTrue(actionInput.getRequired());
         assertEquals("property", actionInput.getType());

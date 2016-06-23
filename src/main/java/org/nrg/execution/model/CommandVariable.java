@@ -54,8 +54,9 @@ public class CommandVariable implements Serializable {
         return required;
     }
 
-    public Boolean isRequired() {
-        return required;
+    @Transient
+    public boolean isRequired() {
+        return required != null && required;
     }
 
     public void setRequired(final Boolean required) {
@@ -97,37 +98,6 @@ public class CommandVariable implements Serializable {
 
     public void setFalseValue(final String falseValue) {
         this.falseValue = falseValue;
-    }
-
-    @Transient
-    @JsonIgnore
-    @ApiModelProperty(hidden = true)
-    public String getValueWithTrueOrFalseValue() {
-        if (defaultValue == null) {
-            return null;
-        }
-
-        if (type != null && type.equalsIgnoreCase("boolean")) {
-            return Boolean.valueOf(defaultValue) ? trueValue : falseValue;
-        } else {
-            return defaultValue;
-        }
-    }
-
-    @Transient
-    @JsonIgnore
-    @ApiModelProperty(hidden = true)
-    public String getArgTemplateValue() {
-        final String valString = getValueWithTrueOrFalseValue();
-        if (valString == null) {
-            return null;
-        }
-
-        if (StringUtils.isBlank(argTemplate)) {
-            return valString;
-        } else {
-            return argTemplate.replaceAll("#value#", valString);
-        }
     }
 
     @Override

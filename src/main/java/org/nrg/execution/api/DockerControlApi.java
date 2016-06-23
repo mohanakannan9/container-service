@@ -259,7 +259,7 @@ public class DockerControlApi implements ContainerControlApi {
     @Override
     public String launchImage(final ResolvedCommand command)
             throws NoServerPrefException, DockerServerException {
-        final String dockerImageId = command.getDockerImageId();
+        final String dockerImageId = command.getDockerImage();
         final List<String> runCommand = command.getRun();
         final List<String> bindMounts = Lists.newArrayList();
         for (final ResolvedCommandMount mount : command.getMountsIn()) {

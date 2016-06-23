@@ -2,6 +2,7 @@ package org.nrg.execution.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
+import io.swagger.annotations.ApiModelProperty;
 
 import javax.persistence.Embeddable;
 import javax.persistence.Transient;
@@ -12,7 +13,7 @@ import java.util.Objects;
 public class ResolvedCommandMount implements Serializable {
 
     private String name;
-    @JsonProperty("local-path") private String localPath;
+    @JsonProperty("host-path") private String hostPath;
     @JsonProperty("remote-path") private String remotePath;
     @JsonProperty("read-only") private Boolean readOnly = true;
 
@@ -34,12 +35,12 @@ public class ResolvedCommandMount implements Serializable {
         this.name = name;
     }
 
-    public String getLocalPath() {
-        return localPath;
+    public String getHostPath() {
+        return hostPath;
     }
 
-    public void setLocalPath(final String localPath) {
-        this.localPath = localPath;
+    public void setHostPath(final String localPath) {
+        this.hostPath = localPath;
     }
 
     public String getRemotePath() {
@@ -59,8 +60,9 @@ public class ResolvedCommandMount implements Serializable {
     }
 
     @Transient
+    @ApiModelProperty(hidden = true)
     public String toBindMountString() {
-        return localPath + ":" + remotePath + (readOnly?":ro":"");
+        return hostPath + ":" + remotePath + (readOnly?":ro":"");
     }
 
     @Override
@@ -69,21 +71,21 @@ public class ResolvedCommandMount implements Serializable {
         if (o == null || getClass() != o.getClass()) return false;
         final ResolvedCommandMount that = (ResolvedCommandMount) o;
         return Objects.equals(this.name, that.name) &&
-                Objects.equals(this.localPath, that.localPath) &&
+                Objects.equals(this.hostPath, that.hostPath) &&
                 Objects.equals(this.remotePath, that.remotePath) &&
                 Objects.equals(this.readOnly, that.readOnly);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, localPath, remotePath, readOnly);
+        return Objects.hash(name, hostPath, remotePath, readOnly);
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("name", name)
-                .add("localPath", localPath)
+                .add("hostPath", hostPath)
                 .add("remotePath", remotePath)
                 .add("readOnly", readOnly)
                 .toString();

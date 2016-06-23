@@ -68,7 +68,7 @@ public class AceRestApiTest {
                 mapper.readValue(aceDtoJson, ActionContextExecutionDto.class);
 
         final String resolvedCommandJson =
-                "{\"docker-image-id\": \"abc123\"," +
+                "{\"docker-image\": \"abc123\"," +
                 "\"run\": [\"/bin/sh\", \"-c\", \"echo test_expt\"]}";
         final ResolvedCommand resolvedCommand =
                 mapper.readValue(resolvedCommandJson, ResolvedCommand.class);

@@ -1,5 +1,7 @@
 package org.nrg.execution.services;
 
+import org.nrg.containers.exceptions.AceInputException;
+import org.nrg.containers.exceptions.CommandVariableResolutionException;
 import org.nrg.execution.model.ActionContextExecution;
 import org.nrg.execution.model.ActionContextExecutionDto;
 import org.nrg.execution.model.Context;
@@ -16,5 +18,6 @@ import java.util.List;
 public interface AceService extends BaseHibernateService<ActionContextExecution> {
     List<ActionContextExecutionDto> resolveAces(final Context context) throws XFTInitException, BadRequestException, NotFoundException;
 
-    ActionContextExecution executeAce(final ActionContextExecutionDto ace) throws NotFoundException, NoServerPrefException, ElementNotFoundException, DockerServerException;
+    ActionContextExecution executeAce(final ActionContextExecutionDto ace)
+            throws NotFoundException, NoServerPrefException, ElementNotFoundException, DockerServerException, AceInputException;
 }

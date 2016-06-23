@@ -1,5 +1,7 @@
 package org.nrg.execution.rest;
 
+import org.nrg.containers.exceptions.AceInputException;
+import org.nrg.containers.exceptions.CommandVariableResolutionException;
 import org.nrg.execution.model.ActionContextExecution;
 import org.nrg.execution.model.ActionContextExecutionDto;
 import org.nrg.execution.model.Context;
@@ -61,9 +63,13 @@ public class AceRestApi {
     @RequestMapping(value = {}, method = POST, consumes = JSON, produces = JSON)
     @ResponseBody
     public ResponseEntity<ActionContextExecution> executeAce(final @RequestBody ActionContextExecutionDto aceDto)
-            throws NoServerPrefException, ElementNotFoundException, NotFoundException, DockerServerException {
-        final ActionContextExecution ace = aceService.executeAce(aceDto);
-        return new ResponseEntity<>(ace, HttpStatus.CREATED);
+            throws NoServerPrefException, ElementNotFoundException, NotFoundException, DockerServerException, BadRequestException {
+        try {
+            final ActionContextExecution ace = aceService.executeAce(aceDto);
+            return new ResponseEntity<>(ace, HttpStatus.CREATED);
+        } catch (AceInputException e) {
+            throw new BadRequestException(e.getMessage());
+        }
     }
 //
 //    @RequestMapping(value = {"/{id}"}, method = GET, produces = JSON)

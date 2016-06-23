@@ -4,6 +4,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.containers.exceptions.AceInputException;
+import org.nrg.containers.exceptions.CommandVariableResolutionException;
 import org.nrg.execution.daos.AceDao;
 import org.nrg.execution.model.Action;
 import org.nrg.execution.model.ActionContextExecution;
@@ -199,8 +201,9 @@ public class HibernateAceService
         }
     }
 
+    @Override
     public ActionContextExecution executeAce(final ActionContextExecutionDto aceDto)
-            throws NotFoundException, NoServerPrefException, ElementNotFoundException, DockerServerException {
+            throws NotFoundException, NoServerPrefException, ElementNotFoundException, DockerServerException, AceInputException {
         final ActionContextExecution ace = aceFromDto(aceDto);
         final ResolvedCommand resolvedCommand = ace.getResolvedCommand();
 
@@ -233,7 +236,7 @@ public class HibernateAceService
                 final ResolvedCommandMount mountIn = localPathToMount.get(localPath);
                 final Path transportedResourcePath = localPathToTransportedPath.get(localPath);
 
-                mountIn.setLocalPath(transportedResourcePath.toString());
+                mountIn.setHostPath(transportedResourcePath.toString());
             }
         }
         // TODO If it's a script command, need to write out the script and transport it
@@ -246,7 +249,7 @@ public class HibernateAceService
                 final ResolvedCommandMount mountOut = mountsOut.get(i);
                 final Path buildPath = buildPaths.get(i);
 
-                mountOut.setLocalPath(buildPath.toString());
+                mountOut.setHostPath(buildPath.toString());
             }
         }
 
@@ -263,16 +266,18 @@ public class HibernateAceService
         return created;
     }
 
-    public ActionContextExecution aceFromDto(final ActionContextExecutionDto aceDto) throws NotFoundException {
+    public ActionContextExecution aceFromDto(final ActionContextExecutionDto aceDto) throws NotFoundException, AceInputException {
         if (aceDto == null) return null;
 
         // TODO Check that all required inputs have values
+        final Map<String, ActionInput> aceInputs = Maps.newHashMap();
         final Map<String, String> aceInputValues = Maps.newHashMap();
         if (aceDto.getInputs() != null && !aceDto.getInputs().isEmpty()) {
             for (final ActionInput input : aceDto.getInputs()) {
                 if (input.isRequired() && StringUtils.isBlank(input.getValue())) {
-                    // TODO throw an error. Required input cannot be blank.
+                    throw new AceInputException(input);
                 }
+                aceInputs.put(input.getCommandVariableName(), input);
                 aceInputValues.put(input.getCommandVariableName(), input.getValue());
             }
         }
@@ -295,8 +300,17 @@ public class HibernateAceService
             }
         }
 
-        final ResolvedCommand resolvedCommand =
-                commandService.resolveCommand(aceDto.getCommandId(), aceInputValues);
+        final ResolvedCommand resolvedCommand;
+        try {
+            resolvedCommand = commandService.resolveCommand(aceDto.getCommandId(), aceInputValues);
+        } catch (CommandVariableResolutionException e) {
+            final ActionInput input = aceInputs.get(e.getVariable().getName());
+            if (input != null) {
+                throw new AceInputException(input);
+            } else {
+                throw new AceInputException("No Action input for Command variable "+e.getVariable().getName(), null);
+            }
+        }
 
         return new ActionContextExecution(aceDto, resolvedCommand);
     }
@@ -328,8 +342,8 @@ public class HibernateAceService
                 // Now try to get values from the context.
                 // (Even if we already found the value from the item, we want to do this.
                 //   Values in the context take precedence over XFTItem properties.)
-                if (StringUtils.isNotBlank(context.get(input.getInputName()))) {
-                    input.setValue(context.get(input.getInputName()));
+                if (StringUtils.isNotBlank(context.get(input.getName()))) {
+                    input.setValue(context.get(input.getName()));
                 }
             }
         }

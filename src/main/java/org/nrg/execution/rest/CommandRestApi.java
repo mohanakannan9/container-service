@@ -5,6 +5,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import org.nrg.containers.exceptions.BadRequestException;
+import org.nrg.containers.exceptions.CommandVariableResolutionException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
@@ -104,15 +105,23 @@ public class CommandRestApi {
     @ResponseBody
     public String launchCommand(final @PathVariable Long id,
                                 final @RequestParam Map<String, String> allRequestParams)
-            throws NoServerPrefException, DockerServerException, NotFoundException {
-        return commandService.launchCommand(id, allRequestParams);
+            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException {
+        try {
+            return commandService.launchCommand(id, allRequestParams);
+        } catch (CommandVariableResolutionException e) {
+            throw new BadRequestException("Must provide value for variable " + e.getVariable().getName() + ".", e);
+        }
     }
 
     @RequestMapping(value = {"/{id}/launch"}, method = POST)
     @ResponseBody
     public String launchCommand(final @PathVariable Long id)
-            throws NoServerPrefException, DockerServerException, NotFoundException {
-        return commandService.launchCommand(id);
+            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException {
+        try {
+            return commandService.launchCommand(id);
+        } catch (CommandVariableResolutionException e) {
+            throw new BadRequestException("Must provide value for variable " + e.getVariable().getName() + " in request body.", e);
+        }
     }
 
     @ResponseStatus(value = HttpStatus.FAILED_DEPENDENCY)
