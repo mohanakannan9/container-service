@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Map;
 
 public interface CommandService extends BaseHibernateService<Command> {
+    String LABEL_KEY = "org.nrg.commands";
+
     List<Command> findByName(final String name);
 
     ResolvedCommand resolveCommand(final Long commandId) throws NotFoundException, CommandVariableResolutionException;
@@ -29,4 +31,7 @@ public interface CommandService extends BaseHibernateService<Command> {
     String launchCommand(final Long commandId,
                          final Map<String, String> variableRuntimeValues)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandVariableResolutionException;
+
+    List<Command> parseLabels(final Map<String, String> labels);
+    List<Command> saveFromLabels(final Map<String, String> labels);
 }

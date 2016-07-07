@@ -1,6 +1,7 @@
 package org.nrg.execution.config;
 
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hibernate.SessionFactory;
 import org.mockito.Mockito;
 import org.nrg.execution.daos.AceDao;
@@ -32,6 +33,11 @@ import java.util.Properties;
 @Configuration
 @Import(ExecutionHibernateEntityTestConfig.class)
 public class AceModelTestConfig {
+    @Bean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper();
+    }
+
     @Bean
     public AceService aceService() {
         return new HibernateAceService();

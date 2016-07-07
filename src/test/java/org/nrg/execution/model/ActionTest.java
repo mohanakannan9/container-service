@@ -90,7 +90,8 @@ public class ActionTest {
                     "\"root-xsi-type\": \"xnat:imageScanData\"," +
                     "\"root-matchers\": [" + SCAN_MATCHER_JSON + "]}";
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    @Autowired
+    private ObjectMapper mapper;
 
     @Autowired
     private ActionService actionService;

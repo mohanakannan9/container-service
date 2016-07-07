@@ -1,5 +1,7 @@
 package org.nrg.execution.services;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -18,11 +20,14 @@ import org.nrg.execution.exceptions.NotFoundException;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -33,8 +38,12 @@ import java.util.regex.Pattern;
 @Transactional
 public class HibernateCommandService extends AbstractHibernateEntityService<Command, CommandDao>
         implements CommandService {
+    private static final Logger log = LoggerFactory.getLogger(HibernateCommandService.class);
     @Autowired
     private ContainerControlApi controlApi;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private static final Pattern TEMPLATE_PATTERN = Pattern.compile("(?<=\\s|\\A)#(\\w+)#(?=\\s|\\z)"); // Match #varname#
 
@@ -145,6 +154,32 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandVariableResolutionException {
         final ResolvedCommand resolvedCommand = resolveCommand(commandId, variableRuntimeValues);
         return controlApi.launchImage(resolvedCommand);
+    }
+
+    @Override
+    public List<Command> parseLabels(final Map<String, String> labels) {
+        if (labels != null && !labels.isEmpty() && labels.containsKey(LABEL_KEY)) {
+            final String labelValue = labels.get(LABEL_KEY);
+            if (StringUtils.isNotBlank(labelValue)) {
+                try {
+                    return objectMapper.readValue(labelValue, new TypeReference<List<Command>>() {});
+                } catch (IOException e) {
+                    log.info("Could not parse Commands from label: %s", labelValue);
+                }
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public List<Command> saveFromLabels(final Map<String, String> labels) {
+        final List<Command> commands = parseLabels(labels);
+        if (!(commands == null || commands.isEmpty())) {
+            for (final Command command : commands) {
+                create(command);
+            }
+        }
+        return commands;
     }
 
     private List<String> resolveTemplateList(final List<String> template,

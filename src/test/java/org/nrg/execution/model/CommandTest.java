@@ -94,7 +94,8 @@ public class CommandTest {
                     "\"mounts-in\":[" + RESOLVED_MOUNT_IN + "]," +
                     "\"mounts-out\":[" + RESOLVED_MOUNT_OUT + "]}";
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    @Autowired
+    private ObjectMapper mapper;
 
     @Autowired
     private ScriptService scriptService;

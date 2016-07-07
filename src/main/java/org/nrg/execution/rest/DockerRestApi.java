@@ -8,6 +8,7 @@ import org.nrg.execution.exceptions.DockerServerException;
 import org.nrg.execution.exceptions.NoServerPrefException;
 import org.nrg.execution.exceptions.NotFoundException;
 import org.nrg.execution.model.DockerHub;
+import org.nrg.execution.model.DockerImage;
 import org.nrg.execution.model.DockerServer;
 import org.nrg.execution.services.DockerService;
 import org.nrg.framework.annotations.XapiRestController;
@@ -29,6 +30,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.util.List;
 
+import static org.springframework.web.bind.annotation.RequestMethod.DELETE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
@@ -102,15 +104,60 @@ public class DockerRestApi {
 
     @RequestMapping(value = "/hubs/{id}/pull", params = {"image"}, method = POST)
     public void pullImageFromHub(final @PathVariable Long hubId,
-                          final @RequestParam(value = "image") String image)
+                                 final @RequestParam(value = "image") String image,
+                                 final @RequestParam(value = "save-commands", defaultValue = "true")
+                                             Boolean saveCommands)
             throws DockerServerException, NotFoundException, NoServerPrefException {
-        dockerService.pullFromHub(hubId, image);
+        dockerService.pullFromHub(hubId, image, saveCommands);
     }
 
-    @RequestMapping(value = "/pull", params = {"image"}, method = POST)
-    public void pullImageFromDefaultHub(final @RequestParam(value = "image") String image)
+    @RequestMapping(value = "/images/pull", params = {"image"}, method = POST)
+    public void pullImageFromDefaultHub(final @RequestParam(value = "image") String image,
+                                        final @RequestParam(value = "save-commands", defaultValue = "true")
+                                                Boolean saveCommands)
             throws DockerServerException, NotFoundException, NoServerPrefException {
-        dockerService.pullFromHub(image);
+        dockerService.pullFromHub(image, saveCommands);
+    }
+
+    @ApiOperation(value = "Get list of images.", notes = "Returns a list of all Docker images.")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "A list of images on the server"),
+            @ApiResponse(code = 424, message = "Admin must set up Docker server."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = "/images", method = GET, produces = JSON)
+    @ResponseBody
+    public List<DockerImage> getAllImages()
+            throws NoServerPrefException, DockerServerException {
+        return dockerService.getImages();
+    }
+
+    @ApiOperation(value = "Get Docker image",
+            notes = "Retrieve information about a Docker image from the docker server")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "Found the image"),
+            @ApiResponse(code = 404, message = "No docker image with given id on the server"),
+            @ApiResponse(code = 424, message = "Admin must set up Docker server."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = "/images/{id}", method = GET, produces = JSON)
+    @ResponseBody
+    public DockerImage getImage(final @PathVariable("id") String id)
+            throws NoServerPrefException, NotFoundException {
+        return dockerService.getImage(id);
+    }
+
+    @ApiOperation(value = "Delete Docker image",
+            notes = "Remove information about a Docker image")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "Image was removed"),
+            @ApiResponse(code = 404, message = "No docker image with given id on docker server"),
+            @ApiResponse(code = 424, message = "Admin must set up Docker server."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = "/images/{id}", method = DELETE)
+    @ResponseBody
+    public void deleteImage(final @PathVariable("id") String id,
+                            final @RequestParam(value = "force", defaultValue = "false") Boolean force)
+            throws NotFoundException, NoServerPrefException, DockerServerException {
+        dockerService.removeImage(id, force);
     }
 
     @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)

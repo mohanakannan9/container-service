@@ -1,5 +1,6 @@
 package org.nrg.execution.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hibernate.SessionFactory;
 import org.mockito.Mockito;
 import org.nrg.execution.daos.CommandDao;
@@ -26,6 +27,10 @@ import java.util.Properties;
 //@EnableTransactionManagement
 @Import(ExecutionHibernateEntityTestConfig.class)
 public class CommandTestConfig {
+    @Bean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper();
+    }
 //    @Bean
 //    public DockerImageService dockerImageService() {
 //        return new HibernateDockerImageService();

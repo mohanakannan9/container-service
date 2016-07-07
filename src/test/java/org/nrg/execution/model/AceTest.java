@@ -70,7 +70,8 @@ public class AceTest {
                     "\"resources-created\":[" + ACE_RESOURCE_CREATED_JSON + "]," +
                     "\"resources-staged\":[" + ACE_RESOURCE_STAGED_JSON + "]}";
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    @Autowired
+    private ObjectMapper mapper;
 
     @Autowired
     private CommandService commandService;

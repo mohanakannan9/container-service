@@ -3,6 +3,7 @@ package org.nrg.execution.services;
 import org.nrg.execution.exceptions.DockerServerException;
 import org.nrg.execution.exceptions.NoServerPrefException;
 import org.nrg.execution.exceptions.NotFoundException;
+import org.nrg.execution.model.Command;
 import org.nrg.execution.model.DockerHub;
 import org.nrg.execution.model.DockerImage;
 import org.nrg.execution.model.DockerServer;
@@ -22,6 +23,9 @@ public class DockerServiceImpl implements DockerService {
 
     @Autowired
     private DockerHubService dockerHubService;
+
+    @Autowired
+    private CommandService commandService;
 
     @Override
     public List<DockerHub> getHubs() {
@@ -48,20 +52,24 @@ public class DockerServiceImpl implements DockerService {
     }
 
     @Override
-    public DockerImage pullFromHub(final Long hubId, final String image)
+    public DockerImage pullFromHub(final Long hubId, final String image, final Boolean saveCommands)
             throws DockerServerException, NoServerPrefException, NotFoundException {
         final DockerHub hub = dockerHubService.retrieve(hubId);
         if (hub == null) {
             throw new NotFoundException("No Docker Hub with id " + hubId);
         }
 
-        return controlApi.pullAndReturnImage(image, hub);
+        final DockerImage dockerImage = controlApi.pullAndReturnImage(image, hub);
+        commandService.saveFromLabels(dockerImage.getLabels());
+        return dockerImage;
     }
 
     @Override
-    public DockerImage pullFromHub(final String image)
+    public DockerImage pullFromHub(final String image, final Boolean saveCommands)
             throws DockerServerException, NoServerPrefException {
-        return controlApi.pullAndReturnImage(image);
+        final DockerImage dockerImage = controlApi.pullAndReturnImage(image);
+        commandService.saveFromLabels(dockerImage.getLabels());
+        return dockerImage;
     }
 
     @Override
