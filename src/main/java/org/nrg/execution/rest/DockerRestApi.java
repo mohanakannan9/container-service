@@ -1,15 +1,15 @@
-package org.nrg.containers.rest;
+package org.nrg.execution.rest;
 
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.containers.exceptions.DockerServerException;
-import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.exceptions.NotFoundException;
-import org.nrg.containers.model.DockerHub;
-import org.nrg.containers.model.DockerServer;
-import org.nrg.containers.services.DockerService;
+import org.nrg.execution.exceptions.DockerServerException;
+import org.nrg.execution.exceptions.NoServerPrefException;
+import org.nrg.execution.exceptions.NotFoundException;
+import org.nrg.execution.model.DockerHub;
+import org.nrg.execution.model.DockerServer;
+import org.nrg.execution.services.DockerService;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;

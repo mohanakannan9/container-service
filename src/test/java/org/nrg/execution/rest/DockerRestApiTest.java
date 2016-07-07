@@ -1,15 +1,15 @@
-package org.nrg.containers.rest;
+package org.nrg.execution.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.nrg.containers.config.RestApiTestConfig;
-import org.nrg.containers.exceptions.DockerServerException;
-import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.exceptions.NotFoundException;
-import org.nrg.containers.model.DockerServer;
-import org.nrg.containers.services.DockerService;
+import org.nrg.execution.config.RestApiTestConfig;
+import org.nrg.execution.exceptions.DockerServerException;
+import org.nrg.execution.exceptions.NoServerPrefException;
+import org.nrg.execution.exceptions.NotFoundException;
+import org.nrg.execution.model.DockerServer;
+import org.nrg.execution.services.DockerService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;

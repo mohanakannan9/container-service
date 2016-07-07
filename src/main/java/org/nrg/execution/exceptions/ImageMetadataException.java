@@ -1,4 +1,4 @@
-package org.nrg.containers.exceptions;
+package org.nrg.execution.exceptions;
 
 @SuppressWarnings("unused")
 public class ImageMetadataException extends RuntimeException {

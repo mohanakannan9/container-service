@@ -22,13 +22,16 @@ import com.spotify.docker.client.messages.Image;
 import com.spotify.docker.client.messages.ImageInfo;
 import com.spotify.docker.client.messages.ProgressMessage;
 import org.apache.commons.lang.StringUtils;
+import org.nrg.execution.model.DockerHub;
+import org.nrg.execution.model.DockerImage;
+import org.nrg.execution.model.DockerServer;
+import org.nrg.execution.model.DockerServerPrefsBean;
 import org.nrg.execution.model.ResolvedCommand;
 import org.nrg.execution.model.ResolvedCommandMount;
-import org.nrg.containers.exceptions.DockerServerException;
-import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.exceptions.NotFoundException;
-import org.nrg.containers.model.Container;
-import org.nrg.containers.model.*;
+import org.nrg.execution.exceptions.DockerServerException;
+import org.nrg.execution.exceptions.NoServerPrefException;
+import org.nrg.execution.exceptions.NotFoundException;
+import org.nrg.execution.model.Container;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -622,7 +625,7 @@ public class DockerControlApi implements ContainerControlApi {
      * @return NRG Container object
      **/
     private static Container DockerContainerToNrgContainer(final com.spotify.docker.client.messages.ContainerInfo dockerContainer) {
-        org.nrg.containers.model.Container genericContainer = null;
+        Container genericContainer = null;
         if (dockerContainer != null) {
             genericContainer =
                     new Container(
@@ -643,14 +646,14 @@ public class DockerControlApi implements ContainerControlApi {
      * @param dockerContainerList List of Spotify-Docker Container objects
      * @return List of NRG Container objects
      **/
-    private static List<org.nrg.containers.model.Container> DockerContainerToNrgContainer(final List<com.spotify.docker.client.messages.Container> dockerContainerList) {
+    private static List<Container> DockerContainerToNrgContainer(final List<com.spotify.docker.client.messages.Container> dockerContainerList) {
         return Lists.transform(dockerContainerList, DockerContainerToNrgContainer);
     }
 
     /**
      * Function to convert list of spotify-docker Container objects to xnat-container Container objects
      **/
-    private static Function<com.spotify.docker.client.messages.Container, org.nrg.containers.model.Container> DockerContainerToNrgContainer =
+    private static Function<com.spotify.docker.client.messages.Container, Container> DockerContainerToNrgContainer =
             new Function<com.spotify.docker.client.messages.Container, Container>() {
                 @Override
                 public Container apply(com.spotify.docker.client.messages.Container container) {

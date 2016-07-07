@@ -1,7 +1,7 @@
-package org.nrg.containers.services;
+package org.nrg.execution.services;
 
-import org.nrg.containers.daos.DockerHubDao;
-import org.nrg.containers.model.DockerHub;
+import org.nrg.execution.daos.DockerHubDao;
+import org.nrg.execution.model.DockerHub;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

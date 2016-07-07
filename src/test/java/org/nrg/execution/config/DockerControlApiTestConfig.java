@@ -1,13 +1,10 @@
-package org.nrg.containers.config;
+package org.nrg.execution.config;
 
 import org.mockito.Mockito;
-import org.nrg.containers.model.Container;
-import org.nrg.containers.model.DockerServerPrefsBean;
-import org.nrg.execution.api.ContainerControlApi;
+import org.nrg.execution.model.DockerServerPrefsBean;
 import org.nrg.execution.api.DockerControlApi;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration

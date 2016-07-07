@@ -1,15 +1,14 @@
 package org.nrg.execution.rest;
 
-import org.nrg.containers.exceptions.AceInputException;
-import org.nrg.containers.exceptions.CommandVariableResolutionException;
+import org.nrg.execution.exceptions.AceInputException;
 import org.nrg.execution.model.ActionContextExecution;
 import org.nrg.execution.model.ActionContextExecutionDto;
 import org.nrg.execution.model.Context;
 import org.nrg.execution.services.AceService;
-import org.nrg.containers.exceptions.BadRequestException;
-import org.nrg.containers.exceptions.DockerServerException;
-import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.exceptions.NotFoundException;
+import org.nrg.execution.exceptions.BadRequestException;
+import org.nrg.execution.exceptions.DockerServerException;
+import org.nrg.execution.exceptions.NoServerPrefException;
+import org.nrg.execution.exceptions.NotFoundException;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;

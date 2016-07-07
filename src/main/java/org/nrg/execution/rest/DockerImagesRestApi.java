@@ -1,14 +1,14 @@
-package org.nrg.containers.rest;
+package org.nrg.execution.rest;
 
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import org.nrg.containers.exceptions.BadRequestException;
-import org.nrg.containers.exceptions.DockerServerException;
-import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.exceptions.NotFoundException;
-import org.nrg.containers.model.DockerImage;
-import org.nrg.containers.services.DockerService;
+import org.nrg.execution.exceptions.BadRequestException;
+import org.nrg.execution.exceptions.DockerServerException;
+import org.nrg.execution.exceptions.NoServerPrefException;
+import org.nrg.execution.exceptions.NotFoundException;
+import org.nrg.execution.model.DockerImage;
+import org.nrg.execution.services.DockerService;
 import org.nrg.framework.annotations.XapiRestController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -1,4 +1,4 @@
-package org.nrg.containers.exceptions;
+package org.nrg.execution.exceptions;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;

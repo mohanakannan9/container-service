@@ -1,11 +1,11 @@
 package org.nrg.execution.services;
 
-import org.nrg.containers.exceptions.CommandVariableResolutionException;
+import org.nrg.execution.exceptions.CommandVariableResolutionException;
 import org.nrg.execution.model.Command;
 import org.nrg.execution.model.ResolvedCommand;
-import org.nrg.containers.exceptions.DockerServerException;
-import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.exceptions.NotFoundException;
+import org.nrg.execution.exceptions.DockerServerException;
+import org.nrg.execution.exceptions.NoServerPrefException;
+import org.nrg.execution.exceptions.NotFoundException;
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
 
 import java.util.List;

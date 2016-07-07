@@ -1,4 +1,4 @@
-package org.nrg.containers.model;
+package org.nrg.execution.model;
 
 import com.google.common.base.MoreObjects;
 import org.nrg.prefs.annotations.NrgPreference;

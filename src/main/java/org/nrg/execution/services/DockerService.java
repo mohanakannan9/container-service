@@ -1,11 +1,11 @@
-package org.nrg.containers.services;
+package org.nrg.execution.services;
 
-import org.nrg.containers.exceptions.DockerServerException;
-import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.exceptions.NotFoundException;
-import org.nrg.containers.model.DockerHub;
-import org.nrg.containers.model.DockerImage;
-import org.nrg.containers.model.DockerServer;
+import org.nrg.execution.exceptions.DockerServerException;
+import org.nrg.execution.exceptions.NoServerPrefException;
+import org.nrg.execution.exceptions.NotFoundException;
+import org.nrg.execution.model.DockerHub;
+import org.nrg.execution.model.DockerImage;
+import org.nrg.execution.model.DockerServer;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 
 import java.util.List;

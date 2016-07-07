@@ -1,6 +1,6 @@
 package org.nrg.execution.rest;
 
-import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.execution.exceptions.NoServerPrefException;
 import org.nrg.framework.annotations.XapiRestController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

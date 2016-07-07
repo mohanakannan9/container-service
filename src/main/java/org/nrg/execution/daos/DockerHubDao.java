@@ -1,6 +1,6 @@
-package org.nrg.containers.daos;
+package org.nrg.execution.daos;
 
-import org.nrg.containers.model.DockerHub;
+import org.nrg.execution.model.DockerHub;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.springframework.stereotype.Repository;
 

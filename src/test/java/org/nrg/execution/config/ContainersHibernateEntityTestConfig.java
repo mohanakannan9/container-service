@@ -1,4 +1,4 @@
-package org.nrg.containers.config;
+package org.nrg.execution.config;
 
 import org.springframework.beans.factory.config.PropertiesFactoryBean;
 import org.springframework.context.annotation.Bean;
