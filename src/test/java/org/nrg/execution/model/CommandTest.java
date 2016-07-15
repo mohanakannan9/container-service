@@ -34,6 +34,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+import static org.nrg.execution.services.CommandService.LABEL_KEY;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @Transactional
@@ -74,6 +75,12 @@ public class CommandTest {
                     "\"run\":[\"cmd\", \"--flag=bar \"], " +
                     "\"mounts-in\":[" + RESOLVED_MOUNT_IN + "]," +
                     "\"mounts-out\":[" + RESOLVED_MOUNT_OUT + "]}";
+
+    private static final String LABEL_TEST_COMMAND =
+            "{\"name\": \"label-test\"," +
+                    "\"description\": \"Command to test label-parsing and command-importing code\"," +
+                    "\"run-template\": [\"/bin/sh\",\"-c\",\"#CMD#\"]," +
+                    "\"variables\": [{\"name\": \"CMD\", \"description\": \"Command to run\", \"required\": true}]}";
 
     @Autowired
     private ObjectMapper mapper;
@@ -217,5 +224,16 @@ public class CommandTest {
 
         assertEquals(Lists.newArrayList("cmd", "--flag=bar -b"), resolvedCommand2.getRun());
 
+    }
+
+    @Test
+    public void testParseLabels() throws Exception {
+        final Map<String, String> labels = Maps.newHashMap();
+        labels.put(LABEL_KEY, "[" + LABEL_TEST_COMMAND + "]");
+
+        final Command expected = mapper.readValue(LABEL_TEST_COMMAND, Command.class);
+
+        final List<Command> parsedCommands = commandService.parseLabels(labels);
+        assertThat(expected, isIn(parsedCommands));
     }
 }
