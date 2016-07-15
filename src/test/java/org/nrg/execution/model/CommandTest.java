@@ -40,17 +40,6 @@ import static org.junit.Assert.fail;
 @ContextConfiguration(classes = CommandTestConfig.class)
 public class CommandTest {
 
-//    private static final String SCRIPT_ENVIRONMENT_JSON =
-//            "{\"name\":\"Mr. Big Stuff\", \"description\":\"Who do you think you are?\", " +
-//                    "\"docker-image\":\"abc123\"," +
-//                    "\"run-prefix\":[\"/bin/bash\"]}";
-
-    private static final String SCRIPT_JSON =
-            "{\"scriptId\":\"123\", \"scriptLabel\":\"a-script\", " +
-                    "\"description\":\"The script for the test\"," +
-                    "\"language\":\"English\"," +
-                    "\"content\":\"It was the best of times, it was the *blurst* of times? You stupid monkey!\"}";
-
     private static final String VARIABLE_0_JSON =
             "{\"name\":\"my_cool_input\", \"description\":\"A boolean value\", " +
                     "\"type\":\"boolean\", \"required\":true," +
@@ -77,14 +66,6 @@ public class CommandTest {
                     "\"docker-image\":\"abc123\", " +
                     "\"mounts-in\":" + MOUNT_IN + "," +
                     "\"mounts-out\":" + MOUNT_OUT + "}";
-
-    private static final String SCRIPT_COMMAND_JSON_TEMPLATE =
-            "{\"name\":\"script_command\", \"description\":\"The Script command for the test\", " +
-                    "\"info-url\":\"http://abc.xyz\", " +
-                    "\"variables\":" + VARIABLE_LIST_JSON + ", " +
-                    "\"run-template\":[\"foo\"], " +
-                    "\"docker-image\":\"abc123\", " +
-                    "\"script-id\":%d}me";
 
     private static final String RESOLVED_DOCKER_IMAGE_COMMAND_JSON_TEMPLATE =
             "{\"command-id\":%d, " +
@@ -206,62 +187,6 @@ public class CommandTest {
         } catch (NrgServiceRuntimeException ignored) {
             //
         }
-    }
-
-    @Test
-    public void testDeserializeScriptCommand() throws Exception {
-
-        final List<CommandVariable> commandVariableList =
-                mapper.readValue(VARIABLE_LIST_JSON, new TypeReference<List<CommandVariable>>() {});
-
-        final String scriptCommandJson =
-                String.format(SCRIPT_COMMAND_JSON_TEMPLATE, 0);
-        final Command command = mapper.readValue(scriptCommandJson, Command.class);
-
-        assertEquals("script_command", command.getName());
-        assertEquals("The Script command for the test", command.getDescription());
-        assertEquals("http://abc.xyz", command.getInfoUrl());
-        assertEquals(Lists.newArrayList("foo"), command.getRunTemplate());
-
-        assertThat(command.getVariables(), hasSize(2));
-        assertThat(commandVariableList, everyItem(isIn(command.getVariables())));
-
-        assertEquals(0L, command.getScriptId().longValue());
-        assertEquals("abc123", command.getDockerImage());
-    }
-
-    @Test
-    public void testPersistScriptCommand() throws Exception {
-
-        final Script script = mapper.readValue(SCRIPT_JSON, Script.class);
-        scriptService.create(script);
-        final Script retrievedScript = scriptService.retrieve(script.getId());
-
-//        final ScriptEnvironment scriptEnvironment =
-//                mapper.readValue(SCRIPT_ENVIRONMENT_JSON, ScriptEnvironment.class);
-//        scriptEnvironmentService.create(scriptEnvironment);
-//        scriptEnvironmentService.flush();
-//        scriptEnvironmentService.refresh(scriptEnvironment);
-
-//        final ScriptEnvironment retrievedScriptEnvironment =
-//                scriptEnvironmentService.retrieve(scriptEnvironment.getId());
-//        assertEquals(scriptEnvironment, retrievedScriptEnvironment);
-
-        final String scriptCommandJson =
-                String.format(SCRIPT_COMMAND_JSON_TEMPLATE, script.getId());
-        final Command command = mapper.readValue(scriptCommandJson, Command.class);
-
-        commandService.create(command);
-        commandService.flush();
-        commandService.refresh(command);
-
-        final Command retrievedCommand = commandService.retrieve(command.getId());
-
-        assertEquals(command, retrievedCommand);
-        assertNotNull(retrievedCommand.getScript());
-        assertEquals(retrievedScript, retrievedCommand.getScript());
-//        assertNotNull(retrievedCommand.getScriptEnvironment());
-//        assertEquals(retrievedScriptEnvironment, retrievedCommand.getScriptEnvironment());
     }
 
     @Test

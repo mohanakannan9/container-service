@@ -1,23 +1,17 @@
 package org.nrg.execution.model;
 
-import com.fasterxml.jackson.annotation.JsonGetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonSetter;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.MoreObjects.ToStringHelper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.envers.Audited;
-import org.nrg.automation.entities.Script;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
-import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +25,6 @@ public class Command extends AbstractHibernateEntity {
     private String description;
     @JsonProperty("info-url") private String infoUrl;
     @JsonProperty("docker-image") private String dockerImage;
-    @JsonIgnore private Script script;
     private List<CommandVariable> variables = Lists.newArrayList();
     @JsonProperty("run-template") private List<String> runTemplate;
     @JsonProperty("mounts-in") private Map<String, String> mountsIn = Maps.newHashMap();
@@ -72,33 +65,6 @@ public class Command extends AbstractHibernateEntity {
 
     public void setDockerImage(final String dockerImage) {
         this.dockerImage = dockerImage;
-    }
-
-    @Transient
-    @JsonGetter("script-id")
-    @ApiModelProperty("The ID of a script in XNAT's Script Repository. This script will be run in the container when the Command is executed.")
-    public Long getScriptId() {
-        return script == null ? null : script.getId();
-    }
-
-    @JsonSetter("script-id")
-    public void setScriptId(final Long scriptId) {
-        if (scriptId == null) {
-            script = null;
-        } else {
-            script = new Script();
-            script.setId(scriptId);
-        }
-    }
-
-    @ManyToOne
-    @ApiModelProperty(hidden = true)
-    public Script getScript() {
-        return script;
-    }
-
-    public void setScript(final Script script) {
-        this.script = script;
     }
 
     @ElementCollection
@@ -180,7 +146,6 @@ public class Command extends AbstractHibernateEntity {
                 .add("description", description)
                 .add("infoUrl", infoUrl)
                 .add("dockerImage", dockerImage)
-                .add("script", script)
                 .add("variables", variables)
                 .add("runTemplate", runTemplate)
                 .add("mountsIn", mountsIn)
@@ -198,7 +163,6 @@ public class Command extends AbstractHibernateEntity {
                 Objects.equals(this.description, that.description) &&
                 Objects.equals(this.infoUrl, that.infoUrl) &&
                 Objects.equals(this.dockerImage, that.dockerImage) &&
-                Objects.equals(this.script, that.script) &&
                 Objects.equals(this.runTemplate, that.runTemplate) &&
                 Objects.equals(this.variables, that.variables) &&
                 Objects.equals(this.mountsIn, that.mountsIn) &&
