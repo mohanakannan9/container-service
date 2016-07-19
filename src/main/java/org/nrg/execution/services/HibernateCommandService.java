@@ -8,10 +8,15 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.exception.ConstraintViolationException;
+import org.nrg.execution.exceptions.AceInputException;
+import org.nrg.execution.exceptions.BadRequestException;
 import org.nrg.execution.exceptions.CommandVariableResolutionException;
 import org.nrg.execution.daos.CommandDao;
+import org.nrg.execution.model.ActionContextExecution;
+import org.nrg.execution.model.ActionContextExecutionDto;
 import org.nrg.execution.model.Command;
 import org.nrg.execution.model.CommandVariable;
+import org.nrg.execution.model.Context;
 import org.nrg.execution.model.ResolvedCommand;
 import org.nrg.execution.api.ContainerControlApi;
 import org.nrg.execution.exceptions.DockerServerException;
@@ -20,6 +25,10 @@ import org.nrg.execution.exceptions.NotFoundException;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
+import org.nrg.xdat.om.XnatImagescandata;
+import org.nrg.xdat.om.XnatImagesessiondata;
+import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.XFTInitException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +50,9 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     private static final Logger log = LoggerFactory.getLogger(HibernateCommandService.class);
     @Autowired
     private ContainerControlApi controlApi;
+
+    @Autowired
+    private AceService aceService;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -154,6 +166,40 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandVariableResolutionException {
         final ResolvedCommand resolvedCommand = resolveCommand(commandId, variableRuntimeValues);
         return controlApi.launchImage(resolvedCommand);
+    }
+
+    @Override
+    public ActionContextExecution launchCommand(final XnatImagesessiondata session, final Long commandId)
+            throws NotFoundException, CommandVariableResolutionException, NoServerPrefException,
+                    DockerServerException, BadRequestException, XFTInitException,
+                    ElementNotFoundException, AceInputException {
+        // TODO Remove this hack
+        final Context context = Context.newContext();
+        context.put("id", session.getId());
+        final List<ActionContextExecutionDto> aceDtos = aceService.resolveAces(context);
+        for (final ActionContextExecutionDto aceDto : aceDtos) {
+            if (aceDto.getCommandId().equals(commandId)) {
+                return aceService.executeAce(aceDto);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public ActionContextExecution launchCommand(final XnatImagescandata scan, final Long commandId)
+            throws NotFoundException, CommandVariableResolutionException, NoServerPrefException,
+                    DockerServerException, BadRequestException, XFTInitException,
+                    ElementNotFoundException, AceInputException {
+        // TODO Remove this hack
+        final Context context = Context.newContext();
+        context.put("id", scan.getImageSessionId() + ":" + scan.getId());
+        final List<ActionContextExecutionDto> aceDtos = aceService.resolveAces(context);
+        for (final ActionContextExecutionDto aceDto : aceDtos) {
+            if (aceDto.getCommandId().equals(commandId)) {
+                return aceService.executeAce(aceDto);
+            }
+        }
+        return null;
     }
 
     @Override

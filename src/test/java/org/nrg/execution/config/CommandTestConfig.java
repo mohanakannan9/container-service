@@ -5,6 +5,7 @@ import org.hibernate.SessionFactory;
 import org.mockito.Mockito;
 import org.nrg.execution.daos.CommandDao;
 import org.nrg.execution.model.Command;
+import org.nrg.execution.services.AceService;
 import org.nrg.execution.services.CommandService;
 import org.nrg.execution.services.HibernateCommandService;
 import org.nrg.automation.entities.Script;
@@ -90,5 +91,10 @@ public class CommandTestConfig {
     @Bean
     public ResourceTransactionManager transactionManager(final SessionFactory sessionFactory) throws Exception {
         return new HibernateTransactionManager(sessionFactory);
+    }
+
+    @Bean
+    public AceService aceService() {
+        return Mockito.mock(AceService.class);
     }
 }

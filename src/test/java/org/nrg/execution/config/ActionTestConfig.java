@@ -7,6 +7,7 @@ import org.mockito.Mockito;
 import org.nrg.execution.daos.ActionDao;
 import org.nrg.execution.daos.CommandDao;
 import org.nrg.execution.model.*;
+import org.nrg.execution.services.AceService;
 import org.nrg.execution.services.ActionService;
 import org.nrg.execution.services.CommandService;
 import org.nrg.execution.services.HibernateActionService;
@@ -45,6 +46,11 @@ public class ActionTestConfig {
     @Bean
     public CommandService commandService() {
         return new HibernateCommandService();
+    }
+
+    @Bean
+    public AceService aceService() {
+        return Mockito.mock(AceService.class);
     }
 
     @Bean
