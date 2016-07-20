@@ -485,11 +485,10 @@ public class DockerControlApi implements ContainerControlApi {
         try (final DockerClient client = getClient()) {
             final LoadProgressHandler handler = new LoadProgressHandler();
             client.pull(name, handler);
-            final String imageId = handler.getImageId();
             try {
-                return getImageById(imageId);
+                return getImageById(name);
             } catch (NotFoundException e) {
-                final String m = String.format("The image with id %s was not found", imageId);
+                final String m = String.format("The image %s was not found", name);
                 _log.error(m);
                 throw new DockerServerException(m);
             }

@@ -5,6 +5,7 @@ import org.nrg.execution.exceptions.BadRequestException;
 import org.nrg.execution.exceptions.CommandVariableResolutionException;
 import org.nrg.execution.model.ActionContextExecution;
 import org.nrg.execution.model.Command;
+import org.nrg.execution.model.DockerImage;
 import org.nrg.execution.model.ResolvedCommand;
 import org.nrg.execution.exceptions.DockerServerException;
 import org.nrg.execution.exceptions.NoServerPrefException;
@@ -43,5 +44,5 @@ public interface CommandService extends BaseHibernateService<Command> {
     ActionContextExecution launchCommand(XnatImagescandata scan, Long commandId) throws NotFoundException, CommandVariableResolutionException, NoServerPrefException, DockerServerException, BadRequestException, XFTInitException, ElementNotFoundException, AceInputException;
 
     List<Command> parseLabels(final Map<String, String> labels);
-    List<Command> saveFromLabels(final Map<String, String> labels);
+    List<Command> saveFromLabels(final DockerImage dockerImage);
 }

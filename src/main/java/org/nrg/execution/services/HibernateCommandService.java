@@ -17,6 +17,7 @@ import org.nrg.execution.model.ActionContextExecutionDto;
 import org.nrg.execution.model.Command;
 import org.nrg.execution.model.CommandVariable;
 import org.nrg.execution.model.Context;
+import org.nrg.execution.model.DockerImage;
 import org.nrg.execution.model.ResolvedCommand;
 import org.nrg.execution.api.ContainerControlApi;
 import org.nrg.execution.exceptions.DockerServerException;
@@ -218,10 +219,11 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     }
 
     @Override
-    public List<Command> saveFromLabels(final Map<String, String> labels) {
-        final List<Command> commands = parseLabels(labels);
+    public List<Command> saveFromLabels(final DockerImage dockerImage) {
+        final List<Command> commands = parseLabels(dockerImage.getLabels());
         if (!(commands == null || commands.isEmpty())) {
             for (final Command command : commands) {
+                command.setDockerImage(dockerImage.getImageId());
                 create(command);
             }
         }
