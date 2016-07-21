@@ -53,8 +53,8 @@ public class CommandTest {
     private static final String VARIABLE_LIST_JSON =
             "[" + VARIABLE_0_JSON + ", " + FOO_VARIABLE + "]";
 
-    private static final String MOUNT_IN = "{\"in\":\"/input\"}";
-    private static final String MOUNT_OUT = "{\"out\":\"/output\"}";
+    private static final String MOUNT_IN = "{\"name\":\"in\", \"remote-path\":\"/input\"}";
+    private static final String MOUNT_OUT = "{\"name\":\"out\", \"remote-path\":\"/output\", \"read-only\":false}";
     private static final String RESOLVED_MOUNT_IN = "{\"name\":\"in\", \"remote-path\":\"/input\"}";
     private static final String RESOLVED_MOUNT_OUT = "{\"name\":\"out\", \"remote-path\":\"/output\", \"read-only\":false}";
 
@@ -65,8 +65,8 @@ public class CommandTest {
                     "\"variables\":" + VARIABLE_LIST_JSON + ", " +
                     "\"run-template\":[\"cmd\",\"#foo# #my_cool_input#\"], " +
                     "\"docker-image\":\"abc123\", " +
-                    "\"mounts-in\":" + MOUNT_IN + "," +
-                    "\"mounts-out\":" + MOUNT_OUT + "}";
+                    "\"mounts-in\":[" + MOUNT_IN + "]," +
+                    "\"mounts-out\":[" + MOUNT_OUT + "]}";
 
     private static final String RESOLVED_DOCKER_IMAGE_COMMAND_JSON_TEMPLATE =
             "{\"command-id\":%d, " +
@@ -85,8 +85,8 @@ public class CommandTest {
     @Autowired
     private ObjectMapper mapper;
 
-    @Autowired
-    private ScriptService scriptService;
+//    @Autowired
+//    private ScriptService scriptService;
 
 //    @Autowired
 //    private ScriptEnvironmentService scriptEnvironmentService;
@@ -132,8 +132,8 @@ public class CommandTest {
         final List<CommandVariable> commandVariableList =
                 mapper.readValue(VARIABLE_LIST_JSON, new TypeReference<List<CommandVariable>>() {});
 
-        final Map<String, String> input = mapper.readValue(MOUNT_IN, new TypeReference<Map<String, String>>(){});
-        final Map<String, String> output = mapper.readValue(MOUNT_OUT, new TypeReference<Map<String, String>>(){});
+        final CommandMount input = mapper.readValue(MOUNT_IN, CommandMount.class);
+        final CommandMount output = mapper.readValue(MOUNT_OUT, CommandMount.class);
 
         final Command command = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, Command.class);
 
@@ -149,9 +149,9 @@ public class CommandTest {
         assertThat(commandVariableList, everyItem(isIn(command.getVariables())));
 
         assertNotNull(command.getMountsIn());
-        assertEquals(input, command.getMountsIn());
+        assertEquals(Lists.newArrayList(input), command.getMountsIn());
         assertNotNull(command.getMountsOut());
-        assertEquals(output, command.getMountsOut());
+        assertEquals(Lists.newArrayList(output), command.getMountsOut());
     }
 
     @Test

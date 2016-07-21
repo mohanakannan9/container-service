@@ -67,13 +67,15 @@ public class Action extends AbstractHibernateEntity {
 
             // If there are any command mounts that weren't referenced
             // explicitly as action resources, create default resources for them
-            for (final String mountName : command.getMountsIn().keySet()) {
+            for (final CommandMount mountIn : command.getMountsIn()) {
+                final String mountName = mountIn.getName();
                 if (getStagedByMountName(mountName) == null) {
                     addResourceStaged(new ActionResource(mountName));
                 }
             }
 
-            for (final String mountName : command.getMountsOut().keySet()) {
+            for (final CommandMount mountOut : command.getMountsOut()) {
+                final String mountName = mountOut.getName();
                 if (getCreatedByMountName(mountName) == null) {
                     addResourceCreated(new ActionResource(mountName));
                 }

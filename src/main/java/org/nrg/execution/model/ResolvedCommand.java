@@ -22,8 +22,8 @@ public class ResolvedCommand implements Serializable {
     @JsonProperty("docker-image") private String dockerImage;
     @JsonProperty("run") private List<String> run;
     @JsonProperty("env") private Map<String, String> environmentVariables = Maps.newHashMap();
-    @JsonProperty("mounts-in") private List<ResolvedCommandMount> mountsIn = Lists.newArrayList();
-    @JsonProperty("mounts-out") private List<ResolvedCommandMount> mountsOut = Lists.newArrayList();
+    @JsonProperty("mounts-in") private List<CommandMount> mountsIn = Lists.newArrayList();
+    @JsonProperty("mounts-out") private List<CommandMount> mountsOut = Lists.newArrayList();
 
     public ResolvedCommand() {}
 
@@ -71,48 +71,31 @@ public class ResolvedCommand implements Serializable {
     }
 
     @ElementCollection(fetch = FetchType.EAGER)
-    public List<ResolvedCommandMount> getMountsIn() {
+    public List<CommandMount> getMountsIn() {
         return mountsIn;
     }
 
-    public void setMountsIn(final List<ResolvedCommandMount> mountsIn) {
+    public void setMountsIn(final List<CommandMount> mountsIn) {
         this.mountsIn = mountsIn == null ?
-                Lists.<ResolvedCommandMount>newArrayList() :
+                Lists.<CommandMount>newArrayList() :
                 mountsIn;
-    }
-
-    @Transient
-    @JsonIgnore
-    public void setMountsIn(final Map<String, String> commandMounts) {
-        setMountsIn(resolveCommandMounts(commandMounts, true));
+        for (final CommandMount mountIn : this.mountsIn) {
+            mountIn.setReadOnly(true);
+        }
     }
 
     @ElementCollection(fetch = FetchType.EAGER)
-    public List<ResolvedCommandMount> getMountsOut() {
+    public List<CommandMount> getMountsOut() {
         return mountsOut;
     }
 
-    public void setMountsOut(final List<ResolvedCommandMount> mountsOut) {
+    public void setMountsOut(final List<CommandMount> mountsOut) {
         this.mountsOut = mountsOut == null ?
-                Lists.<ResolvedCommandMount>newArrayList() :
+                Lists.<CommandMount>newArrayList() :
                 mountsOut;
-    }
-
-    @Transient
-    @JsonIgnore
-    public void setMountsOut(final Map<String, String> commandMounts) {
-        setMountsOut(resolveCommandMounts(commandMounts, false));
-    }
-
-    @Transient
-    @JsonIgnore
-    private List<ResolvedCommandMount> resolveCommandMounts(final Map<String, String> commandMounts,
-                                                            final boolean readOnly) {
-        final List<ResolvedCommandMount> resolvedMounts = Lists.newArrayList();
-        for (final Map.Entry<String, String> mount : commandMounts.entrySet()) {
-            resolvedMounts.add(new ResolvedCommandMount(mount.getKey(), mount.getValue(), readOnly));
+        for (final CommandMount mountOut : this.mountsIn) {
+            mountOut.setReadOnly(false);
         }
-        return resolvedMounts;
     }
 
     @Override

@@ -12,6 +12,7 @@ import org.nrg.execution.model.ActionContextExecution;
 import org.nrg.execution.model.ActionContextExecutionDto;
 import org.nrg.execution.model.ActionInput;
 import org.nrg.execution.model.ActionResource;
+import org.nrg.execution.model.CommandMount;
 import org.nrg.execution.model.Context;
 import org.nrg.execution.model.ItemQueryCacheKey;
 import org.nrg.execution.model.Matcher;
@@ -213,16 +214,16 @@ public class HibernateAceService
         if (!(ace.getResourcesStaged() == null || ace.getResourcesStaged().isEmpty() ||
                 resolvedCommand.getMountsIn() == null || resolvedCommand.getMountsIn().isEmpty()) ) {
             final List<ActionResource> staged = ace.getResourcesStaged();
-            final List<ResolvedCommandMount> mountsIn = resolvedCommand.getMountsIn();
+            final List<CommandMount> mountsIn = resolvedCommand.getMountsIn();
 
             final Set<Path> resourcePathsToTransport = Sets.newHashSet();
-            final Map<Path, ResolvedCommandMount> localPathToMount = Maps.newHashMap();
+            final Map<Path, CommandMount> localPathToMount = Maps.newHashMap();
             for (final ActionResource resourceToStage : staged) {
                 final Path localPath = Paths.get(resourceToStage.getPath());
 
                 resourcePathsToTransport.add(localPath);
 
-                for (final ResolvedCommandMount mountIn : mountsIn) {
+                for (final CommandMount mountIn : mountsIn) {
                     if (resourceToStage.getMountName().equals(mountIn.getName())) {
                         localPathToMount.put(localPath, mountIn);
                     }
@@ -233,7 +234,7 @@ public class HibernateAceService
                             resourcePathsToTransport.toArray(new Path[resourcePathsToTransport.size()]));
 
             for (final Path localPath : localPathToMount.keySet()) {
-                final ResolvedCommandMount mountIn = localPathToMount.get(localPath);
+                final CommandMount mountIn = localPathToMount.get(localPath);
                 final Path transportedResourcePath = localPathToTransportedPath.get(localPath);
 
                 mountIn.setHostPath(transportedResourcePath.toString());
@@ -243,10 +244,10 @@ public class HibernateAceService
 
         // TODO Use Transporter to create writable space for output mounts
         if (resolvedCommand.getMountsOut() != null && !resolvedCommand.getMountsOut().isEmpty()) {
-            final List<ResolvedCommandMount> mountsOut = resolvedCommand.getMountsOut();
+            final List<CommandMount> mountsOut = resolvedCommand.getMountsOut();
             final List<Path> buildPaths = transporter.getWritableDirectories(dockerServer.getHost(), mountsOut.size());
             for (int i=0; i<mountsOut.size(); i++) {
-                final ResolvedCommandMount mountOut = mountsOut.get(i);
+                final CommandMount mountOut = mountsOut.get(i);
                 final Path buildPath = buildPaths.get(i);
 
                 mountOut.setHostPath(buildPath.toString());

@@ -27,8 +27,8 @@ public class Command extends AbstractHibernateEntity {
     @JsonProperty("docker-image") private String dockerImage;
     private List<CommandVariable> variables = Lists.newArrayList();
     @JsonProperty("run-template") private List<String> runTemplate;
-    @JsonProperty("mounts-in") private Map<String, String> mountsIn = Maps.newHashMap();
-    @JsonProperty("mounts-out") private Map<String, String> mountsOut = Maps.newHashMap();
+    @JsonProperty("mounts-in") private List<CommandMount> mountsIn = Lists.newArrayList();
+    @JsonProperty("mounts-out") private List<CommandMount> mountsOut = Lists.newArrayList();
     @JsonProperty("env") private Map<String, String> environmentVariables = Maps.newHashMap();
 
     @ApiModelProperty(value = "The Command's user-readable name. Must be unique for a given docker image.", required = true)
@@ -100,14 +100,17 @@ public class Command extends AbstractHibernateEntity {
             "The paths can use template strings, e.g. #variable-name#, which will be resolved into a value when the Command is launched. " +
             "Input mounts are mounted read-only, and are intended to hold the raw input data your container will expect.",
             example = "{\"in\":\"/input\"}")
-    public Map<String, String> getMountsIn() {
+    public List<CommandMount> getMountsIn() {
         return mountsIn;
     }
 
-    public void setMountsIn(final Map<String, String> mountsIn) {
+    public void setMountsIn(final List<CommandMount> mountsIn) {
         this.mountsIn = mountsIn == null ?
-                Maps.<String, String>newHashMap() :
+                Lists.<CommandMount>newArrayList() :
                 mountsIn;
+        for (final CommandMount mount : this.mountsIn) {
+            mount.setReadOnly(true);
+        }
     }
 
     @ElementCollection
@@ -116,14 +119,17 @@ public class Command extends AbstractHibernateEntity {
             "The paths can use template strings, e.g. #variable-name#, which will be resolved into a value when the Command is launched." +
             "Output mounts are writable, and are intended to hold any outputs your container produces.",
             example = "{\"out\":\"/output\"}")
-    public Map<String, String> getMountsOut() {
+    public List<CommandMount> getMountsOut() {
         return mountsOut;
     }
 
-    public void setMountsOut(final Map<String, String> mountsOut) {
+    public void setMountsOut(final List<CommandMount> mountsOut) {
         this.mountsOut = mountsOut == null ?
-                Maps.<String, String>newHashMap() :
+                Lists.<CommandMount>newArrayList() :
                 mountsOut;
+        for (final CommandMount mount : this.mountsOut) {
+            mount.setReadOnly(false);
+        }
     }
 
     @ElementCollection

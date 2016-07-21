@@ -15,6 +15,7 @@ import org.nrg.xdat.om.XnatImagescandata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.security.UserI;
 
 import java.util.List;
 import java.util.Map;
@@ -40,8 +41,10 @@ public interface CommandService extends BaseHibernateService<Command> {
                          final Map<String, String> variableRuntimeValues)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandVariableResolutionException;
 
-    ActionContextExecution launchCommand(XnatImagesessiondata session, Long commandId) throws NotFoundException, CommandVariableResolutionException, NoServerPrefException, DockerServerException, BadRequestException, XFTInitException, ElementNotFoundException, AceInputException;
-    ActionContextExecution launchCommand(XnatImagescandata scan, Long commandId) throws NotFoundException, CommandVariableResolutionException, NoServerPrefException, DockerServerException, BadRequestException, XFTInitException, ElementNotFoundException, AceInputException;
+    String launchCommand(Long commandId, UserI user, XnatImagesessiondata session)
+            throws NotFoundException, CommandVariableResolutionException, NoServerPrefException,
+            DockerServerException, BadRequestException, XFTInitException, ElementNotFoundException, AceInputException;
+//    ActionContextExecution launchCommand(XnatImagescandata scan, Long commandId) throws NotFoundException, CommandVariableResolutionException, NoServerPrefException, DockerServerException, BadRequestException, XFTInitException, ElementNotFoundException, AceInputException;
 
     List<Command> parseLabels(final Map<String, String> labels);
     List<Command> saveFromLabels(final DockerImage dockerImage);

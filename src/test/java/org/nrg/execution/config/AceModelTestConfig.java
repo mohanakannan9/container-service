@@ -18,13 +18,13 @@ import org.nrg.execution.services.HibernateActionService;
 import org.nrg.execution.services.HibernateCommandService;
 import org.nrg.automation.entities.Script;
 import org.nrg.execution.api.ContainerControlApi;
-import org.nrg.framework.orm.hibernate.AggregatedAnnotationSessionFactoryBean;
 import org.nrg.transporter.TransportService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.orm.hibernate4.HibernateTransactionManager;
+import org.springframework.orm.hibernate4.LocalSessionFactoryBean;
 import org.springframework.transaction.support.ResourceTransactionManager;
 
 import javax.sql.DataSource;
@@ -79,8 +79,8 @@ public class AceModelTestConfig {
     }
 
     @Bean
-    public AggregatedAnnotationSessionFactoryBean sessionFactory(final DataSource dataSource, @Qualifier("hibernateProperties") final Properties properties) {
-        final AggregatedAnnotationSessionFactoryBean bean = new AggregatedAnnotationSessionFactoryBean();
+    public LocalSessionFactoryBean sessionFactory(final DataSource dataSource, @Qualifier("hibernateProperties") final Properties properties) {
+        final LocalSessionFactoryBean bean = new LocalSessionFactoryBean();
         bean.setDataSource(dataSource);
         bean.setHibernateProperties(properties);
         bean.setAnnotatedClasses(

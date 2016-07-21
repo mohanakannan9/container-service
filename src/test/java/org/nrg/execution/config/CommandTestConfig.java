@@ -19,6 +19,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.orm.hibernate4.HibernateTransactionManager;
+import org.springframework.orm.hibernate4.LocalSessionFactoryBean;
 import org.springframework.transaction.support.ResourceTransactionManager;
 
 import javax.sql.DataSource;
@@ -42,15 +43,15 @@ public class CommandTestConfig {
 //        return new DockerImageDao();
 //    }
 
-    @Bean
-    public ScriptService scriptService() {
-        return new HibernateScriptService();
-    }
-
-    @Bean
-    public ScriptRepository scriptRepository() {
-        return new ScriptRepository();
-    }
+//    @Bean
+//    public ScriptService scriptService() {
+//        return new HibernateScriptService();
+//    }
+//
+//    @Bean
+//    public ScriptRepository scriptRepository() {
+//        return new ScriptRepository();
+//    }
 
 //    @Bean
 //    public ScriptEnvironmentService scriptEnvironmentService() {
@@ -78,23 +79,17 @@ public class CommandTestConfig {
     }
 
     @Bean
-    public AggregatedAnnotationSessionFactoryBean sessionFactory(final DataSource dataSource, @Qualifier("hibernateProperties") final Properties properties) {
-        final AggregatedAnnotationSessionFactoryBean bean = new AggregatedAnnotationSessionFactoryBean();
+    public LocalSessionFactoryBean sessionFactory(final DataSource dataSource, @Qualifier("hibernateProperties") final Properties properties) {
+        final LocalSessionFactoryBean bean = new LocalSessionFactoryBean();
         bean.setDataSource(dataSource);
         bean.setHibernateProperties(properties);
         bean.setAnnotatedClasses(
-                Command.class,
-                Script.class);
+                Command.class);
         return bean;
     }
 
     @Bean
     public ResourceTransactionManager transactionManager(final SessionFactory sessionFactory) throws Exception {
         return new HibernateTransactionManager(sessionFactory);
-    }
-
-    @Bean
-    public AceService aceService() {
-        return Mockito.mock(AceService.class);
     }
 }

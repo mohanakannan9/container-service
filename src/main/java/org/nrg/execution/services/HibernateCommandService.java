@@ -15,9 +15,11 @@ import org.nrg.execution.daos.CommandDao;
 import org.nrg.execution.model.ActionContextExecution;
 import org.nrg.execution.model.ActionContextExecutionDto;
 import org.nrg.execution.model.Command;
+import org.nrg.execution.model.CommandMount;
 import org.nrg.execution.model.CommandVariable;
 import org.nrg.execution.model.Context;
 import org.nrg.execution.model.DockerImage;
+import org.nrg.execution.model.ItemQueryCacheKey;
 import org.nrg.execution.model.ResolvedCommand;
 import org.nrg.execution.api.ContainerControlApi;
 import org.nrg.execution.exceptions.DockerServerException;
@@ -26,10 +28,17 @@ import org.nrg.execution.exceptions.NotFoundException;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
+import org.nrg.xdat.XDAT;
+import org.nrg.xdat.om.XnatAbstractresource;
 import org.nrg.xdat.om.XnatImagescandata;
 import org.nrg.xdat.om.XnatImagesessiondata;
+import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.om.XnatResourcecatalog;
+import org.nrg.xft.ItemI;
 import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +47,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -51,9 +61,9 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     private static final Logger log = LoggerFactory.getLogger(HibernateCommandService.class);
     @Autowired
     private ContainerControlApi controlApi;
-
-    @Autowired
-    private AceService aceService;
+//
+//    @Autowired
+//    private AceService aceService;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -141,13 +151,103 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         // Replace variable names in runTemplate, mounts, and environment variables
         final ResolvedCommand resolvedCommand = new ResolvedCommand(command);
         resolvedCommand.setRun(resolveTemplateList(command.getRunTemplate(), resolvedVariableValuesAsRunTemplateArgs));
-        resolvedCommand.setMountsIn(resolveTemplateMap(command.getMountsIn(), resolvedVariableValues, false));
-        resolvedCommand.setMountsOut(resolveTemplateMap(command.getMountsOut(), resolvedVariableValues, false));
+        resolvedCommand.setMountsIn(resolveCommandMounts(command.getMountsIn(), resolvedVariableValues));
+        resolvedCommand.setMountsOut(resolveCommandMounts(command.getMountsOut(), resolvedVariableValues));
         resolvedCommand.setEnvironmentVariables(resolveTemplateMap(command.getEnvironmentVariables(), resolvedVariableValues, true));
 
         // TODO What else do I need to do to resolve the command?
 
         return resolvedCommand;
+    }
+
+    private ResolvedCommand resolve(final Command command,
+                                    final ItemI itemI,
+                                    final Map<String, String> resourceLabelToCatalogPath,
+                                    final Context context)
+            throws XFTInitException, NotFoundException, CommandVariableResolutionException {
+
+//        if (!doesItemMatchMatchers(itemI, action.getRootMatchers(), cache)) {
+//            return null;
+//        }
+        String itemId = "<not found>";
+        try {
+            itemId = itemI.getItem().getIDValue();
+        } catch (ElementNotFoundException ignored) {
+            // Can't get ID.
+        }
+
+        // Find values for any inputs that we can.
+        if (command.getVariables() != null) {
+            for (final CommandVariable variable : command.getVariables()) {
+                // Try to get inputs of type=property out of the root object
+                if (StringUtils.isNotBlank(variable.getRootProperty())) {
+                    try {
+
+                        final String property = (String)itemI.getProperty(variable.getRootProperty());
+                        if (property != null) {
+                            variable.setValue(property);
+                        }
+                    } catch (ElementNotFoundException | FieldNotFoundException e) {
+                        log.info("Field %s not found on item with id %s",
+                                variable.getRootProperty(), itemId);
+                    }
+                }
+
+                // Now try to get values from the context.
+                // (Even if we already found the value from the item, we want to do this.
+                //   Values in the context take precedence over XFTItem properties.)
+                if (StringUtils.isNotBlank(context.get(variable.getName()))) {
+                    variable.setValue(context.get(variable.getName()));
+                }
+            }
+        }
+
+        if (command.getMountsIn() != null && !command.getMountsIn().isEmpty()) {
+            // Item needs resources
+
+            if (resourceLabelToCatalogPath == null || resourceLabelToCatalogPath.isEmpty()) {
+                // Item has no resources, but we need some staged. Action does not work.
+                return null;
+            } else {
+                for (final CommandMount mount : command.getMountsIn()) {
+                    final String resourceCatalogPath = resourceLabelToCatalogPath.get(mount.getName());
+                    if (StringUtils.isNotBlank(resourceCatalogPath)) {
+                        mount.setHostPath(resourceLabelToCatalogPath.get(mount.getName()));
+                    } else {
+                        if(log.isDebugEnabled()) {
+                            final String message =
+                                    String.format("Command %d needed resource, but item has no resource named %s",
+                                            command.getId(), mount.getName());
+                            log.debug(message);
+                        }
+                        return null;
+                    }
+                }
+            }
+        }
+
+        if (command.getMountsOut() != null && !command.getMountsOut().isEmpty()) {
+            // Item needs resources
+
+            if (!(resourceLabelToCatalogPath == null || resourceLabelToCatalogPath.isEmpty())) {
+                for (final CommandMount mount : command.getMountsOut()) {
+
+                    if (resourceLabelToCatalogPath.containsKey(mount.getName()) &&
+                            !mount.getOverwrite()) {
+                        if(log.isDebugEnabled()) {
+                            final String message =
+                                    String.format("Action %d will create resource, but item already has " +
+                                                    "a resource named %s and action cannot overwrite it.",
+                                            command.getId(), mount.getName());
+                            log.debug(message);
+                        }
+                        return null;
+                    }
+                }
+            }
+        }
+
+        return resolveCommand(command);
     }
 
     @Override
@@ -170,38 +270,64 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     }
 
     @Override
-    public ActionContextExecution launchCommand(final XnatImagesessiondata session, final Long commandId)
+    public String launchCommand(final Long commandId, final UserI user, final XnatImagesessiondata session)
             throws NotFoundException, CommandVariableResolutionException, NoServerPrefException,
                     DockerServerException, BadRequestException, XFTInitException,
                     ElementNotFoundException, AceInputException {
         // TODO Remove this hack
-        final Context context = Context.newContext();
-        context.put("id", session.getId());
-        final List<ActionContextExecutionDto> aceDtos = aceService.resolveAces(context);
-        for (final ActionContextExecutionDto aceDto : aceDtos) {
-            if (aceDto.getCommandId().equals(commandId)) {
-                return aceService.executeAce(aceDto);
-            }
+//        final Context context = Context.newContext();
+//        context.put("id", session.getId());
+//        final List<ActionContextExecutionDto> aceDtos = aceService.resolveAces(context);
+//        for (final ActionContextExecutionDto aceDto : aceDtos) {
+//            if (aceDto.getCommandId().equals(commandId)) {
+//                return aceService.executeAce(aceDto);
+//            }
+//        }
+//        return null;
+        final Command command = retrieve(commandId);
+        if (command == null) {
+            throw new NotFoundException("No command with ID " + commandId);
         }
-        return null;
-    }
 
-    @Override
-    public ActionContextExecution launchCommand(final XnatImagescandata scan, final Long commandId)
-            throws NotFoundException, CommandVariableResolutionException, NoServerPrefException,
-                    DockerServerException, BadRequestException, XFTInitException,
-                    ElementNotFoundException, AceInputException {
-        // TODO Remove this hack
-        final Context context = Context.newContext();
-        context.put("id", scan.getImageSessionId() + ":" + scan.getId());
-        final List<ActionContextExecutionDto> aceDtos = aceService.resolveAces(context);
-        for (final ActionContextExecutionDto aceDto : aceDtos) {
-            if (aceDto.getCommandId().equals(commandId)) {
-                return aceService.executeAce(aceDto);
+        final String projectId = session.getProject();
+        final XnatProjectdata proj = XnatProjectdata.getXnatProjectdatasById(projectId, user, false);
+        final String rootArchivePath = proj.getRootArchivePath();
+        final List<XnatAbstractresource> resources = session.getResources_resource();
+
+        final Map<String, String> resourceLabelToCatalogPath = Maps.newHashMap();
+        if (resources != null && StringUtils.isNotBlank(rootArchivePath)) {
+            for (final XnatAbstractresource resource : resources) {
+                if (resource instanceof XnatResourcecatalog) {
+                    final XnatResourcecatalog resourceCatalog = (XnatResourcecatalog) resource;
+                    resourceLabelToCatalogPath.put(resourceCatalog.getLabel(),
+                            resourceCatalog.getCatalogFile(rootArchivePath).getParent());
+                }
             }
+        } else {
+            log.info("Session with id " + session.getId() + " has no resources or a blank archive path");
         }
-        return null;
+
+        final ResolvedCommand resolvedCommand =
+                resolve(command, session, resourceLabelToCatalogPath, Context.newContext());
+        return launchCommand(resolvedCommand);
     }
+//
+//    @Override
+//    public ActionContextExecution launchCommand(final XnatImagescandata scan, final Long commandId)
+//            throws NotFoundException, CommandVariableResolutionException, NoServerPrefException,
+//                    DockerServerException, BadRequestException, XFTInitException,
+//                    ElementNotFoundException, AceInputException {
+//        // TODO Remove this hack
+//        final Context context = Context.newContext();
+//        context.put("id", scan.getImageSessionId() + ":" + scan.getId());
+//        final List<ActionContextExecutionDto> aceDtos = aceService.resolveAces(context);
+//        for (final ActionContextExecutionDto aceDto : aceDtos) {
+//            if (aceDto.getCommandId().equals(commandId)) {
+//                return aceService.executeAce(aceDto);
+//            }
+//        }
+//        return null;
+//    }
 
     @Override
     public List<Command> parseLabels(final Map<String, String> labels) {
@@ -276,5 +402,18 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             resolvedMap.put(resolvedKey, resolvedValue);
         }
         return resolvedMap;
+    }
+
+    private List<CommandMount> resolveCommandMounts(final List<CommandMount> commandMounts,
+                                                    final Map<String, String> variableValues) {
+        if (commandMounts == null || commandMounts.isEmpty()) {
+            return Lists.newArrayList();
+        }
+
+        for (final CommandMount mount : commandMounts) {
+            mount.setRemotePath(resolveTemplate(mount.getRemotePath(), variableValues));
+        }
+
+        return commandMounts;
     }
 }

@@ -88,7 +88,7 @@ public class SessionArchiveListener implements Consumer<Event<WorkflowStatusEven
                     Long commandId = commandEventMapping.getCommandId();
 
                     try {
-                        commandService.launchCommand(session, commandId);
+                        commandService.launchCommand(commandId, user, session);
                     } catch (NotFoundException e) {
                         e.printStackTrace();
                     } catch (CommandVariableResolutionException e) {

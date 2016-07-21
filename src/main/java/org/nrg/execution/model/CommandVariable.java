@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import io.swagger.annotations.ApiModelProperty;
-import org.apache.commons.lang3.StringUtils;
 
 import javax.persistence.Embeddable;
 import javax.persistence.Transient;
@@ -17,10 +16,12 @@ public class CommandVariable implements Serializable {
     private String description;
     private String type;
     private Boolean required;
+    @JsonProperty("root-property") private String rootProperty;
     @JsonProperty("default-value") private String defaultValue;
     @JsonProperty("arg-template") private String argTemplate;
     @JsonProperty("true-value") private String trueValue;
     @JsonProperty("false-value") private String falseValue;
+    @JsonIgnore private String value;
 
     @ApiModelProperty(value = "Name of the command variable", required = true)
     public String getName() {
@@ -63,6 +64,14 @@ public class CommandVariable implements Serializable {
         this.required = required;
     }
 
+    public String getRootProperty() {
+        return rootProperty;
+    }
+
+    public void setRootProperty(final String rootProperty) {
+        this.rootProperty = rootProperty;
+    }
+
     @ApiModelProperty("Default value of the variable")
     public String getDefaultValue() {
         return defaultValue;
@@ -100,6 +109,16 @@ public class CommandVariable implements Serializable {
         this.falseValue = falseValue;
     }
 
+    @Transient
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(final String value) {
+        this.value = value;
+    }
+
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
@@ -109,15 +128,18 @@ public class CommandVariable implements Serializable {
                 Objects.equals(this.description, that.description) &&
                 Objects.equals(this.type, that.type) &&
                 Objects.equals(this.required, that.required) &&
+                Objects.equals(this.rootProperty, that.rootProperty) &&
                 Objects.equals(this.defaultValue, that.defaultValue) &&
                 Objects.equals(this.argTemplate, that.argTemplate) &&
                 Objects.equals(this.trueValue, that.trueValue) &&
-                Objects.equals(this.falseValue, that.falseValue);
+                Objects.equals(this.falseValue, that.falseValue) &&
+                Objects.equals(this.value, that.value);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, description, type, required, defaultValue, argTemplate, trueValue, falseValue);
+        return Objects.hash(name, description, type, required, rootProperty,
+                defaultValue, argTemplate, trueValue, falseValue, value);
     }
 
     @Override
@@ -127,10 +149,12 @@ public class CommandVariable implements Serializable {
                 .add("description", description)
                 .add("type", type)
                 .add("required", required)
+                .add("rootProperty", rootProperty)
                 .add("defaultValue", defaultValue)
                 .add("argTemplate", argTemplate)
                 .add("trueValue", trueValue)
                 .add("falseValue", falseValue)
+                .add("value", value)
                 .toString();
     }
 }

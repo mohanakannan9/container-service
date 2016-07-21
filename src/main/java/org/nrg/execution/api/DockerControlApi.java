@@ -22,6 +22,7 @@ import com.spotify.docker.client.messages.Image;
 import com.spotify.docker.client.messages.ImageInfo;
 import com.spotify.docker.client.messages.ProgressMessage;
 import org.apache.commons.lang.StringUtils;
+import org.nrg.execution.model.CommandMount;
 import org.nrg.execution.model.DockerHub;
 import org.nrg.execution.model.DockerImage;
 import org.nrg.execution.model.DockerServer;
@@ -265,10 +266,10 @@ public class DockerControlApi implements ContainerControlApi {
         final String dockerImageId = command.getDockerImage();
         final List<String> runCommand = command.getRun();
         final List<String> bindMounts = Lists.newArrayList();
-        for (final ResolvedCommandMount mount : command.getMountsIn()) {
+        for (final CommandMount mount : command.getMountsIn()) {
             bindMounts.add(mount.toBindMountString());
         }
-        for (final ResolvedCommandMount mount : command.getMountsOut()) {
+        for (final CommandMount mount : command.getMountsOut()) {
             bindMounts.add(mount.toBindMountString());
         }
         final List<String> environmentVariables = Lists.newArrayList();

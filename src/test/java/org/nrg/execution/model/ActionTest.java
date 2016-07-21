@@ -59,8 +59,8 @@ public class ActionTest {
                     "\"required\":true, \"type\":\"string\"," +
                     "\"value\":\"something\"}";
 
-    private static final String COMMAND_MOUNT_IN_JSON = "{\"in\":\"/input\"}";
-    private static final String COMMAND_MOUNT_OUT_JSON = "{\"out\":\"/output\"}";
+    private static final String COMMAND_MOUNT_IN_JSON = "{\"name\":\"in\", \"remote-path\":\"/input\"}";
+    private static final String COMMAND_MOUNT_OUT_JSON = "{\"name\":\"out\", \"remote-path\":\"/output\", \"read-only\":false}";
     private static final String ACTION_RESOURCE_STAGED_JSON =
             "{\"name\":\"DICOM\", \"mount\":\"in\", \"path\":\"/path\"}";
     private static final String ACTION_RESOURCE_CREATED_JSON =
@@ -72,8 +72,8 @@ public class ActionTest {
                     "\"variables\":" + VARIABLE_LIST_JSON + ", " +
                     "\"run-template\":[\"foo\"], " +
                     "\"docker-image\":\"abc123\", " +
-                    "\"mounts-in\":" + COMMAND_MOUNT_IN_JSON + "," +
-                    "\"mounts-out\":" + COMMAND_MOUNT_OUT_JSON + "}";
+                    "\"mounts-in\":[" + COMMAND_MOUNT_IN_JSON + "]," +
+                    "\"mounts-out\":[" + COMMAND_MOUNT_OUT_JSON + "]}";
 
     private static final String ACTION_JSON_TEMPLATE =
             "{\"name\":\"an_action\", \"description\":\"Yep, it's an action all right\", " +

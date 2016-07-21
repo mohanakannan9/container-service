@@ -37,8 +37,8 @@ public class AceTest {
     private static final String VARIABLE_LIST_JSON =
             "[" + VARIABLE_0_JSON + ", " + VARIABLE_1_JSON + "]";
 
-    private static final String COMMAND_MOUNT_IN_JSON = "{\"in\":\"/input\"}";
-    private static final String COMMAND_MOUNT_OUT_JSON = "{\"out\":\"/output\"}";
+    private static final String COMMAND_MOUNT_IN_JSON = "{\"name\":\"in\", \"remote-path\":\"/input\"}";
+    private static final String COMMAND_MOUNT_OUT_JSON = "{\"name\":\"out\", \"remote-path\":\"/output\", \"read-only\":false}";
 
     private static final String DOCKER_IMAGE_COMMAND_JSON =
             "{\"name\":\"docker_image_command\", \"description\":\"Docker Image command for the test\", " +
@@ -47,8 +47,8 @@ public class AceTest {
                     "\"variables\":" + VARIABLE_LIST_JSON + ", " +
                     "\"run-template\":[\"cmd\", \"#foo#\"], " +
                     "\"docker-image\":\"abc123\", " +
-                    "\"mounts-in\":" + COMMAND_MOUNT_IN_JSON + "," +
-                    "\"mounts-out\":" + COMMAND_MOUNT_OUT_JSON + "}";
+                    "\"mounts-in\":[" + COMMAND_MOUNT_IN_JSON + "]," +
+                    "\"mounts-out\":[" + COMMAND_MOUNT_OUT_JSON + "]}";
 
     private static final String ACTION_INPUT_JSON =
             "{\"name\":\"some_identifier\", \"command-variable-name\":\"my_cool_input\", " +
