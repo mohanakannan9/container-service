@@ -51,50 +51,6 @@ public class DockerControlApi implements ContainerControlApi {
     @SuppressWarnings("SpringJavaAutowiringInspection") // IntelliJ does not process the excludeFilter in ContainerServiceConfig @ComponentScan, erroneously marks this red
     private DockerServerPrefsBean containerServerPref;
 
-    /**
-     * Query Docker server for all images
-     *
-     * @return Image objects stored on docker server
-     **/
-    @Override
-    public List<DockerImage> getAllImages() throws NoServerPrefException, DockerServerException {
-        return getImages(null);
-    }
-
-    /**
-     * Query Docker server for images with parameters
-     *
-     * @param params Map of query parameters (name = value)
-     * @return Image objects stored on docker server meeting the query parameters
-     **/
-    public List<DockerImage> getImages(final Map<String, String> params)
-        throws NoServerPrefException, DockerServerException {
-        return DockerImageToNrgImage(_getImages(params));
-    }
-
-    private List<com.spotify.docker.client.messages.Image> _getImages(final Map<String, String> params)
-        throws NoServerPrefException, DockerServerException {
-        // Transform param map to ListImagesParam array
-        DockerClient.ListImagesParam[] dockerParams;
-        if (params != null && params.size() > 0) {
-            List<DockerClient.ListImagesParam> dockerParamsList =
-                    Lists.transform(Lists.newArrayList(params.entrySet()), imageParamTransformer);
-            dockerParams = dockerParamsList.toArray(new DockerClient.ListImagesParam[dockerParamsList.size()]);
-        } else {
-            dockerParams = new DockerClient.ListImagesParam[] {};
-        }
-
-        try (final DockerClient dockerClient = getClient()) {
-            return dockerClient.listImages(dockerParams);
-        } catch (DockerException | InterruptedException e) {
-            _log.error("Failed to list images. " + e.getMessage());
-            throw new DockerServerException(e);
-        } catch (Error e) {
-            _log.error("Failed to list images. " + e.getMessage());
-            throw e;
-        }
-    }
-
     public DockerServer getServer() throws NoServerPrefException {
         if (containerServerPref == null || containerServerPref.getHost() == null) {
             throw new NoServerPrefException("No container server URI defined in preferences.");
@@ -150,6 +106,50 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     /**
+     * Query Docker server for all images
+     *
+     * @return Image objects stored on docker server
+     **/
+    @Override
+    public List<DockerImage> getAllImages() throws NoServerPrefException, DockerServerException {
+        return getImages(null);
+    }
+
+    /**
+     * Query Docker server for images with parameters
+     *
+     * @param params Map of query parameters (name = value)
+     * @return Image objects stored on docker server meeting the query parameters
+     **/
+    public List<DockerImage> getImages(final Map<String, String> params)
+            throws NoServerPrefException, DockerServerException {
+        return DockerImageToNrgImage(_getImages(params));
+    }
+
+    private List<com.spotify.docker.client.messages.Image> _getImages(final Map<String, String> params)
+            throws NoServerPrefException, DockerServerException {
+        // Transform param map to ListImagesParam array
+        DockerClient.ListImagesParam[] dockerParams;
+        if (params != null && params.size() > 0) {
+            List<DockerClient.ListImagesParam> dockerParamsList =
+                    Lists.transform(Lists.newArrayList(params.entrySet()), imageParamTransformer);
+            dockerParams = dockerParamsList.toArray(new DockerClient.ListImagesParam[dockerParamsList.size()]);
+        } else {
+            dockerParams = new DockerClient.ListImagesParam[] {};
+        }
+
+        try (final DockerClient dockerClient = getClient()) {
+            return dockerClient.listImages(dockerParams);
+        } catch (DockerException | InterruptedException e) {
+            _log.error("Failed to list images. " + e.getMessage());
+            throw new DockerServerException(e);
+        } catch (Error e) {
+            _log.error("Failed to list images. " + e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
      * Query Docker server for image by name
      *
      * @param imageId ID of image
@@ -171,6 +171,216 @@ public class DockerControlApi implements ContainerControlApi {
             return client.inspectImage(imageId);
         } catch (DockerException | InterruptedException e) {
             throw new DockerServerException(e);
+        }
+    }
+
+    /**
+     * Launch image on Docker server
+     *
+     * @param command A ResolvedCommand. All templates are resolved, all mount paths exist.
+     * @return ID of created Container
+     **/
+    @Override
+    public String launchImage(final ResolvedCommand command)
+            throws NoServerPrefException, DockerServerException {
+        final String dockerImageId = command.getDockerImage();
+        final List<String> runCommand = command.getRun();
+        final List<String> bindMounts = Lists.newArrayList();
+        for (final CommandMount mount : command.getMountsIn()) {
+            bindMounts.add(mount.toBindMountString());
+        }
+        for (final CommandMount mount : command.getMountsOut()) {
+            bindMounts.add(mount.toBindMountString());
+        }
+        final List<String> environmentVariables = Lists.newArrayList();
+        for (final Map.Entry<String, String> env : command.getEnvironmentVariables().entrySet()) {
+            environmentVariables.add(org.apache.commons.lang3.StringUtils.join(env.getKey(), env.getValue(), "="));
+        }
+        return launchImage(getServer(), dockerImageId, runCommand, bindMounts, environmentVariables);
+    }
+
+    /**
+     * Launch image on Docker server
+     *
+     * @param imageName name of image to launch
+     * @param runCommand Command string to execute
+     * @param volumes Volume mounts, in the form "/path/on/server:/path/in/container"
+     * @return ID of created Container
+     **/
+    @Override
+    public String launchImage(final String imageName, final List<String> runCommand, final List<String> volumes)
+            throws NoServerPrefException, DockerServerException {
+        return launchImage(getServer(), imageName, runCommand, volumes);
+    }
+
+    /**
+     * Launch image on Docker server
+     *
+     * @param server DockerServer on which to launch
+     * @param imageName name of image to launch
+     * @param runCommand Command string list to execute
+     * @param volumes Volume mounts, in the form "/path/on/server:/path/in/container"
+     * @return ID of created Container
+     **/
+    @Override
+    public String launchImage(final DockerServer server,
+                              final String imageName,
+                              final List<String> runCommand,
+                              final List<String> volumes) throws DockerServerException {
+        return launchImage(server, imageName, runCommand, volumes, null);
+    }
+    /**
+     * Launch image on Docker server
+     *
+     * @param server DockerServer on which to launch
+     * @param imageName name of image to launch
+     * @param runCommand Command string list to execute
+     * @param volumes Volume mounts, in the form "/path/on/server:/path/in/container"
+     * @return ID of created Container
+     **/
+    @Override
+    public String launchImage(final DockerServer server,
+                              final String imageName,
+                              final List<String> runCommand,
+                              final List<String> volumes,
+                              final List<String> environmentVariables) throws DockerServerException {
+
+        final HostConfig hostConfig =
+                HostConfig.builder()
+                        .binds(volumes)
+                        .build();
+        final ContainerConfig containerConfig =
+                ContainerConfig.builder()
+                        .hostConfig(hostConfig)
+                        .image(imageName)
+                        .attachStdout(true)
+                        .attachStderr(true)
+                        .cmd(runCommand)
+                        .env(environmentVariables)
+                        .build();
+
+        if (_log.isDebugEnabled()) {
+            final String message = String.format(
+                    "Starting container: server %s, image %s, command \"%s\", volumes [%s], environment variables %s",
+                    server,
+                    imageName,
+                    StringUtils.join(runCommand, " "),
+                    StringUtils.join(volumes, ", "),
+                    StringUtils.join(environmentVariables, ", ")
+            );
+            _log.debug(message);
+        }
+
+        try (final DockerClient client = getClient(server)) {
+            final ContainerCreation container = client.createContainer(containerConfig);
+
+            _log.info("Starting container: id "+container.id());
+            if (container.getWarnings() != null) {
+                for (String warning : container.getWarnings()) {
+                    _log.warn(warning);
+                }
+            }
+            client.startContainer(container.id());
+
+            return container.id();
+        } catch (DockerException | InterruptedException e) {
+            _log.error(e.getMessage());
+            throw new DockerServerException("Could not start container from image " + imageName, e);
+        }
+    }
+
+    @Override
+    public void deleteImageById(final String id, final Boolean force) throws NoServerPrefException, DockerServerException {
+        try (final DockerClient dockerClient = getClient()) {
+            dockerClient.removeImage(id, force, false);
+        } catch (DockerException|InterruptedException e) {
+            throw new DockerServerException(e);
+        }
+    }
+
+    /**
+     * Pull image from default hub onto docker server
+     *
+     **/
+    @Override
+    public void pullImage(String name) throws NoServerPrefException, DockerServerException {
+        try (final DockerClient client = getClient()) {
+            client.pull(name);
+        } catch (DockerException | InterruptedException e) {
+            _log.error(e.getMessage());
+            throw new DockerServerException(e);
+        }
+    }
+
+    /**
+     * Pull image from specified hub onto docker server
+     *
+     **/
+    @Override
+    public void pullImage(String name, DockerHub hub) throws NoServerPrefException, DockerServerException {
+        if (hub == null) {
+            pullImage(name);
+        } else {
+            try (final DockerClient client = getClient()) {
+                final AuthConfig authConfig = AuthConfig.builder()
+                        .email(hub.getEmail())
+                        .username(hub.getUsername())
+                        .password(hub.getPassword())
+                        .serverAddress(hub.getUrl())
+                        .build();
+                client.pull(name, authConfig);
+            } catch (DockerException | InterruptedException e) {
+                _log.error(e.getMessage());
+                throw new DockerServerException(e);
+            }
+        }
+    }
+
+    @Override
+    public DockerImage pullAndReturnImage(final String name) throws NoServerPrefException, DockerServerException {
+        try (final DockerClient client = getClient()) {
+            final LoadProgressHandler handler = new LoadProgressHandler();
+            client.pull(name, handler);
+            try {
+                return getImageById(name);
+            } catch (NotFoundException e) {
+                final String m = String.format("The image %s was not found", name);
+                _log.error(m);
+                throw new DockerServerException(m);
+            }
+        } catch (DockerException | InterruptedException e) {
+            _log.error(e.getMessage());
+            throw new DockerServerException(e);
+        }
+    }
+
+    @Override
+    public DockerImage pullAndReturnImage(final String name, final DockerHub hub)
+            throws NoServerPrefException, DockerServerException {
+        if (hub == null) {
+            return pullAndReturnImage(name);
+        } else {
+            try (final DockerClient client = getClient()) {
+                final LoadProgressHandler handler = new LoadProgressHandler();
+                final AuthConfig authConfig = AuthConfig.builder()
+                        .email(hub.getEmail())
+                        .username(hub.getUsername())
+                        .password(hub.getPassword())
+                        .serverAddress(hub.getUrl())
+                        .build();
+                client.pull(name, authConfig, handler);
+                final String imageId = handler.getImageId();
+                try {
+                    return getImageById(imageId);
+                } catch (NotFoundException e) {
+                    final String m = String.format("The image with id %s was not found", imageId);
+                    _log.error(m);
+                    throw new DockerServerException(m);
+                }
+            } catch (DockerException | InterruptedException e) {
+                _log.error(e.getMessage());
+                throw new DockerServerException(e);
+            }
         }
     }
 
@@ -254,121 +464,6 @@ public class DockerControlApi implements ContainerControlApi {
         return container != null ? container.status() : null;
     }
 
-    /**
-     * Launch image on Docker server
-     *
-     * @param command A ResolvedCommand. All templates are resolved, all mount paths exist.
-     * @return ID of created Container
-     **/
-    @Override
-    public String launchImage(final ResolvedCommand command)
-            throws NoServerPrefException, DockerServerException {
-        final String dockerImageId = command.getDockerImage();
-        final List<String> runCommand = command.getRun();
-        final List<String> bindMounts = Lists.newArrayList();
-        for (final CommandMount mount : command.getMountsIn()) {
-            bindMounts.add(mount.toBindMountString());
-        }
-        for (final CommandMount mount : command.getMountsOut()) {
-            bindMounts.add(mount.toBindMountString());
-        }
-        final List<String> environmentVariables = Lists.newArrayList();
-        for (final Map.Entry<String, String> env : command.getEnvironmentVariables().entrySet()) {
-            environmentVariables.add(org.apache.commons.lang3.StringUtils.join(env.getKey(), env.getValue(), "="));
-        }
-        return launchImage(getServer(), dockerImageId, runCommand, bindMounts, environmentVariables);
-    }
-
-    /**
-     * Launch image on Docker server
-     *
-     * @param imageName name of image to launch
-     * @param runCommand Command string to execute
-     * @param volumes Volume mounts, in the form "/path/on/server:/path/in/container"
-     * @return ID of created Container
-     **/
-    @Override
-    public String launchImage(final String imageName, final List<String> runCommand, final List<String> volumes)
-            throws NoServerPrefException, DockerServerException {
-        return launchImage(getServer(), imageName, runCommand, volumes);
-    }
-
-    /**
-     * Launch image on Docker server
-     *
-     * @param server DockerServer on which to launch
-     * @param imageName name of image to launch
-     * @param runCommand Command string list to execute
-     * @param volumes Volume mounts, in the form "/path/on/server:/path/in/container"
-     * @return ID of created Container
-     **/
-    @Override
-    public String launchImage(final DockerServer server,
-                              final String imageName,
-                              final List<String> runCommand,
-                              final List<String> volumes) throws DockerServerException {
-        return launchImage(server, imageName, runCommand, volumes, null);
-    }
-    /**
-     * Launch image on Docker server
-     *
-     * @param server DockerServer on which to launch
-     * @param imageName name of image to launch
-     * @param runCommand Command string list to execute
-     * @param volumes Volume mounts, in the form "/path/on/server:/path/in/container"
-     * @return ID of created Container
-     **/
-    @Override
-    public String launchImage(final DockerServer server,
-                              final String imageName,
-                              final List<String> runCommand,
-                              final List<String> volumes,
-                              final List<String> environmentVariables) throws DockerServerException {
-
-         final HostConfig hostConfig =
-                HostConfig.builder()
-                .binds(volumes)
-                .build();
-        final ContainerConfig containerConfig =
-                ContainerConfig.builder()
-                        .hostConfig(hostConfig)
-                        .image(imageName)
-                        .attachStdout(true)
-                        .attachStderr(true)
-                        .cmd(runCommand)
-                        .env(environmentVariables)
-                        .build();
-
-        if (_log.isDebugEnabled()) {
-            final String message = String.format(
-                    "Starting container: server %s, image %s, command \"%s\", volumes [%s], environment variables %s",
-                    server,
-                    imageName,
-                    StringUtils.join(runCommand, " "),
-                    StringUtils.join(volumes, ", "),
-                    StringUtils.join(environmentVariables, ", ")
-            );
-            _log.debug(message);
-        }
-
-        try (final DockerClient client = getClient(server)) {
-            final ContainerCreation container = client.createContainer(containerConfig);
-
-            _log.info("Starting container: id "+container.id());
-            if (container.getWarnings() != null) {
-                for (String warning : container.getWarnings()) {
-                    _log.warn(warning);
-                }
-            }
-            client.startContainer(container.id());
-
-            return container.id();
-        } catch (DockerException | InterruptedException e) {
-            _log.error(e.getMessage());
-            throw new DockerServerException("Could not start container from image " + imageName, e);
-        }
-    }
-
     @Override
     public String getContainerLogs(String id) throws NoServerPrefException, DockerServerException {
         String logs;
@@ -380,15 +475,6 @@ public class DockerControlApi implements ContainerControlApi {
         }
 
         return logs;
-    }
-
-    @Override
-    public void deleteImageById(final String id, final Boolean force) throws NoServerPrefException, DockerServerException {
-        try (final DockerClient dockerClient = getClient()) {
-            dockerClient.removeImage(id, force, false);
-        } catch (DockerException|InterruptedException e) {
-            throw new DockerServerException(e);
-        }
     }
 
     /**
@@ -431,105 +517,6 @@ public class DockerControlApi implements ContainerControlApi {
 
         return DefaultDockerClient.fromEnv().build();
     }
-
-//    /**
-//     * Search docker server for images
-//     *
-//     * @param searchString string to match with image names.
-//     * @return List of NRG Image objects
-//     **/
-//    public List<ImageSearchResult> searchImages(String searchString) throws Exception {
-//        return getClient().searchImages(searchString);
-//
-//    }
-
-    /**
-     * Pull image from default hub onto docker server
-     *
-     **/
-    @Override
-    public void pullImage(String name) throws NoServerPrefException, DockerServerException {
-        try (final DockerClient client = getClient()) {
-            client.pull(name);
-        } catch (DockerException | InterruptedException e) {
-            _log.error(e.getMessage());
-            throw new DockerServerException(e);
-        }
-    }
-
-    /**
-     * Pull image from specified hub onto docker server
-     *
-     **/
-    @Override
-    public void pullImage(String name, DockerHub hub) throws NoServerPrefException, DockerServerException {
-        if (hub == null) {
-            pullImage(name);
-        } else {
-            try (final DockerClient client = getClient()) {
-                final AuthConfig authConfig = AuthConfig.builder()
-                    .email(hub.getEmail())
-                    .username(hub.getUsername())
-                    .password(hub.getPassword())
-                    .serverAddress(hub.getUrl())
-                    .build();
-                client.pull(name, authConfig);
-            } catch (DockerException | InterruptedException e) {
-                _log.error(e.getMessage());
-                throw new DockerServerException(e);
-            }
-        }
-    }
-
-    @Override
-    public DockerImage pullAndReturnImage(final String name) throws NoServerPrefException, DockerServerException {
-        try (final DockerClient client = getClient()) {
-            final LoadProgressHandler handler = new LoadProgressHandler();
-            client.pull(name, handler);
-            try {
-                return getImageById(name);
-            } catch (NotFoundException e) {
-                final String m = String.format("The image %s was not found", name);
-                _log.error(m);
-                throw new DockerServerException(m);
-            }
-        } catch (DockerException | InterruptedException e) {
-            _log.error(e.getMessage());
-            throw new DockerServerException(e);
-        }
-    }
-
-    @Override
-    public DockerImage pullAndReturnImage(final String name, final DockerHub hub)
-            throws NoServerPrefException, DockerServerException {
-        if (hub == null) {
-            return pullAndReturnImage(name);
-        } else {
-            try (final DockerClient client = getClient()) {
-                final LoadProgressHandler handler = new LoadProgressHandler();
-                final AuthConfig authConfig = AuthConfig.builder()
-                    .email(hub.getEmail())
-                    .username(hub.getUsername())
-                    .password(hub.getPassword())
-                    .serverAddress(hub.getUrl())
-                    .build();
-                client.pull(name, authConfig, handler);
-                final String imageId = handler.getImageId();
-                try {
-                    return getImageById(imageId);
-                } catch (NotFoundException e) {
-                    final String m = String.format("The image with id %s was not found", imageId);
-                    _log.error(m);
-                    throw new DockerServerException(m);
-                }
-            } catch (DockerException | InterruptedException e) {
-                _log.error(e.getMessage());
-                throw new DockerServerException(e);
-            }
-        }
-    }
-
-
 
     // TODO Move everything below to a DAO class
     /**
