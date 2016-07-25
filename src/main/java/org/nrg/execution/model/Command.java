@@ -95,11 +95,6 @@ public class Command extends AbstractHibernateEntity {
     }
 
     @ElementCollection
-    @ApiModelProperty(value = "A Map of input mounts. " +
-            "Each key is a unique name for the mount, and each value is a path that will be mounted in the container when the Command is launched. " +
-            "The paths can use template strings, e.g. #variable-name#, which will be resolved into a value when the Command is launched. " +
-            "Input mounts are mounted read-only, and are intended to hold the raw input data your container will expect.",
-            example = "{\"in\":\"/input\"}")
     public List<CommandMount> getMountsIn() {
         return mountsIn;
     }
@@ -114,11 +109,6 @@ public class Command extends AbstractHibernateEntity {
     }
 
     @ElementCollection
-    @ApiModelProperty(value = "A Map of output mounts. " +
-            "Each key is a unique name for the mount, and each value is a path that will be mounted in the container when the Command is launched. " +
-            "The paths can use template strings, e.g. #variable-name#, which will be resolved into a value when the Command is launched." +
-            "Output mounts are writable, and are intended to hold any outputs your container produces.",
-            example = "{\"out\":\"/output\"}")
     public List<CommandMount> getMountsOut() {
         return mountsOut;
     }
