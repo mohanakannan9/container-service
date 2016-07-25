@@ -170,9 +170,9 @@ public class DockerRestApi {
 //            @ApiResponse(code = 404, message = "No docker image with given id on docker server"),
 //            @ApiResponse(code = 424, message = "Admin must set up Docker server."),
 //            @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = "/images/{id}/save", method = POST)
+    @RequestMapping(value = "/images/save", params = "image", method = POST)
     @ResponseBody
-    public List<Command> saveFromLabels(final @PathVariable("id") String imageId)
+    public List<Command> saveFromLabels(final @RequestParam("image") String imageId)
             throws NotFoundException, NoServerPrefException, DockerServerException {
         return dockerService.saveFromImageLabels(imageId);
     }

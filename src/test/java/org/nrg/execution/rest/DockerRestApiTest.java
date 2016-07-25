@@ -198,7 +198,7 @@ public class DockerRestApiTest {
         final Map<String, String> imageLabels = Maps.newHashMap();
         imageLabels.put(LABEL_KEY, labelTestCommandListJson);
 
-        final String fakeImageId = "thisisfake";
+        final String fakeImageId = "xnat/thisisfake";
         final DockerImage fakeDockerImage = new DockerImage();
         fakeDockerImage.setImageId(fakeImageId);
         fakeDockerImage.setLabels(imageLabels);
@@ -210,8 +210,9 @@ public class DockerRestApiTest {
         when(mockContainerControlApi.parseLabels(fakeDockerImage))
                 .thenCallRealMethod();
 
-        final String path = "/docker/images/" + fakeImageId + "/save";
-        final MockHttpServletRequestBuilder request = post(path);
+        final String path = "/docker/images/save";
+        final MockHttpServletRequestBuilder request =
+                post(path).param("image", fakeImageId);
 
         final String responseStr =
                 mockMvc.perform(request)
