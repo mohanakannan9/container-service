@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.util.List;
 
+import static org.nrg.execution.api.ContainerControlApi.LABEL_KEY;
 import static org.springframework.web.bind.annotation.RequestMethod.DELETE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
@@ -158,6 +159,21 @@ public class DockerRestApi {
                             final @RequestParam(value = "force", defaultValue = "false") Boolean force)
             throws NotFoundException, NoServerPrefException, DockerServerException {
         dockerService.removeImage(id, force);
+    }
+
+    @ApiOperation(value = "Save Commands from labels",
+            notes = "Read labels from Docker image. If any labels contain key " +
+                    LABEL_KEY + ", parse value as list of Commands.")
+//    @ApiResponses({
+//            @ApiResponse(code = 200, message = "Image was removed"),
+//            @ApiResponse(code = 404, message = "No docker image with given id on docker server"),
+//            @ApiResponse(code = 424, message = "Admin must set up Docker server."),
+//            @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = "/images/{id}/save", method = POST)
+    @ResponseBody
+    public void saveFromLabels(final @PathVariable("id") String imageId)
+            throws NotFoundException, NoServerPrefException, DockerServerException {
+        dockerService.saveFromImageLabels(imageId);
     }
 
     @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)

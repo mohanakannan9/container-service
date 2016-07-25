@@ -60,7 +60,7 @@ public class DockerServiceImpl implements DockerService {
         }
 
         final DockerImage dockerImage = controlApi.pullAndReturnImage(image, hub);
-        commandService.saveFromLabels(dockerImage);
+        saveFromImageLabels(dockerImage);
         return dockerImage;
     }
 
@@ -68,7 +68,7 @@ public class DockerServiceImpl implements DockerService {
     public DockerImage pullFromHub(final String image, final Boolean saveCommands)
             throws DockerServerException, NoServerPrefException {
         final DockerImage dockerImage = controlApi.pullAndReturnImage(image);
-        commandService.saveFromLabels(dockerImage);
+        saveFromImageLabels(dockerImage);
         return dockerImage;
     }
 
@@ -109,5 +109,18 @@ public class DockerServiceImpl implements DockerService {
     public void removeImage(final String imageId, final Boolean force)
             throws NoServerPrefException, DockerServerException {
         controlApi.deleteImageById(imageId, force);
+    }
+
+    @Override
+    public List<Command> saveFromImageLabels(final String imageId) throws DockerServerException, NotFoundException, NoServerPrefException {
+        final List<Command> parsed = controlApi.parseLabels(imageId);
+        return commandService.save(parsed);
+    }
+
+    @Override
+    public List<Command> saveFromImageLabels(final DockerImage dockerImage) {
+//        commandService.saveFromLabels(imageId);
+        final List<Command> parsed = controlApi.parseLabels(dockerImage);
+        return commandService.save(parsed);
     }
 }

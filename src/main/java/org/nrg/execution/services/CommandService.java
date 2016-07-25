@@ -22,7 +22,7 @@ import java.util.Map;
 
 public interface CommandService extends BaseHibernateService<Command> {
 
-    List<Command> findByName(final String name);
+    Command retrieve(final String name, final String dockerImageId);
 
     ResolvedCommand resolveCommand(final Long commandId) throws NotFoundException, CommandVariableResolutionException;
     ResolvedCommand resolveCommand(final Long commandId,
@@ -45,7 +45,7 @@ public interface CommandService extends BaseHibernateService<Command> {
             DockerServerException, BadRequestException, XFTInitException, ElementNotFoundException, AceInputException;
 //    ActionContextExecution launchCommand(XnatImagescandata scan, Long commandId) throws NotFoundException, CommandVariableResolutionException, NoServerPrefException, DockerServerException, BadRequestException, XFTInitException, ElementNotFoundException, AceInputException;
 
-    List<Command> saveFromLabels(final String imageId) throws DockerServerException, NotFoundException, NoServerPrefException;
-    List<Command> saveFromLabels(final DockerImage dockerImage);
+//    List<Command> saveFromLabels(final String imageId) throws DockerServerException, NotFoundException, NoServerPrefException;
+//    List<Command> saveFromLabels(final DockerImage dockerImage);
     List<Command> save(final List<Command> commands);
 }

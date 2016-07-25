@@ -169,15 +169,16 @@ public class CommandRestApiTest {
                 "{\"name\": \"toDelete\", \"docker-image\":\"abc123\"}";
         final Command command = mapper.readValue(commandJson, Command.class);
         commandService.create(command);
+        final Long id = command.getId();
 
-        final String path = String.format(pathTemplate, command.getId());
+        final String path = String.format(pathTemplate, id);
         final MockHttpServletRequestBuilder request = delete(path);
 
 
         mockMvc.perform(request)
                 .andExpect(status().isNoContent());
 
-        final List<Command> commandsWithName = commandService.findByName("toDelete");
-        assertNull(commandsWithName);
+        final Command retrieved = commandService.retrieve(id);
+        assertNull(retrieved);
     }
 }

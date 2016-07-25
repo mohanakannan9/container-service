@@ -72,12 +72,6 @@ public class CommandTest {
                     "\"mounts-in\":[" + RESOLVED_MOUNT_IN + "]," +
                     "\"mounts-out\":[" + RESOLVED_MOUNT_OUT + "]}";
 
-    private static final String LABEL_TEST_COMMAND =
-            "{\"name\": \"label-test\"," +
-                    "\"description\": \"Command to test label-parsing and command-importing code\"," +
-                    "\"run-template\": [\"/bin/sh\",\"-c\",\"#CMD#\"]," +
-                    "\"variables\": [{\"name\": \"CMD\", \"description\": \"Command to run\", \"required\": true}]}";
-
     @Autowired
     private ObjectMapper mapper;
 
@@ -223,27 +217,5 @@ public class CommandTest {
 
         assertEquals(Lists.newArrayList("cmd", "--flag=bar -b"), resolvedCommand2.getRun());
 
-    }
-
-    @Test
-    public void testParseLabels() throws Exception {
-        final Command expected = mapper.readValue(LABEL_TEST_COMMAND, Command.class);
-
-        final String fakeImageId = "thisisfake";
-        expected.setDockerImage(fakeImageId);
-        when(mockContainerControlApi.parseLabels(fakeImageId))
-                .thenReturn(Lists.newArrayList(expected));
-
-        final List<Command> parsedCommands = commandService.saveFromLabels(fakeImageId);
-        assertThat(parsedCommands, hasSize(1));
-        final Command parsed = parsedCommands.get(0);
-
-        // "parsed" will have been saved, so it will not be exactly equal to "expected"
-        // Must compare attribute-by-attribute
-        assertEquals(expected.getName(), parsed.getName());
-        assertEquals(expected.getDescription(), parsed.getDescription());
-        assertEquals(expected.getRunTemplate(), parsed.getRunTemplate());
-        assertEquals(expected.getVariables(), parsed.getVariables());
-        assertEquals(expected.getDockerImage(), parsed.getDockerImage());
     }
 }

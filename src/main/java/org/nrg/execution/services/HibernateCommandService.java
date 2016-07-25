@@ -1,7 +1,5 @@
 package org.nrg.execution.services;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -45,7 +43,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Nullable;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -82,8 +79,9 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         }
     }
 
-    public List<Command> findByName(final String name) {
-        return getDao().findByName(name);
+    @Override
+    public Command retrieve(final String name, final String dockerImageId) {
+        return getDao().retrieve(name, dockerImageId);
     }
 
     @Override
@@ -370,17 +368,17 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
 //    }
 
 
-    @Override
-    public List<Command> saveFromLabels(final String imageId) throws DockerServerException, NotFoundException, NoServerPrefException {
-        final List<Command> commands = controlApi.parseLabels(imageId);
-        return save(commands);
-    }
-
-    @Override
-    public List<Command> saveFromLabels(final DockerImage dockerImage) {
-        final List<Command> commands = controlApi.parseLabels(dockerImage);
-        return save(commands);
-    }
+//    @Override
+//    public List<Command> saveFromLabels(final String imageId) throws DockerServerException, NotFoundException, NoServerPrefException {
+//        final List<Command> commands = controlApi.parseLabels(imageId);
+//        return save(commands);
+//    }
+//
+//    @Override
+//    public List<Command> saveFromLabels(final DockerImage dockerImage) {
+//        final List<Command> commands = controlApi.parseLabels(dockerImage);
+//        return save(commands);
+//    }
 
     @Override
     public List<Command> save(final List<Command> commands) {
@@ -390,10 +388,9 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
                 try {
                     create(command);
                     saved.add(command);
-                } catch (Exception e) {
-                    // TODO figure out more specific exception to catch.
-                    // Find the type for the exception where name+dockerImage already exists
-                    log.error("Could not save command: " + command);
+                } catch (NrgServiceRuntimeException e) {
+                    // TODO: should I "update" instead of erroring out if command already exists?
+                    log.error("Could not save command: " + command, e);
                 }
             }
         }
