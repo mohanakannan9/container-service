@@ -8,32 +8,31 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.exception.ConstraintViolationException;
+import org.nrg.execution.api.ContainerControlApi;
+import org.nrg.execution.daos.CommandDao;
 import org.nrg.execution.exceptions.AceInputException;
 import org.nrg.execution.exceptions.BadRequestException;
 import org.nrg.execution.exceptions.CommandVariableResolutionException;
-import org.nrg.execution.daos.CommandDao;
-import org.nrg.execution.model.ActionContextExecution;
-import org.nrg.execution.model.ActionContextExecutionDto;
+import org.nrg.execution.exceptions.DockerServerException;
+import org.nrg.execution.exceptions.NoServerPrefException;
+import org.nrg.execution.exceptions.NotFoundException;
 import org.nrg.execution.model.Command;
 import org.nrg.execution.model.CommandMount;
 import org.nrg.execution.model.CommandVariable;
 import org.nrg.execution.model.Context;
 import org.nrg.execution.model.DockerImage;
-import org.nrg.execution.model.ItemQueryCacheKey;
 import org.nrg.execution.model.ResolvedCommand;
-import org.nrg.execution.api.ContainerControlApi;
-import org.nrg.execution.exceptions.DockerServerException;
-import org.nrg.execution.exceptions.NoServerPrefException;
-import org.nrg.execution.exceptions.NotFoundException;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
-import org.nrg.xdat.XDAT;
+import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.om.XnatAbstractresource;
-import org.nrg.xdat.om.XnatImagescandata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatResourcecatalog;
+import org.nrg.xdat.om.base.BaseXnatExperimentdata.UnknownPrimaryProjectException;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
@@ -47,7 +46,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -64,6 +62,14 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
 //
 //    @Autowired
 //    private AceService aceService;
+
+    @Autowired
+    @SuppressWarnings("SpringJavaAutowiringInspection")
+    private AliasTokenService aliasTokenService;
+
+    @Autowired
+    @SuppressWarnings("SpringJavaAutowiringInspection")
+    private SiteConfigPreferences siteConfigPreferences;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -307,8 +313,30 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             log.info("Session with id " + session.getId() + " has no resources or a blank archive path");
         }
 
+        try {
+            resourceLabelToCatalogPath.put("root", session.getArchivePath());
+        } catch (UnknownPrimaryProjectException e) {
+            log.info("Could not get session's archive path", e);
+        }
+
         final ResolvedCommand resolvedCommand =
                 resolve(command, session, resourceLabelToCatalogPath, Context.newContext());
+        if (resolvedCommand == null) {
+            // TODO throw an error
+            return null;
+        }
+
+        // Add default environment variables
+        final Map<String, String> defaultEnv = Maps.newHashMap();
+//        siteConfigPreferences.getBuildPath()
+        defaultEnv.put("XNAT_HOST", siteConfigPreferences.getSiteUrl());
+
+        final AliasToken token = aliasTokenService.issueTokenForUser(user);
+        defaultEnv.put("XNAT_USER", token.getAlias());
+        defaultEnv.put("XNAT_PASS", token.getSecret());
+
+        resolvedCommand.addEnvironmentVariables(defaultEnv);
+
         return launchCommand(resolvedCommand);
     }
 //

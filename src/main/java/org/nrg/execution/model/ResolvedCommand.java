@@ -70,6 +70,16 @@ public class ResolvedCommand implements Serializable {
                 environmentVariables;
     }
 
+    @Transient
+    public void addEnvironmentVariables(final Map<String, String> environmentVariables) {
+        if (environmentVariables != null) {
+            if (this.environmentVariables == null) {
+                this.environmentVariables = Maps.newHashMap();
+            }
+            this.environmentVariables.putAll(environmentVariables);
+        }
+    }
+
     @ElementCollection(fetch = FetchType.EAGER)
     public List<CommandMount> getMountsIn() {
         return mountsIn;

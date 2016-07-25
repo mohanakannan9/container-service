@@ -14,6 +14,9 @@ import org.nrg.automation.services.ScriptService;
 import org.nrg.automation.services.impl.hibernate.HibernateScriptService;
 import org.nrg.execution.api.ContainerControlApi;
 import org.nrg.framework.orm.hibernate.AggregatedAnnotationSessionFactoryBean;
+import org.nrg.prefs.services.NrgPreferenceService;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.services.AliasTokenService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -62,6 +65,21 @@ public class CommandTestConfig {
 //    public ScriptEnvironmentDao scriptEnvironmentDao() {
 //        return new ScriptEnvironmentDao();
 //    }
+
+    @Bean
+    public AliasTokenService aliasTokenService() {
+        return Mockito.mock(AliasTokenService.class);
+    }
+
+    @Bean
+    public SiteConfigPreferences siteConfigPreferences() {
+        return Mockito.mock(SiteConfigPreferences.class);
+    }
+
+    @Bean
+    public NrgPreferenceService nrgPreferenceService() {
+        return Mockito.mock(NrgPreferenceService.class);
+    }
 
     @Bean
     public CommandService commandService() {

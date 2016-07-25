@@ -18,7 +18,10 @@ import org.nrg.execution.services.HibernateActionService;
 import org.nrg.execution.services.HibernateCommandService;
 import org.nrg.automation.entities.Script;
 import org.nrg.execution.api.ContainerControlApi;
+import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.transporter.TransportService;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.services.AliasTokenService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -76,6 +79,21 @@ public class AceModelTestConfig {
     @Bean
     public TransportService transportService() {
         return Mockito.mock(TransportService.class);
+    }
+
+    @Bean
+    public AliasTokenService aliasTokenService() {
+        return Mockito.mock(AliasTokenService.class);
+    }
+
+    @Bean
+    public SiteConfigPreferences siteConfigPreferences() {
+        return Mockito.mock(SiteConfigPreferences.class);
+    }
+
+    @Bean
+    public NrgPreferenceService nrgPreferenceService() {
+        return Mockito.mock(NrgPreferenceService.class);
     }
 
     @Bean
