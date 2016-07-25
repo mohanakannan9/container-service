@@ -394,7 +394,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
                 }
             }
         }
-        return commands;
+        return saved;
     }
 
 

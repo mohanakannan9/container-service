@@ -7,6 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.execution.exceptions.DockerServerException;
 import org.nrg.execution.exceptions.NoServerPrefException;
 import org.nrg.execution.exceptions.NotFoundException;
+import org.nrg.execution.model.Command;
 import org.nrg.execution.model.DockerHub;
 import org.nrg.execution.model.DockerImage;
 import org.nrg.execution.model.DockerServer;
@@ -171,9 +172,9 @@ public class DockerRestApi {
 //            @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = "/images/{id}/save", method = POST)
     @ResponseBody
-    public void saveFromLabels(final @PathVariable("id") String imageId)
+    public List<Command> saveFromLabels(final @PathVariable("id") String imageId)
             throws NotFoundException, NoServerPrefException, DockerServerException {
-        dockerService.saveFromImageLabels(imageId);
+        return dockerService.saveFromImageLabels(imageId);
     }
 
     @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
