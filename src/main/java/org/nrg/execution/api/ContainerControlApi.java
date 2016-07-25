@@ -3,6 +3,7 @@ package org.nrg.execution.api;
 import org.nrg.execution.exceptions.DockerServerException;
 import org.nrg.execution.exceptions.NoServerPrefException;
 import org.nrg.execution.exceptions.NotFoundException;
+import org.nrg.execution.model.Command;
 import org.nrg.execution.model.Container;
 import org.nrg.execution.model.DockerHub;
 import org.nrg.execution.model.DockerImage;
@@ -14,6 +15,8 @@ import java.util.List;
 import java.util.Map;
 
 public interface ContainerControlApi {
+    String LABEL_KEY = "org.nrg.commands";
+
     DockerServer getServer() throws NoServerPrefException;
     DockerServer setServer(String host, String certPath) throws InvalidPreferenceName;
     DockerServer setServer(DockerServer server) throws InvalidPreferenceName;
@@ -37,6 +40,10 @@ public interface ContainerControlApi {
     String launchImage(final DockerServer server, final String imageName,
                        final List<String> runCommand, final List <String> volumes,
                        final List<String> environmentVariables) throws DockerServerException;
+
+    List<Command> parseLabels(final String imageId)
+            throws DockerServerException, NoServerPrefException, NotFoundException;
+    List<Command> parseLabels(final DockerImage dockerImage);
 
     List<Container> getAllContainers() throws NoServerPrefException, DockerServerException;
     List<Container> getContainers(final Map<String, String> params) throws NoServerPrefException, DockerServerException;

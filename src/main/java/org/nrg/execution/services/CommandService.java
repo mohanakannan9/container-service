@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 
 public interface CommandService extends BaseHibernateService<Command> {
-    String LABEL_KEY = "org.nrg.commands";
 
     List<Command> findByName(final String name);
 
@@ -46,6 +45,7 @@ public interface CommandService extends BaseHibernateService<Command> {
             DockerServerException, BadRequestException, XFTInitException, ElementNotFoundException, AceInputException;
 //    ActionContextExecution launchCommand(XnatImagescandata scan, Long commandId) throws NotFoundException, CommandVariableResolutionException, NoServerPrefException, DockerServerException, BadRequestException, XFTInitException, ElementNotFoundException, AceInputException;
 
-    List<Command> parseLabels(final Map<String, String> labels);
+    List<Command> saveFromLabels(final String imageId) throws DockerServerException, NotFoundException, NoServerPrefException;
     List<Command> saveFromLabels(final DockerImage dockerImage);
+    List<Command> save(final List<Command> commands);
 }

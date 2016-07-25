@@ -5,15 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nrg.execution.api.ContainerControlApi;
 import org.nrg.execution.config.CommandTestConfig;
 import org.nrg.execution.services.CommandService;
-import org.nrg.automation.entities.Script;
-import org.nrg.automation.services.ScriptService;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
@@ -25,7 +21,6 @@ import java.util.Map;
 
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isIn;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
@@ -34,7 +29,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import static org.nrg.execution.services.CommandService.LABEL_KEY;
+import static org.mockito.Mockito.when;
+import static org.nrg.execution.api.ContainerControlApi.LABEL_KEY;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @Transactional
@@ -93,6 +89,9 @@ public class CommandTest {
 
     @Autowired
     private CommandService commandService;
+
+    @Autowired
+    private ContainerControlApi mockContainerControlApi;
 
     @Test
     public void testSpringConfiguration() {
@@ -228,12 +227,23 @@ public class CommandTest {
 
     @Test
     public void testParseLabels() throws Exception {
-        final Map<String, String> labels = Maps.newHashMap();
-        labels.put(LABEL_KEY, "[" + LABEL_TEST_COMMAND + "]");
-
         final Command expected = mapper.readValue(LABEL_TEST_COMMAND, Command.class);
 
-        final List<Command> parsedCommands = commandService.parseLabels(labels);
-        assertThat(expected, isIn(parsedCommands));
+        final String fakeImageId = "thisisfake";
+        expected.setDockerImage(fakeImageId);
+        when(mockContainerControlApi.parseLabels(fakeImageId))
+                .thenReturn(Lists.newArrayList(expected));
+
+        final List<Command> parsedCommands = commandService.saveFromLabels(fakeImageId);
+        assertThat(parsedCommands, hasSize(1));
+        final Command parsed = parsedCommands.get(0);
+
+        // "parsed" will have been saved, so it will not be exactly equal to "expected"
+        // Must compare attribute-by-attribute
+        assertEquals(expected.getName(), parsed.getName());
+        assertEquals(expected.getDescription(), parsed.getDescription());
+        assertEquals(expected.getRunTemplate(), parsed.getRunTemplate());
+        assertEquals(expected.getVariables(), parsed.getVariables());
+        assertEquals(expected.getDockerImage(), parsed.getDockerImage());
     }
 }

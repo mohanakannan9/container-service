@@ -1,5 +1,7 @@
 package org.nrg.execution.api;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -21,14 +23,14 @@ import com.spotify.docker.client.messages.HostConfig;
 import com.spotify.docker.client.messages.Image;
 import com.spotify.docker.client.messages.ImageInfo;
 import com.spotify.docker.client.messages.ProgressMessage;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.nrg.execution.model.Command;
 import org.nrg.execution.model.CommandMount;
 import org.nrg.execution.model.DockerHub;
 import org.nrg.execution.model.DockerImage;
 import org.nrg.execution.model.DockerServer;
 import org.nrg.execution.model.DockerServerPrefsBean;
 import org.nrg.execution.model.ResolvedCommand;
-import org.nrg.execution.model.ResolvedCommandMount;
 import org.nrg.execution.exceptions.DockerServerException;
 import org.nrg.execution.exceptions.NoServerPrefException;
 import org.nrg.execution.exceptions.NotFoundException;
@@ -39,17 +41,21 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
 @Service
 public class DockerControlApi implements ContainerControlApi {
-    private static final Logger _log = LoggerFactory.getLogger(DockerControlApi.class);
+    private static final Logger log = LoggerFactory.getLogger(DockerControlApi.class);
 
     @Autowired
     @SuppressWarnings("SpringJavaAutowiringInspection") // IntelliJ does not process the excludeFilter in ContainerServiceConfig @ComponentScan, erroneously marks this red
     private DockerServerPrefsBean containerServerPref;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     public DockerServer getServer() throws NoServerPrefException {
         if (containerServerPref == null || containerServerPref.getHost() == null) {
@@ -78,7 +84,7 @@ public class DockerControlApi implements ContainerControlApi {
         try (final DockerClient client = getClient()) {
             return client.ping();
         } catch (DockerException | InterruptedException e) {
-            _log.error(e.getMessage());
+            log.error(e.getMessage());
             throw new DockerServerException(e);
         }
     }
@@ -99,7 +105,7 @@ public class DockerControlApi implements ContainerControlApi {
             return "OK";
         }
         catch (Exception e) {
-            _log.error(e.getMessage());
+            log.error(e.getMessage());
             throw new DockerServerException(e);
         }
         return null;
@@ -141,10 +147,10 @@ public class DockerControlApi implements ContainerControlApi {
         try (final DockerClient dockerClient = getClient()) {
             return dockerClient.listImages(dockerParams);
         } catch (DockerException | InterruptedException e) {
-            _log.error("Failed to list images. " + e.getMessage());
+            log.error("Failed to list images. " + e.getMessage());
             throw new DockerServerException(e);
         } catch (Error e) {
-            _log.error("Failed to list images. " + e.getMessage());
+            log.error("Failed to list images. " + e.getMessage());
             throw e;
         }
     }
@@ -259,7 +265,7 @@ public class DockerControlApi implements ContainerControlApi {
                         .env(environmentVariables)
                         .build();
 
-        if (_log.isDebugEnabled()) {
+        if (log.isDebugEnabled()) {
             final String message = String.format(
                     "Starting container: server %s, image %s, command \"%s\", volumes [%s], environment variables %s",
                     server,
@@ -268,23 +274,23 @@ public class DockerControlApi implements ContainerControlApi {
                     StringUtils.join(volumes, ", "),
                     StringUtils.join(environmentVariables, ", ")
             );
-            _log.debug(message);
+            log.debug(message);
         }
 
         try (final DockerClient client = getClient(server)) {
             final ContainerCreation container = client.createContainer(containerConfig);
 
-            _log.info("Starting container: id "+container.id());
+            log.info("Starting container: id "+container.id());
             if (container.getWarnings() != null) {
                 for (String warning : container.getWarnings()) {
-                    _log.warn(warning);
+                    log.warn(warning);
                 }
             }
             client.startContainer(container.id());
 
             return container.id();
         } catch (DockerException | InterruptedException e) {
-            _log.error(e.getMessage());
+            log.error(e.getMessage());
             throw new DockerServerException("Could not start container from image " + imageName, e);
         }
     }
@@ -307,7 +313,7 @@ public class DockerControlApi implements ContainerControlApi {
         try (final DockerClient client = getClient()) {
             client.pull(name);
         } catch (DockerException | InterruptedException e) {
-            _log.error(e.getMessage());
+            log.error(e.getMessage());
             throw new DockerServerException(e);
         }
     }
@@ -330,7 +336,7 @@ public class DockerControlApi implements ContainerControlApi {
                         .build();
                 client.pull(name, authConfig);
             } catch (DockerException | InterruptedException e) {
-                _log.error(e.getMessage());
+                log.error(e.getMessage());
                 throw new DockerServerException(e);
             }
         }
@@ -345,11 +351,11 @@ public class DockerControlApi implements ContainerControlApi {
                 return getImageById(name);
             } catch (NotFoundException e) {
                 final String m = String.format("The image %s was not found", name);
-                _log.error(m);
+                log.error(m);
                 throw new DockerServerException(m);
             }
         } catch (DockerException | InterruptedException e) {
-            _log.error(e.getMessage());
+            log.error(e.getMessage());
             throw new DockerServerException(e);
         }
     }
@@ -374,14 +380,44 @@ public class DockerControlApi implements ContainerControlApi {
                     return getImageById(imageId);
                 } catch (NotFoundException e) {
                     final String m = String.format("The image with id %s was not found", imageId);
-                    _log.error(m);
+                    log.error(m);
                     throw new DockerServerException(m);
                 }
             } catch (DockerException | InterruptedException e) {
-                _log.error(e.getMessage());
+                log.error(e.getMessage());
                 throw new DockerServerException(e);
             }
         }
+    }
+
+    @Override
+    public List<Command> parseLabels(final String imageId)
+            throws DockerServerException, NoServerPrefException, NotFoundException {
+        final DockerImage image = getImageById(imageId);
+        return parseLabels(image);
+    }
+
+    @Override
+    public List<Command> parseLabels(final DockerImage dockerImage) {
+        final Map<String, String> labels = dockerImage.getLabels();
+        if (labels != null && !labels.isEmpty() && labels.containsKey(LABEL_KEY)) {
+            final String labelValue = labels.get(LABEL_KEY);
+            if (StringUtils.isNotBlank(labelValue)) {
+                try {
+                    final List<Command> commands =
+                            objectMapper.readValue(labelValue, new TypeReference<List<Command>>() {});
+                    if (commands != null && !commands.isEmpty()) {
+                        for (final Command command : commands) {
+                            command.setDockerImage(dockerImage.getImageId());
+                        }
+                    }
+                    return commands;
+                } catch (IOException e) {
+                    log.info("Could not parse Commands from label: %s", labelValue);
+                }
+            }
+        }
+        return null;
     }
 
     /**
@@ -418,7 +454,7 @@ public class DockerControlApi implements ContainerControlApi {
         try (final DockerClient dockerClient = getClient()) {
             containerList = dockerClient.listContainers(dockerParams);
         } catch (DockerException | InterruptedException e) {
-            _log.error(e.getMessage());
+            log.error(e.getMessage());
             throw new DockerServerException(e);
         }
         return DockerContainerToNrgContainer(containerList);
@@ -445,7 +481,7 @@ public class DockerControlApi implements ContainerControlApi {
         try {
             return client.inspectContainer(id);
         } catch (DockerException | InterruptedException e) {
-            _log.error("Container server error." + e.getMessage());
+            log.error("Container server error." + e.getMessage());
             throw new DockerServerException(e);
         }
     }
@@ -470,7 +506,7 @@ public class DockerControlApi implements ContainerControlApi {
         try (final LogStream logStream = getClient().logs(id, LogsParam.stdout())) {
             logs = logStream.readFully();
         } catch (DockerException | InterruptedException e) {
-            _log.error(e.getMessage());
+            log.error(e.getMessage());
             throw new DockerServerException(e);
         }
 
@@ -492,8 +528,8 @@ public class DockerControlApi implements ContainerControlApi {
          * @return DockerClient object using default authConfig
          **/
     public DockerClient getClient(final DockerServer server) {
-        if (_log.isDebugEnabled()) {
-            _log.debug("method getClient, Create server connection, server " + server.getHost());
+        if (log.isDebugEnabled()) {
+            log.debug("method getClient, Create server connection, server " + server.getHost());
         }
 
         DefaultDockerClient.Builder clientBuilder =
@@ -506,7 +542,7 @@ public class DockerControlApi implements ContainerControlApi {
                     new DockerCertificates(Paths.get(server.getCertPath()));
                 clientBuilder = clientBuilder.dockerCertificates(certificates);
             } catch (DockerCertificateException e) {
-                _log.error("Could not find docker certificates at " + server.getCertPath(), e);
+                log.error("Could not find docker certificates at " + server.getCertPath(), e);
             }
         }
 

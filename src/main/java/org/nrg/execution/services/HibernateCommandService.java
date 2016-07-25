@@ -71,9 +71,6 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     @SuppressWarnings("SpringJavaAutowiringInspection")
     private SiteConfigPreferences siteConfigPreferences;
 
-    @Autowired
-    private ObjectMapper objectMapper;
-
     private static final Pattern TEMPLATE_PATTERN = Pattern.compile("(?<=\\s|\\A)#(\\w+)#(?=\\s|\\z)"); // Match #varname#
 
     @Override
@@ -357,32 +354,52 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
 //        return null;
 //    }
 
+//    @Override
+//    public List<Command> parseLabels(final Map<String, String> labels) {
+//        if (labels != null && !labels.isEmpty() && labels.containsKey(LABEL_KEY)) {
+//            final String labelValue = labels.get(LABEL_KEY);
+//            if (StringUtils.isNotBlank(labelValue)) {
+//                try {
+//                    return objectMapper.readValue(labelValue, new TypeReference<List<Command>>() {});
+//                } catch (IOException e) {
+//                    log.info("Could not parse Commands from label: %s", labelValue);
+//                }
+//            }
+//        }
+//        return null;
+//    }
+
+
     @Override
-    public List<Command> parseLabels(final Map<String, String> labels) {
-        if (labels != null && !labels.isEmpty() && labels.containsKey(LABEL_KEY)) {
-            final String labelValue = labels.get(LABEL_KEY);
-            if (StringUtils.isNotBlank(labelValue)) {
-                try {
-                    return objectMapper.readValue(labelValue, new TypeReference<List<Command>>() {});
-                } catch (IOException e) {
-                    log.info("Could not parse Commands from label: %s", labelValue);
-                }
-            }
-        }
-        return null;
+    public List<Command> saveFromLabels(final String imageId) throws DockerServerException, NotFoundException, NoServerPrefException {
+        final List<Command> commands = controlApi.parseLabels(imageId);
+        return save(commands);
     }
 
     @Override
     public List<Command> saveFromLabels(final DockerImage dockerImage) {
-        final List<Command> commands = parseLabels(dockerImage.getLabels());
+        final List<Command> commands = controlApi.parseLabels(dockerImage);
+        return save(commands);
+    }
+
+    @Override
+    public List<Command> save(final List<Command> commands) {
+        final List<Command> saved = Lists.newArrayList();
         if (!(commands == null || commands.isEmpty())) {
             for (final Command command : commands) {
-                command.setDockerImage(dockerImage.getImageId());
-                create(command);
+                try {
+                    create(command);
+                    saved.add(command);
+                } catch (Exception e) {
+                    // TODO figure out more specific exception to catch.
+                    // Find the type for the exception where name+dockerImage already exists
+                    log.error("Could not save command: " + command);
+                }
             }
         }
         return commands;
     }
+
 
     private List<String> resolveTemplateList(final List<String> template,
                                              final Map<String, String> variableValues) {
