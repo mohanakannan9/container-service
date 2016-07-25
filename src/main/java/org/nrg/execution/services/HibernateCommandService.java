@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
+import org.hibernate.Hibernate;
 import org.hibernate.exception.ConstraintViolationException;
 import org.nrg.execution.api.ContainerControlApi;
 import org.nrg.execution.daos.CommandDao;
@@ -23,6 +24,7 @@ import org.nrg.execution.model.ResolvedCommand;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
+import org.nrg.framework.orm.hibernate.HibernateUtils;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.om.XnatAbstractresource;
 import org.nrg.xdat.om.XnatImagesessiondata;
@@ -70,6 +72,15 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
 
     private static final Pattern TEMPLATE_PATTERN = Pattern.compile("(?<=\\s|\\A)#(\\w+)#(?=\\s|\\z)"); // Match #varname#
 
+    private void initialize(final Command command) {
+        Hibernate.initialize(command);
+        Hibernate.initialize(command.getEnvironmentVariables());
+        Hibernate.initialize(command.getRunTemplate());
+        Hibernate.initialize(command.getMountsIn());
+        Hibernate.initialize(command.getMountsOut());
+        Hibernate.initialize(command.getVariables());
+    }
+
     @Override
     public Command create(final Command command) throws NrgRuntimeException {
         try {
@@ -80,8 +91,61 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     }
 
     @Override
+    @Transactional
+    public Command retrieve(long id) {
+        if (log.isDebugEnabled()) {
+            log.debug("Retrieving entity for ID: " + id);
+        }
+        final Command entity;
+        if (HibernateUtils.isAuditable(getParameterizedType())) {
+            entity = getDao().findEnabledById(id);
+        } else {
+            entity = getDao().retrieve(id);
+        }
+
+        if (entity != null) {
+            initialize(entity);
+        }
+        return entity;
+    }
+
+    @Override
+    @Transactional
     public Command retrieve(final String name, final String dockerImageId) {
-        return getDao().retrieve(name, dockerImageId);
+        final Command command = getDao().retrieve(name, dockerImageId);
+        if (command != null) {
+            initialize(command);
+        }
+        return command;
+    }
+
+    @Override
+    @Transactional
+    public List<Command> getAll() {
+        log.debug("Getting all enabled entities");
+        final List<Command> list = getDao().findAllEnabled();
+        for (final Command entity : list) {
+            initialize(entity);
+        }
+
+        return list;
+    }
+
+    @Override
+    public List<Command> save(final List<Command> commands) {
+        final List<Command> saved = Lists.newArrayList();
+        if (!(commands == null || commands.isEmpty())) {
+            for (final Command command : commands) {
+                try {
+                    create(command);
+                    saved.add(command);
+                } catch (NrgServiceRuntimeException e) {
+                    // TODO: should I "update" instead of erroring out if command already exists?
+                    log.error("Could not save command: " + command, e);
+                }
+            }
+        }
+        return saved;
     }
 
     @Override
@@ -379,24 +443,6 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
 //        final List<Command> commands = controlApi.parseLabels(dockerImage);
 //        return save(commands);
 //    }
-
-    @Override
-    public List<Command> save(final List<Command> commands) {
-        final List<Command> saved = Lists.newArrayList();
-        if (!(commands == null || commands.isEmpty())) {
-            for (final Command command : commands) {
-                try {
-                    create(command);
-                    saved.add(command);
-                } catch (NrgServiceRuntimeException e) {
-                    // TODO: should I "update" instead of erroring out if command already exists?
-                    log.error("Could not save command: " + command, e);
-                }
-            }
-        }
-        return saved;
-    }
-
 
     private List<String> resolveTemplateList(final List<String> template,
                                              final Map<String, String> variableValues) {
