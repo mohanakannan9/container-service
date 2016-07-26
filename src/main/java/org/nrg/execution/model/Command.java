@@ -9,6 +9,8 @@ import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.envers.Audited;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -31,6 +33,7 @@ public class Command extends AbstractHibernateEntity {
     @JsonProperty("mounts-out") private List<CommandMount> mountsOut = Lists.newArrayList();
     @JsonProperty("env") private Map<String, String> environmentVariables = Maps.newHashMap();
 
+    @Nonnull
     @ApiModelProperty(value = "The Command's user-readable name. Must be unique for a given docker image.", required = true)
     public String getName() {
         return name;
@@ -40,6 +43,7 @@ public class Command extends AbstractHibernateEntity {
         this.name = name;
     }
 
+    @Nullable
     @ApiModelProperty("A brief description of the Command")
     public String getDescription() {
         return description;
@@ -49,6 +53,7 @@ public class Command extends AbstractHibernateEntity {
         this.description = description;
     }
 
+    @Nullable
     @ApiModelProperty("A URL where users can get more information about the Command")
     public String getInfoUrl() {
         return infoUrl;
@@ -58,6 +63,7 @@ public class Command extends AbstractHibernateEntity {
         this.infoUrl = infoUrl;
     }
 
+    @Nonnull
     @ApiModelProperty(value = "The ID of the docker image where this Command will run", required = true)
     public String getDockerImage() {
         return dockerImage;
@@ -67,6 +73,7 @@ public class Command extends AbstractHibernateEntity {
         this.dockerImage = dockerImage;
     }
 
+    @Nullable
     @ElementCollection
     @ApiModelProperty("A list of variables. " +
             "When the Command is launched, these variables receive values; " +
@@ -81,6 +88,7 @@ public class Command extends AbstractHibernateEntity {
                 variables;
     }
 
+    @Nullable
     @ElementCollection
     @ApiModelProperty("The command that will be executed in the container when the Command is launched. " +
             "Can use template strings, e.g. #variable-name#, which will be resolved into a value when the Command is launched.")
@@ -94,6 +102,7 @@ public class Command extends AbstractHibernateEntity {
                 runTemplate;
     }
 
+    @Nullable
     @ElementCollection
     public List<CommandMount> getMountsIn() {
         return mountsIn;
@@ -108,6 +117,7 @@ public class Command extends AbstractHibernateEntity {
         }
     }
 
+    @Nullable
     @ElementCollection
     public List<CommandMount> getMountsOut() {
         return mountsOut;
@@ -122,6 +132,7 @@ public class Command extends AbstractHibernateEntity {
         }
     }
 
+    @Nullable
     @ElementCollection
     @ApiModelProperty("A Map of environment variables. Each kay is the environment variable's name, and each value is the environment variable's value." +
             "Both the names and values can use template strings, e.g. #variable-name#, which will be resolved into a value when the Command is launched.")
