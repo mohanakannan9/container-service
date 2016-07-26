@@ -200,7 +200,7 @@ public class DockerControlApi implements ContainerControlApi {
         }
         final List<String> environmentVariables = Lists.newArrayList();
         for (final Map.Entry<String, String> env : command.getEnvironmentVariables().entrySet()) {
-            environmentVariables.add(org.apache.commons.lang3.StringUtils.join(env.getKey(), env.getValue(), "="));
+            environmentVariables.add(StringUtils.join(new String[] {env.getKey(), env.getValue()}, "="));
         }
         return launchImage(getServer(), dockerImageId, runCommand, bindMounts, environmentVariables);
     }

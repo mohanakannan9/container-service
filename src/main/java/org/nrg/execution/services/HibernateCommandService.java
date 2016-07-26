@@ -25,6 +25,7 @@ import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.framework.orm.hibernate.HibernateUtils;
+import org.nrg.transporter.TransportService;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.om.XnatAbstractresource;
 import org.nrg.xdat.om.XnatImagesessiondata;
@@ -45,6 +46,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Nullable;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -69,6 +72,9 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     @Autowired
     @SuppressWarnings("SpringJavaAutowiringInspection")
     private SiteConfigPreferences siteConfigPreferences;
+
+    @Autowired
+    private TransportService transporter;
 
     private static final Pattern TEMPLATE_PATTERN = Pattern.compile("(?<=\\s|\\A)#(\\w+)#(?=\\s|\\z)"); // Match #varname#
 
@@ -185,10 +191,13 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         if (command.getVariables() != null) {
             for (final CommandVariable variable : command.getVariables()) {
                 // raw value is runtime value if provided, else default value
-                final String variableRawValueCouldBeNull =
-                        variableValuesProvidedAtRuntime.containsKey(variable.getName()) ?
-                                variableValuesProvidedAtRuntime.get(variable.getName()) :
-                                variable.getDefaultValue();
+                String variableRawValueCouldBeNull = variable.getDefaultValue();
+                if (StringUtils.isNotBlank(variable.getValue())) {
+                    variableRawValueCouldBeNull = variable.getValue();
+                }
+                if (variableValuesProvidedAtRuntime.containsKey(variable.getName())) {
+                    variableRawValueCouldBeNull = variableValuesProvidedAtRuntime.get(variable.getName());
+                }
                 final String variableRawValue = variableRawValueCouldBeNull == null ? "" : variableRawValueCouldBeNull;
 
                 // If there is no raw value, and variable is required, that is an error
@@ -236,7 +245,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
 //        }
         String itemId = "<not found>";
         try {
-            itemId = itemI.getItem().getIDValue();
+            itemId = itemI.getItem().getIDValue(); // TODO this is null for some reason?
         } catch (ElementNotFoundException ignored) {
             // Can't get ID.
         }
@@ -373,7 +382,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         }
 
         try {
-            resourceLabelToCatalogPath.put("root", session.getArchivePath());
+            resourceLabelToCatalogPath.put("root", session.getRelativeArchivePath());
         } catch (UnknownPrimaryProjectException e) {
             log.info("Could not get session's archive path", e);
         }
@@ -395,6 +404,27 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         defaultEnv.put("XNAT_PASS", token.getSecret());
 
         resolvedCommand.addEnvironmentVariables(defaultEnv);
+
+        // Transport mounts
+        if (resolvedCommand.getMountsIn() != null) {
+            final String dockerHost = controlApi.getServer().getHost();
+            for (final CommandMount mountIn : resolvedCommand.getMountsIn()) {
+                final Path pathOnXnatHost = Paths.get(mountIn.getHostPath());
+                final Path pathOnDockerHost = transporter.transport(dockerHost, pathOnXnatHost);
+                mountIn.setHostPath(pathOnDockerHost.toString());
+            }
+        }
+        if (resolvedCommand.getMountsOut() != null) {
+            final String dockerHost = controlApi.getServer().getHost();
+            final List<CommandMount> mountsOut = resolvedCommand.getMountsOut();
+            final List<Path> buildPaths = transporter.getWritableDirectories(dockerHost, mountsOut.size());
+            for (int i=0; i < mountsOut.size(); i++) {
+                final CommandMount mountOut = mountsOut.get(i);
+                final Path buildPath = buildPaths.get(i);
+
+                mountOut.setHostPath(buildPath.toString());
+            }
+        }
 
         return launchCommand(resolvedCommand);
     }

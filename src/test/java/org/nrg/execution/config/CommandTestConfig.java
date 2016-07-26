@@ -15,6 +15,8 @@ import org.nrg.automation.services.impl.hibernate.HibernateScriptService;
 import org.nrg.execution.api.ContainerControlApi;
 import org.nrg.framework.orm.hibernate.AggregatedAnnotationSessionFactoryBean;
 import org.nrg.prefs.services.NrgPreferenceService;
+import org.nrg.transporter.TransportService;
+import org.nrg.transporter.TransportServiceImpl;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.services.AliasTokenService;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -94,6 +96,11 @@ public class CommandTestConfig {
     @Bean
     public ContainerControlApi controlApi() {
         return Mockito.mock(ContainerControlApi.class);
+    }
+
+    @Bean
+    public TransportService transportService() {
+        return Mockito.mock(TransportServiceImpl.class);
     }
 
     @Bean

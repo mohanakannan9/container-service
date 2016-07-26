@@ -15,6 +15,8 @@ import org.nrg.execution.services.DockerService;
 import org.nrg.execution.services.DockerServiceImpl;
 import org.nrg.execution.services.HibernateCommandService;
 import org.nrg.prefs.services.NrgPreferenceService;
+import org.nrg.transporter.TransportService;
+import org.nrg.transporter.TransportServiceImpl;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.services.AliasTokenService;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -86,6 +88,11 @@ public class DockerRestApiTestConfig {
     @Bean
     public CommandDao commandDao() {
         return new CommandDao();
+    }
+
+    @Bean
+    public TransportService transportService() {
+        return Mockito.mock(TransportServiceImpl.class);
     }
 
     @Bean

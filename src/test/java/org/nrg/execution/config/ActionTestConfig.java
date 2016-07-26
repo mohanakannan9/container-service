@@ -16,6 +16,8 @@ import org.nrg.automation.entities.Script;
 import org.nrg.execution.api.ContainerControlApi;
 import org.nrg.framework.orm.hibernate.AggregatedAnnotationSessionFactoryBean;
 import org.nrg.prefs.services.NrgPreferenceService;
+import org.nrg.transporter.TransportService;
+import org.nrg.transporter.TransportServiceImpl;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.services.AliasTokenService;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -86,6 +88,11 @@ public class ActionTestConfig {
 //    public DockerImageDao dockerImageDao() {
 //        return new DockerImageDao();
 //    }
+
+    @Bean
+    public TransportService transportService() {
+        return Mockito.mock(TransportServiceImpl.class);
+    }
 
     @Bean
     public ContainerControlApi controlApi() {
