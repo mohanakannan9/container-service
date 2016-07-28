@@ -9,8 +9,6 @@ import org.hibernate.Hibernate;
 import org.hibernate.exception.ConstraintViolationException;
 import org.nrg.execution.api.ContainerControlApi;
 import org.nrg.execution.daos.CommandDao;
-import org.nrg.execution.exceptions.AceInputException;
-import org.nrg.execution.exceptions.BadRequestException;
 import org.nrg.execution.exceptions.CommandVariableResolutionException;
 import org.nrg.execution.exceptions.DockerServerException;
 import org.nrg.execution.exceptions.NoServerPrefException;
@@ -19,7 +17,6 @@ import org.nrg.execution.model.Command;
 import org.nrg.execution.model.CommandMount;
 import org.nrg.execution.model.CommandVariable;
 import org.nrg.execution.model.Context;
-import org.nrg.execution.model.DockerImage;
 import org.nrg.execution.model.ResolvedCommand;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
@@ -62,9 +59,6 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     private static final Logger log = LoggerFactory.getLogger(HibernateCommandService.class);
     @Autowired
     private ContainerControlApi controlApi;
-//
-//    @Autowired
-//    private AceService aceService;
 
     @Autowired
     @SuppressWarnings("SpringJavaAutowiringInspection")
@@ -346,19 +340,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
 
     @Override
     public String launchCommand(final Long commandId, final UserI user, final XnatImagesessiondata session)
-            throws NotFoundException, CommandVariableResolutionException, NoServerPrefException,
-                    DockerServerException, BadRequestException, XFTInitException,
-                    ElementNotFoundException, AceInputException {
-        // TODO Remove this hack
-//        final Context context = Context.newContext();
-//        context.put("id", session.getId());
-//        final List<ActionContextExecutionDto> aceDtos = aceService.resolveAces(context);
-//        for (final ActionContextExecutionDto aceDto : aceDtos) {
-//            if (aceDto.getCommandId().equals(commandId)) {
-//                return aceService.executeAce(aceDto);
-//            }
-//        }
-//        return null;
+            throws NotFoundException, XFTInitException, CommandVariableResolutionException, NoServerPrefException, DockerServerException {
         final Command command = retrieve(commandId);
         if (command == null) {
             throw new NotFoundException("No command with ID " + commandId);

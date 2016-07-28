@@ -2,7 +2,11 @@ package org.nrg.execution.listener;
 
 import org.nrg.execution.events.ScanArchiveEvent;
 import org.nrg.execution.events.SessionArchiveEvent;
-import org.nrg.execution.exceptions.*;
+import org.nrg.execution.exceptions.BadRequestException;
+import org.nrg.execution.exceptions.CommandVariableResolutionException;
+import org.nrg.execution.exceptions.DockerServerException;
+import org.nrg.execution.exceptions.NoServerPrefException;
+import org.nrg.execution.exceptions.NotFoundException;
 import org.nrg.execution.model.CommandEventMapping;
 import org.nrg.execution.services.CommandEventMappingService;
 import org.nrg.execution.services.CommandService;
@@ -18,10 +22,8 @@ import reactor.bus.EventBus;
 import reactor.fn.Consumer;
 
 import javax.inject.Inject;
-
 import java.util.List;
 
-import static reactor.bus.selector.Selectors.R;
 import static reactor.bus.selector.Selectors.type;
 
 
@@ -70,8 +72,6 @@ public class SessionArchiveListener implements Consumer<Event<SessionArchiveEven
                 } catch (XFTInitException e) {
                     e.printStackTrace();
                 } catch (ElementNotFoundException e) {
-                    e.printStackTrace();
-                } catch (AceInputException e) {
                     e.printStackTrace();
                 }
             }

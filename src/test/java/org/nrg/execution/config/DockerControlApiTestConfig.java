@@ -1,9 +1,8 @@
 package org.nrg.execution.config;
 
 import org.mockito.Mockito;
-import org.nrg.execution.model.DockerServerPrefsBean;
 import org.nrg.execution.api.DockerControlApi;
-import org.nrg.execution.services.AceService;
+import org.nrg.execution.model.DockerServerPrefsBean;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
