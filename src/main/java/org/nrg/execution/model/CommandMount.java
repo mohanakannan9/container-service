@@ -26,6 +26,7 @@ public class CommandMount implements Serializable {
         this.name = name;
     }
 
+    @Transient
     public String getHostPath() {
         return hostPath;
     }
