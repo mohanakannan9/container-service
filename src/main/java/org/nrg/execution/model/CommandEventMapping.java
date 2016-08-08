@@ -15,6 +15,8 @@ public class CommandEventMapping extends AbstractHibernateEntity {
 
     private String eventType;
     private Long commandId;
+    private String projectId;
+    private String groupId;
 
     public String getEventType() {
         return eventType;

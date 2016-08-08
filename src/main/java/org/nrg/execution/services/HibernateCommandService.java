@@ -428,6 +428,11 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
 
         return launchCommand(resolvedCommand);
     }
+
+    @Override
+    public String launchCommand(Long commandId, UserI user, XnatImagescandata scan) throws NotFoundException, CommandVariableResolutionException, NoServerPrefException, DockerServerException, BadRequestException, XFTInitException, ElementNotFoundException, AceInputException {
+        return null;
+    }
 //
 //    @Override
 //    public ActionContextExecution launchCommand(final XnatImagescandata scan, final Long commandId)

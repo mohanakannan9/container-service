@@ -1,14 +1,10 @@
 package org.nrg.execution.listener;
 
 import org.nrg.execution.events.ScanArchiveEvent;
-import org.nrg.execution.events.SessionArchiveEvent;
 import org.nrg.execution.exceptions.*;
 import org.nrg.execution.model.CommandEventMapping;
 import org.nrg.execution.services.CommandEventMappingService;
 import org.nrg.execution.services.CommandService;
-import org.nrg.framework.services.NrgEventService;
-import org.nrg.xdat.XDAT;
-import org.nrg.xdat.om.XnatImagescandata;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,15 +14,13 @@ import reactor.bus.EventBus;
 import reactor.fn.Consumer;
 
 import javax.inject.Inject;
-
 import java.util.List;
 
-import static reactor.bus.selector.Selectors.R;
 import static reactor.bus.selector.Selectors.type;
 
 
 @Service
-public class SessionArchiveListener implements Consumer<Event<SessionArchiveEvent>> {
+public class ScanArchiveListener implements Consumer<Event<ScanArchiveEvent>> {
 
     @Autowired
     CommandService commandService;
@@ -34,29 +28,28 @@ public class SessionArchiveListener implements Consumer<Event<SessionArchiveEven
     @Autowired
     CommandEventMappingService commandEventMappingService;
 
-    @Inject public SessionArchiveListener( EventBus eventBus ){
-        eventBus.on(type(SessionArchiveEvent.class), this);
+     /**
+     * Instantiates a new xft item event listener.
+     *
+     * @param eventBus the event bus
+     */
+    @Inject public ScanArchiveListener(EventBus eventBus ){
+        eventBus.on(type(ScanArchiveEvent.class), this);
     }
 
-    @Override
-    public void accept(Event<SessionArchiveEvent> event) {
-        final SessionArchiveEvent sessionArchivedEvent = event.getData();
 
-        // Fire ScanArchiveEvent for each contained scan
-        final List<XnatImagescandata> scans =  sessionArchivedEvent.getSession().getScans_scan();
-        final NrgEventService eventService = XDAT.getContextService().getBean(NrgEventService.class);
-        for (XnatImagescandata scan : scans) {
-            eventService.triggerEvent(new ScanArchiveEvent(scan, sessionArchivedEvent.getUser()));
-        }
+    @Override
+    public void accept(Event<ScanArchiveEvent> event) {
+        final ScanArchiveEvent scanArchiveEvent = event.getData();
 
         // Find commands defined for this event type
-        List<CommandEventMapping> commandEventMappings = commandEventMappingService.findByEventType(sessionArchivedEvent.getEventId());
+        List<CommandEventMapping> commandEventMappings = commandEventMappingService.findByEventType(scanArchiveEvent.getEventId());
 
         if (commandEventMappings != null && !commandEventMappings.isEmpty()){
             for (CommandEventMapping commandEventMapping: commandEventMappings) {
                 Long commandId = commandEventMapping.getCommandId();
                 try {
-                    commandService.launchCommand(commandId, sessionArchivedEvent.getUser(), sessionArchivedEvent.getSession());
+                    commandService.launchCommand(commandId, scanArchiveEvent.getUser(), scanArchiveEvent.getScan());
                 } catch (NotFoundException e) {
                     e.printStackTrace();
                 } catch (CommandVariableResolutionException e) {
@@ -77,6 +70,4 @@ public class SessionArchiveListener implements Consumer<Event<SessionArchiveEven
             }
         }
     }
-
-
 }
