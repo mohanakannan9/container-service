@@ -1,12 +1,8 @@
 package org.nrg.execution.events;
 
-import org.nrg.execution.events.ScanArchiveEvent;
-import org.nrg.execution.exceptions.*;
 import org.nrg.execution.model.CommandEventMapping;
 import org.nrg.execution.services.CommandEventMappingService;
 import org.nrg.execution.services.CommandService;
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.XFTInitException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.bus.Event;

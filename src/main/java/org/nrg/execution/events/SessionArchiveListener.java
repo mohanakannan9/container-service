@@ -1,7 +1,5 @@
 package org.nrg.execution.events;
 
-import org.nrg.execution.events.ScanArchiveEvent;
-import org.nrg.execution.events.SessionArchiveEvent;
 import org.nrg.execution.exceptions.BadRequestException;
 import org.nrg.execution.exceptions.CommandVariableResolutionException;
 import org.nrg.execution.exceptions.DockerServerException;
@@ -11,7 +9,6 @@ import org.nrg.execution.model.CommandEventMapping;
 import org.nrg.execution.services.CommandEventMappingService;
 import org.nrg.execution.services.CommandService;
 import org.nrg.framework.services.NrgEventService;
-import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatImagescandata;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
@@ -31,10 +28,13 @@ import static reactor.bus.selector.Selectors.type;
 public class SessionArchiveListener implements Consumer<Event<SessionArchiveEvent>> {
 
     @Autowired
-    CommandService commandService;
+    private CommandService commandService;
 
     @Autowired
-    CommandEventMappingService commandEventMappingService;
+    private CommandEventMappingService commandEventMappingService;
+
+    @Autowired
+    private NrgEventService eventService;
 
     @Inject public SessionArchiveListener( EventBus eventBus ){
         eventBus.on(type(SessionArchiveEvent.class), this);
@@ -46,7 +46,6 @@ public class SessionArchiveListener implements Consumer<Event<SessionArchiveEven
 
         // Fire ScanArchiveEvent for each contained scan
         final List<XnatImagescandata> scans =  sessionArchivedEvent.getSession().getScans_scan();
-        final NrgEventService eventService = XDAT.getContextService().getBean(NrgEventService.class);
         for (XnatImagescandata scan : scans) {
             eventService.triggerEvent(new ScanArchiveEvent(scan, sessionArchivedEvent.getUser()));
         }
