@@ -1,4 +1,4 @@
-package org.nrg.execution.listener;
+package org.nrg.execution.events;
 
 import org.apache.commons.codec.binary.StringUtils;
 import org.nrg.execution.events.SessionArchiveEvent;

@@ -1,4 +1,4 @@
-package org.nrg.execution.listener;
+package org.nrg.execution.events;
 
 import org.nrg.execution.events.ScanArchiveEvent;
 import org.nrg.execution.exceptions.*;
