@@ -28,6 +28,7 @@ import org.nrg.framework.orm.hibernate.HibernateUtils;
 import org.nrg.transporter.TransportService;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.om.XnatAbstractresource;
+import org.nrg.xdat.om.XnatImagescandata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatResourcecatalog;
@@ -430,7 +431,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     }
 
     @Override
-    public String launchCommand(Long commandId, UserI user, XnatImagescandata scan) throws NotFoundException, CommandVariableResolutionException, NoServerPrefException, DockerServerException, BadRequestException, XFTInitException, ElementNotFoundException, AceInputException {
+    public String launchCommand(Long commandId, UserI user, XnatImagescandata scan) {
         return null;
     }
 //

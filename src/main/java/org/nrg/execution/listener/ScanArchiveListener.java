@@ -45,28 +45,10 @@ public class ScanArchiveListener implements Consumer<Event<ScanArchiveEvent>> {
         // Find commands defined for this event type
         List<CommandEventMapping> commandEventMappings = commandEventMappingService.findByEventType(scanArchiveEvent.getEventId());
 
-        if (commandEventMappings != null && !commandEventMappings.isEmpty()){
+        if (commandEventMappings != null && !commandEventMappings.isEmpty()) {
             for (CommandEventMapping commandEventMapping: commandEventMappings) {
                 Long commandId = commandEventMapping.getCommandId();
-                try {
-                    commandService.launchCommand(commandId, scanArchiveEvent.getUser(), scanArchiveEvent.getScan());
-                } catch (NotFoundException e) {
-                    e.printStackTrace();
-                } catch (CommandVariableResolutionException e) {
-                    e.printStackTrace();
-                } catch (NoServerPrefException e) {
-                    e.printStackTrace();
-                } catch (DockerServerException e) {
-                    e.printStackTrace();
-                } catch (BadRequestException e) {
-                    e.printStackTrace();
-                } catch (XFTInitException e) {
-                    e.printStackTrace();
-                } catch (ElementNotFoundException e) {
-                    e.printStackTrace();
-                } catch (AceInputException e) {
-                    e.printStackTrace();
-                }
+                commandService.launchCommand(commandId, scanArchiveEvent.getUser(), scanArchiveEvent.getScan());
             }
         }
     }
