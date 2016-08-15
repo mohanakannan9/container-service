@@ -17,6 +17,7 @@ import org.nrg.execution.services.DockerService;
 import org.nrg.execution.services.DockerServiceImpl;
 import org.nrg.execution.services.HibernateCommandService;
 import org.nrg.execution.services.HibernateContainerExecutionService;
+import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.transporter.TransportService;
 import org.nrg.transporter.TransportServiceImpl;
@@ -106,6 +107,11 @@ public class DockerRestApiTestConfig {
     @Bean
     public TransportService transportService() {
         return Mockito.mock(TransportServiceImpl.class);
+    }
+
+    @Bean
+    public NrgEventService mockNrgEventService() {
+        return Mockito.mock(NrgEventService.class);
     }
 
     @Bean

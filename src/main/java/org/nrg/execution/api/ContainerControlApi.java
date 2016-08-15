@@ -55,4 +55,5 @@ public interface ContainerControlApi {
     String getContainerLogs(String id) throws NoServerPrefException, DockerServerException;
 
     List<DockerContainerEvent> getContainerEvents(final Date since, final Date until) throws NoServerPrefException, DockerServerException;
+    void getContainerEventsAndThrow(final Date since, final Date until) throws NoServerPrefException, DockerServerException;
 }

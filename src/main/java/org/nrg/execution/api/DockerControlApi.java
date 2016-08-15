@@ -27,19 +27,20 @@ import com.spotify.docker.client.messages.ImageInfo;
 import com.spotify.docker.client.messages.ProgressMessage;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.execution.events.DockerContainerEvent;
+import org.nrg.execution.exceptions.DockerServerException;
+import org.nrg.execution.exceptions.NoServerPrefException;
+import org.nrg.execution.exceptions.NotFoundException;
 import org.nrg.execution.model.Command;
 import org.nrg.execution.model.CommandMount;
+import org.nrg.execution.model.Container;
 import org.nrg.execution.model.ContainerExecution;
 import org.nrg.execution.model.DockerHub;
 import org.nrg.execution.model.DockerImage;
 import org.nrg.execution.model.DockerServer;
 import org.nrg.execution.model.DockerServerPrefsBean;
 import org.nrg.execution.model.ResolvedCommand;
-import org.nrg.execution.exceptions.DockerServerException;
-import org.nrg.execution.exceptions.NoServerPrefException;
-import org.nrg.execution.exceptions.NotFoundException;
-import org.nrg.execution.model.Container;
 import org.nrg.execution.services.ContainerExecutionService;
+import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,6 +70,9 @@ public class DockerControlApi implements ContainerControlApi {
 
     @Autowired
     private ContainerExecutionService containerExecutionService;
+
+    @Autowired
+    private NrgEventService eventService;
 
     public DockerServer getServer() throws NoServerPrefException {
         if (containerServerPref == null || containerServerPref.getHost() == null) {
@@ -568,37 +572,76 @@ public class DockerControlApi implements ContainerControlApi {
         return DefaultDockerClient.fromEnv().build();
     }
 
+    @Override
     public List<DockerContainerEvent> getContainerEvents(final Date since, final Date until) throws NoServerPrefException, DockerServerException {
         if (log.isDebugEnabled()) {
             log.debug("Reading all docker container events since " + since + ".");
         }
-        try(final DockerClient client = getClient()) {
-            final List<DockerContainerEvent> events = Lists.newArrayList();
 
+        final EventStream eventStream = getDockerContainerEvents(since, until);
+
+        final List<DockerContainerEvent> events = Lists.newArrayList();
+        while (eventStream.hasNext()) {
+            final Event event = eventStream.next();
+            if (log.isDebugEnabled()) {
+                log.debug("Processing a docker event: " + event);
+            }
+            events.add(new DockerContainerEvent(event.status(), event.id(), event.time()));
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("Done reading docker events.");
+        }
+
+        eventStream.close();
+
+        if (log.isDebugEnabled()) {
+            log.debug("Closed docker event stream.");
+        }
+
+        return events;
+
+    }
+
+    @Override
+    public void getContainerEventsAndThrow(final Date since, final Date until) throws NoServerPrefException, DockerServerException {
+        if (log.isDebugEnabled()) {
+            log.debug("Reading all docker container events since " + since + ".");
+        }
+
+        final EventStream eventStream = getDockerContainerEvents(since, until);
+
+        while (eventStream.hasNext()) {
+            final Event event = eventStream.next();
+            if (log.isDebugEnabled()) {
+                log.debug("Processing a docker event: " + event);
+            }
+            eventService.triggerEvent(new DockerContainerEvent(event.status(), event.id(), event.time()));
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("Done reading docker events.");
+        }
+
+        eventStream.close();
+
+        if (log.isDebugEnabled()) {
+            log.debug("Closed docker event stream.");
+        }
+
+    }
+
+    private EventStream getDockerContainerEvents(final Date since, final Date until) throws NoServerPrefException, DockerServerException {
+        if (log.isDebugEnabled()) {
+            log.debug("Reading all docker container events since " + since + ".");
+        }
+
+        try(final DockerClient client = getClient()) {
             final EventStream eventStream =
                     client.events(since(since.getTime()), until(until.getTime()), type("container"));
-
             if (log.isDebugEnabled()) {
                 log.debug("Got a stream of docker events.");
             }
-            while (eventStream.hasNext()) {
-                final Event event = eventStream.next();
-                if (log.isDebugEnabled()) {
-                    log.debug("Processing a docker event: " + event);
-                }
-                events.add(new DockerContainerEvent(event.status(), event.id(), event.time()));
-            }
-            if (log.isDebugEnabled()) {
-                log.debug("Done reading docker events.");
-            }
 
-            eventStream.close();
-
-            if (log.isDebugEnabled()) {
-                log.debug("Closed docker event stream.");
-            }
-
-            return events;
+            return eventStream;
         } catch (InterruptedException | DockerException e) {
             throw new DockerServerException(e);
         }
