@@ -16,6 +16,8 @@ import org.nrg.execution.exceptions.NotFoundException;
 import org.nrg.execution.model.Command;
 import org.nrg.execution.model.CommandMount;
 import org.nrg.execution.model.CommandVariable;
+import org.nrg.execution.model.Container;
+import org.nrg.execution.model.ContainerExecution;
 import org.nrg.execution.model.Context;
 import org.nrg.execution.model.ResolvedCommand;
 import org.nrg.framework.exceptions.NrgRuntimeException;
@@ -321,26 +323,26 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     }
 
     @Override
-    public String launchCommand(final ResolvedCommand resolvedCommand)
+    public ContainerExecution launchCommand(final ResolvedCommand resolvedCommand)
             throws NoServerPrefException, DockerServerException {
         return controlApi.launchImage(resolvedCommand);
     }
 
     @Override
-    public String launchCommand(final Long commandId)
+    public ContainerExecution launchCommand(final Long commandId)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandVariableResolutionException {
         return launchCommand(commandId, Maps.<String, String>newHashMap());
     }
 
     @Override
-    public String launchCommand(final Long commandId, final Map<String, String> variableRuntimeValues)
+    public ContainerExecution launchCommand(final Long commandId, final Map<String, String> variableRuntimeValues)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandVariableResolutionException {
         final ResolvedCommand resolvedCommand = resolveCommand(commandId, variableRuntimeValues);
-        return controlApi.launchImage(resolvedCommand);
+        return launchCommand(resolvedCommand);
     }
 
     @Override
-    public String launchCommand(final Long commandId, final UserI user, final XnatImagesessiondata session)
+    public ContainerExecution launchCommand(final Long commandId, final UserI user, final XnatImagesessiondata session)
             throws NotFoundException, XFTInitException, CommandVariableResolutionException, NoServerPrefException, DockerServerException {
         final Command command = retrieve(commandId);
         if (command == null) {
@@ -414,7 +416,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     }
 
     @Override
-    public String launchCommand(Long commandId, UserI user, XnatImagesessiondata session, XnatImagescandata scan)
+    public ContainerExecution launchCommand(Long commandId, UserI user, XnatImagesessiondata session, XnatImagescandata scan)
             throws NotFoundException, XFTInitException, CommandVariableResolutionException, NoServerPrefException, DockerServerException {
         final Command command = retrieve(commandId);
         if (command == null) {

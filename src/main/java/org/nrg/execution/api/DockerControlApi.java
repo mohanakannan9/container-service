@@ -9,6 +9,7 @@ import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerCertificates;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.DockerClient.LogsParam;
+import com.spotify.docker.client.EventStream;
 import com.spotify.docker.client.LogStream;
 import com.spotify.docker.client.LoggingPullHandler;
 import com.spotify.docker.client.ProgressHandler;
@@ -19,13 +20,16 @@ import com.spotify.docker.client.messages.AuthConfig;
 import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
 import com.spotify.docker.client.messages.ContainerInfo;
+import com.spotify.docker.client.messages.Event;
 import com.spotify.docker.client.messages.HostConfig;
 import com.spotify.docker.client.messages.Image;
 import com.spotify.docker.client.messages.ImageInfo;
 import com.spotify.docker.client.messages.ProgressMessage;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.execution.events.DockerContainerEvent;
 import org.nrg.execution.model.Command;
 import org.nrg.execution.model.CommandMount;
+import org.nrg.execution.model.ContainerExecution;
 import org.nrg.execution.model.DockerHub;
 import org.nrg.execution.model.DockerImage;
 import org.nrg.execution.model.DockerServer;
@@ -35,6 +39,7 @@ import org.nrg.execution.exceptions.DockerServerException;
 import org.nrg.execution.exceptions.NoServerPrefException;
 import org.nrg.execution.exceptions.NotFoundException;
 import org.nrg.execution.model.Container;
+import org.nrg.execution.services.ContainerExecutionService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,6 +61,9 @@ public class DockerControlApi implements ContainerControlApi {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private ContainerExecutionService containerExecutionService;
 
     public DockerServer getServer() throws NoServerPrefException {
         if (containerServerPref == null || containerServerPref.getHost() == null) {
@@ -187,7 +195,7 @@ public class DockerControlApi implements ContainerControlApi {
      * @return ID of created Container
      **/
     @Override
-    public String launchImage(final ResolvedCommand command)
+    public ContainerExecution launchImage(final ResolvedCommand command)
             throws NoServerPrefException, DockerServerException {
         final String dockerImageId = command.getDockerImage();
         final List<String> runCommand = command.getRun();
@@ -202,23 +210,40 @@ public class DockerControlApi implements ContainerControlApi {
         for (final Map.Entry<String, String> env : command.getEnvironmentVariables().entrySet()) {
             environmentVariables.add(StringUtils.join(new String[] {env.getKey(), env.getValue()}, "="));
         }
-        return launchImage(getServer(), dockerImageId, runCommand, bindMounts, environmentVariables);
+        final String containerId = launchImage(getServer(), dockerImageId, runCommand, bindMounts, environmentVariables);
+        return containerExecutionService.save(command, containerId);
     }
 
-    /**
-     * Launch image on Docker server
-     *
-     * @param imageName name of image to launch
-     * @param runCommand Command string to execute
-     * @param volumes Volume mounts, in the form "/path/on/server:/path/in/container"
-     * @return ID of created Container
-     **/
-    @Override
-    public String launchImage(final String imageName, final List<String> runCommand, final List<String> volumes)
-            throws NoServerPrefException, DockerServerException {
-        return launchImage(getServer(), imageName, runCommand, volumes);
-    }
+//    /**
+//     * Launch image on Docker server
+//     *
+//     * @param imageName name of image to launch
+//     * @param runCommand Command string to execute
+//     * @param volumes Volume mounts, in the form "/path/on/server:/path/in/container"
+//     * @return ID of created Container
+//     **/
+//    @Override
+//    public String launchImage(final String imageName, final List<String> runCommand, final List<String> volumes)
+//            throws NoServerPrefException, DockerServerException {
+//        return launchImage(getServer(), imageName, runCommand, volumes);
+//    }
 
+//    /**
+//     * Launch image on Docker server
+//     *
+//     * @param server DockerServer on which to launch
+//     * @param imageName name of image to launch
+//     * @param runCommand Command string list to execute
+//     * @param volumes Volume mounts, in the form "/path/on/server:/path/in/container"
+//     * @return ID of created Container
+//     **/
+//    @Override
+//    public String launchImage(final DockerServer server,
+//                              final String imageName,
+//                              final List<String> runCommand,
+//                              final List<String> volumes) throws DockerServerException {
+//        return launchImage(server, imageName, runCommand, volumes, null);
+//    }
     /**
      * Launch image on Docker server
      *
@@ -228,24 +253,7 @@ public class DockerControlApi implements ContainerControlApi {
      * @param volumes Volume mounts, in the form "/path/on/server:/path/in/container"
      * @return ID of created Container
      **/
-    @Override
-    public String launchImage(final DockerServer server,
-                              final String imageName,
-                              final List<String> runCommand,
-                              final List<String> volumes) throws DockerServerException {
-        return launchImage(server, imageName, runCommand, volumes, null);
-    }
-    /**
-     * Launch image on Docker server
-     *
-     * @param server DockerServer on which to launch
-     * @param imageName name of image to launch
-     * @param runCommand Command string list to execute
-     * @param volumes Volume mounts, in the form "/path/on/server:/path/in/container"
-     * @return ID of created Container
-     **/
-    @Override
-    public String launchImage(final DockerServer server,
+    private String launchImage(final DockerServer server,
                               final String imageName,
                               final List<String> runCommand,
                               final List<String> volumes,
@@ -553,6 +561,46 @@ public class DockerControlApi implements ContainerControlApi {
     public DockerClient getClientFromEnv() throws DockerCertificateException {
 
         return DefaultDockerClient.fromEnv().build();
+    }
+
+    public List<DockerContainerEvent> getContainerEvents(final Long since) throws NoServerPrefException, DockerServerException {
+        if (log.isDebugEnabled()) {
+            log.debug("Reading all docker container events since " + since + ".");
+        }
+        try(final DockerClient client = getClient()) {
+            final List<DockerContainerEvent> events = Lists.newArrayList();
+
+            final EventStream eventStream = client.events(DockerClient.EventsParam.since(since),
+                    DockerClient.EventsParam.type("container"));
+
+            if (log.isDebugEnabled()) {
+                log.debug("Got a stream of docker events.");
+            }
+            while (eventStream.hasNext()) {
+                final Event event = eventStream.next();
+                if (log.isDebugEnabled()) {
+                    log.debug("Processing a docker event: " + event);
+                }
+                events.add(new DockerContainerEvent(event.status(), event.id(), event.time()));
+
+                if (log.isDebugEnabled()) {
+                    log.debug("What will the event stream say on the next loop iteration? eventStream.hasNext() -> " + eventStream.hasNext());
+                }
+            }
+            if (log.isDebugEnabled()) {
+                log.debug("Done reading docker events.");
+            }
+
+            eventStream.close();
+
+            if (log.isDebugEnabled()) {
+                log.debug("Closed docker event stream.");
+            }
+
+            return events;
+        } catch (InterruptedException | DockerException e) {
+            throw new DockerServerException(e);
+        }
     }
 
     // TODO Move everything below to a DAO class

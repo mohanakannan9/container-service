@@ -10,6 +10,7 @@ import org.nrg.execution.exceptions.DockerServerException;
 import org.nrg.execution.exceptions.NoServerPrefException;
 import org.nrg.execution.exceptions.NotFoundException;
 import org.nrg.execution.model.Command;
+import org.nrg.execution.model.ContainerExecution;
 import org.nrg.execution.model.ResolvedCommand;
 import org.nrg.execution.services.CommandService;
 import org.nrg.framework.annotations.XapiRestController;
@@ -96,7 +97,7 @@ public class CommandRestApi {
     @RequestMapping(value = {"/launch"}, method = POST)
     @ApiOperation(value = "Launch a container from a resolved command")
     @ResponseBody
-    public String launchCommand(final @RequestBody ResolvedCommand resolvedCommand)
+    public ContainerExecution launchCommand(final @RequestBody ResolvedCommand resolvedCommand)
             throws NoServerPrefException, DockerServerException {
         return commandService.launchCommand(resolvedCommand);
     }
@@ -104,8 +105,8 @@ public class CommandRestApi {
     @RequestMapping(value = {"/{id}/launch"}, method = PUT)
     @ApiOperation(value = "Resolve a command from the variable values in the query string, and launch it")
     @ResponseBody
-    public String launchCommand(final @PathVariable Long id,
-                                final @RequestParam Map<String, String> allRequestParams)
+    public ContainerExecution launchCommand(final @PathVariable Long id,
+                                            final @RequestParam Map<String, String> allRequestParams)
             throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException {
         try {
             return commandService.launchCommand(id, allRequestParams);
@@ -116,7 +117,7 @@ public class CommandRestApi {
 
     @RequestMapping(value = {"/{id}/launch"}, method = POST)
     @ResponseBody
-    public String launchCommand(final @PathVariable Long id)
+    public ContainerExecution launchCommand(final @PathVariable Long id)
             throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException {
         try {
             return commandService.launchCommand(id);

@@ -1,6 +1,5 @@
 package org.nrg.execution.events;
 
-import org.nrg.execution.exceptions.BadRequestException;
 import org.nrg.execution.exceptions.CommandVariableResolutionException;
 import org.nrg.execution.exceptions.DockerServerException;
 import org.nrg.execution.exceptions.NoServerPrefException;
@@ -10,7 +9,6 @@ import org.nrg.execution.services.CommandEventMappingService;
 import org.nrg.execution.services.CommandService;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.xdat.om.XnatImagescandata;
-import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -58,19 +56,15 @@ public class SessionArchiveListener implements Consumer<Event<SessionArchiveEven
                 Long commandId = commandEventMapping.getCommandId();
                 try {
                     commandService.launchCommand(commandId, sessionArchivedEvent.getUser(), sessionArchivedEvent.getSession());
-                } catch (NotFoundException e) {
+                } catch (XFTInitException e) {
                     e.printStackTrace();
                 } catch (CommandVariableResolutionException e) {
                     e.printStackTrace();
-                } catch (NoServerPrefException e) {
+                } catch (NotFoundException e) {
                     e.printStackTrace();
                 } catch (DockerServerException e) {
                     e.printStackTrace();
-                } catch (BadRequestException e) {
-                    e.printStackTrace();
-                } catch (XFTInitException e) {
-                    e.printStackTrace();
-                } catch (ElementNotFoundException e) {
+                } catch (NoServerPrefException e) {
                     e.printStackTrace();
                 }
             }

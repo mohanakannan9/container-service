@@ -8,6 +8,7 @@ import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Date;
 import java.util.Objects;
 
 @NrgPreferenceBean(toolId = "docker-server",
@@ -19,6 +20,7 @@ public class DockerServerPrefsBean extends AbstractPreferenceBean {
     public void setFromDto(final DockerServer dockerServerDto) throws InvalidPreferenceName {
         setHost(dockerServerDto.getHost());
         setCertPath(dockerServerDto.getCertPath());
+        setLastEventCheckTime(new Date()); // Initialize with current time
     }
 
     public DockerServer toDto() {
@@ -30,14 +32,13 @@ public class DockerServerPrefsBean extends AbstractPreferenceBean {
         return getValue("host");
     }
 
-    public void setHost(final String host) throws InvalidPreferenceName {
+    public void setHost(final String host) {
         _log.debug("Setting host: " + host);
         if (host != null) {
             try {
                 set(host, "host");
             } catch (InvalidPreferenceName e) {
                 _log.error("Error setting Docker server preference \"host\".", e.getMessage());
-                throw e;
             }
         }
     }
@@ -47,14 +48,29 @@ public class DockerServerPrefsBean extends AbstractPreferenceBean {
         return getValue("certPath");
     }
 
-    public void setCertPath(final String certPath) throws InvalidPreferenceName {
+    public void setCertPath(final String certPath) {
         _log.debug("Setting certPath: " + certPath);
         if (certPath != null) {
             try {
                 set(certPath, "certPath");
             } catch (InvalidPreferenceName e) {
                 _log.error("Error setting Docker server preference \"certPath\".", e.getMessage());
-                throw e;
+            }
+        }
+    }
+
+    @NrgPreference
+    public Date getLastEventCheckTime() {
+        return getDateValue("lastEventCheckTime");
+    }
+
+    public void setLastEventCheckTime(final Date lastEventCheckTime) {
+        _log.debug("Setting lastEventCheckTime: " + lastEventCheckTime);
+        if (lastEventCheckTime != null) {
+            try {
+                setDateValue(lastEventCheckTime, "lastEventCheckTime");
+            } catch (InvalidPreferenceName e) {
+                _log.error("Error setting Docker server value \"lastEventCheckTime\".", e.getMessage());
             }
         }
     }
@@ -64,6 +80,7 @@ public class DockerServerPrefsBean extends AbstractPreferenceBean {
         return MoreObjects.toStringHelper(this)
             .add("host", getHost())
             .add("certPath", getCertPath())
+            .add("lastEventCheckTime", getLastEventCheckTime())
             .toString();
     }
 
