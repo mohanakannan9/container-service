@@ -44,12 +44,12 @@ public class DockerEventPuller implements Runnable {
             log.info("No docker server host set. Skipping attempt to read events.");
         } else {
             final Date lastEventCheckTime = dockerServerPrefs.getLastEventCheckTime();
-            final Long since = lastEventCheckTime == null ? 0L : lastEventCheckTime.getTime();
+            final Date since = lastEventCheckTime == null ? new Date(0L) : lastEventCheckTime;
 
             List<DockerContainerEvent> eventsToThrow = Lists.newArrayList();
             try {
                 final Date now = new Date();
-                eventsToThrow = controlApi.getContainerEvents(since);
+                eventsToThrow = controlApi.getContainerEvents(since, now);
                 dockerServerPrefs.setLastEventCheckTime(now); // Set last event check time to just before we checked. Could produce repeat events next time.
             } catch (NoServerPrefException e) {
                 log.info("Cannot search for Docker container events. No Docker server defined.");

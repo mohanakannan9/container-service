@@ -13,6 +13,7 @@ import org.nrg.execution.model.DockerServer;
 import org.nrg.execution.model.ResolvedCommand;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -53,5 +54,5 @@ public interface ContainerControlApi {
     String getContainerStatus(final String id) throws NotFoundException, NoServerPrefException, DockerServerException;
     String getContainerLogs(String id) throws NoServerPrefException, DockerServerException;
 
-    List<DockerContainerEvent> getContainerEvents(final Long since) throws NoServerPrefException, DockerServerException;
+    List<DockerContainerEvent> getContainerEvents(final Date since, final Date until) throws NoServerPrefException, DockerServerException;
 }

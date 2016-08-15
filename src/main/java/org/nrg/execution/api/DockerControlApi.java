@@ -48,8 +48,13 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+
+import static com.spotify.docker.client.DockerClient.EventsParam.since;
+import static com.spotify.docker.client.DockerClient.EventsParam.type;
+import static com.spotify.docker.client.DockerClient.EventsParam.until;
 
 @Service
 public class DockerControlApi implements ContainerControlApi {
@@ -563,15 +568,15 @@ public class DockerControlApi implements ContainerControlApi {
         return DefaultDockerClient.fromEnv().build();
     }
 
-    public List<DockerContainerEvent> getContainerEvents(final Long since) throws NoServerPrefException, DockerServerException {
+    public List<DockerContainerEvent> getContainerEvents(final Date since, final Date until) throws NoServerPrefException, DockerServerException {
         if (log.isDebugEnabled()) {
             log.debug("Reading all docker container events since " + since + ".");
         }
         try(final DockerClient client = getClient()) {
             final List<DockerContainerEvent> events = Lists.newArrayList();
 
-            final EventStream eventStream = client.events(DockerClient.EventsParam.since(since),
-                    DockerClient.EventsParam.type("container"));
+            final EventStream eventStream =
+                    client.events(since(since.getTime()), until(until.getTime()), type("container"));
 
             if (log.isDebugEnabled()) {
                 log.debug("Got a stream of docker events.");
@@ -582,10 +587,6 @@ public class DockerControlApi implements ContainerControlApi {
                     log.debug("Processing a docker event: " + event);
                 }
                 events.add(new DockerContainerEvent(event.status(), event.id(), event.time()));
-
-                if (log.isDebugEnabled()) {
-                    log.debug("What will the event stream say on the next loop iteration? eventStream.hasNext() -> " + eventStream.hasNext());
-                }
             }
             if (log.isDebugEnabled()) {
                 log.debug("Done reading docker events.");
