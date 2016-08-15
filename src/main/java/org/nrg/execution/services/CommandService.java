@@ -40,8 +40,7 @@ public interface CommandService extends BaseHibernateService<Command> {
     String launchCommand(Long commandId, UserI user, XnatImagesessiondata session)
             throws NotFoundException, CommandVariableResolutionException, NoServerPrefException,
             DockerServerException, BadRequestException, XFTInitException, ElementNotFoundException;
-    String launchCommand(Long commandId, UserI user, XnatImagescandata scan);
-//    ActionContextExecution launchCommand(XnatImagescandata scan, Long commandId) throws NotFoundException, CommandVariableResolutionException, NoServerPrefException, DockerServerException, BadRequestException, XFTInitException, ElementNotFoundException, AceInputException;
+    String launchCommand(Long commandId, UserI user, XnatImagesessiondata session, XnatImagescandata scan) throws NotFoundException, XFTInitException, CommandVariableResolutionException, NoServerPrefException, DockerServerException;
 
     List<Command> save(final List<Command> commands);
 }

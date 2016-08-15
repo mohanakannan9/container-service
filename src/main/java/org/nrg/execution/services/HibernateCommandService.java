@@ -413,26 +413,72 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     }
 
     @Override
-    public String launchCommand(Long commandId, UserI user, XnatImagescandata scan) {
-        return null;
+    public String launchCommand(Long commandId, UserI user, XnatImagesessiondata session, XnatImagescandata scan)
+            throws NotFoundException, XFTInitException, CommandVariableResolutionException, NoServerPrefException, DockerServerException {
+        final Command command = retrieve(commandId);
+        if (command == null) {
+            throw new NotFoundException("No command with ID " + commandId);
+        }
+
+        final String projectId = session.getProject();
+        final XnatProjectdata proj = XnatProjectdata.getXnatProjectdatasById(projectId, user, false);
+        final String rootArchivePath = proj.getRootArchivePath();
+        final List<XnatAbstractresource> resources = scan.getFile();
+
+        final Map<String, String> resourceLabelToCatalogPath = Maps.newHashMap();
+        if (resources != null && StringUtils.isNotBlank(rootArchivePath)) {
+            for (final XnatAbstractresource resource : resources) {
+                if (resource instanceof XnatResourcecatalog) {
+                    final XnatResourcecatalog resourceCatalog = (XnatResourcecatalog) resource;
+                    resourceLabelToCatalogPath.put(resourceCatalog.getLabel(),
+                            resourceCatalog.getCatalogFile(rootArchivePath).getParent());
+                }
+            }
+        } else {
+            log.info("Session with id " + session.getId() + " has a blank archive path, or scan " + scan.getId() + " has no resources.");
+        }
+
+        final ResolvedCommand resolvedCommand =
+                resolve(command, session, resourceLabelToCatalogPath, Context.newContext());
+        if (resolvedCommand == null) {
+            // TODO throw an error
+            return null;
+        }
+
+        // Add default environment variables
+        final Map<String, String> defaultEnv = Maps.newHashMap();
+//        siteConfigPreferences.getBuildPath()
+        defaultEnv.put("XNAT_HOST", siteConfigPreferences.getSiteUrl());
+
+        final AliasToken token = aliasTokenService.issueTokenForUser(user);
+        defaultEnv.put("XNAT_USER", token.getAlias());
+        defaultEnv.put("XNAT_PASS", token.getSecret());
+
+        resolvedCommand.addEnvironmentVariables(defaultEnv);
+
+        // Transport mounts
+        if (resolvedCommand.getMountsIn() != null) {
+            final String dockerHost = controlApi.getServer().getHost();
+            for (final CommandMount mountIn : resolvedCommand.getMountsIn()) {
+                final Path pathOnXnatHost = Paths.get(mountIn.getHostPath());
+                final Path pathOnDockerHost = transporter.transport(dockerHost, pathOnXnatHost);
+                mountIn.setHostPath(pathOnDockerHost.toString());
+            }
+        }
+        if (resolvedCommand.getMountsOut() != null) {
+            final String dockerHost = controlApi.getServer().getHost();
+            final List<CommandMount> mountsOut = resolvedCommand.getMountsOut();
+            final List<Path> buildPaths = transporter.getWritableDirectories(dockerHost, mountsOut.size());
+            for (int i=0; i < mountsOut.size(); i++) {
+                final CommandMount mountOut = mountsOut.get(i);
+                final Path buildPath = buildPaths.get(i);
+
+                mountOut.setHostPath(buildPath.toString());
+            }
+        }
+
+        return launchCommand(resolvedCommand);
     }
-//
-//    @Override
-//    public ActionContextExecution launchCommand(final XnatImagescandata scan, final Long commandId)
-//            throws NotFoundException, CommandVariableResolutionException, NoServerPrefException,
-//                    DockerServerException, BadRequestException, XFTInitException,
-//                    ElementNotFoundException, AceInputException {
-//        // TODO Remove this hack
-//        final Context context = Context.newContext();
-//        context.put("id", scan.getImageSessionId() + ":" + scan.getId());
-//        final List<ActionContextExecutionDto> aceDtos = aceService.resolveAces(context);
-//        for (final ActionContextExecutionDto aceDto : aceDtos) {
-//            if (aceDto.getCommandId().equals(commandId)) {
-//                return aceService.executeAce(aceDto);
-//            }
-//        }
-//        return null;
-//    }
 
 //    @Override
 //    public List<Command> parseLabels(final Map<String, String> labels) {

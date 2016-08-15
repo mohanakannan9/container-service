@@ -47,7 +47,7 @@ public class SessionArchiveListener implements Consumer<Event<SessionArchiveEven
         // Fire ScanArchiveEvent for each contained scan
         final List<XnatImagescandata> scans =  sessionArchivedEvent.getSession().getScans_scan();
         for (XnatImagescandata scan : scans) {
-            eventService.triggerEvent(new ScanArchiveEvent(scan, sessionArchivedEvent.getUser()));
+            eventService.triggerEvent(new ScanArchiveEvent(scan, sessionArchivedEvent.getSession(), sessionArchivedEvent.getUser()));
         }
 
         // Find commands defined for this event type

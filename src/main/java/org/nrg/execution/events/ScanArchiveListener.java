@@ -1,8 +1,13 @@
 package org.nrg.execution.events;
 
+import org.nrg.execution.exceptions.CommandVariableResolutionException;
+import org.nrg.execution.exceptions.DockerServerException;
+import org.nrg.execution.exceptions.NoServerPrefException;
+import org.nrg.execution.exceptions.NotFoundException;
 import org.nrg.execution.model.CommandEventMapping;
 import org.nrg.execution.services.CommandEventMappingService;
 import org.nrg.execution.services.CommandService;
+import org.nrg.xft.exception.XFTInitException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.bus.Event;
@@ -44,7 +49,19 @@ public class ScanArchiveListener implements Consumer<Event<ScanArchiveEvent>> {
         if (commandEventMappings != null && !commandEventMappings.isEmpty()) {
             for (CommandEventMapping commandEventMapping: commandEventMappings) {
                 Long commandId = commandEventMapping.getCommandId();
-                commandService.launchCommand(commandId, scanArchiveEvent.getUser(), scanArchiveEvent.getScan());
+                try {
+                    commandService.launchCommand(commandId, scanArchiveEvent.getUser(), scanArchiveEvent.getSession(), scanArchiveEvent.getScan());
+                } catch (NotFoundException e) {
+                    e.printStackTrace();
+                } catch (CommandVariableResolutionException e) {
+                    e.printStackTrace();
+                } catch (XFTInitException e) {
+                    e.printStackTrace();
+                } catch (NoServerPrefException e) {
+                    e.printStackTrace();
+                } catch (DockerServerException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
