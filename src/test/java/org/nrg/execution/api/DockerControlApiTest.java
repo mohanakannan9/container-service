@@ -2,7 +2,11 @@ package org.nrg.execution.api;
 
 import com.google.common.collect.Lists;
 import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.EventStream;
 import com.spotify.docker.client.exceptions.DockerException;
+import com.spotify.docker.client.messages.ContainerConfig;
+import com.spotify.docker.client.messages.ContainerCreation;
+import com.spotify.docker.client.messages.Event;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -11,6 +15,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.nrg.execution.config.DockerControlApiTestConfig;
+import org.nrg.execution.events.DockerContainerEvent;
 import org.nrg.execution.exceptions.DockerServerException;
 import org.nrg.execution.exceptions.NoServerPrefException;
 import org.nrg.execution.model.DockerHub;
@@ -21,9 +26,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.util.Date;
 import java.util.List;
 
+import static com.spotify.docker.client.DockerClient.EventsParam.since;
+import static com.spotify.docker.client.DockerClient.EventsParam.type;
+import static com.spotify.docker.client.DockerClient.EventsParam.until;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.isIn;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThat;
@@ -182,6 +193,32 @@ public class DockerControlApiTest {
         for(com.spotify.docker.client.messages.Image image:images){
             assertNotEquals(BUSYBOX_ID, image.id());
         }
+    }
+
+    @Test
+    public void testEventPolling() throws Exception {
+        client.pull(BUSYBOX_LATEST);
+
+        // Create container, to ensure we have some events to read
+        final ContainerConfig config = ContainerConfig.builder()
+                .image(BUSYBOX_LATEST)
+                .cmd("sh", "-c", "echo Hello world")
+                .build();
+
+        final Date start = new Date();
+        final ContainerCreation creation = client.createContainer(config);
+        client.startContainer(creation.id());
+        final Date end = new Date();
+
+//        final List<DockerContainerEvent> events = controlApi.getContainerEvents(start, end);
+        final EventStream eventStream =
+                client.events(since(start.getTime() / 1000), until(end.getTime() / 1000), type("container"));
+        final List<Event> eventList = Lists.newArrayList(eventStream);
+        assertThat(eventList, not(empty()));
+
+        // The fact that we have a list of events and not a timeout failure is already a victory
+
+        // TODO this test works with the docker-client methods. Now make my methods work!
     }
 
 }

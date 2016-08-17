@@ -574,25 +574,23 @@ public class DockerControlApi implements ContainerControlApi {
 
     @Override
     public List<DockerContainerEvent> getContainerEvents(final Date since, final Date until) throws NoServerPrefException, DockerServerException {
-        if (log.isDebugEnabled()) {
-            log.debug("Reading all docker container events since " + since + ".");
-        }
-
         final EventStream eventStream = getDockerContainerEvents(since, until);
+        final List<Event> eventList = Lists.newArrayList(eventStream);
+        eventStream.close();
 
         final List<DockerContainerEvent> events = Lists.newArrayList();
-        while (eventStream.hasNext()) {
-            final Event event = eventStream.next();
-            if (log.isDebugEnabled()) {
-                log.debug("Processing a docker event: " + event);
-            }
-            events.add(new DockerContainerEvent(event.status(), event.id(), event.time()));
-        }
-        if (log.isDebugEnabled()) {
-            log.debug("Done reading docker events.");
-        }
-
-        eventStream.close();
+//        while (eventStream.hasNext()) {
+//            final Event event = eventStream.next();
+//            if (log.isDebugEnabled()) {
+//                log.debug("Processing a docker event: " + event);
+//            }
+//            events.add(new DockerContainerEvent(event.status(), event.id(), event.time()));
+//        }
+//        if (log.isDebugEnabled()) {
+//            log.debug("Done reading docker events.");
+//        }
+//
+//        eventStream.close();
 
         if (log.isDebugEnabled()) {
             log.debug("Closed docker event stream.");
@@ -604,10 +602,6 @@ public class DockerControlApi implements ContainerControlApi {
 
     @Override
     public void getContainerEventsAndThrow(final Date since, final Date until) throws NoServerPrefException, DockerServerException {
-        if (log.isDebugEnabled()) {
-            log.debug("Reading all docker container events since " + since + ".");
-        }
-
         final EventStream eventStream = getDockerContainerEvents(since, until);
 
         while (eventStream.hasNext()) {
@@ -636,7 +630,7 @@ public class DockerControlApi implements ContainerControlApi {
 
         try(final DockerClient client = getClient()) {
             final EventStream eventStream =
-                    client.events(since(since.getTime()), until(until.getTime()), type("container"));
+                    client.events(since(since.getTime() / 1000), until((until.getTime() / 1000) + 1000), type("container"));
             if (log.isDebugEnabled()) {
                 log.debug("Got a stream of docker events.");
             }
