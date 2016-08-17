@@ -233,4 +233,58 @@ public class DockerRestApiTest {
         assertEquals(expected.getVariables(), response.getVariables());
         assertEquals(fakeImageId, response.getDockerImage());
     }
+
+    @Test
+    @Transactional
+    public void testSaveFromLabels2() throws Exception {
+        final String labelTestCommandListJson =
+                "[{\"name\":\"dcm2niix-scan\", \"description\":\"Run dcm2niix on a scan's DICOMs\", " +
+                        "\"run-template\":[\"/bin/sh\", \"-c\", \"/run/dcm2niix-scan.sh\", \"#scanId#\", \"#sessionId#\"], " +
+                        "\"variables\":[" +
+                            "{\"name\":\"scanId\", \"required\":true, \"root-property\":\"ID\"}, " +
+                            "{\"name\":\"sessionId\", \"required\":true, \"root-property\":\"ID\"}" +
+                        "], " +
+                        "\"mounts-in\":[{\"name\":\"DICOM\", \"remote-path\":\"/input\"}], " +
+                        "\"mounts-out\":[{\"name\":\"NIFTI\", \"remote-path\":\"/output\"}]}]";
+        final List<Command> expectedList = mapper.readValue(labelTestCommandListJson, new TypeReference<List<Command>>(){});
+        final Command expected = expectedList.get(0);
+
+        final Map<String, String> imageLabels = Maps.newHashMap();
+        imageLabels.put(LABEL_KEY, labelTestCommandListJson);
+
+        final String fakeImageId = "xnat/thisisfake";
+        final DockerImage fakeDockerImage = new DockerImage();
+        fakeDockerImage.setImageId(fakeImageId);
+        fakeDockerImage.setLabels(imageLabels);
+
+        when(mockContainerControlApi.getImageById(fakeImageId))
+                .thenReturn(fakeDockerImage);
+        when(mockContainerControlApi.parseLabels(fakeImageId))
+                .thenCallRealMethod();
+        when(mockContainerControlApi.parseLabels(fakeDockerImage))
+                .thenCallRealMethod();
+
+        final String path = "/docker/images/save";
+        final MockHttpServletRequestBuilder request =
+                post(path).param("image", fakeImageId);
+
+        final String responseStr =
+                mockMvc.perform(request)
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        final List<Command> responseList = mapper.readValue(responseStr, new TypeReference<List<Command>>(){});
+        assertThat(responseList, hasSize(1));
+        final Command response = responseList.get(0);
+
+        // "response" will have been saved, so it will not be exactly equal to "expected"
+        // Must compare attribute-by-attribute
+        assertEquals(expected.getName(), response.getName());
+        assertEquals(expected.getDescription(), response.getDescription());
+        assertEquals(expected.getRunTemplate(), response.getRunTemplate());
+        assertEquals(expected.getVariables(), response.getVariables());
+        assertEquals(fakeImageId, response.getDockerImage());
+    }
 }
