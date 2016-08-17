@@ -146,6 +146,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
                 }
             }
         }
+        getDao().flush();
         return saved;
     }
 
@@ -438,8 +439,12 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             log.info("Session with id " + session.getId() + " has a blank archive path, or scan " + scan.getId() + " has no resources.");
         }
 
+        final Context context = Context.newContext();
+        context.put("scanId", scan.getId());
+        context.put("sessionId", session.getId());
+
         final ResolvedCommand resolvedCommand =
-                resolve(command, session, resourceLabelToCatalogPath, Context.newContext());
+                resolve(command, scan, resourceLabelToCatalogPath, context);
         if (resolvedCommand == null) {
             // TODO throw an error
             return null;

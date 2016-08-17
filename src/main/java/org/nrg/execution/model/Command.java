@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.Objects;
 
 @Entity
-@Audited
 @Table(uniqueConstraints = {@UniqueConstraint(columnNames = {"name", "dockerImage"})})
 public class Command extends AbstractHibernateEntity {
     private String name;
