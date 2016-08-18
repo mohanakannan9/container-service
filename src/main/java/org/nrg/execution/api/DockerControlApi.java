@@ -2,6 +2,7 @@ package org.nrg.execution.api;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -574,68 +575,39 @@ public class DockerControlApi implements ContainerControlApi {
 
     @Override
     public List<DockerContainerEvent> getContainerEvents(final Date since, final Date until) throws NoServerPrefException, DockerServerException {
-        final EventStream eventStream = getDockerContainerEvents(since, until);
-        final List<Event> eventList = Lists.newArrayList(eventStream);
-        eventStream.close();
+        final List<Event> dockerEventList = getDockerContainerEvents(since, until);
 
         final List<DockerContainerEvent> events = Lists.newArrayList();
-//        while (eventStream.hasNext()) {
-//            final Event event = eventStream.next();
-//            if (log.isDebugEnabled()) {
-//                log.debug("Processing a docker event: " + event);
-//            }
-//            events.add(new DockerContainerEvent(event.status(), event.id(), event.time()));
-//        }
-//        if (log.isDebugEnabled()) {
-//            log.debug("Done reading docker events.");
-//        }
-//
-//        eventStream.close();
-
-        if (log.isDebugEnabled()) {
-            log.debug("Closed docker event stream.");
+        for (final Event dockerEvent : dockerEventList) {
+            events.add(new DockerContainerEvent(dockerEvent.status(), dockerEvent.id(), dockerEvent.time()));
         }
-
         return events;
-
     }
 
     @Override
-    public void getContainerEventsAndThrow(final Date since, final Date until) throws NoServerPrefException, DockerServerException {
-        final EventStream eventStream = getDockerContainerEvents(since, until);
+    public List<DockerContainerEvent> getContainerEventsAndThrow(final Date since, final Date until) throws NoServerPrefException, DockerServerException {
+        final List<DockerContainerEvent> events = getContainerEvents(since, until);
 
-        while (eventStream.hasNext()) {
-            final Event event = eventStream.next();
-            if (log.isDebugEnabled()) {
-                log.debug("Processing a docker event: " + event);
-            }
-            eventService.triggerEvent(new DockerContainerEvent(event.status(), event.id(), event.time()));
-        }
-        if (log.isDebugEnabled()) {
-            log.debug("Done reading docker events.");
+        for (final DockerContainerEvent event : events) {
+            eventService.triggerEvent(event);
         }
 
-        eventStream.close();
-
-        if (log.isDebugEnabled()) {
-            log.debug("Closed docker event stream.");
-        }
-
+        return events;
     }
 
-    private EventStream getDockerContainerEvents(final Date since, final Date until) throws NoServerPrefException, DockerServerException {
-        if (log.isDebugEnabled()) {
-            log.debug("Reading all docker container events since " + since + ".");
-        }
-
+    private List<Event> getDockerContainerEvents(final Date since, final Date until) throws NoServerPrefException, DockerServerException {
         try(final DockerClient client = getClient()) {
+            log.info("Reading all docker container events from " + since + " to " + until + ".");
             final EventStream eventStream =
-                    client.events(since(since.getTime() / 1000), until((until.getTime() / 1000) + 1000), type("container"));
-            if (log.isDebugEnabled()) {
-                log.debug("Got a stream of docker events.");
-            }
+                    client.events(since(since.getTime() / 1000), until((until.getTime() / 1000)), type("container"));
+            log.info("Got a stream of docker events.");
 
-            return eventStream;
+            final List<Event> eventList = Lists.newArrayList(eventStream);
+            eventStream.close();
+
+            log.info("Closed docker event stream.");
+
+            return eventList;
         } catch (InterruptedException | DockerException e) {
             throw new DockerServerException(e);
         }

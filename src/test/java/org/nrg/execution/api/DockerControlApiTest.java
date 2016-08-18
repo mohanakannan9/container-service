@@ -205,9 +205,9 @@ public class DockerControlApiTest {
         }
     }
 
-    @Test
+    @Test(timeout = 10000)
     public void testEventPolling() throws Exception {
-        client.pull(BUSYBOX_LATEST);
+        controlApi.pullImage(BUSYBOX_LATEST);
 
         // Create container, to ensure we have some events to read
         final ContainerConfig config = ContainerConfig.builder()
@@ -216,19 +216,18 @@ public class DockerControlApiTest {
                 .build();
 
         final Date start = new Date();
+        Thread.sleep(1000); // Wait to ensure we get some events
         final ContainerCreation creation = client.createContainer(config);
         client.startContainer(creation.id());
+        Thread.sleep(1000); // Wait to ensure we get some events
         final Date end = new Date();
 
-//        final List<DockerContainerEvent> events = controlApi.getContainerEvents(start, end);
-        final EventStream eventStream =
-                client.events(since(start.getTime() / 1000), until(end.getTime() / 1000), type("container"));
-        final List<Event> eventList = Lists.newArrayList(eventStream);
-        assertThat(eventList, not(empty()));
+        final List<DockerContainerEvent> events = controlApi.getContainerEvents(start, end);
 
         // The fact that we have a list of events and not a timeout failure is already a victory
+        assertThat(events, not(empty()));
 
-        // TODO this test works with the docker-client methods. Now make my methods work!
+        // TODO assert more things about the events
     }
 
 }
