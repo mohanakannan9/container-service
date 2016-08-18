@@ -21,6 +21,7 @@ import org.nrg.execution.exceptions.NoServerPrefException;
 import org.nrg.execution.model.DockerHub;
 import org.nrg.execution.model.DockerImage;
 import org.nrg.execution.model.DockerServer;
+import org.nrg.framework.scope.EntityId;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
@@ -83,19 +84,28 @@ public class DockerControlApiTest {
             CERT_PATH = "";
         }
 
+        final Date timeZero = new Date(0L);
+        final String timeZeroString = String.valueOf(timeZero.getTime());
+
         // Set up mock prefs service for all the calls that will initialize
         // the ContainerServerPrefsBean
         when(mockPrefsService.getPreferenceValue("docker-server", "host"))
             .thenReturn(CONTAINER_HOST);
         when(mockPrefsService.getPreferenceValue("docker-server", "certPath"))
             .thenReturn(CERT_PATH);
+        when(mockPrefsService.getPreferenceValue("docker-server", "lastEventCheckTime", EntityId.Default.getScope(), EntityId.Default.getEntityId()))
+            .thenReturn(timeZeroString);
         doNothing().when(mockPrefsService)
             .setPreferenceValue("docker-server", "host", "");
         doNothing().when(mockPrefsService)
             .setPreferenceValue("docker-server", "certPath", "");
+        doNothing().when(mockPrefsService)
+            .setPreferenceValue("docker-server", "lastEventCheckTime", "");
         when(mockPrefsService.hasPreference("docker-server", "host"))
             .thenReturn(true);
         when(mockPrefsService.hasPreference("docker-server", "certPath"))
+            .thenReturn(true);
+        when(mockPrefsService.hasPreference("docker-server", "lastEventCheckTime"))
             .thenReturn(true);
 
         client = controlApi.getClient();
