@@ -12,7 +12,7 @@ public class DockerContainerEvent implements DockerEvent {
     private String exitCode;
 
     public DockerContainerEvent(final String status, final String containerId, final Date time) {
-        new DockerContainerEvent(status, containerId, time, null);
+        this(status, containerId, time, null);
     }
 
     public DockerContainerEvent(final String status, final String containerId, final Date time, final String exitCode) {

@@ -8,9 +8,13 @@ import org.nrg.execution.model.ResolvedCommand;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.bus.Event;
+import reactor.bus.EventBus;
 import reactor.fn.Consumer;
+
+import static reactor.bus.selector.Selectors.type;
 
 @Service
 public class HibernateContainerExecutionService
@@ -18,11 +22,16 @@ public class HibernateContainerExecutionService
         implements ContainerExecutionService, Consumer<Event<DockerContainerEvent>> {
     private static final Logger log = LoggerFactory.getLogger(HibernateContainerExecutionService.class);
 
+    @Autowired
+    public HibernateContainerExecutionService(final EventBus eventBus) {
+        super();
+        eventBus.on(type(DockerContainerEvent.class), this);
+    }
+
     @Override
     public void accept(final Event<DockerContainerEvent> dockerContainerEventEvent) {
-        if (log.isDebugEnabled()) {
-            log.debug("Processing docker container event.");
-        }
+        log.debug("Processing docker container event.");
+
         final DockerContainerEvent event = dockerContainerEventEvent.getData();
 
         // TODO Check timestamp to make sure we haven't seen this exact event before.

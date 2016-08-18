@@ -24,6 +24,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.orm.hibernate4.HibernateTransactionManager;
 import org.springframework.orm.hibernate4.LocalSessionFactoryBean;
 import org.springframework.transaction.support.ResourceTransactionManager;
+import reactor.bus.EventBus;
 
 import javax.sql.DataSource;
 import java.util.Properties;
@@ -38,8 +39,13 @@ public class ContainerExecutionTestConfig {
     }
 
     @Bean
-    public ContainerExecutionService containerExecutionService() {
-        return new HibernateContainerExecutionService();
+    public EventBus eventBus() {
+        return Mockito.mock(EventBus.class);
+    }
+
+    @Bean
+    public ContainerExecutionService containerExecutionService(final EventBus eventBus) {
+        return new HibernateContainerExecutionService(eventBus);
     }
 
     @Bean
