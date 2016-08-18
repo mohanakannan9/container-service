@@ -1,0 +1,125 @@
+package org.nrg.execution.config;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.hibernate.SessionFactory;
+import org.mockito.Mockito;
+import org.nrg.execution.api.DockerControlApi;
+import org.nrg.execution.daos.CommandDao;
+import org.nrg.execution.daos.ContainerExecutionRepository;
+import org.nrg.execution.model.Command;
+import org.nrg.execution.model.ContainerExecution;
+import org.nrg.execution.model.DockerServerPrefsBean;
+import org.nrg.execution.services.CommandService;
+import org.nrg.execution.services.ContainerExecutionService;
+import org.nrg.execution.services.HibernateCommandService;
+import org.nrg.execution.services.HibernateContainerExecutionService;
+import org.nrg.framework.services.NrgEventService;
+import org.nrg.prefs.services.NrgPreferenceService;
+import org.nrg.transporter.TransportService;
+import org.nrg.transporter.TransportServiceImpl;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.services.AliasTokenService;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.orm.hibernate4.HibernateTransactionManager;
+import org.springframework.orm.hibernate4.LocalSessionFactoryBean;
+import org.springframework.transaction.support.ResourceTransactionManager;
+import reactor.Environment;
+import reactor.bus.EventBus;
+
+import javax.sql.DataSource;
+import java.util.Properties;
+
+@Configuration
+@Import({ExecutionHibernateEntityTestConfig.class})
+public class DockerIntegrationTestConfig {
+    @Bean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper();
+    }
+
+    @Bean
+    public DockerControlApi dockerControlApi() {
+        return new DockerControlApi();
+    }
+
+    @Bean
+    public DockerServerPrefsBean dockerServerPrefsBean() {
+        return new DockerServerPrefsBean();
+    }
+
+    @Bean
+    public CommandService commandService() {
+        return new HibernateCommandService();
+    }
+
+    @Bean
+    public CommandDao commandDao() {
+        return new CommandDao();
+    }
+
+    @Bean
+    public TransportService transportService() {
+        return Mockito.mock(TransportServiceImpl.class);
+    }
+
+    @Bean
+    public Environment env() {
+        return Environment.initializeIfEmpty().assignErrorJournal();
+    }
+
+    @Bean
+    public EventBus eventBus(final Environment env) {
+        return EventBus.create(env, Environment.THREAD_POOL);
+    }
+
+    @Bean
+    public NrgEventService nrgEventService(final EventBus eventBus) {
+        return new NrgEventService(eventBus);
+    }
+
+    @Bean
+    public NrgPreferenceService mockNrgPreferenceService() {
+        return Mockito.mock(NrgPreferenceService.class);
+    }
+
+    @Bean
+    public AliasTokenService aliasTokenService() {
+        return Mockito.mock(AliasTokenService.class);
+    }
+
+    @Bean
+    public SiteConfigPreferences siteConfigPreferences() {
+        return Mockito.mock(SiteConfigPreferences.class);
+    }
+
+    @Bean
+    public ContainerExecutionService containerExecutionService(final EventBus eventBus) {
+        return new HibernateContainerExecutionService(eventBus);
+    }
+
+    @Bean
+    public ContainerExecutionRepository containerExecutionRepository() {
+        return new ContainerExecutionRepository();
+    }
+
+    @Bean
+    public LocalSessionFactoryBean sessionFactory(final DataSource dataSource, @Qualifier("hibernateProperties") final Properties properties) {
+        final LocalSessionFactoryBean bean = new LocalSessionFactoryBean();
+        bean.setDataSource(dataSource);
+        bean.setHibernateProperties(properties);
+        bean.setAnnotatedClasses(
+                Command.class,
+                ContainerExecution.class);
+//                Preference.class, Tool.class);
+
+        return bean;
+    }
+
+    @Bean
+    public ResourceTransactionManager transactionManager(final SessionFactory sessionFactory) throws Exception {
+        return new HibernateTransactionManager(sessionFactory);
+    }
+}

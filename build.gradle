@@ -115,6 +115,7 @@ dependencies {
     testCompile "org.springframework:spring-jdbc:${vSpring}"
     testCompile "org.springframework:spring-orm:${vSpring}"
     testCompile "org.hibernate:hibernate-ehcache:${vHibernate}"
+    testCompile "org.nrg:framework:${vXnat}"
 }
 
 jacocoTestReport {
@@ -125,7 +126,7 @@ jacocoTestReport {
 }
 
 task unitTest( type: Test ) {
-    exclude '**/DockerControlApiTest.class'
+    exclude '**/DockerControlApiTest.class', '**/DockerIntegrationTest.class'
 }
 
 //compileJava {
