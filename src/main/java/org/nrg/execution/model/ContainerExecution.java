@@ -6,6 +6,7 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
@@ -62,7 +63,7 @@ public class ContainerExecution extends AbstractHibernateEntity {
         this.rootObjectXsiType = rootObjectXsiType;
     }
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     public List<ContainerExecutionHistory> getHistory() {
         return history;
     }

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spotify.docker.client.DockerClient;
 import org.apache.commons.lang3.StringUtils;
 import org.hamcrest.Matchers;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -13,17 +15,12 @@ import org.mockito.stubbing.Answer;
 import org.nrg.execution.api.DockerControlApi;
 import org.nrg.execution.config.DockerIntegrationTestConfig;
 import org.nrg.execution.model.Command;
-import org.nrg.execution.model.CommandMount;
 import org.nrg.execution.model.ContainerExecution;
 import org.nrg.execution.model.ContainerExecutionHistory;
 import org.nrg.execution.model.DockerImage;
 import org.nrg.execution.model.DockerServerPrefsBean;
-import org.nrg.execution.model.ResolvedCommand;
 import org.nrg.execution.services.CommandService;
 import org.nrg.execution.services.ContainerExecutionService;
-import org.nrg.framework.scope.EntityId;
-import org.nrg.prefs.services.NrgPreferenceService;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,8 +35,8 @@ import java.util.List;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -49,10 +46,10 @@ public class DockerIntegrationTest {
 
     @Autowired private ObjectMapper mapper;
     @Autowired private DockerControlApi controlApi;
-    @Autowired private NrgPreferenceService mockPrefsService;
     @Autowired private DockerServerPrefsBean mockDockerServerPrefsBean;
     @Autowired private CommandService commandService;
     @Autowired private ContainerExecutionService containerExecutionService;
+    @Autowired private SessionFactory sessionFactory;
 
     private DockerClient client;
     private final String BUSYBOX_LATEST = "busybox:latest";
@@ -97,6 +94,7 @@ public class DockerIntegrationTest {
     }
 
     @Test
+    @Transactional
     public void testEventPuller() throws Exception {
         final DockerImage dockerImage = controlApi.getImageById(BUSYBOX_LATEST);
 
@@ -108,6 +106,7 @@ public class DockerIntegrationTest {
                     "{\"name\":\"output\", \"remote-path\":\"/output\"}" +
                 "]}";
         final Command command = mapper.readValue(commandJson, Command.class);
+        final Transaction transaction = sessionFactory.getCurrentSession().getTransaction();
         commandService.create(command);
 
         final UserI mockUser = Mockito.mock(UserI.class);
@@ -120,9 +119,18 @@ public class DockerIntegrationTest {
         assertThat(executions, not(Matchers.<ContainerExecution>empty()));
         log.info("Found at least one execution: " + executions.get(0).getId());
 
+        log.info("Committing transaction");
+        transaction.commit();
+        log.info("Starting new transaction");
+        final Transaction newTransaction = sessionFactory.getCurrentSession().beginTransaction();
+        assertTrue(newTransaction.isActive());
+
+        log.info("Sleeping");
         Thread.sleep(5000);
 
+        log.info("Refreshing execution entity");
         containerExecutionService.refresh(execution);
+        log.info("Checking execution history");
         final List<ContainerExecutionHistory> history = execution.getHistory();
         assertThat(history, not(Matchers.<ContainerExecutionHistory>empty()));
     }
