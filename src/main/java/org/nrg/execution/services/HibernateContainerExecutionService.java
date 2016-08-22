@@ -25,28 +25,22 @@ public class HibernateContainerExecutionService
     @Override
     @Transactional
     public void processEvent(final DockerContainerEvent event) {
-        log.info("Processing docker container event: " + event);
-//        final List<ContainerExecution> matchingContainerIds = getDao().findByProperty("containerId", event.getContainerId());
-        final List<ContainerExecution> matchingContainerIds = Lists.newArrayList();
-        final List<ContainerExecution> all = getAll();
-        if (all == null || all.isEmpty()) {
-            log.error("I FOUND NO EXECUTIONS matching event " + event);
-            return;
+        if (log.isDebugEnabled()) {
+            log.debug("Processing docker container event: " + event);
         }
-        log.info("I found at least one container execution: " + all);
-        for (final ContainerExecution candidate : all) {
-            if (candidate.getContainerId().equals(event.getContainerId())) {
-                matchingContainerIds.add(candidate);
-            }
-        }
+        final List<ContainerExecution> matchingContainerIds = getDao().findByProperty("containerId", event.getContainerId());
 
         // Container ID is constrained to be unique, so we can safely take the first element of this list
         if (matchingContainerIds != null && !matchingContainerIds.isEmpty()) {
             final ContainerExecution execution = matchingContainerIds.get(0);
-            log.info("Found matching execution: " + execution);
+            if (log.isDebugEnabled()) {
+                log.debug("Found matching execution: " + execution);
+            }
 
             final ContainerExecutionHistory history = new ContainerExecutionHistory(event.getStatus(), event.getTime());
-            log.info("Adding history entry: "+history);
+            if (log.isDebugEnabled()) {
+                log.debug("Adding history entry: " + history);
+            }
             execution.addToHistory(history);
             update(execution);
 
@@ -61,7 +55,7 @@ public class HibernateContainerExecutionService
     @Transactional
     public void finalize(final ContainerExecution execution) {
         if (log.isDebugEnabled()) {
-            log.debug("Finalizing ContainerExecution for container %s, status %s", execution.getContainerId(), execution.getHistory().get(execution.getHistory().size()-1).getStatus());
+            log.debug("Finalizing ContainerExecution for container %s", execution.getContainerId());
         }
         // TODO upload logs
 
