@@ -84,8 +84,8 @@ public class CommandTest {
     @Autowired
     private CommandService commandService;
 
-    @Autowired
-    private ContainerControlApi mockContainerControlApi;
+//    @Autowired
+//    private ContainerControlApi mockContainerControlApi;
 
     @Test
     public void testSpringConfiguration() {

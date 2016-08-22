@@ -15,6 +15,8 @@ import org.nrg.execution.model.ResolvedCommand;
 import org.nrg.execution.services.CommandService;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NrgRuntimeException;
+import org.nrg.xdat.XDAT;
+import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -99,7 +101,8 @@ public class CommandRestApi {
     @ResponseBody
     public ContainerExecution launchCommand(final @RequestBody ResolvedCommand resolvedCommand)
             throws NoServerPrefException, DockerServerException {
-        return commandService.launchCommand(resolvedCommand);
+        final UserI userI = XDAT.getUserDetails();
+        return commandService.launchCommand(resolvedCommand, userI);
     }
 
     @RequestMapping(value = {"/{id}/launch"}, method = PUT)
@@ -108,8 +111,9 @@ public class CommandRestApi {
     public ContainerExecution launchCommand(final @PathVariable Long id,
                                             final @RequestParam Map<String, String> allRequestParams)
             throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException {
+        final UserI userI = XDAT.getUserDetails();
         try {
-            return commandService.launchCommand(id, allRequestParams);
+            return commandService.launchCommand(id, allRequestParams, userI);
         } catch (CommandVariableResolutionException e) {
             throw new BadRequestException("Must provide value for variable " + e.getVariable().getName() + ".", e);
         }
@@ -119,8 +123,9 @@ public class CommandRestApi {
     @ResponseBody
     public ContainerExecution launchCommand(final @PathVariable Long id)
             throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException {
+        final UserI userI = XDAT.getUserDetails();
         try {
-            return commandService.launchCommand(id);
+            return commandService.launchCommand(id, userI);
         } catch (CommandVariableResolutionException e) {
             throw new BadRequestException("Must provide value for variable " + e.getVariable().getName() + " in request body.", e);
         }

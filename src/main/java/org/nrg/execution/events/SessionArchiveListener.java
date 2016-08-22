@@ -51,24 +51,24 @@ public class SessionArchiveListener implements Consumer<Event<SessionArchiveEven
         // Find commands defined for this event type
         List<CommandEventMapping> commandEventMappings = commandEventMappingService.findByEventType(sessionArchivedEvent.getEventId());
 
-        if (commandEventMappings != null && !commandEventMappings.isEmpty()){
-            for (CommandEventMapping commandEventMapping: commandEventMappings) {
-                Long commandId = commandEventMapping.getCommandId();
-                try {
-                    commandService.launchCommand(commandId, sessionArchivedEvent.getUser(), sessionArchivedEvent.getSession());
-                } catch (XFTInitException e) {
-                    e.printStackTrace();
-                } catch (CommandVariableResolutionException e) {
-                    e.printStackTrace();
-                } catch (NotFoundException e) {
-                    e.printStackTrace();
-                } catch (DockerServerException e) {
-                    e.printStackTrace();
-                } catch (NoServerPrefException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
+//        if (commandEventMappings != null && !commandEventMappings.isEmpty()){
+//            for (CommandEventMapping commandEventMapping: commandEventMappings) {
+//                Long commandId = commandEventMapping.getCommandId();
+//                try {
+//                    commandService.launchCommand(commandId, sessionArchivedEvent.getUser(), sessionArchivedEvent.getSession());
+//                } catch (XFTInitException e) {
+//                    e.printStackTrace();
+//                } catch (CommandVariableResolutionException e) {
+//                    e.printStackTrace();
+//                } catch (NotFoundException e) {
+//                    e.printStackTrace();
+//                } catch (DockerServerException e) {
+//                    e.printStackTrace();
+//                } catch (NoServerPrefException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        }
     }
 
 

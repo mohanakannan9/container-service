@@ -3,20 +3,10 @@ package org.nrg.execution.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hibernate.SessionFactory;
 import org.mockito.Mockito;
-import org.nrg.execution.api.ContainerControlApi;
-import org.nrg.execution.daos.CommandDao;
 import org.nrg.execution.daos.ContainerExecutionRepository;
-import org.nrg.execution.model.Command;
 import org.nrg.execution.model.ContainerExecution;
-import org.nrg.execution.services.CommandService;
 import org.nrg.execution.services.ContainerExecutionService;
-import org.nrg.execution.services.HibernateCommandService;
 import org.nrg.execution.services.HibernateContainerExecutionService;
-import org.nrg.prefs.services.NrgPreferenceService;
-import org.nrg.transporter.TransportService;
-import org.nrg.transporter.TransportServiceImpl;
-import org.nrg.xdat.preferences.SiteConfigPreferences;
-import org.nrg.xdat.services.AliasTokenService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -44,8 +34,8 @@ public class ContainerExecutionTestConfig {
     }
 
     @Bean
-    public ContainerExecutionService containerExecutionService(final EventBus eventBus) {
-        return new HibernateContainerExecutionService(eventBus);
+    public ContainerExecutionService containerExecutionService() {
+        return new HibernateContainerExecutionService();
     }
 
     @Bean

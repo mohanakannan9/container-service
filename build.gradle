@@ -64,6 +64,7 @@ dependencies {
     compile (group: "org.nrg", name: "transporter", version: "1.0-SNAPSHOT") {
         transitive = false
     }
+//    compile "org.nrg:transaction:${vXnat}"
 
     compile "org.springframework:spring-beans:${vSpring}"
     compile "org.springframework:spring-context:${vSpring}"
@@ -112,9 +113,11 @@ dependencies {
 //    testCompile "com.jayway.jsonpath:json-path:2.1.0"
     testCompile "javax.servlet:javax.servlet-api:3.1.0"
     testCompile "com.h2database:h2:1.4.191"
+//    testCompile "c3p0:c3p0:0.9.1.1"
     testCompile "org.springframework:spring-jdbc:${vSpring}"
     testCompile "org.springframework:spring-orm:${vSpring}"
     testCompile "org.hibernate:hibernate-ehcache:${vHibernate}"
+    testCompile "org.hibernate:hibernate-c3p0:${vHibernate}"
     testCompile "org.nrg:framework:${vXnat}"
 }
 

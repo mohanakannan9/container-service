@@ -7,6 +7,7 @@ import org.nrg.execution.api.ContainerControlApi;
 import org.nrg.execution.daos.CommandDao;
 import org.nrg.execution.model.Command;
 import org.nrg.execution.services.CommandService;
+import org.nrg.execution.services.ContainerExecutionService;
 import org.nrg.execution.services.HibernateCommandService;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.transporter.TransportService;
@@ -95,6 +96,11 @@ public class CommandTestConfig {
     @Bean
     public TransportService transportService() {
         return Mockito.mock(TransportServiceImpl.class);
+    }
+
+    @Bean
+    public ContainerExecutionService mockContainerExecutionService() {
+        return Mockito.mock(ContainerExecutionService.class);
     }
 
     @Bean

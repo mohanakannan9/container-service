@@ -18,7 +18,17 @@ public class ContainerExecution extends AbstractHibernateEntity {
     private String userId;
     private String rootObjectId;
     private String rootObjectXsiType;
-    private List<ContainerExecutionHistory> history;
+    private List<ContainerExecutionHistory> history = Lists.newArrayList();
+
+    public ContainerExecution() {}
+
+    public ContainerExecution(final ResolvedCommand resolvedCommand, final String containerId, final String userId) {
+        this.containerId = containerId;
+        this.userId = userId;
+
+        // TODO the resolved command doesn't have this info. where can I get it?
+//        this.rootObjectId = resolvedCommand.
+    }
 
     public String getContainerId() {
         return containerId;

@@ -29,18 +29,18 @@ public interface CommandService extends BaseHibernateService<Command> {
                                    final Map<String, String> variableRuntimeValues)
             throws NotFoundException, CommandVariableResolutionException;
 
-    ContainerExecution launchCommand(final ResolvedCommand resolvedCommand) throws NoServerPrefException, DockerServerException;
-    ContainerExecution launchCommand(final Long commandId)
+    ContainerExecution launchCommand(final ResolvedCommand resolvedCommand, final UserI userI) throws NoServerPrefException, DockerServerException;
+    ContainerExecution launchCommand(final Long commandId, final UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandVariableResolutionException;
     ContainerExecution launchCommand(final Long commandId,
-                         final Map<String, String> variableRuntimeValues)
+                         final Map<String, String> variableRuntimeValues, final UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandVariableResolutionException;
 
-    ContainerExecution launchCommand(Long commandId, UserI user, XnatImagesessiondata session)
-            throws NotFoundException, CommandVariableResolutionException, NoServerPrefException,
-            DockerServerException, XFTInitException;
-    ContainerExecution launchCommand(Long commandId, UserI user, XnatImagesessiondata session, XnatImagescandata scan)
-            throws NotFoundException, XFTInitException, CommandVariableResolutionException, NoServerPrefException, DockerServerException;
+//    ContainerExecution launchCommand(Long commandId, UserI userI, XnatImagesessiondata session)
+//            throws NotFoundException, CommandVariableResolutionException, NoServerPrefException,
+//            DockerServerException, XFTInitException;
+//    ContainerExecution launchCommand(Long commandId, UserI userI, XnatImagesessiondata session, XnatImagescandata scan)
+//            throws NotFoundException, XFTInitException, CommandVariableResolutionException, NoServerPrefException, DockerServerException;
 
     List<Command> save(final List<Command> commands);
 }

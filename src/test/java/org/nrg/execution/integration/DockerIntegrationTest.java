@@ -1,39 +1,63 @@
 package org.nrg.execution.integration;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spotify.docker.client.DockerClient;
 import org.apache.commons.lang3.StringUtils;
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.nrg.execution.api.DockerControlApi;
 import org.nrg.execution.config.DockerIntegrationTestConfig;
+import org.nrg.execution.model.Command;
+import org.nrg.execution.model.CommandMount;
+import org.nrg.execution.model.ContainerExecution;
+import org.nrg.execution.model.ContainerExecutionHistory;
+import org.nrg.execution.model.DockerImage;
 import org.nrg.execution.model.DockerServerPrefsBean;
+import org.nrg.execution.model.ResolvedCommand;
 import org.nrg.execution.services.CommandService;
 import org.nrg.execution.services.ContainerExecutionService;
 import org.nrg.framework.scope.EntityId;
 import org.nrg.prefs.services.NrgPreferenceService;
+import org.nrg.xdat.security.XDATUser;
+import org.nrg.xft.security.UserI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Date;
+import java.util.List;
+
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = DockerIntegrationTestConfig.class)
 public class DockerIntegrationTest {
+    private static final Logger log = LoggerFactory.getLogger(DockerIntegrationTest.class);
+
+    @Autowired private ObjectMapper mapper;
     @Autowired private DockerControlApi controlApi;
     @Autowired private NrgPreferenceService mockPrefsService;
-    @Autowired private DockerServerPrefsBean dockerServerPrefsBean;
+    @Autowired private DockerServerPrefsBean mockDockerServerPrefsBean;
     @Autowired private CommandService commandService;
     @Autowired private ContainerExecutionService containerExecutionService;
 
     private DockerClient client;
     private final String BUSYBOX_LATEST = "busybox:latest";
+
+    Date lastEventCheckTime;
 
     @Before
     @Transactional
@@ -43,26 +67,25 @@ public class DockerIntegrationTest {
         final String hostEnv = System.getenv("DOCKER_HOST");
         final String containerHost = StringUtils.isBlank(hostEnv) ? defaultHost : hostEnv;
 
-        // Set up mock prefs service for all the calls that will initialize
-        // the ContainerServerPrefsBean
-        when(mockPrefsService.getPreferenceValue("docker-server", "host"))
-                .thenReturn(containerHost);
-//        when(mockPrefsService.getPreferenceValue("docker-server", "certPath"))
-//                .thenReturn(certPath);
-//        when(mockPrefsService.getPreferenceValue("docker-server", "lastEventCheckTime", EntityId.Default.getScope(), EntityId.Default.getEntityId()))
-//                .thenReturn(timeZeroString);
-        doNothing().when(mockPrefsService)
-                .setPreferenceValue("docker-server", "host", "");
-        doNothing().when(mockPrefsService)
-                .setPreferenceValue("docker-server", "certPath", "");
-        doNothing().when(mockPrefsService)
-                .setPreferenceValue("docker-server", "lastEventCheckTime", "");
-        when(mockPrefsService.hasPreference("docker-server", "host"))
-                .thenReturn(true);
-        when(mockPrefsService.hasPreference("docker-server", "certPath"))
-                .thenReturn(true);
-        when(mockPrefsService.hasPreference("docker-server", "lastEventCheckTime"))
-                .thenReturn(true);
+        when(mockDockerServerPrefsBean.getHost()).thenReturn(containerHost);
+        when(mockDockerServerPrefsBean.toDto()).thenCallRealMethod();
+
+        lastEventCheckTime = new Date();
+        when(mockDockerServerPrefsBean.getLastEventCheckTime()).thenAnswer(new Answer<Date>() {
+            @Override
+            public Date answer(final InvocationOnMock invocationOnMock) throws Throwable {
+                return lastEventCheckTime;
+            }
+        });
+        doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(final InvocationOnMock invocationOnMock) throws Throwable {
+                final Object[] args = invocationOnMock.getArguments();
+                lastEventCheckTime = (Date)args[0];
+                return null;
+            }
+        })
+        .when(mockDockerServerPrefsBean).setLastEventCheckTime(Mockito.any(Date.class));
 
         client = controlApi.getClient();
         client.pull(BUSYBOX_LATEST);
@@ -71,5 +94,36 @@ public class DockerIntegrationTest {
     @Test
     public void testSpringConfiguration() {
         assertThat(containerExecutionService, not(nullValue()));
+    }
+
+    @Test
+    public void testEventPuller() throws Exception {
+        final DockerImage dockerImage = controlApi.getImageById(BUSYBOX_LATEST);
+
+        final String commandJson = "{" +
+                "\"name\":\"event-test\"," +
+                "\"docker-image\": \"" + dockerImage.getImageId() + "\"," +
+                "\"run-template\":[\"echo\", \"hello\", \"world\"]," +
+                "\"mounts-out\":[" +
+                    "{\"name\":\"output\", \"remote-path\":\"/output\"}" +
+                "]}";
+        final Command command = mapper.readValue(commandJson, Command.class);
+        commandService.create(command);
+
+        final UserI mockUser = Mockito.mock(UserI.class);
+        when(mockUser.getLogin()).thenReturn("mockUser");
+
+//        final ResolvedCommand resolved = commandService.resolveCommand(command);
+
+        final ContainerExecution execution = commandService.launchCommand(command.getId(), mockUser);
+        final List<ContainerExecution> executions = containerExecutionService.getAll();
+        assertThat(executions, not(Matchers.<ContainerExecution>empty()));
+        log.info("Found at least one execution: " + executions.get(0).getId());
+
+        Thread.sleep(5000);
+
+        containerExecutionService.refresh(execution);
+        final List<ContainerExecutionHistory> history = execution.getHistory();
+        assertThat(history, not(Matchers.<ContainerExecutionHistory>empty()));
     }
 }

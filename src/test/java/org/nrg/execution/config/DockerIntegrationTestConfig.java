@@ -6,6 +6,8 @@ import org.mockito.Mockito;
 import org.nrg.execution.api.DockerControlApi;
 import org.nrg.execution.daos.CommandDao;
 import org.nrg.execution.daos.ContainerExecutionRepository;
+import org.nrg.execution.events.DockerContainerEventListener;
+import org.nrg.execution.events.DockerEventPuller;
 import org.nrg.execution.model.Command;
 import org.nrg.execution.model.ContainerExecution;
 import org.nrg.execution.model.DockerServerPrefsBean;
@@ -25,16 +27,30 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.orm.hibernate4.HibernateTransactionManager;
 import org.springframework.orm.hibernate4.LocalSessionFactoryBean;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.SchedulingConfigurer;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+import org.springframework.scheduling.config.ScheduledTaskRegistrar;
+import org.springframework.scheduling.config.TriggerTask;
+import org.springframework.scheduling.support.PeriodicTrigger;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.support.ResourceTransactionManager;
 import reactor.Environment;
 import reactor.bus.EventBus;
 
 import javax.sql.DataSource;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 @Configuration
+@EnableScheduling
+@EnableTransactionManagement
+//@ComponentScan(value = "org.nrg.execution",
+//        excludeFilters = {
+//                @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*Config.*", value = {}),
+//                @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*PrefsBean.*", value = {})})
 @Import({ExecutionHibernateEntityTestConfig.class})
-public class DockerIntegrationTestConfig {
+public class DockerIntegrationTestConfig implements SchedulingConfigurer {
     @Bean
     public ObjectMapper objectMapper() {
         return new ObjectMapper();
@@ -46,8 +62,8 @@ public class DockerIntegrationTestConfig {
     }
 
     @Bean
-    public DockerServerPrefsBean dockerServerPrefsBean() {
-        return new DockerServerPrefsBean();
+    public DockerServerPrefsBean mockDockerServerPrefsBean() {
+        return Mockito.mock(DockerServerPrefsBean.class);
     }
 
     @Bean
@@ -96,8 +112,13 @@ public class DockerIntegrationTestConfig {
     }
 
     @Bean
-    public ContainerExecutionService containerExecutionService(final EventBus eventBus) {
-        return new HibernateContainerExecutionService(eventBus);
+    public DockerContainerEventListener containerEventListener(final EventBus eventBus) {
+        return new DockerContainerEventListener(eventBus);
+    }
+
+    @Bean
+    public ContainerExecutionService containerExecutionService() {
+        return new HibernateContainerExecutionService();
     }
 
     @Bean
@@ -122,4 +143,34 @@ public class DockerIntegrationTestConfig {
     public ResourceTransactionManager transactionManager(final SessionFactory sessionFactory) throws Exception {
         return new HibernateTransactionManager(sessionFactory);
     }
+
+    @Bean
+    public DockerEventPuller dockerEventPuller(final DockerControlApi dockerControlApi, final DockerServerPrefsBean dockerServerPrefsBean) {
+        return new DockerEventPuller(dockerControlApi, dockerServerPrefsBean);
+    }
+
+    @Bean
+    public TriggerTask dockerEventPullerTask(final DockerEventPuller dockerEventPuller) {
+        myTask = new TriggerTask(
+                dockerEventPuller,
+                new PeriodicTrigger(5L, TimeUnit.SECONDS)
+        );
+        return myTask;
+    }
+
+    @Bean(destroyMethod = "shutdown")
+    public ThreadPoolTaskScheduler taskScheduler() {
+        final ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
+        scheduler.setRemoveOnCancelPolicy(true);
+        return scheduler;
+    }
+
+    @Override
+    public void configureTasks(final ScheduledTaskRegistrar scheduledTaskRegistrar) {
+        scheduledTaskRegistrar.setScheduler(taskScheduler());
+
+        scheduledTaskRegistrar.addTriggerTask(myTask);
+    }
+
+    private TriggerTask myTask;
 }

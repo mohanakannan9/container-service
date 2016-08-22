@@ -36,7 +36,7 @@ public interface ContainerControlApi {
     DockerImage pullAndReturnImage(String name) throws NoServerPrefException, DockerServerException;
     DockerImage pullAndReturnImage(String name, DockerHub hub) throws NoServerPrefException, DockerServerException;
 
-    ContainerExecution launchImage(final ResolvedCommand command) throws NoServerPrefException, DockerServerException;
+    String launchImage(final ResolvedCommand command) throws NoServerPrefException, DockerServerException;
 //    String launchImage(final String imageName, final List<String> runCommand, final List <String> volumes) throws NoServerPrefException, DockerServerException;
 //    String launchImage(final DockerServer server, final String imageName,
 //                       final List<String> runCommand, final List <String> volumes) throws DockerServerException;

@@ -43,6 +43,7 @@ import org.nrg.execution.model.ResolvedCommand;
 import org.nrg.execution.services.ContainerExecutionService;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,8 +70,8 @@ public class DockerControlApi implements ContainerControlApi {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @Autowired
-    private ContainerExecutionService containerExecutionService;
+//    @Autowired
+//    private ContainerExecutionService containerExecutionService;
 
     @Autowired
     private NrgEventService eventService;
@@ -205,7 +206,7 @@ public class DockerControlApi implements ContainerControlApi {
      * @return ID of created Container
      **/
     @Override
-    public ContainerExecution launchImage(final ResolvedCommand command)
+    public String launchImage(final ResolvedCommand command)
             throws NoServerPrefException, DockerServerException {
         final String dockerImageId = command.getDockerImage();
         final List<String> runCommand = command.getRun();
@@ -220,8 +221,7 @@ public class DockerControlApi implements ContainerControlApi {
         for (final Map.Entry<String, String> env : command.getEnvironmentVariables().entrySet()) {
             environmentVariables.add(StringUtils.join(new String[] {env.getKey(), env.getValue()}, "="));
         }
-        final String containerId = launchImage(getServer(), dockerImageId, runCommand, bindMounts, environmentVariables);
-        return containerExecutionService.save(command, containerId);
+        return launchImage(getServer(), dockerImageId, runCommand, bindMounts, environmentVariables);
     }
 
 //    /**
@@ -589,6 +589,7 @@ public class DockerControlApi implements ContainerControlApi {
         final List<DockerContainerEvent> events = getContainerEvents(since, until);
 
         for (final DockerContainerEvent event : events) {
+            log.info("Throwing docker container event: " + event);
             eventService.triggerEvent(event);
         }
 
@@ -597,7 +598,7 @@ public class DockerControlApi implements ContainerControlApi {
 
     private List<Event> getDockerContainerEvents(final Date since, final Date until) throws NoServerPrefException, DockerServerException {
         try(final DockerClient client = getClient()) {
-            log.info("Reading all docker container events from " + since + " to " + until + ".");
+            log.info("Reading all docker container events from " + since.getTime() + " to " + until.getTime() + ".");
             final EventStream eventStream =
                     client.events(since(since.getTime() / 1000), until((until.getTime() / 1000)), type("container"));
             log.info("Got a stream of docker events.");
