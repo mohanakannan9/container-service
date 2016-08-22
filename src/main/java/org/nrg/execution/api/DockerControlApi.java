@@ -520,16 +520,23 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     @Override
-    public String getContainerLogs(String id) throws NoServerPrefException, DockerServerException {
-        String logs;
+    public String getContainerStdoutLog(String id) throws NoServerPrefException, DockerServerException {
         try (final LogStream logStream = getClient().logs(id, LogsParam.stdout())) {
-            logs = logStream.readFully();
+            return logStream.readFully();
         } catch (DockerException | InterruptedException e) {
             log.error(e.getMessage());
             throw new DockerServerException(e);
         }
+    }
 
-        return logs;
+    @Override
+    public String getContainerStderrLog(String id) throws NoServerPrefException, DockerServerException {
+        try (final LogStream logStream = getClient().logs(id, LogsParam.stderr())) {
+            return logStream.readFully();
+        } catch (DockerException | InterruptedException e) {
+            log.error(e.getMessage());
+            throw new DockerServerException(e);
+        }
     }
 
     /**

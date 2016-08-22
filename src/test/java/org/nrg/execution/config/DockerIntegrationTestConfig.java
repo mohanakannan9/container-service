@@ -3,6 +3,7 @@ package org.nrg.execution.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hibernate.SessionFactory;
 import org.mockito.Mockito;
+import org.nrg.execution.api.ContainerControlApi;
 import org.nrg.execution.api.DockerControlApi;
 import org.nrg.execution.daos.CommandDao;
 import org.nrg.execution.daos.ContainerExecutionRepository;
@@ -117,8 +118,9 @@ public class DockerIntegrationTestConfig implements SchedulingConfigurer {
     }
 
     @Bean
-    public ContainerExecutionService containerExecutionService() {
-        return new HibernateContainerExecutionService();
+    public ContainerExecutionService containerExecutionService(final ContainerControlApi containerControlApi,
+                                                               final SiteConfigPreferences siteConfigPreferences) {
+        return new HibernateContainerExecutionService(containerControlApi, siteConfigPreferences);
     }
 
     @Bean

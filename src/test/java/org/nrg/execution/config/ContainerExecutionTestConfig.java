@@ -3,10 +3,14 @@ package org.nrg.execution.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hibernate.SessionFactory;
 import org.mockito.Mockito;
+import org.nrg.execution.api.ContainerControlApi;
 import org.nrg.execution.daos.ContainerExecutionRepository;
 import org.nrg.execution.model.ContainerExecution;
 import org.nrg.execution.services.ContainerExecutionService;
 import org.nrg.execution.services.HibernateContainerExecutionService;
+import org.nrg.framework.services.NrgEventService;
+import org.nrg.prefs.services.NrgPreferenceService;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -34,8 +38,29 @@ public class ContainerExecutionTestConfig {
     }
 
     @Bean
-    public ContainerExecutionService containerExecutionService() {
-        return new HibernateContainerExecutionService();
+    public ContainerControlApi containerControlApi() {
+        return Mockito.mock(ContainerControlApi.class);
+    }
+
+    @Bean
+    public SiteConfigPreferences siteConfigPreferences() {
+        return Mockito.mock(SiteConfigPreferences.class);
+    }
+
+    @Bean
+    public NrgEventService nrgEventService() {
+        return Mockito.mock(NrgEventService.class);
+    }
+
+    @Bean
+    public NrgPreferenceService nrgPreferenceService() {
+        return Mockito.mock(NrgPreferenceService.class);
+    }
+
+    @Bean
+    public ContainerExecutionService containerExecutionService(final ContainerControlApi containerControlApi,
+                                                               final SiteConfigPreferences siteConfigPreferences) {
+        return new HibernateContainerExecutionService(containerControlApi, siteConfigPreferences);
     }
 
     @Bean
