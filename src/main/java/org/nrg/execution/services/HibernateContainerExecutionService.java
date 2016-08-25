@@ -81,13 +81,10 @@ public class HibernateContainerExecutionService
         try {
             final UserI user = Users.getUser(userLogin);
             uploadLogs(execution, user);
+            uploadOutputFiles(execution, user);
         } catch (UserInitException | UserNotFoundException e) {
             log.error("Could not finalize container execution. Could not get user details for user " + userLogin, e);
         }
-
-
-
-        // TODO upload output files
     }
 
     private void uploadLogs(final ContainerExecution execution, final UserI user) {
@@ -160,6 +157,10 @@ public class HibernateContainerExecutionService
 //                log.error("", e);
 //            }
         }
+    }
+
+    private void uploadOutputFiles(final ContainerExecution containerExecution, final UserI userI) {
+        return;
     }
 
     @Override
