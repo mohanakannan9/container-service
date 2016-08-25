@@ -318,8 +318,17 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     @Override
     public ContainerExecution launchCommand(final ResolvedCommand resolvedCommand, final UserI userI)
             throws NoServerPrefException, DockerServerException {
+        return launchCommand(resolvedCommand, null, null, userI);
+    }
+
+    @Override
+    public ContainerExecution launchCommand(final ResolvedCommand resolvedCommand,
+                                            final String rootObjectId,
+                                            final String rootObjectXsiType,
+                                            final UserI userI)
+            throws NoServerPrefException, DockerServerException {
         final String containerId = controlApi.launchImage(resolvedCommand);
-        return containerExecutionService.save(resolvedCommand, containerId, userI);
+        return containerExecutionService.save(resolvedCommand, containerId, rootObjectId, rootObjectXsiType, userI);
     }
 
     @Override
@@ -406,7 +415,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             }
         }
 
-        return launchCommand(resolvedCommand, userI);
+        return launchCommand(resolvedCommand, session.getId(), session.getXSIType(), userI);
     }
 
     @Override
@@ -478,7 +487,8 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             }
         }
 
-        return launchCommand(resolvedCommand, userI);
+        final String concattenatedSessionScanId = session.getId() + ":" + scan.getId();
+        return launchCommand(resolvedCommand, concattenatedSessionScanId, scan.getXSIType(), userI);
     }
 
 //    @Override

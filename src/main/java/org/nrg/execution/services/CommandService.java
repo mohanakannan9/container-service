@@ -30,6 +30,11 @@ public interface CommandService extends BaseHibernateService<Command> {
             throws NotFoundException, CommandVariableResolutionException;
 
     ContainerExecution launchCommand(final ResolvedCommand resolvedCommand, final UserI userI) throws NoServerPrefException, DockerServerException;
+    ContainerExecution launchCommand(final ResolvedCommand resolvedCommand,
+                                     final String rootObjectId,
+                                     final String rootObjectXsiType,
+                                     final UserI userI)
+            throws NoServerPrefException, DockerServerException;
     ContainerExecution launchCommand(final Long commandId, final UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandVariableResolutionException;
     ContainerExecution launchCommand(final Long commandId,

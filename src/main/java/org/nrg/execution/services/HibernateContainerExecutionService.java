@@ -164,8 +164,12 @@ public class HibernateContainerExecutionService
 
     @Override
     @Transactional
-    public ContainerExecution save(final ResolvedCommand resolvedCommand, final String containerId, final UserI userI) {
-        final ContainerExecution execution = new ContainerExecution(resolvedCommand, containerId, userI.getLogin());
+    public ContainerExecution save(final ResolvedCommand resolvedCommand,
+                                   final String containerId,
+                                   final String rootObjectId,
+                                   final String rootObjectXsiType,
+                                   final UserI userI) {
+        final ContainerExecution execution = new ContainerExecution(resolvedCommand, containerId, rootObjectId, rootObjectXsiType, userI.getLogin());
         return create(execution);
     }
 }

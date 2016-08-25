@@ -33,12 +33,30 @@ public class ContainerExecution extends AbstractHibernateEntity {
 
     public ContainerExecution() {}
 
-    public ContainerExecution(final ResolvedCommand resolvedCommand, final String containerId, final String userId) {
+    public ContainerExecution(final ResolvedCommand resolvedCommand,
+                              final String containerId,
+                              final String userId,
+                              final String rootObjectId,
+                              final String rootObjectXsiType) {
         this.containerId = containerId;
         this.userId = userId;
+        this.rootObjectId = rootObjectId;
+        this.rootObjectXsiType = rootObjectXsiType;
 
-        // TODO the resolved command doesn't have this info. where can I get it?
-//        this.rootObjectId = resolvedCommand.
+        this.commandId = resolvedCommand.getCommandId();
+        this.dockerImage = resolvedCommand.getDockerImage();
+        this.run = resolvedCommand.getRun() == null ?
+                Lists.<String>newArrayList() :
+                Lists.newArrayList(resolvedCommand.getRun());
+        this.environmentVariables = resolvedCommand.getEnvironmentVariables() == null ?
+                Maps.<String, String>newHashMap() :
+                Maps.newHashMap(resolvedCommand.getEnvironmentVariables());
+        this.mountsIn = resolvedCommand.getMountsIn() == null ?
+                Lists.<CommandMount>newArrayList() :
+                Lists.newArrayList(resolvedCommand.getMountsIn());
+        this.mountsOut = resolvedCommand.getMountsOut() == null ?
+                Lists.<CommandMount>newArrayList() :
+                Lists.newArrayList(resolvedCommand.getMountsOut());
     }
 
     public Long getCommandId() {
