@@ -335,151 +335,151 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         return launchCommand(resolvedCommand, userI);
     }
 
-//    @Override
-//    public ContainerExecution launchCommand(final Long commandId, final UserI userI, final XnatImagesessiondata session)
-//            throws NotFoundException, XFTInitException, CommandVariableResolutionException, NoServerPrefException, DockerServerException {
-//        final Command command = retrieve(commandId);
-//        if (command == null) {
-//            throw new NotFoundException("No command with ID " + commandId);
-//        }
-//
-//        final String projectId = session.getProject();
-//        final XnatProjectdata proj = XnatProjectdata.getXnatProjectdatasById(projectId, userI, false);
-//        final String rootArchivePath = proj.getRootArchivePath();
-//        final List<XnatAbstractresource> resources = session.getResources_resource();
-//
-//        final Map<String, String> resourceLabelToCatalogPath = Maps.newHashMap();
-//        if (resources != null && StringUtils.isNotBlank(rootArchivePath)) {
-//            for (final XnatAbstractresource resource : resources) {
-//                if (resource instanceof XnatResourcecatalog) {
-//                    final XnatResourcecatalog resourceCatalog = (XnatResourcecatalog) resource;
-//                    resourceLabelToCatalogPath.put(resourceCatalog.getLabel(),
-//                            resourceCatalog.getCatalogFile(rootArchivePath).getParent());
-//                }
-//            }
-//        } else {
-//            log.info("Session with id " + session.getId() + " has no resources or a blank archive path");
-//        }
-//
-//        try {
-//            resourceLabelToCatalogPath.put("root", session.getRelativeArchivePath());
-//        } catch (UnknownPrimaryProjectException e) {
-//            log.info("Could not get session's archive path", e);
-//        }
-//
-//        final ResolvedCommand resolvedCommand =
-//                resolve(command, session, resourceLabelToCatalogPath, Context.newContext());
-//        if (resolvedCommand == null) {
-//            // TODO throw an error
-//            return null;
-//        }
-//
-//        // Add default environment variables
-//        final Map<String, String> defaultEnv = Maps.newHashMap();
-////        siteConfigPreferences.getBuildPath()
-//        defaultEnv.put("XNAT_HOST", siteConfigPreferences.getSiteUrl());
-//
-//        final AliasToken token = aliasTokenService.issueTokenForUser(userI);
-//        defaultEnv.put("XNAT_USER", token.getAlias());
-//        defaultEnv.put("XNAT_PASS", token.getSecret());
-//
-//        resolvedCommand.addEnvironmentVariables(defaultEnv);
-//
-//        // Transport mounts
-//        if (resolvedCommand.getMountsIn() != null) {
-//            final String dockerHost = controlApi.getServer().getHost();
-//            for (final CommandMount mountIn : resolvedCommand.getMountsIn()) {
-//                final Path pathOnXnatHost = Paths.get(mountIn.getHostPath());
-//                final Path pathOnDockerHost = transporter.transport(dockerHost, pathOnXnatHost);
-//                mountIn.setHostPath(pathOnDockerHost.toString());
-//            }
-//        }
-//        if (resolvedCommand.getMountsOut() != null) {
-//            final String dockerHost = controlApi.getServer().getHost();
-//            final List<CommandMount> mountsOut = resolvedCommand.getMountsOut();
-//            final List<Path> buildPaths = transporter.getWritableDirectories(dockerHost, mountsOut.size());
-//            for (int i=0; i < mountsOut.size(); i++) {
-//                final CommandMount mountOut = mountsOut.get(i);
-//                final Path buildPath = buildPaths.get(i);
-//
-//                mountOut.setHostPath(buildPath.toString());
-//            }
-//        }
-//
-//        return launchCommand(resolvedCommand, userI);
-//    }
+    @Override
+    public ContainerExecution launchCommand(final Long commandId, final UserI userI, final XnatImagesessiondata session)
+            throws NotFoundException, XFTInitException, CommandVariableResolutionException, NoServerPrefException, DockerServerException {
+        final Command command = retrieve(commandId);
+        if (command == null) {
+            throw new NotFoundException("No command with ID " + commandId);
+        }
 
-//    @Override
-//    public ContainerExecution launchCommand(Long commandId, UserI userI, XnatImagesessiondata session, XnatImagescandata scan)
-//            throws NotFoundException, XFTInitException, CommandVariableResolutionException, NoServerPrefException, DockerServerException {
-//        final Command command = retrieve(commandId);
-//        if (command == null) {
-//            throw new NotFoundException("No command with ID " + commandId);
-//        }
-//
-//        final String projectId = session.getProject();
-//        final XnatProjectdata proj = XnatProjectdata.getXnatProjectdatasById(projectId, userI, false);
-//        final String rootArchivePath = proj.getRootArchivePath();
-//        final List<XnatAbstractresource> resources = scan.getFile();
-//
-//        final Map<String, String> resourceLabelToCatalogPath = Maps.newHashMap();
-//        if (resources != null && StringUtils.isNotBlank(rootArchivePath)) {
-//            for (final XnatAbstractresource resource : resources) {
-//                if (resource instanceof XnatResourcecatalog) {
-//                    final XnatResourcecatalog resourceCatalog = (XnatResourcecatalog) resource;
-//                    resourceLabelToCatalogPath.put(resourceCatalog.getLabel(),
-//                            resourceCatalog.getCatalogFile(rootArchivePath).getParent());
-//                }
-//            }
-//        } else {
-//            log.info("Session with id " + session.getId() + " has a blank archive path, or scan " + scan.getId() + " has no resources.");
-//        }
-//
-//        final Context context = Context.newContext();
-//        context.put("scanId", scan.getId());
-//        context.put("sessionId", session.getId());
-//
-//        final ResolvedCommand resolvedCommand =
-//                resolve(command, scan, resourceLabelToCatalogPath, context);
-//        if (resolvedCommand == null) {
-//            // TODO throw an error
-//            return null;
-//        }
-//
-//        // Add default environment variables
-//        final Map<String, String> defaultEnv = Maps.newHashMap();
-////        siteConfigPreferences.getBuildPath()
-//        defaultEnv.put("XNAT_HOST", siteConfigPreferences.getSiteUrl());
-//
-//        final AliasToken token = aliasTokenService.issueTokenForUser(userI);
-//        defaultEnv.put("XNAT_USER", token.getAlias());
-//        defaultEnv.put("XNAT_PASS", token.getSecret());
-//
-//        resolvedCommand.addEnvironmentVariables(defaultEnv);
-//
-//        // Transport mounts
-//        if (resolvedCommand.getMountsIn() != null) {
-//            final String dockerHost = controlApi.getServer().getHost();
-//            for (final CommandMount mountIn : resolvedCommand.getMountsIn()) {
-//                final Path pathOnXnatHost = Paths.get(mountIn.getHostPath());
-//                final Path pathOnDockerHost = transporter.transport(dockerHost, pathOnXnatHost);
-//                mountIn.setHostPath(pathOnDockerHost.toString());
-//            }
-//        }
-//        if (resolvedCommand.getMountsOut() != null) {
-//            final String dockerHost = controlApi.getServer().getHost();
-//            final List<CommandMount> mountsOut = resolvedCommand.getMountsOut();
-//            final List<Path> buildPaths = transporter.getWritableDirectories(dockerHost, mountsOut.size());
-//            for (int i=0; i < mountsOut.size(); i++) {
-//                final CommandMount mountOut = mountsOut.get(i);
-//                final Path buildPath = buildPaths.get(i);
-//
-//                mountOut.setHostPath(buildPath.toString());
-//            }
-//        }
-//
-//        return launchCommand(resolvedCommand, userI);
-//    }
+        final String projectId = session.getProject();
+        final XnatProjectdata proj = XnatProjectdata.getXnatProjectdatasById(projectId, userI, false);
+        final String rootArchivePath = proj.getRootArchivePath();
+        final List<XnatAbstractresource> resources = session.getResources_resource();
+
+        final Map<String, String> resourceLabelToCatalogPath = Maps.newHashMap();
+        if (resources != null && StringUtils.isNotBlank(rootArchivePath)) {
+            for (final XnatAbstractresource resource : resources) {
+                if (resource instanceof XnatResourcecatalog) {
+                    final XnatResourcecatalog resourceCatalog = (XnatResourcecatalog) resource;
+                    resourceLabelToCatalogPath.put(resourceCatalog.getLabel(),
+                            resourceCatalog.getCatalogFile(rootArchivePath).getParent());
+                }
+            }
+        } else {
+            log.info("Session with id " + session.getId() + " has no resources or a blank archive path");
+        }
+
+        try {
+            resourceLabelToCatalogPath.put("root", session.getRelativeArchivePath());
+        } catch (UnknownPrimaryProjectException e) {
+            log.info("Could not get session's archive path", e);
+        }
+
+        final ResolvedCommand resolvedCommand =
+                resolve(command, session, resourceLabelToCatalogPath, Context.newContext());
+        if (resolvedCommand == null) {
+            // TODO throw an error
+            return null;
+        }
+
+        // Add default environment variables
+        final Map<String, String> defaultEnv = Maps.newHashMap();
+//        siteConfigPreferences.getBuildPath()
+        defaultEnv.put("XNAT_HOST", siteConfigPreferences.getSiteUrl());
+
+        final AliasToken token = aliasTokenService.issueTokenForUser(userI);
+        defaultEnv.put("XNAT_USER", token.getAlias());
+        defaultEnv.put("XNAT_PASS", token.getSecret());
+
+        resolvedCommand.addEnvironmentVariables(defaultEnv);
+
+        // Transport mounts
+        if (resolvedCommand.getMountsIn() != null) {
+            final String dockerHost = controlApi.getServer().getHost();
+            for (final CommandMount mountIn : resolvedCommand.getMountsIn()) {
+                final Path pathOnXnatHost = Paths.get(mountIn.getHostPath());
+                final Path pathOnDockerHost = transporter.transport(dockerHost, pathOnXnatHost);
+                mountIn.setHostPath(pathOnDockerHost.toString());
+            }
+        }
+        if (resolvedCommand.getMountsOut() != null) {
+            final String dockerHost = controlApi.getServer().getHost();
+            final List<CommandMount> mountsOut = resolvedCommand.getMountsOut();
+            final List<Path> buildPaths = transporter.getWritableDirectories(dockerHost, mountsOut.size());
+            for (int i=0; i < mountsOut.size(); i++) {
+                final CommandMount mountOut = mountsOut.get(i);
+                final Path buildPath = buildPaths.get(i);
+
+                mountOut.setHostPath(buildPath.toString());
+            }
+        }
+
+        return launchCommand(resolvedCommand, userI);
+    }
+
+    @Override
+    public ContainerExecution launchCommand(Long commandId, UserI userI, XnatImagesessiondata session, XnatImagescandata scan)
+            throws NotFoundException, XFTInitException, CommandVariableResolutionException, NoServerPrefException, DockerServerException {
+        final Command command = retrieve(commandId);
+        if (command == null) {
+            throw new NotFoundException("No command with ID " + commandId);
+        }
+
+        final String projectId = session.getProject();
+        final XnatProjectdata proj = XnatProjectdata.getXnatProjectdatasById(projectId, userI, false);
+        final String rootArchivePath = proj.getRootArchivePath();
+        final List<XnatAbstractresource> resources = scan.getFile();
+
+        final Map<String, String> resourceLabelToCatalogPath = Maps.newHashMap();
+        if (resources != null && StringUtils.isNotBlank(rootArchivePath)) {
+            for (final XnatAbstractresource resource : resources) {
+                if (resource instanceof XnatResourcecatalog) {
+                    final XnatResourcecatalog resourceCatalog = (XnatResourcecatalog) resource;
+                    resourceLabelToCatalogPath.put(resourceCatalog.getLabel(),
+                            resourceCatalog.getCatalogFile(rootArchivePath).getParent());
+                }
+            }
+        } else {
+            log.info("Session with id " + session.getId() + " has a blank archive path, or scan " + scan.getId() + " has no resources.");
+        }
+
+        final Context context = Context.newContext();
+        context.put("scanId", scan.getId());
+        context.put("sessionId", session.getId());
+
+        final ResolvedCommand resolvedCommand =
+                resolve(command, scan, resourceLabelToCatalogPath, context);
+        if (resolvedCommand == null) {
+            // TODO throw an error
+            return null;
+        }
+
+        // Add default environment variables
+        final Map<String, String> defaultEnv = Maps.newHashMap();
+//        siteConfigPreferences.getBuildPath()
+        defaultEnv.put("XNAT_HOST", siteConfigPreferences.getSiteUrl());
+
+        final AliasToken token = aliasTokenService.issueTokenForUser(userI);
+        defaultEnv.put("XNAT_USER", token.getAlias());
+        defaultEnv.put("XNAT_PASS", token.getSecret());
+
+        resolvedCommand.addEnvironmentVariables(defaultEnv);
+
+        // Transport mounts
+        if (resolvedCommand.getMountsIn() != null) {
+            final String dockerHost = controlApi.getServer().getHost();
+            for (final CommandMount mountIn : resolvedCommand.getMountsIn()) {
+                final Path pathOnXnatHost = Paths.get(mountIn.getHostPath());
+                final Path pathOnDockerHost = transporter.transport(dockerHost, pathOnXnatHost);
+                mountIn.setHostPath(pathOnDockerHost.toString());
+            }
+        }
+        if (resolvedCommand.getMountsOut() != null) {
+            final String dockerHost = controlApi.getServer().getHost();
+            final List<CommandMount> mountsOut = resolvedCommand.getMountsOut();
+            final List<Path> buildPaths = transporter.getWritableDirectories(dockerHost, mountsOut.size());
+            for (int i=0; i < mountsOut.size(); i++) {
+                final CommandMount mountOut = mountsOut.get(i);
+                final Path buildPath = buildPaths.get(i);
+
+                mountOut.setHostPath(buildPath.toString());
+            }
+        }
+
+        return launchCommand(resolvedCommand, userI);
+    }
 
 //    @Override
 //    public List<Command> parseLabels(final Map<String, String> labels) {
