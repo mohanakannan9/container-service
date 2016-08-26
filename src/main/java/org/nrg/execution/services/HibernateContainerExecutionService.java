@@ -37,6 +37,7 @@ import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.restlet.util.XNATRestConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -62,6 +63,7 @@ public class HibernateContainerExecutionService
     private AliasTokenService aliasTokenService;
     private TransportService transportService;
 
+    @Autowired
     public HibernateContainerExecutionService(final ContainerControlApi containerControlApi,
                                               final SiteConfigPreferences siteConfigPreferences,
                                               final AliasTokenService aliasTokenService,
