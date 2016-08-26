@@ -10,7 +10,9 @@ import org.nrg.execution.services.ContainerExecutionService;
 import org.nrg.execution.services.HibernateContainerExecutionService;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.services.NrgPreferenceService;
+import org.nrg.transporter.TransportService;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.services.AliasTokenService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -58,9 +60,21 @@ public class ContainerExecutionTestConfig {
     }
 
     @Bean
+    public AliasTokenService aliasTokenService() {
+        return Mockito.mock(AliasTokenService.class);
+    }
+
+    @Bean
+    public TransportService transportService() {
+        return Mockito.mock(TransportService.class);
+    }
+
+    @Bean
     public ContainerExecutionService containerExecutionService(final ContainerControlApi containerControlApi,
-                                                               final SiteConfigPreferences siteConfigPreferences) {
-        return new HibernateContainerExecutionService(containerControlApi, siteConfigPreferences);
+                                                               final SiteConfigPreferences siteConfigPreferences,
+                                                               final AliasTokenService aliasTokenService,
+                                                               final TransportService transportService) {
+        return new HibernateContainerExecutionService(containerControlApi, siteConfigPreferences, aliasTokenService, transportService);
     }
 
     @Bean

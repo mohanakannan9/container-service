@@ -143,7 +143,7 @@ public class ContainerExecution extends AbstractHibernateEntity {
         this.rootObjectXsiType = rootObjectXsiType;
     }
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection
     public List<ContainerExecutionHistory> getHistory() {
         return history;
     }

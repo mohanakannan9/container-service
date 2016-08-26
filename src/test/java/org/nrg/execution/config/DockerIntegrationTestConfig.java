@@ -119,8 +119,10 @@ public class DockerIntegrationTestConfig implements SchedulingConfigurer {
 
     @Bean
     public ContainerExecutionService containerExecutionService(final ContainerControlApi containerControlApi,
-                                                               final SiteConfigPreferences siteConfigPreferences) {
-        return new HibernateContainerExecutionService(containerControlApi, siteConfigPreferences);
+                                                               final SiteConfigPreferences siteConfigPreferences,
+                                                               final AliasTokenService aliasTokenService,
+                                                               final TransportService transportService) {
+        return new HibernateContainerExecutionService(containerControlApi, siteConfigPreferences, aliasTokenService, transportService);
     }
 
     @Bean
