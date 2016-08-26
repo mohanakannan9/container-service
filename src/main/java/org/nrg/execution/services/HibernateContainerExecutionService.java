@@ -96,25 +96,36 @@ public class HibernateContainerExecutionService
 
             if (StringUtils.isNotBlank(event.getStatus()) &&
                     event.getStatus().matches("kill|die|oom")) {
-                finalize(execution);
+                final String userLogin = execution.getUserId();
+                try {
+                    final UserI userI = Users.getUser(userLogin);
+                    finalize(execution, userI);
+                } catch (UserInitException | UserNotFoundException e) {
+                    log.error("Could not finalize container execution. Could not get user details for user " + userLogin, e);
+                }
+
             }
         }
     }
 
     @Override
     @Transactional
-    public void finalize(final ContainerExecution execution) {
+    public void finalize(final Long containerExecutionId, final UserI userI) {
+        final ContainerExecution containerExecution = retrieve(containerExecutionId);
+        finalize(containerExecution, userI);
+    }
+
+    @Override
+    @Transactional
+    public void finalize(final ContainerExecution containerExecution, final UserI userI) {
         if (log.isDebugEnabled()) {
-            log.debug("Finalizing ContainerExecution for container %s", execution.getContainerId());
+            log.debug("Finalizing ContainerExecution for container %s", containerExecution.getContainerId());
         }
-        final String userLogin = execution.getUserId();
-        try {
-            final UserI user = Users.getUser(userLogin);
-            uploadLogs(execution, user);
-            uploadOutputFiles(execution, user);
-        } catch (UserInitException | UserNotFoundException e) {
-            log.error("Could not finalize container execution. Could not get user details for user " + userLogin, e);
-        }
+
+        uploadLogs(containerExecution, userI);
+        uploadOutputFiles(containerExecution, userI);
+
+
     }
 
     private void uploadLogs(final ContainerExecution execution, final UserI user) {
