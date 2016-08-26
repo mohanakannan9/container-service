@@ -1,16 +1,14 @@
 package org.nrg.execution.services;
 
-import org.apache.commons.httpclient.auth.BasicScheme;
-import org.apache.commons.httpclient.auth.CredentialsProvider;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
-import org.apache.http.auth.AuthScheme;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.AuthCache;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.BasicAuthCache;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -210,7 +208,7 @@ public class HibernateContainerExecutionService
 
             final AuthCache authCache = new BasicAuthCache();
             final BasicScheme basicAuth = new BasicScheme();
-            authCache.put(targetHost, (AuthScheme) basicAuth);
+            authCache.put(targetHost, basicAuth);
 
             if (rootXsiType.matches(".+?:.*?[Ss]can.*") && rootId.contains(":")) {
                 final String scanId = StringUtils.substringAfterLast(rootId, ":");
