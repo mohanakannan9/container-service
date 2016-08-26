@@ -1,10 +1,12 @@
 package org.nrg.execution.model;
 
 import com.google.common.base.MoreObjects;
+import org.nrg.framework.configuration.ConfigPaths;
 import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.beans.AbstractPreferenceBean;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.nrg.prefs.services.NrgPreferenceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +18,14 @@ import java.util.Objects;
     description = "All the preferences that define a Docker Server")
 public class DockerServerPrefsBean extends AbstractPreferenceBean {
     private static final Logger _log = LoggerFactory.getLogger(DockerServerPrefsBean.class);
+
+    public DockerServerPrefsBean(final NrgPreferenceService preferenceService) {
+        super(preferenceService);
+    }
+
+    public DockerServerPrefsBean(final NrgPreferenceService preferenceService, final ConfigPaths configFolderPaths) {
+        super(preferenceService, configFolderPaths);
+    }
 
     public void setFromDto(final DockerServer dockerServerDto) throws InvalidPreferenceName {
         setHost(dockerServerDto.getHost());

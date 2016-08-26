@@ -21,8 +21,8 @@ public class DockerControlApiTestConfig {
     }
 
     @Bean
-    public DockerServerPrefsBean dockerServerPrefsBean() {
-        return new DockerServerPrefsBean();
+    public DockerServerPrefsBean dockerServerPrefsBean(final NrgPreferenceService nrgPreferenceService) {
+        return new DockerServerPrefsBean(nrgPreferenceService);
     }
 
     @Bean
