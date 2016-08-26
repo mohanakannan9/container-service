@@ -35,9 +35,9 @@ public class ContainerExecution extends AbstractHibernateEntity {
 
     public ContainerExecution(final ResolvedCommand resolvedCommand,
                               final String containerId,
-                              final String userId,
                               final String rootObjectId,
-                              final String rootObjectXsiType) {
+                              final String rootObjectXsiType,
+                              final String userId) {
         this.containerId = containerId;
         this.userId = userId;
         this.rootObjectId = rootObjectId;
