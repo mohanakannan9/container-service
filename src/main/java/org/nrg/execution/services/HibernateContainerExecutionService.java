@@ -13,6 +13,7 @@ import org.apache.http.impl.client.BasicAuthCache;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.hibernate.Hibernate;
 import org.nrg.execution.api.ContainerControlApi;
 import org.nrg.execution.daos.ContainerExecutionRepository;
 import org.nrg.execution.events.DockerContainerEvent;
@@ -70,6 +71,16 @@ public class HibernateContainerExecutionService
         this.siteConfigPreferences = siteConfigPreferences;
         this.aliasTokenService = aliasTokenService;
         this.transportService = transportService;
+    }
+
+    @Override
+    public void initialize(final ContainerExecution entity) {
+        Hibernate.initialize(entity);
+        Hibernate.initialize(entity.getEnvironmentVariables());
+        Hibernate.initialize(entity.getHistory());
+        Hibernate.initialize(entity.getMountsIn());
+        Hibernate.initialize(entity.getMountsOut());
+        Hibernate.initialize(entity.getRun());
     }
 
     @Override
