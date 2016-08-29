@@ -70,6 +70,9 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
 
     @Override
     public void initialize(final Command command) {
+        if (command == null) {
+            return;
+        }
         Hibernate.initialize(command);
         Hibernate.initialize(command.getEnvironmentVariables());
         Hibernate.initialize(command.getRunTemplate());
@@ -85,47 +88,6 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         } catch (ConstraintViolationException e) {
             throw new NrgServiceRuntimeException("A command already exists with this name and docker image ID.");
         }
-    }
-
-    @Override
-    @Transactional
-    public Command retrieve(long id) {
-        if (log.isDebugEnabled()) {
-            log.debug("Retrieving entity for ID: " + id);
-        }
-        final Command entity;
-        if (HibernateUtils.isAuditable(getParameterizedType())) {
-            entity = getDao().findEnabledById(id);
-        } else {
-            entity = getDao().retrieve(id);
-        }
-
-        if (entity != null) {
-            initialize(entity);
-        }
-        return entity;
-    }
-
-    @Override
-    @Transactional
-    public Command retrieve(final String name, final String dockerImageId) {
-        final Command command = getDao().retrieve(name, dockerImageId);
-        if (command != null) {
-            initialize(command);
-        }
-        return command;
-    }
-
-    @Override
-    @Transactional
-    public List<Command> getAll() {
-        log.debug("Getting all enabled entities");
-        final List<Command> list = getDao().findAllEnabled();
-        for (final Command entity : list) {
-            initialize(entity);
-        }
-
-        return list;
     }
 
     @Override

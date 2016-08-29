@@ -18,8 +18,6 @@ import java.util.Map;
 
 public interface CommandService extends BaseHibernateService<Command> {
 
-    Command retrieve(final String name, final String dockerImageId);
-
     ResolvedCommand resolveCommand(final Long commandId) throws NotFoundException, CommandVariableResolutionException;
     ResolvedCommand resolveCommand(final Long commandId,
                                    final Map<String, String> variableRuntimeValues)
