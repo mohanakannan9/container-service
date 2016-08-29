@@ -75,6 +75,9 @@ public class HibernateContainerExecutionService
 
     @Override
     public void initialize(final ContainerExecution entity) {
+        if (entity == null) {
+            return;
+        }
         Hibernate.initialize(entity);
         Hibernate.initialize(entity.getEnvironmentVariables());
         Hibernate.initialize(entity.getHistory());
