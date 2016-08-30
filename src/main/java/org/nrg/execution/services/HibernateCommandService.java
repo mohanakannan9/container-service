@@ -1,5 +1,6 @@
 package org.nrg.execution.services;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -346,39 +347,9 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             return null;
         }
 
-        // Add default environment variables
-        final Map<String, String> defaultEnv = Maps.newHashMap();
-//        siteConfigPreferences.getBuildPath()
-        defaultEnv.put("XNAT_HOST", siteConfigPreferences.getSiteUrl());
+        final ResolvedCommand preparedToLaunch = prelaunch(resolvedCommand, userI);
 
-        final AliasToken token = aliasTokenService.issueTokenForUser(userI);
-        defaultEnv.put("XNAT_USER", token.getAlias());
-        defaultEnv.put("XNAT_PASS", token.getSecret());
-
-        resolvedCommand.addEnvironmentVariables(defaultEnv);
-
-        // Transport mounts
-        if (resolvedCommand.getMountsIn() != null) {
-            final String dockerHost = controlApi.getServer().getHost();
-            for (final CommandMount mountIn : resolvedCommand.getMountsIn()) {
-                final Path pathOnXnatHost = Paths.get(mountIn.getHostPath());
-                final Path pathOnDockerHost = transporter.transport(dockerHost, pathOnXnatHost);
-                mountIn.setHostPath(pathOnDockerHost.toString());
-            }
-        }
-        if (resolvedCommand.getMountsOut() != null) {
-            final String dockerHost = controlApi.getServer().getHost();
-            final List<CommandMount> mountsOut = resolvedCommand.getMountsOut();
-            final List<Path> buildPaths = transporter.getWritableDirectories(dockerHost, mountsOut.size());
-            for (int i=0; i < mountsOut.size(); i++) {
-                final CommandMount mountOut = mountsOut.get(i);
-                final Path buildPath = buildPaths.get(i);
-
-                mountOut.setHostPath(buildPath.toString());
-            }
-        }
-
-        return launchCommand(resolvedCommand, session.getId(), session.getXSIType(), userI);
+        return launchCommand(preparedToLaunch, session.getId(), session.getXSIType(), userI);
     }
 
     @Override
@@ -389,6 +360,19 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             throw new NotFoundException("No command with ID " + commandId);
         }
 
+        final ResolvedCommand preparedToLaunch = prepareToLaunchScan(command, session, scan, userI);
+
+        final String concattenatedSessionScanId = session.getId() + ":" + scan.getId();
+        return launchCommand(preparedToLaunch, concattenatedSessionScanId, scan.getXSIType(), userI);
+    }
+
+    @VisibleForTesting
+    @Override
+    public ResolvedCommand prepareToLaunchScan(final Command command,
+                                                final XnatImagesessiondata session,
+                                                final XnatImagescandata scan,
+                                                final UserI userI)
+            throws CommandVariableResolutionException, NotFoundException, XFTInitException, NoServerPrefException {
         final String projectId = session.getProject();
         final XnatProjectdata proj = XnatProjectdata.getXnatProjectdatasById(projectId, userI, false);
         final String rootArchivePath = proj.getRootArchivePath();
@@ -418,6 +402,10 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             return null;
         }
 
+        return prelaunch(resolvedCommand, userI);
+    }
+
+    private ResolvedCommand prelaunch(final ResolvedCommand resolvedCommand, final UserI userI) throws NoServerPrefException {
         // Add default environment variables
         final Map<String, String> defaultEnv = Maps.newHashMap();
 //        siteConfigPreferences.getBuildPath()
@@ -450,8 +438,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             }
         }
 
-        final String concattenatedSessionScanId = session.getId() + ":" + scan.getId();
-        return launchCommand(resolvedCommand, concattenatedSessionScanId, scan.getXSIType(), userI);
+        return resolvedCommand;
     }
 
 //    @Override

@@ -1,5 +1,6 @@
 package org.nrg.execution.services;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.nrg.execution.exceptions.CommandVariableResolutionException;
 import org.nrg.execution.exceptions.DockerServerException;
 import org.nrg.execution.exceptions.NoServerPrefException;
@@ -46,4 +47,11 @@ public interface CommandService extends BaseHibernateService<Command> {
             throws NotFoundException, XFTInitException, CommandVariableResolutionException, NoServerPrefException, DockerServerException;
 
     List<Command> save(final List<Command> commands);
+
+    @VisibleForTesting
+    ResolvedCommand prepareToLaunchScan(Command command,
+                                        XnatImagesessiondata session,
+                                        XnatImagescandata scan,
+                                        UserI userI)
+            throws CommandVariableResolutionException, NotFoundException, XFTInitException, NoServerPrefException;
 }
