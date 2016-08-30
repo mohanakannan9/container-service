@@ -1,16 +1,9 @@
 package org.nrg.execution.services;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.AuthCache;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.impl.auth.BasicScheme;
-import org.apache.http.impl.client.BasicAuthCache;
-import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.hibernate.Hibernate;
@@ -221,19 +214,14 @@ public class HibernateContainerExecutionService
         final String rootXsiType = containerExecution.getRootObjectXsiType();
         if (StringUtils.isNotBlank(rootXsiType) && StringUtils.isNotBlank(rootId)) {
             final AliasToken token = aliasTokenService.issueTokenForUser(userI);
+
+//            final String encodedAuth =
+//                    (new BASE64Encoder()).encode((token.getAlias() + ":" + token.getSecret()).getBytes());
+            final String encodedAuth = Base64.encodeBase64String((token.getAlias() + ":" + token.getSecret()).getBytes());
+
 //            final String xnatUrl = siteConfigPreferences.getSiteUrl();
             final String xnatUrl = "http://localhost:80";
             String url = xnatUrl + "/data";
-
-            final HttpHost targetHost = HttpHost.create(xnatUrl);
-            final BasicCredentialsProvider credsProvider = new BasicCredentialsProvider();
-            credsProvider.setCredentials(
-                    new AuthScope(targetHost.getHostName(), targetHost.getPort()),
-                    new UsernamePasswordCredentials(token.getAlias(), token.getSecret()));
-
-            final AuthCache authCache = new BasicAuthCache();
-            final BasicScheme basicAuth = new BasicScheme();
-            authCache.put(targetHost, basicAuth);
 
             if (rootXsiType.matches(".+?:.*?[Ss]can.*") && rootId.contains(":")) {
                 final String scanId = StringUtils.substringAfterLast(rootId, ":");
@@ -250,13 +238,6 @@ public class HibernateContainerExecutionService
             }
 
             try (final CloseableHttpClient client = HttpClients.createDefault()) {
-
-
-
-                final HttpClientContext context = HttpClientContext.create();
-                context.setCredentialsProvider(credsProvider);
-                context.setAuthCache(authCache);
-
                 for (final CommandMount mount : toUpload) {
                     if (StringUtils.isBlank(mount.getName())) {
                         log.error(String.format("Cannot upload mount for container execution %s. Mount has no resource name. %s",
@@ -276,8 +257,9 @@ public class HibernateContainerExecutionService
                                 URLEncoder.encode(mount.getOverwrite().toString(), UTF8),
                                 URLEncoder.encode(pathOnXnatMachine.toString(), UTF8));
 
-
                         final HttpPost post = new HttpPost(url);
+                        post.setHeader("Authorization", "Basic " + encodedAuth);
+
                         final HttpResponse response = client.execute(post);
 
                         if (response.getStatusLine().getStatusCode() > 400) {
