@@ -18,8 +18,8 @@ import java.util.List;
 import java.util.Map;
 
 public interface CommandService extends BaseHibernateService<Command> {
+    Command get(Long id) throws NotFoundException;
 
-    ResolvedCommand resolveCommand(final Long commandId) throws NotFoundException, CommandVariableResolutionException;
     ResolvedCommand resolveCommand(final Long commandId,
                                    final Map<String, String> variableRuntimeValues)
             throws NotFoundException, CommandVariableResolutionException;
@@ -34,8 +34,6 @@ public interface CommandService extends BaseHibernateService<Command> {
                                      final String rootObjectXsiType,
                                      final UserI userI)
             throws NoServerPrefException, DockerServerException;
-    ContainerExecution launchCommand(final Long commandId, final UserI userI)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandVariableResolutionException;
     ContainerExecution launchCommand(final Long commandId,
                          final Map<String, String> variableRuntimeValues, final UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandVariableResolutionException;

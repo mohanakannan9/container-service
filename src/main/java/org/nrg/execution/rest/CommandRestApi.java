@@ -126,17 +126,6 @@ public class CommandRestApi {
         }
     }
 
-    @RequestMapping(value = {"/{id}/launch"}, method = POST)
-    @ResponseBody
-    public ContainerExecution launchCommand(final @PathVariable Long id)
-            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException {
-        final UserI userI = XDAT.getUserDetails();
-        try {
-            return commandService.launchCommand(id, userI);
-        } catch (CommandVariableResolutionException e) {
-            throw new BadRequestException("Must provide value for variable " + e.getVariable().getName() + " in request body.", e);
-        }
-    }
 
     @RequestMapping(value = "/{id}/resolve", method = POST)
     @ResponseBody

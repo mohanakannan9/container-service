@@ -70,6 +70,15 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     private static final Pattern TEMPLATE_PATTERN = Pattern.compile("(?<=\\s|\\A)#(\\w+)#(?=\\s|\\z)"); // Match #varname#
 
     @Override
+    public Command get(final Long id) throws NotFoundException {
+        final Command command = retrieve(id);
+        if (command == null) {
+            throw new NotFoundException("Could not find Command with id " + id);
+        }
+        return command;
+    }
+
+    @Override
     public void initialize(final Command command) {
         if (command == null) {
             return;
@@ -110,19 +119,10 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     }
 
     @Override
-    public ResolvedCommand resolveCommand(final Long commandId)
-            throws NotFoundException, CommandVariableResolutionException {
-        return resolveCommand(commandId, Maps.<String, String>newHashMap());
-    }
-
-    @Override
     public ResolvedCommand resolveCommand(final Long commandId,
                                           final Map<String, String> variableValuesProvidedAtRuntime)
             throws NotFoundException, CommandVariableResolutionException {
-        final Command command = retrieve(commandId);
-        if (command == null) {
-            throw new NotFoundException("Could not find Command with id " + commandId);
-        }
+        final Command command = get(commandId);
         return resolveCommand(command, variableValuesProvidedAtRuntime);
     }
 
@@ -276,7 +276,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             }
         }
 
-        return resolveCommand(command);
+        return resolveCommand(command, context);
     }
 
     @Override
@@ -296,12 +296,6 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     }
 
     @Override
-    public ContainerExecution launchCommand(final Long commandId, final UserI userI)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandVariableResolutionException {
-        return launchCommand(commandId, Maps.<String, String>newHashMap(), userI);
-    }
-
-    @Override
     public ContainerExecution launchCommand(final Long commandId, final Map<String, String> variableRuntimeValues, final UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandVariableResolutionException {
         final ResolvedCommand resolvedCommand = resolveCommand(commandId, variableRuntimeValues);
@@ -311,10 +305,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     @Override
     public ContainerExecution launchCommand(final Long commandId, final UserI userI, final XnatImagesessiondata session)
             throws NotFoundException, XFTInitException, CommandVariableResolutionException, NoServerPrefException, DockerServerException {
-        final Command command = retrieve(commandId);
-        if (command == null) {
-            throw new NotFoundException("No command with ID " + commandId);
-        }
+        final Command command = get(commandId);
 
         final String projectId = session.getProject();
         final XnatProjectdata proj = XnatProjectdata.getXnatProjectdatasById(projectId, userI, false);
@@ -355,10 +346,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     @Override
     public ContainerExecution launchCommand(Long commandId, UserI userI, XnatImagesessiondata session, XnatImagescandata scan)
             throws NotFoundException, XFTInitException, CommandVariableResolutionException, NoServerPrefException, DockerServerException {
-        final Command command = retrieve(commandId);
-        if (command == null) {
-            throw new NotFoundException("No command with ID " + commandId);
-        }
+        final Command command = get(commandId);
 
         final ResolvedCommand preparedToLaunch = prepareToLaunchScan(command, session, scan, userI);
 
