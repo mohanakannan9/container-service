@@ -169,7 +169,13 @@ public class CommandRestApi {
                 final String scanId = StringUtils.substringAfterLast(itemId, ":");
 
                 final XnatImagesessiondata session = XnatImagesessiondata.getXnatImagesessiondatasById(sessionId, userI, false);
+                if (session == null) {
+                    throw new NotFoundException(String.format("No session with id %s.", sessionId));
+                }
                 final XnatImagescandata scan = session.getScanById(scanId);
+                if (scan == null) {
+                    throw new NotFoundException(String.format("No scan with id %s on session with id %s.", scanId, sessionId));
+                }
 
                 return commandService.launchCommand(id, userI, session, scan);
             } else {
