@@ -1,21 +1,18 @@
 package org.nrg.execution.services;
 
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.AuthCache;
-import org.apache.http.client.AuthenticationStrategy;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.BasicAuthCache;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.hibernate.Hibernate;
 import org.nrg.execution.api.ContainerControlApi;
@@ -41,11 +38,13 @@ import org.nrg.xnat.restlet.util.XNATRestConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.codec.Base64;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -226,9 +225,16 @@ public class HibernateContainerExecutionService
         if (StringUtils.isNotBlank(rootXsiType) && StringUtils.isNotBlank(rootId)) {
             final AliasToken token = aliasTokenService.issueTokenForUser(userI);
 
-//            final String encodedAuth =
-//                    (new BASE64Encoder()).encode((token.getAlias() + ":" + token.getSecret()).getBytes());
-//            final String encodedAuth = Base64.encodeBase64String((token.getAlias() + ":" + token.getSecret()).getBytes());
+//            final String authToken = token.getAlias() + ":" + token.getSecret();
+//            String encodedAuth = "";
+//            try {
+//                final byte[] authTokenBytes = authToken.getBytes("UTF-8");
+//                final byte[] authTokenBase64Bytes = Base64.encode(authTokenBytes);
+//                encodedAuth = new String(authTokenBase64Bytes, "UTF-8");
+//            } catch (UnsupportedEncodingException e) {
+//                log.error("Sorry, can't get an auth token", e);
+//            }
+
 
 //            final String xnatUrl = siteConfigPreferences.getSiteUrl();
             final String xnatUrl = "http://localhost:80";
@@ -249,15 +255,18 @@ public class HibernateContainerExecutionService
                 url += String.format("/experiments/%s", rootId);
             }
 
-            final HttpClientBuilder clientBuilder = HttpClientBuilder.create();
+//            final HttpClientBuilder clientBuilder = HttpClientBuilder.create();
             final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
             credentialsProvider.setCredentials(new AuthScope(targetHost.getHostName(), targetHost.getPort()), new UsernamePasswordCredentials(token.getAlias(), token.getSecret()));
             final AuthCache authCache = new BasicAuthCache();
-            BasicScheme basicAuth = new BasicScheme();
+            final BasicScheme basicAuth = new BasicScheme();
             authCache.put(targetHost, basicAuth);
-            clientBuilder.setDefaultCredentialsProvider(credentialsProvider);
-            try (final CloseableHttpClient client = clientBuilder.build()) {
-//            try (final CloseableHttpClient client = HttpClients.createDefault()) {
+//            clientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+            final HttpClientContext clientContext = new HttpClientContext();
+            clientContext.setAuthCache(authCache);
+            clientContext.setCredentialsProvider(credentialsProvider);
+//            try (final CloseableHttpClient client = clientBuilder.build()) {
+            try (final CloseableHttpClient client = HttpClients.createDefault()) {
                 for (final CommandMount mount : toUpload) {
                     if (StringUtils.isBlank(mount.getName())) {
                         log.error(String.format("Cannot upload mount for container execution %s. Mount has no resource name. %s",
@@ -280,7 +289,8 @@ public class HibernateContainerExecutionService
                         final HttpPost post = new HttpPost(url);
 //                        post.setHeader("Authorization", "Basic " + encodedAuth);
 
-                        final HttpResponse response = client.execute(post);
+                        final HttpResponse response = client.execute(post, clientContext);
+//                        final HttpResponse response = client.execute(post);
 
                         if (response.getStatusLine().getStatusCode() > 400) {
                             log.error(String.format("Upload failed for container execution %s, mount %s.\n" +
