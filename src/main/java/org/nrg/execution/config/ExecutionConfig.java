@@ -18,7 +18,7 @@ import javax.inject.Inject;
 import java.util.concurrent.TimeUnit;
 
 @Configuration
-@XnatPlugin(value = "execution", description = "Action/Command Execution Service", entityPackages = "org.nrg.execution")
+@XnatPlugin(value = "execution", name = "execution", description = "Action/Command Execution Service", entityPackages = "org.nrg.execution")
 @ComponentScan(value = "org.nrg.execution",
         excludeFilters = @Filter(type = FilterType.REGEX, pattern = ".*TestConfig.*", value = {}))
 @Import(TransporterConfig.class)
