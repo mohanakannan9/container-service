@@ -1,5 +1,6 @@
 package org.nrg.execution.services;
 
+import io.restassured.response.Response;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
@@ -52,6 +53,9 @@ import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+
+import static io.restassured.RestAssured.given;
+import static io.restassured.RestAssured.post;
 
 @Service
 public class HibernateContainerExecutionService
@@ -136,7 +140,7 @@ public class HibernateContainerExecutionService
     @Transactional
     public void finalize(final ContainerExecution containerExecution, final UserI userI) {
         if (log.isDebugEnabled()) {
-            log.debug("Finalizing ContainerExecution for container %s", containerExecution.getContainerId());
+            log.debug(String.format("Finalizing ContainerExecution for container %s", containerExecution.getContainerId()));
         }
 
         uploadLogs(containerExecution, userI);
@@ -256,17 +260,17 @@ public class HibernateContainerExecutionService
             }
 
 //            final HttpClientBuilder clientBuilder = HttpClientBuilder.create();
-            final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-            credentialsProvider.setCredentials(new AuthScope(targetHost.getHostName(), targetHost.getPort()), new UsernamePasswordCredentials(token.getAlias(), token.getSecret()));
-            final AuthCache authCache = new BasicAuthCache();
-            final BasicScheme basicAuth = new BasicScheme();
-            authCache.put(targetHost, basicAuth);
+//            final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+//            credentialsProvider.setCredentials(new AuthScope(targetHost.getHostName(), targetHost.getPort()), new UsernamePasswordCredentials(token.getAlias(), token.getSecret()));
+//            final AuthCache authCache = new BasicAuthCache();
+//            final BasicScheme basicAuth = new BasicScheme();
+//            authCache.put(targetHost, basicAuth);
 //            clientBuilder.setDefaultCredentialsProvider(credentialsProvider);
-            final HttpClientContext clientContext = new HttpClientContext();
-            clientContext.setAuthCache(authCache);
-            clientContext.setCredentialsProvider(credentialsProvider);
+//            final HttpClientContext clientContext = new HttpClientContext();
+//            clientContext.setAuthCache(authCache);
+//            clientContext.setCredentialsProvider(credentialsProvider);
 //            try (final CloseableHttpClient client = clientBuilder.build()) {
-            try (final CloseableHttpClient client = HttpClients.createDefault()) {
+//            try (final CloseableHttpClient client = HttpClients.createDefault()) {
                 for (final CommandMount mount : toUpload) {
                     if (StringUtils.isBlank(mount.getName())) {
                         log.error(String.format("Cannot upload mount for container execution %s. Mount has no resource name. %s",
@@ -285,25 +289,34 @@ public class HibernateContainerExecutionService
                         url += String.format("?overwrite=%s&reference=%s",
                                 URLEncoder.encode(mount.getOverwrite().toString(), UTF8),
                                 URLEncoder.encode(pathOnXnatMachine.toString(), UTF8));
-
-                        final HttpPost post = new HttpPost(url);
-//                        post.setHeader("Authorization", "Basic " + encodedAuth);
-
-                        final HttpResponse response = client.execute(post, clientContext);
-//                        final HttpResponse response = client.execute(post);
-
-                        if (response.getStatusLine().getStatusCode() > 400) {
-                            log.error(String.format("Upload failed for container execution %s, mount %s.\n" +
-                                    "Attempted %s.\nUpload returned response: %s",
-                                    containerExecution.getId(), mount, post, response.getStatusLine().getReasonPhrase()));
-                        }
                     } catch (IOException e) {
                         log.error(String.format("Cannot upload mount for container execution %s. There was an error. %s", containerExecution.getId(), mount), e);
                     }
+
+//                        final HttpPost post = new HttpPost(url);
+//                        post.setHeader("Authorization", "Basic " + encodedAuth);
+
+//                        final HttpResponse response = client.execute(post, clientContext);
+//                        final HttpResponse response = client.execute(post);
+
+                    try {
+                        final Response response = given().auth().preemptive().basic(token.getAlias(), token.getSecret()).when().post(url).andReturn();
+                        if (response.getStatusCode() > 400) {
+                            log.error(String.format("Upload failed for container execution %s, mount %s.\n" +
+                                            "Attempted POST %s.\nUpload returned response: %s",
+                                    containerExecution.getId(), mount, url, response.getStatusLine()));
+                        }
+                    } catch (Exception e) {
+                        log.error(String.format("Upload failed for container execution %s, mount %s.\n" +
+                                        "Attempted POST %s.\nGot an exception.",
+                                containerExecution.getId(), mount, url), e);
+                    }
+
+
                 }
-            } catch (IOException e) {
-                log.error(String.format("Cannot upload files for container execution %s. Could not connect out and back to XNAT.", containerExecution.getId()));
-            }
+//            } catch (IOException e) {
+//                log.error(String.format("Cannot upload files for container execution %s. Could not connect out and back to XNAT.", containerExecution.getId()));
+//            }
         } else {
             // No root id and/or xsi type, so I can't upload anything.
             // If there is anything there that I am supposed to upload, I will log that fact.
