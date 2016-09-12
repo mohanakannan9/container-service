@@ -68,7 +68,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
 
     private static final Pattern TEMPLATE_PATTERN = Pattern.compile("(?<=\\s|\\A)#(\\w+)#(?=\\s|\\z)"); // Match #varname#
 
-    private void initialize(final Command command) {
+    public void initialize(final Command command) {
         Hibernate.initialize(command);
         Hibernate.initialize(command.getEnvironmentVariables());
         Hibernate.initialize(command.getRunTemplate());
