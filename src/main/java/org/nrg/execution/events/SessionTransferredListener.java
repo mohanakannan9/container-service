@@ -1,6 +1,7 @@
 package org.nrg.execution.events;
 
-import org.apache.commons.codec.binary.StringUtils;
+//import org.apache.commons.codec.binary.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.execution.events.SessionArchiveEvent;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.xdat.XDAT;

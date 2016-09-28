@@ -4,6 +4,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.execution.exceptions.BadRequestException;
 import org.nrg.execution.exceptions.CommandVariableResolutionException;
 import org.nrg.execution.exceptions.DockerServerException;
@@ -16,7 +17,12 @@ import org.nrg.execution.services.CommandService;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.om.XnatImagescandata;
+import org.nrg.xdat.om.XnatImagesessiondata;
+import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.security.UserI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -42,6 +48,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.PUT;
 @RequestMapping("/commands")
 @Api("Command API for XNAT Action/Context Execution service")
 public class CommandRestApi {
+    private static final Logger log = LoggerFactory.getLogger(CommandRestApi.class);
     private static final String JSON = MediaType.APPLICATION_JSON_UTF8_VALUE;
     private static final String TEXT = MediaType.TEXT_PLAIN_VALUE;
     private static final String FORM = MediaType.APPLICATION_FORM_URLENCODED_VALUE;
@@ -105,7 +112,7 @@ public class CommandRestApi {
         return commandService.launchCommand(resolvedCommand, userI);
     }
 
-    @RequestMapping(value = {"/{id}/launch"}, method = PUT)
+    @RequestMapping(value = {"/{id}/launch"}, method = POST)
     @ApiOperation(value = "Resolve a command from the variable values in the query string, and launch it")
     @ResponseBody
     public ContainerExecution launchCommand(final @PathVariable Long id,
@@ -119,16 +126,63 @@ public class CommandRestApi {
         }
     }
 
-    @RequestMapping(value = {"/{id}/launch"}, method = POST)
+    // HACKY TEST API ENDPOINTS
+    @RequestMapping(value = "/{id}/resolve", method = POST)
     @ResponseBody
-    public ContainerExecution launchCommand(final @PathVariable Long id)
-            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException {
+    public ResolvedCommand resolve(final @PathVariable Long id,
+                                   final @RequestParam Map<String, String> allRequestParams)
+            throws NotFoundException, CommandVariableResolutionException, NoServerPrefException, XFTInitException {
         final UserI userI = XDAT.getUserDetails();
-        try {
-            return commandService.launchCommand(id, userI);
-        } catch (CommandVariableResolutionException e) {
-            throw new BadRequestException("Must provide value for variable " + e.getVariable().getName() + " in request body.", e);
+        final Command command = commandService.retrieve(id);
+        if (command == null) {
+            throw new NotFoundException("Could not find Command with id " + id);
         }
+
+        if (allRequestParams.containsKey("id")) {
+            final String itemId = allRequestParams.get("id");
+            if (itemId.contains(":")) {
+                final String sessionId = StringUtils.substringBeforeLast(itemId, ":");
+                final String scanId = StringUtils.substringAfterLast(itemId, ":");
+
+                final XnatImagesessiondata session = XnatImagesessiondata.getXnatImagesessiondatasById(sessionId, userI, false);
+                final XnatImagescandata scan = session.getScanById(scanId);
+
+                return commandService.prepareToLaunchScan(command, session, scan, userI);
+            } else {
+                log.error("Haven't tested anything other than scan yet.");
+            }
+        }
+        return null;
+    }
+
+    @RequestMapping(value = "/{id}/launchtest", method = POST)
+    @ResponseBody
+    public ContainerExecution launchTest(final @PathVariable Long id,
+                                   final @RequestParam Map<String, String> allRequestParams)
+            throws NotFoundException, CommandVariableResolutionException, NoServerPrefException, XFTInitException, DockerServerException {
+        final UserI userI = XDAT.getUserDetails();
+
+        if (allRequestParams.containsKey("id")) {
+            final String itemId = allRequestParams.get("id");
+            if (itemId.contains(":")) {
+                final String sessionId = StringUtils.substringBeforeLast(itemId, ":");
+                final String scanId = StringUtils.substringAfterLast(itemId, ":");
+
+                final XnatImagesessiondata session = XnatImagesessiondata.getXnatImagesessiondatasById(sessionId, userI, false);
+                if (session == null) {
+                    throw new NotFoundException(String.format("No session with id %s.", sessionId));
+                }
+                final XnatImagescandata scan = session.getScanById(scanId);
+                if (scan == null) {
+                    throw new NotFoundException(String.format("No scan with id %s on session with id %s.", scanId, sessionId));
+                }
+
+                return commandService.launchCommand(id, userI, session, scan);
+            } else {
+                log.error("Haven't tested anything other than scan yet.");
+            }
+        }
+        return null;
     }
 
     @ResponseStatus(value = HttpStatus.FAILED_DEPENDENCY)

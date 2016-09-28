@@ -9,6 +9,7 @@ import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Date;
 import java.util.Objects;
@@ -19,6 +20,7 @@ import java.util.Objects;
 public class DockerServerPrefsBean extends AbstractPreferenceBean {
     private static final Logger _log = LoggerFactory.getLogger(DockerServerPrefsBean.class);
 
+    @Autowired
     public DockerServerPrefsBean(final NrgPreferenceService preferenceService) {
         super(preferenceService);
     }

@@ -298,7 +298,9 @@ public class DockerControlApi implements ContainerControlApi {
         try (final DockerClient client = getClient(server)) {
             final ContainerCreation container = client.createContainer(containerConfig);
 
-            log.info("Starting container: id "+container.id());
+            if (log.isDebugEnabled()) {
+                log.debug("Starting container: id " + container.id());
+            }
             if (container.getWarnings() != null) {
                 for (String warning : container.getWarnings()) {
                     log.warn(warning);
@@ -596,7 +598,9 @@ public class DockerControlApi implements ContainerControlApi {
         final List<DockerContainerEvent> events = getContainerEvents(since, until);
 
         for (final DockerContainerEvent event : events) {
-            log.info("Throwing docker container event: " + event);
+            if (log.isDebugEnabled()) {
+                log.debug("Throwing docker container event: " + event);
+            }
             eventService.triggerEvent(event);
         }
 
@@ -605,15 +609,21 @@ public class DockerControlApi implements ContainerControlApi {
 
     private List<Event> getDockerContainerEvents(final Date since, final Date until) throws NoServerPrefException, DockerServerException {
         try(final DockerClient client = getClient()) {
-            log.info("Reading all docker container events from " + since.getTime() + " to " + until.getTime() + ".");
+            if (log.isDebugEnabled()) {
+                log.debug("Reading all docker container events from " + since.getTime() + " to " + until.getTime() + ".");
+            }
             final EventStream eventStream =
                     client.events(since(since.getTime() / 1000), until((until.getTime() / 1000)), type("container"));
-            log.info("Got a stream of docker events.");
+            if (log.isDebugEnabled()) {
+                log.debug("Got a stream of docker events.");
+            }
 
             final List<Event> eventList = Lists.newArrayList(eventStream);
             eventStream.close();
 
-            log.info("Closed docker event stream.");
+            if (log.isDebugEnabled()) {
+                log.debug("Closed docker event stream.");
+            }
 
             return eventList;
         } catch (InterruptedException | DockerException e) {

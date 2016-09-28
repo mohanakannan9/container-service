@@ -1,5 +1,6 @@
 package org.nrg.execution.services;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -68,7 +69,20 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
 
     private static final Pattern TEMPLATE_PATTERN = Pattern.compile("(?<=\\s|\\A)#(\\w+)#(?=\\s|\\z)"); // Match #varname#
 
+    @Override
+    public Command get(final Long id) throws NotFoundException {
+        final Command command = retrieve(id);
+        if (command == null) {
+            throw new NotFoundException("Could not find Command with id " + id);
+        }
+        return command;
+    }
+
+    @Override
     public void initialize(final Command command) {
+        if (command == null) {
+            return;
+        }
         Hibernate.initialize(command);
         Hibernate.initialize(command.getEnvironmentVariables());
         Hibernate.initialize(command.getRunTemplate());
@@ -84,47 +98,6 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         } catch (ConstraintViolationException e) {
             throw new NrgServiceRuntimeException("A command already exists with this name and docker image ID.");
         }
-    }
-
-    @Override
-    @Transactional
-    public Command retrieve(long id) {
-        if (log.isDebugEnabled()) {
-            log.debug("Retrieving entity for ID: " + id);
-        }
-        final Command entity;
-        if (HibernateUtils.isAuditable(getParameterizedType())) {
-            entity = getDao().findEnabledById(id);
-        } else {
-            entity = getDao().retrieve(id);
-        }
-
-        if (entity != null) {
-            initialize(entity);
-        }
-        return entity;
-    }
-
-    @Override
-    @Transactional
-    public Command retrieve(final String name, final String dockerImageId) {
-        final Command command = getDao().retrieve(name, dockerImageId);
-        if (command != null) {
-            initialize(command);
-        }
-        return command;
-    }
-
-    @Override
-    @Transactional
-    public List<Command> getAll() {
-        log.debug("Getting all enabled entities");
-        final List<Command> list = getDao().findAllEnabled();
-        for (final Command entity : list) {
-            initialize(entity);
-        }
-
-        return list;
     }
 
     @Override
@@ -146,19 +119,10 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     }
 
     @Override
-    public ResolvedCommand resolveCommand(final Long commandId)
-            throws NotFoundException, CommandVariableResolutionException {
-        return resolveCommand(commandId, Maps.<String, String>newHashMap());
-    }
-
-    @Override
     public ResolvedCommand resolveCommand(final Long commandId,
                                           final Map<String, String> variableValuesProvidedAtRuntime)
             throws NotFoundException, CommandVariableResolutionException {
-        final Command command = retrieve(commandId);
-        if (command == null) {
-            throw new NotFoundException("Could not find Command with id " + commandId);
-        }
+        final Command command = get(commandId);
         return resolveCommand(command, variableValuesProvidedAtRuntime);
     }
 
@@ -312,20 +276,23 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             }
         }
 
-        return resolveCommand(command);
+        return resolveCommand(command, context);
     }
 
     @Override
     public ContainerExecution launchCommand(final ResolvedCommand resolvedCommand, final UserI userI)
             throws NoServerPrefException, DockerServerException {
-        final String containerId = controlApi.launchImage(resolvedCommand);
-        return containerExecutionService.save(resolvedCommand, containerId, userI);
+        return launchCommand(resolvedCommand, null, null, userI);
     }
 
     @Override
-    public ContainerExecution launchCommand(final Long commandId, final UserI userI)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandVariableResolutionException {
-        return launchCommand(commandId, Maps.<String, String>newHashMap(), userI);
+    public ContainerExecution launchCommand(final ResolvedCommand resolvedCommand,
+                                            final String rootObjectId,
+                                            final String rootObjectXsiType,
+                                            final UserI userI)
+            throws NoServerPrefException, DockerServerException {
+        final String containerId = controlApi.launchImage(resolvedCommand);
+        return containerExecutionService.save(resolvedCommand, containerId, rootObjectId, rootObjectXsiType, userI);
     }
 
     @Override
@@ -338,10 +305,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     @Override
     public ContainerExecution launchCommand(final Long commandId, final UserI userI, final XnatImagesessiondata session)
             throws NotFoundException, XFTInitException, CommandVariableResolutionException, NoServerPrefException, DockerServerException {
-        final Command command = retrieve(commandId);
-        if (command == null) {
-            throw new NotFoundException("No command with ID " + commandId);
-        }
+        final Command command = get(commandId);
 
         final String projectId = session.getProject();
         final XnatProjectdata proj = XnatProjectdata.getXnatProjectdatasById(projectId, userI, false);
@@ -374,49 +338,29 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             return null;
         }
 
-        // Add default environment variables
-        final Map<String, String> defaultEnv = Maps.newHashMap();
-//        siteConfigPreferences.getBuildPath()
-        defaultEnv.put("XNAT_HOST", siteConfigPreferences.getSiteUrl());
+        final ResolvedCommand preparedToLaunch = prelaunch(resolvedCommand, userI);
 
-        final AliasToken token = aliasTokenService.issueTokenForUser(userI);
-        defaultEnv.put("XNAT_USER", token.getAlias());
-        defaultEnv.put("XNAT_PASS", token.getSecret());
-
-        resolvedCommand.addEnvironmentVariables(defaultEnv);
-
-        // Transport mounts
-        if (resolvedCommand.getMountsIn() != null) {
-            final String dockerHost = controlApi.getServer().getHost();
-            for (final CommandMount mountIn : resolvedCommand.getMountsIn()) {
-                final Path pathOnXnatHost = Paths.get(mountIn.getHostPath());
-                final Path pathOnDockerHost = transporter.transport(dockerHost, pathOnXnatHost);
-                mountIn.setHostPath(pathOnDockerHost.toString());
-            }
-        }
-        if (resolvedCommand.getMountsOut() != null) {
-            final String dockerHost = controlApi.getServer().getHost();
-            final List<CommandMount> mountsOut = resolvedCommand.getMountsOut();
-            final List<Path> buildPaths = transporter.getWritableDirectories(dockerHost, mountsOut.size());
-            for (int i=0; i < mountsOut.size(); i++) {
-                final CommandMount mountOut = mountsOut.get(i);
-                final Path buildPath = buildPaths.get(i);
-
-                mountOut.setHostPath(buildPath.toString());
-            }
-        }
-
-        return launchCommand(resolvedCommand, userI);
+        return launchCommand(preparedToLaunch, session.getId(), session.getXSIType(), userI);
     }
 
     @Override
     public ContainerExecution launchCommand(Long commandId, UserI userI, XnatImagesessiondata session, XnatImagescandata scan)
             throws NotFoundException, XFTInitException, CommandVariableResolutionException, NoServerPrefException, DockerServerException {
-        final Command command = retrieve(commandId);
-        if (command == null) {
-            throw new NotFoundException("No command with ID " + commandId);
-        }
+        final Command command = get(commandId);
 
+        final ResolvedCommand preparedToLaunch = prepareToLaunchScan(command, session, scan, userI);
+
+        final String concattenatedSessionScanId = session.getId() + ":" + scan.getId();
+        return launchCommand(preparedToLaunch, concattenatedSessionScanId, scan.getXSIType(), userI);
+    }
+
+    @VisibleForTesting
+    @Override
+    public ResolvedCommand prepareToLaunchScan(final Command command,
+                                                final XnatImagesessiondata session,
+                                                final XnatImagescandata scan,
+                                                final UserI userI)
+            throws CommandVariableResolutionException, NotFoundException, XFTInitException, NoServerPrefException {
         final String projectId = session.getProject();
         final XnatProjectdata proj = XnatProjectdata.getXnatProjectdatasById(projectId, userI, false);
         final String rootArchivePath = proj.getRootArchivePath();
@@ -446,6 +390,10 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             return null;
         }
 
+        return prelaunch(resolvedCommand, userI);
+    }
+
+    private ResolvedCommand prelaunch(final ResolvedCommand resolvedCommand, final UserI userI) throws NoServerPrefException {
         // Add default environment variables
         final Map<String, String> defaultEnv = Maps.newHashMap();
 //        siteConfigPreferences.getBuildPath()
@@ -478,7 +426,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             }
         }
 
-        return launchCommand(resolvedCommand, userI);
+        return resolvedCommand;
     }
 
 //    @Override

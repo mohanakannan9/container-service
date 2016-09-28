@@ -1,6 +1,7 @@
 package org.nrg.execution.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Maps;
 import com.spotify.docker.client.DockerClient;
 import org.apache.commons.lang3.StringUtils;
 import org.hamcrest.Matchers;
@@ -114,7 +115,8 @@ public class DockerIntegrationTest {
 
 //        final ResolvedCommand resolved = commandService.resolveCommand(command);
 
-        final ContainerExecution execution = commandService.launchCommand(command.getId(), mockUser);
+        final ContainerExecution execution =
+                commandService.launchCommand(command.getId(), Maps.<String, String>newHashMap(), mockUser);
         final List<ContainerExecution> executions = containerExecutionService.getAll();
         assertThat(executions, not(Matchers.<ContainerExecution>empty()));
         log.info("Found at least one execution: " + executions.get(0).getId());
