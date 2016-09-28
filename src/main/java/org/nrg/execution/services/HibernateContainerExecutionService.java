@@ -1,20 +1,7 @@
 package org.nrg.execution.services;
 
-import io.restassured.response.Response;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHost;
-import org.apache.http.HttpResponse;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.AuthCache;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.impl.auth.BasicScheme;
-import org.apache.http.impl.client.BasicAuthCache;
-import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 import org.hibernate.Hibernate;
 import org.nrg.execution.api.ContainerControlApi;
 import org.nrg.execution.daos.ContainerExecutionRepository;
@@ -39,13 +26,11 @@ import org.nrg.xnat.restlet.util.XNATRestConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.codec.Base64;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -53,9 +38,6 @@ import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
-
-import static io.restassured.RestAssured.given;
-import static io.restassured.RestAssured.post;
 
 @Service
 public class HibernateContainerExecutionService
@@ -299,18 +281,19 @@ public class HibernateContainerExecutionService
 //                        final HttpResponse response = client.execute(post, clientContext);
 //                        final HttpResponse response = client.execute(post);
 
-                    try {
-                        final Response response = given().auth().preemptive().basic(token.getAlias(), token.getSecret()).when().post(url).andReturn();
-                        if (response.getStatusCode() > 400) {
-                            log.error(String.format("Upload failed for container execution %s, mount %s.\n" +
-                                            "Attempted POST %s.\nUpload returned response: %s",
-                                    containerExecution.getId(), mount, url, response.getStatusLine()));
-                        }
-                    } catch (Exception e) {
-                        log.error(String.format("Upload failed for container execution %s, mount %s.\n" +
-                                        "Attempted POST %s.\nGot an exception.",
-                                containerExecution.getId(), mount, url), e);
-                    }
+//                    try {
+//                        final Response response = given().auth().preemptive().basic(token.getAlias(), token.getSecret()).when().post(url).andReturn();
+//                        if (response.getStatusCode() > 400) {
+//                            log.error(String.format("Upload failed for container execution %s, mount %s.\n" +
+//                                            "Attempted POST %s.\nUpload returned response: %s",
+//                                    containerExecution.getId(), mount, url, response.getStatusLine()));
+//                        }
+//                    } catch (Exception e) {
+//                        log.error(String.format("Upload failed for container execution %s, mount %s.\n" +
+//                                        "Attempted POST %s.\nGot an exception.",
+//                                containerExecution.getId(), mount, url), e);
+//                    }
+                    // TODO Actually upload files as new resource
 
 
                 }
