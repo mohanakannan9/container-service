@@ -1,5 +1,7 @@
 package org.nrg.execution.rest;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
@@ -47,6 +49,9 @@ public class DockerRestApi {
     @Autowired
     private DockerService dockerService;
 
+    @Autowired
+    private ObjectMapper mapper;
+
     @ApiOperation(value = "Docker server", notes = "Returns Docker server configuration values",
             response = DockerServer.class)
     @ApiResponses({
@@ -67,15 +72,14 @@ public class DockerRestApi {
             @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = "/server", method = POST)
     public ResponseEntity<String> setServer(final @RequestBody DockerServer dockerServer)
-            throws InvalidPreferenceName {
+            throws InvalidPreferenceName, JsonProcessingException {
         if (StringUtils.isBlank(dockerServer.getHost())) {
             return new ResponseEntity<>("Must set the \"host\" property in request body.",
                     HttpStatus.BAD_REQUEST);
         }
 
-        dockerService.setServer(dockerServer);
-
-        return new ResponseEntity<>("", HttpStatus.ACCEPTED);
+        final DockerServer server = dockerService.setServer(dockerServer);
+        return new ResponseEntity<>(mapper.writeValueAsString(server), HttpStatus.ACCEPTED);
     }
 
     @RequestMapping(value = "/server/ping", method = GET)
