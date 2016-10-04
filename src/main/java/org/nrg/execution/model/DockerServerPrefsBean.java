@@ -39,7 +39,7 @@ public class DockerServerPrefsBean extends AbstractPreferenceBean {
         return new DockerServer(this);
     }
 
-    @NrgPreference
+    @NrgPreference(defaultValue = "unix:///var/run/docker.sock")
     public String getHost() {
         return getValue("host");
     }
