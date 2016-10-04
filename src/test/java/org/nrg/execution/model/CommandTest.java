@@ -42,7 +42,8 @@ public class CommandTest {
             "{\"name\":\"foo\", \"description\":\"A foo that bars\", " +
                     "\"required\":false," +
                     "\"default-value\":\"bar\"," +
-                    "\"arg-template\":\"--flag=#value#\"}";
+                    "\"command-line-flag\":\"--flag\"," +
+                    "\"command-line-separator\":\"=\"}";
     private static final String INPUT_LIST_JSON =
             "[" + INPUT_0_JSON + ", " + FOO_INPUT + "]";
 
@@ -103,7 +104,9 @@ public class CommandTest {
         assertEquals(true, commandInput0.isRequired());
         assertEquals("-b", commandInput0.getTrueValue());
         assertEquals("", commandInput0.getFalseValue());
-        assertNull(commandInput0.getArgTemplate());
+        assertEquals("#my_cool_input#", commandInput0.getReplacementKey());
+        assertEquals("", commandInput0.getCommandLineFlag());
+        assertEquals(" ", commandInput0.getCommandLineSeparator());
         assertNull(commandInput0.getDefaultValue());
 
         assertEquals("foo", fooInput.getName());
@@ -112,7 +115,9 @@ public class CommandTest {
         assertEquals(false, fooInput.isRequired());
         assertNull(fooInput.getTrueValue());
         assertNull(fooInput.getFalseValue());
-        assertEquals("--flag=#value#", fooInput.getArgTemplate());
+        assertEquals("#foo#", fooInput.getReplacementKey());
+        assertEquals("--flag", fooInput.getCommandLineFlag());
+        assertEquals("=", fooInput.getCommandLineSeparator());
         assertEquals("bar", fooInput.getDefaultValue());
     }
 

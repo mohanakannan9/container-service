@@ -65,8 +65,6 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     @Autowired private TransportService transporter;
     @Autowired private ContainerExecutionService containerExecutionService;
 
-    private static final Pattern TEMPLATE_PATTERN = Pattern.compile("(?<=\\s|\\A)#(\\w+)#(?=\\s|\\z)"); // Match #varname#
-
     @Override
     public Command get(final Long id) throws NotFoundException {
         final Command command = retrieve(id);
@@ -132,59 +130,79 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
 
     @Override
     public ResolvedCommand resolveCommand(final Command command,
-                                          final Map<String, String> variableValuesProvidedAtRuntime)
+                                          final Map<String, String> inputValuesProvidedAtRuntime)
             throws NotFoundException, CommandVariableResolutionException {
 
-        if (variableValuesProvidedAtRuntime == null) {
+        if (inputValuesProvidedAtRuntime == null) {
             return resolveCommand(command);
         }
 
-        final Map<String, String> resolvedVariableValues = Maps.newHashMap();
-        final Map<String, String> resolvedVariableValuesAsRunTemplateArgs = Maps.newHashMap();
+        final Map<String, String> resolvedInputValues = Maps.newHashMap();
+        final Map<String, String> resolvedInputValuesAsCommandLineArgs = Maps.newHashMap();
         if (command.getInputs() != null) {
-            for (final CommandInput variable : command.getInputs()) {
-                // raw value is runtime value if provided, else default value
-                String variableRawValueCouldBeNull = variable.getDefaultValue();
-                if (StringUtils.isNotBlank(variable.getValue())) {
-                    variableRawValueCouldBeNull = variable.getValue();
-                }
-                if (variableValuesProvidedAtRuntime.containsKey(variable.getName())) {
-                    variableRawValueCouldBeNull = variableValuesProvidedAtRuntime.get(variable.getName());
-                }
-                final String variableRawValue = variableRawValueCouldBeNull == null ? "" : variableRawValueCouldBeNull;
+            for (final CommandInput input : command.getInputs()) {
+                final String runtimeValue = inputValuesProvidedAtRuntime.get(input.getName());
 
-                // If there is no raw value, and variable is required, that is an error
-                if (StringUtils.isBlank(variableRawValue) && variable.isRequired()) {
-                    throw new CommandVariableResolutionException(variable);
+                final String resolvedValue = getResolvedInputValue(input, runtimeValue);
+
+                // If resolved value is null, and input is required, that is an error
+                if (resolvedValue == null && input.isRequired()) {
+                    throw new CommandVariableResolutionException(input);
                 }
 
-                // value is either = raw value, or if "type" is "boolean" then value = trueValue if rawvalue=true or falseValue if rawvalue=false
-                final String variableValue =
-                        variable.getType() != null && variable.getType().equalsIgnoreCase("boolean") ?
-                                (Boolean.valueOf(variableRawValue) ? variable.getTrueValue() : variable.getFalseValue()) :
-                                variableRawValue;
-
-                // to get the value as run template arg, we replace any "#value#" tokens in argTemplate
-                final String variableValueAsRunTemplateArg =
-                        StringUtils.isNotBlank(variable.getArgTemplate()) ?
-                                variable.getArgTemplate().replaceAll("#value#", variableValue) :
-                                variableValue;
-
-                resolvedVariableValues.put(variable.getName(), variableValue);
-                resolvedVariableValuesAsRunTemplateArgs.put(variable.getName(), variableValueAsRunTemplateArg);
+                // Only substitute the input into the command line if a replacementKey is set
+                // TODO This will be changed later, as we will allow pro-active searching with JSONPath
+                final String replacementKey = input.getReplacementKey();
+                if (StringUtils.isBlank(replacementKey)) {
+                    continue;
+                }
+                resolvedInputValues.put(replacementKey, resolvedValue);
+                resolvedInputValuesAsCommandLineArgs.put(replacementKey, getValueForCommandLine(input, resolvedValue));
             }
         }
 
-        // Replace variable names in runTemplate, mounts, and environment variables
+        // Replace variable names in command line, mounts, and environment variables
         final ResolvedCommand resolvedCommand = new ResolvedCommand(command);
-        resolvedCommand.setCommandLine(resolveTemplate(command.getCommandLine(), resolvedVariableValuesAsRunTemplateArgs));
-        resolvedCommand.setMountsIn(resolveCommandMounts(command.getMountsIn(), resolvedVariableValues));
-        resolvedCommand.setMountsOut(resolveCommandMounts(command.getMountsOut(), resolvedVariableValues));
-        resolvedCommand.setEnvironmentVariables(resolveTemplateMap(command.getEnvironmentVariables(), resolvedVariableValues, true));
+        resolvedCommand.setCommandLine(resolveTemplate(command.getCommandLine(), resolvedInputValuesAsCommandLineArgs));
+        resolvedCommand.setMountsIn(resolveCommandMounts(command.getMountsIn(), resolvedInputValues));
+        resolvedCommand.setMountsOut(resolveCommandMounts(command.getMountsOut(), resolvedInputValues));
+        resolvedCommand.setEnvironmentVariables(resolveTemplateMap(command.getEnvironmentVariables(), resolvedInputValues, true));
 
         // TODO What else do I need to do to resolve the command?
 
         return resolvedCommand;
+    }
+
+    private String getResolvedInputValue(final CommandInput input, final String runtimeValue) {
+        final String rawValue;
+        if (runtimeValue != null) {
+            rawValue = runtimeValue;
+        } else {
+            rawValue = input.getValueOrDefaultValue();
+        }
+        if (rawValue == null) {
+            return null;
+        }
+
+        if (StringUtils.isNotBlank(input.getType()) && input.getType().equalsIgnoreCase("boolean")) {
+            if (Boolean.parseBoolean(rawValue)) {
+                return input.getTrueValue() != null ? input.getTrueValue() : "";
+            } else {
+                return input.getFalseValue() != null ? input.getFalseValue() : "";
+            }
+        } else {
+            return rawValue;
+        }
+    }
+
+    private String getValueForCommandLine(final CommandInput input, final String resolvedInputValue) {
+        if (StringUtils.isBlank(input.getCommandLineFlag())) {
+            return resolvedInputValue;
+        } else {
+            return input.getCommandLineFlag() +
+                    (input.getCommandLineSeparator() == null ? " " : input.getCommandLineSeparator()) +
+                    resolvedInputValue;
+        }
     }
 
     private ResolvedCommand resolve(final Command command,
@@ -469,17 +487,10 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     private String resolveTemplate(final String template,
                                    final Map<String, String> variableValues) {
         String toResolve = template;
-        final Set<String> matches = Sets.newHashSet();
 
-        final Matcher m = TEMPLATE_PATTERN.matcher(toResolve);
-        while (m.find()) {
-            matches.add(m.group(1));
-        }
-
-        for (final String varName : matches) {
-            if (variableValues.get(varName) != null) {
-                toResolve = toResolve.replaceAll("#"+ varName +"#", variableValues.get(varName));
-            }
+        for (final String replacementKey : variableValues.keySet()) {
+            final String replacementValue = variableValues.get(replacementKey);
+            toResolve = toResolve.replaceAll(replacementKey, replacementValue);
         }
 
         return toResolve;
