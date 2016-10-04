@@ -56,7 +56,7 @@ public class CommandTest {
                     "\"info-url\":\"http://abc.xyz\", " +
                     "\"env\":{\"foo\":\"bar\"}, " +
                     "\"inputs\":" + INPUT_LIST_JSON + ", " +
-                    "\"run-template\":[\"cmd\",\"#foo# #my_cool_input#\"], " +
+                    "\"command-line\":\"cmd #foo# #my_cool_input#\", " +
                     "\"docker-image\":\"abc123\", " +
                     "\"mounts-in\":[" + MOUNT_IN + "]," +
                     "\"mounts-out\":[" + MOUNT_OUT + "]}";
@@ -65,7 +65,7 @@ public class CommandTest {
             "{\"command-id\":%d, " +
                     "\"docker-image\":\"abc123\", " +
                     "\"env\":{\"foo\":\"bar\"}, " +
-                    "\"run\":[\"cmd\", \"--flag=bar \"], " +
+                    "\"command-line\":\"cmd --flag=bar \", " +
                     "\"mounts-in\":[" + RESOLVED_MOUNT_IN + "]," +
                     "\"mounts-out\":[" + RESOLVED_MOUNT_OUT + "]}";
 
@@ -132,7 +132,7 @@ public class CommandTest {
         assertEquals("docker_image_command", command.getName());
         assertEquals("Docker Image command for the test", command.getDescription());
         assertEquals("http://abc.xyz", command.getInfoUrl());
-        assertEquals(Lists.newArrayList("cmd", "#foo# #my_cool_input#"), command.getRunTemplate());
+        assertEquals("cmd #foo# #my_cool_input#", command.getCommandLine());
         assertEquals(ImmutableMap.of("foo", "bar"), command.getEnvironmentVariables());
 
         assertThat(command.getInputs(), hasSize(2));
@@ -199,7 +199,7 @@ public class CommandTest {
         variableRuntimeValues.put("my_cool_input", "false");
         final ResolvedCommand resolvedCommand = commandService.resolveCommand(command, variableRuntimeValues);
 
-        assertEquals(expected.getRun(), resolvedCommand.getRun());
+        assertEquals(expected.getCommandLine(), resolvedCommand.getCommandLine());
         assertEquals(expected.getEnvironmentVariables(), resolvedCommand.getEnvironmentVariables());
         assertEquals(expected.getMountsIn(), resolvedCommand.getMountsIn());
         assertEquals(expected.getMountsOut(), resolvedCommand.getMountsOut());
@@ -212,7 +212,7 @@ public class CommandTest {
         assertEquals(expected.getMountsIn(), resolvedCommand2.getMountsIn());
         assertEquals(expected.getMountsOut(), resolvedCommand2.getMountsOut());
 
-        assertEquals(Lists.newArrayList("cmd", "--flag=bar -b"), resolvedCommand2.getRun());
+        assertEquals("cmd --flag=bar -b", resolvedCommand2.getCommandLine());
 
     }
 }

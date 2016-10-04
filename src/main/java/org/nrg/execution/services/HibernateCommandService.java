@@ -83,7 +83,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         }
         Hibernate.initialize(command);
         Hibernate.initialize(command.getEnvironmentVariables());
-        Hibernate.initialize(command.getRunTemplate());
+        Hibernate.initialize(command.getCommandLine());
         Hibernate.initialize(command.getMountsIn());
         Hibernate.initialize(command.getMountsOut());
         Hibernate.initialize(command.getInputs());
@@ -177,7 +177,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
 
         // Replace variable names in runTemplate, mounts, and environment variables
         final ResolvedCommand resolvedCommand = new ResolvedCommand(command);
-        resolvedCommand.setRun(resolveTemplateList(command.getRunTemplate(), resolvedVariableValuesAsRunTemplateArgs));
+        resolvedCommand.setCommandLine(resolveTemplate(command.getCommandLine(), resolvedVariableValuesAsRunTemplateArgs));
         resolvedCommand.setMountsIn(resolveCommandMounts(command.getMountsIn(), resolvedVariableValues));
         resolvedCommand.setMountsOut(resolveCommandMounts(command.getMountsOut(), resolvedVariableValues));
         resolvedCommand.setEnvironmentVariables(resolveTemplateMap(command.getEnvironmentVariables(), resolvedVariableValues, true));

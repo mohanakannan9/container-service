@@ -19,7 +19,7 @@ public class ResolvedCommand implements Serializable {
 
     @JsonProperty("command-id") private Long commandId;
     @JsonProperty("docker-image") private String dockerImage;
-    @JsonProperty("run") private List<String> run;
+    @JsonProperty("command-line") private String commandLine;
     @JsonProperty("env") private Map<String, String> environmentVariables = Maps.newHashMap();
     @JsonProperty("mounts-in") private List<CommandMount> mountsIn = Lists.newArrayList();
     @JsonProperty("mounts-out") private List<CommandMount> mountsOut = Lists.newArrayList();
@@ -39,15 +39,12 @@ public class ResolvedCommand implements Serializable {
         this.commandId = commandId;
     }
 
-    @ElementCollection
-    public List<String> getRun() {
-        return run;
+    public String getCommandLine() {
+        return commandLine;
     }
 
-    public void setRun(final List<String> run) {
-        this.run = run == null ?
-                Lists.<String>newArrayList() :
-                run;
+    public void setCommandLine(final String commandLine) {
+        this.commandLine = commandLine;
     }
 
     public String getDockerImage() {
@@ -113,7 +110,7 @@ public class ResolvedCommand implements Serializable {
         if (o == null || getClass() != o.getClass()) return false;
         final ResolvedCommand that = (ResolvedCommand) o;
         return Objects.equals(this.commandId, that.commandId) &&
-                Objects.equals(this.run, that.run) &&
+                Objects.equals(this.commandLine, that.commandLine) &&
                 Objects.equals(this.dockerImage, that.dockerImage) &&
                 Objects.equals(this.environmentVariables, that.environmentVariables) &&
                 Objects.equals(this.mountsIn, that.mountsIn) &&
@@ -122,14 +119,14 @@ public class ResolvedCommand implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(commandId, run, dockerImage, environmentVariables, mountsIn, mountsOut);
+        return Objects.hash(commandId, commandLine, dockerImage, environmentVariables, mountsIn, mountsOut);
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("commandId", commandId)
-                .add("run", run)
+                .add("commandLine", commandLine)
                 .add("dockerImage", dockerImage)
                 .add("environmentVariables", environmentVariables)
                 .add("mountsIn", mountsIn)

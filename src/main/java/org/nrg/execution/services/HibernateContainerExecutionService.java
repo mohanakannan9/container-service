@@ -72,7 +72,7 @@ public class HibernateContainerExecutionService
         Hibernate.initialize(entity.getHistory());
         Hibernate.initialize(entity.getMountsIn());
         Hibernate.initialize(entity.getMountsOut());
-        Hibernate.initialize(entity.getRun());
+        Hibernate.initialize(entity.getCommandLine());
     }
 
     @Override

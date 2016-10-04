@@ -26,7 +26,7 @@ public class Command extends AbstractHibernateEntity {
     @JsonProperty("info-url") private String infoUrl;
     @JsonProperty("docker-image") private String dockerImage;
     private List<CommandInput> inputs = Lists.newArrayList();
-    @JsonProperty("run-template") private List<String> runTemplate;
+    @JsonProperty("command-line") private String commandLine;
     @JsonProperty("mounts-in") private List<CommandMount> mountsIn = Lists.newArrayList();
     @JsonProperty("mounts-out") private List<CommandMount> mountsOut = Lists.newArrayList();
     @JsonProperty("env") private Map<String, String> environmentVariables = Maps.newHashMap();
@@ -87,17 +87,14 @@ public class Command extends AbstractHibernateEntity {
     }
 
     @Nullable
-    @ElementCollection
     @ApiModelProperty("The command that will be executed in the container when the Command is launched. " +
             "Can use template strings, e.g. #variable-name#, which will be resolved into a value when the Command is launched.")
-    public List<String> getRunTemplate() {
-        return runTemplate;
+    public String getCommandLine() {
+        return commandLine;
     }
 
-    public void setRunTemplate(final List<String> runTemplate) {
-        this.runTemplate = runTemplate == null ?
-                Lists.<String>newArrayList() :
-                runTemplate;
+    public void setCommandLine(final String commandLine) {
+        this.commandLine = commandLine;
     }
 
     @Nullable
@@ -152,7 +149,7 @@ public class Command extends AbstractHibernateEntity {
                 .add("infoUrl", infoUrl)
                 .add("dockerImage", dockerImage)
                 .add("inputs", inputs)
-                .add("runTemplate", runTemplate)
+                .add("commandLine", commandLine)
                 .add("mountsIn", mountsIn)
                 .add("mountsOut", mountsOut)
                 .add("environmentVariables", environmentVariables);
@@ -168,7 +165,7 @@ public class Command extends AbstractHibernateEntity {
                 Objects.equals(this.description, that.description) &&
                 Objects.equals(this.infoUrl, that.infoUrl) &&
                 Objects.equals(this.dockerImage, that.dockerImage) &&
-                Objects.equals(this.runTemplate, that.runTemplate) &&
+                Objects.equals(this.commandLine, that.commandLine) &&
                 Objects.equals(this.inputs, that.inputs) &&
                 Objects.equals(this.mountsIn, that.mountsIn) &&
                 Objects.equals(this.mountsOut, that.mountsOut) &&
@@ -178,7 +175,7 @@ public class Command extends AbstractHibernateEntity {
     @Override
     public int hashCode() {
         return Objects.hash(name, description, infoUrl, dockerImage,
-                inputs, runTemplate, mountsIn, mountsOut, environmentVariables);
+                inputs, commandLine, mountsIn, mountsOut, environmentVariables);
     }
 
     @Override

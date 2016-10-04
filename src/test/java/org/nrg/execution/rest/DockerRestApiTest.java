@@ -189,7 +189,7 @@ public class DockerRestApiTest {
         final String labelTestCommandListJson =
                 "[{\"name\": \"label-test\"," +
                         "\"description\": \"Command to test label-parsing and command-importing code\"," +
-                        "\"run-template\": [\"/bin/sh\",\"-c\",\"#CMD#\"]," +
+                        "\"command-line\": \"#CMD#\"," +
                         "\"inputs\": [{\"name\": \"CMD\", \"description\": \"Command to run\", \"required\": true}]}]";
         final List<Command> expectedList = mapper.readValue(labelTestCommandListJson, new TypeReference<List<Command>>(){});
         final Command expected = expectedList.get(0);
@@ -228,7 +228,7 @@ public class DockerRestApiTest {
         // Must compare attribute-by-attribute
         assertEquals(expected.getName(), response.getName());
         assertEquals(expected.getDescription(), response.getDescription());
-        assertEquals(expected.getRunTemplate(), response.getRunTemplate());
+        assertEquals(expected.getCommandLine(), response.getCommandLine());
         assertEquals(expected.getInputs(), response.getInputs());
         assertEquals(fakeImageId, response.getDockerImage());
     }
@@ -238,7 +238,7 @@ public class DockerRestApiTest {
     public void testSaveFromLabels2() throws Exception {
         final String labelTestCommandListJson =
                 "[{\"name\":\"dcm2niix-scan\", \"description\":\"Run dcm2niix on a scan's DICOMs\", " +
-                        "\"run-template\":[\"/bin/sh\", \"-c\", \"/run/dcm2niix-scan.sh\", \"#scanId#\", \"#sessionId#\"], " +
+                        "\"command-line\": \"/run/dcm2niix-scan.sh #scanId# #sessionId#\", " +
                         "\"inputs\":[" +
                             "{\"name\":\"scanId\", \"required\":true, \"root-property\":\"ID\"}, " +
                             "{\"name\":\"sessionId\", \"required\":true, \"root-property\":\"ID\"}" +
@@ -282,7 +282,7 @@ public class DockerRestApiTest {
         // Must compare attribute-by-attribute
         assertEquals(expected.getName(), response.getName());
         assertEquals(expected.getDescription(), response.getDescription());
-        assertEquals(expected.getRunTemplate(), response.getRunTemplate());
+        assertEquals(expected.getCommandLine(), response.getCommandLine());
         assertEquals(expected.getInputs(), response.getInputs());
         assertEquals(fakeImageId, response.getDockerImage());
     }
