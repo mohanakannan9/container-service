@@ -7,7 +7,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.nrg.execution.api.ContainerControlApi;
 import org.nrg.execution.config.CommandTestConfig;
 import org.nrg.execution.services.CommandService;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
@@ -29,25 +28,23 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.when;
-import static org.nrg.execution.api.ContainerControlApi.LABEL_KEY;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @Transactional
 @ContextConfiguration(classes = CommandTestConfig.class)
 public class CommandTest {
 
-    private static final String VARIABLE_0_JSON =
+    private static final String INPUT_0_JSON =
             "{\"name\":\"my_cool_input\", \"description\":\"A boolean value\", " +
                     "\"type\":\"boolean\", \"required\":true," +
                     "\"true-value\":\"-b\", \"false-value\":\"\"}";
-    private static final String FOO_VARIABLE =
+    private static final String FOO_INPUT =
             "{\"name\":\"foo\", \"description\":\"A foo that bars\", " +
                     "\"required\":false," +
                     "\"default-value\":\"bar\"," +
                     "\"arg-template\":\"--flag=#value#\"}";
-    private static final String VARIABLE_LIST_JSON =
-            "[" + VARIABLE_0_JSON + ", " + FOO_VARIABLE + "]";
+    private static final String INPUT_LIST_JSON =
+            "[" + INPUT_0_JSON + ", " + FOO_INPUT + "]";
 
     private static final String MOUNT_IN = "{\"name\":\"in\", \"remote-path\":\"/input\"}";
     private static final String MOUNT_OUT = "{\"name\":\"out\", \"remote-path\":\"/output\", \"read-only\":false}";
@@ -58,7 +55,7 @@ public class CommandTest {
             "{\"name\":\"docker_image_command\", \"description\":\"Docker Image command for the test\", " +
                     "\"info-url\":\"http://abc.xyz\", " +
                     "\"env\":{\"foo\":\"bar\"}, " +
-                    "\"variables\":" + VARIABLE_LIST_JSON + ", " +
+                    "\"inputs\":" + INPUT_LIST_JSON + ", " +
                     "\"run-template\":[\"cmd\",\"#foo# #my_cool_input#\"], " +
                     "\"docker-image\":\"abc123\", " +
                     "\"mounts-in\":[" + MOUNT_IN + "]," +
@@ -95,35 +92,35 @@ public class CommandTest {
 
     @Test
     public void testDeserializeCommandInput() throws Exception {
-        final CommandVariable commandVariable0 =
-                mapper.readValue(VARIABLE_0_JSON, CommandVariable.class);
-        final CommandVariable fooVariable =
-                mapper.readValue(FOO_VARIABLE, CommandVariable.class);
+        final CommandInput commandInput0 =
+                mapper.readValue(INPUT_0_JSON, CommandInput.class);
+        final CommandInput fooInput =
+                mapper.readValue(FOO_INPUT, CommandInput.class);
 
-        assertEquals("my_cool_input", commandVariable0.getName());
-        assertEquals("A boolean value", commandVariable0.getDescription());
-        assertEquals("boolean", commandVariable0.getType());
-        assertEquals(true, commandVariable0.isRequired());
-        assertEquals("-b", commandVariable0.getTrueValue());
-        assertEquals("", commandVariable0.getFalseValue());
-        assertNull(commandVariable0.getArgTemplate());
-        assertNull(commandVariable0.getDefaultValue());
+        assertEquals("my_cool_input", commandInput0.getName());
+        assertEquals("A boolean value", commandInput0.getDescription());
+        assertEquals("boolean", commandInput0.getType());
+        assertEquals(true, commandInput0.isRequired());
+        assertEquals("-b", commandInput0.getTrueValue());
+        assertEquals("", commandInput0.getFalseValue());
+        assertNull(commandInput0.getArgTemplate());
+        assertNull(commandInput0.getDefaultValue());
 
-        assertEquals("foo", fooVariable.getName());
-        assertEquals("A foo that bars", fooVariable.getDescription());
-        assertNull(fooVariable.getType());
-        assertEquals(false, fooVariable.isRequired());
-        assertNull(fooVariable.getTrueValue());
-        assertNull(fooVariable.getFalseValue());
-        assertEquals("--flag=#value#", fooVariable.getArgTemplate());
-        assertEquals("bar", fooVariable.getDefaultValue());
+        assertEquals("foo", fooInput.getName());
+        assertEquals("A foo that bars", fooInput.getDescription());
+        assertNull(fooInput.getType());
+        assertEquals(false, fooInput.isRequired());
+        assertNull(fooInput.getTrueValue());
+        assertNull(fooInput.getFalseValue());
+        assertEquals("--flag=#value#", fooInput.getArgTemplate());
+        assertEquals("bar", fooInput.getDefaultValue());
     }
 
     @Test
     public void testDeserializeDockerImageCommand() throws Exception {
 
-        final List<CommandVariable> commandVariableList =
-                mapper.readValue(VARIABLE_LIST_JSON, new TypeReference<List<CommandVariable>>() {});
+        final List<CommandInput> commandInputList =
+                mapper.readValue(INPUT_LIST_JSON, new TypeReference<List<CommandInput>>() {});
 
         final CommandMount input = mapper.readValue(MOUNT_IN, CommandMount.class);
         final CommandMount output = mapper.readValue(MOUNT_OUT, CommandMount.class);
@@ -138,8 +135,8 @@ public class CommandTest {
         assertEquals(Lists.newArrayList("cmd", "#foo# #my_cool_input#"), command.getRunTemplate());
         assertEquals(ImmutableMap.of("foo", "bar"), command.getEnvironmentVariables());
 
-        assertThat(command.getVariables(), hasSize(2));
-        assertThat(commandVariableList, everyItem(isIn(command.getVariables())));
+        assertThat(command.getInputs(), hasSize(2));
+        assertThat(commandInputList, everyItem(isIn(command.getInputs())));
 
         assertNotNull(command.getMountsIn());
         assertEquals(Lists.newArrayList(input), command.getMountsIn());

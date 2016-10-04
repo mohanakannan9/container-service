@@ -11,7 +11,7 @@ import java.io.Serializable;
 import java.util.Objects;
 
 @Embeddable
-public class CommandVariable implements Serializable {
+public class CommandInput implements Serializable {
     private String name;
     private String description;
     private String type;
@@ -123,7 +123,7 @@ public class CommandVariable implements Serializable {
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final CommandVariable that = (CommandVariable) o;
+        final CommandInput that = (CommandInput) o;
         return Objects.equals(this.name, that.name) &&
                 Objects.equals(this.description, that.description) &&
                 Objects.equals(this.type, that.type) &&

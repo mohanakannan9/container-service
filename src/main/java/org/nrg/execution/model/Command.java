@@ -6,7 +6,6 @@ import com.google.common.base.MoreObjects.ToStringHelper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.swagger.annotations.ApiModelProperty;
-import org.hibernate.envers.Audited;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.annotation.Nonnull;
@@ -26,7 +25,7 @@ public class Command extends AbstractHibernateEntity {
     private String description;
     @JsonProperty("info-url") private String infoUrl;
     @JsonProperty("docker-image") private String dockerImage;
-    private List<CommandVariable> variables = Lists.newArrayList();
+    private List<CommandInput> inputs = Lists.newArrayList();
     @JsonProperty("run-template") private List<String> runTemplate;
     @JsonProperty("mounts-in") private List<CommandMount> mountsIn = Lists.newArrayList();
     @JsonProperty("mounts-out") private List<CommandMount> mountsOut = Lists.newArrayList();
@@ -74,17 +73,17 @@ public class Command extends AbstractHibernateEntity {
 
     @Nullable
     @ElementCollection
-    @ApiModelProperty("A list of variables. " +
-            "When the Command is launched, these variables receive values; " +
+    @ApiModelProperty("A list of inputs. " +
+            "When the Command is launched, these inputs receive values; " +
             "those values will be used to fill in any template strings in the Command's run-template, mounts, or environment variables.")
-    public List<CommandVariable> getVariables() {
-        return variables;
+    public List<CommandInput> getInputs() {
+        return inputs;
     }
 
-    void setVariables(final List<CommandVariable> variables) {
-        this.variables = variables == null ?
-                Lists.<CommandVariable>newArrayList() :
-                variables;
+    void setInputs(final List<CommandInput> inputs) {
+        this.inputs = inputs == null ?
+                Lists.<CommandInput>newArrayList() :
+                inputs;
     }
 
     @Nullable
@@ -152,7 +151,7 @@ public class Command extends AbstractHibernateEntity {
                 .add("description", description)
                 .add("infoUrl", infoUrl)
                 .add("dockerImage", dockerImage)
-                .add("variables", variables)
+                .add("inputs", inputs)
                 .add("runTemplate", runTemplate)
                 .add("mountsIn", mountsIn)
                 .add("mountsOut", mountsOut)
@@ -170,7 +169,7 @@ public class Command extends AbstractHibernateEntity {
                 Objects.equals(this.infoUrl, that.infoUrl) &&
                 Objects.equals(this.dockerImage, that.dockerImage) &&
                 Objects.equals(this.runTemplate, that.runTemplate) &&
-                Objects.equals(this.variables, that.variables) &&
+                Objects.equals(this.inputs, that.inputs) &&
                 Objects.equals(this.mountsIn, that.mountsIn) &&
                 Objects.equals(this.mountsOut, that.mountsOut) &&
                 Objects.equals(this.environmentVariables, that.environmentVariables);
@@ -179,7 +178,7 @@ public class Command extends AbstractHibernateEntity {
     @Override
     public int hashCode() {
         return Objects.hash(name, description, infoUrl, dockerImage,
-                variables, runTemplate, mountsIn, mountsOut, environmentVariables);
+                inputs, runTemplate, mountsIn, mountsOut, environmentVariables);
     }
 
     @Override

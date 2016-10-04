@@ -16,15 +16,13 @@ import org.nrg.execution.exceptions.NoServerPrefException;
 import org.nrg.execution.exceptions.NotFoundException;
 import org.nrg.execution.model.Command;
 import org.nrg.execution.model.CommandMount;
-import org.nrg.execution.model.CommandVariable;
+import org.nrg.execution.model.CommandInput;
 import org.nrg.execution.model.ContainerExecution;
 import org.nrg.execution.model.Context;
 import org.nrg.execution.model.ResolvedCommand;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
-import org.nrg.framework.orm.hibernate.BaseHibernateService;
-import org.nrg.framework.orm.hibernate.HibernateUtils;
 import org.nrg.transporter.TransportService;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.om.XnatAbstractresource;
@@ -88,7 +86,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         Hibernate.initialize(command.getRunTemplate());
         Hibernate.initialize(command.getMountsIn());
         Hibernate.initialize(command.getMountsOut());
-        Hibernate.initialize(command.getVariables());
+        Hibernate.initialize(command.getInputs());
     }
 
     @Override
@@ -143,8 +141,8 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
 
         final Map<String, String> resolvedVariableValues = Maps.newHashMap();
         final Map<String, String> resolvedVariableValuesAsRunTemplateArgs = Maps.newHashMap();
-        if (command.getVariables() != null) {
-            for (final CommandVariable variable : command.getVariables()) {
+        if (command.getInputs() != null) {
+            for (final CommandInput variable : command.getInputs()) {
                 // raw value is runtime value if provided, else default value
                 String variableRawValueCouldBeNull = variable.getDefaultValue();
                 if (StringUtils.isNotBlank(variable.getValue())) {
@@ -206,8 +204,8 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         }
 
         // Find values for any inputs that we can.
-        if (command.getVariables() != null) {
-            for (final CommandVariable variable : command.getVariables()) {
+        if (command.getInputs() != null) {
+            for (final CommandInput variable : command.getInputs()) {
                 // Try to get inputs of type=property out of the root object
                 if (StringUtils.isNotBlank(variable.getRootProperty())) {
                     try {

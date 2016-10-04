@@ -7,7 +7,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.execution.api.ContainerControlApi;
-import org.nrg.execution.api.DockerControlApi;
 import org.nrg.execution.config.DockerRestApiTestConfig;
 import org.nrg.execution.exceptions.DockerServerException;
 import org.nrg.execution.exceptions.NoServerPrefException;
@@ -191,7 +190,7 @@ public class DockerRestApiTest {
                 "[{\"name\": \"label-test\"," +
                         "\"description\": \"Command to test label-parsing and command-importing code\"," +
                         "\"run-template\": [\"/bin/sh\",\"-c\",\"#CMD#\"]," +
-                        "\"variables\": [{\"name\": \"CMD\", \"description\": \"Command to run\", \"required\": true}]}]";
+                        "\"inputs\": [{\"name\": \"CMD\", \"description\": \"Command to run\", \"required\": true}]}]";
         final List<Command> expectedList = mapper.readValue(labelTestCommandListJson, new TypeReference<List<Command>>(){});
         final Command expected = expectedList.get(0);
 
@@ -230,7 +229,7 @@ public class DockerRestApiTest {
         assertEquals(expected.getName(), response.getName());
         assertEquals(expected.getDescription(), response.getDescription());
         assertEquals(expected.getRunTemplate(), response.getRunTemplate());
-        assertEquals(expected.getVariables(), response.getVariables());
+        assertEquals(expected.getInputs(), response.getInputs());
         assertEquals(fakeImageId, response.getDockerImage());
     }
 
@@ -240,7 +239,7 @@ public class DockerRestApiTest {
         final String labelTestCommandListJson =
                 "[{\"name\":\"dcm2niix-scan\", \"description\":\"Run dcm2niix on a scan's DICOMs\", " +
                         "\"run-template\":[\"/bin/sh\", \"-c\", \"/run/dcm2niix-scan.sh\", \"#scanId#\", \"#sessionId#\"], " +
-                        "\"variables\":[" +
+                        "\"inputs\":[" +
                             "{\"name\":\"scanId\", \"required\":true, \"root-property\":\"ID\"}, " +
                             "{\"name\":\"sessionId\", \"required\":true, \"root-property\":\"ID\"}" +
                         "], " +
@@ -284,7 +283,7 @@ public class DockerRestApiTest {
         assertEquals(expected.getName(), response.getName());
         assertEquals(expected.getDescription(), response.getDescription());
         assertEquals(expected.getRunTemplate(), response.getRunTemplate());
-        assertEquals(expected.getVariables(), response.getVariables());
+        assertEquals(expected.getInputs(), response.getInputs());
         assertEquals(fakeImageId, response.getDockerImage());
     }
 }
