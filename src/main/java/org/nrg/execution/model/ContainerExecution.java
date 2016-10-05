@@ -8,7 +8,6 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
@@ -21,7 +20,7 @@ import java.util.Objects;
 public class ContainerExecution extends AbstractHibernateEntity {
     @JsonProperty("command-id") private Long commandId;
     @JsonProperty("docker-image") private String dockerImage;
-    @JsonProperty("run") private List<String> run;
+    @JsonProperty("command-line") private String commandLine;
     @JsonProperty("env") private Map<String, String> environmentVariables = Maps.newHashMap();
     @JsonProperty("mounts-in") private List<CommandMount> mountsIn = Lists.newArrayList();
     @JsonProperty("mounts-out") private List<CommandMount> mountsOut = Lists.newArrayList();
@@ -45,9 +44,7 @@ public class ContainerExecution extends AbstractHibernateEntity {
 
         this.commandId = resolvedCommand.getCommandId();
         this.dockerImage = resolvedCommand.getDockerImage();
-        this.run = resolvedCommand.getRun() == null ?
-                Lists.<String>newArrayList() :
-                Lists.newArrayList(resolvedCommand.getRun());
+        this.commandLine = resolvedCommand.getCommandLine();
         this.environmentVariables = resolvedCommand.getEnvironmentVariables() == null ?
                 Maps.<String, String>newHashMap() :
                 Maps.newHashMap(resolvedCommand.getEnvironmentVariables());
@@ -75,13 +72,12 @@ public class ContainerExecution extends AbstractHibernateEntity {
         this.dockerImage = dockerImage;
     }
 
-    @ElementCollection
-    public List<String> getRun() {
-        return run;
+    public String getCommandLine() {
+        return commandLine;
     }
 
-    public void setRun(final List<String> run) {
-        this.run = run;
+    public void setCommandLine(final String commandLine) {
+        this.commandLine = commandLine;
     }
 
     @ElementCollection
@@ -168,7 +164,7 @@ public class ContainerExecution extends AbstractHibernateEntity {
         final ContainerExecution that = (ContainerExecution) o;
         return Objects.equals(commandId, that.commandId) &&
                 Objects.equals(dockerImage, that.dockerImage) &&
-                Objects.equals(run, that.run) &&
+                Objects.equals(commandLine, that.commandLine) &&
                 Objects.equals(environmentVariables, that.environmentVariables) &&
                 Objects.equals(mountsIn, that.mountsIn) &&
                 Objects.equals(mountsOut, that.mountsOut) &&
@@ -181,7 +177,7 @@ public class ContainerExecution extends AbstractHibernateEntity {
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.getId(), commandId, dockerImage, run, environmentVariables,
+        return Objects.hash(super.getId(), commandId, dockerImage, commandLine, environmentVariables,
                 mountsIn, mountsOut, containerId, userId, rootObjectId, rootObjectXsiType, history);
     }
 
@@ -190,7 +186,7 @@ public class ContainerExecution extends AbstractHibernateEntity {
         return MoreObjects.toStringHelper(this)
                 .add("commandId", commandId)
                 .add("dockerImage", dockerImage)
-                .add("run", run)
+                .add("commandLine", commandLine)
                 .add("environmentVariables", environmentVariables)
                 .add("mountsIn", mountsIn)
                 .add("mountsOut", mountsOut)

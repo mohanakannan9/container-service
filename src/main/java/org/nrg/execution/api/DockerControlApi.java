@@ -2,7 +2,6 @@ package org.nrg.execution.api;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -34,16 +33,13 @@ import org.nrg.execution.exceptions.NotFoundException;
 import org.nrg.execution.model.Command;
 import org.nrg.execution.model.CommandMount;
 import org.nrg.execution.model.Container;
-import org.nrg.execution.model.ContainerExecution;
 import org.nrg.execution.model.DockerHub;
 import org.nrg.execution.model.DockerImage;
 import org.nrg.execution.model.DockerServer;
 import org.nrg.execution.model.DockerServerPrefsBean;
 import org.nrg.execution.model.ResolvedCommand;
-import org.nrg.execution.services.ContainerExecutionService;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
-import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -209,7 +205,7 @@ public class DockerControlApi implements ContainerControlApi {
     public String launchImage(final ResolvedCommand command)
             throws NoServerPrefException, DockerServerException {
         final String dockerImageId = command.getDockerImage();
-        final List<String> runCommand = command.getRun();
+        final String runCommand = command.getCommandLine();
         final List<String> bindMounts = Lists.newArrayList();
         for (final CommandMount mount : command.getMountsIn()) {
             bindMounts.add(mount.toBindMountString());
@@ -265,7 +261,7 @@ public class DockerControlApi implements ContainerControlApi {
      **/
     private String launchImage(final DockerServer server,
                               final String imageName,
-                              final List<String> runCommand,
+                              final String runCommand,
                               final List<String> volumes,
                               final List<String> environmentVariables) throws DockerServerException {
 
@@ -279,7 +275,7 @@ public class DockerControlApi implements ContainerControlApi {
                         .image(imageName)
                         .attachStdout(true)
                         .attachStderr(true)
-                        .cmd(runCommand)
+                        .cmd(Lists.newArrayList("/bin/sh", "-c", runCommand))
                         .env(environmentVariables)
                         .build();
 

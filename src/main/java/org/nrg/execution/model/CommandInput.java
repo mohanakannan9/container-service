@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import io.swagger.annotations.ApiModelProperty;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.persistence.Embeddable;
 import javax.persistence.Transient;
@@ -11,19 +12,21 @@ import java.io.Serializable;
 import java.util.Objects;
 
 @Embeddable
-public class CommandVariable implements Serializable {
+public class CommandInput implements Serializable {
     private String name;
     private String description;
     private String type;
     private Boolean required;
     @JsonProperty("root-property") private String rootProperty;
     @JsonProperty("default-value") private String defaultValue;
-    @JsonProperty("arg-template") private String argTemplate;
+    @JsonProperty("replacement-key") private String rawReplacementKey;
+    @JsonProperty("command-line-flag") private String commandLineFlag = "";
+    @JsonProperty("command-line-separator") private String commandLineSeparator = " ";
     @JsonProperty("true-value") private String trueValue;
     @JsonProperty("false-value") private String falseValue;
     @JsonIgnore private String value;
 
-    @ApiModelProperty(value = "Name of the command variable", required = true)
+    @ApiModelProperty(value = "Name of the command input", required = true)
     public String getName() {
         return name;
     }
@@ -32,7 +35,7 @@ public class CommandVariable implements Serializable {
         this.name = name;
     }
 
-    @ApiModelProperty("Description of the command variable")
+    @ApiModelProperty("Description of the command input")
     public String getDescription() {
         return description;
     }
@@ -41,7 +44,7 @@ public class CommandVariable implements Serializable {
         this.description = description;
     }
 
-    @ApiModelProperty(value = "Type of the command variable", allowableValues = "string, boolean, number")
+    @ApiModelProperty(value = "Type of the command input", allowableValues = "string, boolean, number")
     public String getType() {
         return type;
     }
@@ -72,7 +75,7 @@ public class CommandVariable implements Serializable {
         this.rootProperty = rootProperty;
     }
 
-    @ApiModelProperty("Default value of the variable")
+    @ApiModelProperty("Default value of the input")
     public String getDefaultValue() {
         return defaultValue;
     }
@@ -81,17 +84,40 @@ public class CommandVariable implements Serializable {
         this.defaultValue = value;
     }
 
-    @ApiModelProperty(value = "When the variable is used in the run-template, its raw value can be modified to the appropriate form it should take on the command line. " +
-            "You can reference the raw variable value as #value#.", example = "--command-line-flag=#value#")
-    public String getArgTemplate() {
-        return argTemplate;
+    @ApiModelProperty(value = "String in the command-line or elsewhere that will be replaced by this input's value. Default: #input_name#", example = "[MY_INPUT]")
+    public String getRawReplacementKey() {
+        return rawReplacementKey;
     }
 
-    public void setArgTemplate(final String argTemplate) {
-        this.argTemplate = argTemplate;
+    public void setRawReplacementKey(final String rawReplacementKey) {
+        this.rawReplacementKey = rawReplacementKey;
     }
 
-    @ApiModelProperty(value = "If the variable is a boolean, this string will be used when the value is \"true\".", example = "1")
+    @Transient
+    @JsonIgnore
+    public String getReplacementKey() {
+        return StringUtils.isNotBlank(rawReplacementKey) ? rawReplacementKey : "#" + getName() + "#";
+    }
+
+    @ApiModelProperty(value = "Flag to use for this input when substituting the value on the command line", example = "--input-flag")
+    public String getCommandLineFlag() {
+        return commandLineFlag;
+    }
+
+    public void setCommandLineFlag(final String commandLineFlag) {
+        this.commandLineFlag = commandLineFlag;
+    }
+
+    @ApiModelProperty(value = "Separator between command-line-flag and value. Default \" \" (space).", example = " ")
+    public String getCommandLineSeparator() {
+        return commandLineSeparator;
+    }
+
+    public void setCommandLineSeparator(final String commandLineSeparator) {
+        this.commandLineSeparator = commandLineSeparator;
+    }
+
+    @ApiModelProperty(value = "If the input is a boolean, this string will be used when the value is \"true\".", example = "1")
     public String getTrueValue() {
         return trueValue;
     }
@@ -100,7 +126,7 @@ public class CommandVariable implements Serializable {
         this.trueValue = trueValue;
     }
 
-    @ApiModelProperty(value = "If the variable is a boolean, this string will be used when the value is \"false\".", example = "0")
+    @ApiModelProperty(value = "If the input is a boolean, this string will be used when the value is \"false\".", example = "0")
     public String getFalseValue() {
         return falseValue;
     }
@@ -118,19 +144,32 @@ public class CommandVariable implements Serializable {
         this.value = value;
     }
 
+    @Transient
+    @JsonIgnore
+    public String getValueOrDefaultValue() {
+        if (value != null) {
+            return value;
+        } else if (defaultValue != null) {
+            return defaultValue;
+        } else {
+            return null;
+        }
+    }
 
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final CommandVariable that = (CommandVariable) o;
+        final CommandInput that = (CommandInput) o;
         return Objects.equals(this.name, that.name) &&
                 Objects.equals(this.description, that.description) &&
                 Objects.equals(this.type, that.type) &&
                 Objects.equals(this.required, that.required) &&
                 Objects.equals(this.rootProperty, that.rootProperty) &&
                 Objects.equals(this.defaultValue, that.defaultValue) &&
-                Objects.equals(this.argTemplate, that.argTemplate) &&
+                Objects.equals(this.rawReplacementKey, that.rawReplacementKey) &&
+                Objects.equals(this.commandLineFlag, that.commandLineFlag) &&
+                Objects.equals(this.commandLineSeparator, that.commandLineSeparator) &&
                 Objects.equals(this.trueValue, that.trueValue) &&
                 Objects.equals(this.falseValue, that.falseValue) &&
                 Objects.equals(this.value, that.value);
@@ -138,8 +177,8 @@ public class CommandVariable implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, description, type, required, rootProperty,
-                defaultValue, argTemplate, trueValue, falseValue, value);
+        return Objects.hash(name, description, type, required, rootProperty, defaultValue,
+                rawReplacementKey, commandLineFlag, commandLineSeparator, trueValue, falseValue, value);
     }
 
     @Override
@@ -151,7 +190,9 @@ public class CommandVariable implements Serializable {
                 .add("required", required)
                 .add("rootProperty", rootProperty)
                 .add("defaultValue", defaultValue)
-                .add("argTemplate", argTemplate)
+                .add("rawReplacementKey", rawReplacementKey)
+                .add("commandLineFlag", commandLineFlag)
+                .add("commandLineSeparator", commandLineSeparator)
                 .add("trueValue", trueValue)
                 .add("falseValue", falseValue)
                 .add("value", value)

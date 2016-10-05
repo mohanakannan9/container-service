@@ -1,8 +1,10 @@
 package org.nrg.execution.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import io.swagger.annotations.ApiModelProperty;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.persistence.Embeddable;
 import javax.persistence.Transient;
@@ -12,10 +14,10 @@ import java.util.Objects;
 @Embeddable
 public class CommandMount implements Serializable {
 
-    private String name;
+    @JsonProperty(required = true) private String name;
+    @JsonProperty(required = true) private String type;
     @JsonProperty("host-path") private String hostPath;
     @JsonProperty("remote-path") private String remotePath;
-    @JsonProperty("read-only") private Boolean readOnly = true;
     private Boolean overwrite = false;
 
     public String getName() {
@@ -24,6 +26,15 @@ public class CommandMount implements Serializable {
 
     public void setName(final String name) {
         this.name = name;
+    }
+
+    @ApiModelProperty(value = "Type of mount: input or output.", allowableValues = "input, output")
+    public String getType() {
+        return type;
+    }
+
+    public void setType(final String type) {
+        this.type = type;
     }
 
     public String getHostPath() {
@@ -42,12 +53,10 @@ public class CommandMount implements Serializable {
         this.remotePath = remotePath;
     }
 
-    public Boolean getReadOnly() {
-        return readOnly;
-    }
-
-    public void setReadOnly(final Boolean readOnly) {
-        this.readOnly = readOnly;
+    @Transient
+    @JsonIgnore
+    public boolean isInput() {
+        return (StringUtils.isBlank(type) || type.equalsIgnoreCase("input"));
     }
 
     public Boolean getOverwrite() {
@@ -61,7 +70,7 @@ public class CommandMount implements Serializable {
     @Transient
     @ApiModelProperty(hidden = true)
     public String toBindMountString() {
-        return hostPath + ":" + remotePath + (readOnly?":ro":"");
+        return hostPath + ":" + remotePath + (isInput()?":ro":"");
     }
 
     @Override
@@ -70,24 +79,24 @@ public class CommandMount implements Serializable {
         if (o == null || getClass() != o.getClass()) return false;
         final CommandMount that = (CommandMount) o;
         return Objects.equals(this.name, that.name) &&
+                Objects.equals(this.type, that.type) &&
                 Objects.equals(this.hostPath, that.hostPath) &&
                 Objects.equals(this.remotePath, that.remotePath) &&
-                Objects.equals(this.readOnly, that.readOnly) &&
                 Objects.equals(this.overwrite, that.overwrite);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, hostPath, remotePath, readOnly, overwrite);
+        return Objects.hash(name, type, hostPath, remotePath, overwrite);
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("name", name)
+                .add("type", type)
                 .add("hostPath", hostPath)
                 .add("remotePath", remotePath)
-                .add("readOnly", readOnly)
                 .add("overwrite", overwrite)
                 .toString();
     }

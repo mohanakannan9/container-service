@@ -16,15 +16,14 @@ import org.nrg.execution.exceptions.NoServerPrefException;
 import org.nrg.execution.exceptions.NotFoundException;
 import org.nrg.execution.model.Command;
 import org.nrg.execution.model.CommandMount;
-import org.nrg.execution.model.CommandVariable;
+import org.nrg.execution.model.CommandInput;
+import org.nrg.execution.model.CommandRun;
 import org.nrg.execution.model.ContainerExecution;
 import org.nrg.execution.model.Context;
 import org.nrg.execution.model.ResolvedCommand;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
-import org.nrg.framework.orm.hibernate.BaseHibernateService;
-import org.nrg.framework.orm.hibernate.HibernateUtils;
 import org.nrg.transporter.TransportService;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.om.XnatAbstractresource;
@@ -67,8 +66,6 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     @Autowired private TransportService transporter;
     @Autowired private ContainerExecutionService containerExecutionService;
 
-    private static final Pattern TEMPLATE_PATTERN = Pattern.compile("(?<=\\s|\\A)#(\\w+)#(?=\\s|\\z)"); // Match #varname#
-
     @Override
     public Command get(final Long id) throws NotFoundException {
         final Command command = retrieve(id);
@@ -84,11 +81,15 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             return;
         }
         Hibernate.initialize(command);
-        Hibernate.initialize(command.getEnvironmentVariables());
-        Hibernate.initialize(command.getRunTemplate());
-        Hibernate.initialize(command.getMountsIn());
-        Hibernate.initialize(command.getMountsOut());
-        Hibernate.initialize(command.getVariables());
+        Hibernate.initialize(command.getInputs());
+        Hibernate.initialize(command.getOutputs());
+
+        final CommandRun run = command.getRun();
+        if (run != null) {
+            Hibernate.initialize(run.getEnvironmentVariables());
+            Hibernate.initialize(run.getCommandLine());
+            Hibernate.initialize(run.getMounts());
+        }
     }
 
     @Override
@@ -134,59 +135,79 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
 
     @Override
     public ResolvedCommand resolveCommand(final Command command,
-                                          final Map<String, String> variableValuesProvidedAtRuntime)
+                                          final Map<String, String> inputValuesProvidedAtRuntime)
             throws NotFoundException, CommandVariableResolutionException {
 
-        if (variableValuesProvidedAtRuntime == null) {
+        if (inputValuesProvidedAtRuntime == null) {
             return resolveCommand(command);
         }
 
-        final Map<String, String> resolvedVariableValues = Maps.newHashMap();
-        final Map<String, String> resolvedVariableValuesAsRunTemplateArgs = Maps.newHashMap();
-        if (command.getVariables() != null) {
-            for (final CommandVariable variable : command.getVariables()) {
-                // raw value is runtime value if provided, else default value
-                String variableRawValueCouldBeNull = variable.getDefaultValue();
-                if (StringUtils.isNotBlank(variable.getValue())) {
-                    variableRawValueCouldBeNull = variable.getValue();
-                }
-                if (variableValuesProvidedAtRuntime.containsKey(variable.getName())) {
-                    variableRawValueCouldBeNull = variableValuesProvidedAtRuntime.get(variable.getName());
-                }
-                final String variableRawValue = variableRawValueCouldBeNull == null ? "" : variableRawValueCouldBeNull;
+        final Map<String, String> resolvedInputValues = Maps.newHashMap();
+        final Map<String, String> resolvedInputValuesAsCommandLineArgs = Maps.newHashMap();
+        if (command.getInputs() != null) {
+            for (final CommandInput input : command.getInputs()) {
+                final String runtimeValue = inputValuesProvidedAtRuntime.get(input.getName());
 
-                // If there is no raw value, and variable is required, that is an error
-                if (StringUtils.isBlank(variableRawValue) && variable.isRequired()) {
-                    throw new CommandVariableResolutionException(variable);
+                final String resolvedValue = getResolvedInputValue(input, runtimeValue);
+
+                // If resolved value is null, and input is required, that is an error
+                if (resolvedValue == null && input.isRequired()) {
+                    throw new CommandVariableResolutionException(input);
                 }
 
-                // value is either = raw value, or if "type" is "boolean" then value = trueValue if rawvalue=true or falseValue if rawvalue=false
-                final String variableValue =
-                        variable.getType() != null && variable.getType().equalsIgnoreCase("boolean") ?
-                                (Boolean.valueOf(variableRawValue) ? variable.getTrueValue() : variable.getFalseValue()) :
-                                variableRawValue;
-
-                // to get the value as run template arg, we replace any "#value#" tokens in argTemplate
-                final String variableValueAsRunTemplateArg =
-                        StringUtils.isNotBlank(variable.getArgTemplate()) ?
-                                variable.getArgTemplate().replaceAll("#value#", variableValue) :
-                                variableValue;
-
-                resolvedVariableValues.put(variable.getName(), variableValue);
-                resolvedVariableValuesAsRunTemplateArgs.put(variable.getName(), variableValueAsRunTemplateArg);
+                // Only substitute the input into the command line if a replacementKey is set
+                // TODO This will be changed later, as we will allow pro-active searching with JSONPath
+                final String replacementKey = input.getReplacementKey();
+                if (StringUtils.isBlank(replacementKey)) {
+                    continue;
+                }
+                resolvedInputValues.put(replacementKey, resolvedValue);
+                resolvedInputValuesAsCommandLineArgs.put(replacementKey, getValueForCommandLine(input, resolvedValue));
             }
         }
 
-        // Replace variable names in runTemplate, mounts, and environment variables
+        // Replace variable names in command line, mounts, and environment variables
         final ResolvedCommand resolvedCommand = new ResolvedCommand(command);
-        resolvedCommand.setRun(resolveTemplateList(command.getRunTemplate(), resolvedVariableValuesAsRunTemplateArgs));
-        resolvedCommand.setMountsIn(resolveCommandMounts(command.getMountsIn(), resolvedVariableValues));
-        resolvedCommand.setMountsOut(resolveCommandMounts(command.getMountsOut(), resolvedVariableValues));
-        resolvedCommand.setEnvironmentVariables(resolveTemplateMap(command.getEnvironmentVariables(), resolvedVariableValues, true));
+        final CommandRun run = command.getRun();
+        resolvedCommand.setCommandLine(resolveTemplate(run.getCommandLine(), resolvedInputValuesAsCommandLineArgs));
+        resolvedCommand.setMounts(resolveCommandMounts(run.getMounts(), resolvedInputValues));
+        resolvedCommand.setEnvironmentVariables(resolveTemplateMap(run.getEnvironmentVariables(), resolvedInputValues, true));
 
         // TODO What else do I need to do to resolve the command?
 
         return resolvedCommand;
+    }
+
+    private String getResolvedInputValue(final CommandInput input, final String runtimeValue) {
+        final String rawValue;
+        if (runtimeValue != null) {
+            rawValue = runtimeValue;
+        } else {
+            rawValue = input.getValueOrDefaultValue();
+        }
+        if (rawValue == null) {
+            return null;
+        }
+
+        if (StringUtils.isNotBlank(input.getType()) && input.getType().equalsIgnoreCase("boolean")) {
+            if (Boolean.parseBoolean(rawValue)) {
+                return input.getTrueValue() != null ? input.getTrueValue() : "";
+            } else {
+                return input.getFalseValue() != null ? input.getFalseValue() : "";
+            }
+        } else {
+            return rawValue;
+        }
+    }
+
+    private String getValueForCommandLine(final CommandInput input, final String resolvedInputValue) {
+        if (StringUtils.isBlank(input.getCommandLineFlag())) {
+            return resolvedInputValue;
+        } else {
+            return input.getCommandLineFlag() +
+                    (input.getCommandLineSeparator() == null ? " " : input.getCommandLineSeparator()) +
+                    resolvedInputValue;
+        }
     }
 
     private ResolvedCommand resolve(final Command command,
@@ -206,8 +227,8 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         }
 
         // Find values for any inputs that we can.
-        if (command.getVariables() != null) {
-            for (final CommandVariable variable : command.getVariables()) {
+        if (command.getInputs() != null) {
+            for (final CommandInput variable : command.getInputs()) {
                 // Try to get inputs of type=property out of the root object
                 if (StringUtils.isNotBlank(variable.getRootProperty())) {
                     try {
@@ -231,14 +252,24 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             }
         }
 
-        if (command.getMountsIn() != null && !command.getMountsIn().isEmpty()) {
+        final CommandRun run = command.getRun();
+        if (run.getMounts() != null && !run.getMounts().isEmpty()) {
             // Item needs resources
+            final List<CommandMount> mountsIn = Lists.newArrayList();
+            final List<CommandMount> mountsOut = Lists.newArrayList();
+            for (final CommandMount mount : run.getMounts()) {
+                if (mount.isInput()) {
+                    mountsIn.add(mount);
+                } else {
+                    mountsOut.add(mount);
+                }
+            }
 
-            if (resourceLabelToCatalogPath == null || resourceLabelToCatalogPath.isEmpty()) {
+            if (!mountsIn.isEmpty() && (resourceLabelToCatalogPath == null || resourceLabelToCatalogPath.isEmpty())) {
                 // Item has no resources, but we need some staged. Action does not work.
                 return null;
             } else {
-                for (final CommandMount mount : command.getMountsIn()) {
+                for (final CommandMount mount : mountsIn) {
                     final String resourceCatalogPath = resourceLabelToCatalogPath.get(mount.getName());
                     if (StringUtils.isNotBlank(resourceCatalogPath)) {
                         mount.setHostPath(resourceLabelToCatalogPath.get(mount.getName()));
@@ -253,13 +284,11 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
                     }
                 }
             }
-        }
 
-        if (command.getMountsOut() != null && !command.getMountsOut().isEmpty()) {
-            // Item needs resources
-
+            // If there are no resources, then we don't need to check if they can be overwritten
             if (!(resourceLabelToCatalogPath == null || resourceLabelToCatalogPath.isEmpty())) {
-                for (final CommandMount mount : command.getMountsOut()) {
+                // There are resources, so check if we will need to overwrite any
+                for (final CommandMount mount : mountsOut) {
 
                     if (resourceLabelToCatalogPath.containsKey(mount.getName()) &&
                             !mount.getOverwrite()) {
@@ -471,17 +500,10 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     private String resolveTemplate(final String template,
                                    final Map<String, String> variableValues) {
         String toResolve = template;
-        final Set<String> matches = Sets.newHashSet();
 
-        final Matcher m = TEMPLATE_PATTERN.matcher(toResolve);
-        while (m.find()) {
-            matches.add(m.group(1));
-        }
-
-        for (final String varName : matches) {
-            if (variableValues.get(varName) != null) {
-                toResolve = toResolve.replaceAll("#"+ varName +"#", variableValues.get(varName));
-            }
+        for (final String replacementKey : variableValues.keySet()) {
+            final String replacementValue = variableValues.get(replacementKey);
+            toResolve = toResolve.replaceAll(replacementKey, replacementValue);
         }
 
         return toResolve;

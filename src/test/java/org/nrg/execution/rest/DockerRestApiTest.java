@@ -7,7 +7,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.execution.api.ContainerControlApi;
-import org.nrg.execution.api.DockerControlApi;
 import org.nrg.execution.config.DockerRestApiTestConfig;
 import org.nrg.execution.exceptions.DockerServerException;
 import org.nrg.execution.exceptions.NoServerPrefException;
@@ -190,8 +189,8 @@ public class DockerRestApiTest {
         final String labelTestCommandListJson =
                 "[{\"name\": \"label-test\"," +
                         "\"description\": \"Command to test label-parsing and command-importing code\"," +
-                        "\"run-template\": [\"/bin/sh\",\"-c\",\"#CMD#\"]," +
-                        "\"variables\": [{\"name\": \"CMD\", \"description\": \"Command to run\", \"required\": true}]}]";
+                        "\"run\": {\"command-line\": \"#CMD#\"}," +
+                        "\"inputs\": [{\"name\": \"CMD\", \"description\": \"Command to run\", \"required\": true}]}]";
         final List<Command> expectedList = mapper.readValue(labelTestCommandListJson, new TypeReference<List<Command>>(){});
         final Command expected = expectedList.get(0);
 
@@ -229,8 +228,8 @@ public class DockerRestApiTest {
         // Must compare attribute-by-attribute
         assertEquals(expected.getName(), response.getName());
         assertEquals(expected.getDescription(), response.getDescription());
-        assertEquals(expected.getRunTemplate(), response.getRunTemplate());
-        assertEquals(expected.getVariables(), response.getVariables());
+        assertEquals(expected.getRun(), response.getRun());
+        assertEquals(expected.getInputs(), response.getInputs());
         assertEquals(fakeImageId, response.getDockerImage());
     }
 
@@ -239,13 +238,18 @@ public class DockerRestApiTest {
     public void testSaveFromLabels2() throws Exception {
         final String labelTestCommandListJson =
                 "[{\"name\":\"dcm2niix-scan\", \"description\":\"Run dcm2niix on a scan's DICOMs\", " +
-                        "\"run-template\":[\"/bin/sh\", \"-c\", \"/run/dcm2niix-scan.sh\", \"#scanId#\", \"#sessionId#\"], " +
-                        "\"variables\":[" +
+                        "\"run\": {" +
+                            "\"command-line\": \"/run/dcm2niix-scan.sh #scanId# #sessionId#\", " +
+                            "\"mounts\": [" +
+                                "{\"name\":\"DICOM\", \"type\":\"input\", \"remote-path\":\"/input\"}," +
+                                "{\"name\":\"NIFTI\", \"type\":\"output\", \"remote-path\":\"/output\"}" +
+                            "]" +
+                        "}," +
+                        "\"inputs\":[" +
                             "{\"name\":\"scanId\", \"required\":true, \"root-property\":\"ID\"}, " +
                             "{\"name\":\"sessionId\", \"required\":true, \"root-property\":\"ID\"}" +
-                        "], " +
-                        "\"mounts-in\":[{\"name\":\"DICOM\", \"remote-path\":\"/input\"}], " +
-                        "\"mounts-out\":[{\"name\":\"NIFTI\", \"remote-path\":\"/output\"}]}]";
+                        "] " +
+                    "}]";
         final List<Command> expectedList = mapper.readValue(labelTestCommandListJson, new TypeReference<List<Command>>(){});
         final Command expected = expectedList.get(0);
 
@@ -283,8 +287,8 @@ public class DockerRestApiTest {
         // Must compare attribute-by-attribute
         assertEquals(expected.getName(), response.getName());
         assertEquals(expected.getDescription(), response.getDescription());
-        assertEquals(expected.getRunTemplate(), response.getRunTemplate());
-        assertEquals(expected.getVariables(), response.getVariables());
+        assertEquals(expected.getRun(), response.getRun());
+        assertEquals(expected.getInputs(), response.getInputs());
         assertEquals(fakeImageId, response.getDockerImage());
     }
 }
