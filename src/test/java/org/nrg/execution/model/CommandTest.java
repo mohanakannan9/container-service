@@ -47,20 +47,21 @@ public class CommandTest {
     private static final String INPUT_LIST_JSON =
             "[" + INPUT_0_JSON + ", " + FOO_INPUT + "]";
 
-    private static final String MOUNT_IN = "{\"name\":\"in\", \"remote-path\":\"/input\"}";
-    private static final String MOUNT_OUT = "{\"name\":\"out\", \"remote-path\":\"/output\", \"read-only\":false}";
-    private static final String RESOLVED_MOUNT_IN = "{\"name\":\"in\", \"remote-path\":\"/input\"}";
-    private static final String RESOLVED_MOUNT_OUT = "{\"name\":\"out\", \"remote-path\":\"/output\", \"read-only\":false}";
+    private static final String MOUNT_IN = "{\"name\":\"in\", \"type\": \"input\", \"remote-path\":\"/input\"}";
+    private static final String MOUNT_OUT = "{\"name\":\"out\", \"type\": \"output\", \"remote-path\":\"/output\"}";
+    private static final String RESOLVED_MOUNT_IN = "{\"name\":\"in\", \"type\": \"input\", \"remote-path\":\"/input\"}";
+    private static final String RESOLVED_MOUNT_OUT = "{\"name\":\"out\", \"type\":\"output\", \"remote-path\":\"/output\"}";
 
     private static final String DOCKER_IMAGE_COMMAND_JSON =
             "{\"name\":\"docker_image_command\", \"description\":\"Docker Image command for the test\", " +
                     "\"info-url\":\"http://abc.xyz\", " +
-                    "\"env\":{\"foo\":\"bar\"}, " +
+                    "\"run\": {" +
+                        "\"environment-variables\":{\"foo\":\"bar\"}, " +
+                        "\"command-line\":\"cmd #foo# #my_cool_input#\", " +
+                        "\"mounts\":[" + MOUNT_IN + ", " + MOUNT_OUT + "]" +
+                    "}," +
                     "\"inputs\":" + INPUT_LIST_JSON + ", " +
-                    "\"command-line\":\"cmd #foo# #my_cool_input#\", " +
-                    "\"docker-image\":\"abc123\", " +
-                    "\"mounts-in\":[" + MOUNT_IN + "]," +
-                    "\"mounts-out\":[" + MOUNT_OUT + "]}";
+                    "\"docker-image\":\"abc123\"}";
 
     private static final String RESOLVED_DOCKER_IMAGE_COMMAND_JSON_TEMPLATE =
             "{\"command-id\":%d, " +
@@ -137,16 +138,13 @@ public class CommandTest {
         assertEquals("docker_image_command", command.getName());
         assertEquals("Docker Image command for the test", command.getDescription());
         assertEquals("http://abc.xyz", command.getInfoUrl());
-        assertEquals("cmd #foo# #my_cool_input#", command.getCommandLine());
-        assertEquals(ImmutableMap.of("foo", "bar"), command.getEnvironmentVariables());
-
         assertThat(command.getInputs(), hasSize(2));
         assertThat(commandInputList, everyItem(isIn(command.getInputs())));
 
-        assertNotNull(command.getMountsIn());
-        assertEquals(Lists.newArrayList(input), command.getMountsIn());
-        assertNotNull(command.getMountsOut());
-        assertEquals(Lists.newArrayList(output), command.getMountsOut());
+        final CommandRun run = command.getRun();
+        assertEquals("cmd #foo# #my_cool_input#", run.getCommandLine());
+        assertEquals(ImmutableMap.of("foo", "bar"), run.getEnvironmentVariables());
+        assertEquals(Lists.newArrayList(input, output), run.getMounts());
     }
 
     @Test
@@ -218,6 +216,5 @@ public class CommandTest {
         assertEquals(expected.getMountsOut(), resolvedCommand2.getMountsOut());
 
         assertEquals("cmd --flag=bar -b", resolvedCommand2.getCommandLine());
-
     }
 }

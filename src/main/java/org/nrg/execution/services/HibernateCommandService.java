@@ -17,6 +17,7 @@ import org.nrg.execution.exceptions.NotFoundException;
 import org.nrg.execution.model.Command;
 import org.nrg.execution.model.CommandMount;
 import org.nrg.execution.model.CommandInput;
+import org.nrg.execution.model.CommandRun;
 import org.nrg.execution.model.ContainerExecution;
 import org.nrg.execution.model.Context;
 import org.nrg.execution.model.ResolvedCommand;
@@ -80,11 +81,14 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             return;
         }
         Hibernate.initialize(command);
-        Hibernate.initialize(command.getEnvironmentVariables());
-        Hibernate.initialize(command.getCommandLine());
-        Hibernate.initialize(command.getMountsIn());
-        Hibernate.initialize(command.getMountsOut());
         Hibernate.initialize(command.getInputs());
+
+        final CommandRun run = command.getRun();
+        if (run != null) {
+            Hibernate.initialize(run.getEnvironmentVariables());
+            Hibernate.initialize(run.getCommandLine());
+            Hibernate.initialize(run.getMounts());
+        }
     }
 
     @Override
@@ -163,10 +167,10 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
 
         // Replace variable names in command line, mounts, and environment variables
         final ResolvedCommand resolvedCommand = new ResolvedCommand(command);
-        resolvedCommand.setCommandLine(resolveTemplate(command.getCommandLine(), resolvedInputValuesAsCommandLineArgs));
-        resolvedCommand.setMountsIn(resolveCommandMounts(command.getMountsIn(), resolvedInputValues));
-        resolvedCommand.setMountsOut(resolveCommandMounts(command.getMountsOut(), resolvedInputValues));
-        resolvedCommand.setEnvironmentVariables(resolveTemplateMap(command.getEnvironmentVariables(), resolvedInputValues, true));
+        final CommandRun run = command.getRun();
+        resolvedCommand.setCommandLine(resolveTemplate(run.getCommandLine(), resolvedInputValuesAsCommandLineArgs));
+        resolvedCommand.setMounts(resolveCommandMounts(run.getMounts(), resolvedInputValues));
+        resolvedCommand.setEnvironmentVariables(resolveTemplateMap(run.getEnvironmentVariables(), resolvedInputValues, true));
 
         // TODO What else do I need to do to resolve the command?
 
@@ -247,14 +251,24 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             }
         }
 
-        if (command.getMountsIn() != null && !command.getMountsIn().isEmpty()) {
+        final CommandRun run = command.getRun();
+        if (run.getMounts() != null && !run.getMounts().isEmpty()) {
             // Item needs resources
+            final List<CommandMount> mountsIn = Lists.newArrayList();
+            final List<CommandMount> mountsOut = Lists.newArrayList();
+            for (final CommandMount mount : run.getMounts()) {
+                if (mount.isInput()) {
+                    mountsIn.add(mount);
+                } else {
+                    mountsOut.add(mount);
+                }
+            }
 
-            if (resourceLabelToCatalogPath == null || resourceLabelToCatalogPath.isEmpty()) {
+            if (!mountsIn.isEmpty() && (resourceLabelToCatalogPath == null || resourceLabelToCatalogPath.isEmpty())) {
                 // Item has no resources, but we need some staged. Action does not work.
                 return null;
             } else {
-                for (final CommandMount mount : command.getMountsIn()) {
+                for (final CommandMount mount : mountsIn) {
                     final String resourceCatalogPath = resourceLabelToCatalogPath.get(mount.getName());
                     if (StringUtils.isNotBlank(resourceCatalogPath)) {
                         mount.setHostPath(resourceLabelToCatalogPath.get(mount.getName()));
@@ -269,13 +283,11 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
                     }
                 }
             }
-        }
 
-        if (command.getMountsOut() != null && !command.getMountsOut().isEmpty()) {
-            // Item needs resources
-
+            // If there are no resources, then we don't need to check if they can be overwritten
             if (!(resourceLabelToCatalogPath == null || resourceLabelToCatalogPath.isEmpty())) {
-                for (final CommandMount mount : command.getMountsOut()) {
+                // There are resources, so check if we will need to overwrite any
+                for (final CommandMount mount : mountsOut) {
 
                     if (resourceLabelToCatalogPath.containsKey(mount.getName()) &&
                             !mount.getOverwrite()) {

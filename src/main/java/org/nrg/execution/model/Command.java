@@ -25,11 +25,8 @@ public class Command extends AbstractHibernateEntity {
     private String description;
     @JsonProperty("info-url") private String infoUrl;
     @JsonProperty("docker-image") private String dockerImage;
+    private CommandRun run;
     private List<CommandInput> inputs = Lists.newArrayList();
-    @JsonProperty("command-line") private String commandLine;
-    @JsonProperty("mounts-in") private List<CommandMount> mountsIn = Lists.newArrayList();
-    @JsonProperty("mounts-out") private List<CommandMount> mountsOut = Lists.newArrayList();
-    @JsonProperty("env") private Map<String, String> environmentVariables = Maps.newHashMap();
 
     @Nonnull
     @ApiModelProperty(value = "The Command's user-readable name. Must be unique for a given docker image.", required = true)
@@ -71,6 +68,14 @@ public class Command extends AbstractHibernateEntity {
         this.dockerImage = dockerImage;
     }
 
+    public CommandRun getRun() {
+        return run;
+    }
+
+    public void setRun(final CommandRun run) {
+        this.run = run;
+    }
+
     @Nullable
     @ElementCollection
     @ApiModelProperty("A list of inputs. " +
@@ -86,61 +91,6 @@ public class Command extends AbstractHibernateEntity {
                 inputs;
     }
 
-    @Nullable
-    @ApiModelProperty("The command that will be executed in the container when the Command is launched. " +
-            "Can use template strings, e.g. #variable-name#, which will be resolved into a value when the Command is launched.")
-    public String getCommandLine() {
-        return commandLine;
-    }
-
-    public void setCommandLine(final String commandLine) {
-        this.commandLine = commandLine;
-    }
-
-    @Nullable
-    @ElementCollection
-    public List<CommandMount> getMountsIn() {
-        return mountsIn;
-    }
-
-    public void setMountsIn(final List<CommandMount> mountsIn) {
-        this.mountsIn = mountsIn == null ?
-                Lists.<CommandMount>newArrayList() :
-                mountsIn;
-        for (final CommandMount mount : this.mountsIn) {
-            mount.setReadOnly(true);
-        }
-    }
-
-    @Nullable
-    @ElementCollection
-    public List<CommandMount> getMountsOut() {
-        return mountsOut;
-    }
-
-    public void setMountsOut(final List<CommandMount> mountsOut) {
-        this.mountsOut = mountsOut == null ?
-                Lists.<CommandMount>newArrayList() :
-                mountsOut;
-        for (final CommandMount mount : this.mountsOut) {
-            mount.setReadOnly(false);
-        }
-    }
-
-    @Nullable
-    @ElementCollection
-    @ApiModelProperty("A Map of environment variables. Each kay is the environment variable's name, and each value is the environment variable's value." +
-            "Both the names and values can use template strings, e.g. #variable-name#, which will be resolved into a value when the Command is launched.")
-    public Map<String, String> getEnvironmentVariables() {
-        return environmentVariables;
-    }
-
-    public void setEnvironmentVariables(final Map<String, String> environmentVariables) {
-        this.environmentVariables = environmentVariables == null ?
-                Maps.<String, String>newHashMap() :
-                environmentVariables;
-    }
-
     @Override
     public ToStringHelper addParentPropertiesToString(final ToStringHelper helper) {
         return super.addParentPropertiesToString(helper)
@@ -148,11 +98,8 @@ public class Command extends AbstractHibernateEntity {
                 .add("description", description)
                 .add("infoUrl", infoUrl)
                 .add("dockerImage", dockerImage)
-                .add("inputs", inputs)
-                .add("commandLine", commandLine)
-                .add("mountsIn", mountsIn)
-                .add("mountsOut", mountsOut)
-                .add("environmentVariables", environmentVariables);
+                .add("run", run)
+                .add("inputs", inputs);
     }
 
     @Override
@@ -165,17 +112,13 @@ public class Command extends AbstractHibernateEntity {
                 Objects.equals(this.description, that.description) &&
                 Objects.equals(this.infoUrl, that.infoUrl) &&
                 Objects.equals(this.dockerImage, that.dockerImage) &&
-                Objects.equals(this.commandLine, that.commandLine) &&
-                Objects.equals(this.inputs, that.inputs) &&
-                Objects.equals(this.mountsIn, that.mountsIn) &&
-                Objects.equals(this.mountsOut, that.mountsOut) &&
-                Objects.equals(this.environmentVariables, that.environmentVariables);
+                Objects.equals(this.run, that.run) &&
+                Objects.equals(this.inputs, that.inputs);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, description, infoUrl, dockerImage,
-                inputs, commandLine, mountsIn, mountsOut, environmentVariables);
+        return Objects.hash(name, description, infoUrl, dockerImage, run, inputs);
     }
 
     @Override

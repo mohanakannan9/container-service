@@ -1,5 +1,6 @@
 package org.nrg.execution.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
@@ -85,9 +86,6 @@ public class ResolvedCommand implements Serializable {
         this.mountsIn = mountsIn == null ?
                 Lists.<CommandMount>newArrayList() :
                 mountsIn;
-        for (final CommandMount mountIn : this.mountsIn) {
-            mountIn.setReadOnly(true);
-        }
     }
 
     @ElementCollection(fetch = FetchType.EAGER)
@@ -99,9 +97,22 @@ public class ResolvedCommand implements Serializable {
         this.mountsOut = mountsOut == null ?
                 Lists.<CommandMount>newArrayList() :
                 mountsOut;
-        for (final CommandMount mountOut : this.mountsIn) {
-            mountOut.setReadOnly(false);
+    }
+
+    @Transient
+    @JsonIgnore
+    public void setMounts(final List<CommandMount> mounts) {
+        final List<CommandMount> mountsIn = Lists.newArrayList();
+        final List<CommandMount> mountsOut = Lists.newArrayList();
+        for (final CommandMount mount : mounts) {
+            if (mount.isInput()) {
+                mountsIn.add(mount);
+            } else {
+                mountsOut.add(mount);
+            }
         }
+        setMountsIn(mountsIn);
+        setMountsOut(mountsOut);
     }
 
     @Override
