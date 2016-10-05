@@ -44,6 +44,16 @@ public class CommandTest {
                     "\"default-value\":\"bar\"," +
                     "\"command-line-flag\":\"--flag\"," +
                     "\"command-line-separator\":\"=\"}";
+    private static final String OUTPUT_JSON =
+            "{" +
+                    "\"name\":\"the_output\"," +
+                    "\"description\":\"It's the output\"," +
+                    "\"type\":\"Resource\"," +
+                    "\"label\":\"DATA\"," +
+                    "\"root\":\"$.json.path.expression\"," +
+                    "\"mount\":\"$.run.mounts[name='out']\"," +
+                    "\"path\":\"relative/path/to/dir\"" +
+            "}";
     private static final String INPUT_LIST_JSON =
             "[" + INPUT_0_JSON + ", " + FOO_INPUT + "]";
 
@@ -61,6 +71,7 @@ public class CommandTest {
                         "\"mounts\":[" + MOUNT_IN + ", " + MOUNT_OUT + "]" +
                     "}," +
                     "\"inputs\":" + INPUT_LIST_JSON + ", " +
+                    "\"outputs\":[" + OUTPUT_JSON + "], " +
                     "\"docker-image\":\"abc123\"}";
 
     private static final String RESOLVED_DOCKER_IMAGE_COMMAND_JSON_TEMPLATE =
@@ -127,6 +138,7 @@ public class CommandTest {
 
         final List<CommandInput> commandInputList =
                 mapper.readValue(INPUT_LIST_JSON, new TypeReference<List<CommandInput>>() {});
+        final CommandOutput commandOutput = mapper.readValue(OUTPUT_JSON, CommandOutput.class);
 
         final CommandMount input = mapper.readValue(MOUNT_IN, CommandMount.class);
         final CommandMount output = mapper.readValue(MOUNT_OUT, CommandMount.class);
@@ -140,6 +152,8 @@ public class CommandTest {
         assertEquals("http://abc.xyz", command.getInfoUrl());
         assertThat(command.getInputs(), hasSize(2));
         assertThat(commandInputList, everyItem(isIn(command.getInputs())));
+        assertThat(command.getOutputs(), hasSize(1));
+        assertEquals(commandOutput, command.getOutputs().get(0));
 
         final CommandRun run = command.getRun();
         assertEquals("cmd #foo# #my_cool_input#", run.getCommandLine());

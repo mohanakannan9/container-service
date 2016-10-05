@@ -82,6 +82,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         }
         Hibernate.initialize(command);
         Hibernate.initialize(command.getInputs());
+        Hibernate.initialize(command.getOutputs());
 
         final CommandRun run = command.getRun();
         if (run != null) {

@@ -27,6 +27,7 @@ public class Command extends AbstractHibernateEntity {
     @JsonProperty("docker-image") private String dockerImage;
     private CommandRun run;
     private List<CommandInput> inputs = Lists.newArrayList();
+    private List<CommandOutput> outputs = Lists.newArrayList();
 
     @Nonnull
     @ApiModelProperty(value = "The Command's user-readable name. Must be unique for a given docker image.", required = true)
@@ -91,6 +92,19 @@ public class Command extends AbstractHibernateEntity {
                 inputs;
     }
 
+    @Nullable
+    @ElementCollection
+    @ApiModelProperty("A list of outputs.")
+    public List<CommandOutput> getOutputs() {
+        return outputs;
+    }
+
+    void setOutputs(final List<CommandOutput> outputs) {
+        this.outputs = outputs == null ?
+                Lists.<CommandOutput>newArrayList() :
+                outputs;
+    }
+
     @Override
     public ToStringHelper addParentPropertiesToString(final ToStringHelper helper) {
         return super.addParentPropertiesToString(helper)
@@ -99,7 +113,8 @@ public class Command extends AbstractHibernateEntity {
                 .add("infoUrl", infoUrl)
                 .add("dockerImage", dockerImage)
                 .add("run", run)
-                .add("inputs", inputs);
+                .add("inputs", inputs)
+                .add("outputs", outputs);
     }
 
     @Override
@@ -113,12 +128,13 @@ public class Command extends AbstractHibernateEntity {
                 Objects.equals(this.infoUrl, that.infoUrl) &&
                 Objects.equals(this.dockerImage, that.dockerImage) &&
                 Objects.equals(this.run, that.run) &&
-                Objects.equals(this.inputs, that.inputs);
+                Objects.equals(this.inputs, that.inputs) &&
+                Objects.equals(this.outputs, that.outputs);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, description, infoUrl, dockerImage, run, inputs);
+        return Objects.hash(name, description, infoUrl, dockerImage, run, inputs, outputs);
     }
 
     @Override
