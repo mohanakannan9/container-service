@@ -16,8 +16,13 @@ import org.nrg.execution.model.DockerImage;
 import org.nrg.execution.model.DockerServer;
 import org.nrg.execution.services.DockerService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.nrg.xdat.security.services.RoleServiceI;
+import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.TestingAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -36,10 +41,15 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.nrg.execution.api.ContainerControlApi.LABEL_KEY;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.testSecurityContext;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -79,9 +89,12 @@ public class DockerRestApiTest {
     @Autowired
     private ContainerControlApi mockContainerControlApi;
 
+    @Autowired
+    private RoleServiceI mockRoleService;
+
     @Before
     public void setup() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
+        mockMvc = MockMvcBuilders.webAppContextSetup(wac).apply(springSecurity()).build();
     }
 
     @Test
@@ -89,8 +102,12 @@ public class DockerRestApiTest {
 
         final String path = "/docker/server";
 
+        final Authentication authentication = new TestingAuthenticationToken("nonAdmin", "nonAdmin");
         final MockHttpServletRequestBuilder request =
-                get(path).accept(JSON);
+                get(path).accept(JSON)
+                        .with(authentication(authentication))
+                        .with(csrf())
+                        .with(testSecurityContext());
 
         when(mockContainerControlApi.getServer())
                 .thenReturn(MOCK_CONTAINER_SERVER)
@@ -126,8 +143,20 @@ public class DockerRestApiTest {
 
         final String path = "/docker/server";
 
+        final UserI admin = mock(UserI.class);
+        when(admin.getLogin()).thenReturn("admin");
+        when(admin.getPassword()).thenReturn("admin");
+        when(mockRoleService.isSiteAdmin(admin)).thenReturn(true);
+
+        final Authentication authentication = new TestingAuthenticationToken(admin, "admin");
+
         final MockHttpServletRequestBuilder request =
-                post(path).content(containerServerJson).contentType(JSON);
+                post(path)
+                        .content(containerServerJson)
+                        .contentType(JSON)
+                        .with(authentication(authentication))
+                        .with(csrf())
+                        .with(testSecurityContext());
 
         when(mockContainerControlApi.setServer(MOCK_CONTAINER_SERVER))
                 .thenReturn(MOCK_CONTAINER_SERVER);
@@ -152,9 +181,45 @@ public class DockerRestApiTest {
     }
 
     @Test
+    public void testSetServerNonAdmin() throws Exception {
+
+        final String containerServerJson =
+                mapper.writeValueAsString(MOCK_CONTAINER_SERVER);
+
+        final String path = "/docker/server";
+
+        final UserI nonAdmin = mock(UserI.class);
+        when(nonAdmin.getLogin()).thenReturn("nonAdmin");
+        when(nonAdmin.getPassword()).thenReturn("nonAdmin");
+        when(mockRoleService.isSiteAdmin(nonAdmin)).thenReturn(false);
+        final Authentication authentication = new TestingAuthenticationToken(nonAdmin, "nonAdmin");
+
+        final MockHttpServletRequestBuilder request =
+                post(path)
+                        .content(containerServerJson)
+                        .contentType(JSON)
+                        .with(authentication(authentication))
+                        .with(csrf())
+                        .with(testSecurityContext());
+
+        final String exceptionResponse =
+                mockMvc.perform(request)
+                        .andExpect(status().isUnauthorized())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        assertThat(exceptionResponse, containsString("nonAdmin"));
+    }
+
+    @Test
     public void testPingServer() throws Exception {
         final String path = "/docker/server/ping";
-        final MockHttpServletRequestBuilder request = get(path);
+
+        final Authentication authentication = new TestingAuthenticationToken("nonAdmin", "nonAdmin");
+        final MockHttpServletRequestBuilder request =
+                get(path).with(authentication(authentication))
+                        .with(csrf()).with(testSecurityContext());
 
         when(mockContainerControlApi.pingServer())
                 .thenReturn("OK")
@@ -210,8 +275,11 @@ public class DockerRestApiTest {
                 .thenCallRealMethod();
 
         final String path = "/docker/images/save";
+        final Authentication authentication = new TestingAuthenticationToken("nonAdmin", "nonAdmin");
         final MockHttpServletRequestBuilder request =
-                post(path).param("image", fakeImageId);
+                post(path).param("image", fakeImageId)
+                        .with(authentication(authentication))
+                        .with(csrf()).with(testSecurityContext());
 
         final String responseStr =
                 mockMvc.perform(request)
@@ -269,8 +337,11 @@ public class DockerRestApiTest {
                 .thenCallRealMethod();
 
         final String path = "/docker/images/save";
+        final Authentication authentication = new TestingAuthenticationToken("nonAdmin", "nonAdmin");
         final MockHttpServletRequestBuilder request =
-                post(path).param("image", fakeImageId);
+                post(path).param("image", fakeImageId)
+                        .with(authentication(authentication))
+                        .with(csrf()).with(testSecurityContext());
 
         final String responseStr =
                 mockMvc.perform(request)

@@ -17,18 +17,26 @@ import org.nrg.execution.services.DockerService;
 import org.nrg.execution.services.DockerServiceImpl;
 import org.nrg.execution.services.HibernateCommandService;
 import org.nrg.execution.services.HibernateContainerExecutionService;
+import org.nrg.framework.services.ContextService;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.transporter.TransportService;
 import org.nrg.transporter.TransportServiceImpl;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.security.services.RoleHolder;
+import org.nrg.xdat.security.services.RoleServiceI;
 import org.nrg.xdat.services.AliasTokenService;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.orm.hibernate4.HibernateTransactionManager;
 import org.springframework.orm.hibernate4.LocalSessionFactoryBean;
+import org.springframework.security.authentication.TestingAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.transaction.support.ResourceTransactionManager;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
@@ -37,8 +45,9 @@ import java.util.Properties;
 
 @Configuration
 @EnableWebMvc
+@EnableWebSecurity
 @Import(ExecutionHibernateEntityTestConfig.class)
-public class DockerRestApiTestConfig {
+public class DockerRestApiTestConfig extends WebSecurityConfigurerAdapter {
     @Bean
     public ObjectMapper objectMapper() {
         return new ObjectMapper();
@@ -115,6 +124,23 @@ public class DockerRestApiTestConfig {
     }
 
     @Bean
+    public ContextService contextService(final ApplicationContext applicationContext) {
+        final ContextService contextService = new ContextService();
+        contextService.setApplicationContext(applicationContext);
+        return contextService;
+    }
+
+    @Bean
+    public RoleHolder mockRoleHolder(final RoleServiceI roleServiceI) {
+        return new RoleHolder(roleServiceI);
+    }
+
+    @Bean
+    public RoleServiceI mockRoleService() {
+        return Mockito.mock(RoleServiceI.class);
+    }
+
+    @Bean
     public LocalSessionFactoryBean sessionFactory(final DataSource dataSource, @Qualifier("hibernateProperties") final Properties properties) {
         final LocalSessionFactoryBean bean = new LocalSessionFactoryBean();
         bean.setDataSource(dataSource);
@@ -127,5 +153,10 @@ public class DockerRestApiTestConfig {
     @Bean
     public ResourceTransactionManager transactionManager(final SessionFactory sessionFactory) throws Exception {
         return new HibernateTransactionManager(sessionFactory);
+    }
+
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.authenticationProvider(new TestingAuthenticationProvider());
     }
 }

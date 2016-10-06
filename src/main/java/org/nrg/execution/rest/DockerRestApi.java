@@ -9,6 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.execution.exceptions.DockerServerException;
 import org.nrg.execution.exceptions.NoServerPrefException;
 import org.nrg.execution.exceptions.NotFoundException;
+import org.nrg.execution.exceptions.UnauthorizedException;
 import org.nrg.execution.model.Command;
 import org.nrg.execution.model.DockerHub;
 import org.nrg.execution.model.DockerImage;
@@ -17,6 +18,13 @@ import org.nrg.execution.services.DockerService;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.nrg.xapi.model.users.User;
+import org.nrg.xdat.XDAT;
+import org.nrg.xdat.security.helpers.Permissions;
+import org.nrg.xdat.security.helpers.Roles;
+import org.nrg.xdat.security.helpers.UserHelper;
+import org.nrg.xdat.security.services.PermissionsServiceI;
+import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -72,7 +80,11 @@ public class DockerRestApi {
             @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = "/server", method = POST)
     public ResponseEntity<String> setServer(final @RequestBody DockerServer dockerServer)
-            throws InvalidPreferenceName, JsonProcessingException {
+            throws InvalidPreferenceName, JsonProcessingException, UnauthorizedException {
+        final UserI userI = XDAT.getUserDetails();
+        if (!Roles.isSiteAdmin(userI)) {
+            throw new UnauthorizedException(String.format("User %s is not an admin.", userI.getLogin()));
+        }
         if (StringUtils.isBlank(dockerServer.getHost())) {
             return new ResponseEntity<>("Must set the \"host\" property in request body.",
                     HttpStatus.BAD_REQUEST);
@@ -97,7 +109,13 @@ public class DockerRestApi {
 
     @RequestMapping(value = "/hubs", method = POST)
     @ResponseBody
-    public ResponseEntity<DockerHub> setHub(final @RequestBody DockerHub hub) throws NrgServiceRuntimeException {
+    public ResponseEntity<DockerHub> setHub(final @RequestBody DockerHub hub)
+            throws NrgServiceRuntimeException, UnauthorizedException {
+        final UserI userI = XDAT.getUserDetails();
+        final User xapiUser = new User(userI);
+        if (!xapiUser.isAdmin()) {
+            throw new UnauthorizedException(String.format("User %s is not an admin.", userI.getLogin()));
+        }
         return new ResponseEntity<>(dockerService.setHub(hub), HttpStatus.CREATED);
     }
 
@@ -210,5 +228,13 @@ public class DockerRestApi {
     public String handleFailedDependency() {
         return "Set up Docker server before using this REST endpoint.";
     }
+
+    @ResponseStatus(value = HttpStatus.UNAUTHORIZED)
+    @ExceptionHandler(value = {UnauthorizedException.class})
+    public String handleUnauthorized(final Exception e) {
+        return "Unauthorized.\n" + e.getMessage();
+    }
+
+
 }
 
