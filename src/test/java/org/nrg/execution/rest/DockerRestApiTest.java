@@ -314,8 +314,8 @@ public class DockerRestApiTest {
                             "]" +
                         "}," +
                         "\"inputs\":[" +
-                            "{\"name\":\"scanId\", \"required\":true, \"root-property\":\"ID\"}, " +
-                            "{\"name\":\"sessionId\", \"required\":true, \"root-property\":\"ID\"}" +
+                            "{\"name\":\"scanId\", \"required\":true, \"parent-property\":\"ID\"}, " +
+                            "{\"name\":\"sessionId\", \"required\":true, \"parent-property\":\"ID\"}" +
                         "] " +
                     "}]";
         final List<Command> expectedList = mapper.readValue(labelTestCommandListJson, new TypeReference<List<Command>>(){});

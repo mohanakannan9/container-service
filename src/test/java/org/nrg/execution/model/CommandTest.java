@@ -123,7 +123,7 @@ public class CommandTest {
 
         assertEquals("foo", fooInput.getName());
         assertEquals("A foo that bars", fooInput.getDescription());
-        assertNull(fooInput.getType());
+        assertEquals(CommandInput.Type.STRING, fooInput.getType());
         assertEquals(false, fooInput.isRequired());
         assertNull(fooInput.getTrueValue());
         assertNull(fooInput.getFalseValue());
@@ -214,7 +214,7 @@ public class CommandTest {
 
         final Map<String, String> variableRuntimeValues = Maps.newHashMap();
         variableRuntimeValues.put("my_cool_input", "false");
-        final ResolvedCommand resolvedCommand = commandService.resolveCommand(command, variableRuntimeValues);
+        final ResolvedCommand resolvedCommand = commandService.resolveCommand(command, variableRuntimeValues, null);
 
         assertEquals(expected.getCommandLine(), resolvedCommand.getCommandLine());
         assertEquals(expected.getEnvironmentVariables(), resolvedCommand.getEnvironmentVariables());
@@ -223,7 +223,7 @@ public class CommandTest {
         assertEquals(expected, resolvedCommand);
 
         variableRuntimeValues.put("my_cool_input", "true");
-        final ResolvedCommand resolvedCommand2 = commandService.resolveCommand(command, variableRuntimeValues);
+        final ResolvedCommand resolvedCommand2 = commandService.resolveCommand(command, variableRuntimeValues, null);
 
         assertEquals(expected.getEnvironmentVariables(), resolvedCommand2.getEnvironmentVariables());
         assertEquals(expected.getMountsIn(), resolvedCommand2.getMountsIn());

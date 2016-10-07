@@ -21,11 +21,14 @@ public interface CommandService extends BaseHibernateService<Command> {
     Command get(Long id) throws NotFoundException;
 
     ResolvedCommand resolveCommand(final Long commandId,
-                                   final Map<String, String> variableRuntimeValues)
+                                   final Map<String, String> variableRuntimeValues,
+                                   final UserI userI)
             throws NotFoundException, CommandInputResolutionException;
-    ResolvedCommand resolveCommand(final Command command) throws NotFoundException, CommandInputResolutionException;
+    ResolvedCommand resolveCommand(final Command command, final UserI userI)
+            throws NotFoundException, CommandInputResolutionException;
     ResolvedCommand resolveCommand(final Command command,
-                                   final Map<String, String> variableRuntimeValues)
+                                   final Map<String, String> variableRuntimeValues,
+                                   final UserI userI)
             throws NotFoundException, CommandInputResolutionException;
 
     ContainerExecution launchCommand(final ResolvedCommand resolvedCommand, final UserI userI) throws NoServerPrefException, DockerServerException;

@@ -86,7 +86,7 @@ public class Command extends AbstractHibernateEntity {
         return inputs;
     }
 
-    void setInputs(final List<CommandInput> inputs) {
+    public void setInputs(final List<CommandInput> inputs) {
         this.inputs = inputs == null ?
                 Lists.<CommandInput>newArrayList() :
                 inputs;
@@ -99,7 +99,7 @@ public class Command extends AbstractHibernateEntity {
         return outputs;
     }
 
-    void setOutputs(final List<CommandOutput> outputs) {
+    public void setOutputs(final List<CommandOutput> outputs) {
         this.outputs = outputs == null ?
                 Lists.<CommandOutput>newArrayList() :
                 outputs;
