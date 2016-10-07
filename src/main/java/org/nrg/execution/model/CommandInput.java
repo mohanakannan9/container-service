@@ -7,6 +7,8 @@ import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.persistence.Embeddable;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.Transient;
 import java.io.Serializable;
 import java.util.Objects;
@@ -15,7 +17,7 @@ import java.util.Objects;
 public class CommandInput implements Serializable {
     private String name;
     private String description;
-    private String type;
+    private Type type;
     private Boolean required;
     @JsonProperty("root-property") private String rootProperty;
     @JsonProperty("default-value") private String defaultValue;
@@ -31,7 +33,7 @@ public class CommandInput implements Serializable {
         return name;
     }
 
-    public void setName(String name) {
+    public void setName(final String name) {
         this.name = name;
     }
 
@@ -44,12 +46,13 @@ public class CommandInput implements Serializable {
         this.description = description;
     }
 
-    @ApiModelProperty(value = "Type of the command input", allowableValues = "string, boolean, number")
-    public String getType() {
+    @Enumerated(EnumType.STRING)
+    @ApiModelProperty(value = "Type of the command input", allowableValues = "string, boolean, number, Project, Subject, Session, Scan, Assessor, Resource, Config")
+    public Type getType() {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(final Type type) {
         this.type = type;
     }
 
@@ -197,5 +200,17 @@ public class CommandInput implements Serializable {
                 .add("falseValue", falseValue)
                 .add("value", value)
                 .toString();
+    }
+
+    public enum Type {
+        @JsonProperty("string") STRING,
+        @JsonProperty("boolean") BOOLEAN,
+        @JsonProperty("number") NUMBER,
+        @JsonProperty("Project") PROJECT,
+        @JsonProperty("Subject") SUBJECT,
+        @JsonProperty("Session") SESSION,
+        @JsonProperty("Scan") SCAN,
+        @JsonProperty("Assessor") ASSESSOR,
+        @JsonProperty("Config") CONFIG
     }
 }

@@ -112,7 +112,7 @@ public class CommandTest {
 
         assertEquals("my_cool_input", commandInput0.getName());
         assertEquals("A boolean value", commandInput0.getDescription());
-        assertEquals("boolean", commandInput0.getType());
+        assertEquals(CommandInput.Type.BOOLEAN, commandInput0.getType());
         assertEquals(true, commandInput0.isRequired());
         assertEquals("-b", commandInput0.getTrueValue());
         assertEquals("", commandInput0.getFalseValue());

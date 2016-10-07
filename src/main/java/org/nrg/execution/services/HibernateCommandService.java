@@ -189,7 +189,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             return null;
         }
 
-        if (StringUtils.isNotBlank(input.getType()) && input.getType().equalsIgnoreCase("boolean")) {
+        if (input.getType() != null && input.getType().equals(CommandInput.Type.BOOLEAN)) {
             if (Boolean.parseBoolean(rawValue)) {
                 return input.getTrueValue() != null ? input.getTrueValue() : "";
             } else {
