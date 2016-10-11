@@ -1,6 +1,6 @@
 package org.nrg.execution.events;
 
-import org.nrg.execution.exceptions.CommandVariableResolutionException;
+import org.nrg.execution.exceptions.CommandInputResolutionException;
 import org.nrg.execution.exceptions.DockerServerException;
 import org.nrg.execution.exceptions.NoServerPrefException;
 import org.nrg.execution.exceptions.NotFoundException;
@@ -58,7 +58,7 @@ public class SessionArchiveListener implements Consumer<Event<SessionArchiveEven
                     commandService.launchCommand(commandId, sessionArchivedEvent.getUser(), sessionArchivedEvent.getSession());
                 } catch (XFTInitException e) {
                     e.printStackTrace();
-                } catch (CommandVariableResolutionException e) {
+                } catch (CommandInputResolutionException e) {
                     e.printStackTrace();
                 } catch (NotFoundException e) {
                     e.printStackTrace();

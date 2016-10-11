@@ -4,13 +4,12 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Hibernate;
 import org.hibernate.exception.ConstraintViolationException;
 import org.nrg.execution.api.ContainerControlApi;
 import org.nrg.execution.daos.CommandDao;
-import org.nrg.execution.exceptions.CommandVariableResolutionException;
+import org.nrg.execution.exceptions.CommandInputResolutionException;
 import org.nrg.execution.exceptions.DockerServerException;
 import org.nrg.execution.exceptions.NoServerPrefException;
 import org.nrg.execution.exceptions.NotFoundException;
@@ -50,9 +49,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Service
 @Transactional
@@ -122,21 +118,21 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     @Override
     public ResolvedCommand resolveCommand(final Long commandId,
                                           final Map<String, String> variableValuesProvidedAtRuntime)
-            throws NotFoundException, CommandVariableResolutionException {
+            throws NotFoundException, CommandInputResolutionException {
         final Command command = get(commandId);
         return resolveCommand(command, variableValuesProvidedAtRuntime);
     }
 
     @Override
     public ResolvedCommand resolveCommand(final Command command)
-            throws NotFoundException, CommandVariableResolutionException {
+            throws NotFoundException, CommandInputResolutionException {
         return resolveCommand(command, Maps.<String, String>newHashMap());
     }
 
     @Override
     public ResolvedCommand resolveCommand(final Command command,
                                           final Map<String, String> inputValuesProvidedAtRuntime)
-            throws NotFoundException, CommandVariableResolutionException {
+            throws NotFoundException, CommandInputResolutionException {
 
         if (inputValuesProvidedAtRuntime == null) {
             return resolveCommand(command);
@@ -152,7 +148,8 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
 
                 // If resolved value is null, and input is required, that is an error
                 if (resolvedValue == null && input.isRequired()) {
-                    throw new CommandVariableResolutionException(input);
+                    final String message = String.format("Input \"%s\" has no provided or default value, but is required.", input.getName());
+                    throw new CommandInputResolutionException(message, input);
                 }
 
                 // Only substitute the input into the command line if a replacementKey is set
@@ -214,7 +211,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
                                     final ItemI itemI,
                                     final Map<String, String> resourceLabelToCatalogPath,
                                     final Context context)
-            throws XFTInitException, NotFoundException, CommandVariableResolutionException {
+            throws XFTInitException, NotFoundException, CommandInputResolutionException {
 
 //        if (!doesItemMatchMatchers(itemI, action.getRootMatchers(), cache)) {
 //            return null;
@@ -326,14 +323,14 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
 
     @Override
     public ContainerExecution launchCommand(final Long commandId, final Map<String, String> variableRuntimeValues, final UserI userI)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandVariableResolutionException {
+            throws NoServerPrefException, DockerServerException, NotFoundException, CommandInputResolutionException {
         final ResolvedCommand resolvedCommand = resolveCommand(commandId, variableRuntimeValues);
         return launchCommand(resolvedCommand, userI);
     }
 
     @Override
     public ContainerExecution launchCommand(final Long commandId, final UserI userI, final XnatImagesessiondata session)
-            throws NotFoundException, XFTInitException, CommandVariableResolutionException, NoServerPrefException, DockerServerException {
+            throws NotFoundException, XFTInitException, CommandInputResolutionException, NoServerPrefException, DockerServerException {
         final Command command = get(commandId);
 
         final String projectId = session.getProject();
@@ -374,7 +371,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
 
     @Override
     public ContainerExecution launchCommand(Long commandId, UserI userI, XnatImagesessiondata session, XnatImagescandata scan)
-            throws NotFoundException, XFTInitException, CommandVariableResolutionException, NoServerPrefException, DockerServerException {
+            throws NotFoundException, XFTInitException, CommandInputResolutionException, NoServerPrefException, DockerServerException {
         final Command command = get(commandId);
 
         final ResolvedCommand preparedToLaunch = prepareToLaunchScan(command, session, scan, userI);
@@ -389,7 +386,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
                                                 final XnatImagesessiondata session,
                                                 final XnatImagescandata scan,
                                                 final UserI userI)
-            throws CommandVariableResolutionException, NotFoundException, XFTInitException, NoServerPrefException {
+            throws CommandInputResolutionException, NotFoundException, XFTInitException, NoServerPrefException {
         final String projectId = session.getProject();
         final XnatProjectdata proj = XnatProjectdata.getXnatProjectdatasById(projectId, userI, false);
         final String rootArchivePath = proj.getRootArchivePath();

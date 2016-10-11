@@ -6,7 +6,7 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.execution.exceptions.BadRequestException;
-import org.nrg.execution.exceptions.CommandVariableResolutionException;
+import org.nrg.execution.exceptions.CommandInputResolutionException;
 import org.nrg.execution.exceptions.DockerServerException;
 import org.nrg.execution.exceptions.NoServerPrefException;
 import org.nrg.execution.exceptions.NotFoundException;
@@ -35,14 +35,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
-import javax.transaction.Transactional;
 import java.util.List;
 import java.util.Map;
 
 import static org.springframework.web.bind.annotation.RequestMethod.DELETE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
-import static org.springframework.web.bind.annotation.RequestMethod.PUT;
 
 @XapiRestController
 @RequestMapping("/commands")
@@ -121,8 +119,8 @@ public class CommandRestApi {
         final UserI userI = XDAT.getUserDetails();
         try {
             return commandService.launchCommand(id, allRequestParams, userI);
-        } catch (CommandVariableResolutionException e) {
-            throw new BadRequestException("Must provide value for variable " + e.getVariable().getName() + ".", e);
+        } catch (CommandInputResolutionException e) {
+            throw new BadRequestException("Must provide value for variable " + e.getInput().getName() + ".", e);
         }
     }
 
@@ -131,7 +129,7 @@ public class CommandRestApi {
     @ResponseBody
     public ResolvedCommand resolve(final @PathVariable Long id,
                                    final @RequestParam Map<String, String> allRequestParams)
-            throws NotFoundException, CommandVariableResolutionException, NoServerPrefException, XFTInitException {
+            throws NotFoundException, CommandInputResolutionException, NoServerPrefException, XFTInitException {
         final UserI userI = XDAT.getUserDetails();
         final Command command = commandService.retrieve(id);
         if (command == null) {
@@ -159,7 +157,7 @@ public class CommandRestApi {
     @ResponseBody
     public ContainerExecution launchTest(final @PathVariable Long id,
                                    final @RequestParam Map<String, String> allRequestParams)
-            throws NotFoundException, CommandVariableResolutionException, NoServerPrefException, XFTInitException, DockerServerException {
+            throws NotFoundException, CommandInputResolutionException, NoServerPrefException, XFTInitException, DockerServerException {
         final UserI userI = XDAT.getUserDetails();
 
         if (allRequestParams.containsKey("id")) {

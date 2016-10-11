@@ -1,7 +1,7 @@
 package org.nrg.execution.services;
 
 import com.google.common.annotations.VisibleForTesting;
-import org.nrg.execution.exceptions.CommandVariableResolutionException;
+import org.nrg.execution.exceptions.CommandInputResolutionException;
 import org.nrg.execution.exceptions.DockerServerException;
 import org.nrg.execution.exceptions.NoServerPrefException;
 import org.nrg.execution.exceptions.NotFoundException;
@@ -22,11 +22,11 @@ public interface CommandService extends BaseHibernateService<Command> {
 
     ResolvedCommand resolveCommand(final Long commandId,
                                    final Map<String, String> variableRuntimeValues)
-            throws NotFoundException, CommandVariableResolutionException;
-    ResolvedCommand resolveCommand(final Command command) throws NotFoundException, CommandVariableResolutionException;
+            throws NotFoundException, CommandInputResolutionException;
+    ResolvedCommand resolveCommand(final Command command) throws NotFoundException, CommandInputResolutionException;
     ResolvedCommand resolveCommand(final Command command,
                                    final Map<String, String> variableRuntimeValues)
-            throws NotFoundException, CommandVariableResolutionException;
+            throws NotFoundException, CommandInputResolutionException;
 
     ContainerExecution launchCommand(final ResolvedCommand resolvedCommand, final UserI userI) throws NoServerPrefException, DockerServerException;
     ContainerExecution launchCommand(final ResolvedCommand resolvedCommand,
@@ -36,13 +36,13 @@ public interface CommandService extends BaseHibernateService<Command> {
             throws NoServerPrefException, DockerServerException;
     ContainerExecution launchCommand(final Long commandId,
                          final Map<String, String> variableRuntimeValues, final UserI userI)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandVariableResolutionException;
+            throws NoServerPrefException, DockerServerException, NotFoundException, CommandInputResolutionException;
 
     ContainerExecution launchCommand(Long commandId, UserI userI, XnatImagesessiondata session)
-            throws NotFoundException, CommandVariableResolutionException, NoServerPrefException,
+            throws NotFoundException, CommandInputResolutionException, NoServerPrefException,
             DockerServerException, XFTInitException;
     ContainerExecution launchCommand(Long commandId, UserI userI, XnatImagesessiondata session, XnatImagescandata scan)
-            throws NotFoundException, XFTInitException, CommandVariableResolutionException, NoServerPrefException, DockerServerException;
+            throws NotFoundException, XFTInitException, CommandInputResolutionException, NoServerPrefException, DockerServerException;
 
     List<Command> save(final List<Command> commands);
 
@@ -51,5 +51,5 @@ public interface CommandService extends BaseHibernateService<Command> {
                                         XnatImagesessiondata session,
                                         XnatImagescandata scan,
                                         UserI userI)
-            throws CommandVariableResolutionException, NotFoundException, XFTInitException, NoServerPrefException;
+            throws CommandInputResolutionException, NotFoundException, XFTInitException, NoServerPrefException;
 }

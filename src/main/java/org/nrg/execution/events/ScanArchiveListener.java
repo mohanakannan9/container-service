@@ -1,6 +1,6 @@
 package org.nrg.execution.events;
 
-import org.nrg.execution.exceptions.CommandVariableResolutionException;
+import org.nrg.execution.exceptions.CommandInputResolutionException;
 import org.nrg.execution.exceptions.DockerServerException;
 import org.nrg.execution.exceptions.NoServerPrefException;
 import org.nrg.execution.exceptions.NotFoundException;
@@ -53,7 +53,7 @@ public class ScanArchiveListener implements Consumer<Event<ScanArchiveEvent>> {
                     commandService.launchCommand(commandId, scanArchiveEvent.getUser(), scanArchiveEvent.getSession(), scanArchiveEvent.getScan());
                 } catch (NotFoundException e) {
                     e.printStackTrace();
-                } catch (CommandVariableResolutionException e) {
+                } catch (CommandInputResolutionException e) {
                     e.printStackTrace();
                 } catch (XFTInitException e) {
                     e.printStackTrace();
