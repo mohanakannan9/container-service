@@ -1,5 +1,6 @@
 package org.nrg.execution.model.xnat;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import org.nrg.xdat.model.XnatAbstractresourceI;
@@ -15,6 +16,7 @@ import java.util.Objects;
 
 
 public class Session {
+    @JsonIgnore private XnatImagesessiondataI xnatImagesessiondataI;
     private String id;
     private String label;
     private String xsiType;
@@ -28,6 +30,7 @@ public class Session {
         this(xnatImagesessiondataI, XnatProjectdata.getXnatProjectdatasById(xnatImagesessiondataI.getProject(), userI, false).getRootArchivePath());
     }
     public Session(final XnatImagesessiondataI xnatImagesessiondataI, final String rootArchivePath) {
+        this.xnatImagesessiondataI = xnatImagesessiondataI;
         this.id = xnatImagesessiondataI.getId();
         this.label = xnatImagesessiondataI.getLabel();
         this.xsiType = xnatImagesessiondataI.getXSIType();
@@ -48,6 +51,14 @@ public class Session {
         for (final XnatImageassessordataI xnatImageassessordataI : xnatImagesessiondataI.getAssessors_assessor()) {
             assessors.add(new Assessor(xnatImageassessordataI, rootArchivePath));
         }
+    }
+
+    public XnatImagesessiondataI getXnatImagesessiondataI() {
+        return xnatImagesessiondataI;
+    }
+
+    public void setXnatImagesessiondataI(final XnatImagesessiondataI xnatImagesessiondataI) {
+        this.xnatImagesessiondataI = xnatImagesessiondataI;
     }
 
     public String getXsiType() {
@@ -103,28 +114,31 @@ public class Session {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final Session that = (Session) o;
-        return Objects.equals(scans, that.scans) &&
-                Objects.equals(assessors, that.assessors) &&
-                Objects.equals(resources, that.resources) &&
-                Objects.equals(id, that.id) &&
-                Objects.equals(label, that.label) &&
-                Objects.equals(xsiType, that.xsiType);
+        return Objects.equals(this.xnatImagesessiondataI, that.xnatImagesessiondataI) &&
+                Objects.equals(this.id, that.id) &&
+                Objects.equals(this.label, that.label) &&
+                Objects.equals(this.xsiType, that.xsiType) &&
+                Objects.equals(this.scans, that.scans) &&
+                Objects.equals(this.assessors, that.assessors) &&
+                Objects.equals(this.resources, that.resources);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(scans, assessors, resources, id, label, xsiType);
+        return Objects.hash(xnatImagesessiondataI, scans, assessors, resources, id, label, xsiType);
     }
+
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-                .add("scans", scans)
-                .add("assessors", assessors)
-                .add("resources", resources)
+                .add("xnatImagesessiondataI", xnatImagesessiondataI)
                 .add("id", id)
                 .add("label", label)
                 .add("xsiType", xsiType)
+                .add("scans", scans)
+                .add("assessors", assessors)
+                .add("resources", resources)
                 .toString();
     }
 }

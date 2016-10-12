@@ -1,19 +1,14 @@
 package org.nrg.execution.services;
 
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.Filter;
 import com.jayway.jsonpath.JsonPath;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.ecs.xhtml.input;
 import org.hibernate.Hibernate;
 import org.hibernate.exception.ConstraintViolationException;
 import org.nrg.execution.api.ContainerControlApi;
@@ -23,13 +18,12 @@ import org.nrg.execution.exceptions.DockerServerException;
 import org.nrg.execution.exceptions.NoServerPrefException;
 import org.nrg.execution.exceptions.NotFoundException;
 import org.nrg.execution.model.Command;
-import org.nrg.execution.model.CommandMount;
 import org.nrg.execution.model.CommandInput;
+import org.nrg.execution.model.CommandMount;
 import org.nrg.execution.model.CommandRun;
 import org.nrg.execution.model.ContainerExecution;
 import org.nrg.execution.model.Context;
 import org.nrg.execution.model.ResolvedCommand;
-import org.nrg.execution.model.xnat.Resource;
 import org.nrg.execution.model.xnat.Scan;
 import org.nrg.execution.model.xnat.Session;
 import org.nrg.framework.exceptions.NrgRuntimeException;
@@ -38,16 +32,12 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.transporter.TransportService;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.om.XnatAbstractresource;
-import org.nrg.xdat.om.XnatImagescandata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata.UnknownPrimaryProjectException;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.services.AliasTokenService;
-import org.nrg.xft.ItemI;
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
@@ -73,6 +63,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         implements CommandService {
     private static final Logger log = LoggerFactory.getLogger(HibernateCommandService.class);
 
+    @Autowired private ObjectMapper mapper;
     @Autowired private ContainerControlApi controlApi;
     @Autowired private AliasTokenService aliasTokenService;
     @Autowired private SiteConfigPreferences siteConfigPreferences;
@@ -158,103 +149,24 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     @Override
     public ContainerExecution launchCommand(final ResolvedCommand resolvedCommand, final UserI userI)
             throws NoServerPrefException, DockerServerException {
-        return launchCommand(resolvedCommand, null, null, userI);
+        return launchCommand(resolvedCommand, Maps.<String, String>newHashMap(), userI);
     }
 
     @Override
     public ContainerExecution launchCommand(final ResolvedCommand resolvedCommand,
-                                            final String rootObjectId,
-                                            final String rootObjectXsiType,
+                                            final Map<String, String> inputValues,
                                             final UserI userI)
             throws NoServerPrefException, DockerServerException {
-        final String containerId = controlApi.launchImage(resolvedCommand);
-        return containerExecutionService.save(resolvedCommand, containerId, rootObjectId, rootObjectXsiType, userI);
-    }
-
-    @Override
-    public ContainerExecution launchCommand(final Long commandId, final Map<String, String> variableRuntimeValues, final UserI userI)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandInputResolutionException {
-        final ResolvedCommand resolvedCommand = resolveCommand(commandId, variableRuntimeValues, userI);
-        return launchCommand(resolvedCommand, userI);
-    }
-
-    @Override
-    public ContainerExecution launchCommand(final Long commandId, final UserI userI, final XnatImagesessiondata session)
-            throws NotFoundException, XFTInitException, CommandInputResolutionException, NoServerPrefException, DockerServerException {
-        final Command command = get(commandId);
-
-        final String projectId = session.getProject();
-        final XnatProjectdata proj = XnatProjectdata.getXnatProjectdatasById(projectId, userI, false);
-        final String rootArchivePath = proj.getRootArchivePath();
-        final List<XnatAbstractresource> resources = session.getResources_resource();
-
-        final Map<String, String> resourceLabelToCatalogPath = Maps.newHashMap();
-        if (resources != null && StringUtils.isNotBlank(rootArchivePath)) {
-            for (final XnatAbstractresource resource : resources) {
-                if (resource instanceof XnatResourcecatalog) {
-                    final XnatResourcecatalog resourceCatalog = (XnatResourcecatalog) resource;
-                    resourceLabelToCatalogPath.put(resourceCatalog.getLabel(),
-                            resourceCatalog.getCatalogFile(rootArchivePath).getParent());
-                }
-            }
-        } else {
-            log.info("Session with id " + session.getId() + " has no resources or a blank archive path");
-        }
-
-        try {
-            resourceLabelToCatalogPath.put("root", session.getRelativeArchivePath());
-        } catch (UnknownPrimaryProjectException e) {
-            log.info("Could not get session's archive path", e);
-        }
-
-        final ResolvedCommand resolvedCommand =
-                CommandResolutionHelper.resolve(command, session, resourceLabelToCatalogPath, Context.newContext(), userI);
-        if (resolvedCommand == null) {
-            // TODO throw an error
-            return null;
-        }
-
         final ResolvedCommand preparedToLaunch = prelaunch(resolvedCommand, userI);
-
-        return launchCommand(preparedToLaunch, session.getId(), session.getXSIType(), userI);
+        final String containerId = controlApi.launchImage(preparedToLaunch);
+        return containerExecutionService.save(preparedToLaunch, containerId, inputValues, userI);
     }
 
     @Override
-    public ContainerExecution launchCommand(final Long commandId, final UserI userI, final XnatImagescandata scan, final String sessionId, final String rootArchivePath)
-            throws NotFoundException, XFTInitException, CommandInputResolutionException, NoServerPrefException, DockerServerException {
-        final Command command = get(commandId);
-
-        final ResolvedCommand preparedToLaunch = prepareToLaunchScan(command, scan, sessionId, rootArchivePath, userI);
-
-        final String concattenatedSessionScanId = sessionId + ":" + scan.getId();
-        return launchCommand(preparedToLaunch, concattenatedSessionScanId, scan.getXSIType(), userI);
-    }
-
-    private ResolvedCommand prepareToLaunchScan(final Command command,
-                                                final XnatImagescandata xnatImagescandata,
-                                                final String sessionId,
-                                                final String rootArchivePath,
-                                                final UserI userI)
-            throws CommandInputResolutionException, NotFoundException, XFTInitException, NoServerPrefException {
-        final Scan scan = new Scan(xnatImagescandata, rootArchivePath);
-
-        final Map<String, String> resourceLabelToCatalogPath = Maps.newHashMap();
-        for (final Resource resource : scan.getResources()) {
-            resourceLabelToCatalogPath.put(resource.getLabel(), resource.getDirectory());
-        }
-
-        final Context context = Context.newContext();
-        context.put("scanId", scan.getId());
-        context.put("sessionId", sessionId);
-
-        final ResolvedCommand resolvedCommand =
-                CommandResolutionHelper.resolve(command, xnatImagescandata, resourceLabelToCatalogPath, context, userI);
-        if (resolvedCommand == null) {
-            // TODO throw an error
-            return null;
-        }
-
-        return prelaunch(resolvedCommand, userI);
+    public ContainerExecution launchCommand(final Long commandId, final Map<String, String> runtimeValues, final UserI userI)
+            throws NoServerPrefException, DockerServerException, NotFoundException, CommandInputResolutionException {
+        final ResolvedCommand resolvedCommand = resolveCommand(commandId, runtimeValues, userI);
+        return launchCommand(resolvedCommand, runtimeValues, userI);
     }
 
     private ResolvedCommand prelaunch(final ResolvedCommand resolvedCommand, final UserI userI) throws NoServerPrefException {
@@ -334,105 +246,6 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
                 throws CommandInputResolutionException {
             final CommandResolutionHelper helper = new CommandResolutionHelper(command, inputValues, userI);
             return helper.resolve();
-        }
-
-        private static ResolvedCommand resolve(final Command command,
-                                               final ItemI itemI,
-                                               final Map<String, String> resourceLabelToCatalogPath,
-                                               final Context context,
-                                               final UserI userI)
-                throws XFTInitException, NotFoundException, CommandInputResolutionException {
-
-//        if (!doesItemMatchMatchers(itemI, action.getRootMatchers(), cache)) {
-//            return null;
-//        }
-            String itemId = "<not found>";
-            try {
-                itemId = itemI.getItem().getIDValue(); // TODO this is null for some reason?
-            } catch (ElementNotFoundException ignored) {
-                // Can't get ID.
-            }
-
-            // Find values for any inputs that we can.
-            if (command.getInputs() != null) {
-                for (final CommandInput variable : command.getInputs()) {
-                    // Try to get inputs of type=property out of the root object
-                    if (StringUtils.isNotBlank(variable.getParentProperty())) {
-                        try {
-
-                            final String property = (String)itemI.getProperty(variable.getParentProperty());
-                            if (property != null) {
-                                variable.setValue(property);
-                            }
-                        } catch (ElementNotFoundException | FieldNotFoundException e) {
-                            log.info("Field %s not found on item with id %s",
-                                    variable.getParentProperty(), itemId);
-                        }
-                    }
-
-                    // Now try to get values from the context.
-                    // (Even if we already found the value from the item, we want to do this.
-                    //   Values in the context take precedence over XFTItem properties.)
-                    if (StringUtils.isNotBlank(context.get(variable.getName()))) {
-                        variable.setValue(context.get(variable.getName()));
-                    }
-                }
-            }
-
-            final CommandRun run = command.getRun();
-            if (run.getMounts() != null && !run.getMounts().isEmpty()) {
-                // Item needs resources
-                final List<CommandMount> mountsIn = Lists.newArrayList();
-                final List<CommandMount> mountsOut = Lists.newArrayList();
-                for (final CommandMount mount : run.getMounts()) {
-                    if (mount.isInput()) {
-                        mountsIn.add(mount);
-                    } else {
-                        mountsOut.add(mount);
-                    }
-                }
-
-                if (!mountsIn.isEmpty() && (resourceLabelToCatalogPath == null || resourceLabelToCatalogPath.isEmpty())) {
-                    // Item has no resources, but we need some staged. Action does not work.
-                    return null;
-                } else {
-                    for (final CommandMount mount : mountsIn) {
-                        final String resourceCatalogPath = resourceLabelToCatalogPath.get(mount.getName());
-                        if (StringUtils.isNotBlank(resourceCatalogPath)) {
-                            mount.setHostPath(resourceLabelToCatalogPath.get(mount.getName()));
-                        } else {
-                            if(log.isDebugEnabled()) {
-                                final String message =
-                                        String.format("Command %d needed resource, but item has no resource named %s",
-                                                command.getId(), mount.getName());
-                                log.debug(message);
-                            }
-                            return null;
-                        }
-                    }
-                }
-
-                // If there are no resources, then we don't need to check if they can be overwritten
-                if (!(resourceLabelToCatalogPath == null || resourceLabelToCatalogPath.isEmpty())) {
-                    // There are resources, so check if we will need to overwrite any
-                    for (final CommandMount mount : mountsOut) {
-
-                        if (resourceLabelToCatalogPath.containsKey(mount.getName()) &&
-                                !mount.getOverwrite()) {
-                            if(log.isDebugEnabled()) {
-                                final String message =
-                                        String.format("Action %d will create resource, but item already has " +
-                                                        "a resource named %s and action cannot overwrite it.",
-                                                command.getId(), mount.getName());
-                                log.debug(message);
-                            }
-                            return null;
-                        }
-                    }
-                }
-            }
-
-            return resolve(command, context, userI);
         }
 
         private ResolvedCommand resolve() throws CommandInputResolutionException {

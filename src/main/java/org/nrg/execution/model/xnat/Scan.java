@@ -1,5 +1,6 @@
 package org.nrg.execution.model.xnat;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import org.nrg.xdat.model.XnatAbstractresourceI;
@@ -10,6 +11,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class Scan {
+    @JsonIgnore private XnatImagescandataI xnatImagescandataI;
     private String id;
     private String xsiType;
     private String scanType;
@@ -18,6 +20,7 @@ public class Scan {
     public Scan() {}
 
     public Scan(final XnatImagescandataI xnatImagescandataI, final String rootArchivePath) {
+        this.xnatImagescandataI = xnatImagescandataI;
         this.id = xnatImagescandataI.getId();
         this.xsiType = xnatImagescandataI.getXSIType();
         this.scanType = xnatImagescandataI.getType();
@@ -28,6 +31,14 @@ public class Scan {
                 resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, rootArchivePath));
             }
         }
+    }
+
+    public XnatImagescandataI getXnatImagescandataI() {
+        return xnatImagescandataI;
+    }
+
+    public void setXnatImagescandataI(final XnatImagescandataI xnatImagescandataI) {
+        this.xnatImagescandataI = xnatImagescandataI;
     }
 
     public String getId() {
@@ -67,7 +78,8 @@ public class Scan {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final Scan that = (Scan) o;
-        return Objects.equals(this.id, that.id) &&
+        return Objects.equals(this.xnatImagescandataI, that.xnatImagescandataI) &&
+                Objects.equals(this.id, that.id) &&
                 Objects.equals(this.xsiType, that.xsiType) &&
                 Objects.equals(this.scanType, that.scanType) &&
                 Objects.equals(this.resources, that.resources);
@@ -75,17 +87,17 @@ public class Scan {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, xsiType, scanType, resources);
+        return Objects.hash(xnatImagescandataI, id, xsiType, scanType, resources);
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("xnatImagescandataI", xnatImagescandataI)
                 .add("id", id)
                 .add("xsiType", xsiType)
                 .add("scanType", scanType)
                 .add("resources", resources)
                 .toString();
     }
-
 }
