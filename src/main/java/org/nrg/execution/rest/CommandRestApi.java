@@ -125,63 +125,63 @@ public class CommandRestApi {
     }
 
     // HACKY TEST API ENDPOINTS
-    @RequestMapping(value = "/{id}/resolve", method = POST)
-    @ResponseBody
-    public ResolvedCommand resolve(final @PathVariable Long id,
-                                   final @RequestParam Map<String, String> allRequestParams)
-            throws NotFoundException, CommandInputResolutionException, NoServerPrefException, XFTInitException {
-        final UserI userI = XDAT.getUserDetails();
-        final Command command = commandService.retrieve(id);
-        if (command == null) {
-            throw new NotFoundException("Could not find Command with id " + id);
-        }
+//    @RequestMapping(value = "/{id}/resolve", method = POST)
+//    @ResponseBody
+//    public ResolvedCommand resolve(final @PathVariable Long id,
+//                                   final @RequestParam Map<String, String> allRequestParams)
+//            throws NotFoundException, CommandInputResolutionException, NoServerPrefException, XFTInitException {
+//        final UserI userI = XDAT.getUserDetails();
+//        final Command command = commandService.retrieve(id);
+//        if (command == null) {
+//            throw new NotFoundException("Could not find Command with id " + id);
+//        }
+//
+//        if (allRequestParams.containsKey("id")) {
+//            final String itemId = allRequestParams.get("id");
+//            if (itemId.contains(":")) {
+//                final String sessionId = StringUtils.substringBeforeLast(itemId, ":");
+//                final String scanId = StringUtils.substringAfterLast(itemId, ":");
+//
+//                final XnatImagesessiondata session = XnatImagesessiondata.getXnatImagesessiondatasById(sessionId, userI, false);
+//                final XnatImagescandata scan = session.getScanById(scanId);
+//
+//                return commandService.prepareToLaunchScan(command, session, scan, userI);
+//            } else {
+//                log.error("Haven't tested anything other than scan yet.");
+//            }
+//        }
+//        return null;
+//    }
 
-        if (allRequestParams.containsKey("id")) {
-            final String itemId = allRequestParams.get("id");
-            if (itemId.contains(":")) {
-                final String sessionId = StringUtils.substringBeforeLast(itemId, ":");
-                final String scanId = StringUtils.substringAfterLast(itemId, ":");
-
-                final XnatImagesessiondata session = XnatImagesessiondata.getXnatImagesessiondatasById(sessionId, userI, false);
-                final XnatImagescandata scan = session.getScanById(scanId);
-
-                return commandService.prepareToLaunchScan(command, session, scan, userI);
-            } else {
-                log.error("Haven't tested anything other than scan yet.");
-            }
-        }
-        return null;
-    }
-
-    @RequestMapping(value = "/{id}/launchtest", method = POST)
-    @ResponseBody
-    public ContainerExecution launchTest(final @PathVariable Long id,
-                                   final @RequestParam Map<String, String> allRequestParams)
-            throws NotFoundException, CommandInputResolutionException, NoServerPrefException, XFTInitException, DockerServerException {
-        final UserI userI = XDAT.getUserDetails();
-
-        if (allRequestParams.containsKey("id")) {
-            final String itemId = allRequestParams.get("id");
-            if (itemId.contains(":")) {
-                final String sessionId = StringUtils.substringBeforeLast(itemId, ":");
-                final String scanId = StringUtils.substringAfterLast(itemId, ":");
-
-                final XnatImagesessiondata session = XnatImagesessiondata.getXnatImagesessiondatasById(sessionId, userI, false);
-                if (session == null) {
-                    throw new NotFoundException(String.format("No session with id %s.", sessionId));
-                }
-                final XnatImagescandata scan = session.getScanById(scanId);
-                if (scan == null) {
-                    throw new NotFoundException(String.format("No scan with id %s on session with id %s.", scanId, sessionId));
-                }
-
-                return commandService.launchCommand(id, userI, session, scan);
-            } else {
-                log.error("Haven't tested anything other than scan yet.");
-            }
-        }
-        return null;
-    }
+//    @RequestMapping(value = "/{id}/launchtest", method = POST)
+//    @ResponseBody
+//    public ContainerExecution launchTest(final @PathVariable Long id,
+//                                   final @RequestParam Map<String, String> allRequestParams)
+//            throws NotFoundException, CommandInputResolutionException, NoServerPrefException, XFTInitException, DockerServerException {
+//        final UserI userI = XDAT.getUserDetails();
+//
+//        if (allRequestParams.containsKey("id")) {
+//            final String itemId = allRequestParams.get("id");
+//            if (itemId.contains(":")) {
+//                final String sessionId = StringUtils.substringBeforeLast(itemId, ":");
+//                final String scanId = StringUtils.substringAfterLast(itemId, ":");
+//
+//                final XnatImagesessiondata session = XnatImagesessiondata.getXnatImagesessiondatasById(sessionId, userI, false);
+//                if (session == null) {
+//                    throw new NotFoundException(String.format("No session with id %s.", sessionId));
+//                }
+//                final XnatImagescandata scan = session.getScanById(scanId);
+//                if (scan == null) {
+//                    throw new NotFoundException(String.format("No scan with id %s on session with id %s.", scanId, sessionId));
+//                }
+//
+//                return commandService.launchCommand(id, userI, session, scan);
+//            } else {
+//                log.error("Haven't tested anything other than scan yet.");
+//            }
+//        }
+//        return null;
+//    }
 
     @ResponseStatus(value = HttpStatus.FAILED_DEPENDENCY)
     @ExceptionHandler(value = {NoServerPrefException.class})

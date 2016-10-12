@@ -50,7 +50,7 @@ public class ScanArchiveListener implements Consumer<Event<ScanArchiveEvent>> {
             for (CommandEventMapping commandEventMapping: commandEventMappings) {
                 Long commandId = commandEventMapping.getCommandId();
                 try {
-                    commandService.launchCommand(commandId, scanArchiveEvent.getUser(), scanArchiveEvent.getSession(), scanArchiveEvent.getScan());
+                    commandService.launchCommand(commandId, scanArchiveEvent.getUser(), scanArchiveEvent.getScan(), scanArchiveEvent.getSessionId(), scanArchiveEvent.getRootArchivePath());
                 } catch (NotFoundException e) {
                     e.printStackTrace();
                 } catch (CommandInputResolutionException e) {

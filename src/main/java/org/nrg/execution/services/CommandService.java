@@ -44,15 +44,15 @@ public interface CommandService extends BaseHibernateService<Command> {
     ContainerExecution launchCommand(Long commandId, UserI userI, XnatImagesessiondata session)
             throws NotFoundException, CommandInputResolutionException, NoServerPrefException,
             DockerServerException, XFTInitException;
-    ContainerExecution launchCommand(Long commandId, UserI userI, XnatImagesessiondata session, XnatImagescandata scan)
+    ContainerExecution launchCommand(Long commandId, UserI userI, XnatImagescandata scan, String sessionId, String rootArchivePath)
             throws NotFoundException, XFTInitException, CommandInputResolutionException, NoServerPrefException, DockerServerException;
 
     List<Command> save(final List<Command> commands);
 
-    @VisibleForTesting
-    ResolvedCommand prepareToLaunchScan(Command command,
-                                        XnatImagesessiondata session,
-                                        XnatImagescandata scan,
-                                        UserI userI)
-            throws CommandInputResolutionException, NotFoundException, XFTInitException, NoServerPrefException;
+//    @VisibleForTesting
+//    ResolvedCommand prepareToLaunchScan(Command command,
+//                                        XnatImagesessiondata session,
+//                                        XnatImagescandata scan,
+//                                        UserI userI)
+//            throws CommandInputResolutionException, NotFoundException, XFTInitException, NoServerPrefException;
 }

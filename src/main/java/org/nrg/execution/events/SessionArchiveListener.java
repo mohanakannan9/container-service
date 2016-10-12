@@ -9,6 +9,8 @@ import org.nrg.execution.services.CommandEventMappingService;
 import org.nrg.execution.services.CommandService;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.xdat.om.XnatImagescandata;
+import org.nrg.xdat.om.XnatImagesessiondata;
+import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xft.exception.XFTInitException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -41,11 +43,15 @@ public class SessionArchiveListener implements Consumer<Event<SessionArchiveEven
     @Override
     public void accept(Event<SessionArchiveEvent> event) {
         final SessionArchiveEvent sessionArchivedEvent = event.getData();
+        final XnatImagesessiondata imagesession = sessionArchivedEvent.getSession();
+        final String projectId = imagesession.getProject();
+        final XnatProjectdata xnatProjectdata = XnatProjectdata.getXnatProjectdatasById(projectId, sessionArchivedEvent.getUser(), false);
+        final String rootArchivePath = xnatProjectdata.getRootArchivePath();
 
         // Fire ScanArchiveEvent for each contained scan
-        final List<XnatImagescandata> scans =  sessionArchivedEvent.getSession().getScans_scan();
+        final List<XnatImagescandata> scans =  imagesession.getScans_scan();
         for (XnatImagescandata scan : scans) {
-            eventService.triggerEvent(new ScanArchiveEvent(scan, sessionArchivedEvent.getSession(), sessionArchivedEvent.getUser()));
+            eventService.triggerEvent(new ScanArchiveEvent(scan, sessionArchivedEvent.getSession(), sessionArchivedEvent.getUser(), rootArchivePath));
         }
 
         // Find commands defined for this event type

@@ -1,5 +1,10 @@
 package org.nrg.execution.services;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
@@ -8,6 +13,7 @@ import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.Filter;
 import com.jayway.jsonpath.JsonPath;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.ecs.xhtml.input;
 import org.hibernate.Hibernate;
 import org.hibernate.exception.ConstraintViolationException;
 import org.nrg.execution.api.ContainerControlApi;
@@ -23,6 +29,9 @@ import org.nrg.execution.model.CommandRun;
 import org.nrg.execution.model.ContainerExecution;
 import org.nrg.execution.model.Context;
 import org.nrg.execution.model.ResolvedCommand;
+import org.nrg.execution.model.xnat.Resource;
+import org.nrg.execution.model.xnat.Scan;
+import org.nrg.execution.model.xnat.Session;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
@@ -48,6 +57,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.LinkedList;
@@ -210,47 +220,35 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     }
 
     @Override
-    public ContainerExecution launchCommand(Long commandId, UserI userI, XnatImagesessiondata session, XnatImagescandata scan)
+    public ContainerExecution launchCommand(final Long commandId, final UserI userI, final XnatImagescandata scan, final String sessionId, final String rootArchivePath)
             throws NotFoundException, XFTInitException, CommandInputResolutionException, NoServerPrefException, DockerServerException {
         final Command command = get(commandId);
 
-        final ResolvedCommand preparedToLaunch = prepareToLaunchScan(command, session, scan, userI);
+        final ResolvedCommand preparedToLaunch = prepareToLaunchScan(command, scan, sessionId, rootArchivePath, userI);
 
-        final String concattenatedSessionScanId = session.getId() + ":" + scan.getId();
+        final String concattenatedSessionScanId = sessionId + ":" + scan.getId();
         return launchCommand(preparedToLaunch, concattenatedSessionScanId, scan.getXSIType(), userI);
     }
 
-    @VisibleForTesting
-    @Override
-    public ResolvedCommand prepareToLaunchScan(final Command command,
-                                                final XnatImagesessiondata session,
-                                                final XnatImagescandata scan,
+    private ResolvedCommand prepareToLaunchScan(final Command command,
+                                                final XnatImagescandata xnatImagescandata,
+                                                final String sessionId,
+                                                final String rootArchivePath,
                                                 final UserI userI)
             throws CommandInputResolutionException, NotFoundException, XFTInitException, NoServerPrefException {
-        final String projectId = session.getProject();
-        final XnatProjectdata proj = XnatProjectdata.getXnatProjectdatasById(projectId, userI, false);
-        final String rootArchivePath = proj.getRootArchivePath();
-        final List<XnatAbstractresource> resources = scan.getFile();
+        final Scan scan = new Scan(xnatImagescandata, rootArchivePath);
 
         final Map<String, String> resourceLabelToCatalogPath = Maps.newHashMap();
-        if (resources != null && StringUtils.isNotBlank(rootArchivePath)) {
-            for (final XnatAbstractresource resource : resources) {
-                if (resource instanceof XnatResourcecatalog) {
-                    final XnatResourcecatalog resourceCatalog = (XnatResourcecatalog) resource;
-                    resourceLabelToCatalogPath.put(resourceCatalog.getLabel(),
-                            resourceCatalog.getCatalogFile(rootArchivePath).getParent());
-                }
-            }
-        } else {
-            log.info("Session with id " + session.getId() + " has a blank archive path, or scan " + scan.getId() + " has no resources.");
+        for (final Resource resource : scan.getResources()) {
+            resourceLabelToCatalogPath.put(resource.getLabel(), resource.getDirectory());
         }
 
         final Context context = Context.newContext();
         context.put("scanId", scan.getId());
-        context.put("sessionId", session.getId());
+        context.put("sessionId", sessionId);
 
         final ResolvedCommand resolvedCommand =
-                CommandResolutionHelper.resolve(command, scan, resourceLabelToCatalogPath, context, userI);
+                CommandResolutionHelper.resolve(command, xnatImagescandata, resourceLabelToCatalogPath, context, userI);
         if (resolvedCommand == null) {
             // TODO throw an error
             return null;
@@ -300,7 +298,8 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         private LinkedList<CommandInput> notResolvedInputs;
         private Map<String, CommandInput> resolvedInputs;
         private UserI userI;
-        private DocumentContext commandJson;
+        private ObjectMapper mapper;
+//        private DocumentContext commandJson;
         private Map<String, String> inputValues;
 
         private CommandResolutionHelper(final Command command,
@@ -316,8 +315,9 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             }
 //            command.setInputs(Lists.<CommandInput>newArrayList());
             this.userI = userI;
+            this.mapper = new ObjectMapper();
 
-            this.commandJson = JsonPath.parse(command);
+//            this.commandJson = JsonPath.parse(command);
             this.inputValues = inputValues == null ?
                     Maps.<String, String>newHashMap() :
                     inputValues;
@@ -531,10 +531,39 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
                         break;
                     case SESSION:
                         if (parent == null) {
-                            // With no parent, assume the value we were given is an id
-                            final XnatImagesessiondata imagesessiondata = XnatImagesessiondata.getXnatImagesessiondatasById(resolvedValue, userI, true);
-                            if (imagesessiondata == null) {
-                                throw new CommandInputResolutionException("Could not instantiate image session from id " + resolvedValue, input);
+                            // With no parent, we were either given, A. a Session in json, B. a list of Sessions in json, or C. the session id
+                            Session session = null;
+                            if (resolvedValue.startsWith("{")) {
+                                try {
+                                    session = mapper.readValue(resolvedValue, Session.class);
+                                } catch (IOException e) {
+                                    log.info(String.format("Could not deserialize %s into a Session object.", resolvedValue), e);
+                                }
+                            } else if (resolvedValue.matches("^\\[\\s*\\{")) {
+                                try {
+                                    final List<Session> sessions = mapper.readValue(resolvedValue, new TypeReference<List<Session>>(){});
+                                    session = sessions.get(0);
+                                    log.warn(String.format("Cannot implicitly loop over Session objects. Selecting first session (%s) from list of sessions (%s).", session, resolvedValue));
+                                } catch (IOException e) {
+                                    log.info(String.format("Could not deserialize %s into a list of Session objects.", resolvedValue), e);
+                                }
+                            } else {
+
+                                final XnatImagesessiondata imagesessiondata = XnatImagesessiondata.getXnatImagesessiondatasById(resolvedValue, userI, true);
+                                if (imagesessiondata == null) {
+                                    log.info("Could not instantiate image session from id " + resolvedValue);
+                                }
+                                session = new Session(imagesessiondata, userI);
+                            }
+
+                            if (session == null) {
+                                throw new CommandInputResolutionException("Could not instantiate Session from value " + resolvedValue, input);
+                            }
+
+                            try {
+                                resolvedValue = mapper.writeValueAsString(session);
+                            } catch (JsonProcessingException e) {
+                                log.error("Could not serialize session: " + session, e);
                             }
                         } else {
                             final List<Filter> filters = Lists.newArrayList();
