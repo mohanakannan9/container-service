@@ -7,6 +7,7 @@ import io.swagger.annotations.ApiResponses;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.execution.exceptions.BadRequestException;
 import org.nrg.execution.exceptions.CommandInputResolutionException;
+import org.nrg.execution.exceptions.CommandMountResolutionException;
 import org.nrg.execution.exceptions.DockerServerException;
 import org.nrg.execution.exceptions.NoServerPrefException;
 import org.nrg.execution.exceptions.NotFoundException;
@@ -115,7 +116,7 @@ public class CommandRestApi {
     @ResponseBody
     public ContainerExecution launchCommand(final @PathVariable Long id,
                                             final @RequestParam Map<String, String> allRequestParams)
-            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException {
+            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandMountResolutionException {
         final UserI userI = XDAT.getUserDetails();
         try {
             return commandService.launchCommand(id, allRequestParams, userI);

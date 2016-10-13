@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
 import org.nrg.execution.exceptions.CommandInputResolutionException;
+import org.nrg.execution.exceptions.CommandMountResolutionException;
 import org.nrg.execution.exceptions.DockerServerException;
 import org.nrg.execution.exceptions.NoServerPrefException;
 import org.nrg.execution.exceptions.NotFoundException;
@@ -78,6 +79,8 @@ public class SessionArchiveListenerAndCommandLauncher implements Consumer<Event<
                 } catch (DockerServerException e) {
                     e.printStackTrace();
                 } catch (NoServerPrefException e) {
+                    e.printStackTrace();
+                } catch (CommandMountResolutionException e) {
                     e.printStackTrace();
                 }
             }

@@ -1,6 +1,7 @@
 package org.nrg.execution.services;
 
 import org.nrg.execution.exceptions.CommandInputResolutionException;
+import org.nrg.execution.exceptions.CommandMountResolutionException;
 import org.nrg.execution.exceptions.DockerServerException;
 import org.nrg.execution.exceptions.NoServerPrefException;
 import org.nrg.execution.exceptions.NotFoundException;
@@ -19,13 +20,13 @@ public interface CommandService extends BaseHibernateService<Command> {
     ResolvedCommand resolveCommand(final Long commandId,
                                    final Map<String, String> variableRuntimeValues,
                                    final UserI userI)
-            throws NotFoundException, CommandInputResolutionException;
+            throws NotFoundException, CommandInputResolutionException, CommandMountResolutionException;
     ResolvedCommand resolveCommand(final Command command, final UserI userI)
-            throws NotFoundException, CommandInputResolutionException;
+            throws NotFoundException, CommandInputResolutionException, CommandMountResolutionException;
     ResolvedCommand resolveCommand(final Command command,
                                    final Map<String, String> variableRuntimeValues,
                                    final UserI userI)
-            throws NotFoundException, CommandInputResolutionException;
+            throws NotFoundException, CommandInputResolutionException, CommandMountResolutionException;
 
     ContainerExecution launchCommand(final ResolvedCommand resolvedCommand, final UserI userI) throws NoServerPrefException, DockerServerException;
     ContainerExecution launchCommand(final ResolvedCommand resolvedCommand,
@@ -34,7 +35,7 @@ public interface CommandService extends BaseHibernateService<Command> {
             throws NoServerPrefException, DockerServerException;
     ContainerExecution launchCommand(final Long commandId,
                          final Map<String, String> variableRuntimeValues, final UserI userI)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandInputResolutionException;
+            throws NoServerPrefException, DockerServerException, NotFoundException, CommandInputResolutionException, CommandMountResolutionException;
 
     List<Command> save(final List<Command> commands);
 

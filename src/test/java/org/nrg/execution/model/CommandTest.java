@@ -33,17 +33,25 @@ import static org.junit.Assert.fail;
 @Transactional
 @ContextConfiguration(classes = CommandTestConfig.class)
 public class CommandTest {
+    private static final String RESOURCE_JSON = "{\"id\":1, \"label\":\"a_resource\", \"directory\":\"/path/to/files\"}";
+    private static final String SESSION_JSON = "{\"id\":\"1\", \"label\":\"a_session\", " +
+            "\"xsiType\":\"xnat:fakesessiondata\", \"resources\":[" + RESOURCE_JSON + "]}";
 
-    private static final String INPUT_0_JSON =
+    private static final String COOL_INPUT_JSON =
             "{\"name\":\"my_cool_input\", \"description\":\"A boolean value\", " +
                     "\"type\":\"boolean\", \"required\":true," +
                     "\"true-value\":\"-b\", \"false-value\":\"\"}";
-    private static final String FOO_INPUT =
+    private static final String FOO_INPUT_JSON =
             "{\"name\":\"foo\", \"description\":\"A foo that bars\", " +
                     "\"required\":false," +
                     "\"default-value\":\"bar\"," +
                     "\"command-line-flag\":\"--flag\"," +
                     "\"command-line-separator\":\"=\"}";
+    private static final String SESSION_INPUT_JSON =
+            "{\"name\":\"session\", \"description\":\"A session\", " +
+                    "\"type\":\"Session\", " +
+                    "\"required\":true}";
+    
     private static final String OUTPUT_JSON =
             "{" +
                     "\"name\":\"the_output\"," +
@@ -55,12 +63,13 @@ public class CommandTest {
                     "\"path\":\"relative/path/to/dir\"" +
             "}";
     private static final String INPUT_LIST_JSON =
-            "[" + INPUT_0_JSON + ", " + FOO_INPUT + "]";
+            "[" + COOL_INPUT_JSON + ", " + FOO_INPUT_JSON + "," + SESSION_INPUT_JSON + "]";
 
-    private static final String MOUNT_IN = "{\"name\":\"in\", \"type\": \"input\", \"remote-path\":\"/input\"}";
-    private static final String MOUNT_OUT = "{\"name\":\"out\", \"type\": \"output\", \"remote-path\":\"/output\"}";
-    private static final String RESOLVED_MOUNT_IN = "{\"name\":\"in\", \"type\": \"input\", \"remote-path\":\"/input\"}";
-    private static final String RESOLVED_MOUNT_OUT = "{\"name\":\"out\", \"type\":\"output\", \"remote-path\":\"/output\"}";
+    private static final String MOUNT_IN = "{\"name\":\"in\", \"type\": \"input\", \"path\":\"/input\", \"file-input\":\"session\", \"resource\":\"a_resource\"}";
+    private static final String MOUNT_OUT = "{\"name\":\"out\", \"type\": \"output\", \"path\":\"/output\", \"file-input\":\"session\", \"resource\":\"out\"}";
+    private static final String RESOLVED_MOUNT_IN = "{\"name\":\"in\", \"type\": \"input\", " +
+            "\"path\":\"/input\", \"host-path\":\"/path/to/files\", \"file-input\":\"session\", \"resource\":\"a_resource\"}";
+    private static final String RESOLVED_MOUNT_OUT = "{\"name\":\"out\", \"type\":\"output\", \"path\":\"/output\", \"file-input\":\"session\", \"resource\":\"out\"}";
 
     private static final String DOCKER_IMAGE_COMMAND_JSON =
             "{\"name\":\"docker_image_command\", \"description\":\"Docker Image command for the test\", " +
@@ -106,9 +115,9 @@ public class CommandTest {
     @Test
     public void testDeserializeCommandInput() throws Exception {
         final CommandInput commandInput0 =
-                mapper.readValue(INPUT_0_JSON, CommandInput.class);
+                mapper.readValue(COOL_INPUT_JSON, CommandInput.class);
         final CommandInput fooInput =
-                mapper.readValue(FOO_INPUT, CommandInput.class);
+                mapper.readValue(FOO_INPUT_JSON, CommandInput.class);
 
         assertEquals("my_cool_input", commandInput0.getName());
         assertEquals("A boolean value", commandInput0.getDescription());
@@ -150,8 +159,7 @@ public class CommandTest {
         assertEquals("docker_image_command", command.getName());
         assertEquals("Docker Image command for the test", command.getDescription());
         assertEquals("http://abc.xyz", command.getInfoUrl());
-        assertThat(command.getInputs(), hasSize(2));
-        assertThat(commandInputList, everyItem(isIn(command.getInputs())));
+        assertEquals(commandInputList, command.getInputs());
         assertThat(command.getOutputs(), hasSize(1));
         assertEquals(commandOutput, command.getOutputs().get(0));
 
@@ -212,9 +220,10 @@ public class CommandTest {
                 String.format(RESOLVED_DOCKER_IMAGE_COMMAND_JSON_TEMPLATE, command.getId());
         final ResolvedCommand expected = mapper.readValue(resolvedCommandJson, ResolvedCommand.class);
 
-        final Map<String, String> variableRuntimeValues = Maps.newHashMap();
-        variableRuntimeValues.put("my_cool_input", "false");
-        final ResolvedCommand resolvedCommand = commandService.resolveCommand(command, variableRuntimeValues, null);
+        final Map<String, String> runtimeValues = Maps.newHashMap();
+        runtimeValues.put("my_cool_input", "false");
+        runtimeValues.put("session", SESSION_JSON);
+        final ResolvedCommand resolvedCommand = commandService.resolveCommand(command, runtimeValues, null);
 
         assertEquals(expected.getCommandLine(), resolvedCommand.getCommandLine());
         assertEquals(expected.getEnvironmentVariables(), resolvedCommand.getEnvironmentVariables());
@@ -222,8 +231,8 @@ public class CommandTest {
         assertEquals(expected.getMountsOut(), resolvedCommand.getMountsOut());
         assertEquals(expected, resolvedCommand);
 
-        variableRuntimeValues.put("my_cool_input", "true");
-        final ResolvedCommand resolvedCommand2 = commandService.resolveCommand(command, variableRuntimeValues, null);
+        runtimeValues.put("my_cool_input", "true");
+        final ResolvedCommand resolvedCommand2 = commandService.resolveCommand(command, runtimeValues, null);
 
         assertEquals(expected.getEnvironmentVariables(), resolvedCommand2.getEnvironmentVariables());
         assertEquals(expected.getMountsIn(), resolvedCommand2.getMountsIn());
