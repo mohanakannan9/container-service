@@ -28,7 +28,7 @@ public class Resource {
         this.files = Lists.newArrayList();
         for (final Object[] entry: entryDetails) {
             // See CatalogUtils.getEntryDetails to see where all these "entry" elements come from
-            files.add(new File((String) entry[0], (String) entry[2], (String) entry[4], (String) entry[5], (String) entry[6], (File) entry[8]));
+            files.add(new File((String) entry[0], (String) entry[2], (String) entry[4], (String) entry[5], (String) entry[6], (java.io.File) entry[8]));
         }
     }
 

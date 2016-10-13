@@ -12,7 +12,7 @@ public class File {
     private List<String> tags;
     private String format;
     private String content;
-    private File file;
+    private java.io.File file;
 
     public File() {}
 
@@ -21,7 +21,7 @@ public class File {
                 final String tagsCsv,
                 final String format,
                 final String content,
-                final File file) {
+                final java.io.File file) {
         this.name = name;
         this.path = path;
         this.tags = Lists.newArrayList(tagsCsv.split(","));
@@ -70,11 +70,11 @@ public class File {
         this.content = content;
     }
 
-    public File getFile() {
+    public java.io.File getFile() {
         return file;
     }
 
-    public void setFile(final File file) {
+    public void setFile(final java.io.File file) {
         this.file = file;
     }
 
