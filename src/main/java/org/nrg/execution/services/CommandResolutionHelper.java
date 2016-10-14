@@ -14,6 +14,7 @@ import com.jayway.jsonpath.TypeRef;
 import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.ecs.xhtml.input;
 import org.nrg.execution.exceptions.CommandInputResolutionException;
 import org.nrg.execution.exceptions.CommandMountResolutionException;
 import org.nrg.execution.model.Command;
@@ -181,28 +182,10 @@ class CommandResolutionHelper {
                     // TODO
                     break;
                 case FILE:
-                    if (parent == null) {
-                        throw new CommandInputResolutionException(String.format("Inputs of type %s must have a parent.", input.getType()), input);
+                    if (parent != null) {
+                        resolvedValue = getValueFromParent(parent.getValue(), input.getParentProperty(), "files", resolvedValue);
                     } else {
-                        final List<Filter> filters = Lists.newArrayList();
-                        String jsonPath = StringUtils.isNotBlank(input.getParentProperty()) ?
-                                input.getParentProperty() :
-                                "$.files";
-
-                        if (StringUtils.isNotBlank(resolvedValue)) {
-                            if (resolvedValue.startsWith("?")) {
-                                // Allow the user to send in a jsonpath filter
-                                jsonPath = jsonPath + "[" + resolvedValue + "]";
-                            } else {
-                                // TODO What would a user specify about the file? Name?
-                            }
-                        }
-
-                        if (parent.getValue().startsWith("[")) {
-                            jsonPath = jsonPath.replaceFirst("$", "$[*]");
-                        }
-
-                        resolvedValue = JsonPath.read(parent.getValue(), jsonPath, filters.toArray(new Filter[filters.size()]));
+                        throw new CommandInputResolutionException(String.format("Inputs of type %s must have a parent.", input.getType()), input);
                     }
                     break;
                 case PROJECT:
@@ -212,7 +195,10 @@ class CommandResolutionHelper {
                     // TODO
                     break;
                 case SESSION:
-                    if (parent == null) {
+                    if (parent != null) {
+                        // We have a parent, so pull the value from it
+                        resolvedValue = getValueFromParent(parent.getValue(), input.getParentProperty(), "sessions", resolvedValue);
+                    } else {
                         // With no parent, we were either given, A. a Session in json, B. a list of Sessions in json, or C. the session id
                         Session session = null;
                         if (resolvedValue.startsWith("{")) {
@@ -247,47 +233,34 @@ class CommandResolutionHelper {
                         } catch (JsonProcessingException e) {
                             log.error("Could not serialize session: " + session, e);
                         }
-                    } else {
-                        final List<Filter> filters = Lists.newArrayList();
-                        String jsonPath = StringUtils.isNotBlank(input.getParentProperty()) ?
-                                input.getParentProperty() :
-                                "$.sessions";
-
-                        if (StringUtils.isNotBlank(resolvedValue)) {
-                            if (resolvedValue.startsWith("?")) {
-                                // Allow the user to send in a jsonpath filter
-                                jsonPath = jsonPath + "[" + resolvedValue + "]";
-                            } else {
-                                // Otherwise assume the value we were given is an id or a label
-                                jsonPath = jsonPath + "[?]";
-                                filters.add(filter(where("id").is(resolvedValue)).or(where("label").is(resolvedValue)));
-                            }
-                        }
-
-                        if (parent.getValue().startsWith("[")) {
-                            jsonPath = jsonPath.replaceFirst("$", "$[*]");
-                        }
-
-                        resolvedValue = JsonPath.read(parent.getValue(), jsonPath, filters.toArray(new Filter[filters.size()]));
                     }
                     break;
                 case SCAN:
-                    if (parent == null) {
+                    if (parent != null) {
+                        // We have a parent, so pull the value from it
+                        resolvedValue = getValueFromParent(parent.getValue(), input.getParentProperty(), "scans", resolvedValue);
+                    } else {
                         // With no parent, we must have been given the Scan as json
                         Scan scan = null;
                         if (resolvedValue.startsWith("{")) {
                             try {
+                                if (log.isDebugEnabled()) {
+                                    log.debug("Attempting to deserialize value %s as a Scan.", resolvedValue);
+                                }
                                 scan = mapper.readValue(resolvedValue, Scan.class);
                             } catch (IOException e) {
-                                log.info(String.format("Could not deserialize %s into a Scan object.", resolvedValue), e);
+                                log.error(String.format("Could not deserialize %s into a Scan object.", resolvedValue), e);
                             }
                         } else if (resolvedValue.matches("^\\[\\s*\\{")) {
                             try {
+                                if (log.isDebugEnabled()) {
+                                    log.debug("Attempting to deserialize value %s as a list of Scans.", resolvedValue);
+                                }
                                 final List<Scan> scans = mapper.readValue(resolvedValue, new TypeReference<List<Scan>>(){});
                                 scan = scans.get(0);
                                 log.warn(String.format("Cannot implicitly loop over Scan objects. Selecting first scan (%s) from list of scans (%s).", scan, resolvedValue));
                             } catch (IOException e) {
-                                log.info(String.format("Could not deserialize %s into a list of Scan objects.", resolvedValue), e);
+                                log.error(String.format("Could not deserialize %s into a list of Scan objects.", resolvedValue), e);
                             }
                         }
 
@@ -298,30 +271,8 @@ class CommandResolutionHelper {
                         try {
                             resolvedValue = mapper.writeValueAsString(scan);
                         } catch (JsonProcessingException e) {
-                            log.error("Could not serialize session: " + scan, e);
+                            log.error("Could not serialize scan: " + scan, e);
                         }
-                    } else {
-                        final List<Filter> filters = Lists.newArrayList();
-                        String jsonPathSearch = StringUtils.isNotBlank(input.getParentProperty()) ?
-                                input.getParentProperty() :
-                                "$.scans[*]";
-
-                        if (StringUtils.isNotBlank(resolvedValue)) {
-                            if (resolvedValue.startsWith("?")) {
-                                // Allow the user to send in a jsonpath filter
-                                jsonPathSearch = jsonPathSearch + "[" + resolvedValue + "]";
-                            } else {
-                                // Otherwise assume the value we were given is an id or a label
-                                jsonPathSearch = jsonPathSearch + "[?]";
-                                filters.add(filter(where("id").is(resolvedValue)));
-                            }
-                        }
-
-                        if (parent.getValue().startsWith("[")) {
-                            jsonPathSearch = jsonPathSearch.replaceFirst("$", "$[*]");
-                        }
-
-                        resolvedValue = jsonPath.parse(parent.getValue()).read(jsonPathSearch, filters.toArray(new Filter[filters.size()]));
                     }
                     break;
                 case ASSESSOR:
@@ -356,6 +307,18 @@ class CommandResolutionHelper {
             resolvedInputValues.put(replacementKey, resolvedValue);
             resolvedInputValuesAsCommandLineArgs.put(replacementKey, getValueForCommandLine(input, resolvedValue));
         }
+    }
+
+    private String getValueFromParent(final String parent, final String parentProperty, final String rootValueType, final String currentResolvedValue) {
+        // We have a parent, and we need to get the scan out of it.
+        // We currently have implemented two possibilities:
+        // 1. The user has set 'parentProperty', and we interpret that as a jsonpath search string
+        // 2. The user has sent in the scan id as the value
+
+        final String jsonPathSearch = StringUtils.isNotBlank(parentProperty) ?
+                parentProperty :
+                String.format("$.%s[?(@.id == '%s')]", rootValueType, currentResolvedValue);
+        return jsonPath.parse(parent).read(jsonPathSearch);
     }
 
     private String getValueForCommandLine(final CommandInput input, final String resolvedInputValue) {
