@@ -13,17 +13,20 @@ import java.util.Objects;
 public class Scan {
     @JsonIgnore private XnatImagescandataI xnatImagescandataI;
     private String id;
+    private String sessionId;
     private String xsiType;
     private String scanType;
     private List<Resource> resources;
 
     public Scan() {}
 
-    public Scan(final XnatImagescandataI xnatImagescandataI, final String rootArchivePath) {
+    public Scan(final XnatImagescandataI xnatImagescandataI, final String sessionId, final String rootArchivePath) {
         this.xnatImagescandataI = xnatImagescandataI;
         this.id = xnatImagescandataI.getId();
         this.xsiType = xnatImagescandataI.getXSIType();
         this.scanType = xnatImagescandataI.getType();
+
+        this.sessionId = sessionId;
 
         this.resources = Lists.newArrayList();
         for (final XnatAbstractresourceI xnatAbstractresourceI : xnatImagescandataI.getFile()) {
@@ -47,6 +50,14 @@ public class Scan {
 
     public void setId(final String id) {
         this.id = id;
+    }
+
+    public String getSessionId() {
+        return sessionId;
+    }
+
+    public void setSessionId(final String sessionId) {
+        this.sessionId = sessionId;
     }
 
     public String getXsiType() {
@@ -80,6 +91,7 @@ public class Scan {
         final Scan that = (Scan) o;
         return Objects.equals(this.xnatImagescandataI, that.xnatImagescandataI) &&
                 Objects.equals(this.id, that.id) &&
+                Objects.equals(this.sessionId, that.sessionId) &&
                 Objects.equals(this.xsiType, that.xsiType) &&
                 Objects.equals(this.scanType, that.scanType) &&
                 Objects.equals(this.resources, that.resources);
@@ -87,7 +99,7 @@ public class Scan {
 
     @Override
     public int hashCode() {
-        return Objects.hash(xnatImagescandataI, id, xsiType, scanType, resources);
+        return Objects.hash(xnatImagescandataI, id, sessionId, xsiType, scanType, resources);
     }
 
     @Override
@@ -95,6 +107,7 @@ public class Scan {
         return MoreObjects.toStringHelper(this)
                 .add("xnatImagescandataI", xnatImagescandataI)
                 .add("id", id)
+                .add("sessionId", sessionId)
                 .add("xsiType", xsiType)
                 .add("scanType", scanType)
                 .add("resources", resources)

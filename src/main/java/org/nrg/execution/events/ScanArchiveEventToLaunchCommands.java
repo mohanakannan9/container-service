@@ -8,21 +8,15 @@ import org.nrg.xft.security.UserI;
 
 public class ScanArchiveEventToLaunchCommands implements EventI {
     private Scan scan;
-    private String sessionId;
     private UserI user;
 
-    public ScanArchiveEventToLaunchCommands(final Scan scan, final String sessionId, final UserI user) {
+    public ScanArchiveEventToLaunchCommands(final Scan scan, final UserI user) {
         this.scan = scan;
-        this.sessionId = sessionId;
         this.user = user;
     }
 
     public Scan getScan() {
         return scan;
-    }
-
-    public String getSessionId() {
-        return sessionId;
     }
 
     public UserI getUser() {

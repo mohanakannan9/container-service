@@ -52,7 +52,7 @@ public class SessionArchiveListenerAndCommandLauncher implements Consumer<Event<
 
         // Fire ScanArchiveEvent for each contained scan
         for (final Scan scan : session.getScans()) {
-            eventService.triggerEvent(new ScanArchiveEventToLaunchCommands(scan, session.getId(), sessionArchivedEvent.getUser()));
+            eventService.triggerEvent(new ScanArchiveEventToLaunchCommands(scan, sessionArchivedEvent.getUser()));
         }
 
         // Find commands defined for this event type

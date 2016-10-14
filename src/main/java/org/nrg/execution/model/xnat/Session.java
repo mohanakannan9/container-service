@@ -37,7 +37,7 @@ public class Session {
 
         this.scans = Lists.newArrayList();
         for (final XnatImagescandataI xnatImagescandataI : xnatImagesessiondataI.getScans_scan()) {
-            this.scans.add(new Scan(xnatImagescandataI, rootArchivePath));
+            this.scans.add(new Scan(xnatImagescandataI, this.id, rootArchivePath));
         }
 
         this.resources = Lists.newArrayList();

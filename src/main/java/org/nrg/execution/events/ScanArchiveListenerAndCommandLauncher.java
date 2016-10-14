@@ -58,7 +58,6 @@ public class ScanArchiveListenerAndCommandLauncher implements Consumer<Event<Sca
                 final Long commandId = commandEventMapping.getCommandId();
 
                 final Map<String, String> runtimeValues = Maps.newHashMap();
-                runtimeValues.put("sessionId", scanArchiveEventToLaunchCommands.getSessionId());
 
                 final Scan scan = scanArchiveEventToLaunchCommands.getScan();
                 String scanString = scan.getId();
@@ -66,6 +65,7 @@ public class ScanArchiveListenerAndCommandLauncher implements Consumer<Event<Sca
                     scanString = mapper.writeValueAsString(scan);
                 } catch (JsonProcessingException e) {
                     log.error(String.format("Could not serialize Scan %s to json.", scan), e);
+                    runtimeValues.put("sessionId", scan.getSessionId());
                 }
                 runtimeValues.put("scan", scanString);
                 try {
