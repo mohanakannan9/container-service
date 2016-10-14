@@ -309,13 +309,13 @@ public class DockerRestApiTest {
                         "\"run\": {" +
                             "\"command-line\": \"/run/dcm2niix-scan.sh #scanId# #sessionId#\", " +
                             "\"mounts\": [" +
-                                "{\"name\":\"DICOM\", \"type\":\"input\", \"remote-path\":\"/input\"}," +
-                                "{\"name\":\"NIFTI\", \"type\":\"output\", \"remote-path\":\"/output\"}" +
+                                "{\"name\":\"DICOM\", \"type\":\"input\", \"path\":\"/input\"}," +
+                                "{\"name\":\"NIFTI\", \"type\":\"output\", \"path\":\"/output\"}" +
                             "]" +
                         "}," +
                         "\"inputs\":[" +
-                            "{\"name\":\"scanId\", \"required\":true, \"root-property\":\"ID\"}, " +
-                            "{\"name\":\"sessionId\", \"required\":true, \"root-property\":\"ID\"}" +
+                            "{\"name\":\"scanId\", \"required\":true, \"parent-property\":\"ID\"}, " +
+                            "{\"name\":\"sessionId\", \"required\":true, \"parent-property\":\"ID\"}" +
                         "] " +
                     "}]";
         final List<Command> expectedList = mapper.readValue(labelTestCommandListJson, new TypeReference<List<Command>>(){});

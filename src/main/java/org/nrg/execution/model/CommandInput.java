@@ -17,9 +17,10 @@ import java.util.Objects;
 public class CommandInput implements Serializable {
     private String name;
     private String description;
-    private Type type;
+    private Type type = Type.STRING;
     private Boolean required;
-    @JsonProperty("root-property") private String rootProperty;
+    private String parent;
+    @JsonProperty("parent-property") private String parentProperty;
     @JsonProperty("default-value") private String defaultValue;
     @JsonProperty("replacement-key") private String rawReplacementKey;
     @JsonProperty("command-line-flag") private String commandLineFlag = "";
@@ -70,12 +71,20 @@ public class CommandInput implements Serializable {
         this.required = required;
     }
 
-    public String getRootProperty() {
-        return rootProperty;
+    public String getParent() {
+        return parent;
     }
 
-    public void setRootProperty(final String rootProperty) {
-        this.rootProperty = rootProperty;
+    public void setParent(final String parent) {
+        this.parent = parent;
+    }
+
+    public String getParentProperty() {
+        return parentProperty;
+    }
+
+    public void setParentProperty(final String parentProperty) {
+        this.parentProperty = parentProperty;
     }
 
     @ApiModelProperty("Default value of the input")
@@ -147,18 +156,6 @@ public class CommandInput implements Serializable {
         this.value = value;
     }
 
-    @Transient
-    @JsonIgnore
-    public String getValueOrDefaultValue() {
-        if (value != null) {
-            return value;
-        } else if (defaultValue != null) {
-            return defaultValue;
-        } else {
-            return null;
-        }
-    }
-
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
@@ -168,7 +165,8 @@ public class CommandInput implements Serializable {
                 Objects.equals(this.description, that.description) &&
                 Objects.equals(this.type, that.type) &&
                 Objects.equals(this.required, that.required) &&
-                Objects.equals(this.rootProperty, that.rootProperty) &&
+                Objects.equals(this.parent, that.parent) &&
+                Objects.equals(this.parentProperty, that.parentProperty) &&
                 Objects.equals(this.defaultValue, that.defaultValue) &&
                 Objects.equals(this.rawReplacementKey, that.rawReplacementKey) &&
                 Objects.equals(this.commandLineFlag, that.commandLineFlag) &&
@@ -180,7 +178,7 @@ public class CommandInput implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, description, type, required, rootProperty, defaultValue,
+        return Objects.hash(name, description, type, required, parent, parentProperty, defaultValue,
                 rawReplacementKey, commandLineFlag, commandLineSeparator, trueValue, falseValue, value);
     }
 
@@ -191,7 +189,8 @@ public class CommandInput implements Serializable {
                 .add("description", description)
                 .add("type", type)
                 .add("required", required)
-                .add("rootProperty", rootProperty)
+                .add("parent", parent)
+                .add("parentProperty", parentProperty)
                 .add("defaultValue", defaultValue)
                 .add("rawReplacementKey", rawReplacementKey)
                 .add("commandLineFlag", commandLineFlag)
@@ -206,11 +205,13 @@ public class CommandInput implements Serializable {
         @JsonProperty("string") STRING,
         @JsonProperty("boolean") BOOLEAN,
         @JsonProperty("number") NUMBER,
+        @JsonProperty("file") FILE,
         @JsonProperty("Project") PROJECT,
         @JsonProperty("Subject") SUBJECT,
         @JsonProperty("Session") SESSION,
         @JsonProperty("Scan") SCAN,
         @JsonProperty("Assessor") ASSESSOR,
+        @JsonProperty("Resource") RESOURCE,
         @JsonProperty("Config") CONFIG
     }
 }

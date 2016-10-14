@@ -5,19 +5,14 @@ import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xft.security.UserI;
 
 public class SessionArchiveEvent implements EventI {
-
-    private static final String eventId = "SessionArchived";
     private XnatImagesessiondata session;
     private UserI user;
 
-    public SessionArchiveEvent(XnatImagesessiondata session, UserI user) {
+    public SessionArchiveEvent(final XnatImagesessiondata session, final UserI user) {
         this.session = session;
         this.user = user;
     }
 
-    public static String getEventId() {
-        return eventId;
-    }
     public XnatImagesessiondata getSession() {
 
         return session;

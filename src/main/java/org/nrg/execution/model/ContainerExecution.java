@@ -26,21 +26,20 @@ public class ContainerExecution extends AbstractHibernateEntity {
     @JsonProperty("mounts-out") private List<CommandMount> mountsOut = Lists.newArrayList();
     @JsonProperty("container-id") private String containerId;
     @JsonProperty("user-id") private String userId;
-    @JsonProperty("root-id") private String rootObjectId;
-    @JsonProperty("root-xsi-type") private String rootObjectXsiType;
+    @JsonProperty("input-values") private Map<String, String> inputValues = Maps.newHashMap();
     private List<ContainerExecutionHistory> history = Lists.newArrayList();
 
     public ContainerExecution() {}
 
     public ContainerExecution(final ResolvedCommand resolvedCommand,
                               final String containerId,
-                              final String rootObjectId,
-                              final String rootObjectXsiType,
+                              final Map<String, String> inputValues,
                               final String userId) {
         this.containerId = containerId;
         this.userId = userId;
-        this.rootObjectId = rootObjectId;
-        this.rootObjectXsiType = rootObjectXsiType;
+        this.inputValues = inputValues == null ?
+                Maps.<String, String>newHashMap() :
+                Maps.newHashMap(inputValues);
 
         this.commandId = resolvedCommand.getCommandId();
         this.dockerImage = resolvedCommand.getDockerImage();
@@ -123,20 +122,13 @@ public class ContainerExecution extends AbstractHibernateEntity {
         this.userId = user;
     }
 
-    public String getRootObjectId() {
-        return rootObjectId;
+    @ElementCollection
+    public Map<String, String> getInputValues() {
+        return inputValues;
     }
 
-    public void setRootObjectId(final String rootObjectId) {
-        this.rootObjectId = rootObjectId;
-    }
-
-    public String getRootObjectXsiType() {
-        return rootObjectXsiType;
-    }
-
-    public void setRootObjectXsiType(final String rootObjectXsiType) {
-        this.rootObjectXsiType = rootObjectXsiType;
+    public void setInputValues(final Map<String, String> inputValues) {
+        this.inputValues = inputValues;
     }
 
     @ElementCollection
@@ -170,15 +162,14 @@ public class ContainerExecution extends AbstractHibernateEntity {
                 Objects.equals(mountsOut, that.mountsOut) &&
                 Objects.equals(containerId, that.containerId) &&
                 Objects.equals(userId, that.userId) &&
-                Objects.equals(rootObjectId, that.rootObjectId) &&
-                Objects.equals(rootObjectXsiType, that.rootObjectXsiType) &&
+                Objects.equals(inputValues, that.inputValues) &&
                 Objects.equals(history, that.history);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(super.getId(), commandId, dockerImage, commandLine, environmentVariables,
-                mountsIn, mountsOut, containerId, userId, rootObjectId, rootObjectXsiType, history);
+                mountsIn, mountsOut, containerId, userId, inputValues, history);
     }
 
     @Override
@@ -192,8 +183,7 @@ public class ContainerExecution extends AbstractHibernateEntity {
                 .add("mountsOut", mountsOut)
                 .add("containerId", containerId)
                 .add("userId", userId)
-                .add("rootObjectId", rootObjectId)
-                .add("rootObjectXsiType", rootObjectXsiType)
+                .add("inputValues", inputValues)
                 .add("history", history)
                 .toString();
     }
