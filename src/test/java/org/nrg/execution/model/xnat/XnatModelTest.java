@@ -1,6 +1,5 @@
 package org.nrg.execution.model.xnat;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -15,15 +14,12 @@ import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 
 
 public class XnatModelTest {
@@ -32,7 +28,7 @@ public class XnatModelTest {
     private static final String RESOURCE_JSON = "{\"id\":1, \"label\":\"a_resource\", " +
             "\"directory\":\"/path/to/files\", \"files\":[" + FILE_JSON + "]}";
 
-    private static final String SESSION_JSON = "{\"id\":\"1\", \"label\":\"a_session\", " +
+    private static final String SESSION_JSON = "{\"id\":\"E1\", \"label\":\"a_session\", " +
             "\"xsiType\":\"xnat:fakesessiondata\", \"resources\":[" + RESOURCE_JSON + "]}";
 
     private final ObjectMapper mapper = new ObjectMapper();
@@ -87,7 +83,7 @@ public class XnatModelTest {
         final Resource resource = mapper.readValue(RESOURCE_JSON, Resource.class);
         final Session session = mapper.readValue(SESSION_JSON, Session.class);
 
-        assertEquals("1", session.getId());
+        assertEquals("E1", session.getId());
         assertEquals("a_session", session.getLabel());
         assertEquals("xnat:fakesessiondata", session.getXsiType());
         assertEquals(Lists.newArrayList(resource), session.getResources());

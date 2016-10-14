@@ -1,6 +1,7 @@
 package org.nrg.execution.model.xnat;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import org.nrg.xdat.model.XnatAbstractresourceI;
@@ -17,7 +18,8 @@ import java.util.Objects;
 
 public class Session {
     @JsonIgnore private XnatImagesessiondataI xnatImagesessiondataI;
-    private String id;
+    @JsonProperty(required = true) private String id;
+    @JsonProperty(value = "parent-id") private String parentId;
     private String label;
     private String xsiType;
     private List<Scan> scans;
@@ -35,6 +37,8 @@ public class Session {
         this.label = xnatImagesessiondataI.getLabel();
         this.xsiType = xnatImagesessiondataI.getXSIType();
 
+        this.parentId = xnatImagesessiondataI.getSubjectId();
+
         this.scans = Lists.newArrayList();
         for (final XnatImagescandataI xnatImagescandataI : xnatImagesessiondataI.getScans_scan()) {
             this.scans.add(new Scan(xnatImagescandataI, this.id, rootArchivePath));
@@ -43,13 +47,13 @@ public class Session {
         this.resources = Lists.newArrayList();
         for (final XnatAbstractresourceI xnatAbstractresourceI : xnatImagesessiondataI.getResources_resource()) {
             if (xnatAbstractresourceI instanceof XnatResourcecatalog) {
-                resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, rootArchivePath));
+                resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, this.id, rootArchivePath));
             }
         }
 
         this.assessors = Lists.newArrayList();
         for (final XnatImageassessordataI xnatImageassessordataI : xnatImagesessiondataI.getAssessors_assessor()) {
-            assessors.add(new Assessor(xnatImageassessordataI, rootArchivePath));
+            assessors.add(new Assessor(xnatImageassessordataI, this.id, rootArchivePath));
         }
     }
 
@@ -59,6 +63,22 @@ public class Session {
 
     public void setXnatImagesessiondataI(final XnatImagesessiondataI xnatImagesessiondataI) {
         this.xnatImagesessiondataI = xnatImagesessiondataI;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(final String id) {
+        this.id = id;
+    }
+
+    public String getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(final String parentId) {
+        this.parentId = parentId;
     }
 
     public String getXsiType() {
@@ -75,14 +95,6 @@ public class Session {
 
     public void setLabel(final String label) {
         this.label = label;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(final String id) {
-        this.id = id;
     }
 
     public List<Resource> getResources() {
@@ -114,8 +126,8 @@ public class Session {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final Session that = (Session) o;
-        return Objects.equals(this.xnatImagesessiondataI, that.xnatImagesessiondataI) &&
-                Objects.equals(this.id, that.id) &&
+        return Objects.equals(this.id, that.id) &&
+                Objects.equals(this.parentId, that.parentId) &&
                 Objects.equals(this.label, that.label) &&
                 Objects.equals(this.xsiType, that.xsiType) &&
                 Objects.equals(this.scans, that.scans) &&
@@ -125,15 +137,15 @@ public class Session {
 
     @Override
     public int hashCode() {
-        return Objects.hash(xnatImagesessiondataI, scans, assessors, resources, id, label, xsiType);
+        return Objects.hash(id, parentId, scans, assessors, resources, label, xsiType);
     }
 
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-                .add("xnatImagesessiondataI", xnatImagesessiondataI)
                 .add("id", id)
+                .add("parentId", parentId)
                 .add("label", label)
                 .add("xsiType", xsiType)
                 .add("scans", scans)

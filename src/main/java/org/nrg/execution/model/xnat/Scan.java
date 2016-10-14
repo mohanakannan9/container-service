@@ -1,6 +1,7 @@
 package org.nrg.execution.model.xnat;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import org.nrg.xdat.model.XnatAbstractresourceI;
@@ -12,26 +13,26 @@ import java.util.Objects;
 
 public class Scan {
     @JsonIgnore private XnatImagescandataI xnatImagescandataI;
-    private String id;
-    private String sessionId;
+    @JsonProperty(required = true) private String id;
+    @JsonProperty(value = "parent-id") private String parentId;
     private String xsiType;
     private String scanType;
     private List<Resource> resources;
 
     public Scan() {}
 
-    public Scan(final XnatImagescandataI xnatImagescandataI, final String sessionId, final String rootArchivePath) {
+    public Scan(final XnatImagescandataI xnatImagescandataI, final String parentId, final String rootArchivePath) {
         this.xnatImagescandataI = xnatImagescandataI;
         this.id = xnatImagescandataI.getId();
         this.xsiType = xnatImagescandataI.getXSIType();
         this.scanType = xnatImagescandataI.getType();
 
-        this.sessionId = sessionId;
+        this.parentId = parentId;
 
         this.resources = Lists.newArrayList();
         for (final XnatAbstractresourceI xnatAbstractresourceI : xnatImagescandataI.getFile()) {
             if (xnatAbstractresourceI instanceof XnatResourcecatalog) {
-                resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, rootArchivePath));
+                resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, this.id, rootArchivePath));
             }
         }
     }
@@ -52,12 +53,12 @@ public class Scan {
         this.id = id;
     }
 
-    public String getSessionId() {
-        return sessionId;
+    public String getParentId() {
+        return parentId;
     }
 
-    public void setSessionId(final String sessionId) {
-        this.sessionId = sessionId;
+    public void setParentId(final String parentId) {
+        this.parentId = parentId;
     }
 
     public String getXsiType() {
@@ -89,9 +90,8 @@ public class Scan {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final Scan that = (Scan) o;
-        return Objects.equals(this.xnatImagescandataI, that.xnatImagescandataI) &&
-                Objects.equals(this.id, that.id) &&
-                Objects.equals(this.sessionId, that.sessionId) &&
+        return Objects.equals(this.id, that.id) &&
+                Objects.equals(this.parentId, that.parentId) &&
                 Objects.equals(this.xsiType, that.xsiType) &&
                 Objects.equals(this.scanType, that.scanType) &&
                 Objects.equals(this.resources, that.resources);
@@ -99,15 +99,14 @@ public class Scan {
 
     @Override
     public int hashCode() {
-        return Objects.hash(xnatImagescandataI, id, sessionId, xsiType, scanType, resources);
+        return Objects.hash(id, parentId, xsiType, scanType, resources);
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-                .add("xnatImagescandataI", xnatImagescandataI)
                 .add("id", id)
-                .add("sessionId", sessionId)
+                .add("parentId", parentId)
                 .add("xsiType", xsiType)
                 .add("scanType", scanType)
                 .add("resources", resources)
