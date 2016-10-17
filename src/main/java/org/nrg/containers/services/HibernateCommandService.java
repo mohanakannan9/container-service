@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.hibernate.Hibernate;
 import org.hibernate.exception.ConstraintViolationException;
+import org.nrg.config.services.ConfigService;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.daos.CommandDao;
 import org.nrg.containers.exceptions.CommandInputResolutionException;
@@ -47,6 +48,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     @Autowired private SiteConfigPreferences siteConfigPreferences;
     @Autowired private TransportService transporter;
     @Autowired private ContainerExecutionService containerExecutionService;
+    @Autowired private ConfigService configService;
 
     @Override
     public Command get(final Long id) throws NotFoundException {
@@ -113,7 +115,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     @Override
     public ResolvedCommand resolveCommand(final Command command, final UserI userI)
             throws NotFoundException, CommandInputResolutionException, CommandMountResolutionException {
-        return CommandResolutionHelper.resolve(command, userI);
+        return CommandResolutionHelper.resolve(command, userI, configService);
     }
 
     @Override
@@ -121,7 +123,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
                                           final Map<String, String> inputValuesProvidedAtRuntime,
                                           final UserI userI)
             throws NotFoundException, CommandInputResolutionException, CommandMountResolutionException {
-        return CommandResolutionHelper.resolve(command, inputValuesProvidedAtRuntime, userI);
+        return CommandResolutionHelper.resolve(command, inputValuesProvidedAtRuntime, userI, configService);
     }
 
     @Override

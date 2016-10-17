@@ -14,6 +14,7 @@ import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ecs.xhtml.input;
+import org.nrg.config.services.ConfigService;
 import org.nrg.containers.exceptions.CommandInputResolutionException;
 import org.nrg.containers.exceptions.CommandMountResolutionException;
 import org.nrg.containers.model.Command;
@@ -24,13 +25,13 @@ import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.containers.model.xnat.Resource;
 import org.nrg.containers.model.xnat.Scan;
 import org.nrg.containers.model.xnat.Session;
+import org.nrg.framework.constants.Scope;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -47,16 +48,19 @@ class CommandResolutionHelper {
     private ObjectMapper mapper;
     private ParseContext jsonPath;
     private Map<String, String> inputValues;
+    private ConfigService configService;
 
     private CommandResolutionHelper(final Command command,
                                     final Map<String, String> inputValues,
-                                    final UserI userI) {
+                                    final UserI userI,
+                                    final ConfigService configService) {
         this.command = command;
         this.resolvedInputs = Maps.newHashMap();
         this.resolvedInputValues = Maps.newHashMap();
         this.resolvedInputValuesAsCommandLineArgs = Maps.newHashMap();
 //            command.setInputs(Lists.<CommandInput>newArrayList());
         this.userI = userI;
+        this.configService = configService;
         this.mapper = new ObjectMapper();
 
 //            this.commandJson = JsonPath.parse(command);
@@ -72,16 +76,17 @@ class CommandResolutionHelper {
         jsonPath = JsonPath.using(configuration);
     }
 
-    public static ResolvedCommand resolve(final Command command, final UserI userI)
+    public static ResolvedCommand resolve(final Command command, final UserI userI, final ConfigService configService)
             throws CommandInputResolutionException, CommandMountResolutionException {
-        return resolve(command, null, userI);
+        return resolve(command, null, userI, configService);
     }
 
     public static ResolvedCommand resolve(final Command command,
                                           final Map<String, String> inputValues,
-                                          final UserI userI)
+                                          final UserI userI,
+                                          final ConfigService configService)
             throws CommandInputResolutionException, CommandMountResolutionException {
-        final CommandResolutionHelper helper = new CommandResolutionHelper(command, inputValues, userI);
+        final CommandResolutionHelper helper = new CommandResolutionHelper(command, inputValues, userI, configService);
         return helper.resolve();
     }
 
@@ -267,7 +272,45 @@ class CommandResolutionHelper {
                     // TODO
                     break;
                 case CONFIG:
-                    // TODO
+                    final String[] configProps = input.getValue() != null ?
+                            input.getValue().split("/") :
+                            null;
+
+                    if (configProps == null || configProps.length != 2) {
+                        throw new CommandInputResolutionException("Config inputs must have a value that can be interpreted as a config_toolname/config_filename string.", input);
+                    }
+
+                    final Scope configScope;
+                    final String entityId;
+                    final CommandInput.Type parentType = parent == null ? CommandInput.Type.STRING : parent.getType();
+                    switch (parentType) {
+                        case PROJECT:
+                            configScope = Scope.Project;
+                            entityId = jsonPath.parse(parent.getValue()).read("$.id");
+                            break;
+                        case SUBJECT:
+                        case SESSION:
+                        case SCAN:
+                        case ASSESSOR:
+                            // TODO This probably will not work. Figure out a way to get the project ID from these, or simply throw an error.
+                            configScope = Scope.Project;
+                            entityId = jsonPath.parse(parent.getValue()).read("$..projectId");
+                            if (StringUtils.isBlank(entityId)) {
+                                throw new CommandInputResolutionException("Could not determine project when resolving config value.", input);
+                            }
+                            break;
+                        default:
+                            configScope = Scope.Site;
+                            entityId = null;
+                    }
+
+
+                    final org.nrg.config.entities.Configuration config = configService.getConfig(configProps[0], configProps[1], configScope, entityId);
+                    if (config == null || config.getContents() == null) {
+                        throw new CommandInputResolutionException("Could not read config " + input.getValue(), input);
+                    }
+
+                    resolvedValue = config.getContents();
                     break;
                 case RESOURCE:
                     // TODO

@@ -3,6 +3,7 @@ package org.nrg.containers.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hibernate.SessionFactory;
 import org.mockito.Mockito;
+import org.nrg.config.services.ConfigService;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.daos.CommandDao;
 import org.nrg.containers.model.Command;
@@ -96,6 +97,11 @@ public class CommandTestConfig {
     @Bean
     public TransportService transportService() {
         return Mockito.mock(TransportServiceImpl.class);
+    }
+
+    @Bean
+    public ConfigService configService() {
+        return Mockito.mock(ConfigService.class);
     }
 
     @Bean
