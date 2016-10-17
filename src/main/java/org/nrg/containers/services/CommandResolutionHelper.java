@@ -13,6 +13,7 @@ import com.jayway.jsonpath.TypeRef;
 import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.ecs.xhtml.input;
 import org.nrg.containers.exceptions.CommandInputResolutionException;
 import org.nrg.containers.exceptions.CommandMountResolutionException;
 import org.nrg.containers.model.Command;
@@ -39,7 +40,6 @@ import static com.jayway.jsonpath.Filter.filter;
 class CommandResolutionHelper {
     private static final Logger log = LoggerFactory.getLogger(CommandResolutionHelper.class);
     private Command command;
-    private LinkedList<CommandInput> notResolvedInputs;
     private Map<String, CommandInput> resolvedInputs;
     private Map<String, String> resolvedInputValues;
     private Map<String, String> resolvedInputValuesAsCommandLineArgs;
@@ -55,12 +55,6 @@ class CommandResolutionHelper {
         this.resolvedInputs = Maps.newHashMap();
         this.resolvedInputValues = Maps.newHashMap();
         this.resolvedInputValuesAsCommandLineArgs = Maps.newHashMap();
-        this.notResolvedInputs = Lists.newLinkedList();
-        if (command.getInputs() != null) {
-            for (final CommandInput input : command.getInputs()) {
-                this.notResolvedInputs.push(input);
-            }
-        }
 //            command.setInputs(Lists.<CommandInput>newArrayList());
         this.userI = userI;
         this.mapper = new ObjectMapper();
@@ -109,10 +103,33 @@ class CommandResolutionHelper {
     }
 
     private void resolveInputs() throws CommandInputResolutionException {
-        while (!notResolvedInputs.isEmpty()) {
-            final CommandInput input = notResolvedInputs.pop();
+        if (command.getInputs() == null) {
+            return;
+        }
+
+        for (final CommandInput input : command.getInputs()) {
             if (log.isDebugEnabled()) {
                 log.debug("Resolving input " + input);
+            }
+
+            // Check that all prerequisites have already been resolved.
+            // TODO Move this to a command validation function. Command should not be saved unless inputs are in correct order. At this stage, we should be able to safely iterate.
+            final List<String> prerequisites = StringUtils.isNotBlank(input.getPrerequisites()) ?
+                    Lists.newArrayList(input.getPrerequisites().split("\\s*,\\s*")) :
+                    Lists.<String>newArrayList();
+            if (StringUtils.isNotBlank(input.getParent()) && !prerequisites.contains(input.getParent())) {
+                // Parent is always a prerequisite
+                prerequisites.add(input.getParent());
+            }
+
+            for (final String prereq : prerequisites) {
+                if (!resolvedInputs.containsKey(prereq)) {
+                    final String message = String.format(
+                            "Input %s has prerequisite %s which has not been resolved. Re-order inputs so %s appears after %s.",
+                            input.getName(), prereq, input.getName(), prereq
+                    );
+                    throw new CommandInputResolutionException(message, input);
+                }
             }
 
             // If input requires a parent, it must be resolved first
@@ -122,39 +139,12 @@ class CommandResolutionHelper {
                     // Parent has already been resolved. We can continue.
                     parent = resolvedInputs.get(input.getParent());
                 } else {
-                    // If parent has not been resolved, we...
-                    // 1. find it in & remove it from the stack,
-                    // 2. push the input back on,
-                    // 3. push the parent on top, and
-                    // 4. iterate again
-                    boolean found = false;
-                    for (final CommandInput potentialParent : notResolvedInputs) {
-                        if (input.getParent().equals(potentialParent.getName())) {
-                            if (StringUtils.isNotBlank(potentialParent.getParent()) && potentialParent.getParent().equalsIgnoreCase(input.getName())) {
-                                final String message = String.format("Circular parent reference: input %s has parent %s, which has parent %s.",
-                                        input.getName(), potentialParent.getName(), input.getName());
-                                throw new CommandInputResolutionException(message, input);
-                            }
-                            notResolvedInputs.remove(potentialParent);
-                            notResolvedInputs.push(input);
-                            notResolvedInputs.push(potentialParent);
-                            found = true;
-                            break;
-                        }
-                    }
-
-                    if (!found) {
-                        final String message = String.format(
-                                "Input %s requires parent %s, but parent was not found.",
-                                input.getName(), input.getParent()
-                        );
-                        throw new CommandInputResolutionException(message, input);
-                    } else {
-                        if (log.isDebugEnabled()) {
-                            log.debug(String.format("Input %s requires parent %s. Must resolve parent first.", input.getName(), input.getParent()));
-                        }
-                        continue;
-                    }
+                    // This exception should have been thrown already above, but just in case it wasn't...
+                    final String message = String.format(
+                            "Input %s has prerequisite %s which has not been resolved. Re-order inputs so %s appears after %s.",
+                            input.getName(), input.getParent(), input.getName(), input.getParent()
+                    );
+                    throw new CommandInputResolutionException(message, input);
                 }
             }
 

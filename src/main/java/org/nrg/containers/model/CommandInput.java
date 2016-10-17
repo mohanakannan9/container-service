@@ -6,11 +6,9 @@ import com.google.common.base.MoreObjects;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.persistence.Embeddable;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.Transient;
+import javax.persistence.*;
 import java.io.Serializable;
+import java.util.List;
 import java.util.Objects;
 
 @Embeddable
@@ -19,6 +17,7 @@ public class CommandInput implements Serializable {
     private String description;
     private Type type = Type.STRING;
     private Boolean required;
+    private String prerequisites;
     private String parent;
     @JsonProperty("parent-property") private String parentProperty;
     @JsonProperty("default-value") private String defaultValue;
@@ -69,6 +68,14 @@ public class CommandInput implements Serializable {
 
     public void setRequired(final Boolean required) {
         this.required = required;
+    }
+
+    public String getPrerequisites() {
+        return prerequisites;
+    }
+
+    public void setPrerequisites(final String prerequisites) {
+        this.prerequisites = prerequisites;
     }
 
     public String getParent() {
@@ -165,6 +172,7 @@ public class CommandInput implements Serializable {
                 Objects.equals(this.description, that.description) &&
                 Objects.equals(this.type, that.type) &&
                 Objects.equals(this.required, that.required) &&
+                Objects.equals(this.prerequisites, that.prerequisites) &&
                 Objects.equals(this.parent, that.parent) &&
                 Objects.equals(this.parentProperty, that.parentProperty) &&
                 Objects.equals(this.defaultValue, that.defaultValue) &&
@@ -178,7 +186,7 @@ public class CommandInput implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, description, type, required, parent, parentProperty, defaultValue,
+        return Objects.hash(name, description, type, required, prerequisites, parent, parentProperty, defaultValue,
                 rawReplacementKey, commandLineFlag, commandLineSeparator, trueValue, falseValue, value);
     }
 
@@ -189,6 +197,7 @@ public class CommandInput implements Serializable {
                 .add("description", description)
                 .add("type", type)
                 .add("required", required)
+                .add("prerequisites", prerequisites)
                 .add("parent", parent)
                 .add("parentProperty", parentProperty)
                 .add("defaultValue", defaultValue)
