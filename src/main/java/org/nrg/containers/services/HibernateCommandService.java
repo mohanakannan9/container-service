@@ -48,7 +48,6 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     @Autowired private SiteConfigPreferences siteConfigPreferences;
     @Autowired private TransportService transporter;
     @Autowired private ContainerExecutionService containerExecutionService;
-    @Autowired private ConfigService configService;
 
     @Override
     public Command get(final Long id) throws NotFoundException {
@@ -115,7 +114,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     @Override
     public ResolvedCommand resolveCommand(final Command command, final UserI userI)
             throws NotFoundException, CommandInputResolutionException, CommandMountResolutionException {
-        return CommandResolutionHelper.resolve(command, userI, configService);
+        return CommandResolutionHelper.resolve(command, userI);
     }
 
     @Override
@@ -123,7 +122,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
                                           final Map<String, String> inputValuesProvidedAtRuntime,
                                           final UserI userI)
             throws NotFoundException, CommandInputResolutionException, CommandMountResolutionException {
-        return CommandResolutionHelper.resolve(command, inputValuesProvidedAtRuntime, userI, configService);
+        return CommandResolutionHelper.resolve(command, inputValuesProvidedAtRuntime, userI);
     }
 
     @Override

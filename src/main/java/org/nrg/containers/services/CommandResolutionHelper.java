@@ -26,6 +26,7 @@ import org.nrg.containers.model.xnat.Resource;
 import org.nrg.containers.model.xnat.Scan;
 import org.nrg.containers.model.xnat.Session;
 import org.nrg.framework.constants.Scope;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
@@ -52,15 +53,14 @@ class CommandResolutionHelper {
 
     private CommandResolutionHelper(final Command command,
                                     final Map<String, String> inputValues,
-                                    final UserI userI,
-                                    final ConfigService configService) {
+                                    final UserI userI) {
         this.command = command;
         this.resolvedInputs = Maps.newHashMap();
         this.resolvedInputValues = Maps.newHashMap();
         this.resolvedInputValuesAsCommandLineArgs = Maps.newHashMap();
 //            command.setInputs(Lists.<CommandInput>newArrayList());
         this.userI = userI;
-        this.configService = configService;
+        this.configService = XDAT.getConfigService();
         this.mapper = new ObjectMapper();
 
 //            this.commandJson = JsonPath.parse(command);
@@ -76,17 +76,16 @@ class CommandResolutionHelper {
         jsonPath = JsonPath.using(configuration);
     }
 
-    public static ResolvedCommand resolve(final Command command, final UserI userI, final ConfigService configService)
+    public static ResolvedCommand resolve(final Command command, final UserI userI)
             throws CommandInputResolutionException, CommandMountResolutionException {
-        return resolve(command, null, userI, configService);
+        return resolve(command, null, userI);
     }
 
     public static ResolvedCommand resolve(final Command command,
                                           final Map<String, String> inputValues,
-                                          final UserI userI,
-                                          final ConfigService configService)
+                                          final UserI userI)
             throws CommandInputResolutionException, CommandMountResolutionException {
-        final CommandResolutionHelper helper = new CommandResolutionHelper(command, inputValues, userI, configService);
+        final CommandResolutionHelper helper = new CommandResolutionHelper(command, inputValues, userI);
         return helper.resolve();
     }
 
