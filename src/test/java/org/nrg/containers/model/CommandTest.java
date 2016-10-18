@@ -58,8 +58,10 @@ public class CommandTest {
                     "\"type\":\"Resource\"," +
                     "\"label\":\"DATA\"," +
                     "\"parent\":\"$.json.path.expression\"," +
-                    "\"mount\":\"$.run.mounts[name='out']\"," +
-                    "\"path\":\"relative/path/to/dir\"" +
+                    "\"files\": {" +
+                        "\"mount\":\"out\"," +
+                        "\"path\":\"relative/path/to/dir\"" +
+                    "}" +
             "}";
     private static final String INPUT_LIST_JSON =
             "[" + COOL_INPUT_JSON + ", " + FOO_INPUT_JSON + "," + SESSION_INPUT_JSON + "]";

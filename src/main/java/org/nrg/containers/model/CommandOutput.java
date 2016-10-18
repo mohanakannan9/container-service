@@ -1,5 +1,6 @@
 package org.nrg.containers.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import io.swagger.annotations.ApiModelProperty;
 
@@ -12,14 +13,12 @@ import java.util.Objects;
 public class CommandOutput implements Serializable {
     private String name;
     private String description;
-    private String type;
+    private Type type;
+    private String label;
     private Boolean required;
     private String parent;
-    private String label;
-    private String mount;
-    private String path;
+    private CommandOutputFiles files;
 
-    @ApiModelProperty(value = "Name of the command input", required = true)
     public String getName() {
         return name;
     }
@@ -28,7 +27,6 @@ public class CommandOutput implements Serializable {
         this.name = name;
     }
 
-    @ApiModelProperty("Description of the command input")
     public String getDescription() {
         return description;
     }
@@ -37,16 +35,22 @@ public class CommandOutput implements Serializable {
         this.description = description;
     }
 
-    @ApiModelProperty(value = "Type of the command input", allowableValues = "string, boolean, number")
-    public String getType() {
+    public Type getType() {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(final Type type) {
         this.type = type;
     }
 
-    @ApiModelProperty("Whether the argument is required. If true, and no value is given as a default or at command launch time, an error is thrown.")
+    public String getLabel() {
+        return label;
+    }
+
+    public void setLabel(final String label) {
+        this.label = label;
+    }
+
     public Boolean getRequired() {
         return required;
     }
@@ -68,29 +72,12 @@ public class CommandOutput implements Serializable {
         this.parent = parent;
     }
 
-
-    public String getLabel() {
-        return label;
+    public CommandOutputFiles getFiles() {
+        return files;
     }
 
-    public void setLabel(final String label) {
-        this.label = label;
-    }
-
-    public String getMount() {
-        return mount;
-    }
-
-    public void setMount(final String mount) {
-        this.mount = mount;
-    }
-
-    public String getPath() {
-        return path;
-    }
-
-    public void setPath(final String path) {
-        this.path = path;
+    public void setFiles(final CommandOutputFiles files) {
+        this.files = files;
     }
 
     @Override
@@ -100,17 +87,15 @@ public class CommandOutput implements Serializable {
         final CommandOutput that = (CommandOutput) o;
         return Objects.equals(this.name, that.name) &&
                 Objects.equals(this.description, that.description) &&
-                Objects.equals(this.type, that.type) &&
+                Objects.equals(this.label, that.label) &&
                 Objects.equals(this.required, that.required) &&
                 Objects.equals(this.parent, that.parent) &&
-                Objects.equals(this.label, that.label) &&
-                Objects.equals(this.mount, that.mount) &&
-                Objects.equals(this.path, that.path);
+                Objects.equals(this.files, that.files);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, description, type, required, parent, label, mount, path);
+        return Objects.hash(name, description, label, required, parent, files);
     }
 
     @Override
@@ -118,12 +103,15 @@ public class CommandOutput implements Serializable {
         return MoreObjects.toStringHelper(this)
                 .add("name", name)
                 .add("description", description)
-                .add("type", type)
+                .add("type", label)
                 .add("required", required)
                 .add("parent", parent)
-                .add("label", label)
-                .add("mount", mount)
-                .add("path", path)
+                .add("files", files)
                 .toString();
+    }
+
+    public enum Type {
+        @JsonProperty("Resource") RESOURCE,
+        @JsonProperty("Assessor") ASSESSOR
     }
 }
