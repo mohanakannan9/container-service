@@ -57,7 +57,7 @@ public class CommandTest {
                     "\"description\":\"It's the output\"," +
                     "\"type\":\"Resource\"," +
                     "\"label\":\"DATA\"," +
-                    "\"root\":\"$.json.path.expression\"," +
+                    "\"parent\":\"$.json.path.expression\"," +
                     "\"mount\":\"$.run.mounts[name='out']\"," +
                     "\"path\":\"relative/path/to/dir\"" +
             "}";

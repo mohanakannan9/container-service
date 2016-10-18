@@ -14,7 +14,7 @@ public class CommandOutput implements Serializable {
     private String description;
     private String type;
     private Boolean required;
-    private String root;
+    private String parent;
     private String label;
     private String mount;
     private String path;
@@ -60,12 +60,12 @@ public class CommandOutput implements Serializable {
         this.required = required;
     }
 
-    public String getRoot() {
-        return root;
+    public String getParent() {
+        return parent;
     }
 
-    public void setRoot(final String root) {
-        this.root = root;
+    public void setParent(final String parent) {
+        this.parent = parent;
     }
 
 
@@ -102,7 +102,7 @@ public class CommandOutput implements Serializable {
                 Objects.equals(this.description, that.description) &&
                 Objects.equals(this.type, that.type) &&
                 Objects.equals(this.required, that.required) &&
-                Objects.equals(this.root, that.root) &&
+                Objects.equals(this.parent, that.parent) &&
                 Objects.equals(this.label, that.label) &&
                 Objects.equals(this.mount, that.mount) &&
                 Objects.equals(this.path, that.path);
@@ -110,7 +110,7 @@ public class CommandOutput implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, description, type, required, root, label, mount, path);
+        return Objects.hash(name, description, type, required, parent, label, mount, path);
     }
 
     @Override
@@ -120,7 +120,7 @@ public class CommandOutput implements Serializable {
                 .add("description", description)
                 .add("type", type)
                 .add("required", required)
-                .add("root", root)
+                .add("parent", parent)
                 .add("label", label)
                 .add("mount", mount)
                 .add("path", path)
