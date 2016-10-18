@@ -181,7 +181,10 @@ class CommandResolutionHelper {
                     break;
                 case FILE:
                     if (parent != null) {
-                        resolvedValue = getValueFromParent(parent.getValue(), input.getParentProperty(), "files", resolvedValue);
+                        final String childString = matchChildFromParent(parent.getValue(), resolvedValue, "files", "name", input.getMatcher());
+                        if (childString != null) {
+                            resolvedValue = childString;
+                        }
                     } else {
                         throw new CommandInputResolutionException(String.format("Inputs of type %s must have a parent.", input.getType()), input);
                     }
@@ -195,7 +198,8 @@ class CommandResolutionHelper {
                 case SESSION:
                     if (parent != null) {
                         // We have a parent, so pull the value from it
-                        final String childString = getChildFromParent(parent.getValue(), "sessions", input.getMatcher());
+                        // If we have any value set currently, assume it is an ID
+                        final String childString = matchChildFromParent(parent.getValue(), resolvedValue, "sessions", "id", input.getMatcher());
                         if (childString != null) {
                             resolvedValue = childString;
                         }
@@ -255,7 +259,7 @@ class CommandResolutionHelper {
                 case SCAN:
                     if (parent != null) {
                         // We have a parent, so pull the value from it
-                        final String childString = getChildFromParent(parent.getValue(), "scans", input.getMatcher());
+                        final String childString = matchChildFromParent(parent.getValue(), resolvedValue, "scans", "id", input.getMatcher());
                         if (childString != null) {
                             resolvedValue = childString;
                         }
@@ -382,6 +386,25 @@ class CommandResolutionHelper {
             resolvedInputValues.put(replacementKey, resolvedValue);
             resolvedInputValuesAsCommandLineArgs.put(replacementKey, getValueForCommandLine(input, resolvedValue));
         }
+    }
+
+    private String matchChildFromParent(final String parentValue, final String value, final String childKey, final String valueMatchProperty, final String matcherFromInput) {
+        final String matcherFromValue = StringUtils.isNotBlank(value) ?
+                String.format("@.%s == '%s'", valueMatchProperty, value) :
+                "";
+        final boolean hasValueMatcher = StringUtils.isNotBlank(matcherFromValue);
+        final boolean hasInputMatcher = StringUtils.isNotBlank(matcherFromInput);
+        final String fullMatcher;
+        if (hasValueMatcher && hasInputMatcher) {
+            fullMatcher = matcherFromValue + " && " + matcherFromInput;
+        } else if (hasValueMatcher) {
+            fullMatcher = matcherFromValue;
+        } else if (hasInputMatcher) {
+            fullMatcher = matcherFromInput;
+        } else {
+            fullMatcher = "*";
+        }
+        return getChildFromParent(parentValue, childKey, fullMatcher);
     }
 
     private String resolveJsonpathSubstring(final String stringThatMayContainJsonpathSubstring) {
