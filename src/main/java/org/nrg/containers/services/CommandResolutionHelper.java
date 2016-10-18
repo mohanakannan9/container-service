@@ -166,6 +166,8 @@ class CommandResolutionHelper {
                 resolvedValue = inputValues.get(input.getName());
             }
 
+            final String resolvedMatcher = resolveJsonpathSubstring(input.getMatcher());
+
             switch (input.getType()) {
                 case BOOLEAN:
                     // Parse the value as a boolean, and use the trueValue/falseValue
@@ -181,7 +183,7 @@ class CommandResolutionHelper {
                     break;
                 case FILE:
                     if (parent != null) {
-                        final String childString = matchChildFromParent(parent.getValue(), resolvedValue, "files", "name", input.getMatcher());
+                        final String childString = matchChildFromParent(parent.getValue(), resolvedValue, "files", "name", resolvedMatcher);
                         if (childString != null) {
                             resolvedValue = childString;
                         }
@@ -199,7 +201,8 @@ class CommandResolutionHelper {
                     if (parent != null) {
                         // We have a parent, so pull the value from it
                         // If we have any value set currently, assume it is an ID
-                        final String childString = matchChildFromParent(parent.getValue(), resolvedValue, "sessions", "id", input.getMatcher());
+
+                        final String childString = matchChildFromParent(parent.getValue(), resolvedValue, "sessions", "id", resolvedMatcher);
                         if (childString != null) {
                             resolvedValue = childString;
                         }
@@ -234,12 +237,12 @@ class CommandResolutionHelper {
                         final List<Session> doMatch;
                         if (StringUtils.isNotBlank(input.getMatcher())) {
                             final String jsonPathSearch = String.format(
-                                    "$[?(%s)]", input.getMatcher()
+                                    "$[?(%s)]", resolvedMatcher
                             );
                             doMatch = jsonPath.parse(mayOrMayNotMatch).read(jsonPathSearch, new TypeRef<List<Session>>(){});
 
                             if (doMatch == null || doMatch.isEmpty()) {
-                                throw new CommandInputResolutionException("Could not match any sessions with matcher " + input.getMatcher(), input);
+                                throw new CommandInputResolutionException("Could not match any sessions with matcher " + resolvedMatcher, input);
                             }
                         } else {
                             doMatch = mayOrMayNotMatch;
@@ -259,7 +262,7 @@ class CommandResolutionHelper {
                 case SCAN:
                     if (parent != null) {
                         // We have a parent, so pull the value from it
-                        final String childString = matchChildFromParent(parent.getValue(), resolvedValue, "scans", "id", input.getMatcher());
+                        final String childString = matchChildFromParent(parent.getValue(), resolvedValue, "scans", "id", resolvedMatcher);
                         if (childString != null) {
                             resolvedValue = childString;
                         }
@@ -292,14 +295,14 @@ class CommandResolutionHelper {
                         }
 
                         final List<Scan> doMatch;
-                        if (StringUtils.isNotBlank(input.getMatcher())) {
+                        if (StringUtils.isNotBlank(resolvedMatcher)) {
                             final String jsonPathSearch = String.format(
-                                    "$[?(%s)]", input.getMatcher()
+                                    "$[?(%s)]", resolvedMatcher
                             );
                             doMatch = jsonPath.parse(mayOrMayNotMatch).read(jsonPathSearch, new TypeRef<List<Scan>>(){});
 
                             if (doMatch == null || doMatch.isEmpty()) {
-                                throw new CommandInputResolutionException("Could not match any Scans with matcher " + input.getMatcher(), input);
+                                throw new CommandInputResolutionException("Could not match any Scans with matcher " + resolvedMatcher, input);
                             }
                         } else {
                             doMatch = mayOrMayNotMatch;
@@ -321,7 +324,7 @@ class CommandResolutionHelper {
                     break;
                 case CONFIG:
                     final String[] configProps = input.getValue() != null ?
-                            input.getValue().split("/") :
+                            resolvedValue.split("/") :
                             null;
 
                     if (configProps == null || configProps.length != 2) {
@@ -355,7 +358,7 @@ class CommandResolutionHelper {
 
                     final org.nrg.config.entities.Configuration config = configService.getConfig(configProps[0], configProps[1], configScope, entityId);
                     if (config == null || config.getContents() == null) {
-                        throw new CommandInputResolutionException("Could not read config " + input.getValue(), input);
+                        throw new CommandInputResolutionException("Could not read config " + resolvedValue, input);
                     }
 
                     resolvedValue = config.getContents();
