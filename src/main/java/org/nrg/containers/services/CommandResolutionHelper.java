@@ -13,7 +13,6 @@ import com.jayway.jsonpath.TypeRef;
 import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.ecs.xhtml.input;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.exceptions.CommandInputResolutionException;
 import org.nrg.containers.exceptions.CommandMountResolutionException;
@@ -35,12 +34,16 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.jayway.jsonpath.Criteria.where;
 import static com.jayway.jsonpath.Filter.filter;
 
 class CommandResolutionHelper {
     private static final Logger log = LoggerFactory.getLogger(CommandResolutionHelper.class);
+    private static final String JSONPATH_SUBSTRING_REGEX = "\\^(.+)\\^";
+
     private Command command;
     private Map<String, CommandInput> resolvedInputs;
     private Map<String, String> resolvedInputValues;
@@ -50,6 +53,7 @@ class CommandResolutionHelper {
     private ParseContext jsonPath;
     private Map<String, String> inputValues;
     private ConfigService configService;
+    private Pattern jsonpathSubstringPattern;
 
     private CommandResolutionHelper(final Command command,
                                     final Map<String, String> inputValues,
@@ -62,8 +66,6 @@ class CommandResolutionHelper {
         this.userI = userI;
         this.configService = XDAT.getConfigService();
         this.mapper = new ObjectMapper();
-
-//            this.commandJson = JsonPath.parse(command);
         this.inputValues = inputValues == null ?
                 Maps.<String, String>newHashMap() :
                 inputValues;
@@ -74,6 +76,7 @@ class CommandResolutionHelper {
                 .options(Option.ALWAYS_RETURN_LIST, Option.DEFAULT_PATH_LEAF_TO_NULL)
                 .build();
         jsonPath = JsonPath.using(configuration);
+        jsonpathSubstringPattern = Pattern.compile(JSONPATH_SUBSTRING_REGEX);
     }
 
     public static ResolvedCommand resolve(final Command command, final UserI userI)
@@ -126,11 +129,14 @@ class CommandResolutionHelper {
                 prerequisites.add(input.getParent());
             }
 
+            if (log.isDebugEnabled()) {
+                log.debug("Prerequisites: " + prerequisites.toString());
+            }
             for (final String prereq : prerequisites) {
                 if (!resolvedInputs.containsKey(prereq)) {
                     final String message = String.format(
-                            "Input %s has prerequisite %s which has not been resolved. Re-order inputs so %s appears after %s.",
-                            input.getName(), prereq, input.getName(), prereq
+                            "Input %1$s has prerequisite %2$s which has not been resolved. Re-order inputs so %1$s appears after %2$s.",
+                            input.getName(), prereq
                     );
                     throw new CommandInputResolutionException(message, input);
                 }
@@ -145,15 +151,15 @@ class CommandResolutionHelper {
                 } else {
                     // This exception should have been thrown already above, but just in case it wasn't...
                     final String message = String.format(
-                            "Input %s has prerequisite %s which has not been resolved. Re-order inputs so %s appears after %s.",
-                            input.getName(), input.getParent(), input.getName(), input.getParent()
+                            "Input %1$s has prerequisite %2$s which has not been resolved. Re-order inputs so %1$s appears after %2$s.",
+                            input.getName(), input.getParent()
                     );
                     throw new CommandInputResolutionException(message, input);
                 }
             }
 
             // Give the input its default value
-            String resolvedValue = input.getDefaultValue();
+            String resolvedValue = resolveJsonpathSubstring(input.getDefaultValue());
 
             // If a value was provided at runtime, use that over the default
             if (inputValues.containsKey(input.getName()) && inputValues.get(input.getName()) != null) {
@@ -337,6 +343,37 @@ class CommandResolutionHelper {
             resolvedInputValues.put(replacementKey, resolvedValue);
             resolvedInputValuesAsCommandLineArgs.put(replacementKey, getValueForCommandLine(input, resolvedValue));
         }
+    }
+
+    private String resolveJsonpathSubstring(final String stringThatMayContainJsonpathSubstring) {
+        if (log.isDebugEnabled()) log.debug("Checking for jsonpath substring in " + stringThatMayContainJsonpathSubstring);
+        if (StringUtils.isNotBlank(stringThatMayContainJsonpathSubstring)) {
+
+            final Matcher jsonpathSubstringMatcher = jsonpathSubstringPattern.matcher(stringThatMayContainJsonpathSubstring);
+
+            if (jsonpathSubstringMatcher.find()) {
+
+                final String jsonpathSearchWithMarkers = jsonpathSubstringMatcher.group(0);
+                final String jsonpathSearchWithoutMarkers = jsonpathSubstringMatcher.group(1);
+
+                if (log.isDebugEnabled()) log.debug("Found possible jsonpath substring " + jsonpathSearchWithMarkers);
+
+                if (StringUtils.isNotBlank(jsonpathSearchWithoutMarkers)) {
+
+                    if(log.isInfoEnabled()) log.info("Performing jsonpath search through command with search string " + jsonpathSearchWithoutMarkers);
+
+                    final String searchResult = jsonPath.parse(command).read(jsonpathSearchWithoutMarkers);
+                    if (searchResult != null) {
+                        if (log.isInfoEnabled()) log.info("Result: " + searchResult);
+                        return stringThatMayContainJsonpathSubstring.replaceFirst(jsonpathSearchWithMarkers, searchResult);
+                    } else {
+                        if (log.isInfoEnabled()) log.debug("No result");
+                    }
+                }
+            }
+        }
+        if (log.isDebugEnabled()) log.debug("Returning initial string without any replacement.");
+        return stringThatMayContainJsonpathSubstring;
     }
 
     private String getValueFromParent(final String parent, final String parentProperty, final String rootValueType, final String currentResolvedValue) {
