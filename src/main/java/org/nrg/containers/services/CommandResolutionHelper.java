@@ -195,37 +195,56 @@ class CommandResolutionHelper {
                 case SESSION:
                     if (parent != null) {
                         // We have a parent, so pull the value from it
-                        resolvedValue = getValueFromParent(parent.getValue(), input.getParentProperty(), "sessions", resolvedValue);
+                        final String childString = getChildFromParent(parent.getValue(), "sessions", input.getMatcher());
+                        if (childString != null) {
+                            resolvedValue = childString;
+                        }
                     } else {
                         // With no parent, we were either given, A. a Session in json, B. a list of Sessions in json, or C. the session id
-                        Session session = null;
+                        List<Session> mayOrMayNotMatch = Lists.newArrayList();
                         if (resolvedValue.startsWith("{")) {
                             try {
-                                session = mapper.readValue(resolvedValue, Session.class);
+                                final Session session = mapper.readValue(resolvedValue, Session.class);
+                                mayOrMayNotMatch.add(session);
                             } catch (IOException e) {
                                 log.info(String.format("Could not deserialize %s into a Session object.", resolvedValue), e);
                             }
                         } else if (resolvedValue.matches("^\\[\\s*\\{")) {
                             try {
-                                final List<Session> sessions = mapper.readValue(resolvedValue, new TypeReference<List<Session>>(){});
-                                session = sessions.get(0);
-                                log.warn(String.format("Cannot implicitly loop over Session objects. Selecting first session (%s) from list of sessions (%s).", session, resolvedValue));
+                                mayOrMayNotMatch = mapper.readValue(resolvedValue, new TypeReference<List<Session>>(){});
                             } catch (IOException e) {
                                 log.info(String.format("Could not deserialize %s into a list of Session objects.", resolvedValue), e);
                             }
                         } else {
-
                             final XnatImagesessiondata imagesessiondata = XnatImagesessiondata.getXnatImagesessiondatasById(resolvedValue, userI, true);
                             if (imagesessiondata == null) {
                                 log.info("Could not instantiate image session from id " + resolvedValue);
                             }
-                            session = new Session(imagesessiondata, userI);
+                            mayOrMayNotMatch.add(new Session(imagesessiondata, userI));
                         }
 
-                        if (session == null) {
+                        if (mayOrMayNotMatch == null || mayOrMayNotMatch.isEmpty()) {
                             throw new CommandInputResolutionException("Could not instantiate Session from value " + resolvedValue, input);
                         }
 
+                        final List<Session> doMatch;
+                        if (StringUtils.isNotBlank(input.getMatcher())) {
+                            final String jsonPathSearch = String.format(
+                                    "$[?(%s)]", input.getMatcher()
+                            );
+                            doMatch = jsonPath.parse(mayOrMayNotMatch).read(jsonPathSearch, new TypeRef<List<Session>>(){});
+
+                            if (doMatch == null || doMatch.isEmpty()) {
+                                throw new CommandInputResolutionException("Could not match any sessions with matcher " + input.getMatcher(), input);
+                            }
+                        } else {
+                            doMatch = mayOrMayNotMatch;
+                        }
+
+                        final Session session = doMatch.get(0);
+                        if (doMatch.size() > 1) {
+                            log.warn(String.format("Cannot implicitly loop over Session objects. Selecting first session (%s) from list of sessions (%s).", session, resolvedValue));
+                        }
                         try {
                             resolvedValue = mapper.writeValueAsString(session);
                         } catch (JsonProcessingException e) {
@@ -236,36 +255,56 @@ class CommandResolutionHelper {
                 case SCAN:
                     if (parent != null) {
                         // We have a parent, so pull the value from it
-                        resolvedValue = getValueFromParent(parent.getValue(), input.getParentProperty(), "scans", resolvedValue);
+                        final String childString = getChildFromParent(parent.getValue(), "scans", input.getMatcher());
+                        if (childString != null) {
+                            resolvedValue = childString;
+                        }
                     } else {
                         // With no parent, we must have been given the Scan as json
-                        Scan scan = null;
+                        List<Scan> mayOrMayNotMatch = Lists.newArrayList();
                         if (resolvedValue.startsWith("{")) {
                             try {
                                 if (log.isDebugEnabled()) {
                                     log.debug("Attempting to deserialize value %s as a Scan.", resolvedValue);
                                 }
-                                scan = mapper.readValue(resolvedValue, Scan.class);
+                                final Scan scan = mapper.readValue(resolvedValue, Scan.class);
+                                mayOrMayNotMatch.add(scan);
                             } catch (IOException e) {
-                                log.error(String.format("Could not deserialize %s into a Scan object.", resolvedValue), e);
+                                log.info(String.format("Could not deserialize %s into a Scan object.", resolvedValue), e);
                             }
                         } else if (resolvedValue.matches("^\\[\\s*\\{")) {
                             try {
                                 if (log.isDebugEnabled()) {
                                     log.debug("Attempting to deserialize value %s as a list of Scans.", resolvedValue);
                                 }
-                                final List<Scan> scans = mapper.readValue(resolvedValue, new TypeReference<List<Scan>>(){});
-                                scan = scans.get(0);
-                                log.warn(String.format("Cannot implicitly loop over Scan objects. Selecting first scan (%s) from list of scans (%s).", scan, resolvedValue));
+                                mayOrMayNotMatch = mapper.readValue(resolvedValue, new TypeReference<List<Scan>>(){});
                             } catch (IOException e) {
                                 log.error(String.format("Could not deserialize %s into a list of Scan objects.", resolvedValue), e);
                             }
                         }
 
-                        if (scan == null) {
+                        if (mayOrMayNotMatch == null || mayOrMayNotMatch.isEmpty()) {
                             throw new CommandInputResolutionException("Could not instantiate Scan from value " + resolvedValue, input);
                         }
 
+                        final List<Scan> doMatch;
+                        if (StringUtils.isNotBlank(input.getMatcher())) {
+                            final String jsonPathSearch = String.format(
+                                    "$[?(%s)]", input.getMatcher()
+                            );
+                            doMatch = jsonPath.parse(mayOrMayNotMatch).read(jsonPathSearch, new TypeRef<List<Scan>>(){});
+
+                            if (doMatch == null || doMatch.isEmpty()) {
+                                throw new CommandInputResolutionException("Could not match any Scans with matcher " + input.getMatcher(), input);
+                            }
+                        } else {
+                            doMatch = mayOrMayNotMatch;
+                        }
+
+                        final Scan scan = doMatch.get(0);
+                        if (doMatch.size() > 1) {
+                            log.warn(String.format("Refusing to implicitly loop over Scan objects. Selecting first scan (%s) from list (%s).", scan, resolvedValue));
+                        }
                         try {
                             resolvedValue = mapper.writeValueAsString(scan);
                         } catch (JsonProcessingException e) {
@@ -327,7 +366,7 @@ class CommandResolutionHelper {
 
             // If resolved value is null, and input is required, that is an error
             if (resolvedValue == null && input.isRequired()) {
-                final String message = String.format("Input \"%s\" has no provided or default value, but is required.", input.getName());
+                final String message = String.format("No value could be resolved for required input \"%s\".", input.getName());
                 throw new CommandInputResolutionException(message, input);
             }
             input.setValue(resolvedValue);
@@ -386,6 +425,15 @@ class CommandResolutionHelper {
                 parentProperty :
                 String.format("$.%s[?(@.id == '%s')]", rootValueType, currentResolvedValue);
         return jsonPath.parse(parent).read(jsonPathSearch);
+    }
+
+    private String getChildFromParent(final String parentJson, final String childKey, final String matcher) {
+        final String jsonPathSearch = String.format(
+                "$.%s[%s]",
+                childKey,
+                StringUtils.isNotBlank(matcher) ? "?(" + matcher + ")" : "*"
+        );
+        return jsonPath.parse(parentJson).read(jsonPathSearch);
     }
 
     private String getValueForCommandLine(final CommandInput input, final String resolvedInputValue) {
