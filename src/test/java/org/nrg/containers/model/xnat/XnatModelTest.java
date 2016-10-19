@@ -3,10 +3,7 @@ package org.nrg.containers.model.xnat;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.jayway.jsonpath.Configuration;
-import com.jayway.jsonpath.JsonPath;
-import com.jayway.jsonpath.Option;
-import com.jayway.jsonpath.TypeRef;
+import com.jayway.jsonpath.*;
 import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
 import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
@@ -52,7 +49,7 @@ public class XnatModelTest {
 
             @Override
             public Set<Option> options() {
-                return Sets.newHashSet(Option.ALWAYS_RETURN_LIST, Option.DEFAULT_PATH_LEAF_TO_NULL);
+                return Sets.newHashSet(Option.DEFAULT_PATH_LEAF_TO_NULL);
             }
         });
     }
@@ -93,6 +90,28 @@ public class XnatModelTest {
 
     @Test
     public void testJsonPath() throws Exception {
+        final String json = "{\"outerKey1\": {\"innerKey1\": \"value\", \"innerKey2\": \"foo\"}}";
+        final DocumentContext documentContext = JsonPath.parse(json);
+
+        final String definite = documentContext.read("$.outerKey1.innerKey1");
+        assertEquals("value", definite);
+
+//        final List<String> indefinite = documentContext.read("$..key2");
+//        assertEquals(Lists.newArrayList("value"), indefinite);
+
+        final InnerTestPojo expectedInner = new InnerTestPojo("value", "foo");
+        assertEquals(expectedInner, documentContext.read("$.outerKey1", new TypeRef<InnerTestPojo>() {}));
+
+
+        assertEquals(Lists.newArrayList("value"), JsonPath.parse(json).read("$.outerKey1[?(@.innerKey2 == 'foo')].innerKey1"));
+        final List<InnerTestPojo> actualIndefiniteWPredicate = documentContext.read("$.outerKey1[?(@.innerKey2 == 'foo')]", new TypeRef<List<InnerTestPojo>>(){});
+        assertEquals(Lists.newArrayList(expectedInner), actualIndefiniteWPredicate);
+
+        assertEquals(Lists.newArrayList(), documentContext.read("$.outerKey1[?(@.innerKey2 != 'foo')]"));
+    }
+
+    @Test
+    public void testJsonPathOnXnatObjects() throws Exception {
         final Resource expected = mapper.readValue(RESOURCE_JSON, Resource.class);
         final List<Resource> resources = JsonPath.parse(SESSION_JSON).read("$.resources[*]", new TypeRef<List<Resource>>(){});
 
