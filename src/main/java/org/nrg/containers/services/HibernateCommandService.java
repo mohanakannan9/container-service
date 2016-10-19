@@ -2,16 +2,19 @@ package org.nrg.containers.services;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.Option;
+import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
+import com.jayway.jsonpath.spi.json.JsonProvider;
+import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
+import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import org.hibernate.Hibernate;
 import org.hibernate.exception.ConstraintViolationException;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.daos.CommandDao;
-import org.nrg.containers.exceptions.CommandInputResolutionException;
-import org.nrg.containers.exceptions.CommandMountResolutionException;
-import org.nrg.containers.exceptions.DockerServerException;
-import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.exceptions.NotFoundException;
+import org.nrg.containers.exceptions.*;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.CommandMount;
 import org.nrg.containers.model.CommandRun;
@@ -35,6 +38,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 @Transactional
@@ -48,6 +52,31 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     @Autowired private SiteConfigPreferences siteConfigPreferences;
     @Autowired private TransportService transporter;
     @Autowired private ContainerExecutionService containerExecutionService;
+
+    @Override
+    public void afterPropertiesSet() {
+        // Set the default JayWay JSONPath configuration
+        Configuration.setDefaults(new Configuration.Defaults() {
+
+            private final JsonProvider jsonProvider = new JacksonJsonProvider();
+            private final MappingProvider mappingProvider = new JacksonMappingProvider();
+
+            @Override
+            public JsonProvider jsonProvider() {
+                return jsonProvider;
+            }
+
+            @Override
+            public MappingProvider mappingProvider() {
+                return mappingProvider;
+            }
+
+            @Override
+            public Set<Option> options() {
+                return Sets.newHashSet(Option.DEFAULT_PATH_LEAF_TO_NULL);
+            }
+        });
+    }
 
     @Override
     public Command get(final Long id) throws NotFoundException {
@@ -106,14 +135,14 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     public ResolvedCommand resolveCommand(final Long commandId,
                                           final Map<String, String> variableValuesProvidedAtRuntime,
                                           final UserI userI)
-            throws NotFoundException, CommandInputResolutionException, CommandMountResolutionException {
+            throws NotFoundException, CommandResolutionException {
         final Command command = get(commandId);
         return resolveCommand(command, variableValuesProvidedAtRuntime, userI);
     }
 
     @Override
     public ResolvedCommand resolveCommand(final Command command, final UserI userI)
-            throws NotFoundException, CommandInputResolutionException, CommandMountResolutionException {
+            throws NotFoundException, CommandResolutionException {
         return CommandResolutionHelper.resolve(command, userI);
     }
 
@@ -121,7 +150,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     public ResolvedCommand resolveCommand(final Command command,
                                           final Map<String, String> inputValuesProvidedAtRuntime,
                                           final UserI userI)
-            throws NotFoundException, CommandInputResolutionException, CommandMountResolutionException {
+            throws NotFoundException, CommandResolutionException {
         return CommandResolutionHelper.resolve(command, inputValuesProvidedAtRuntime, userI);
     }
 
@@ -143,7 +172,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
 
     @Override
     public ContainerExecution launchCommand(final Long commandId, final Map<String, String> runtimeValues, final UserI userI)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandInputResolutionException, CommandMountResolutionException {
+            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException {
         final ResolvedCommand resolvedCommand = resolveCommand(commandId, runtimeValues, userI);
         return launchCommand(resolvedCommand, runtimeValues, userI);
     }

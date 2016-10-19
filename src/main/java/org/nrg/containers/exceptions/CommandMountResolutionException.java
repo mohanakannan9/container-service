@@ -2,7 +2,7 @@ package org.nrg.containers.exceptions;
 
 import org.nrg.containers.model.CommandMount;
 
-public class CommandMountResolutionException extends Exception {
+public class CommandMountResolutionException extends CommandResolutionException {
     final CommandMount mount;
 
     public CommandMountResolutionException(final String message, final CommandMount mount) {

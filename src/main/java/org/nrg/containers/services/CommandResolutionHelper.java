@@ -5,17 +5,22 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.ParseContext;
 import com.jayway.jsonpath.TypeRef;
 import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
+import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
+import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.ecs.xhtml.input;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.exceptions.CommandInputResolutionException;
 import org.nrg.containers.exceptions.CommandMountResolutionException;
+import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.CommandInput;
 import org.nrg.containers.model.CommandMount;
@@ -36,6 +41,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -53,7 +59,6 @@ class CommandResolutionHelper {
     private Map<String, String> resolvedInputValuesAsCommandLineArgs;
     private UserI userI;
     private ObjectMapper mapper;
-    private ParseContext jsonPath;
     private Map<String, String> inputValues;
     @Autowired private ConfigService configService;
     private Pattern jsonpathSubstringPattern;
@@ -72,29 +77,23 @@ class CommandResolutionHelper {
                 Maps.<String, String>newHashMap() :
                 inputValues;
 
-        final Configuration configuration = Configuration.builder()
-                .jsonProvider(new JacksonJsonProvider())
-                .mappingProvider(new JacksonMappingProvider())
-                .options(Option.ALWAYS_RETURN_LIST, Option.DEFAULT_PATH_LEAF_TO_NULL)
-                .build();
-        jsonPath = JsonPath.using(configuration);
         jsonpathSubstringPattern = Pattern.compile(JSONPATH_SUBSTRING_REGEX);
     }
 
     public static ResolvedCommand resolve(final Command command, final UserI userI)
-            throws CommandInputResolutionException, CommandMountResolutionException {
+            throws CommandResolutionException {
         return resolve(command, null, userI);
     }
 
     public static ResolvedCommand resolve(final Command command,
                                           final Map<String, String> inputValues,
                                           final UserI userI)
-            throws CommandInputResolutionException, CommandMountResolutionException {
+            throws CommandResolutionException {
         final CommandResolutionHelper helper = new CommandResolutionHelper(command, inputValues, userI);
         return helper.resolve();
     }
 
-    private ResolvedCommand resolve() throws CommandInputResolutionException, CommandMountResolutionException {
+    private ResolvedCommand resolve() throws CommandResolutionException {
 
 
         resolveInputs();
@@ -111,7 +110,7 @@ class CommandResolutionHelper {
         return resolvedCommand;
     }
 
-    private void resolveInputs() throws CommandInputResolutionException {
+    private void resolveInputs() throws CommandResolutionException {
         if (command.getInputs() == null) {
             return;
         }
@@ -241,7 +240,7 @@ class CommandResolutionHelper {
                             final String jsonPathSearch = String.format(
                                     "$[?(%s)]", resolvedMatcher
                             );
-                            doMatch = jsonPath.parse(mayOrMayNotMatch).read(jsonPathSearch, new TypeRef<List<Session>>(){});
+                            doMatch = JsonPath.parse(mayOrMayNotMatch).read(jsonPathSearch, new TypeRef<List<Session>>(){});
 
                             if (doMatch == null || doMatch.isEmpty()) {
                                 throw new CommandInputResolutionException("Could not match any sessions with matcher " + resolvedMatcher, input);
@@ -301,7 +300,7 @@ class CommandResolutionHelper {
                             final String jsonPathSearch = String.format(
                                     "$[?(%s)]", resolvedMatcher
                             );
-                            doMatch = jsonPath.parse(mayOrMayNotMatch).read(jsonPathSearch, new TypeRef<List<Scan>>(){});
+                            doMatch = JsonPath.parse(mayOrMayNotMatch).read(jsonPathSearch, new TypeRef<List<Scan>>(){});
 
                             if (doMatch == null || doMatch.isEmpty()) {
                                 throw new CommandInputResolutionException("Could not match any Scans with matcher " + resolvedMatcher, input);
@@ -339,7 +338,7 @@ class CommandResolutionHelper {
                     switch (parentType) {
                         case PROJECT:
                             configScope = Scope.Project;
-                            entityId = jsonPath.parse(parent.getValue()).read("$.id");
+                            entityId = JsonPath.parse(parent.getValue()).read("$.id");
                             break;
                         case SUBJECT:
                         case SESSION:
@@ -347,7 +346,8 @@ class CommandResolutionHelper {
                         case ASSESSOR:
                             // TODO This probably will not work. Figure out a way to get the project ID from these, or simply throw an error.
                             configScope = Scope.Project;
-                            entityId = jsonPath.parse(parent.getValue()).read("$..projectId");
+                            final List<String> projectIds = JsonPath.parse(parent.getValue()).read("$..projectId");
+                            entityId = (projectIds != null && !projectIds.isEmpty()) ? projectIds.get(0) : "";
                             if (StringUtils.isBlank(entityId)) {
                                 throw new CommandInputResolutionException("Could not determine project when resolving config value.", input);
                             }
@@ -412,7 +412,7 @@ class CommandResolutionHelper {
         return getChildFromParent(parentValue, childKey, fullMatcher);
     }
 
-    private String resolveJsonpathSubstring(final String stringThatMayContainJsonpathSubstring) {
+    private String resolveJsonpathSubstring(final String stringThatMayContainJsonpathSubstring) throws CommandResolutionException {
         if (log.isDebugEnabled()) log.debug("Checking for jsonpath substring in " + stringThatMayContainJsonpathSubstring);
         if (StringUtils.isNotBlank(stringThatMayContainJsonpathSubstring)) {
 
@@ -429,10 +429,21 @@ class CommandResolutionHelper {
 
                     if(log.isInfoEnabled()) log.info("Performing jsonpath search through command with search string " + jsonpathSearchWithoutMarkers);
 
-                    final String searchResult = jsonPath.parse(command).read(jsonpathSearchWithoutMarkers);
+                    final Configuration c = Configuration.defaultConfiguration().addOptions(Option.ALWAYS_RETURN_LIST);
+                    final List<String> searchResult = JsonPath.using(c).parse(command).read(jsonpathSearchWithoutMarkers);
                     if (searchResult != null) {
                         if (log.isInfoEnabled()) log.info("Result: " + searchResult);
-                        return stringThatMayContainJsonpathSubstring.replaceFirst(jsonpathSearchWithMarkers, searchResult);
+                        if (searchResult.size() == 1) {
+                            return stringThatMayContainJsonpathSubstring.replaceFirst(jsonpathSearchWithMarkers, searchResult.get(0));
+                        } else {
+                            final String message =
+                                    String.format(
+                                            "JSONPath search %s resulted in multiple results: %s. Cannot determine value to replace into string %s.",
+                                            jsonpathSearchWithoutMarkers,
+                                            searchResult.toString(),
+                                            stringThatMayContainJsonpathSubstring);
+                            throw new CommandResolutionException(message);
+                        }
                     } else {
                         if (log.isInfoEnabled()) log.debug("No result");
                     }
@@ -443,25 +454,13 @@ class CommandResolutionHelper {
         return stringThatMayContainJsonpathSubstring;
     }
 
-    private String getValueFromParent(final String parent, final String parentProperty, final String rootValueType, final String currentResolvedValue) {
-        // We have a parent, and we need to get the scan out of it.
-        // We currently have implemented two possibilities:
-        // 1. The user has set 'parentProperty', and we interpret that as a jsonpath search string
-        // 2. The user has sent in the scan id as the value
-
-        final String jsonPathSearch = StringUtils.isNotBlank(parentProperty) ?
-                parentProperty :
-                String.format("$.%s[?(@.id == '%s')]", rootValueType, currentResolvedValue);
-        return jsonPath.parse(parent).read(jsonPathSearch);
-    }
-
     private String getChildFromParent(final String parentJson, final String childKey, final String matcher) {
         final String jsonPathSearch = String.format(
                 "$.%s[%s]",
                 childKey,
                 StringUtils.isNotBlank(matcher) ? "?(" + matcher + ")" : "*"
         );
-        return jsonPath.parse(parentJson).read(jsonPathSearch);
+        return JsonPath.parse(parentJson).read(jsonPathSearch);
     }
 
     private String getValueForCommandLine(final CommandInput input, final String resolvedInputValue) {
@@ -543,7 +542,7 @@ class CommandResolutionHelper {
                     case SESSION:
                     case SCAN:
                     case ASSESSOR:
-                        final List<Resource> resources = jsonPath.parse(source.getValue()).read("$.resources[*]", new TypeRef<List<Resource>>(){});
+                        final List<Resource> resources = JsonPath.parse(source.getValue()).read("$.resources[*]", new TypeRef<List<Resource>>(){});
                         if (resources == null || resources.isEmpty()) {
                             throw new CommandMountResolutionException(String.format("Could not find any resources for parent %s", source), mount);
                         }

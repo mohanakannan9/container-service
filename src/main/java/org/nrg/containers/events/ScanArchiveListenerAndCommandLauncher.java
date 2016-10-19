@@ -3,11 +3,7 @@ package org.nrg.containers.events;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
-import org.nrg.containers.exceptions.CommandInputResolutionException;
-import org.nrg.containers.exceptions.CommandMountResolutionException;
-import org.nrg.containers.exceptions.DockerServerException;
-import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.exceptions.NotFoundException;
+import org.nrg.containers.exceptions.*;
 import org.nrg.containers.model.CommandEventMapping;
 import org.nrg.containers.model.xnat.Scan;
 import org.nrg.containers.services.CommandEventMappingService;
@@ -69,17 +65,16 @@ public class ScanArchiveListenerAndCommandLauncher implements Consumer<Event<Sca
                 }
                 runtimeValues.put("scan", scanString);
                 try {
+                    if (log.isDebugEnabled()) {
+                        final String message = String.format(
+                                "Launching command %s for user %s with runtime input values %s",
+                                commandId, scanArchiveEventToLaunchCommands.getUser(), runtimeValues
+                        );
+                        log.debug(message);
+                    }
                     commandService.launchCommand(commandId, runtimeValues, scanArchiveEventToLaunchCommands.getUser());
-                } catch (NotFoundException e) {
-                    e.printStackTrace();
-                } catch (CommandInputResolutionException e) {
-                    e.printStackTrace();
-                } catch (NoServerPrefException e) {
-                    e.printStackTrace();
-                } catch (DockerServerException e) {
-                    e.printStackTrace();
-                } catch (CommandMountResolutionException e) {
-                    e.printStackTrace();
+                } catch (NotFoundException | CommandResolutionException | NoServerPrefException | DockerServerException e) {
+                    log.error("Error launching command " + commandId, e);
                 }
             }
         }

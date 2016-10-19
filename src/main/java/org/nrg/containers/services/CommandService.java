@@ -1,10 +1,6 @@
 package org.nrg.containers.services;
 
-import org.nrg.containers.exceptions.CommandInputResolutionException;
-import org.nrg.containers.exceptions.CommandMountResolutionException;
-import org.nrg.containers.exceptions.DockerServerException;
-import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.exceptions.NotFoundException;
+import org.nrg.containers.exceptions.*;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.ResolvedCommand;
@@ -20,13 +16,13 @@ public interface CommandService extends BaseHibernateService<Command> {
     ResolvedCommand resolveCommand(final Long commandId,
                                    final Map<String, String> variableRuntimeValues,
                                    final UserI userI)
-            throws NotFoundException, CommandInputResolutionException, CommandMountResolutionException;
+            throws NotFoundException, CommandResolutionException;
     ResolvedCommand resolveCommand(final Command command, final UserI userI)
-            throws NotFoundException, CommandInputResolutionException, CommandMountResolutionException;
+            throws NotFoundException, CommandResolutionException;
     ResolvedCommand resolveCommand(final Command command,
                                    final Map<String, String> variableRuntimeValues,
                                    final UserI userI)
-            throws NotFoundException, CommandInputResolutionException, CommandMountResolutionException;
+            throws NotFoundException, CommandResolutionException;
 
     ContainerExecution launchCommand(final ResolvedCommand resolvedCommand, final UserI userI) throws NoServerPrefException, DockerServerException;
     ContainerExecution launchCommand(final ResolvedCommand resolvedCommand,
@@ -35,7 +31,7 @@ public interface CommandService extends BaseHibernateService<Command> {
             throws NoServerPrefException, DockerServerException;
     ContainerExecution launchCommand(final Long commandId,
                          final Map<String, String> variableRuntimeValues, final UserI userI)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandInputResolutionException, CommandMountResolutionException;
+            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException;
 
     List<Command> save(final List<Command> commands);
 
