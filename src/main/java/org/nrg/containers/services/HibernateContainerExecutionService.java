@@ -165,23 +165,24 @@ public class HibernateContainerExecutionService
 //                }
 //            }
 
-            String rootPath = siteConfigPreferences.getArchivePath(); // TODO find a place to upload this thing. Root of the archive if sitewide, else under the archive path of the root object
+            final String archivePath = siteConfigPreferences.getArchivePath(); // TODO find a place to upload this thing. Root of the archive if sitewide, else under the archive path of the root object
+            if (StringUtils.isNotBlank(archivePath)) {
+                final SimpleDateFormat formatter = new SimpleDateFormat(XNATRestConstants.PREARCHIVE_TIMESTAMP);
+                final String datestamp = formatter.format(new Date());
+                final String containerExecPath = FileUtils.AppendRootPath(archivePath, "CONTAINER_EXEC/");
+                final String destinationPath = containerExecPath + datestamp + "/LOGS/";
+                final File destination = new File(destinationPath);
+                destination.mkdirs();
 
-            final SimpleDateFormat formatter = new SimpleDateFormat(XNATRestConstants.PREARCHIVE_TIMESTAMP);
-            final String datestamp = formatter.format(new Date());
-            final String containerExecPath = FileUtils.AppendRootPath(rootPath, "CONTAINER_EXEC/");
-            final String destinationPath = containerExecPath + datestamp + "/LOGS/";
-            final File destination = new File(destinationPath);
-            destination.mkdirs();
+                if (StringUtils.isNotBlank(stdoutLogStr)) {
+                    final File stdoutFile = new File(destination, "stdout.log");
+                    FileUtils.OutputToFile(stdoutLogStr, stdoutFile.getAbsolutePath());
+                }
 
-            if (StringUtils.isNotBlank(stdoutLogStr)) {
-                final File stdoutFile = new File(destination, "stdout.log");
-                FileUtils.OutputToFile(stdoutLogStr, stdoutFile.getAbsolutePath());
-            }
-
-            if (StringUtils.isNotBlank(stderrLogStr)) {
-                final File stderrFile = new File(destination, "stderr.log");
-                FileUtils.OutputToFile(stderrLogStr, stderrFile.getAbsolutePath());
+                if (StringUtils.isNotBlank(stderrLogStr)) {
+                    final File stderrFile = new File(destination, "stderr.log");
+                    FileUtils.OutputToFile(stderrLogStr, stderrFile.getAbsolutePath());
+                }
             }
 
             // TODO Save a resource if possible.

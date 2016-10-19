@@ -30,6 +30,8 @@ import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.List;
@@ -40,6 +42,7 @@ import java.util.regex.Pattern;
 import static com.jayway.jsonpath.Criteria.where;
 import static com.jayway.jsonpath.Filter.filter;
 
+@Component
 class CommandResolutionHelper {
     private static final Logger log = LoggerFactory.getLogger(CommandResolutionHelper.class);
     private static final String JSONPATH_SUBSTRING_REGEX = "\\^(.+)\\^";
@@ -52,7 +55,7 @@ class CommandResolutionHelper {
     private ObjectMapper mapper;
     private ParseContext jsonPath;
     private Map<String, String> inputValues;
-    private ConfigService configService;
+    @Autowired private ConfigService configService;
     private Pattern jsonpathSubstringPattern;
 
     private CommandResolutionHelper(final Command command,
@@ -64,7 +67,6 @@ class CommandResolutionHelper {
         this.resolvedInputValuesAsCommandLineArgs = Maps.newHashMap();
 //            command.setInputs(Lists.<CommandInput>newArrayList());
         this.userI = userI;
-        this.configService = XDAT.getConfigService();
         this.mapper = new ObjectMapper();
         this.inputValues = inputValues == null ?
                 Maps.<String, String>newHashMap() :

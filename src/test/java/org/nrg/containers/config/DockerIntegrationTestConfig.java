@@ -2,7 +2,9 @@ package org.nrg.containers.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hibernate.SessionFactory;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.nrg.config.services.ConfigService;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.api.DockerControlApi;
 import org.nrg.containers.daos.CommandDao;
@@ -16,13 +18,17 @@ import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerExecutionService;
 import org.nrg.containers.services.HibernateCommandService;
 import org.nrg.containers.services.HibernateContainerExecutionService;
+import org.nrg.framework.services.ContextService;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.transporter.TransportService;
 import org.nrg.transporter.TransportServiceImpl;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.services.AliasTokenService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -39,6 +45,7 @@ import org.springframework.transaction.support.ResourceTransactionManager;
 import reactor.Environment;
 import reactor.bus.EventBus;
 
+import javax.servlet.ServletContext;
 import javax.sql.DataSource;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -79,7 +86,7 @@ public class DockerIntegrationTestConfig implements SchedulingConfigurer {
 
     @Bean
     public TransportService transportService() {
-        return Mockito.mock(TransportServiceImpl.class);
+        return new TransportServiceImpl();
     }
 
     @Bean
@@ -110,6 +117,23 @@ public class DockerIntegrationTestConfig implements SchedulingConfigurer {
     @Bean
     public SiteConfigPreferences siteConfigPreferences() {
         return Mockito.mock(SiteConfigPreferences.class);
+    }
+
+    @Bean
+    public ConfigService configService() {
+        return Mockito.mock(ConfigService.class);
+    }
+
+    @Bean
+    public UserManagementServiceI userManagementServiceI() {
+        return Mockito.mock(UserManagementServiceI.class);
+    }
+
+    @Bean
+    public ContextService contextService(final ApplicationContext applicationContext) {
+        final ContextService contextService = new ContextService();
+        contextService.setApplicationContext(applicationContext);
+        return contextService;
     }
 
     @Bean
