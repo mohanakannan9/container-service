@@ -3,20 +3,35 @@ package org.nrg.containers.model.xnat;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.jayway.jsonpath.*;
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.DocumentContext;
+import com.jayway.jsonpath.InvalidJsonException;
+import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.Option;
+import com.jayway.jsonpath.TypeRef;
+import com.jayway.jsonpath.spi.json.GsonJsonProvider;
 import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
+import com.jayway.jsonpath.spi.json.JsonOrgJsonProvider;
 import com.jayway.jsonpath.spi.json.JsonProvider;
+import com.jayway.jsonpath.spi.mapper.GsonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
+import com.jayway.jsonpath.spi.mapper.JsonOrgMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
+import org.hamcrest.CustomTypeSafeMatcher;
+import org.hamcrest.Matcher;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.util.List;
 import java.util.Set;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 
 
 public class XnatModelTest {
@@ -86,28 +101,6 @@ public class XnatModelTest {
         assertEquals(Lists.newArrayList(resource), session.getResources());
         assertNull(session.getScans());
         assertNull(session.getAssessors());
-    }
-
-    @Test
-    public void testJsonPath() throws Exception {
-        final String json = "{\"outerKey1\": {\"innerKey1\": \"value\", \"innerKey2\": \"foo\"}}";
-        final DocumentContext documentContext = JsonPath.parse(json);
-
-        final String definite = documentContext.read("$.outerKey1.innerKey1");
-        assertEquals("value", definite);
-
-//        final List<String> indefinite = documentContext.read("$..key2");
-//        assertEquals(Lists.newArrayList("value"), indefinite);
-
-        final InnerTestPojo expectedInner = new InnerTestPojo("value", "foo");
-        assertEquals(expectedInner, documentContext.read("$.outerKey1", new TypeRef<InnerTestPojo>() {}));
-
-
-        assertEquals(Lists.newArrayList("value"), JsonPath.parse(json).read("$.outerKey1[?(@.innerKey2 == 'foo')].innerKey1"));
-        final List<InnerTestPojo> actualIndefiniteWPredicate = documentContext.read("$.outerKey1[?(@.innerKey2 == 'foo')]", new TypeRef<List<InnerTestPojo>>(){});
-        assertEquals(Lists.newArrayList(expectedInner), actualIndefiniteWPredicate);
-
-        assertEquals(Lists.newArrayList(), documentContext.read("$.outerKey1[?(@.innerKey2 != 'foo')]"));
     }
 
     @Test

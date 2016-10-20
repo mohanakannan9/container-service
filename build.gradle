@@ -115,6 +115,7 @@ dependencies {
     testCompile "org.springframework:spring-jdbc:${vSpring}"
     testCompile "org.springframework:spring-orm:${vSpring}"
     testCompile "org.nrg:framework:${vXnat}"
+    testCompile "com.google.code.gson:gson:2.6.2"
 }
 
 jacocoTestReport {
