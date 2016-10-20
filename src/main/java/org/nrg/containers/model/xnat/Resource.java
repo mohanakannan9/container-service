@@ -11,7 +11,7 @@ import org.nrg.xnat.utils.CatalogUtils;
 import java.util.List;
 import java.util.Objects;
 
-public class Resource {
+public class Resource extends XnatModelObject {
     @JsonIgnore private XnatResourcecatalog xnatResourcecatalog;
     @JsonProperty(required = true) private Integer id;
     @JsonProperty(value = "parent-id") private String parentId;

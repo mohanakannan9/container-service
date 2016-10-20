@@ -10,7 +10,7 @@ import org.nrg.xdat.om.XnatResourcecatalog;
 import java.util.List;
 import java.util.Objects;
 
-public class Assessor {
+public class Assessor extends XnatModelObject {
     @JsonProperty(required = true) private String id;
     @JsonProperty(value = "parent-id") private String parentId;
     private String label;

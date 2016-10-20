@@ -6,7 +6,7 @@ import com.google.common.collect.Lists;
 import java.util.List;
 import java.util.Objects;
 
-public class File {
+public class File extends XnatModelObject {
     private String name;
     private String path;
     private List<String> tags;

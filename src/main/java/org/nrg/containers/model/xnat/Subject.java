@@ -15,7 +15,7 @@ import org.nrg.xft.security.UserI;
 import java.util.List;
 import java.util.Objects;
 
-public class Subject {
+public class Subject extends XnatModelObject {
     @JsonIgnore XnatSubjectdataI xnatSubjectdataI;
     @JsonProperty(required = true) private String id;
     @JsonProperty(value = "parent-id") private String parentId;

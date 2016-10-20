@@ -119,4 +119,36 @@ public class XnatModelTest {
         assertThat(resources.get(0), instanceOf(Resource.class));
         assertEquals(expected, resources.get(0));
     }
+
+    @Test
+    public void testCommandInputJsonPath() throws Exception {
+        final String scantype = "SCANTYPE";
+
+        final String commandJson =
+                "{\"inputs\": [" +
+                        "{\"name\": \"T1-scantype\", \"description\": \"Scantype of T1 scans\", " +
+                        "\"type\": \"string\", " +
+                        "\"value\": \"" + scantype + "\"}"
+                        + "]}";
+
+        final List<String> results = JsonPath.parse(commandJson).read("$.inputs[?(@.name == 'T1-scantype')].value");
+        assertEquals(Lists.newArrayList(scantype), results);
+    }
+
+    @Test
+    public void testPredicateWithList() throws Exception {
+        final String scanRuntimeJson =
+                "{\"id\": \"scan1\", \"parent-id\": \"session1\", " +
+                        "\"scan-type\": \"SCANTYPE\"" +
+                        "}";
+        final String sessionRuntimeJson =
+                "{\"id\": \"session1\", \"label\": \"session1\"," +
+                        "\"scans\": [" + scanRuntimeJson + "]" +
+                        "}";
+        final Scan expected = mapper.readValue(scanRuntimeJson, Scan.class);
+
+        final List<Scan> results = JsonPath.parse(sessionRuntimeJson).read("$.scans[?(@.scan-type in [\"SCANTYPE\", \"OTHER_SCANTYPE\"])]", new TypeRef<List<Scan>>(){});
+
+        assertEquals(Lists.newArrayList(expected), results);
+    }
 }

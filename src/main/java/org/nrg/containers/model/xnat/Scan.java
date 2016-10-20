@@ -11,12 +11,12 @@ import org.nrg.xdat.om.XnatResourcecatalog;
 import java.util.List;
 import java.util.Objects;
 
-public class Scan {
+public class Scan extends XnatModelObject {
     @JsonIgnore private XnatImagescandataI xnatImagescandataI;
     @JsonProperty(required = true) private String id;
     @JsonProperty(value = "parent-id") private String parentId;
     private String xsiType;
-    private String scanType;
+    @JsonProperty("scan-type") private String scanType;
     private List<Resource> resources;
 
     public Scan() {}

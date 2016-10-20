@@ -1,4 +1,4 @@
 package org.nrg.containers.model.xnat;
 
-public class Config {
+public class Config extends XnatModelObject {
 }

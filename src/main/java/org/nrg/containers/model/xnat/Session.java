@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Objects;
 
 
-public class Session {
+public class Session extends XnatModelObject {
     @JsonIgnore private XnatImagesessiondataI xnatImagesessiondataI;
     @JsonProperty(required = true) private String id;
     @JsonProperty(value = "parent-id") private String parentId;
