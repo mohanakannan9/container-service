@@ -1,6 +1,7 @@
 package org.nrg.containers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.io.Resources;
@@ -10,6 +11,7 @@ import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
 import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
+import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -18,6 +20,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.nrg.containers.config.IntegrationTestConfig;
 import org.nrg.containers.model.Command;
+import org.nrg.containers.model.CommandMount;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.xnat.Session;
@@ -32,9 +35,16 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.File;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.hasSize;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -101,13 +111,16 @@ public class CommandLaunchTest {
     @Test
     public void testFakeReconAll() throws Exception {
         final String dir = Resources.getResource("commandLaunchTest").getPath();
+        final String commandJsonFile = dir + "/fakeReconAllCommand.json";
+        final String sessionJsonFile = dir + "/session.json";
+        final String fakeResourceDir = dir + "/fakeResource";
 
-        final Command fakeReconAll = mapper.readValue(new File(dir + "/fakeReconAllCommand.json"), Command.class);
+        final Command fakeReconAll = mapper.readValue(new File(commandJsonFile), Command.class);
         commandService.create(fakeReconAll);
         commandService.flush();
 
-        final Session session = mapper.readValue(new File(dir + "/session.json"), Session.class);
-        session.getScans().get(0).getResources().get(0).setDirectory(dir + "/fakeResource");
+        final Session session = mapper.readValue(new File(sessionJsonFile), Session.class);
+        session.getScans().get(0).getResources().get(0).setDirectory(fakeResourceDir);
         final String sessionJson = mapper.writeValueAsString(session);
 
         final Map<String, String> runtimeValues = Maps.newHashMap();
@@ -116,5 +129,27 @@ public class CommandLaunchTest {
         runtimeValues.put("T1-scantype", "T1_TEST_SCANTYPE");
 
         final ContainerExecution execution = commandService.launchCommand(fakeReconAll.getId(), runtimeValues, mockUser);
+        Thread.sleep(1000); // Wait for container to finish
+
+        assertThat(execution.getMountsOut(), hasSize(1));
+        final CommandMount mountOut = execution.getMountsOut().get(0);
+        final String outputPath = mountOut.getHostPath();
+        final File outputFile = new File(outputPath + "/out.txt");
+        if (!outputFile.canRead()) {
+            fail("Cannot read output file " + outputFile.getAbsolutePath());
+        }
+        final String[] outputFileContents = FileUtils.readFileToString(outputFile).split("\\n");
+        assertThat(outputFileContents.length, greaterThanOrEqualTo(2));
+        assertEquals("recon-all -s session1 -all", outputFileContents[0]);
+
+        final File fakeResourceDirFile = new File(fakeResourceDir);
+        assertNotNull(fakeResourceDirFile);
+        assertNotNull(fakeResourceDirFile.listFiles());
+        final List<String> fakeResourceDirFileNames = Lists.newArrayList();
+        for (final File file : fakeResourceDirFile.listFiles()) {
+            fakeResourceDirFileNames.add(file.getName());
+
+        }
+        assertEquals(fakeResourceDirFileNames, Lists.newArrayList(outputFileContents[1].split(" ")));
     }
 }
