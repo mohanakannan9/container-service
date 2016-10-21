@@ -1,9 +1,7 @@
 package org.nrg.containers.services;
 
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
@@ -24,7 +22,7 @@ import org.nrg.containers.model.CommandInput;
 import org.nrg.containers.model.CommandMount;
 import org.nrg.containers.model.CommandRun;
 import org.nrg.containers.model.ResolvedCommand;
-import org.nrg.containers.model.xnat.File;
+import org.nrg.containers.model.xnat.XnatFile;
 import org.nrg.containers.model.xnat.Resource;
 import org.nrg.containers.model.xnat.Scan;
 import org.nrg.containers.model.xnat.Session;
@@ -184,12 +182,12 @@ class CommandResolutionHelper {
                     break;
                 case FILE:
                     if (parent != null) {
-                        final List<File> childStringList = matchChildFromParent(parent.getValue(), resolvedValue, "files", "name", resolvedMatcher, new TypeRef<List<File>>(){});
+                        final List<XnatFile> childStringList = matchChildFromParent(parent.getValue(), resolvedValue, "files", "name", resolvedMatcher, new TypeRef<List<XnatFile>>(){});
                         if (childStringList != null && !childStringList.isEmpty()) {
                             if (log.isInfoEnabled()) {
                                 log.info("Selecting first matching result from list " + childStringList);
                             }
-                            final File first = childStringList.get(0);
+                            final XnatFile first = childStringList.get(0);
                             try {
                                 resolvedValue = mapper.writeValueAsString(first);
                             } catch (JsonProcessingException e) {

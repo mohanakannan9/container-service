@@ -4,25 +4,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.jayway.jsonpath.Configuration;
-import com.jayway.jsonpath.DocumentContext;
-import com.jayway.jsonpath.InvalidJsonException;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.TypeRef;
-import com.jayway.jsonpath.spi.json.GsonJsonProvider;
 import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
-import com.jayway.jsonpath.spi.json.JsonOrgJsonProvider;
 import com.jayway.jsonpath.spi.json.JsonProvider;
-import com.jayway.jsonpath.spi.mapper.GsonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
-import com.jayway.jsonpath.spi.mapper.JsonOrgMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
-import org.hamcrest.CustomTypeSafeMatcher;
-import org.hamcrest.Matcher;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.util.List;
 import java.util.Set;
@@ -37,7 +27,7 @@ import static org.junit.Assert.assertThat;
 public class XnatModelTest {
     private static final String FILE_JSON = "{\"name\":\"file.txt\", \"path\":\"/path/to/files/file.txt\", " +
             "\"tags\":[\"squishy\",\"jovial\"], \"format\":\"TEXT\", \"content\":\"TEXT\"}";
-    private static final String RESOURCE_JSON = "{\"id\":1, \"label\":\"a_resource\", " +
+    private static final String RESOURCE_JSON = "{\"id\":\"1\", \"label\":\"a_resource\", " +
             "\"directory\":\"/path/to/files\", \"files\":[" + FILE_JSON + "]}";
 
     private static final String SESSION_JSON = "{\"id\":\"E1\", \"label\":\"a_session\", " +
@@ -71,7 +61,7 @@ public class XnatModelTest {
 
     @Test
     public void testDeserializeFile() throws Exception {
-        final File file = mapper.readValue(FILE_JSON, File.class);
+        final XnatFile file = mapper.readValue(FILE_JSON, XnatFile.class);
         assertEquals("file.txt", file.getName());
         assertEquals("/path/to/files/file.txt", file.getPath());
         assertEquals(Lists.newArrayList("squishy", "jovial"), file.getTags());
@@ -81,10 +71,10 @@ public class XnatModelTest {
 
     @Test
     public void testDeserializeResource() throws Exception {
-        final File file = mapper.readValue(FILE_JSON, File.class);
+        final XnatFile file = mapper.readValue(FILE_JSON, XnatFile.class);
         final Resource resource = mapper.readValue(RESOURCE_JSON, Resource.class);
 
-        assertEquals((Integer) 1, resource.getId());
+        assertEquals("1", resource.getId());
         assertEquals("a_resource", resource.getLabel());
         assertEquals("/path/to/files", resource.getDirectory());
         assertEquals(Lists.newArrayList(file), resource.getFiles());

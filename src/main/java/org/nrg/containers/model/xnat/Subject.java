@@ -16,11 +16,13 @@ import java.util.List;
 import java.util.Objects;
 
 public class Subject extends XnatModelObject {
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), xnatSubjectdataI, parentId, sessions, resources);
+    }
+
     @JsonIgnore XnatSubjectdataI xnatSubjectdataI;
-    @JsonProperty(required = true) private String id;
     @JsonProperty(value = "parent-id") private String parentId;
-    private String label;
-    private String xsiType;
     private List<Session> sessions;
     private List<Resource> resources;
 
@@ -57,40 +59,16 @@ public class Subject extends XnatModelObject {
         return xnatSubjectdataI;
     }
 
-    public void setXnatSubjectdataI(XnatSubjectdataI xnatSubjectdataI) {
+    public void setXnatSubjectdataI(final XnatSubjectdataI xnatSubjectdataI) {
         this.xnatSubjectdataI = xnatSubjectdataI;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(final String id) {
-        this.id = id;
     }
 
     public String getParentId() {
         return parentId;
     }
 
-    public void setParentId(String parentId) {
+    public void setParentId(final String parentId) {
         this.parentId = parentId;
-    }
-
-    public String getLabel() {
-        return label;
-    }
-
-    public void setLabel(final String label) {
-        this.label = label;
-    }
-
-    public String getXsiType() {
-        return xsiType;
-    }
-
-    public void setXsiType(final String xsiType) {
-        this.xsiType = xsiType;
     }
 
     public List<Session> getSessions() {
@@ -110,30 +88,21 @@ public class Subject extends XnatModelObject {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Subject that = (Subject) o;
-        return Objects.equals(this.id, that.id) &&
+        if (!super.equals(o)) return false;
+        final Subject that = (Subject) o;
+        return Objects.equals(this.xnatSubjectdataI, that.xnatSubjectdataI) &&
                 Objects.equals(this.parentId, that.parentId) &&
-                Objects.equals(this.label, that.label) &&
-                Objects.equals(this.xsiType, that.xsiType) &&
                 Objects.equals(this.sessions, that.sessions) &&
                 Objects.equals(this.resources, that.resources);
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(id, parentId, label, xsiType, sessions, resources);
-    }
-
-    @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", id)
+        return addParentPropertiesToString(MoreObjects.toStringHelper(this))
                 .add("parentId", parentId)
-                .add("label", label)
-                .add("xsiType", xsiType)
                 .add("sessions", sessions)
                 .add("resources", resources)
                 .toString();

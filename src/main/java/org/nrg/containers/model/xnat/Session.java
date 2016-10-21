@@ -18,10 +18,7 @@ import java.util.Objects;
 
 public class Session extends XnatModelObject {
     @JsonIgnore private XnatImagesessiondataI xnatImagesessiondataI;
-    @JsonProperty(required = true) private String id;
     @JsonProperty(value = "parent-id") private String parentId;
-    private String label;
-    private String xsiType;
     private List<Scan> scans;
     private List<Assessor> assessors;
     private List<Resource> resources;
@@ -65,36 +62,12 @@ public class Session extends XnatModelObject {
         this.xnatImagesessiondataI = xnatImagesessiondataI;
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(final String id) {
-        this.id = id;
-    }
-
     public String getParentId() {
         return parentId;
     }
 
     public void setParentId(final String parentId) {
         this.parentId = parentId;
-    }
-
-    public String getXsiType() {
-        return xsiType;
-    }
-
-    public void setXsiType(final String xsiType) {
-        this.xsiType = xsiType;
-    }
-
-    public String getLabel() {
-        return label;
-    }
-
-    public void setLabel(final String label) {
-        this.label = label;
     }
 
     public List<Resource> getResources() {
@@ -125,11 +98,10 @@ public class Session extends XnatModelObject {
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
         final Session that = (Session) o;
-        return Objects.equals(this.id, that.id) &&
+        return Objects.equals(this.xnatImagesessiondataI, that.xnatImagesessiondataI) &&
                 Objects.equals(this.parentId, that.parentId) &&
-                Objects.equals(this.label, that.label) &&
-                Objects.equals(this.xsiType, that.xsiType) &&
                 Objects.equals(this.scans, that.scans) &&
                 Objects.equals(this.assessors, that.assessors) &&
                 Objects.equals(this.resources, that.resources);
@@ -137,17 +109,13 @@ public class Session extends XnatModelObject {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, parentId, scans, assessors, resources, label, xsiType);
+        return Objects.hash(super.hashCode(), xnatImagesessiondataI, parentId, scans, assessors, resources);
     }
-
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", id)
+        return addParentPropertiesToString(MoreObjects.toStringHelper(this))
                 .add("parentId", parentId)
-                .add("label", label)
-                .add("xsiType", xsiType)
                 .add("scans", scans)
                 .add("assessors", assessors)
                 .add("resources", resources)
