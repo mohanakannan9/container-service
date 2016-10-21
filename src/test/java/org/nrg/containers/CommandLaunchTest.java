@@ -11,17 +11,22 @@ import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.nrg.containers.config.IntegrationTestConfig;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.ContainerExecution;
+import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.xnat.Session;
 import org.nrg.containers.services.CommandService;
+import org.nrg.xdat.entities.AliasToken;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.security.services.UserManagementServiceI;
+import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xft.security.UserI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -35,17 +40,19 @@ import static org.mockito.Mockito.when;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = IntegrationTestConfig.class)
 public class CommandLaunchTest {
-    private static final Logger log = LoggerFactory.getLogger(CommandLaunchTest.class);
-    private final String BUSYBOX_LATEST = "busybox:latest";
-
     private UserI mockUser;
 
-    @Autowired
-    private ObjectMapper mapper;
+    @Autowired private ObjectMapper mapper;
     @Autowired private CommandService commandService;
+    @Autowired private AliasTokenService mockAliasTokenService;
+    @Autowired private DockerServerPrefsBean mockDockerServerPrefsBean;
+    @Autowired private SiteConfigPreferences mockSiteConfigPreferences;
+    @Autowired private UserManagementServiceI mockUserManagementServiceI;
+
+    @Rule public TemporaryFolder folder = new TemporaryFolder(new File("/tmp"));
 
     @Before
-    public void setup() {
+    public void setup() throws Exception {
         Configuration.setDefaults(new Configuration.Defaults() {
 
             private final JsonProvider jsonProvider = new JacksonJsonProvider();
@@ -67,8 +74,28 @@ public class CommandLaunchTest {
             }
         });
 
+        // Mock out the prefs bean
+        final String containerHost = "unix:///var/run/docker.sock";
+        when(mockDockerServerPrefsBean.getHost()).thenReturn(containerHost);
+        when(mockDockerServerPrefsBean.toDto()).thenCallRealMethod();
+
+        // Mock the userI
         mockUser = Mockito.mock(UserI.class);
         when(mockUser.getLogin()).thenReturn("mockUser");
+
+        // Mock the user management service
+        when(mockUserManagementServiceI.getUser("mockUser")).thenReturn(mockUser);
+
+        // Mock the aliasTokenService
+        final AliasToken mockAliasToken = new AliasToken();
+        mockAliasToken.setAlias("alias");
+        mockAliasToken.setSecret("secret");
+        when(mockAliasTokenService.issueTokenForUser(mockUser)).thenReturn(mockAliasToken);
+
+        // Mock the site config preferences
+        when(mockSiteConfigPreferences.getSiteUrl()).thenReturn("mock://url");
+        when(mockSiteConfigPreferences.getBuildPath()).thenReturn(folder.newFolder().getAbsolutePath()); // transporter makes a directory under build
+        when(mockSiteConfigPreferences.getArchivePath()).thenReturn(folder.newFolder().getAbsolutePath()); // container logs get stored under archive
     }
 
     @Test
@@ -85,6 +112,7 @@ public class CommandLaunchTest {
 
         final Map<String, String> runtimeValues = Maps.newHashMap();
         runtimeValues.put("session", sessionJson);
+        runtimeValues.put("project", "{\"id\": \"project1\"}");
         runtimeValues.put("T1-scantype", "T1_TEST_SCANTYPE");
 
         final ContainerExecution execution = commandService.launchCommand(fakeReconAll.getId(), runtimeValues, mockUser);

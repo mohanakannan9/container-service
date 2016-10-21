@@ -36,16 +36,9 @@
             "command-line-flag": "-s"
         },
         {
-            "name": "project",
-            "description": "Project in which session is stored",
-            "type": "Project",
-            "parent": "session"
-        },
-        {
             "name": "T1-scantype",
             "description": "Scantype of T1 scans",
-            "type": "Config",
-            "parent": "project",
+            "type": "string",
             "default-value": "pipelines/mr_scan_types"
         },
         {
@@ -54,14 +47,14 @@
             "type": "Scan",
             "parent": "session",
             "prerequisites": "T1-scantype",
-            "matcher": "@.scan-type in [^$.inputs[?(@.name == 'T1-scantype')].value^]"
+            "matcher": "@.scan-type == '^$.inputs[?(@.name == 'T1-scantype')].value^'"
         },
         {
             "name": "resource",
             "description": "Input resource: DICOM or NIFTI",
             "type": "Resource",
             "parent": "T1",
-            "matcher": "@.label in ['DICOM', 'NIFTI']"
+            "matcher": "@.label in [\"DICOM\", \"NIFTI\"]"
         },
         {
             "name": "other-recon-all-args",

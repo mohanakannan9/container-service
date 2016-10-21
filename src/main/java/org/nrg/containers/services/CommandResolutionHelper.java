@@ -28,6 +28,7 @@ import org.nrg.containers.model.xnat.Scan;
 import org.nrg.containers.model.xnat.Session;
 import org.nrg.containers.model.xnat.XnatModelObject;
 import org.nrg.framework.constants.Scope;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
@@ -42,7 +43,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@Component
 class CommandResolutionHelper {
     private static final Logger log = LoggerFactory.getLogger(CommandResolutionHelper.class);
     private static final String JSONPATH_SUBSTRING_REGEX = "\\^(.+)\\^";
@@ -56,7 +56,7 @@ class CommandResolutionHelper {
     private UserI userI;
     private ObjectMapper mapper;
     private Map<String, String> inputValues;
-    @Autowired private ConfigService configService;
+    private ConfigService configService;
     private Pattern jsonpathSubstringPattern;
 
     private CommandResolutionHelper(final Command command,
@@ -184,8 +184,8 @@ class CommandResolutionHelper {
                     if (parent != null) {
                         final List<XnatFile> childStringList = matchChildFromParent(parent.getValue(), resolvedValue, "files", "name", resolvedMatcher, new TypeRef<List<XnatFile>>(){});
                         if (childStringList != null && !childStringList.isEmpty()) {
-                            if (log.isInfoEnabled()) {
-                                log.info("Selecting first matching result from list " + childStringList);
+                            if (log.isDebugEnabled()) {
+                                log.debug("Selecting first matching result from list " + childStringList);
                             }
                             final XnatFile first = childStringList.get(0);
                             try {
@@ -211,8 +211,8 @@ class CommandResolutionHelper {
 
                         final List<Session> childStringList = matchChildFromParent(parent.getValue(), resolvedValue, "sessions", "id", resolvedMatcher, new TypeRef<List<Session>>(){});
                         if (childStringList != null && !childStringList.isEmpty()) {
-                            if (log.isInfoEnabled()) {
-                                log.info("Selecting first matching result from list " + childStringList);
+                            if (log.isDebugEnabled()) {
+                                log.debug("Selecting first matching result from list " + childStringList);
                             }
                             final Session first = childStringList.get(0);
                             try {
@@ -255,8 +255,8 @@ class CommandResolutionHelper {
                         // We have a parent, so pull the value from it
                         final List<Scan> childStringList = matchChildFromParent(parent.getValue(), resolvedValue, "scans", "id", resolvedMatcher, new TypeRef<List<Scan>>(){});
                         if (childStringList != null && !childStringList.isEmpty()) {
-                            if (log.isInfoEnabled()) {
-                                log.info("Selecting first matching result from list " + childStringList);
+                            if (log.isDebugEnabled()) {
+                                log.debug("Selecting first matching result from list " + childStringList);
                             }
                             final Scan first = childStringList.get(0);
                             try {
@@ -287,12 +287,9 @@ class CommandResolutionHelper {
                     // TODO
                     break;
                 case CONFIG:
-                    final String[] configProps = input.getValue() != null ?
-                            resolvedValue.split("/") :
-                            null;
-
+                    final String[] configProps = resolvedValue != null ? resolvedValue.split("/") : null;
                     if (configProps == null || configProps.length != 2) {
-                        throw new CommandInputResolutionException("Config inputs must have a value that can be interpreted as a config_toolname/config_filename string.", input);
+                        throw new CommandInputResolutionException("Input value: " + resolvedValue + ". Config inputs must have a value that can be interpreted as a config_toolname/config_filename string.", input);
                     }
 
                     final Scope configScope;
@@ -320,21 +317,23 @@ class CommandResolutionHelper {
                             entityId = null;
                     }
 
-
-                    final org.nrg.config.entities.Configuration config = configService.getConfig(configProps[0], configProps[1], configScope, entityId);
-                    if (config == null || config.getContents() == null) {
+                    if (configService == null) {
+                        configService = XDAT.getConfigService();
+                    }
+                    final String configContents = configService.getConfigContents(configProps[0], configProps[1], configScope, entityId);
+                    if (configContents == null) {
                         throw new CommandInputResolutionException("Could not read config " + resolvedValue, input);
                     }
 
-                    resolvedValue = config.getContents();
+                    resolvedValue = configContents;
                     break;
                 case RESOURCE:
                     if (parent != null) {
                         // We have a parent, so pull the value from it
                         final List<Resource> childStringList = matchChildFromParent(parent.getValue(), resolvedValue, "resources", "id", resolvedMatcher, new TypeRef<List<Resource>>(){});
                         if (childStringList != null && !childStringList.isEmpty()) {
-                            if (log.isInfoEnabled()) {
-                                log.info("Selecting first matching result from list " + childStringList);
+                            if (log.isDebugEnabled()) {
+                                log.debug("Selecting first matching result from list " + childStringList);
                             }
                             final Resource first = childStringList.get(0);
                             try {
@@ -366,6 +365,9 @@ class CommandResolutionHelper {
             if (log.isDebugEnabled()) {
                 final String message = String.format("Input %s has been resolved with value %s.", input.getName(), resolvedValue);
                 log.debug(message);
+            } else if (log.isInfoEnabled()) {
+                final String message = String.format("Resolved input %s: %s", input.getName(), resolvedValue);
+                log.info(message);
             }
             input.setValue(resolvedValue);
 
@@ -422,7 +424,7 @@ class CommandResolutionHelper {
                             throw new CommandResolutionException(message);
                         }
                     } else {
-                        if (log.isInfoEnabled()) log.debug("No result");
+                        if (log.isDebugEnabled()) log.debug("No result");
                     }
                 }
             }
@@ -610,27 +612,32 @@ class CommandResolutionHelper {
         String hostPath = "";
         if (StringUtils.isNotBlank(mount.getFileInput())) {
             if (resolvedInputs.containsKey(mount.getFileInput())) {
-                final CommandInput source = resolvedInputs.get(mount.getFileInput());
-                switch (source.getType()) {
+                final CommandInput sourceInput = resolvedInputs.get(mount.getFileInput());
+                final String sourceInputValue = sourceInput.getValue();
+                if (StringUtils.isBlank(sourceInputValue)) {
+                    final String message = String.format("Cannot resolve mount %s. Souce input %s has blank value.", mount.getName(), mount.getFileInput());
+                    throw new CommandMountResolutionException(message, mount);
+                }
+                switch (sourceInput.getType()) {
                     case RESOURCE:
                         try {
-                            final Resource resource = mapper.readValue(source.getValue(), Resource.class);
+                            final Resource resource = mapper.readValue(sourceInputValue, Resource.class);
                             hostPath = resource.getDirectory();
                         } catch (IOException e) {
-                            throw new CommandMountResolutionException(String.format("Could not get resource from parent %s", source), mount, e);
+                            throw new CommandMountResolutionException(String.format("Could not get resource from parent %s", sourceInput), mount, e);
                         }
                         break;
                     case FILE:
-                        hostPath = source.getValue();
+                        hostPath = sourceInput.getValue();
                         break;
                     case PROJECT:
                     case SUBJECT:
                     case SESSION:
                     case SCAN:
                     case ASSESSOR:
-                        final List<Resource> resources = JsonPath.parse(source.getValue()).read("$.resources[*]", new TypeRef<List<Resource>>(){});
+                        final List<Resource> resources = JsonPath.parse(sourceInputValue).read("$.resources[*]", new TypeRef<List<Resource>>(){});
                         if (resources == null || resources.isEmpty()) {
-                            throw new CommandMountResolutionException(String.format("Could not find any resources for parent %s", source), mount);
+                            throw new CommandMountResolutionException(String.format("Could not find any resources for parent %s", sourceInput), mount);
                         }
 
                         if (StringUtils.isBlank(mount.getResource()) || resources.size() == 1) {
@@ -646,13 +653,13 @@ class CommandResolutionHelper {
                             if (StringUtils.isNotBlank(directory)) {
                                 hostPath = directory;
                             } else {
-                                throw new CommandMountResolutionException(String.format("Parent %s has no resource with name %s", source.getName(), mount.getResource()), mount);
+                                throw new CommandMountResolutionException(String.format("Parent %s has no resource with name %s", sourceInput.getName(), mount.getResource()), mount);
                             }
                         }
 
                         break;
                     default:
-                        throw new CommandMountResolutionException("I don't know how to resolve a mount from an input of type " + source.getType(), mount);
+                        throw new CommandMountResolutionException("I don't know how to resolve a mount from an input of type " + sourceInput.getType(), mount);
                 }
             }
         } else {

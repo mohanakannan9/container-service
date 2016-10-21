@@ -18,7 +18,6 @@ import org.mockito.Mockito;
 import org.nrg.containers.config.IntegrationTestConfig;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.ResolvedCommand;
-import org.nrg.containers.model.xnat.Session;
 import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
