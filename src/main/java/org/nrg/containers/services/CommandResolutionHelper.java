@@ -350,7 +350,13 @@ class CommandResolutionHelper {
                     }
                     break;
                 default:
-                    // TODO
+                    if (parent != null && StringUtils.isNotBlank(input.getParentProperty())) {
+                        final String propertyToGetFromParent = resolveJsonpathSubstring(input.getParentProperty());
+                        final String parentProperty = JsonPath.parse(parent.getValue()).read("$." + propertyToGetFromParent);
+                        if (parentProperty != null) {
+                            resolvedValue = parentProperty;
+                        }
+                    }
             }
 
 
