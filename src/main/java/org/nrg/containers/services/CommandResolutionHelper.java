@@ -13,6 +13,7 @@ import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.TypeRef;
 import com.jayway.jsonpath.spi.mapper.MappingException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.ecs.html.P;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.exceptions.CommandInputResolutionException;
 import org.nrg.containers.exceptions.CommandMountResolutionException;
@@ -92,14 +93,21 @@ class CommandResolutionHelper {
     }
 
     private ResolvedCommand resolve() throws CommandResolutionException {
-
+        if (log.isDebugEnabled()) {
+            log.debug("Resolving command " + command);
+        }
 
         resolveInputs();
 
         // Replace variable names in command line, mounts, and environment variables
         final ResolvedCommand resolvedCommand = new ResolvedCommand(command);
         final CommandRun run = command.getRun();
+
+        if (log.isDebugEnabled()) {
+            log.debug("Resolving command-line string");
+        }
         resolvedCommand.setCommandLine(resolveTemplate(run.getCommandLine(), resolvedInputValuesAsCommandLineArgs));
+
         resolvedCommand.setMounts(resolveCommandMounts());
         resolvedCommand.setEnvironmentVariables(resolveTemplateMap(run.getEnvironmentVariables(), resolvedInputValues, true));
 
@@ -109,13 +117,16 @@ class CommandResolutionHelper {
     }
 
     private void resolveInputs() throws CommandResolutionException {
+        if (log.isDebugEnabled()) {
+            log.debug("Resolving command inputs");
+        }
         if (command.getInputs() == null) {
             return;
         }
 
         for (final CommandInput input : command.getInputs()) {
             if (log.isDebugEnabled()) {
-                log.debug("Resolving input " + input);
+                log.debug(String.format("Resolving input \"%s\"", input.getName()));
             }
 
             // Check that all prerequisites have already been resolved.
@@ -157,16 +168,32 @@ class CommandResolutionHelper {
                 }
             }
 
+            String resolvedValue = null;
+
             // Give the input its default value
-            String resolvedValue = resolveJsonpathSubstring(input.getDefaultValue());
+            if (log.isDebugEnabled()) {
+                log.debug("Default value: " + input.getDefaultValue());
+            }
+            if (input.getDefaultValue() != null) {
+                 resolvedValue = resolveJsonpathSubstring(input.getDefaultValue());
+            }
 
             // If a value was provided at runtime, use that over the default
             if (inputValues.containsKey(input.getName()) && inputValues.get(input.getName()) != null) {
-                resolvedValue = inputValues.get(input.getName());
+                if (log.isDebugEnabled()) {
+                    log.debug("Runtime value: " + inputValues.get(input.getName()));
+                }
+                resolvedValue = resolveJsonpathSubstring(inputValues.get(input.getName()));
             }
 
-            final String resolvedMatcher = resolveJsonpathSubstring(input.getMatcher());
+            if (log.isDebugEnabled()) {
+                log.debug("Matcher: " + input.getMatcher());
+            }
+            final String resolvedMatcher = input.getMatcher() != null ? resolveJsonpathSubstring(input.getMatcher()) : null;
 
+            if (log.isDebugEnabled()) {
+                log.debug("Processing input value as a " + input.getType());
+            }
             switch (input.getType()) {
                 case BOOLEAN:
                     // Parse the value as a boolean, and use the trueValue/falseValue
@@ -362,11 +389,8 @@ class CommandResolutionHelper {
                 final String message = String.format("No value could be resolved for required input \"%s\".", input.getName());
                 throw new CommandInputResolutionException(message, input);
             }
-            if (log.isDebugEnabled()) {
-                final String message = String.format("Input %s has been resolved with value %s.", input.getName(), resolvedValue);
-                log.debug(message);
-            } else if (log.isInfoEnabled()) {
-                final String message = String.format("Resolved input %s: %s", input.getName(), resolvedValue);
+            if (log.isInfoEnabled()) {
+                final String message = String.format("Resolved input \"%s\": %s", input.getName(), resolvedValue);
                 log.info(message);
             }
             input.setValue(resolvedValue);
@@ -563,13 +587,23 @@ class CommandResolutionHelper {
 
     private String resolveTemplate(final String template,
                                    final Map<String, String> variableValues) {
+        if (log.isDebugEnabled()) {
+            log.debug("Resolving template string: " + template);
+        }
         String toResolve = template;
 
         for (final String replacementKey : variableValues.keySet()) {
             final String replacementValue = variableValues.get(replacementKey);
+            final String copyForLogging = log.isDebugEnabled() ? toResolve : null;
             toResolve = toResolve.replaceAll(replacementKey, replacementValue);
+            if (log.isDebugEnabled() && copyForLogging != null && !toResolve.equals(copyForLogging)) {
+                log.debug(String.format("Replacing \"%s\" -> \"%s\"", replacementKey, replacementValue));
+            }
         }
 
+        if (log.isDebugEnabled()) {
+            log.debug("Resolved template string: " + toResolve);
+        }
         return toResolve;
     }
 
@@ -592,7 +626,13 @@ class CommandResolutionHelper {
     }
 
     private List<CommandMount> resolveCommandMounts() throws CommandMountResolutionException {
+        if (log.isDebugEnabled()) {
+            log.debug("Resolving mounts");
+        }
         if (command.getRun() == null || command.getRun().getMounts() == null) {
+            if (log.isDebugEnabled()) {
+                log.debug("No mounts");
+            }
             return Lists.newArrayList();
         }
 
@@ -605,71 +645,86 @@ class CommandResolutionHelper {
             commandMounts.add(mount);
         }
 
+        if (log.isDebugEnabled()) {
+            log.debug("Done resolving mounts.");
+        }
         return commandMounts;
     }
 
     private String resolveCommandMountHostPath(final CommandMount mount) throws CommandMountResolutionException {
-        String hostPath = "";
+        if (log.isDebugEnabled()) {
+            log.debug(String.format("Resolving hostPath for mount \"%s\".", mount.getName()));
+        }
+
+        final String hostPath;
         if (StringUtils.isNotBlank(mount.getFileInput())) {
-            if (resolvedInputs.containsKey(mount.getFileInput())) {
-                final CommandInput sourceInput = resolvedInputs.get(mount.getFileInput());
-                final String sourceInputValue = sourceInput.getValue();
-                if (StringUtils.isBlank(sourceInputValue)) {
-                    final String message = String.format("Cannot resolve mount %s. Souce input %s has blank value.", mount.getName(), mount.getFileInput());
-                    throw new CommandMountResolutionException(message, mount);
-                }
-                switch (sourceInput.getType()) {
-                    case RESOURCE:
-                        try {
-                            final Resource resource = mapper.readValue(sourceInputValue, Resource.class);
-                            hostPath = resource.getDirectory();
-                        } catch (IOException e) {
-                            throw new CommandMountResolutionException(String.format("Could not get resource from parent %s", sourceInput), mount, e);
-                        }
-                        break;
-                    case FILE:
-                        hostPath = sourceInput.getValue();
-                        break;
-                    case PROJECT:
-                    case SUBJECT:
-                    case SESSION:
-                    case SCAN:
-                    case ASSESSOR:
-                        final List<Resource> resources = JsonPath.parse(sourceInputValue).read("$.resources[*]", new TypeRef<List<Resource>>(){});
-                        if (resources == null || resources.isEmpty()) {
-                            throw new CommandMountResolutionException(String.format("Could not find any resources for parent %s", sourceInput), mount);
-                        }
 
-                        if (StringUtils.isBlank(mount.getResource()) || resources.size() == 1) {
-                            hostPath = resources.get(0).getDirectory();
+            final CommandInput sourceInput = resolvedInputs.get(mount.getFileInput());
+            if (sourceInput == null || StringUtils.isBlank(sourceInput.getValue())) {
+                final String message = String.format("Cannot resolve mount \"%s\". Source input \"%s\" has no resolved value.", mount.getName(), mount.getFileInput());
+                throw new CommandMountResolutionException(message, mount);
+            }
+            final String sourceInputValue = sourceInput.getValue();
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Source input has type \"%s\".", sourceInput.getType()));
+            }
+            switch (sourceInput.getType()) {
+                case RESOURCE:
+                    try {
+                        final Resource resource = mapper.readValue(sourceInputValue, Resource.class);
+                        hostPath = resource.getDirectory();
+                    } catch (IOException e) {
+                        throw new CommandMountResolutionException("Source input is not a Resource. " + sourceInput, mount, e);
+                    }
+                    break;
+                case FILE:
+                    hostPath = sourceInput.getValue();
+                    break;
+                case PROJECT:
+                case SUBJECT:
+                case SESSION:
+                case SCAN:
+                case ASSESSOR:
+                    if (log.isDebugEnabled()) {
+                        log.debug("Looking for child resources on source input.");
+                    }
+                    final List<Resource> resources = JsonPath.parse(sourceInputValue).read("$.resources[*]", new TypeRef<List<Resource>>(){});
+                    if (resources == null || resources.isEmpty()) {
+                        throw new CommandMountResolutionException(String.format("Could not find any resources for source input \"%s\".", sourceInput), mount);
+                    }
+
+                    if (StringUtils.isBlank(mount.getResource()) || resources.size() == 1) {
+                        hostPath = resources.get(0).getDirectory();
+                    } else {
+                        String directory = null;
+                        for (final Resource resource : resources) {
+                            if (resource.getLabel().equals(mount.getResource())) {
+                                directory = resource.getDirectory();
+                                break;
+                            }
+                        }
+                        if (StringUtils.isNotBlank(directory)) {
+                            hostPath = directory;
                         } else {
-                            String directory = null;
-                            for (final Resource resource : resources) {
-                                if (resource.getLabel().equals(mount.getResource())) {
-                                    directory = resource.getDirectory();
-                                    break;
-                                }
-                            }
-                            if (StringUtils.isNotBlank(directory)) {
-                                hostPath = directory;
-                            } else {
-                                throw new CommandMountResolutionException(String.format("Parent %s has no resource with name %s", sourceInput.getName(), mount.getResource()), mount);
-                            }
+                            throw new CommandMountResolutionException(String.format("Source input \"%s\" has no resource with label \"%s\".", sourceInput.getName(), mount.getResource()), mount);
                         }
+                    }
 
-                        break;
-                    default:
-                        throw new CommandMountResolutionException("I don't know how to resolve a mount from an input of type " + sourceInput.getType(), mount);
-                }
+                    break;
+                default:
+                    throw new CommandMountResolutionException("I don't know how to resolve a mount from an input of type " + sourceInput.getType(), mount);
             }
         } else {
-            throw new CommandMountResolutionException("I don't know how to resolve a mount without a parent.", mount);
+            throw new CommandMountResolutionException("I don't know how to resolve a mount without a source input.", mount);
         }
 
         if (StringUtils.isBlank(hostPath)) {
             throw new CommandMountResolutionException("Could not resolve command mount host path.", mount);
         }
 
+        if (log.isDebugEnabled()) {
+            log.debug("Resolved host path: " + hostPath);
+        }
         return hostPath;
     }
 }
