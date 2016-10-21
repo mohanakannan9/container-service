@@ -189,9 +189,19 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         defaultEnv.put("XNAT_USER", token.getAlias());
         defaultEnv.put("XNAT_PASS", token.getSecret());
 
+        if (log.isDebugEnabled()) {
+            log.debug("Adding default environment variables");
+            for (final String envKey : defaultEnv.keySet()) {
+                log.debug(String.format("%s=%s", envKey, defaultEnv.get(envKey)));
+            }
+        }
         resolvedCommand.addEnvironmentVariables(defaultEnv);
 
         // Transport mounts
+        if (log.isDebugEnabled() && ((resolvedCommand.getMountsIn() != null && !resolvedCommand.getMountsIn().isEmpty()) ||
+                (resolvedCommand.getMountsOut() != null && !resolvedCommand.getMountsOut().isEmpty()))) {
+            log.debug("Transporting mounts");
+        }
         if (resolvedCommand.getMountsIn() != null) {
             final String dockerHost = controlApi.getServer().getHost();
             for (final CommandMount mountIn : resolvedCommand.getMountsIn()) {
