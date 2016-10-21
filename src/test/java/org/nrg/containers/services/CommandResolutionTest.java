@@ -1,10 +1,10 @@
 package org.nrg.containers.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.jayway.jsonpath.*;
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
 import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
@@ -15,7 +15,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.nrg.containers.config.CommandResolutionTestConfig;
+import org.nrg.containers.config.IntegrationTestConfig;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.containers.model.xnat.Session;
@@ -28,17 +28,13 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = CommandResolutionTestConfig.class)
+@ContextConfiguration(classes = IntegrationTestConfig.class)
 public class CommandResolutionTest {
     private static final Logger log = LoggerFactory.getLogger(CommandResolutionTest.class);
     private final String BUSYBOX_LATEST = "busybox:latest";
@@ -77,8 +73,6 @@ public class CommandResolutionTest {
         mockUser = Mockito.mock(UserI.class);
         when(mockUser.getLogin()).thenReturn("mockUser");
     }
-
-
 
     @Test
     @Transactional
@@ -139,7 +133,7 @@ public class CommandResolutionTest {
         final Map<String, String> runtimeValues = Maps.newHashMap();
         runtimeValues.put("session", sessionRuntimeJson);
 
-        final Session session = mapper.readValue(sessionRuntimeJson, Session.class);
+//        final Session session = mapper.readValue(sessionRuntimeJson, Session.class);
 
         final ResolvedCommand resolvedCommand = CommandResolutionHelper.resolve(command, runtimeValues, mockUser);
     }
