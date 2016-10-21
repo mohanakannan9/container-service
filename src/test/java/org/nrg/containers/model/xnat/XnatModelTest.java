@@ -19,13 +19,15 @@ import java.util.Set;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 
 
 public class XnatModelTest {
     private static final String FILE_JSON = "{\"name\":\"file.txt\", \"path\":\"/path/to/files/file.txt\", " +
             "\"tags\":[\"squishy\",\"jovial\"], \"format\":\"TEXT\", \"content\":\"TEXT\"}";
-    private static final String RESOURCE_JSON = "{\"id\":1, \"label\":\"a_resource\", " +
+    private static final String RESOURCE_JSON = "{\"id\":\"1\", \"label\":\"a_resource\", " +
             "\"directory\":\"/path/to/files\", \"files\":[" + FILE_JSON + "]}";
 
     private static final String SESSION_JSON = "{\"id\":\"E1\", \"label\":\"a_session\", " +
@@ -52,14 +54,14 @@ public class XnatModelTest {
 
             @Override
             public Set<Option> options() {
-                return Sets.newHashSet(Option.ALWAYS_RETURN_LIST, Option.DEFAULT_PATH_LEAF_TO_NULL);
+                return Sets.newHashSet(Option.DEFAULT_PATH_LEAF_TO_NULL);
             }
         });
     }
 
     @Test
     public void testDeserializeFile() throws Exception {
-        final File file = mapper.readValue(FILE_JSON, File.class);
+        final XnatFile file = mapper.readValue(FILE_JSON, XnatFile.class);
         assertEquals("file.txt", file.getName());
         assertEquals("/path/to/files/file.txt", file.getPath());
         assertEquals(Lists.newArrayList("squishy", "jovial"), file.getTags());
@@ -69,10 +71,10 @@ public class XnatModelTest {
 
     @Test
     public void testDeserializeResource() throws Exception {
-        final File file = mapper.readValue(FILE_JSON, File.class);
+        final XnatFile file = mapper.readValue(FILE_JSON, XnatFile.class);
         final Resource resource = mapper.readValue(RESOURCE_JSON, Resource.class);
 
-        assertEquals((Integer) 1, resource.getId());
+        assertEquals("1", resource.getId());
         assertEquals("a_resource", resource.getLabel());
         assertEquals("/path/to/files", resource.getDirectory());
         assertEquals(Lists.newArrayList(file), resource.getFiles());
@@ -92,12 +94,44 @@ public class XnatModelTest {
     }
 
     @Test
-    public void testJsonPath() throws Exception {
+    public void testJsonPathOnXnatObjects() throws Exception {
         final Resource expected = mapper.readValue(RESOURCE_JSON, Resource.class);
         final List<Resource> resources = JsonPath.parse(SESSION_JSON).read("$.resources[*]", new TypeRef<List<Resource>>(){});
 
         assertThat(resources, hasSize(1));
         assertThat(resources.get(0), instanceOf(Resource.class));
         assertEquals(expected, resources.get(0));
+    }
+
+    @Test
+    public void testCommandInputJsonPath() throws Exception {
+        final String scantype = "SCANTYPE";
+
+        final String commandJson =
+                "{\"inputs\": [" +
+                        "{\"name\": \"T1-scantype\", \"description\": \"Scantype of T1 scans\", " +
+                        "\"type\": \"string\", " +
+                        "\"value\": \"" + scantype + "\"}"
+                        + "]}";
+
+        final List<String> results = JsonPath.parse(commandJson).read("$.inputs[?(@.name == 'T1-scantype')].value");
+        assertEquals(Lists.newArrayList(scantype), results);
+    }
+
+    @Test
+    public void testPredicateWithList() throws Exception {
+        final String scanRuntimeJson =
+                "{\"id\": \"scan1\", \"parent-id\": \"session1\", " +
+                        "\"scan-type\": \"SCANTYPE\"" +
+                        "}";
+        final String sessionRuntimeJson =
+                "{\"id\": \"session1\", \"label\": \"session1\"," +
+                        "\"scans\": [" + scanRuntimeJson + "]" +
+                        "}";
+        final Scan expected = mapper.readValue(scanRuntimeJson, Scan.class);
+
+        final List<Scan> results = JsonPath.parse(sessionRuntimeJson).read("$.scans[?(@.scan-type in [\"SCANTYPE\", \"OTHER_SCANTYPE\"])]", new TypeRef<List<Scan>>(){});
+
+        assertEquals(Lists.newArrayList(expected), results);
     }
 }

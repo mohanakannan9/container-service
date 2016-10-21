@@ -10,11 +10,8 @@ import org.nrg.xdat.om.XnatResourcecatalog;
 import java.util.List;
 import java.util.Objects;
 
-public class Assessor {
-    @JsonProperty(required = true) private String id;
+public class Assessor extends XnatModelObject {
     @JsonProperty(value = "parent-id") private String parentId;
-    private String label;
-    private String xsiType;
     private List<Resource> resources;
 
     public Assessor() {}
@@ -26,7 +23,6 @@ public class Assessor {
 
         this.parentId = parentId;
 
-
         this.resources = Lists.newArrayList();
         for (final XnatAbstractresourceI xnatAbstractresourceI : xnatImageassessordataI.getResources_resource()) {
             if (xnatAbstractresourceI instanceof XnatResourcecatalog) {
@@ -35,36 +31,12 @@ public class Assessor {
         }
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(final String id) {
-        this.id = id;
-    }
-
     public String getParentId() {
         return parentId;
     }
 
     public void setParentId(String parentId) {
         this.parentId = parentId;
-    }
-
-    public String getLabel() {
-        return label;
-    }
-
-    public void setLabel(final String label) {
-        this.label = label;
-    }
-
-    public String getXsiType() {
-        return xsiType;
-    }
-
-    public void setXsiType(final String xsiType) {
-        this.xsiType = xsiType;
     }
 
     public List<Resource> getResources() {
@@ -79,26 +51,21 @@ public class Assessor {
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
         final Assessor that = (Assessor) o;
-        return Objects.equals(this.id, that.id) &&
-                Objects.equals(this.parentId, that.parentId) &&
-                Objects.equals(this.label, that.label) &&
-                Objects.equals(this.xsiType, that.xsiType) &&
+        return Objects.equals(this.parentId, that.parentId) &&
                 Objects.equals(this.resources, that.resources);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, parentId, label, xsiType, resources);
+        return Objects.hash(super.hashCode(), parentId, resources);
     }
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", id)
+        return addParentPropertiesToString(MoreObjects.toStringHelper(this))
                 .add("parentId", parentId)
-                .add("label", label)
-                .add("xsiType", xsiType)
                 .add("resources", resources)
                 .toString();
     }

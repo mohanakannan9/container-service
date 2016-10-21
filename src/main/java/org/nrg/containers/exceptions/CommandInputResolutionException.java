@@ -2,7 +2,7 @@ package org.nrg.containers.exceptions;
 
 import org.nrg.containers.model.CommandInput;
 
-public class CommandInputResolutionException extends Exception {
+public class CommandInputResolutionException extends CommandResolutionException {
     final CommandInput input;
 
     public CommandInputResolutionException(final String message, final CommandInput input) {

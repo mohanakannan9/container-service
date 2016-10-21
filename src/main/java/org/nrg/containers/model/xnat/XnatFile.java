@@ -3,10 +3,11 @@ package org.nrg.containers.model.xnat;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 
+import java.io.File;
 import java.util.List;
 import java.util.Objects;
 
-public class File {
+public class XnatFile extends XnatModelObject {
     private String name;
     private String path;
     private List<String> tags;
@@ -14,14 +15,14 @@ public class File {
     private String content;
     private java.io.File file;
 
-    public File() {}
+    public XnatFile() {}
 
-    public File(final String name,
-                final String path,
-                final String tagsCsv,
-                final String format,
-                final String content,
-                final java.io.File file) {
+    public XnatFile(final String name,
+                    final String path,
+                    final String tagsCsv,
+                    final String format,
+                    final String content,
+                    final File file) {
         this.name = name;
         this.path = path;
         this.tags = Lists.newArrayList(tagsCsv.split(","));
@@ -82,7 +83,7 @@ public class File {
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final File that = (File) o;
+        final XnatFile that = (XnatFile) o;
         return Objects.equals(this.name, that.name) &&
                 Objects.equals(this.path, that.path) &&
                 Objects.equals(this.tags, that.tags) &&

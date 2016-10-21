@@ -27,7 +27,7 @@ public class CommandInput implements Serializable {
     @JsonProperty("command-line-separator") private String commandLineSeparator = " ";
     @JsonProperty("true-value") private String trueValue;
     @JsonProperty("false-value") private String falseValue;
-    @JsonIgnore private String value;
+    private String value;
 
     @ApiModelProperty(value = "Name of the command input", required = true)
     public String getName() {

@@ -11,12 +11,10 @@ import org.nrg.xdat.om.XnatResourcecatalog;
 import java.util.List;
 import java.util.Objects;
 
-public class Scan {
+public class Scan extends XnatModelObject {
     @JsonIgnore private XnatImagescandataI xnatImagescandataI;
-    @JsonProperty(required = true) private String id;
     @JsonProperty(value = "parent-id") private String parentId;
-    private String xsiType;
-    private String scanType;
+    @JsonProperty("scan-type") private String scanType;
     private List<Resource> resources;
 
     public Scan() {}
@@ -45,28 +43,12 @@ public class Scan {
         this.xnatImagescandataI = xnatImagescandataI;
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(final String id) {
-        this.id = id;
-    }
-
     public String getParentId() {
         return parentId;
     }
 
     public void setParentId(final String parentId) {
         this.parentId = parentId;
-    }
-
-    public String getXsiType() {
-        return xsiType;
-    }
-
-    public void setXsiType(final String xsiType) {
-        this.xsiType = xsiType;
     }
 
     public String getScanType() {
@@ -89,25 +71,23 @@ public class Scan {
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
         final Scan that = (Scan) o;
-        return Objects.equals(this.id, that.id) &&
+        return Objects.equals(this.xnatImagescandataI, that.xnatImagescandataI) &&
                 Objects.equals(this.parentId, that.parentId) &&
-                Objects.equals(this.xsiType, that.xsiType) &&
                 Objects.equals(this.scanType, that.scanType) &&
                 Objects.equals(this.resources, that.resources);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, parentId, xsiType, scanType, resources);
+        return Objects.hash(super.hashCode(), xnatImagescandataI, parentId, scanType, resources);
     }
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", id)
+        return addParentPropertiesToString(MoreObjects.toStringHelper(this))
                 .add("parentId", parentId)
-                .add("xsiType", xsiType)
                 .add("scanType", scanType)
                 .add("resources", resources)
                 .toString();

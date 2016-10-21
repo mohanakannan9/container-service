@@ -4,12 +4,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import org.nrg.containers.exceptions.BadRequestException;
-import org.nrg.containers.exceptions.CommandInputResolutionException;
-import org.nrg.containers.exceptions.CommandMountResolutionException;
-import org.nrg.containers.exceptions.DockerServerException;
-import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.exceptions.NotFoundException;
+import org.nrg.containers.exceptions.*;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.ResolvedCommand;
@@ -112,7 +107,7 @@ public class CommandRestApi {
     @ResponseBody
     public ContainerExecution launchCommand(final @PathVariable Long id,
                                             final @RequestParam Map<String, String> allRequestParams)
-            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandMountResolutionException {
+            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException {
         final UserI userI = XDAT.getUserDetails();
         try {
             return commandService.launchCommand(id, allRequestParams, userI);

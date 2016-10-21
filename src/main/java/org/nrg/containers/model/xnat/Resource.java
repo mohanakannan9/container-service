@@ -8,24 +8,22 @@ import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xnat.utils.CatalogUtils;
 
+import java.io.File;
 import java.util.List;
 import java.util.Objects;
 
-public class Resource {
+public class Resource extends XnatModelObject {
     @JsonIgnore private XnatResourcecatalog xnatResourcecatalog;
-    @JsonProperty(required = true) private Integer id;
     @JsonProperty(value = "parent-id") private String parentId;
-    private String label;
-    private String xsiType;
     private String directory;
-    private List<File> files;
+    private List<XnatFile> files;
 
     public Resource() {}
 
     public Resource(final XnatResourcecatalog xnatResourcecatalog, final String parentId, final String rootArchivePath) {
         this.xnatResourcecatalog = xnatResourcecatalog;
 
-        this.id = xnatResourcecatalog.getXnatAbstractresourceId();
+        this.id = xnatResourcecatalog.getXnatAbstractresourceId() != null ? xnatResourcecatalog.getXnatAbstractresourceId().toString() : "";
         this.label = xnatResourcecatalog.getLabel();
         this.xsiType = xnatResourcecatalog.getXSIType();
 
@@ -38,7 +36,7 @@ public class Resource {
         this.files = Lists.newArrayList();
         for (final Object[] entry: entryDetails) {
             // See CatalogUtils.getEntryDetails to see where all these "entry" elements come from
-            files.add(new File((String) entry[0], (String) entry[2], (String) entry[4], (String) entry[5], (String) entry[6], (java.io.File) entry[8]));
+            files.add(new XnatFile((String) entry[0], (String) entry[2], (String) entry[4], (String) entry[5], (String) entry[6], (File) entry[8]));
         }
     }
 
@@ -46,40 +44,16 @@ public class Resource {
         return xnatResourcecatalog;
     }
 
-    public void setXnatResourcecatalog(XnatResourcecatalog xnatResourcecatalog) {
+    public void setXnatResourcecatalog(final XnatResourcecatalog xnatResourcecatalog) {
         this.xnatResourcecatalog = xnatResourcecatalog;
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(final Integer id) {
-        this.id = id;
     }
 
     public String getParentId() {
         return parentId;
     }
 
-    public void setParentId(String parentId) {
+    public void setParentId(final String parentId) {
         this.parentId = parentId;
-    }
-
-    public String getLabel() {
-        return label;
-    }
-
-    public void setLabel(final String label) {
-        this.label = label;
-    }
-
-    public String getXsiType() {
-        return xsiType;
-    }
-
-    public void setXsiType(String xsiType) {
-        this.xsiType = xsiType;
     }
 
     public String getDirectory() {
@@ -90,39 +64,35 @@ public class Resource {
         this.directory = directory;
     }
 
-    public List<File> getFiles() {
+    public List<XnatFile> getFiles() {
         return files;
     }
 
-    public void setFiles(final List<File> files) {
+    public void setFiles(final List<XnatFile> files) {
         this.files = files;
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Resource that = (Resource) o;
-        return Objects.equals(this.id, that.id) &&
+        if (!super.equals(o)) return false;
+        final Resource that = (Resource) o;
+        return Objects.equals(this.xnatResourcecatalog, that.xnatResourcecatalog) &&
                 Objects.equals(this.parentId, that.parentId) &&
-                Objects.equals(this.label, that.label) &&
-                Objects.equals(this.xsiType, that.xsiType) &&
                 Objects.equals(this.directory, that.directory) &&
                 Objects.equals(this.files, that.files);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, parentId, label, xsiType, directory, files);
+        return Objects.hash(super.hashCode(), xnatResourcecatalog, parentId, directory, files);
     }
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", id)
+        return addParentPropertiesToString(MoreObjects.toStringHelper(this))
                 .add("parentId", parentId)
-                .add("label", label)
-                .add("xsiType", xsiType)
                 .add("directory", directory)
                 .add("files", files)
                 .toString();

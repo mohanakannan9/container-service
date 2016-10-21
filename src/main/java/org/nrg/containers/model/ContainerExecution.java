@@ -6,6 +6,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
+import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -123,6 +124,7 @@ public class ContainerExecution extends AbstractHibernateEntity {
     }
 
     @ElementCollection
+    @Column(columnDefinition = "TEXT")
     public Map<String, String> getInputValues() {
         return inputValues;
     }
