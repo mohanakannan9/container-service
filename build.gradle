@@ -125,7 +125,7 @@ jacocoTestReport {
 }
 
 task unitTest( type: Test ) {
-    exclude '**/DockerControlApiTest.class', '**/DockerIntegrationTest.class'
+    exclude '**/DockerControlApiTest.class', '**/*IntegrationTest.class'
 }
 
 //compileJava {

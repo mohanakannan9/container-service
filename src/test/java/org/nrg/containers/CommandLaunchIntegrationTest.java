@@ -49,7 +49,7 @@ import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = IntegrationTestConfig.class)
-public class CommandLaunchTest {
+public class CommandLaunchIntegrationTest {
     private UserI mockUser;
 
     @Autowired private ObjectMapper mapper;
