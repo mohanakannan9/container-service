@@ -308,9 +308,8 @@ public class HibernateContainerExecutionService
     @Transactional
     public ContainerExecution save(final ResolvedCommand resolvedCommand,
                                    final String containerId,
-                                   final Map<String, String> inputValues,
                                    final UserI userI) {
-        final ContainerExecution execution = new ContainerExecution(resolvedCommand, containerId, inputValues, userI.getLogin());
+        final ContainerExecution execution = new ContainerExecution(resolvedCommand, containerId, userI.getLogin());
         return create(execution);
     }
 }

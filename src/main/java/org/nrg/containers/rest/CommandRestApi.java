@@ -99,7 +99,7 @@ public class CommandRestApi {
     public ContainerExecution launchCommand(final @RequestBody ResolvedCommand resolvedCommand)
             throws NoServerPrefException, DockerServerException {
         final UserI userI = XDAT.getUserDetails();
-        return commandService.launchCommand(resolvedCommand, userI);
+        return commandService.launchResolvedCommand(resolvedCommand, userI);
     }
 
     @RequestMapping(value = {"/{id}/launch"}, method = POST)
@@ -110,7 +110,7 @@ public class CommandRestApi {
             throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException {
         final UserI userI = XDAT.getUserDetails();
         try {
-            return commandService.launchCommand(id, allRequestParams, userI);
+            return commandService.resolveAndLaunchCommand(id, allRequestParams, userI);
         } catch (CommandInputResolutionException e) {
             throw new BadRequestException("Must provide value for variable " + e.getInput().getName() + ".", e);
         }
@@ -167,7 +167,7 @@ public class CommandRestApi {
 //                    throw new NotFoundException(String.format("No scan with id %s on session with id %s.", scanId, sessionId));
 //                }
 //
-//                return commandService.launchCommand(id, userI, session, scan);
+//                return commandService.resolveAndLaunchCommand(id, userI, session, scan);
 //            } else {
 //                log.error("Haven't tested anything other than scan yet.");
 //            }

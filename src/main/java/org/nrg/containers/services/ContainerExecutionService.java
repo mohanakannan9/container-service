@@ -14,6 +14,5 @@ public interface ContainerExecutionService extends BaseHibernateService<Containe
     void finalize(final ContainerExecution containerExecution, final UserI userI);
     ContainerExecution save(final ResolvedCommand resolvedCommand,
                             final String containerId,
-                            final Map<String, String> inputValues,
                             final UserI userI);
 }

@@ -21,9 +21,10 @@ public class ResolvedCommand implements Serializable {
     @JsonProperty("command-id") private Long commandId;
     @JsonProperty("docker-image") private String dockerImage;
     @JsonProperty("command-line") private String commandLine;
-    @JsonProperty("env") private Map<String, String> environmentVariables = Maps.newHashMap();
-    @JsonProperty("mounts-in") private List<CommandMount> mountsIn = Lists.newArrayList();
-    @JsonProperty("mounts-out") private List<CommandMount> mountsOut = Lists.newArrayList();
+    @JsonProperty("env") private Map<String, String> environmentVariables;
+    @JsonProperty("mounts-in") private List<CommandMount> mountsIn;
+    @JsonProperty("mounts-out") private List<CommandMount> mountsOut;
+    @JsonProperty("input-values") private Map<String, String> inputValues;
     private List<CommandOutput> outputs;
 
     public ResolvedCommand() {}
@@ -65,7 +66,7 @@ public class ResolvedCommand implements Serializable {
     public void setEnvironmentVariables(final Map<String, String> environmentVariables) {
         this.environmentVariables = environmentVariables == null ?
                 Maps.<String, String>newHashMap() :
-                environmentVariables;
+                Maps.newHashMap(environmentVariables);
     }
 
     @Transient
@@ -86,7 +87,7 @@ public class ResolvedCommand implements Serializable {
     public void setMountsIn(final List<CommandMount> mountsIn) {
         this.mountsIn = mountsIn == null ?
                 Lists.<CommandMount>newArrayList() :
-                mountsIn;
+                Lists.newArrayList(mountsIn);
     }
 
     @ElementCollection(fetch = FetchType.EAGER)
@@ -97,7 +98,7 @@ public class ResolvedCommand implements Serializable {
     public void setMountsOut(final List<CommandMount> mountsOut) {
         this.mountsOut = mountsOut == null ?
                 Lists.<CommandMount>newArrayList() :
-                mountsOut;
+                Lists.newArrayList(mountsOut);
     }
 
     @Transient
@@ -115,6 +116,19 @@ public class ResolvedCommand implements Serializable {
         setMountsIn(mountsIn);
         setMountsOut(mountsOut);
     }
+
+
+    @ElementCollection
+    public Map<String, String> getInputValues() {
+        return inputValues;
+    }
+
+    public void setInputValues(final Map<String, String> inputValues) {
+        this.inputValues = inputValues == null ?
+                Maps.<String, String>newHashMap() :
+                Maps.newHashMap(inputValues);
+    }
+
 
     @ElementCollection
     public List<CommandOutput> getOutputs() {
@@ -147,12 +161,13 @@ public class ResolvedCommand implements Serializable {
                 Objects.equals(this.environmentVariables, that.environmentVariables) &&
                 Objects.equals(this.mountsIn, that.mountsIn) &&
                 Objects.equals(this.mountsOut, that.mountsOut) &&
+                Objects.equals(this.inputValues, that.inputValues) &&
                 Objects.equals(this.outputs, that.outputs);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(commandId, commandLine, dockerImage, environmentVariables, mountsIn, mountsOut, outputs);
+        return Objects.hash(commandId, commandLine, dockerImage, environmentVariables, mountsIn, mountsOut, inputValues, outputs);
     }
 
     @Override
@@ -164,6 +179,7 @@ public class ResolvedCommand implements Serializable {
                 .add("environmentVariables", environmentVariables)
                 .add("mountsIn", mountsIn)
                 .add("mountsOut", mountsOut)
+                .add("inputValues", inputValues)
                 .add("outputs", outputs)
                 .toString();
     }
