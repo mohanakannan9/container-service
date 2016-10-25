@@ -1,6 +1,7 @@
 package org.nrg.containers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -21,8 +22,12 @@ import org.mockito.Mockito;
 import org.nrg.containers.config.IntegrationTestConfig;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.CommandMount;
+import org.nrg.containers.model.CommandOutput;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.DockerServerPrefsBean;
+import org.nrg.containers.model.xnat.Project;
+import org.nrg.containers.model.xnat.Resource;
+import org.nrg.containers.model.xnat.Scan;
 import org.nrg.containers.model.xnat.Session;
 import org.nrg.containers.services.CommandService;
 import org.nrg.xdat.entities.AliasToken;
@@ -34,12 +39,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -120,16 +127,39 @@ public class CommandLaunchIntegrationTest {
         commandService.flush();
 
         final Session session = mapper.readValue(new File(sessionJsonFile), Session.class);
-        session.getScans().get(0).getResources().get(0).setDirectory(fakeResourceDir);
+        final Scan scan = session.getScans().get(0);
+        final Resource resource = scan.getResources().get(0);
+        resource.setDirectory(fakeResourceDir);
         final String sessionJson = mapper.writeValueAsString(session);
+
+        final String t1Scantype = "T1_TEST_SCANTYPE";
 
         final Map<String, String> runtimeValues = Maps.newHashMap();
         runtimeValues.put("session", sessionJson);
-        runtimeValues.put("project", "{\"id\": \"project1\"}");
-        runtimeValues.put("T1-scantype", "T1_TEST_SCANTYPE");
+        runtimeValues.put("T1-scantype", t1Scantype);
 
-        final ContainerExecution execution = commandService.launchCommand(fakeReconAll.getId(), runtimeValues, mockUser);
+        final ContainerExecution execution = commandService.resolveAndLaunchCommand(fakeReconAll.getId(), runtimeValues, mockUser);
         Thread.sleep(1000); // Wait for container to finish
+
+        final Map<String, String> inputValues = Maps.newHashMap(execution.getInputValues());
+        assertEquals(
+                Sets.newHashSet("session", "label", "T1-scantype", "T1", "resource", "other-recon-all-args"),
+                inputValues.keySet());
+        assertEquals(session, mapper.readValue(inputValues.get("session"), Session.class));
+        assertEquals(session.getLabel(), inputValues.get("label"));
+        assertEquals(t1Scantype, inputValues.get("T1-scantype"));
+        assertEquals(scan, mapper.readValue(inputValues.get("T1"), Scan.class));
+        assertEquals(resource, mapper.readValue(inputValues.get("resource"), Resource.class));
+        assertEquals("-all", inputValues.get("other-recon-all-args"));
+
+        final List<CommandOutput> outputs = execution.getOutputs();
+        assertEquals(Lists.newArrayList("fs", "data"), Lists.transform(outputs, new Function<CommandOutput, String>() {
+            @Nullable
+            @Override
+            public String apply(@Nullable final CommandOutput output) {
+                return output == null ? "" : output.getName();
+            }
+        }));
 
         assertThat(execution.getMountsOut(), hasSize(1));
         final CommandMount mountOut = execution.getMountsOut().get(0);

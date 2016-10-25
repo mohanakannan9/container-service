@@ -72,7 +72,7 @@ public class ScanArchiveListenerAndCommandLauncher implements Consumer<Event<Sca
                         );
                         log.debug(message);
                     }
-                    commandService.launchCommand(commandId, runtimeValues, scanArchiveEventToLaunchCommands.getUser());
+                    commandService.resolveAndLaunchCommand(commandId, runtimeValues, scanArchiveEventToLaunchCommands.getUser());
                 } catch (NotFoundException | CommandResolutionException | NoServerPrefException | DockerServerException e) {
                     log.error("Error launching command " + commandId, e);
                 }

@@ -13,7 +13,6 @@ import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.TypeRef;
 import com.jayway.jsonpath.spi.mapper.MappingException;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.ecs.html.P;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.exceptions.CommandInputResolutionException;
 import org.nrg.containers.exceptions.CommandMountResolutionException;
@@ -21,12 +20,13 @@ import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.CommandInput;
 import org.nrg.containers.model.CommandMount;
-import org.nrg.containers.model.CommandRun;
+import org.nrg.containers.model.CommandOutput;
+import org.nrg.containers.model.CommandOutputFiles;
 import org.nrg.containers.model.ResolvedCommand;
-import org.nrg.containers.model.xnat.XnatFile;
 import org.nrg.containers.model.xnat.Resource;
 import org.nrg.containers.model.xnat.Scan;
 import org.nrg.containers.model.xnat.Session;
+import org.nrg.containers.model.xnat.XnatFile;
 import org.nrg.containers.model.xnat.XnatModelObject;
 import org.nrg.framework.constants.Scope;
 import org.nrg.xdat.XDAT;
@@ -34,8 +34,6 @@ import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -49,11 +47,12 @@ class CommandResolutionHelper {
     private static final String JSONPATH_SUBSTRING_REGEX = "\\^(.+)\\^";
 
     private Command command;
+    private ResolvedCommand resolvedCommand;
     private Command cachedCommand;
     private String commandJson;
-    private Map<String, CommandInput> resolvedInputs;
-    private Map<String, String> resolvedInputValues;
-    private Map<String, String> resolvedInputValuesAsCommandLineArgs;
+    private Map<String, CommandInput> resolvedInputObjects;
+    private Map<String, String> resolvedInputValuesByReplacementKey;
+    private Map<String, String> resolvedInputCommandLineValuesByReplacementKey;
     private UserI userI;
     private ObjectMapper mapper;
     private Map<String, String> inputValues;
@@ -64,11 +63,12 @@ class CommandResolutionHelper {
                                     final Map<String, String> inputValues,
                                     final UserI userI) {
         this.command = command;
+        resolvedCommand = new ResolvedCommand(command);
         this.cachedCommand = null;
         this.commandJson = null;
-        this.resolvedInputs = Maps.newHashMap();
-        this.resolvedInputValues = Maps.newHashMap();
-        this.resolvedInputValuesAsCommandLineArgs = Maps.newHashMap();
+        this.resolvedInputObjects = Maps.newHashMap();
+        this.resolvedInputValuesByReplacementKey = Maps.newHashMap();
+        this.resolvedInputCommandLineValuesByReplacementKey = Maps.newHashMap();
 //            command.setInputs(Lists.<CommandInput>newArrayList());
         this.userI = userI;
         this.mapper = new ObjectMapper();
@@ -77,11 +77,6 @@ class CommandResolutionHelper {
                 inputValues;
 
         jsonpathSubstringPattern = Pattern.compile(JSONPATH_SUBSTRING_REGEX);
-    }
-
-    public static ResolvedCommand resolve(final Command command, final UserI userI)
-            throws CommandResolutionException {
-        return resolve(command, null, userI);
     }
 
     public static ResolvedCommand resolve(final Command command,
@@ -97,33 +92,24 @@ class CommandResolutionHelper {
             log.debug("Resolving command " + command);
         }
 
-        resolveInputs();
-
-        // Replace variable names in command line, mounts, and environment variables
-        final ResolvedCommand resolvedCommand = new ResolvedCommand(command);
-        final CommandRun run = command.getRun();
-
-        if (log.isDebugEnabled()) {
-            log.debug("Resolving command-line string");
-        }
-        resolvedCommand.setCommandLine(resolveTemplate(run.getCommandLine(), resolvedInputValuesAsCommandLineArgs));
-
+        resolvedCommand.setInputValues(resolveInputs());
+        resolvedCommand.setOutputs(resolveOutputs());
+        resolvedCommand.setCommandLine(resolveCommandLine());
         resolvedCommand.setMounts(resolveCommandMounts());
-        resolvedCommand.setEnvironmentVariables(resolveTemplateMap(run.getEnvironmentVariables(), resolvedInputValues, true));
-
-        // TODO What else do I need to do to resolve the command?
+        resolvedCommand.setEnvironmentVariables(resolveEnvironmentVariables());
 
         return resolvedCommand;
     }
 
-    private void resolveInputs() throws CommandResolutionException {
+    private Map<String, String> resolveInputs() throws CommandResolutionException {
         if (log.isDebugEnabled()) {
             log.debug("Resolving command inputs");
         }
         if (command.getInputs() == null) {
-            return;
+            return null;
         }
 
+        final Map<String, String> resolvedInputValuesByName = Maps.newHashMap();
         for (final CommandInput input : command.getInputs()) {
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Resolving input \"%s\"", input.getName()));
@@ -143,7 +129,7 @@ class CommandResolutionHelper {
                 log.debug("Prerequisites: " + prerequisites.toString());
             }
             for (final String prereq : prerequisites) {
-                if (!resolvedInputs.containsKey(prereq)) {
+                if (!resolvedInputObjects.containsKey(prereq)) {
                     final String message = String.format(
                             "Input %1$s has prerequisite %2$s which has not been resolved. Re-order inputs so %1$s appears after %2$s.",
                             input.getName(), prereq
@@ -155,9 +141,9 @@ class CommandResolutionHelper {
             // If input requires a parent, it must be resolved first
             CommandInput parent = null;
             if (StringUtils.isNotBlank(input.getParent())) {
-                if (resolvedInputs.containsKey(input.getParent())) {
+                if (resolvedInputObjects.containsKey(input.getParent())) {
                     // Parent has already been resolved. We can continue.
-                    parent = resolvedInputs.get(input.getParent());
+                    parent = resolvedInputObjects.get(input.getParent());
                 } else {
                     // This exception should have been thrown already above, but just in case it wasn't...
                     final String message = String.format(
@@ -395,66 +381,19 @@ class CommandResolutionHelper {
             }
             input.setValue(resolvedValue);
 
-            resolvedInputs.put(input.getName(), input);
+            resolvedInputObjects.put(input.getName(), input);
+            resolvedInputValuesByName.put(input.getName(), input.getValue());
 
             // Only substitute the input into the command line if a replacementKey is set
-            // TODO This will be changed later, as we will allow pro-active searching with JSONPath
             final String replacementKey = input.getReplacementKey();
             if (StringUtils.isBlank(replacementKey)) {
                 continue;
             }
-            resolvedInputValues.put(replacementKey, resolvedValue);
-            resolvedInputValuesAsCommandLineArgs.put(replacementKey, getValueForCommandLine(input, resolvedValue));
+            resolvedInputValuesByReplacementKey.put(replacementKey, resolvedValue);
+            resolvedInputCommandLineValuesByReplacementKey.put(replacementKey, getValueForCommandLine(input, resolvedValue));
         }
-    }
 
-    private String resolveJsonpathSubstring(final String stringThatMayContainJsonpathSubstring) throws CommandResolutionException {
-        if (log.isDebugEnabled()) log.debug("Checking for jsonpath substring in " + stringThatMayContainJsonpathSubstring);
-        if (StringUtils.isNotBlank(stringThatMayContainJsonpathSubstring)) {
-
-            final Matcher jsonpathSubstringMatcher = jsonpathSubstringPattern.matcher(stringThatMayContainJsonpathSubstring);
-
-            if (jsonpathSubstringMatcher.find()) {
-
-                final String jsonpathSearchWithMarkers = jsonpathSubstringMatcher.group(0);
-                final String jsonpathSearchWithoutMarkers = jsonpathSubstringMatcher.group(1);
-
-                if (log.isDebugEnabled()) log.debug("Found possible jsonpath substring " + jsonpathSearchWithMarkers);
-
-                if (StringUtils.isNotBlank(jsonpathSearchWithoutMarkers)) {
-
-                    if(log.isInfoEnabled()) log.info("Performing jsonpath search through command with search string " + jsonpathSearchWithoutMarkers);
-                    if(log.isDebugEnabled()) log.debug("Command json: " + commandAsJson());
-
-                    final Configuration c = Configuration.defaultConfiguration().addOptions(Option.ALWAYS_RETURN_LIST);
-                    final List<String> searchResult = JsonPath.using(c).parse(commandAsJson()).read(jsonpathSearchWithoutMarkers);
-                    if (searchResult != null && !searchResult.isEmpty() && searchResult.get(0) != null) {
-                        if (log.isInfoEnabled()) log.info("Result: " + searchResult);
-                        if (searchResult.size() == 1) {
-                            final String result = searchResult.get(0);
-                            final String replacement = stringThatMayContainJsonpathSubstring.replace(jsonpathSearchWithMarkers, result);
-                            if (log.isDebugEnabled()) {
-                                log.debug(String.format("Replacing %s with %s in %s.", jsonpathSearchWithMarkers, result, stringThatMayContainJsonpathSubstring));
-                                log.debug("Result: " + replacement);
-                            }
-                            return replacement;
-                        } else {
-                            final String message =
-                                    String.format(
-                                            "JSONPath search %s resulted in multiple results: %s. Cannot determine value to replace into string %s.",
-                                            jsonpathSearchWithoutMarkers,
-                                            searchResult.toString(),
-                                            stringThatMayContainJsonpathSubstring);
-                            throw new CommandResolutionException(message);
-                        }
-                    } else {
-                        if (log.isDebugEnabled()) log.debug("No result");
-                    }
-                }
-            }
-        }
-        if (log.isDebugEnabled()) log.debug("Returning initial string without any replacement.");
-        return stringThatMayContainJsonpathSubstring;
+        return resolvedInputValuesByName;
     }
 
     private String commandAsJson() throws CommandResolutionException {
@@ -585,42 +524,71 @@ class CommandResolutionHelper {
         return matches;
     }
 
-    private String resolveTemplate(final String template,
-                                   final Map<String, String> variableValues) {
+    private List<CommandOutput> resolveOutputs() throws CommandResolutionException {
         if (log.isDebugEnabled()) {
-            log.debug("Resolving template string: " + template);
+            log.debug("Resolving command outputs");
         }
-        String toResolve = template;
+        if (command.getOutputs() == null) {
+            return null;
+        }
 
-        for (final String replacementKey : variableValues.keySet()) {
-            final String replacementValue = variableValues.get(replacementKey);
-            final String copyForLogging = log.isDebugEnabled() ? toResolve : null;
-            toResolve = toResolve.replaceAll(replacementKey, replacementValue);
-            if (log.isDebugEnabled() && copyForLogging != null && !toResolve.equals(copyForLogging)) {
-                log.debug(String.format("Replacing \"%s\" -> \"%s\"", replacementKey, replacementValue));
+        final List<CommandOutput> outputs = Lists.newArrayList();
+        for (final CommandOutput output : command.getOutputs()) {
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Resolving output \"%s\"", output.getName()));
             }
+
+            final CommandOutputFiles files = output.getFiles();
+            // TODO This should be noticed and fixed during command validation
+            if (files == null) {
+                throw new CommandResolutionException("Command output \"%s\" has no files.");
+            }
+
+            final String resolvedPath = resolveTemplate(files.getPath());
+            files.setPath(resolvedPath);
+
+            // TODO Anything else needed to resolve an output?
+
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Adding resolved output \"%s\" to resolved command.", output.getName()));
+            }
+
+            outputs.add(output);
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug("Resolved template string: " + toResolve);
-        }
-        return toResolve;
+        return outputs;
     }
 
-    private Map<String, String> resolveTemplateMap(final Map<String, String> templateMap,
-                                                   final Map<String, String> variableValues,
-                                                   final boolean keysAreTemplates) {
-        if (templateMap == null) {
+    private String resolveCommandLine() throws CommandResolutionException {
+        if (log.isDebugEnabled()) {
+            log.debug("Resolving command-line string");
+        }
+        return resolveTemplate(command.getRun().getCommandLine(), resolvedInputCommandLineValuesByReplacementKey);
+    }
+
+    private Map<String, String> resolveEnvironmentVariables()
+            throws CommandResolutionException {
+        if (log.isDebugEnabled()) {
+            log.debug("Resolving environment variables");
+        }
+        final Map<String, String> envTemplates = command.getRun().getEnvironmentVariables();
+        if (envTemplates == null) {
             return null;
         }
 
         final Map<String, String> resolvedMap = Maps.newHashMap();
-        for (final Map.Entry<String, String> templateEntry : templateMap.entrySet()) {
-            final String resolvedKey = keysAreTemplates ?
-                    resolveTemplate(templateEntry.getKey(), variableValues) :
-                    templateEntry.getKey();
-            final String resolvedValue = resolveTemplate(templateEntry.getValue(), variableValues);
+        for (final Map.Entry<String, String> templateEntry : envTemplates.entrySet()) {
+            final String resolvedKey = resolveTemplate(templateEntry.getKey());
+            final String resolvedValue = resolveTemplate(templateEntry.getValue());
             resolvedMap.put(resolvedKey, resolvedValue);
+            if (!templateEntry.getKey().equals(resolvedKey) || !templateEntry.getValue().equals(resolvedValue)) {
+                if (log.isDebugEnabled()) {
+                    final String message = String.format("Map %s: %s -> %s: %s",
+                            templateEntry.getKey(), templateEntry.getValue(),
+                            resolvedKey, resolvedValue);
+                    log.debug(message);
+                }
+            }
         }
         return resolvedMap;
     }
@@ -659,7 +627,7 @@ class CommandResolutionHelper {
         final String hostPath;
         if (StringUtils.isNotBlank(mount.getFileInput())) {
 
-            final CommandInput sourceInput = resolvedInputs.get(mount.getFileInput());
+            final CommandInput sourceInput = resolvedInputObjects.get(mount.getFileInput());
             if (sourceInput == null || StringUtils.isBlank(sourceInput.getValue())) {
                 final String message = String.format("Cannot resolve mount \"%s\". Source input \"%s\" has no resolved value.", mount.getName(), mount.getFileInput());
                 throw new CommandMountResolutionException(message, mount);
@@ -726,5 +694,81 @@ class CommandResolutionHelper {
             log.debug("Resolved host path: " + hostPath);
         }
         return hostPath;
+    }
+
+    private String resolveTemplate(final String template)
+            throws CommandResolutionException {
+        return resolveTemplate(template, resolvedInputValuesByReplacementKey);
+    }
+
+    private String resolveTemplate(final String template, Map<String, String> valuesMap)
+            throws CommandResolutionException {
+        if (log.isDebugEnabled()) {
+            log.debug("Resolving: " + template);
+        }
+        String toResolve = resolveJsonpathSubstring(template);
+
+        for (final String replacementKey : valuesMap.keySet()) {
+            final String replacementValue = valuesMap.get(replacementKey);
+            final String copyForLogging = log.isDebugEnabled() ? toResolve : null;
+            toResolve = toResolve.replaceAll(replacementKey, replacementValue);
+            if (log.isDebugEnabled() && copyForLogging != null && !toResolve.equals(copyForLogging)) {
+                log.debug(String.format("%s -> %s", replacementKey, replacementValue));
+            }
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug("Resolved: " + toResolve);
+        }
+        return toResolve;
+    }
+
+    private String resolveJsonpathSubstring(final String stringThatMayContainJsonpathSubstring) throws CommandResolutionException {
+        if (log.isDebugEnabled()) log.debug("Checking for jsonpath substring in " + stringThatMayContainJsonpathSubstring);
+        if (StringUtils.isNotBlank(stringThatMayContainJsonpathSubstring)) {
+
+            final Matcher jsonpathSubstringMatcher = jsonpathSubstringPattern.matcher(stringThatMayContainJsonpathSubstring);
+
+            if (jsonpathSubstringMatcher.find()) {
+
+                final String jsonpathSearchWithMarkers = jsonpathSubstringMatcher.group(0);
+                final String jsonpathSearchWithoutMarkers = jsonpathSubstringMatcher.group(1);
+
+                if (log.isDebugEnabled()) log.debug("Found possible jsonpath substring " + jsonpathSearchWithMarkers);
+
+                if (StringUtils.isNotBlank(jsonpathSearchWithoutMarkers)) {
+
+                    if(log.isInfoEnabled()) log.info("Performing jsonpath search through command with search string " + jsonpathSearchWithoutMarkers);
+                    if(log.isDebugEnabled()) log.debug("Command json: " + commandAsJson());
+
+                    final Configuration c = Configuration.defaultConfiguration().addOptions(Option.ALWAYS_RETURN_LIST);
+                    final List<String> searchResult = JsonPath.using(c).parse(commandAsJson()).read(jsonpathSearchWithoutMarkers);
+                    if (searchResult != null && !searchResult.isEmpty() && searchResult.get(0) != null) {
+                        if (log.isInfoEnabled()) log.info("Result: " + searchResult);
+                        if (searchResult.size() == 1) {
+                            final String result = searchResult.get(0);
+                            final String replacement = stringThatMayContainJsonpathSubstring.replace(jsonpathSearchWithMarkers, result);
+                            if (log.isDebugEnabled()) {
+                                log.debug(String.format("Replacing %s with %s in %s.", jsonpathSearchWithMarkers, result, stringThatMayContainJsonpathSubstring));
+                                log.debug("Result: " + replacement);
+                            }
+                            return replacement;
+                        } else {
+                            final String message =
+                                    String.format(
+                                            "JSONPath search %s resulted in multiple results: %s. Cannot determine value to replace into string %s.",
+                                            jsonpathSearchWithoutMarkers,
+                                            searchResult.toString(),
+                                            stringThatMayContainJsonpathSubstring);
+                            throw new CommandResolutionException(message);
+                        }
+                    } else {
+                        if (log.isDebugEnabled()) log.debug("No result");
+                    }
+                }
+            }
+        }
+        if (log.isDebugEnabled()) log.debug("Returning initial string without any replacement.");
+        return stringThatMayContainJsonpathSubstring;
     }
 }

@@ -1,6 +1,5 @@
 package org.nrg.containers.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 
 import javax.persistence.Embeddable;

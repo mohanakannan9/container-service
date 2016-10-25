@@ -28,19 +28,16 @@ public class ContainerExecution extends AbstractHibernateEntity {
     @JsonProperty("container-id") private String containerId;
     @JsonProperty("user-id") private String userId;
     @JsonProperty("input-values") private Map<String, String> inputValues = Maps.newHashMap();
+    private List<CommandOutput> outputs;
     private List<ContainerExecutionHistory> history = Lists.newArrayList();
 
     public ContainerExecution() {}
 
     public ContainerExecution(final ResolvedCommand resolvedCommand,
                               final String containerId,
-                              final Map<String, String> inputValues,
                               final String userId) {
         this.containerId = containerId;
         this.userId = userId;
-        this.inputValues = inputValues == null ?
-                Maps.<String, String>newHashMap() :
-                Maps.newHashMap(inputValues);
 
         this.commandId = resolvedCommand.getCommandId();
         this.dockerImage = resolvedCommand.getDockerImage();
@@ -54,6 +51,12 @@ public class ContainerExecution extends AbstractHibernateEntity {
         this.mountsOut = resolvedCommand.getMountsOut() == null ?
                 Lists.<CommandMount>newArrayList() :
                 Lists.newArrayList(resolvedCommand.getMountsOut());
+        this.inputValues = resolvedCommand.getInputValues() == null ?
+                Maps.<String, String>newHashMap() :
+                Maps.newHashMap(resolvedCommand.getInputValues());
+        this.outputs = resolvedCommand.getOutputs() == null ?
+                Lists.<CommandOutput>newArrayList() :
+                Lists.newArrayList(resolvedCommand.getOutputs());
     }
 
     public Long getCommandId() {
@@ -131,6 +134,15 @@ public class ContainerExecution extends AbstractHibernateEntity {
 
     public void setInputValues(final Map<String, String> inputValues) {
         this.inputValues = inputValues;
+    }
+
+    @ElementCollection
+    public List<CommandOutput> getOutputs() {
+        return outputs;
+    }
+
+    public void setOutputs(final List<CommandOutput> outputs) {
+        this.outputs = outputs;
     }
 
     @ElementCollection

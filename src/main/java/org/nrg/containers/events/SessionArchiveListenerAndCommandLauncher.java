@@ -73,7 +73,7 @@ public class SessionArchiveListenerAndCommandLauncher implements Consumer<Event<
                         );
                         log.debug(message);
                     }
-                    commandService.launchCommand(commandId, runtimeValues, sessionArchivedEvent.getUser());
+                    commandService.resolveAndLaunchCommand(commandId, runtimeValues, sessionArchivedEvent.getUser());
                 } catch (NotFoundException | CommandResolutionException | NoServerPrefException | DockerServerException e) {
                     log.error("Error launching command " + commandId, e);
                 }

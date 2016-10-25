@@ -8,6 +8,7 @@ import com.google.common.collect.Maps;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.containers.config.CommandTestConfig;
+import org.nrg.containers.model.xnat.Session;
 import org.nrg.containers.services.CommandService;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,7 +58,7 @@ public class CommandTest {
                     "\"description\":\"It's the output\"," +
                     "\"type\":\"Resource\"," +
                     "\"label\":\"DATA\"," +
-                    "\"parent\":\"$.json.path.expression\"," +
+                    "\"parent\":\"session\"," +
                     "\"files\": {" +
                         "\"mount\":\"out\"," +
                         "\"path\":\"relative/path/to/dir\"" +
@@ -90,7 +91,13 @@ public class CommandTest {
                     "\"env\":{\"foo\":\"bar\"}, " +
                     "\"command-line\":\"cmd --flag=bar \", " +
                     "\"mounts-in\":[" + RESOLVED_MOUNT_IN + "]," +
-                    "\"mounts-out\":[" + RESOLVED_MOUNT_OUT + "]}";
+                    "\"mounts-out\":[" + RESOLVED_MOUNT_OUT + "]," +
+                    "\"input-values\": {" +
+                        "\"my_cool_input\": \"%s\"," +
+                        "\"foo\": \"%s\"," +
+                        "\"session\": \"%s\"" +
+                    "}," +
+                    "\"outputs\":[ " + OUTPUT_JSON + "]}";
 
     @Autowired
     private ObjectMapper mapper;
@@ -217,27 +224,28 @@ public class CommandTest {
 
         final Command command = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, Command.class);
 
-        final String resolvedCommandJson =
-                String.format(RESOLVED_DOCKER_IMAGE_COMMAND_JSON_TEMPLATE, command.getId());
-        final ResolvedCommand expected = mapper.readValue(resolvedCommandJson, ResolvedCommand.class);
-
         final Map<String, String> runtimeValues = Maps.newHashMap();
         runtimeValues.put("my_cool_input", "false");
         runtimeValues.put("session", SESSION_JSON);
         final ResolvedCommand resolvedCommand = commandService.resolveCommand(command, runtimeValues, null);
 
-        assertEquals(expected.getCommandLine(), resolvedCommand.getCommandLine());
-        assertEquals(expected.getEnvironmentVariables(), resolvedCommand.getEnvironmentVariables());
-        assertEquals(expected.getMountsIn(), resolvedCommand.getMountsIn());
-        assertEquals(expected.getMountsOut(), resolvedCommand.getMountsOut());
-        assertEquals(expected, resolvedCommand);
+        final String filledOutSessionJson = mapper.writeValueAsString(mapper.readValue(SESSION_JSON, Session.class)).replaceAll("\\\"", "\\\\\\\"");
+        final String resolvedCommandJson1 =
+                String.format(RESOLVED_DOCKER_IMAGE_COMMAND_JSON_TEMPLATE,
+                        command.getId(), "", "bar", filledOutSessionJson);
+        final ResolvedCommand expected1 = mapper.readValue(resolvedCommandJson1, ResolvedCommand.class);
+        assertEquals(expected1, resolvedCommand);
 
         runtimeValues.put("my_cool_input", "true");
         final ResolvedCommand resolvedCommand2 = commandService.resolveCommand(command, runtimeValues, null);
 
-        assertEquals(expected.getEnvironmentVariables(), resolvedCommand2.getEnvironmentVariables());
-        assertEquals(expected.getMountsIn(), resolvedCommand2.getMountsIn());
-        assertEquals(expected.getMountsOut(), resolvedCommand2.getMountsOut());
+        final String resolvedCommandJson2 =
+                String.format(RESOLVED_DOCKER_IMAGE_COMMAND_JSON_TEMPLATE,
+                        command.getId(), "true", "bar", filledOutSessionJson);
+        final ResolvedCommand expected2 = mapper.readValue(resolvedCommandJson2, ResolvedCommand.class);
+        assertEquals(expected2.getEnvironmentVariables(), resolvedCommand2.getEnvironmentVariables());
+        assertEquals(expected2.getMountsIn(), resolvedCommand2.getMountsIn());
+        assertEquals(expected2.getMountsOut(), resolvedCommand2.getMountsOut());
 
         assertEquals("cmd --flag=bar -b", resolvedCommand2.getCommandLine());
     }

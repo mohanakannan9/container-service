@@ -135,48 +135,34 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
 
     @Override
     public ResolvedCommand resolveCommand(final Long commandId,
-                                          final Map<String, String> variableValuesProvidedAtRuntime,
+                                          final Map<String, String> runtimeInputValues,
                                           final UserI userI)
             throws NotFoundException, CommandResolutionException {
         final Command command = get(commandId);
-        return resolveCommand(command, variableValuesProvidedAtRuntime, userI);
-    }
-
-    @Override
-    public ResolvedCommand resolveCommand(final Command command, final UserI userI)
-            throws NotFoundException, CommandResolutionException {
-        return CommandResolutionHelper.resolve(command, userI);
+        return resolveCommand(command, runtimeInputValues, userI);
     }
 
     @Override
     public ResolvedCommand resolveCommand(final Command command,
-                                          final Map<String, String> inputValuesProvidedAtRuntime,
+                                          final Map<String, String> runtimeInputValues,
                                           final UserI userI)
             throws NotFoundException, CommandResolutionException {
-        return CommandResolutionHelper.resolve(command, inputValuesProvidedAtRuntime, userI);
+        return CommandResolutionHelper.resolve(command, runtimeInputValues, userI);
     }
 
     @Override
-    public ContainerExecution launchCommand(final ResolvedCommand resolvedCommand, final UserI userI)
-            throws NoServerPrefException, DockerServerException {
-        return launchCommand(resolvedCommand, Maps.<String, String>newHashMap(), userI);
-    }
-
-    @Override
-    public ContainerExecution launchCommand(final ResolvedCommand resolvedCommand,
-                                            final Map<String, String> inputValues,
-                                            final UserI userI)
-            throws NoServerPrefException, DockerServerException {
-        final ResolvedCommand preparedToLaunch = prelaunch(resolvedCommand, userI);
-        final String containerId = controlApi.launchImage(preparedToLaunch);
-        return containerExecutionService.save(preparedToLaunch, containerId, inputValues, userI);
-    }
-
-    @Override
-    public ContainerExecution launchCommand(final Long commandId, final Map<String, String> runtimeValues, final UserI userI)
+    public ContainerExecution resolveAndLaunchCommand(final Long commandId, final Map<String, String> runtimeValues, final UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException {
         final ResolvedCommand resolvedCommand = resolveCommand(commandId, runtimeValues, userI);
-        return launchCommand(resolvedCommand, runtimeValues, userI);
+        return launchResolvedCommand(resolvedCommand, userI);
+    }
+
+    @Override
+    public ContainerExecution launchResolvedCommand(final ResolvedCommand resolvedCommand,
+                                                    final UserI userI) throws NoServerPrefException, DockerServerException {
+        final ResolvedCommand preparedToLaunch = prelaunch(resolvedCommand, userI);
+        final String containerId = controlApi.launchImage(preparedToLaunch);
+        return containerExecutionService.save(preparedToLaunch, containerId, userI);
     }
 
     private ResolvedCommand prelaunch(final ResolvedCommand resolvedCommand, final UserI userI) throws NoServerPrefException {
