@@ -13,7 +13,6 @@ import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.TypeRef;
 import com.jayway.jsonpath.spi.mapper.MappingException;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.ecs.html.P;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.exceptions.CommandInputResolutionException;
 import org.nrg.containers.exceptions.CommandMountResolutionException;
@@ -21,12 +20,14 @@ import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.CommandInput;
 import org.nrg.containers.model.CommandMount;
+import org.nrg.containers.model.CommandOutput;
+import org.nrg.containers.model.CommandOutputFiles;
 import org.nrg.containers.model.CommandRun;
 import org.nrg.containers.model.ResolvedCommand;
-import org.nrg.containers.model.xnat.XnatFile;
 import org.nrg.containers.model.xnat.Resource;
 import org.nrg.containers.model.xnat.Scan;
 import org.nrg.containers.model.xnat.Session;
+import org.nrg.containers.model.xnat.XnatFile;
 import org.nrg.containers.model.xnat.XnatModelObject;
 import org.nrg.framework.constants.Scope;
 import org.nrg.xdat.XDAT;
@@ -34,8 +35,6 @@ import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -49,6 +48,7 @@ class CommandResolutionHelper {
     private static final String JSONPATH_SUBSTRING_REGEX = "\\^(.+)\\^";
 
     private Command command;
+    private ResolvedCommand resolvedCommand;
     private Command cachedCommand;
     private String commandJson;
     private Map<String, CommandInput> resolvedInputs;
@@ -64,6 +64,7 @@ class CommandResolutionHelper {
                                     final Map<String, String> inputValues,
                                     final UserI userI) {
         this.command = command;
+        resolvedCommand = new ResolvedCommand(command);
         this.cachedCommand = null;
         this.commandJson = null;
         this.resolvedInputs = Maps.newHashMap();
@@ -98,9 +99,16 @@ class CommandResolutionHelper {
         }
 
         resolveInputs();
+        resolveOutputs();
+        resolveRuntimeStuff();
 
+        // TODO What else do I need to do to resolve the command?
+
+        return resolvedCommand;
+    }
+
+    private void resolveRuntimeStuff() throws CommandResolutionException {
         // Replace variable names in command line, mounts, and environment variables
-        final ResolvedCommand resolvedCommand = new ResolvedCommand(command);
         final CommandRun run = command.getRun();
 
         if (log.isDebugEnabled()) {
@@ -108,12 +116,15 @@ class CommandResolutionHelper {
         }
         resolvedCommand.setCommandLine(resolveTemplate(run.getCommandLine(), resolvedInputValuesAsCommandLineArgs));
 
+        if (log.isDebugEnabled()) {
+            log.debug("Resolving mounts");
+        }
         resolvedCommand.setMounts(resolveCommandMounts());
+
+        if (log.isDebugEnabled()) {
+            log.debug("Resolving environment variables");
+        }
         resolvedCommand.setEnvironmentVariables(resolveTemplateMap(run.getEnvironmentVariables(), resolvedInputValues, true));
-
-        // TODO What else do I need to do to resolve the command?
-
-        return resolvedCommand;
     }
 
     private void resolveInputs() throws CommandResolutionException {
@@ -585,6 +596,37 @@ class CommandResolutionHelper {
         return matches;
     }
 
+    private void resolveOutputs() throws CommandResolutionException {
+        if (log.isDebugEnabled()) {
+            log.debug("Resolving command outputs");
+        }
+        if (command.getOutputs() == null) {
+            return;
+        }
+
+        for (final CommandOutput output : command.getOutputs()) {
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Resolving output \"%s\"", output.getName()));
+            }
+
+            final CommandOutputFiles files = output.getFiles();
+            // TODO This should be noticed and fixed during command validation
+            if (files == null) {
+                throw new CommandResolutionException("Command output \"%s\" has no files.");
+            }
+
+            final String resolvedPath = resolveJsonpathSubstring(files.getPath());
+            files.setPath(resolvedPath);
+
+            // TODO Anything else needed to resolve an output?
+
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Adding resolved output \"%s\" to resolved command.", output.getName()));
+            }
+            resolvedCommand.addOutput(output);
+        }
+    }
+
     private String resolveTemplate(final String template,
                                    final Map<String, String> variableValues) {
         if (log.isDebugEnabled()) {
@@ -621,6 +663,14 @@ class CommandResolutionHelper {
                     templateEntry.getKey();
             final String resolvedValue = resolveTemplate(templateEntry.getValue(), variableValues);
             resolvedMap.put(resolvedKey, resolvedValue);
+            if (!templateEntry.getKey().equals(resolvedKey) || !templateEntry.getValue().equals(resolvedValue)) {
+                if (log.isDebugEnabled()) {
+                    final String message = String.format("%s: %s -> %s: %s",
+                            templateEntry.getKey(), templateEntry.getValue(),
+                            resolvedKey, resolvedValue);
+                    log.debug(message);
+                }
+            }
         }
         return resolvedMap;
     }

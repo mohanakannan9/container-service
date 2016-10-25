@@ -24,6 +24,7 @@ public class ResolvedCommand implements Serializable {
     @JsonProperty("env") private Map<String, String> environmentVariables = Maps.newHashMap();
     @JsonProperty("mounts-in") private List<CommandMount> mountsIn = Lists.newArrayList();
     @JsonProperty("mounts-out") private List<CommandMount> mountsOut = Lists.newArrayList();
+    private List<CommandOutput> outputs;
 
     public ResolvedCommand() {}
 
@@ -115,6 +116,26 @@ public class ResolvedCommand implements Serializable {
         setMountsOut(mountsOut);
     }
 
+    @ElementCollection
+    public List<CommandOutput> getOutputs() {
+        return outputs;
+    }
+
+    public void setOutputs(final List<CommandOutput> outputs) {
+        this.outputs = outputs == null ?
+                Lists.<CommandOutput>newArrayList() :
+                Lists.newArrayList(outputs);
+    }
+
+    @Transient
+    public void addOutput(final CommandOutput output) {
+        if (this.outputs == null) {
+            this.outputs = Lists.newArrayList();
+        }
+
+        this.outputs.add(output);
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
@@ -125,12 +146,13 @@ public class ResolvedCommand implements Serializable {
                 Objects.equals(this.dockerImage, that.dockerImage) &&
                 Objects.equals(this.environmentVariables, that.environmentVariables) &&
                 Objects.equals(this.mountsIn, that.mountsIn) &&
-                Objects.equals(this.mountsOut, that.mountsOut);
+                Objects.equals(this.mountsOut, that.mountsOut) &&
+                Objects.equals(this.outputs, that.outputs);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(commandId, commandLine, dockerImage, environmentVariables, mountsIn, mountsOut);
+        return Objects.hash(commandId, commandLine, dockerImage, environmentVariables, mountsIn, mountsOut, outputs);
     }
 
     @Override
@@ -142,6 +164,7 @@ public class ResolvedCommand implements Serializable {
                 .add("environmentVariables", environmentVariables)
                 .add("mountsIn", mountsIn)
                 .add("mountsOut", mountsOut)
+                .add("outputs", outputs)
                 .toString();
     }
 }

@@ -57,7 +57,7 @@ public class CommandTest {
                     "\"description\":\"It's the output\"," +
                     "\"type\":\"Resource\"," +
                     "\"label\":\"DATA\"," +
-                    "\"parent\":\"$.json.path.expression\"," +
+                    "\"parent\":\"session\"," +
                     "\"files\": {" +
                         "\"mount\":\"out\"," +
                         "\"path\":\"relative/path/to/dir\"" +
@@ -90,7 +90,8 @@ public class CommandTest {
                     "\"env\":{\"foo\":\"bar\"}, " +
                     "\"command-line\":\"cmd --flag=bar \", " +
                     "\"mounts-in\":[" + RESOLVED_MOUNT_IN + "]," +
-                    "\"mounts-out\":[" + RESOLVED_MOUNT_OUT + "]}";
+                    "\"mounts-out\":[" + RESOLVED_MOUNT_OUT + "]," +
+                    "\"outputs\":[ " + OUTPUT_JSON + "]}";
 
     @Autowired
     private ObjectMapper mapper;
@@ -225,11 +226,6 @@ public class CommandTest {
         runtimeValues.put("my_cool_input", "false");
         runtimeValues.put("session", SESSION_JSON);
         final ResolvedCommand resolvedCommand = commandService.resolveCommand(command, runtimeValues, null);
-
-        assertEquals(expected.getCommandLine(), resolvedCommand.getCommandLine());
-        assertEquals(expected.getEnvironmentVariables(), resolvedCommand.getEnvironmentVariables());
-        assertEquals(expected.getMountsIn(), resolvedCommand.getMountsIn());
-        assertEquals(expected.getMountsOut(), resolvedCommand.getMountsOut());
         assertEquals(expected, resolvedCommand);
 
         runtimeValues.put("my_cool_input", "true");
