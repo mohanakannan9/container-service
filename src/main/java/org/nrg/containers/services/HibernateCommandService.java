@@ -11,12 +11,14 @@ import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import org.hibernate.Hibernate;
 import org.hibernate.exception.ConstraintViolationException;
+import org.nrg.config.services.ConfigService;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.daos.CommandDao;
 import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
+import org.nrg.containers.helpers.CommandResolutionHelper;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.CommandMount;
 import org.nrg.containers.model.CommandRun;
@@ -54,6 +56,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     @Autowired private SiteConfigPreferences siteConfigPreferences;
     @Autowired private TransportService transporter;
     @Autowired private ContainerExecutionService containerExecutionService;
+    @Autowired private ConfigService configService;
 
     @Override
     public void afterPropertiesSet() {
@@ -147,11 +150,13 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
                                           final Map<String, String> runtimeInputValues,
                                           final UserI userI)
             throws NotFoundException, CommandResolutionException {
-        return CommandResolutionHelper.resolve(command, runtimeInputValues, userI);
+        return CommandResolutionHelper.resolve(command, runtimeInputValues, userI, configService);
     }
 
     @Override
-    public ContainerExecution resolveAndLaunchCommand(final Long commandId, final Map<String, String> runtimeValues, final UserI userI)
+    public ContainerExecution resolveAndLaunchCommand(final Long commandId,
+                                                      final Map<String, String> runtimeValues,
+                                                      final UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException {
         final ResolvedCommand resolvedCommand = resolveCommand(commandId, runtimeValues, userI);
         return launchResolvedCommand(resolvedCommand, userI);
@@ -159,13 +164,16 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
 
     @Override
     public ContainerExecution launchResolvedCommand(final ResolvedCommand resolvedCommand,
-                                                    final UserI userI) throws NoServerPrefException, DockerServerException {
-        final ResolvedCommand preparedToLaunch = prelaunch(resolvedCommand, userI);
+                                                    final UserI userI)
+            throws NoServerPrefException, DockerServerException {
+        final ResolvedCommand preparedToLaunch = prepareToLaunch(resolvedCommand, userI);
         final String containerId = controlApi.launchImage(preparedToLaunch);
         return containerExecutionService.save(preparedToLaunch, containerId, userI);
     }
 
-    private ResolvedCommand prelaunch(final ResolvedCommand resolvedCommand, final UserI userI) throws NoServerPrefException {
+    private ResolvedCommand prepareToLaunch(final ResolvedCommand resolvedCommand,
+                                            final UserI userI)
+            throws NoServerPrefException {
         // Add default environment variables
         final Map<String, String> defaultEnv = Maps.newHashMap();
 //        siteConfigPreferences.getBuildPath()

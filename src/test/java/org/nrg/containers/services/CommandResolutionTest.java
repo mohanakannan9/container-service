@@ -16,6 +16,7 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.nrg.containers.config.IntegrationTestConfig;
+import org.nrg.containers.helpers.CommandResolutionHelper;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.xft.security.UserI;
@@ -134,6 +135,6 @@ public class CommandResolutionTest {
 
 //        final Session session = mapper.readValue(sessionRuntimeJson, Session.class);
 
-        final ResolvedCommand resolvedCommand = CommandResolutionHelper.resolve(command, runtimeValues, mockUser);
+        final ResolvedCommand resolvedCommand = commandService.resolveCommand(command, runtimeValues, mockUser);
     }
 }

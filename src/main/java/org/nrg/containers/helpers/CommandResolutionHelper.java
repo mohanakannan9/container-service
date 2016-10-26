@@ -1,4 +1,4 @@
-package org.nrg.containers.services;
+package org.nrg.containers.helpers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -42,7 +42,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-class CommandResolutionHelper {
+public class CommandResolutionHelper {
     private static final Logger log = LoggerFactory.getLogger(CommandResolutionHelper.class);
     private static final String JSONPATH_SUBSTRING_REGEX = "\\^(.+)\\^";
 
@@ -61,7 +61,8 @@ class CommandResolutionHelper {
 
     private CommandResolutionHelper(final Command command,
                                     final Map<String, String> inputValues,
-                                    final UserI userI) {
+                                    final UserI userI,
+                                    final ConfigService configService) {
         this.command = command;
         resolvedCommand = new ResolvedCommand(command);
         this.cachedCommand = null;
@@ -75,15 +76,16 @@ class CommandResolutionHelper {
         this.inputValues = inputValues == null ?
                 Maps.<String, String>newHashMap() :
                 inputValues;
-
-        jsonpathSubstringPattern = Pattern.compile(JSONPATH_SUBSTRING_REGEX);
+        this.configService = configService;
+        this.jsonpathSubstringPattern = Pattern.compile(JSONPATH_SUBSTRING_REGEX);
     }
 
     public static ResolvedCommand resolve(final Command command,
                                           final Map<String, String> inputValues,
-                                          final UserI userI)
+                                          final UserI userI,
+                                          final ConfigService configService)
             throws CommandResolutionException {
-        final CommandResolutionHelper helper = new CommandResolutionHelper(command, inputValues, userI);
+        final CommandResolutionHelper helper = new CommandResolutionHelper(command, inputValues, userI, configService);
         return helper.resolve();
     }
 
@@ -330,9 +332,6 @@ class CommandResolutionHelper {
                             entityId = null;
                     }
 
-                    if (configService == null) {
-                        configService = XDAT.getConfigService();
-                    }
                     final String configContents = configService.getConfigContents(configProps[0], configProps[1], configScope, entityId);
                     if (configContents == null) {
                         throw new CommandInputResolutionException("Could not read config " + resolvedValue, input);
