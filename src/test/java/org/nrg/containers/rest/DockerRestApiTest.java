@@ -39,6 +39,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -76,20 +77,12 @@ public class DockerRestApiTest {
             new DockerServerException("Your server dun goofed.");
     private final NotFoundException NOT_FOUND_EXCEPTION =
             new NotFoundException("I should think of a message");
-    @Autowired
-    private WebApplicationContext wac;
 
-    @Autowired
-    private DockerService dockerService;
-
-    @Autowired
-    private ObjectMapper mapper;
-
-    @Autowired
-    private ContainerControlApi mockContainerControlApi;
-
-    @Autowired
-    private RoleServiceI mockRoleService;
+    @Autowired private WebApplicationContext wac;
+    @Autowired private DockerService dockerService;
+    @Autowired private ObjectMapper mapper;
+    @Autowired private ContainerControlApi mockContainerControlApi;
+    @Autowired private RoleServiceI mockRoleService;
 
     @Before
     public void setup() {
@@ -108,9 +101,8 @@ public class DockerRestApiTest {
                         .with(csrf())
                         .with(testSecurityContext());
 
-        when(mockContainerControlApi.getServer())
-                .thenReturn(MOCK_CONTAINER_SERVER)
-                .thenThrow(NO_SERVER_PREF_EXCEPTION);
+        doReturn(MOCK_CONTAINER_SERVER)
+                .when(mockContainerControlApi).getServer();
 
         final String response =
                 mockMvc.perform(request)
@@ -123,6 +115,9 @@ public class DockerRestApiTest {
         final DockerServer responseServer =
                 mapper.readValue(response, DockerServer.class);
         assertThat(responseServer, equalTo(MOCK_CONTAINER_SERVER));
+
+        doThrow(NO_SERVER_PREF_EXCEPTION)
+                .when(mockContainerControlApi).getServer();
 
         // Not found
         final String exceptionResponse =
@@ -157,16 +152,17 @@ public class DockerRestApiTest {
                         .with(csrf())
                         .with(testSecurityContext());
 
-        when(mockContainerControlApi.setServer(MOCK_CONTAINER_SERVER))
-                .thenReturn(MOCK_CONTAINER_SERVER);
+        doReturn(MOCK_CONTAINER_SERVER)
+                .when(mockContainerControlApi).setServer(MOCK_CONTAINER_SERVER);
 
         mockMvc.perform(request)
                 .andExpect(status().isAccepted());
 
         verify(mockContainerControlApi, times(1)).setServer(MOCK_CONTAINER_SERVER); // Method has been called once
 
-        // Now mock out the exception
-        doThrow(INVALID_PREFERENCE_NAME).when(mockContainerControlApi).setServer(MOCK_CONTAINER_SERVER);
+        // Now verify the exception
+        doThrow(INVALID_PREFERENCE_NAME)
+                .when(mockContainerControlApi).setServer(MOCK_CONTAINER_SERVER);
 
         final String exceptionResponse =
                 mockMvc.perform(request)
@@ -220,14 +216,15 @@ public class DockerRestApiTest {
                 get(path).with(authentication(authentication))
                         .with(csrf()).with(testSecurityContext());
 
-        when(mockContainerControlApi.pingServer())
-                .thenReturn("OK")
-                .thenThrow(DOCKER_SERVER_EXCEPTION)
-                .thenThrow(NO_SERVER_PREF_EXCEPTION);
+        doReturn("OK")
+                .when(mockContainerControlApi).pingServer();
 
         mockMvc.perform(request)
                 .andExpect(status().isOk())
                 .andExpect(content().string(equalTo("OK")));
+
+        doThrow(DOCKER_SERVER_EXCEPTION)
+                .when(mockContainerControlApi).pingServer();
 
         final String ISEResponse =
                 mockMvc.perform(request)
@@ -236,6 +233,9 @@ public class DockerRestApiTest {
                         .getResponse()
                         .getContentAsString();
         assertEquals("The Docker server returned an error:\nYour server dun goofed.", ISEResponse);
+
+        doThrow(NO_SERVER_PREF_EXCEPTION)
+                .when(mockContainerControlApi).pingServer();
 
         final String failedDepResponse =
                 mockMvc.perform(request)
@@ -266,12 +266,8 @@ public class DockerRestApiTest {
         fakeDockerImage.setImageId(fakeImageId);
         fakeDockerImage.setLabels(imageLabels);
 
-        when(mockContainerControlApi.getImageById(fakeImageId))
-                .thenReturn(fakeDockerImage);
-        when(mockContainerControlApi.parseLabels(fakeImageId))
-                .thenCallRealMethod();
-        when(mockContainerControlApi.parseLabels(fakeDockerImage))
-                .thenCallRealMethod();
+        doReturn(fakeDockerImage)
+            .when(mockContainerControlApi).getImageById(fakeImageId);
 
         final String path = "/docker/images/save";
         final Authentication authentication = new TestingAuthenticationToken("nonAdmin", "nonAdmin");
@@ -328,12 +324,8 @@ public class DockerRestApiTest {
         fakeDockerImage.setImageId(fakeImageId);
         fakeDockerImage.setLabels(imageLabels);
 
-        when(mockContainerControlApi.getImageById(fakeImageId))
-                .thenReturn(fakeDockerImage);
-        when(mockContainerControlApi.parseLabels(fakeImageId))
-                .thenCallRealMethod();
-        when(mockContainerControlApi.parseLabels(fakeDockerImage))
-                .thenCallRealMethod();
+        doReturn(fakeDockerImage)
+                .when(mockContainerControlApi).getImageById(fakeImageId);
 
         final String path = "/docker/images/save";
         final Authentication authentication = new TestingAuthenticationToken("nonAdmin", "nonAdmin");

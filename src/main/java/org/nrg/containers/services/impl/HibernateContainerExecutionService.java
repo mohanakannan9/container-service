@@ -1,4 +1,4 @@
-package org.nrg.containers.services;
+package org.nrg.containers.services.impl;
 
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Hibernate;
@@ -10,6 +10,7 @@ import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.ContainerExecutionHistory;
 import org.nrg.containers.model.ResolvedCommand;
+import org.nrg.containers.services.ContainerExecutionService;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.transporter.TransportService;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -31,7 +32,6 @@ import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class HibernateContainerExecutionService

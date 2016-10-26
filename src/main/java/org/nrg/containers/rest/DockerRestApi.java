@@ -51,11 +51,15 @@ public class DockerRestApi {
     private static final String JSON = MediaType.APPLICATION_JSON_UTF8_VALUE;
     private static final String TEXT = MediaType.TEXT_PLAIN_VALUE;
 
-    @Autowired
     private DockerService dockerService;
+    private ObjectMapper mapper;
 
     @Autowired
-    private ObjectMapper mapper;
+    public DockerRestApi(final DockerService dockerService,
+                         final ObjectMapper objectMapper) {
+        this.dockerService = dockerService;
+        this.mapper = objectMapper;
+    }
 
     @ApiOperation(value = "Docker server", notes = "Returns Docker server configuration values",
             response = DockerServer.class)

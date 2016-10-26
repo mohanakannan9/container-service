@@ -15,9 +15,9 @@ import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerExecutionService;
 import org.nrg.containers.services.DockerHubService;
 import org.nrg.containers.services.DockerService;
-import org.nrg.containers.services.DockerServiceImpl;
-import org.nrg.containers.services.HibernateCommandService;
-import org.nrg.containers.services.HibernateContainerExecutionService;
+import org.nrg.containers.services.impl.DockerServiceImpl;
+import org.nrg.containers.services.impl.HibernateCommandService;
+import org.nrg.containers.services.impl.HibernateContainerExecutionService;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.services.NrgPreferenceService;
@@ -55,13 +55,16 @@ public class DockerRestApiTestConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public DockerRestApi dockerRestApi() {
-        return new DockerRestApi();
+    public DockerRestApi dockerRestApi(final DockerService dockerService,
+                                       final ObjectMapper objectMapper) {
+        return new DockerRestApi(dockerService, objectMapper);
     }
 
     @Bean
-    public DockerService dockerService() {
-        return new DockerServiceImpl();
+    public DockerService dockerService(final ContainerControlApi controlApi,
+                                       final DockerHubService dockerHubService,
+                                       final CommandService commandService) {
+        return new DockerServiceImpl(controlApi, dockerHubService, commandService);
     }
 
     @Bean
@@ -75,8 +78,11 @@ public class DockerRestApiTestConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public ContainerControlApi mockContainerControlApi() {
-        return Mockito.mock(DockerControlApi.class);
+    public ContainerControlApi mockContainerControlApi(final DockerServerPrefsBean containerServerPref,
+                                                       final ObjectMapper objectMapper,
+                                                       final NrgEventService eventService) {
+        final ContainerControlApi controlApi = new DockerControlApi(containerServerPref, objectMapper, eventService);
+        return Mockito.spy(controlApi);
     }
 
     @Bean
@@ -105,8 +111,14 @@ public class DockerRestApiTestConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public CommandService commandService() {
-        return new HibernateCommandService();
+    public CommandService commandService(final ContainerControlApi controlApi,
+                                         final AliasTokenService aliasTokenService,
+                                         final SiteConfigPreferences siteConfigPreferences,
+                                         final TransportService transporter,
+                                         final ContainerExecutionService containerExecutionService,
+                                         final ConfigService configService) {
+        return new HibernateCommandService(controlApi, aliasTokenService, siteConfigPreferences,
+                transporter, containerExecutionService, configService);
     }
 
     @Bean

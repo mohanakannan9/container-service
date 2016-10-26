@@ -7,7 +7,7 @@ import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.daos.ContainerExecutionRepository;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.services.ContainerExecutionService;
-import org.nrg.containers.services.HibernateContainerExecutionService;
+import org.nrg.containers.services.impl.HibernateContainerExecutionService;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.transporter.TransportService;

@@ -6,7 +6,7 @@ import org.nrg.containers.api.DockerControlApi;
 import org.nrg.containers.daos.ContainerExecutionRepository;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.services.ContainerExecutionService;
-import org.nrg.containers.services.HibernateContainerExecutionService;
+import org.nrg.containers.services.impl.HibernateContainerExecutionService;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.springframework.context.annotation.Bean;
@@ -15,8 +15,10 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class DockerControlApiTestConfig {
     @Bean
-    public DockerControlApi dockerControlApi() {
-        return new DockerControlApi();
+    public DockerControlApi dockerControlApi(final DockerServerPrefsBean containerServerPref,
+                                             final ObjectMapper objectMapper,
+                                             final NrgEventService eventService) {
+        return new DockerControlApi(containerServerPref, objectMapper, eventService);
     }
 
     @Bean

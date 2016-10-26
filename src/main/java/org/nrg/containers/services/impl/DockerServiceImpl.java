@@ -1,4 +1,4 @@
-package org.nrg.containers.services;
+package org.nrg.containers.services.impl;
 
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
@@ -8,6 +8,9 @@ import org.nrg.containers.model.DockerHub;
 import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.api.ContainerControlApi;
+import org.nrg.containers.services.CommandService;
+import org.nrg.containers.services.DockerHubService;
+import org.nrg.containers.services.DockerService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,14 +21,18 @@ import java.util.List;
 @Service
 @Transactional
 public class DockerServiceImpl implements DockerService {
-    @Autowired
     private ContainerControlApi controlApi;
-
-    @Autowired
     private DockerHubService dockerHubService;
+    private CommandService commandService;
 
     @Autowired
-    private CommandService commandService;
+    public DockerServiceImpl(final ContainerControlApi controlApi,
+                             final DockerHubService dockerHubService,
+                             final CommandService commandService) {
+        this.controlApi = controlApi;
+        this.dockerHubService = dockerHubService;
+        this.commandService = commandService;
+    }
 
     @Override
     public List<DockerHub> getHubs() {

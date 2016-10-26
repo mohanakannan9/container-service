@@ -15,8 +15,8 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
 public class TestApi {
   private static final Logger _log = LoggerFactory.getLogger(TestApi.class);
 
-  public static final String JSON = MediaType.APPLICATION_JSON_UTF8_VALUE;
-  public static final String PLAIN_TEXT = MediaType.TEXT_PLAIN_VALUE;
+  private static final String JSON = MediaType.APPLICATION_JSON_UTF8_VALUE;
+  private static final String PLAIN_TEXT = MediaType.TEXT_PLAIN_VALUE;
 
   @RequestMapping(method = GET, produces = PLAIN_TEXT)
   public String getTest()

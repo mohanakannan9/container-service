@@ -1,8 +1,9 @@
-package org.nrg.containers.services;
+package org.nrg.containers.services.impl;
 
 
 import org.nrg.containers.daos.CommandEventMappingDao;
 import org.nrg.containers.model.CommandEventMapping;
+import org.nrg.containers.services.CommandEventMappingService;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

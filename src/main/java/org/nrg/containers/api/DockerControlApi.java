@@ -59,18 +59,18 @@ import static com.spotify.docker.client.DockerClient.EventsParam.until;
 public class DockerControlApi implements ContainerControlApi {
     private static final Logger log = LoggerFactory.getLogger(DockerControlApi.class);
 
-    @Autowired
-    @SuppressWarnings("SpringJavaAutowiringInspection") // IntelliJ does not process the excludeFilter in ContainerServiceConfig @ComponentScan, erroneously marks this red
     private DockerServerPrefsBean containerServerPref;
-
-    @Autowired
     private ObjectMapper objectMapper;
-
-//    @Autowired
-//    private ContainerExecutionService containerExecutionService;
+    private NrgEventService eventService;
 
     @Autowired
-    private NrgEventService eventService;
+    public DockerControlApi(final DockerServerPrefsBean containerServerPref,
+                            final ObjectMapper objectMapper,
+                            final NrgEventService eventService) {
+        this.containerServerPref = containerServerPref;
+        this.objectMapper = objectMapper;
+        this.eventService = eventService;
+    }
 
     public DockerServer getServer() throws NoServerPrefException {
         if (containerServerPref == null || containerServerPref.getHost() == null) {

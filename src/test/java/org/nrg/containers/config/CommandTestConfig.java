@@ -9,7 +9,7 @@ import org.nrg.containers.daos.CommandDao;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerExecutionService;
-import org.nrg.containers.services.HibernateCommandService;
+import org.nrg.containers.services.impl.HibernateCommandService;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.transporter.TransportService;
 import org.nrg.transporter.TransportServiceImpl;
@@ -80,8 +80,14 @@ public class CommandTestConfig {
     }
 
     @Bean
-    public CommandService commandService() {
-        return new HibernateCommandService();
+    public CommandService commandService(final ContainerControlApi controlApi,
+                                         final AliasTokenService aliasTokenService,
+                                         final SiteConfigPreferences siteConfigPreferences,
+                                         final TransportService transporter,
+                                         final ContainerExecutionService containerExecutionService,
+                                         final ConfigService configService) {
+        return new HibernateCommandService(controlApi, aliasTokenService, siteConfigPreferences,
+                transporter, containerExecutionService, configService);
     }
 
     @Bean

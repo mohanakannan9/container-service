@@ -1,4 +1,4 @@
-package org.nrg.containers.services;
+package org.nrg.containers.services.impl;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -24,6 +24,8 @@ import org.nrg.containers.model.CommandMount;
 import org.nrg.containers.model.CommandRun;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.ResolvedCommand;
+import org.nrg.containers.services.CommandService;
+import org.nrg.containers.services.ContainerExecutionService;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
@@ -50,13 +52,27 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         implements CommandService {
     private static final Logger log = LoggerFactory.getLogger(HibernateCommandService.class);
 
-//    @Autowired private ObjectMapper mapper;
-    @Autowired private ContainerControlApi controlApi;
-    @Autowired private AliasTokenService aliasTokenService;
-    @Autowired private SiteConfigPreferences siteConfigPreferences;
-    @Autowired private TransportService transporter;
-    @Autowired private ContainerExecutionService containerExecutionService;
-    @Autowired private ConfigService configService;
+    private ContainerControlApi controlApi;
+    private AliasTokenService aliasTokenService;
+    private SiteConfigPreferences siteConfigPreferences;
+    private TransportService transporter;
+    private ContainerExecutionService containerExecutionService;
+    private ConfigService configService;
+
+    @Autowired
+    public HibernateCommandService(final ContainerControlApi controlApi,
+                                   final AliasTokenService aliasTokenService,
+                                   final SiteConfigPreferences siteConfigPreferences,
+                                   final TransportService transporter,
+                                   final ContainerExecutionService containerExecutionService,
+                                   final ConfigService configService) {
+        this.controlApi = controlApi;
+        this.aliasTokenService = aliasTokenService;
+        this.siteConfigPreferences = siteConfigPreferences;
+        this.transporter = transporter;
+        this.containerExecutionService = containerExecutionService;
+        this.configService = configService;
+    }
 
     @Override
     public void afterPropertiesSet() {

@@ -29,9 +29,12 @@ public class CommandEventMappingRestApi {
     private static final String TEXT = MediaType.TEXT_PLAIN_VALUE;
     private static final String FORM = MediaType.APPLICATION_FORM_URLENCODED_VALUE;
 
-    @Autowired
     private CommandEventMappingService commandEventMappingService;
 
+    @Autowired
+    public CommandEventMappingRestApi(final CommandEventMappingService commandEventMappingService) {
+        this.commandEventMappingService = commandEventMappingService;
+    }
 
     @RequestMapping(value = {}, method = GET)
     @ApiOperation(value = "Get all Commands Event Mappings")

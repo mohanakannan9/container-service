@@ -43,8 +43,12 @@ public class CommandRestApi {
     private static final String TEXT = MediaType.TEXT_PLAIN_VALUE;
     private static final String FORM = MediaType.APPLICATION_FORM_URLENCODED_VALUE;
 
-    @Autowired
     private CommandService commandService;
+
+    @Autowired
+    public CommandRestApi(final CommandService commandService) {
+        this.commandService = commandService;
+    }
 
     @RequestMapping(value = {}, method = GET)
     @ApiOperation(value = "Get all Commands")

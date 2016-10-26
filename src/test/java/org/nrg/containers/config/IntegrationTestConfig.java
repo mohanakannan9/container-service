@@ -9,14 +9,13 @@ import org.nrg.containers.api.DockerControlApi;
 import org.nrg.containers.daos.CommandDao;
 import org.nrg.containers.daos.ContainerExecutionRepository;
 import org.nrg.containers.events.DockerContainerEventListener;
-import org.nrg.containers.events.DockerEventPuller;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerExecutionService;
-import org.nrg.containers.services.HibernateCommandService;
-import org.nrg.containers.services.HibernateContainerExecutionService;
+import org.nrg.containers.services.impl.HibernateCommandService;
+import org.nrg.containers.services.impl.HibernateContainerExecutionService;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.services.NrgPreferenceService;
@@ -32,12 +31,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.orm.hibernate4.HibernateTransactionManager;
 import org.springframework.orm.hibernate4.LocalSessionFactoryBean;
-import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.annotation.SchedulingConfigurer;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
-import org.springframework.scheduling.config.ScheduledTaskRegistrar;
-import org.springframework.scheduling.config.TriggerTask;
-import org.springframework.scheduling.support.PeriodicTrigger;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.support.ResourceTransactionManager;
 import reactor.Environment;
@@ -45,7 +38,6 @@ import reactor.bus.EventBus;
 
 import javax.sql.DataSource;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 
 @Configuration
 @EnableTransactionManagement
@@ -57,8 +49,10 @@ public class IntegrationTestConfig {
     }
 
     @Bean
-    public DockerControlApi dockerControlApi() {
-        return new DockerControlApi();
+    public DockerControlApi dockerControlApi(final DockerServerPrefsBean containerServerPref,
+                                             final ObjectMapper objectMapper,
+                                             final NrgEventService eventService) {
+        return new DockerControlApi(containerServerPref, objectMapper, eventService);
     }
 
     @Bean
@@ -67,8 +61,14 @@ public class IntegrationTestConfig {
     }
 
     @Bean
-    public CommandService commandService() {
-        return new HibernateCommandService();
+    public CommandService commandService(final ContainerControlApi controlApi,
+                                         final AliasTokenService aliasTokenService,
+                                         final SiteConfigPreferences siteConfigPreferences,
+                                         final TransportService transporter,
+                                         final ContainerExecutionService containerExecutionService,
+                                         final ConfigService configService) {
+        return new HibernateCommandService(controlApi, aliasTokenService, siteConfigPreferences,
+                transporter, containerExecutionService, configService);
     }
 
     @Bean

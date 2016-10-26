@@ -25,7 +25,12 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 public class ContainerExecutionRestApi {
     private static final String JSON = MediaType.APPLICATION_JSON_UTF8_VALUE;
 
-    @Autowired private ContainerExecutionService containerExecutionService;
+    private ContainerExecutionService containerExecutionService;
+
+    @Autowired
+    public ContainerExecutionRestApi(final ContainerExecutionService containerExecutionService) {
+        this.containerExecutionService = containerExecutionService;
+    }
 
     @RequestMapping(method = GET)
     @ResponseBody
