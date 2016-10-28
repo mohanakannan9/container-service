@@ -521,7 +521,7 @@ public class DockerControlApi implements ContainerControlApi {
     public String getContainerStdoutLog(String id) throws NoServerPrefException, DockerServerException {
         try (final LogStream logStream = getClient().logs(id, LogsParam.stdout())) {
             return logStream.readFully();
-        } catch (DockerException | InterruptedException e) {
+        } catch (Exception e) {
             log.error(e.getMessage());
             throw new DockerServerException(e);
         }
@@ -531,7 +531,7 @@ public class DockerControlApi implements ContainerControlApi {
     public String getContainerStderrLog(String id) throws NoServerPrefException, DockerServerException {
         try (final LogStream logStream = getClient().logs(id, LogsParam.stderr())) {
             return logStream.readFully();
-        } catch (DockerException | InterruptedException e) {
+        } catch (Exception e) {
             log.error(e.getMessage());
             throw new DockerServerException(e);
         }
