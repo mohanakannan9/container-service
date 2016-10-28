@@ -22,6 +22,7 @@ import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.transporter.TransportService;
 import org.nrg.transporter.TransportServiceImpl;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.services.AliasTokenService;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -129,11 +130,17 @@ public class IntegrationTestConfig {
     }
 
     @Bean
+    public PermissionsServiceI permissionsService() {
+        return Mockito.mock(PermissionsServiceI.class);
+    }
+
+    @Bean
     public ContainerExecutionService containerExecutionService(final ContainerControlApi containerControlApi,
                                                                final SiteConfigPreferences siteConfigPreferences,
                                                                final AliasTokenService aliasTokenService,
-                                                               final TransportService transportService) {
-        return new HibernateContainerExecutionService(containerControlApi, siteConfigPreferences, aliasTokenService, transportService);
+                                                               final TransportService transportService,
+                                                               final PermissionsServiceI permissionsService) {
+        return new HibernateContainerExecutionService(containerControlApi, siteConfigPreferences, aliasTokenService, transportService, permissionsService);
     }
 
     @Bean
