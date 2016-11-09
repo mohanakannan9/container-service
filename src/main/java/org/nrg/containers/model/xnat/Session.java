@@ -8,6 +8,7 @@ import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatImageassessordataI;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.model.XnatImagesessiondataI;
+import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xft.security.UserI;
@@ -17,7 +18,7 @@ import java.util.Objects;
 
 
 public class Session extends XnatModelObject {
-    @JsonIgnore private XnatImagesessiondataI xnatImagesessiondataI;
+    @JsonIgnore private XnatImagesessiondataI xnatImagesessiondata;
     @JsonProperty(value = "parent-id") private String parentId;
     private List<Scan> scans;
     private List<Assessor> assessors;
@@ -25,41 +26,46 @@ public class Session extends XnatModelObject {
 
     public Session() {}
 
-    public Session(final XnatImagesessiondataI xnatImagesessiondataI, final UserI userI) {
-        this(xnatImagesessiondataI, XnatProjectdata.getXnatProjectdatasById(xnatImagesessiondataI.getProject(), userI, false).getRootArchivePath());
+    public Session(final XnatImagesessiondataI xnatImagesessiondata, final UserI userI) {
+        this(xnatImagesessiondata, XnatProjectdata.getXnatProjectdatasById(xnatImagesessiondata.getProject(), userI, false).getRootArchivePath());
     }
-    public Session(final XnatImagesessiondataI xnatImagesessiondataI, final String rootArchivePath) {
-        this.xnatImagesessiondataI = xnatImagesessiondataI;
-        this.id = xnatImagesessiondataI.getId();
-        this.label = xnatImagesessiondataI.getLabel();
-        this.xsiType = xnatImagesessiondataI.getXSIType();
+    public Session(final XnatImagesessiondataI xnatImagesessiondata, final String rootArchivePath) {
+        this.xnatImagesessiondata = xnatImagesessiondata;
+        this.id = xnatImagesessiondata.getId();
+        this.label = xnatImagesessiondata.getLabel();
+        this.xsiType = xnatImagesessiondata.getXSIType();
 
-        this.parentId = xnatImagesessiondataI.getSubjectId();
+        this.parentId = xnatImagesessiondata.getSubjectId();
 
         this.scans = Lists.newArrayList();
-        for (final XnatImagescandataI xnatImagescandataI : xnatImagesessiondataI.getScans_scan()) {
+        for (final XnatImagescandataI xnatImagescandataI : xnatImagesessiondata.getScans_scan()) {
             this.scans.add(new Scan(xnatImagescandataI, this.id, rootArchivePath));
         }
 
         this.resources = Lists.newArrayList();
-        for (final XnatAbstractresourceI xnatAbstractresourceI : xnatImagesessiondataI.getResources_resource()) {
+        for (final XnatAbstractresourceI xnatAbstractresourceI : xnatImagesessiondata.getResources_resource()) {
             if (xnatAbstractresourceI instanceof XnatResourcecatalog) {
                 resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, this.id, rootArchivePath));
             }
         }
 
         this.assessors = Lists.newArrayList();
-        for (final XnatImageassessordataI xnatImageassessordataI : xnatImagesessiondataI.getAssessors_assessor()) {
+        for (final XnatImageassessordataI xnatImageassessordataI : xnatImagesessiondata.getAssessors_assessor()) {
             assessors.add(new Assessor(xnatImageassessordataI, this.id, rootArchivePath));
         }
     }
 
-    public XnatImagesessiondataI getXnatImagesessiondataI() {
-        return xnatImagesessiondataI;
+    public XnatImagesessiondataI loadXnatImagesessiondata(final UserI userI) {
+        xnatImagesessiondata = XnatImagesessiondata.getXnatImagesessiondatasById(id, userI, false);
+        return xnatImagesessiondata;
     }
 
-    public void setXnatImagesessiondataI(final XnatImagesessiondataI xnatImagesessiondataI) {
-        this.xnatImagesessiondataI = xnatImagesessiondataI;
+    public XnatImagesessiondataI getXnatImagesessiondata() {
+        return xnatImagesessiondata;
+    }
+
+    public void setXnatImagesessiondata(final XnatImagesessiondataI xnatImagesessiondata) {
+        this.xnatImagesessiondata = xnatImagesessiondata;
     }
 
     public String getParentId() {
@@ -100,7 +106,7 @@ public class Session extends XnatModelObject {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         final Session that = (Session) o;
-        return Objects.equals(this.xnatImagesessiondataI, that.xnatImagesessiondataI) &&
+        return Objects.equals(this.xnatImagesessiondata, that.xnatImagesessiondata) &&
                 Objects.equals(this.parentId, that.parentId) &&
                 Objects.equals(this.scans, that.scans) &&
                 Objects.equals(this.assessors, that.assessors) &&
@@ -109,7 +115,7 @@ public class Session extends XnatModelObject {
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), xnatImagesessiondataI, parentId, scans, assessors, resources);
+        return Objects.hash(super.hashCode(), xnatImagesessiondata, parentId, scans, assessors, resources);
     }
 
     @Override

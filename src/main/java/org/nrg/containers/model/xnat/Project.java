@@ -4,38 +4,45 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import org.nrg.xdat.model.XnatAbstractresourceI;
+import org.nrg.xdat.model.XnatProjectdataI;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatResourcecatalog;
+import org.nrg.xft.security.UserI;
 
 import java.util.List;
 import java.util.Objects;
 
 public class Project extends XnatModelObject {
-    @JsonIgnore private XnatProjectdata xnatProjectdata;
+    @JsonIgnore private XnatProjectdataI xnatProjectdata;
     private List<Resource> resources;
     private List<Subject> subjects;
 
     public Project() {}
 
-    public Project(final XnatProjectdata xnatProjectdata) {
-        this.xnatProjectdata = xnatProjectdata;
+    public Project(final XnatProjectdata xnatProjectdataI) {
+        this.xnatProjectdata = xnatProjectdataI;
 
-        this.id = xnatProjectdata.getId();
-        this.label = xnatProjectdata.getName();
-        this.xsiType = xnatProjectdata.getXSIType();
+        this.id = xnatProjectdataI.getId();
+        this.label = xnatProjectdataI.getName();
+        this.xsiType = xnatProjectdataI.getXSIType();
 
         this.subjects = Lists.newArrayList();
         // TODO how do I get subjects from an XnatProjecdata?
 
         this.resources = Lists.newArrayList();
-        for (final XnatAbstractresourceI xnatAbstractresourceI: xnatProjectdata.getResources_resource()) {
+        for (final XnatAbstractresourceI xnatAbstractresourceI: xnatProjectdataI.getResources_resource()) {
             if (xnatAbstractresourceI instanceof XnatResourcecatalog) {
-                resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, this.id, xnatProjectdata.getRootArchivePath()));
+                resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, this.id, xnatProjectdataI.getRootArchivePath()));
             }
         }
     }
 
-    public XnatProjectdata getXnatProjectdata() {
+    public XnatProjectdataI loadXnatProjectdata(final UserI userI) {
+        xnatProjectdata = XnatProjectdata.getXnatProjectdatasById(id, userI, false);
+        return xnatProjectdata;
+    }
+
+    public XnatProjectdataI getXnatProjectdata() {
         return xnatProjectdata;
     }
 

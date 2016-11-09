@@ -5,7 +5,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import org.nrg.xdat.bean.CatCatalogBean;
+import org.nrg.xdat.model.XnatResourcecatalogI;
 import org.nrg.xdat.om.XnatResourcecatalog;
+import org.nrg.xft.security.UserI;
 import org.nrg.xnat.utils.CatalogUtils;
 
 import java.io.File;
@@ -13,26 +15,26 @@ import java.util.List;
 import java.util.Objects;
 
 public class Resource extends XnatModelObject {
-    @JsonIgnore private XnatResourcecatalog xnatResourcecatalog;
+    @JsonIgnore private XnatResourcecatalogI xnatResourcecatalog;
     @JsonProperty(value = "parent-id") private String parentId;
     private String directory;
     private List<XnatFile> files;
 
     public Resource() {}
 
-    public Resource(final XnatResourcecatalog xnatResourcecatalog, final String parentId, final String rootArchivePath) {
-        this.xnatResourcecatalog = xnatResourcecatalog;
+    public Resource(final XnatResourcecatalog xnatResourcecatalogI, final String parentId, final String rootArchivePath) {
+        this.xnatResourcecatalog = xnatResourcecatalogI;
 
-        this.id = xnatResourcecatalog.getXnatAbstractresourceId() != null ? xnatResourcecatalog.getXnatAbstractresourceId().toString() : "";
-        this.label = xnatResourcecatalog.getLabel();
-        this.xsiType = xnatResourcecatalog.getXSIType();
+        this.id = xnatResourcecatalogI.getXnatAbstractresourceId() != null ? xnatResourcecatalogI.getXnatAbstractresourceId().toString() : "";
+        this.label = xnatResourcecatalogI.getLabel();
+        this.xsiType = xnatResourcecatalogI.getXSIType();
 
         this.parentId = parentId;
 
-        final CatCatalogBean cat = xnatResourcecatalog.getCleanCatalog(rootArchivePath, true, null, null);
-        this.directory = xnatResourcecatalog.getCatalogFile(rootArchivePath).getParent();
+        final CatCatalogBean cat = xnatResourcecatalogI.getCleanCatalog(rootArchivePath, true, null, null);
+        this.directory = xnatResourcecatalogI.getCatalogFile(rootArchivePath).getParent();
 
-        final List<Object[]> entryDetails = CatalogUtils.getEntryDetails(cat, this.directory, null, xnatResourcecatalog, true, null, null, "absolutePath");
+        final List<Object[]> entryDetails = CatalogUtils.getEntryDetails(cat, this.directory, null, xnatResourcecatalogI, true, null, null, "absolutePath");
         this.files = Lists.newArrayList();
         for (final Object[] entry: entryDetails) {
             // See CatalogUtils.getEntryDetails to see where all these "entry" elements come from
@@ -40,12 +42,17 @@ public class Resource extends XnatModelObject {
         }
     }
 
-    public XnatResourcecatalog getXnatResourcecatalog() {
+    public XnatResourcecatalogI loadXnatResourcecatalog(UserI userI) {
+        xnatResourcecatalog = XnatResourcecatalog.getXnatResourcecatalogsByXnatAbstractresourceId(id, userI, false);
         return xnatResourcecatalog;
     }
 
-    public void setXnatResourcecatalog(final XnatResourcecatalog xnatResourcecatalog) {
-        this.xnatResourcecatalog = xnatResourcecatalog;
+    public XnatResourcecatalogI getXnatResourcecatalog() {
+        return xnatResourcecatalog;
+    }
+
+    public void setXnatResourcecatalog(final XnatResourcecatalog xnatResourcecatalogI) {
+        this.xnatResourcecatalog = xnatResourcecatalogI;
     }
 
     public String getParentId() {

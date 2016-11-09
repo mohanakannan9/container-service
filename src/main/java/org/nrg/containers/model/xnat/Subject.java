@@ -10,6 +10,7 @@ import org.nrg.xdat.model.XnatImagesessiondataI;
 import org.nrg.xdat.model.XnatSubjectdataI;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatResourcecatalog;
+import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xft.security.UserI;
 
 import java.util.List;
@@ -18,22 +19,22 @@ import java.util.Objects;
 public class Subject extends XnatModelObject {
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), xnatSubjectdataI, parentId, sessions, resources);
+        return Objects.hash(super.hashCode(), xnatSubjectdata, parentId, sessions, resources);
     }
 
-    @JsonIgnore XnatSubjectdataI xnatSubjectdataI;
+    @JsonIgnore XnatSubjectdataI xnatSubjectdata;
     @JsonProperty(value = "parent-id") private String parentId;
     private List<Session> sessions;
     private List<Resource> resources;
 
     public Subject() {}
 
-    public Subject(final XnatSubjectdataI xnatSubjectdataI, final String parentId, final UserI userI) {
-        this(xnatSubjectdataI, XnatProjectdata.getXnatProjectdatasById(xnatSubjectdataI.getProject(), userI, false).getRootArchivePath());
+    public Subject(final XnatSubjectdataI xnatSubjectdata, final String parentId, final UserI userI) {
+        this(xnatSubjectdata, XnatProjectdata.getXnatProjectdatasById(xnatSubjectdata.getProject(), userI, false).getRootArchivePath());
     }
 
     public Subject(final XnatSubjectdataI xnatSubjectdataI, final String rootArchivePath) {
-        this.xnatSubjectdataI = xnatSubjectdataI;
+        this.xnatSubjectdata = xnatSubjectdataI;
 
         this.id = xnatSubjectdataI.getId();
         this.label = xnatSubjectdataI.getLabel();
@@ -55,12 +56,17 @@ public class Subject extends XnatModelObject {
         }
     }
 
-    public XnatSubjectdataI getXnatSubjectdataI() {
-        return xnatSubjectdataI;
+    public XnatSubjectdataI loadXnatSubjectdataI(UserI userI) {
+        xnatSubjectdata = XnatSubjectdata.getXnatSubjectdatasById(id, userI, false);
+        return xnatSubjectdata;
     }
 
-    public void setXnatSubjectdataI(final XnatSubjectdataI xnatSubjectdataI) {
-        this.xnatSubjectdataI = xnatSubjectdataI;
+    public XnatSubjectdataI getXnatSubjectdata() {
+        return xnatSubjectdata;
+    }
+
+    public void setXnatSubjectdata(final XnatSubjectdataI xnatSubjectdata) {
+        this.xnatSubjectdata = xnatSubjectdata;
     }
 
     public String getParentId() {
@@ -93,7 +99,7 @@ public class Subject extends XnatModelObject {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         final Subject that = (Subject) o;
-        return Objects.equals(this.xnatSubjectdataI, that.xnatSubjectdataI) &&
+        return Objects.equals(this.xnatSubjectdata, that.xnatSubjectdata) &&
                 Objects.equals(this.parentId, that.parentId) &&
                 Objects.equals(this.sessions, that.sessions) &&
                 Objects.equals(this.resources, that.resources);
