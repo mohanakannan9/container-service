@@ -137,3 +137,67 @@ task unitTest( type: Test ) {
 //    options.encoding = 'UTF-8'
 //    options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
 //}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+
+//            artifact sourceJar {
+//                classifier "sources"
+//            }
+//
+//            artifact javadocJar {
+//                classifier "javadoc"
+//            }
+
+            pom.withXml {
+                def root = asNode()
+                root.appendNode('name', 'XNAT Container Service')
+                root.appendNode('description', 'XNAT plugin for launching and managing containers.')
+                root.appendNode('url', 'https://github.com/nrgxnat/container-service')
+                root.appendNode('inceptionYear', '2016')
+
+                def scm = root.appendNode('scm')
+                scm.appendNode('url', 'https://github.com/nrgxnat/container-service')
+                scm.appendNode('connection', 'scm:https://github.com/nrgxnat/container-service.git')
+                scm.appendNode('developerConnection', 'scm:git@github.com:nrgxnat/container-service')
+
+                def license = root.appendNode('licenses').appendNode('license')
+                license.appendNode('name', 'Simplified BSD 2-Clause License')
+                license.appendNode('url', 'http://xnat.org/about/license.php')
+                license.appendNode('distribution', 'repo')
+
+                def developers = root.appendNode('developers')
+                def flavin = developers.appendNode('developer')
+                flavin.appendNode('id', 'jflavin')
+                flavin.appendNode('name', 'John Flavin')
+                flavin.appendNode('email', 'jflavin@wustl.edu')
+
+                def kelsey = developers.appendNode('developer')
+                kelsey.appendNode('id', 'kelseym')
+                kelsey.appendNode('name', 'Matt Kelsey')
+                kelsey.appendNode('email', 'kelseym@wustl.edu')
+            }
+        }
+    }
+    repositories {
+        maven {
+            credentials {
+                // These properties must be set in the ~/.gradle/gradle.properties file or passed on the Gradle command
+                // line in the form -PrepoUsername=foo -PrepoPassword=bar.
+                username propertyWithDefault('repoUsername', 'username')
+                password propertyWithDefault('repoPassword', 'password')
+            }
+            if (project.version.endsWith('-SNAPSHOT')) {
+                url "https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot-local"
+            } else {
+                url "https://nrgxnat.jfrog.io/nrgxnat/libs-release-local"
+            }
+        }
+    }
+}
+
+def propertyWithDefault(def String property, def Object value) {
+    hasProperty(property) ? getProperty(property) : value
+}
