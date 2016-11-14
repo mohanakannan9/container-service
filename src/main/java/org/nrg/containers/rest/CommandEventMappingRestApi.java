@@ -8,6 +8,9 @@ import org.nrg.containers.model.CommandEventMapping;
 import org.nrg.containers.services.CommandEventMappingService;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NrgRuntimeException;
+import org.nrg.xdat.rest.AbstractXapiRestController;
+import org.nrg.xdat.security.services.RoleHolder;
+import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -24,7 +27,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 @XapiRestController
 @RequestMapping("/commandeventmapping")
 @Api("Command Event Mapping API for XNAT Container Service")
-public class CommandEventMappingRestApi {
+public class CommandEventMappingRestApi extends AbstractXapiRestController {
     private static final String JSON = MediaType.APPLICATION_JSON_UTF8_VALUE;
     private static final String TEXT = MediaType.TEXT_PLAIN_VALUE;
     private static final String FORM = MediaType.APPLICATION_FORM_URLENCODED_VALUE;
@@ -32,7 +35,10 @@ public class CommandEventMappingRestApi {
     private CommandEventMappingService commandEventMappingService;
 
     @Autowired
-    public CommandEventMappingRestApi(final CommandEventMappingService commandEventMappingService) {
+    public CommandEventMappingRestApi(final CommandEventMappingService commandEventMappingService,
+                                      final UserManagementServiceI userManagementService,
+                                      final RoleHolder roleHolder) {
+        super(userManagementService, roleHolder);
         this.commandEventMappingService = commandEventMappingService;
     }
 

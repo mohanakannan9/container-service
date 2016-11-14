@@ -41,7 +41,7 @@ import java.util.Properties;
 
 @Configuration
 @EnableTransactionManagement
-@Import({ExecutionHibernateEntityTestConfig.class})
+@Import({ExecutionHibernateEntityTestConfig.class, RestApiTestConfig.class})
 public class IntegrationTestConfig {
     @Bean
     public ObjectMapper objectMapper() {
@@ -114,11 +114,6 @@ public class IntegrationTestConfig {
     @Bean
     public ConfigService configService() {
         return Mockito.mock(ConfigService.class);
-    }
-
-    @Bean
-    public UserManagementServiceI userManagementServiceI() {
-        return Mockito.mock(UserManagementServiceI.class);
     }
 
     @Bean

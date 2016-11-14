@@ -25,7 +25,7 @@ import org.nrg.transporter.TransportService;
 import org.nrg.transporter.TransportServiceImpl;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.RoleHolder;
-import org.nrg.xdat.security.services.RoleServiceI;
+import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.services.AliasTokenService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
@@ -47,7 +47,7 @@ import java.util.Properties;
 @Configuration
 @EnableWebMvc
 @EnableWebSecurity
-@Import(ExecutionHibernateEntityTestConfig.class)
+@Import({ExecutionHibernateEntityTestConfig.class, RestApiTestConfig.class})
 public class DockerRestApiTestConfig extends WebSecurityConfigurerAdapter {
     @Bean
     public ObjectMapper objectMapper() {
@@ -56,8 +56,10 @@ public class DockerRestApiTestConfig extends WebSecurityConfigurerAdapter {
 
     @Bean
     public DockerRestApi dockerRestApi(final DockerService dockerService,
-                                       final ObjectMapper objectMapper) {
-        return new DockerRestApi(dockerService, objectMapper);
+                                       final ObjectMapper objectMapper,
+                                       final UserManagementServiceI userManagementService,
+                                       final RoleHolder roleHolder) {
+        return new DockerRestApi(dockerService, objectMapper, userManagementService, roleHolder);
     }
 
     @Bean
@@ -146,16 +148,6 @@ public class DockerRestApiTestConfig extends WebSecurityConfigurerAdapter {
         final ContextService contextService = new ContextService();
         contextService.setApplicationContext(applicationContext);
         return contextService;
-    }
-
-    @Bean
-    public RoleHolder mockRoleHolder(final RoleServiceI roleServiceI) {
-        return new RoleHolder(roleServiceI);
-    }
-
-    @Bean
-    public RoleServiceI mockRoleService() {
-        return Mockito.mock(RoleServiceI.class);
     }
 
     @Bean

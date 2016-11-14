@@ -12,6 +12,9 @@ import org.nrg.containers.services.CommandService;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.rest.AbstractXapiRestController;
+import org.nrg.xdat.security.services.RoleHolder;
+import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +40,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 @XapiRestController
 @RequestMapping("/commands")
 @Api("Command API for XNAT Action/Context Execution service")
-public class CommandRestApi {
+public class CommandRestApi extends AbstractXapiRestController {
     private static final Logger log = LoggerFactory.getLogger(CommandRestApi.class);
     private static final String JSON = MediaType.APPLICATION_JSON_UTF8_VALUE;
     private static final String TEXT = MediaType.TEXT_PLAIN_VALUE;
@@ -46,7 +49,10 @@ public class CommandRestApi {
     private CommandService commandService;
 
     @Autowired
-    public CommandRestApi(final CommandService commandService) {
+    public CommandRestApi(final CommandService commandService,
+                          final UserManagementServiceI userManagementService,
+                          final RoleHolder roleHolder) {
+        super(userManagementService, roleHolder);
         this.commandService = commandService;
     }
 

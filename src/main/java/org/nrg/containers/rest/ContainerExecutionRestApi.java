@@ -5,6 +5,9 @@ import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.services.ContainerExecutionService;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.rest.AbstractXapiRestController;
+import org.nrg.xdat.security.services.RoleHolder;
+import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -22,13 +25,16 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 @XapiRestController
 @RequestMapping(value = "/containerexecutions")
-public class ContainerExecutionRestApi {
+public class ContainerExecutionRestApi extends AbstractXapiRestController {
     private static final String JSON = MediaType.APPLICATION_JSON_UTF8_VALUE;
 
     private ContainerExecutionService containerExecutionService;
 
     @Autowired
-    public ContainerExecutionRestApi(final ContainerExecutionService containerExecutionService) {
+    public ContainerExecutionRestApi(final ContainerExecutionService containerExecutionService,
+                                     final UserManagementServiceI userManagementService,
+                                     final RoleHolder roleHolder) {
+        super(userManagementService, roleHolder);
         this.containerExecutionService = containerExecutionService;
     }
 
