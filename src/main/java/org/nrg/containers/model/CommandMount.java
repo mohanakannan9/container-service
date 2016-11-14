@@ -17,7 +17,6 @@ public class CommandMount implements Serializable {
     @JsonProperty(required = true) private Type type = Type.INPUT;
     @JsonProperty("host-path") private String hostPath;
     @JsonProperty("path") private String remotePath;
-    private Boolean overwrite = false;
     @JsonProperty("file-input") private String fileInput;
     private String resource;
 
@@ -60,14 +59,6 @@ public class CommandMount implements Serializable {
         return type.equals(Type.INPUT);
     }
 
-    public Boolean getOverwrite() {
-        return overwrite;
-    }
-
-    public void setOverwrite(final Boolean overwrite) {
-        this.overwrite = overwrite;
-    }
-
     public String getFileInput() {
         return fileInput;
     }
@@ -99,14 +90,13 @@ public class CommandMount implements Serializable {
                 Objects.equals(this.type, that.type) &&
                 Objects.equals(this.hostPath, that.hostPath) &&
                 Objects.equals(this.remotePath, that.remotePath) &&
-                Objects.equals(this.overwrite, that.overwrite) &&
                 Objects.equals(this.fileInput, that.fileInput) &&
                 Objects.equals(this.resource, that.resource);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, type, hostPath, remotePath, overwrite, fileInput, resource);
+        return Objects.hash(name, type, hostPath, remotePath, fileInput, resource);
     }
 
     @Override
@@ -116,7 +106,6 @@ public class CommandMount implements Serializable {
                 .add("type", type)
                 .add("hostPath", hostPath)
                 .add("remotePath", remotePath)
-                .add("overwrite", overwrite)
                 .add("fileInput", fileInput)
                 .add("resource", resource)
                 .toString();
