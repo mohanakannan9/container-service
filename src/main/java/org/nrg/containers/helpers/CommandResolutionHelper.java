@@ -501,15 +501,26 @@ public class CommandResolutionHelper {
             throw new CommandInputResolutionException(message, null);
         }
 
+        String mayOrMayNotMatchJson = "";
+        try {
+            mayOrMayNotMatchJson = mapper.writeValueAsString(mayOrMayNotMatch);
+        } catch (JsonProcessingException e) {
+            throw new CommandInputResolutionException(String.format("Could not serialize object to JSON: %s", mayOrMayNotMatch), null, e);
+        }
+
+        if (StringUtils.isBlank(mayOrMayNotMatchJson)) {
+            throw new CommandInputResolutionException(String.format("Could not serialize object to JSON: %s", mayOrMayNotMatch), null);
+        }
+
         final List<T> doMatch;
         if (StringUtils.isNotBlank(matcher)) {
             final String jsonPathSearch = String.format(
                     "$[?(%s)]", matcher
             );
-            doMatch = JsonPath.parse(mayOrMayNotMatch).read(jsonPathSearch, new TypeRef<List<T>>(){});
+            doMatch = JsonPath.parse(mayOrMayNotMatchJson).read(jsonPathSearch, new TypeRef<List<T>>(){});
 
             if (doMatch == null || doMatch.isEmpty()) {
-                throw new CommandInputResolutionException("Could not match any %s with matcher " + matcher, null);
+                throw new CommandInputResolutionException(String.format("Could not match any %s with matcher %s.", model.getName(), matcher), null);
             }
         } else {
             doMatch = mayOrMayNotMatch;
