@@ -69,7 +69,7 @@ public class SessionArchiveListenerAndCommandLauncher implements Consumer<Event<
                     if (log.isDebugEnabled()) {
                         final String message = String.format(
                                 "Launching command %s for user %s with runtime input values %s",
-                                commandId, sessionArchivedEvent.getUser(), runtimeValues
+                                commandId, sessionArchivedEvent.getUser().getLogin(), runtimeValues
                         );
                         log.debug(message);
                     }

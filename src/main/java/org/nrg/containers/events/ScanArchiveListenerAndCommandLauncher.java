@@ -68,7 +68,7 @@ public class ScanArchiveListenerAndCommandLauncher implements Consumer<Event<Sca
                     if (log.isDebugEnabled()) {
                         final String message = String.format(
                                 "Launching command %s for user %s with runtime input values %s",
-                                commandId, scanArchiveEventToLaunchCommands.getUser(), runtimeValues
+                                commandId, scanArchiveEventToLaunchCommands.getUser().getLogin(), runtimeValues
                         );
                         log.debug(message);
                     }

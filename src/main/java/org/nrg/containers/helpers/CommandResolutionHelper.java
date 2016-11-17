@@ -29,7 +29,6 @@ import org.nrg.containers.model.xnat.Session;
 import org.nrg.containers.model.xnat.XnatFile;
 import org.nrg.containers.model.xnat.XnatModelObject;
 import org.nrg.framework.constants.Scope;
-import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
@@ -486,6 +485,10 @@ public class CommandResolutionHelper {
                 log.error(String.format("Could not deserialize %s into a list of %s.", value, model.getName()), e);
             }
         } else if (makeANewModelObject != null) {
+            if (log.isDebugEnabled()) {
+                final String message = String.format("Attempting to create a %s using value %s in function %s.", model.getName(), value, makeANewModelObject);
+                log.debug(message);
+            }
             final T newModelObject = makeANewModelObject.apply(value);
             if (newModelObject != null) {
                 mayOrMayNotMatch.add(newModelObject);
@@ -517,6 +520,11 @@ public class CommandResolutionHelper {
             final String jsonPathSearch = String.format(
                     "$[?(%s)]", matcher
             );
+
+            if (log.isDebugEnabled()) {
+                final String message = String.format("Using JSONPath matcher %s to search for matching items in %s.", jsonPathSearch, mayOrMayNotMatchJson);
+                log.debug(message);
+            }
             doMatch = JsonPath.parse(mayOrMayNotMatchJson).read(jsonPathSearch, new TypeRef<List<T>>(){});
 
             if (doMatch == null || doMatch.isEmpty()) {
