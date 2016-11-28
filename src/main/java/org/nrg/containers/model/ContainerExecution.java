@@ -168,22 +168,23 @@ public class ContainerExecution extends AbstractHibernateEntity {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         final ContainerExecution that = (ContainerExecution) o;
-        return Objects.equals(commandId, that.commandId) &&
-                Objects.equals(dockerImage, that.dockerImage) &&
-                Objects.equals(commandLine, that.commandLine) &&
-                Objects.equals(environmentVariables, that.environmentVariables) &&
-                Objects.equals(mountsIn, that.mountsIn) &&
-                Objects.equals(mountsOut, that.mountsOut) &&
-                Objects.equals(containerId, that.containerId) &&
-                Objects.equals(userId, that.userId) &&
-                Objects.equals(inputValues, that.inputValues) &&
-                Objects.equals(history, that.history);
+        return Objects.equals(this.commandId, that.commandId) &&
+                Objects.equals(this.dockerImage, that.dockerImage) &&
+                Objects.equals(this.commandLine, that.commandLine) &&
+                Objects.equals(this.environmentVariables, that.environmentVariables) &&
+                Objects.equals(this.mountsIn, that.mountsIn) &&
+                Objects.equals(this.mountsOut, that.mountsOut) &&
+                Objects.equals(this.containerId, that.containerId) &&
+                Objects.equals(this.userId, that.userId) &&
+                Objects.equals(this.inputValues, that.inputValues) &&
+                Objects.equals(this.outputs, that.outputs) &&
+                Objects.equals(this.history, that.history);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(super.getId(), commandId, dockerImage, commandLine, environmentVariables,
-                mountsIn, mountsOut, containerId, userId, inputValues, history);
+                mountsIn, mountsOut, containerId, userId, inputValues, outputs, history);
     }
 
     @Override
@@ -198,6 +199,7 @@ public class ContainerExecution extends AbstractHibernateEntity {
                 .add("containerId", containerId)
                 .add("userId", userId)
                 .add("inputValues", inputValues)
+                .add("outputs", outputs)
                 .add("history", history)
                 .toString();
     }
