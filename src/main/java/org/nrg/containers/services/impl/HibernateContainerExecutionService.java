@@ -23,6 +23,7 @@ import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.restlet.util.XNATRestConstants;
+import org.nrg.xnat.services.archive.CatalogService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,21 +45,21 @@ public class HibernateContainerExecutionService
 
     private ContainerControlApi containerControlApi;
     private SiteConfigPreferences siteConfigPreferences;
-    private AliasTokenService aliasTokenService;
     private TransportService transportService;
     private PermissionsServiceI permissionsService;
+    private CatalogService catalogService;
 
     @Autowired
     public HibernateContainerExecutionService(final ContainerControlApi containerControlApi,
                                               final SiteConfigPreferences siteConfigPreferences,
-                                              final AliasTokenService aliasTokenService,
                                               final TransportService transportService,
-                                              final PermissionsServiceI permissionsService) {
+                                              final PermissionsServiceI permissionsService,
+                                              final CatalogService catalogService) {
         this.containerControlApi = containerControlApi;
         this.siteConfigPreferences = siteConfigPreferences;
-        this.aliasTokenService = aliasTokenService;
         this.transportService = transportService;
         this.permissionsService = permissionsService;
+        this.catalogService = catalogService;
     }
 
     @Override
@@ -126,7 +127,7 @@ public class HibernateContainerExecutionService
             log.debug(String.format("Finalizing ContainerExecution for container %s", containerExecution.getContainerId()));
         }
 
-        ContainerFinalizeHelper.finalizeContainer(containerExecution, userI, containerControlApi, siteConfigPreferences, transportService, permissionsService);
+        ContainerFinalizeHelper.finalizeContainer(containerExecution, userI, containerControlApi, siteConfigPreferences, transportService, permissionsService, catalogService);
     }
 
     @Override

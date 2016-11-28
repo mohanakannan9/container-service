@@ -25,6 +25,7 @@ import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.services.AliasTokenService;
+import org.nrg.xnat.services.archive.CatalogService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -103,11 +104,6 @@ public class IntegrationTestConfig {
     }
 
     @Bean
-    public AliasTokenService aliasTokenService() {
-        return Mockito.mock(AliasTokenService.class);
-    }
-
-    @Bean
     public SiteConfigPreferences siteConfigPreferences() {
         return Mockito.mock(SiteConfigPreferences.class);
     }
@@ -135,12 +131,17 @@ public class IntegrationTestConfig {
     }
 
     @Bean
+    public CatalogService catalogService() {
+        return Mockito.mock(CatalogService.class);
+    }
+
+    @Bean
     public ContainerExecutionService containerExecutionService(final ContainerControlApi containerControlApi,
                                                                final SiteConfigPreferences siteConfigPreferences,
-                                                               final AliasTokenService aliasTokenService,
                                                                final TransportService transportService,
-                                                               final PermissionsServiceI permissionsService) {
-        return new HibernateContainerExecutionService(containerControlApi, siteConfigPreferences, aliasTokenService, transportService, permissionsService);
+                                                               final PermissionsServiceI permissionsService,
+                                                               final CatalogService catalogService) {
+        return new HibernateContainerExecutionService(containerControlApi, siteConfigPreferences, transportService, permissionsService, catalogService);
     }
 
     @Bean

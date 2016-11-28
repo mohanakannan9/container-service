@@ -7,8 +7,10 @@ import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.model.CommandInput;
 import org.nrg.containers.model.CommandMount;
 import org.nrg.containers.model.CommandOutput;
+import org.nrg.containers.model.CommandOutputFiles;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.transporter.TransportService;
 import org.nrg.xdat.base.BaseElement;
@@ -22,6 +24,7 @@ import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.restlet.util.XNATRestConstants;
+import org.nrg.xnat.services.archive.CatalogService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -41,6 +44,7 @@ public class ContainerFinalizeHelper {
     private SiteConfigPreferences siteConfigPreferences;
     private TransportService transportService;
     private PermissionsServiceI permissionsService;
+    private CatalogService catalogService;
 
     private ContainerExecution containerExecution;
     private UserI userI;
@@ -53,11 +57,13 @@ public class ContainerFinalizeHelper {
                                     final ContainerControlApi containerControlApi,
                                     final SiteConfigPreferences siteConfigPreferences,
                                     final TransportService transportService,
-                                    final PermissionsServiceI permissionsService) {
+                                    final PermissionsServiceI permissionsService,
+                                    final CatalogService catalogService) {
         this.containerControlApi = containerControlApi;
         this.siteConfigPreferences = siteConfigPreferences;
         this.transportService = transportService;
         this.permissionsService = permissionsService;
+        this.catalogService = catalogService;
 
         this.containerExecution = containerExecution;
         this.userI = userI;
@@ -71,9 +77,10 @@ public class ContainerFinalizeHelper {
                                          final ContainerControlApi containerControlApi,
                                          final SiteConfigPreferences siteConfigPreferences,
                                          final TransportService transportService,
-                                         final PermissionsServiceI permissionsService) {
+                                         final PermissionsServiceI permissionsService,
+                                         final CatalogService catalogService) {
         final ContainerFinalizeHelper helper =
-                new ContainerFinalizeHelper(containerExecution, userI, containerControlApi, siteConfigPreferences, transportService, permissionsService);
+                new ContainerFinalizeHelper(containerExecution, userI, containerControlApi, siteConfigPreferences, transportService, permissionsService, catalogService);
         helper.finalizeContainer();
     }
 
@@ -144,6 +151,44 @@ public class ContainerFinalizeHelper {
                 log.error("Cannot upload files for command output " + output.getName(), e);
             }
         }
+
+//        for (final CommandMount mount : toUpload) {
+//            if (StringUtils.isBlank(mount.getName())) {
+//                log.error(String.format("Cannot upload mount for container execution %s. Mount has no resource name. %s",
+//                        containerExecution.getId(), mount));
+//                continue;
+//            }
+//            if (StringUtils.isBlank(mount.getHostPath())) {
+//                log.error(String.format("Cannot upload mount for container execution %s. Mount has no path to files. %s",
+//                        containerExecution.getId(), mount));
+//                continue;
+//            }
+//            final Path pathOnExecutionMachine = Paths.get(mount.getHostPath());
+//            final Path pathOnXnatMachine = transportService.transport("", pathOnExecutionMachine); // TODO this currently does nothing
+
+//                        final HttpPost post = new HttpPost(url);
+//                        post.setHeader("Authorization", "Basic " + encodedAuth);
+
+//                        final HttpResponse response = client.execute(post, clientContext);
+//                        final HttpResponse response = client.execute(post);
+
+//                    try {
+//                        final Response response = given().auth().preemptive().basic(token.getAlias(), token.getSecret()).when().post(url).andReturn();
+//                        if (response.getStatusCode() > 400) {
+//                            log.error(String.format("Upload failed for container execution %s, mount %s.\n" +
+//                                            "Attempted POST %s.\nUpload returned response: %s",
+//                                    containerExecution.getId(), mount, url, response.getStatusLine()));
+//                        }
+//                    } catch (Exception e) {
+//                        log.error(String.format("Upload failed for container execution %s, mount %s.\n" +
+//                                        "Attempted POST %s.\nGot an exception.",
+//                                containerExecution.getId(), mount, url), e);
+//                    }
+                    // TODO Actually upload files as new resource
+
+
+//                }
+
 //        final String rootId = containerExecution.getRootObjectId();
 //        final String rootXsiType = containerExecution.getRootObjectXsiType();
 //        if (StringUtils.isNotBlank(rootXsiType) && StringUtils.isNotBlank(rootId)) {
@@ -251,12 +296,34 @@ public class ContainerFinalizeHelper {
         if (log.isDebugEnabled()) {
             log.debug(String.format("Uploading command output \"%s\".", output.getName()));
         }
+
+        final CommandOutputFiles filesObj = output.getFiles();
         if (output.getFiles() == null) {
             throw new ContainerException(String.format("Command output \"%s\" has no files.", output.getName()));
         }
+
+        final String mountName = filesObj.getMount();
+        final String relativeFilePath = filesObj.getPath();
+        final CommandMount mount = getMount(mountName);
+        if (mount == null) {
+            throw new ContainerException(String.format("Mount \"%s\" does not exist.", mountName));
+        }
+        final String absoluteFilePath = FilenameUtils.concat(mount.getHostPath(), relativeFilePath);
+        final File outputFile = new File(absoluteFilePath);
+
+        final String label = StringUtils.isNotBlank(output.getLabel()) ? output.getLabel() :
+                StringUtils.isNotBlank(mount.getResource()) ? mount.getResource() :
+                        mountName;
+
+        final String parentUri = getParentUri(output.getParent());
+
         switch (output.getType()) {
             case RESOURCE:
-                // TODO Waiting on XNAT-4548
+                try {
+                    catalogService.insertResources(userI, parentUri, outputFile, label, null, null, null);
+                } catch (Exception e) {
+                    throw new ContainerException("Could not upload files to resource.", e);
+                }
                 break;
             case ASSESSOR:
                 /* TODO Waiting on XNAT-4556
@@ -329,5 +396,9 @@ public class ContainerFinalizeHelper {
 
         // Mount does not exist
         throw new ContainerException(String.format("Mount \"%s\" does not exist.", mountName));
+    }
+
+    private String getParentUri(final String parentInputName) {
+        return "";
     }
 }
