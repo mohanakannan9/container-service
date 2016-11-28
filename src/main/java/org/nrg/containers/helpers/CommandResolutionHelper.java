@@ -708,7 +708,7 @@ public class CommandResolutionHelper {
 
     private String resolveTemplate(final String template)
             throws CommandResolutionException {
-        return resolveTemplate(template, resolvedInputValuesByReplacementKey);
+        return StringUtils.isNotBlank(template) ? resolveTemplate(template, resolvedInputValuesByReplacementKey) : template;
     }
 
     private String resolveTemplate(final String template, Map<String, String> valuesMap)
