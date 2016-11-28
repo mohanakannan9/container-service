@@ -104,6 +104,11 @@ public class IntegrationTestConfig {
     }
 
     @Bean
+    public AliasTokenService aliasTokenService() {
+        return Mockito.mock(AliasTokenService.class);
+    }
+
+    @Bean
     public SiteConfigPreferences siteConfigPreferences() {
         return Mockito.mock(SiteConfigPreferences.class);
     }
@@ -140,8 +145,9 @@ public class IntegrationTestConfig {
                                                                final SiteConfigPreferences siteConfigPreferences,
                                                                final TransportService transportService,
                                                                final PermissionsServiceI permissionsService,
-                                                               final CatalogService catalogService) {
-        return new HibernateContainerExecutionService(containerControlApi, siteConfigPreferences, transportService, permissionsService, catalogService);
+                                                               final CatalogService catalogService,
+                                                               final ObjectMapper mapper) {
+        return new HibernateContainerExecutionService(containerControlApi, siteConfigPreferences, transportService, permissionsService, catalogService, mapper);
     }
 
     @Bean

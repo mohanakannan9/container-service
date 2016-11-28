@@ -1,5 +1,6 @@
 package org.nrg.containers.services.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Hibernate;
 import org.nrg.containers.api.ContainerControlApi;
@@ -48,18 +49,21 @@ public class HibernateContainerExecutionService
     private TransportService transportService;
     private PermissionsServiceI permissionsService;
     private CatalogService catalogService;
+    private ObjectMapper mapper;
 
     @Autowired
     public HibernateContainerExecutionService(final ContainerControlApi containerControlApi,
                                               final SiteConfigPreferences siteConfigPreferences,
                                               final TransportService transportService,
                                               final PermissionsServiceI permissionsService,
-                                              final CatalogService catalogService) {
+                                              final CatalogService catalogService,
+                                              final ObjectMapper mapper) {
         this.containerControlApi = containerControlApi;
         this.siteConfigPreferences = siteConfigPreferences;
         this.transportService = transportService;
         this.permissionsService = permissionsService;
         this.catalogService = catalogService;
+        this.mapper = mapper;
     }
 
     @Override
@@ -127,7 +131,7 @@ public class HibernateContainerExecutionService
             log.debug(String.format("Finalizing ContainerExecution for container %s", containerExecution.getContainerId()));
         }
 
-        ContainerFinalizeHelper.finalizeContainer(containerExecution, userI, containerControlApi, siteConfigPreferences, transportService, permissionsService, catalogService);
+        ContainerFinalizeHelper.finalizeContainer(containerExecution, userI, containerControlApi, siteConfigPreferences, transportService, permissionsService, catalogService, mapper);
     }
 
     @Override

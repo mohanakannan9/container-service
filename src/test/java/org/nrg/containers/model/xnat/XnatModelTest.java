@@ -11,6 +11,7 @@ import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
 import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
+import org.apache.ecs.xhtml.label;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -25,12 +26,12 @@ import static org.junit.Assert.assertThat;
 
 
 public class XnatModelTest {
-    private static final String FILE_JSON = "{\"name\":\"file.txt\", \"path\":\"/path/to/files/file.txt\", " +
+    private static final String FILE_JSON = "{\"name\":\"file.txt\", \"type\":\"File\", \"path\":\"/path/to/files/file.txt\", " +
             "\"tags\":[\"squishy\",\"jovial\"], \"format\":\"TEXT\", \"content\":\"TEXT\"}";
-    private static final String RESOURCE_JSON = "{\"id\":\"1\", \"label\":\"a_resource\", " +
+    private static final String RESOURCE_JSON = "{\"id\":\"1\", \"type\":\"Resource\", \"label\":\"a_resource\", " +
             "\"directory\":\"/path/to/files\", \"files\":[" + FILE_JSON + "]}";
 
-    private static final String SESSION_JSON = "{\"id\":\"E1\", \"label\":\"a_session\", " +
+    private static final String SESSION_JSON = "{\"id\":\"E1\", \"type\":\"Session\", \"label\":\"a_session\", " +
             "\"xsiType\":\"xnat:fakesessiondata\", \"resources\":[" + RESOURCE_JSON + "]}";
 
     private final ObjectMapper mapper = new ObjectMapper();
@@ -62,6 +63,7 @@ public class XnatModelTest {
     @Test
     public void testDeserializeFile() throws Exception {
         final XnatFile file = mapper.readValue(FILE_JSON, XnatFile.class);
+        assertEquals(XnatModelObject.Type.FILE, file.getType());
         assertEquals("file.txt", file.getName());
         assertEquals("/path/to/files/file.txt", file.getPath());
         assertEquals(Lists.newArrayList("squishy", "jovial"), file.getTags());
@@ -73,7 +75,7 @@ public class XnatModelTest {
     public void testDeserializeResource() throws Exception {
         final XnatFile file = mapper.readValue(FILE_JSON, XnatFile.class);
         final Resource resource = mapper.readValue(RESOURCE_JSON, Resource.class);
-
+        assertEquals(XnatModelObject.Type.RESOURCE, resource.getType());
         assertEquals("1", resource.getId());
         assertEquals("a_resource", resource.getLabel());
         assertEquals("/path/to/files", resource.getDirectory());
@@ -84,7 +86,7 @@ public class XnatModelTest {
     public void testDeserializeSession() throws Exception {
         final Resource resource = mapper.readValue(RESOURCE_JSON, Resource.class);
         final Session session = mapper.readValue(SESSION_JSON, Session.class);
-
+        assertEquals(XnatModelObject.Type.SESSION, session.getType());
         assertEquals("E1", session.getId());
         assertEquals("a_session", session.getLabel());
         assertEquals("xnat:fakesessiondata", session.getXsiType());
@@ -121,7 +123,7 @@ public class XnatModelTest {
     @Test
     public void testPredicateWithList() throws Exception {
         final String scanRuntimeJson =
-                "{\"id\": \"scan1\", \"parent-id\": \"session1\", " +
+                "{\"id\": \"scan1\", \"type\":\"Scan\", \"parent-id\": \"session1\", " +
                         "\"scan-type\": \"SCANTYPE\"" +
                         "}";
         final String sessionRuntimeJson =

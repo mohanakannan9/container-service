@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class XnatFile extends XnatModelObject {
+    public static Type type = Type.FILE;
     private String name;
     private String path;
     private List<String> tags;
@@ -17,12 +18,14 @@ public class XnatFile extends XnatModelObject {
 
     public XnatFile() {}
 
-    public XnatFile(final String name,
+    public XnatFile(final String parentUri,
+                    final String name,
                     final String path,
                     final String tagsCsv,
                     final String format,
                     final String content,
                     final File file) {
+        this.uri = parentUri + "/files/" + path;
         this.name = name;
         this.path = path;
         this.tags = Lists.newArrayList(tagsCsv.split(","));
@@ -77,6 +80,10 @@ public class XnatFile extends XnatModelObject {
 
     public void setFile(final java.io.File file) {
         this.file = file;
+    }
+
+    public Type getType() {
+        return type;
     }
 
     @Override

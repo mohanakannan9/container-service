@@ -120,14 +120,14 @@ public class CommandResolutionTest {
 
         final String dicomDir = folder.newFolder("DICOM").getAbsolutePath();
         final String scanDicomResource =
-                "{\"id\":0, \"label\": \"DICOM\", \"parent-id\": \"scan1\", \"directory\": \"" + dicomDir + "\"}";
+                "{\"id\":0, \"type\": \"Resource\", \"label\": \"DICOM\", \"parent-id\": \"scan1\", \"directory\": \"" + dicomDir + "\"}";
         final String scanRuntimeJson =
-                "{\"id\": \"scan1\", \"parent-id\": \"session1\", " +
+                "{\"id\": \"scan1\", \"type\": \"Scan\", \"parent-id\": \"session1\", " +
                         "\"scan-type\": \"" + scantype + "\"," +
                         "\"resources\": [" + scanDicomResource + "]" +
                         "}";
         final String sessionRuntimeJson =
-                "{\"id\": \"session1\", \"label\": \"session1\"," +
+                "{\"id\": \"session1\", \"type\": \"Session\", \"label\": \"session1\"," +
                         "\"scans\": [" + scanRuntimeJson + "]" +
                         "}";
         final Map<String, String> runtimeValues = Maps.newHashMap();

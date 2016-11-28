@@ -1,6 +1,7 @@
 package org.nrg.containers.model.xnat;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import org.nrg.xdat.model.XnatAbstractresourceI;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class Project extends XnatModelObject {
+    public static Type type = Type.PROJECT;
     @JsonIgnore private XnatProjectdataI xnatProjectdata;
     private List<Resource> resources;
     private List<Subject> subjects;
@@ -25,14 +27,15 @@ public class Project extends XnatModelObject {
         this.id = xnatProjectdataI.getId();
         this.label = xnatProjectdataI.getName();
         this.xsiType = xnatProjectdataI.getXSIType();
+        this.uri = "/projects/" + id;
 
         this.subjects = Lists.newArrayList();
-        // TODO how do I get subjects from an XnatProjecdata?
+        // TODO how do I get subjects from an XnatProjectdata?
 
         this.resources = Lists.newArrayList();
         for (final XnatAbstractresourceI xnatAbstractresourceI: xnatProjectdataI.getResources_resource()) {
             if (xnatAbstractresourceI instanceof XnatResourcecatalog) {
-                resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, this.id, xnatProjectdataI.getRootArchivePath()));
+                resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, this.id, this.uri, xnatProjectdataI.getRootArchivePath()));
             }
         }
     }
@@ -64,6 +67,10 @@ public class Project extends XnatModelObject {
 
     public void setSubjects(final List<Subject> subjects) {
         this.subjects = subjects;
+    }
+
+    public Type getType() {
+        return type;
     }
 
     @Override

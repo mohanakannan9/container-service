@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.Objects;
 
 public class Resource extends XnatModelObject {
+    public static Type type = Type.RESOURCE;
+
     @JsonIgnore private XnatResourcecatalogI xnatResourcecatalog;
     @JsonProperty(value = "parent-id") private String parentId;
     private String directory;
@@ -22,12 +24,13 @@ public class Resource extends XnatModelObject {
 
     public Resource() {}
 
-    public Resource(final XnatResourcecatalog xnatResourcecatalogI, final String parentId, final String rootArchivePath) {
+    public Resource(final XnatResourcecatalog xnatResourcecatalogI, final String parentId, final String parentUri, final String rootArchivePath) {
         this.xnatResourcecatalog = xnatResourcecatalogI;
 
         this.id = xnatResourcecatalogI.getXnatAbstractresourceId() != null ? xnatResourcecatalogI.getXnatAbstractresourceId().toString() : "";
         this.label = xnatResourcecatalogI.getLabel();
         this.xsiType = xnatResourcecatalogI.getXSIType();
+        this.uri = parentUri + "/resources/" + id;
 
         this.parentId = parentId;
 
@@ -38,7 +41,7 @@ public class Resource extends XnatModelObject {
         this.files = Lists.newArrayList();
         for (final Object[] entry: entryDetails) {
             // See CatalogUtils.getEntryDetails to see where all these "entry" elements come from
-            files.add(new XnatFile((String) entry[0], (String) entry[2], (String) entry[4], (String) entry[5], (String) entry[6], (File) entry[8]));
+            files.add(new XnatFile(this.uri, (String) entry[0], (String) entry[2], (String) entry[4], (String) entry[5], (String) entry[6], (File) entry[8]));
         }
     }
 
@@ -77,6 +80,10 @@ public class Resource extends XnatModelObject {
 
     public void setFiles(final List<XnatFile> files) {
         this.files = files;
+    }
+
+    public Type getType() {
+        return type;
     }
 
     @Override

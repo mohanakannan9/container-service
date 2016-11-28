@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Objects;
 
 public class Subject extends XnatModelObject {
+    public static Type type = Type.SUBJECT;
+
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), xnatSubjectdata, parentId, sessions, resources);
@@ -40,6 +42,7 @@ public class Subject extends XnatModelObject {
         this.label = xnatSubjectdataI.getLabel();
         this.xsiType = xnatSubjectdataI.getXSIType();
         this.parentId = xnatSubjectdataI.getProject();
+        this.uri = "/subjects/" + id;
 
         this.sessions = Lists.newArrayList();
         for (final XnatExperimentdataI xnatExperimentdataI : xnatSubjectdataI.getExperiments_experiment()) {
@@ -51,7 +54,7 @@ public class Subject extends XnatModelObject {
         this.resources = Lists.newArrayList();
         for (final XnatAbstractresourceI xnatAbstractresourceI : xnatSubjectdataI.getResources_resource()) {
             if (xnatAbstractresourceI instanceof XnatResourcecatalog) {
-                resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, this.id, rootArchivePath));
+                resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, this.id, this.uri, rootArchivePath));
             }
         }
     }
@@ -91,6 +94,10 @@ public class Subject extends XnatModelObject {
 
     public void setResources(final List<Resource> resources) {
         this.resources = resources;
+    }
+
+    public Type getType() {
+        return type;
     }
 
     @Override

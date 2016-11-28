@@ -81,8 +81,9 @@ public class ContainerExecutionTestConfig {
                                                                final SiteConfigPreferences siteConfigPreferences,
                                                                final TransportService transportService,
                                                                final PermissionsServiceI permissionsService,
-                                                               final CatalogService catalogService) {
-        return new HibernateContainerExecutionService(containerControlApi, siteConfigPreferences, transportService, permissionsService, catalogService);
+                                                               final CatalogService catalogService,
+                                                               final ObjectMapper mapper) {
+        return new HibernateContainerExecutionService(containerControlApi, siteConfigPreferences, transportService, permissionsService, catalogService, mapper);
     }
 
     @Bean

@@ -1,5 +1,6 @@
 package org.nrg.containers.helpers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -7,27 +8,20 @@ import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.model.CommandInput;
 import org.nrg.containers.model.CommandMount;
 import org.nrg.containers.model.CommandOutput;
 import org.nrg.containers.model.CommandOutputFiles;
 import org.nrg.containers.model.ContainerExecution;
+import org.nrg.containers.model.xnat.XnatModelObject;
 import org.nrg.transporter.TransportService;
-import org.nrg.xdat.base.BaseElement;
-import org.nrg.xdat.om.XnatImageassessordata;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
-import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.services.PermissionsServiceI;
-import org.nrg.xft.XFTItem;
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.restlet.util.XNATRestConstants;
 import org.nrg.xnat.services.archive.CatalogService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,12 +39,14 @@ public class ContainerFinalizeHelper {
     private TransportService transportService;
     private PermissionsServiceI permissionsService;
     private CatalogService catalogService;
+    private ObjectMapper mapper;
 
     private ContainerExecution containerExecution;
     private UserI userI;
 
     private Map<String, CommandMount> untransportedMounts;
     private Map<String, CommandMount> transportedMounts;
+    private Map<String, String> inputUriCache;
 
     private ContainerFinalizeHelper(final ContainerExecution containerExecution,
                                     final UserI userI,
@@ -58,18 +54,21 @@ public class ContainerFinalizeHelper {
                                     final SiteConfigPreferences siteConfigPreferences,
                                     final TransportService transportService,
                                     final PermissionsServiceI permissionsService,
-                                    final CatalogService catalogService) {
+                                    final CatalogService catalogService,
+                                    final ObjectMapper mapper) {
         this.containerControlApi = containerControlApi;
         this.siteConfigPreferences = siteConfigPreferences;
         this.transportService = transportService;
         this.permissionsService = permissionsService;
         this.catalogService = catalogService;
+        this.mapper = mapper;
 
         this.containerExecution = containerExecution;
         this.userI = userI;
 
         untransportedMounts = Maps.newHashMap();
         transportedMounts = Maps.newHashMap();
+        inputUriCache = Maps.newHashMap();
     }
 
     public static void finalizeContainer(final ContainerExecution containerExecution,
@@ -78,9 +77,10 @@ public class ContainerFinalizeHelper {
                                          final SiteConfigPreferences siteConfigPreferences,
                                          final TransportService transportService,
                                          final PermissionsServiceI permissionsService,
-                                         final CatalogService catalogService) {
+                                         final CatalogService catalogService,
+                                         final ObjectMapper mapper) {
         final ContainerFinalizeHelper helper =
-                new ContainerFinalizeHelper(containerExecution, userI, containerControlApi, siteConfigPreferences, transportService, permissionsService, catalogService);
+                new ContainerFinalizeHelper(containerExecution, userI, containerControlApi, siteConfigPreferences, transportService, permissionsService, catalogService, mapper);
         helper.finalizeContainer();
     }
 
@@ -315,12 +315,12 @@ public class ContainerFinalizeHelper {
                 StringUtils.isNotBlank(mount.getResource()) ? mount.getResource() :
                         mountName;
 
-        final String parentUri = getParentUri(output.getParent());
+        final String parentInputUri = getInputUri(output.getParent());
 
         switch (output.getType()) {
             case RESOURCE:
                 try {
-                    catalogService.insertResources(userI, parentUri, outputFile, label, null, null, null);
+                    catalogService.insertResources(userI, parentInputUri, outputFile, label, null, null, null);
                 } catch (Exception e) {
                     throw new ContainerException("Could not upload files to resource.", e);
                 }
@@ -398,7 +398,31 @@ public class ContainerFinalizeHelper {
         throw new ContainerException(String.format("Mount \"%s\" does not exist.", mountName));
     }
 
-    private String getParentUri(final String parentInputName) {
-        return "";
+    private String getInputUri(final String parentInputName) {
+        if (inputUriCache.containsKey(parentInputName)) {
+            return inputUriCache.get(parentInputName);
+        }
+
+        if (!containerExecution.getInputValues().containsValue(parentInputName)) {
+            return null;
+        }
+
+        final String parentInputValue = containerExecution.getInputValues().get(parentInputName);
+        String parentUri = "";
+        try {
+            parentUri = mapper.readValue(parentInputValue, XnatModelObject.class).getUri();
+        } catch (IOException e) {
+            if (log.isDebugEnabled()) {
+                // Yes, I know I checked for "debug" and am logging at "error".
+                // I still want this to show up as "error" either way, but I only want the full object to
+                // be logged if you opted into the firehose.
+                log.error("Could not deserialize Container Execution input value:\n" + parentInputValue, e);
+            } else {
+                log.error("Could not deserialize Container Execution input value.", e);
+            }
+        }
+
+        inputUriCache.put(parentInputName, parentUri);
+        return parentUri;
     }
 }

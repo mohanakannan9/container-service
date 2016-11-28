@@ -14,23 +14,25 @@ import java.util.List;
 import java.util.Objects;
 
 public class Assessor extends XnatModelObject {
+    public static Type type = Type.ASSESSOR;
     @JsonIgnore private XnatImageassessordataI xnatImageassessordata;
     @JsonProperty(value = "parent-id") private String parentId;
     private List<Resource> resources;
 
     public Assessor() {}
 
-    public Assessor(final XnatImageassessordataI xnatImageassessordata, final String parentId, final String rootArchivePath) {
+    public Assessor(final XnatImageassessordataI xnatImageassessordata, final String parentId, final String parentUri, final String rootArchivePath) {
         this.id = xnatImageassessordata.getId();
         this.label = xnatImageassessordata.getLabel();
         this.xsiType = xnatImageassessordata.getXSIType();
+        this.uri = parentUri + "/assessors/" + id;
 
         this.parentId = parentId;
 
         this.resources = Lists.newArrayList();
         for (final XnatAbstractresourceI xnatAbstractresourceI : xnatImageassessordata.getResources_resource()) {
             if (xnatAbstractresourceI instanceof XnatResourcecatalog) {
-                resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, this.id, rootArchivePath));
+                resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, this.id, this.uri, rootArchivePath));
             }
         }
     }
@@ -56,6 +58,14 @@ public class Assessor extends XnatModelObject {
         return xnatImageassessordata;
     }
 
+    @Override
+    public String getUri() {
+        return null;
+    }
+
+    public Type getType() {
+        return type;
+    }
 
     @Override
     public boolean equals(final Object o) {
