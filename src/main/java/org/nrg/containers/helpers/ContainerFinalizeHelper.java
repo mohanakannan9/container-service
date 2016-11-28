@@ -316,11 +316,18 @@ public class ContainerFinalizeHelper {
                         mountName;
 
         final String parentInputUri = getInputUri(output.getParent());
+        if (StringUtils.isBlank(parentInputUri)) {
+            throw new ContainerException(String.format("Cannot upload output \"%s\". Parent \"%s\" URI is blank.", output.getName(), output.getParent()));
+        }
 
         switch (output.getType()) {
             case RESOURCE:
+                if (log.isDebugEnabled()) {
+                    final String template = "Attempting to insert file resource.\n\tuser: %s\n\tparentInputUri: %s\n\toutputFile: %s\n\tlabel: %s";
+                    log.debug(String.format(template, userI.getLogin(), parentInputUri, outputFile, label));
+                }
                 try {
-                    catalogService.insertResources(userI, parentInputUri, outputFile, label, null, null, null);
+                    catalogService.insertResources(userI, "/data" + parentInputUri, outputFile, label, null, null, null);
                 } catch (Exception e) {
                     throw new ContainerException("Could not upload files to resource.", e);
                 }
@@ -398,19 +405,33 @@ public class ContainerFinalizeHelper {
         throw new ContainerException(String.format("Mount \"%s\" does not exist.", mountName));
     }
 
-    private String getInputUri(final String parentInputName) {
-        if (inputUriCache.containsKey(parentInputName)) {
-            return inputUriCache.get(parentInputName);
+    private String getInputUri(final String inputName) {
+        if (log.isDebugEnabled()) {
+            log.debug(String.format("Getting URI for input \"%s\".", inputName));
+        }
+        if (inputUriCache.containsKey(inputName)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Input URI was cached. Value: " + inputUriCache.get(inputName));
+            }
+            return inputUriCache.get(inputName);
         }
 
-        if (!containerExecution.getInputValues().containsValue(parentInputName)) {
+        final Map<String, String> inputValues = containerExecution.getInputValues();
+        if (!inputValues.containsKey(inputName)) {
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("No input found with name \"%s\". Input name set: %s", inputName, inputValues.keySet()));
+            }
             return null;
         }
 
-        final String parentInputValue = containerExecution.getInputValues().get(parentInputName);
+        final String parentInputValue = containerExecution.getInputValues().get(inputName);
         String parentUri = "";
         try {
-            parentUri = mapper.readValue(parentInputValue, XnatModelObject.class).getUri();
+            final XnatModelObject parent = mapper.readValue(parentInputValue, XnatModelObject.class);
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Deserialized input \"%s\": %s", inputName, parent));
+            }
+            parentUri = parent.getUri();
         } catch (IOException e) {
             if (log.isDebugEnabled()) {
                 // Yes, I know I checked for "debug" and am logging at "error".
@@ -422,7 +443,10 @@ public class ContainerFinalizeHelper {
             }
         }
 
-        inputUriCache.put(parentInputName, parentUri);
+        if (log.isDebugEnabled()) {
+            log.debug(String.format("Caching URI for input \"%s\": %s", inputName, parentUri));
+        }
+        inputUriCache.put(inputName, parentUri);
         return parentUri;
     }
 }
