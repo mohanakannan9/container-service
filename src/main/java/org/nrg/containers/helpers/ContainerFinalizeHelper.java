@@ -327,7 +327,7 @@ public class ContainerFinalizeHelper {
                     log.debug(String.format(template, userI.getLogin(), parentInputUri, outputFile, label));
                 }
                 try {
-                    catalogService.insertResources(userI, "/data" + parentInputUri, outputFile, label, null, null, null);
+                    catalogService.insertResources(userI, "/archive" + parentInputUri, outputFile, label, null, null, null);
                 } catch (Exception e) {
                     throw new ContainerException("Could not upload files to resource.", e);
                 }
