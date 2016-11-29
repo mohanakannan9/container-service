@@ -99,9 +99,7 @@ public class ContainerFinalizeHelper {
     }
 
     private void uploadLogs() {
-        if (log.isDebugEnabled()) {
-            log.debug("Getting container logs");
-        }
+        log.info("Getting container logs");
 
         String stdoutLogStr = "";
         String stderrLogStr = "";
@@ -123,9 +121,7 @@ public class ContainerFinalizeHelper {
                 final File destination = new File(destinationPath);
                 destination.mkdirs();
 
-                if (log.isDebugEnabled()) {
-                    log.debug("Saving container logs to " + destinationPath);
-                }
+                log.info("Saving container logs to " + destinationPath);
 
                 if (StringUtils.isNotBlank(stdoutLogStr)) {
                     final File stdoutFile = new File(destination, "stdout.log");
@@ -141,160 +137,26 @@ public class ContainerFinalizeHelper {
     }
 
     private void uploadOutputs() {
-
+        log.info("Uploading command outputs.");
 
 
         for (final CommandOutput output: containerExecution.getOutputs()) {
             try {
                 uploadOutput(output);
-            } catch (ContainerException e) {
+            } catch (ContainerException | RuntimeException e) {
                 log.error("Cannot upload files for command output " + output.getName(), e);
             }
         }
 
-//        for (final CommandMount mount : toUpload) {
-//            if (StringUtils.isBlank(mount.getName())) {
-//                log.error(String.format("Cannot upload mount for container execution %s. Mount has no resource name. %s",
-//                        containerExecution.getId(), mount));
-//                continue;
-//            }
-//            if (StringUtils.isBlank(mount.getHostPath())) {
-//                log.error(String.format("Cannot upload mount for container execution %s. Mount has no path to files. %s",
-//                        containerExecution.getId(), mount));
-//                continue;
-//            }
-//            final Path pathOnExecutionMachine = Paths.get(mount.getHostPath());
-//            final Path pathOnXnatMachine = transportService.transport("", pathOnExecutionMachine); // TODO this currently does nothing
-
-//                        final HttpPost post = new HttpPost(url);
-//                        post.setHeader("Authorization", "Basic " + encodedAuth);
-
-//                        final HttpResponse response = client.execute(post, clientContext);
-//                        final HttpResponse response = client.execute(post);
-
-//                    try {
-//                        final Response response = given().auth().preemptive().basic(token.getAlias(), token.getSecret()).when().post(url).andReturn();
-//                        if (response.getStatusCode() > 400) {
-//                            log.error(String.format("Upload failed for container execution %s, mount %s.\n" +
-//                                            "Attempted POST %s.\nUpload returned response: %s",
-//                                    containerExecution.getId(), mount, url, response.getStatusLine()));
-//                        }
-//                    } catch (Exception e) {
-//                        log.error(String.format("Upload failed for container execution %s, mount %s.\n" +
-//                                        "Attempted POST %s.\nGot an exception.",
-//                                containerExecution.getId(), mount, url), e);
-//                    }
-                    // TODO Actually upload files as new resource
-
-
-//                }
-
-//        final String rootId = containerExecution.getRootObjectId();
-//        final String rootXsiType = containerExecution.getRootObjectXsiType();
-//        if (StringUtils.isNotBlank(rootXsiType) && StringUtils.isNotBlank(rootId)) {
-//            final AliasToken token = aliasTokenService.issueTokenForUser(userI);
-//
-////            final String authToken = token.getAlias() + ":" + token.getSecret();
-////            String encodedAuth = "";
-////            try {
-////                final byte[] authTokenBytes = authToken.getBytes("UTF-8");
-////                final byte[] authTokenBase64Bytes = Base64.encode(authTokenBytes);
-////                encodedAuth = new String(authTokenBase64Bytes, "UTF-8");
-////            } catch (UnsupportedEncodingException e) {
-////                log.error("Sorry, can't get an auth token", e);
-////            }
-//
-//
-////            final String xnatUrl = siteConfigPreferences.getSiteUrl();
-//            final String xnatUrl = "http://localhost:80";
-//            final HttpHost targetHost = new HttpHost(xnatUrl);
-//            String url = xnatUrl + "/data";
-//
-//            if (rootXsiType.matches(".+?:.*?[Ss]can.*") && rootId.contains(":")) {
-//                final String scanId = StringUtils.substringAfterLast(rootId, ":");
-//                final String sessionId = StringUtils.substringBeforeLast(rootId, ":");
-//
-//                url += String.format("/experiments/%s/scans/%s", sessionId, scanId);
-//            } else if (rootXsiType.matches(".+?:.*?[Ss]ubject.*")) {
-//                url += String.format("/subjects/%s", rootId);
-//            } else if (rootXsiType.matches(".+?:.*?[Pp]roject.*")) {
-//                url += String.format("/projects/%s", rootId);
-//            } else {
-//                // If all else fails, it's an experiment
-//                url += String.format("/experiments/%s", rootId);
-//            }
-//
-////            final HttpClientBuilder clientBuilder = HttpClientBuilder.create();
-////            final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-////            credentialsProvider.setCredentials(new AuthScope(targetHost.getHostName(), targetHost.getPort()), new UsernamePasswordCredentials(token.getAlias(), token.getSecret()));
-////            final AuthCache authCache = new BasicAuthCache();
-////            final BasicScheme basicAuth = new BasicScheme();
-////            authCache.put(targetHost, basicAuth);
-////            clientBuilder.setDefaultCredentialsProvider(credentialsProvider);
-////            final HttpClientContext clientContext = new HttpClientContext();
-////            clientContext.setAuthCache(authCache);
-////            clientContext.setCredentialsProvider(credentialsProvider);
-////            try (final CloseableHttpClient client = clientBuilder.build()) {
-////            try (final CloseableHttpClient client = HttpClients.createDefault()) {
-//                for (final CommandMount mount : toUpload) {
-//                    if (StringUtils.isBlank(mount.getName())) {
-//                        log.error(String.format("Cannot upload mount for container execution %s. Mount has no resource name. %s",
-//                                containerExecution.getId(), mount));
-//                        continue;
-//                    }
-//                    if (StringUtils.isBlank(mount.getHostPath())) {
-//                        log.error(String.format("Cannot upload mount for container execution %s. Mount has no path to files. %s",
-//                                containerExecution.getId(), mount));
-//                        continue;
-//                    }
-//                    final Path pathOnExecutionMachine = Paths.get(mount.getHostPath());
-//                    final Path pathOnXnatMachine = transportService.transport("", pathOnExecutionMachine); // TODO this currently does nothing
-//                    url += String.format("/resources/%s/files", mount.getName());
-//                    try {
-//                        url += String.format("?overwrite=%s&reference=%s",
-//                                URLEncoder.encode(mount.getOverwrite().toString(), UTF8),
-//                                URLEncoder.encode(pathOnXnatMachine.toString(), UTF8));
-//                    } catch (IOException e) {
-//                        log.error(String.format("Cannot upload mount for container execution %s. There was an error. %s", containerExecution.getId(), mount), e);
-//                    }
-//
-////                        final HttpPost post = new HttpPost(url);
-////                        post.setHeader("Authorization", "Basic " + encodedAuth);
-//
-////                        final HttpResponse response = client.execute(post, clientContext);
-////                        final HttpResponse response = client.execute(post);
-//
-////                    try {
-////                        final Response response = given().auth().preemptive().basic(token.getAlias(), token.getSecret()).when().post(url).andReturn();
-////                        if (response.getStatusCode() > 400) {
-////                            log.error(String.format("Upload failed for container execution %s, mount %s.\n" +
-////                                            "Attempted POST %s.\nUpload returned response: %s",
-////                                    containerExecution.getId(), mount, url, response.getStatusLine()));
-////                        }
-////                    } catch (Exception e) {
-////                        log.error(String.format("Upload failed for container execution %s, mount %s.\n" +
-////                                        "Attempted POST %s.\nGot an exception.",
-////                                containerExecution.getId(), mount, url), e);
-////                    }
-//                    // TODO Actually upload files as new resource
-//
-//
-//                }
-////            } catch (IOException e) {
-////                log.error(String.format("Cannot upload files for container execution %s. Could not connect out and back to XNAT.", containerExecution.getId()));
-////            }
-//        } else {
-//            // No root id and/or xsi type, so I can't upload anything.
-//            // If there is anything there that I am supposed to upload, I will log that fact.
-//            if (toUpload != null && !toUpload.isEmpty()) {
-//                log.error("Cannot upload outputs for container execution " + containerExecution.getId() + ". No root id and/or xsi type.");
-//            }
-//        }
+        log.info("Done uploading command outputs.");
     }
 
     private void uploadOutput(final CommandOutput output) throws ContainerException {
+        if (log.isInfoEnabled()) {
+            log.info(String.format("Uploading command output \"%s\".", output.getName()));
+        }
         if (log.isDebugEnabled()) {
-            log.debug(String.format("Uploading command output \"%s\".", output.getName()));
+            log.debug(output.toString());
         }
 
         final CommandOutputFiles filesObj = output.getFiles();
@@ -307,6 +169,10 @@ public class ContainerFinalizeHelper {
         final CommandMount mount = getMount(mountName);
         if (mount == null) {
             throw new ContainerException(String.format("Mount \"%s\" does not exist.", mountName));
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug(String.format("Output files are provided by mount \"%s\": %s", mount.getName(), mount));
         }
         final String absoluteFilePath = FilenameUtils.concat(mount.getHostPath(), relativeFilePath);
         final File outputFile = new File(absoluteFilePath);
@@ -323,7 +189,7 @@ public class ContainerFinalizeHelper {
         switch (output.getType()) {
             case RESOURCE:
                 if (log.isDebugEnabled()) {
-                    final String template = "Attempting to insert file resource.\n\tuser: %s\n\tparentInputUri: %s\n\toutputFile: %s\n\tlabel: %s";
+                    final String template = "Inserting file resource.\n\tuser: %s\n\tparentInputUri: %s\n\toutputFile: %s\n\tlabel: %s";
                     log.debug(String.format(template, userI.getLogin(), parentInputUri, outputFile, label));
                 }
                 try {
@@ -398,6 +264,8 @@ public class ContainerFinalizeHelper {
 
             transportedMounts.put(mountName, mountToTransport);
             untransportedMounts.remove(mountName);
+
+            log.debug("Done transporting mount.");
             return mountToTransport;
         }
 

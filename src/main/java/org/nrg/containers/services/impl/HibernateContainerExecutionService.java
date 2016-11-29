@@ -93,7 +93,7 @@ public class HibernateContainerExecutionService
         if (matchingContainerIds != null && !matchingContainerIds.isEmpty()) {
             final ContainerExecution execution = matchingContainerIds.get(0);
             if (log.isDebugEnabled()) {
-                log.debug("Found matching execution: " + execution);
+                log.debug("Found matching execution: " + execution.getId());
             }
 
             final ContainerExecutionHistory history = new ContainerExecutionHistory(event.getStatus(), event.getTime());
@@ -128,7 +128,7 @@ public class HibernateContainerExecutionService
     @Transactional
     public void finalize(final ContainerExecution containerExecution, final UserI userI) {
         if (log.isDebugEnabled()) {
-            log.debug(String.format("Finalizing ContainerExecution for container %s", containerExecution.getContainerId()));
+            log.debug(String.format("Finalizing ContainerExecution %s for container %s", containerExecution.getId(), containerExecution.getContainerId()));
         }
 
         ContainerFinalizeHelper.finalizeContainer(containerExecution, userI, containerControlApi, siteConfigPreferences, transportService, permissionsService, catalogService, mapper);
