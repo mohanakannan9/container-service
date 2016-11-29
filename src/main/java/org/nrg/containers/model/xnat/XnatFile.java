@@ -25,7 +25,7 @@ public class XnatFile extends XnatModelObject {
                     final String format,
                     final String content,
                     final File file) {
-        this.uri = parentUri + "/files/" + path;
+        this.uri = parentUri + "/files/" + name;
         this.name = name;
         this.path = path;
         this.tags = Lists.newArrayList(tagsCsv.split(","));
