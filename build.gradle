@@ -10,7 +10,7 @@ apply plugin: 'jacoco'
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
-def vXnat = '1.7.0'
+def vXnat = '1.7.1-SNAPSHOT'
 def vSpring = '4.2.7.RELEASE'
 def vSwagger = '2.4.0'
 def vHibernate = '4.3.11.Final'
@@ -100,6 +100,8 @@ dependencies {
     testCompile "org.springframework:spring-jdbc:${vSpring}"
     testCompile "org.springframework:spring-orm:${vSpring}"
     testCompile "com.google.code.gson:gson:2.6.2"
+    testCompile "org.json:json:20160810"
+    testCompile "org.apache.commons:commons-dbcp2:2.1.1"
 }
 
 jacocoTestReport {

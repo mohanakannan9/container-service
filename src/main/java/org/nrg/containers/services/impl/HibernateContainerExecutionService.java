@@ -67,6 +67,8 @@ public class HibernateContainerExecutionService
         Hibernate.initialize(entity.getMountsIn());
         Hibernate.initialize(entity.getMountsOut());
         Hibernate.initialize(entity.getCommandLine());
+        Hibernate.initialize(entity.getInputValues());
+        Hibernate.initialize(entity.getOutputs());
     }
 
     @Override

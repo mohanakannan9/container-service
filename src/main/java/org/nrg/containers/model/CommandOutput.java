@@ -87,6 +87,7 @@ public class CommandOutput implements Serializable {
         final CommandOutput that = (CommandOutput) o;
         return Objects.equals(this.name, that.name) &&
                 Objects.equals(this.description, that.description) &&
+                Objects.equals(this.type, that.type) &&
                 Objects.equals(this.label, that.label) &&
                 Objects.equals(this.required, that.required) &&
                 Objects.equals(this.parent, that.parent) &&
@@ -95,7 +96,7 @@ public class CommandOutput implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, description, label, required, parent, files);
+        return Objects.hash(name, description, type, label, required, parent, files);
     }
 
     @Override
@@ -103,7 +104,8 @@ public class CommandOutput implements Serializable {
         return MoreObjects.toStringHelper(this)
                 .add("name", name)
                 .add("description", description)
-                .add("type", label)
+                .add("type", type)
+                .add("label", label)
                 .add("required", required)
                 .add("parent", parent)
                 .add("files", files)

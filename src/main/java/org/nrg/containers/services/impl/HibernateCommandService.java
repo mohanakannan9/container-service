@@ -193,7 +193,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         // Add default environment variables
         final Map<String, String> defaultEnv = Maps.newHashMap();
 //        siteConfigPreferences.getBuildPath()
-        defaultEnv.put("XNAT_HOST", siteConfigPreferences.getSiteUrl());
+        defaultEnv.put("XNAT_HOST", (String)siteConfigPreferences.getProperty("processingUrl", siteConfigPreferences.getSiteUrl()));
 
         final AliasToken token = aliasTokenService.issueTokenForUser(userI);
         defaultEnv.put("XNAT_USER", token.getAlias());
