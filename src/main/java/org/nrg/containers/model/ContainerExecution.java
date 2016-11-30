@@ -23,12 +23,12 @@ public class ContainerExecution extends AbstractHibernateEntity {
     @JsonProperty("docker-image") private String dockerImage;
     @JsonProperty("command-line") private String commandLine;
     @JsonProperty("env") private Map<String, String> environmentVariables = Maps.newHashMap();
-    @JsonProperty("mounts-in") private List<CommandMount> mountsIn = Lists.newArrayList();
-    @JsonProperty("mounts-out") private List<CommandMount> mountsOut = Lists.newArrayList();
+    @JsonProperty("mounts-in") private List<ContainerExecutionMount> mountsIn = Lists.newArrayList();
+    @JsonProperty("mounts-out") private List<ContainerExecutionMount> mountsOut = Lists.newArrayList();
     @JsonProperty("container-id") private String containerId;
     @JsonProperty("user-id") private String userId;
     @JsonProperty("input-values") private Map<String, String> inputValues = Maps.newHashMap();
-    private List<CommandOutput> outputs;
+    private List<ContainerExecutionOutput> outputs;
     private List<ContainerExecutionHistory> history = Lists.newArrayList();
 
     public ContainerExecution() {}
@@ -46,16 +46,16 @@ public class ContainerExecution extends AbstractHibernateEntity {
                 Maps.<String, String>newHashMap() :
                 Maps.newHashMap(resolvedCommand.getEnvironmentVariables());
         this.mountsIn = resolvedCommand.getMountsIn() == null ?
-                Lists.<CommandMount>newArrayList() :
+                Lists.<ContainerExecutionMount>newArrayList() :
                 Lists.newArrayList(resolvedCommand.getMountsIn());
         this.mountsOut = resolvedCommand.getMountsOut() == null ?
-                Lists.<CommandMount>newArrayList() :
+                Lists.<ContainerExecutionMount>newArrayList() :
                 Lists.newArrayList(resolvedCommand.getMountsOut());
         this.inputValues = resolvedCommand.getInputValues() == null ?
                 Maps.<String, String>newHashMap() :
                 Maps.newHashMap(resolvedCommand.getInputValues());
         this.outputs = resolvedCommand.getOutputs() == null ?
-                Lists.<CommandOutput>newArrayList() :
+                Lists.<ContainerExecutionOutput>newArrayList() :
                 Lists.newArrayList(resolvedCommand.getOutputs());
     }
 
@@ -93,20 +93,20 @@ public class ContainerExecution extends AbstractHibernateEntity {
     }
 
     @ElementCollection
-    public List<CommandMount> getMountsIn() {
+    public List<ContainerExecutionMount> getMountsIn() {
         return mountsIn;
     }
 
-    public void setMountsIn(final List<CommandMount> mountsIn) {
+    public void setMountsIn(final List<ContainerExecutionMount> mountsIn) {
         this.mountsIn = mountsIn;
     }
 
     @ElementCollection
-    public List<CommandMount> getMountsOut() {
+    public List<ContainerExecutionMount> getMountsOut() {
         return mountsOut;
     }
 
-    public void setMountsOut(final List<CommandMount> mountsOut) {
+    public void setMountsOut(final List<ContainerExecutionMount> mountsOut) {
         this.mountsOut = mountsOut;
     }
 
@@ -137,11 +137,11 @@ public class ContainerExecution extends AbstractHibernateEntity {
     }
 
     @ElementCollection
-    public List<CommandOutput> getOutputs() {
+    public List<ContainerExecutionOutput> getOutputs() {
         return outputs;
     }
 
-    public void setOutputs(final List<CommandOutput> outputs) {
+    public void setOutputs(final List<ContainerExecutionOutput> outputs) {
         this.outputs = outputs;
     }
 

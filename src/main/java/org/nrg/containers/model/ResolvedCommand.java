@@ -22,10 +22,10 @@ public class ResolvedCommand implements Serializable {
     @JsonProperty("docker-image") private String dockerImage;
     @JsonProperty("command-line") private String commandLine;
     @JsonProperty("env") private Map<String, String> environmentVariables;
-    @JsonProperty("mounts-in") private List<CommandMount> mountsIn;
-    @JsonProperty("mounts-out") private List<CommandMount> mountsOut;
+    @JsonProperty("mounts-in") private List<ContainerExecutionMount> mountsIn;
+    @JsonProperty("mounts-out") private List<ContainerExecutionMount> mountsOut;
     @JsonProperty("input-values") private Map<String, String> inputValues;
-    private List<CommandOutput> outputs;
+    private List<ContainerExecutionOutput> outputs;
 
     public ResolvedCommand() {}
 
@@ -80,33 +80,33 @@ public class ResolvedCommand implements Serializable {
     }
 
     @ElementCollection(fetch = FetchType.EAGER)
-    public List<CommandMount> getMountsIn() {
+    public List<ContainerExecutionMount> getMountsIn() {
         return mountsIn;
     }
 
-    public void setMountsIn(final List<CommandMount> mountsIn) {
+    public void setMountsIn(final List<ContainerExecutionMount> mountsIn) {
         this.mountsIn = mountsIn == null ?
-                Lists.<CommandMount>newArrayList() :
+                Lists.<ContainerExecutionMount>newArrayList() :
                 Lists.newArrayList(mountsIn);
     }
 
     @ElementCollection(fetch = FetchType.EAGER)
-    public List<CommandMount> getMountsOut() {
+    public List<ContainerExecutionMount> getMountsOut() {
         return mountsOut;
     }
 
-    public void setMountsOut(final List<CommandMount> mountsOut) {
+    public void setMountsOut(final List<ContainerExecutionMount> mountsOut) {
         this.mountsOut = mountsOut == null ?
-                Lists.<CommandMount>newArrayList() :
+                Lists.<ContainerExecutionMount>newArrayList() :
                 Lists.newArrayList(mountsOut);
     }
 
     @Transient
     @JsonIgnore
-    public void setMounts(final List<CommandMount> mounts) {
-        final List<CommandMount> mountsIn = Lists.newArrayList();
-        final List<CommandMount> mountsOut = Lists.newArrayList();
-        for (final CommandMount mount : mounts) {
+    public void setMounts(final List<ContainerExecutionMount> mounts) {
+        final List<ContainerExecutionMount> mountsIn = Lists.newArrayList();
+        final List<ContainerExecutionMount> mountsOut = Lists.newArrayList();
+        for (final ContainerExecutionMount mount : mounts) {
             if (mount.isInput()) {
                 mountsIn.add(mount);
             } else {
@@ -131,18 +131,18 @@ public class ResolvedCommand implements Serializable {
 
 
     @ElementCollection
-    public List<CommandOutput> getOutputs() {
+    public List<ContainerExecutionOutput> getOutputs() {
         return outputs;
     }
 
-    public void setOutputs(final List<CommandOutput> outputs) {
+    public void setOutputs(final List<ContainerExecutionOutput> outputs) {
         this.outputs = outputs == null ?
-                Lists.<CommandOutput>newArrayList() :
+                Lists.<ContainerExecutionOutput>newArrayList() :
                 Lists.newArrayList(outputs);
     }
 
     @Transient
-    public void addOutput(final CommandOutput output) {
+    public void addOutput(final ContainerExecutionOutput output) {
         if (this.outputs == null) {
             this.outputs = Lists.newArrayList();
         }

@@ -12,6 +12,8 @@ import org.nrg.containers.model.CommandMount;
 import org.nrg.containers.model.CommandOutput;
 import org.nrg.containers.model.CommandOutputFiles;
 import org.nrg.containers.model.ContainerExecution;
+import org.nrg.containers.model.ContainerExecutionMount;
+import org.nrg.containers.model.ContainerExecutionOutput;
 import org.nrg.containers.model.xnat.XnatModelObject;
 import org.nrg.transporter.TransportService;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -44,8 +46,8 @@ public class ContainerFinalizeHelper {
     private ContainerExecution containerExecution;
     private UserI userI;
 
-    private Map<String, CommandMount> untransportedMounts;
-    private Map<String, CommandMount> transportedMounts;
+    private Map<String, ContainerExecutionMount> untransportedMounts;
+    private Map<String, ContainerExecutionMount> transportedMounts;
     private Map<String, String> inputUriCache;
 
     private ContainerFinalizeHelper(final ContainerExecution containerExecution,
@@ -89,7 +91,7 @@ public class ContainerFinalizeHelper {
 
         if (containerExecution.getOutputs() != null) {
             if (containerExecution.getMountsOut() != null) {
-                for (final CommandMount mountOut : containerExecution.getMountsOut()) {
+                for (final ContainerExecutionMount mountOut : containerExecution.getMountsOut()) {
                     untransportedMounts.put(mountOut.getName(), mountOut);
                 }
             }
@@ -140,7 +142,7 @@ public class ContainerFinalizeHelper {
         log.info("Uploading command outputs.");
 
 
-        for (final CommandOutput output: containerExecution.getOutputs()) {
+        for (final ContainerExecutionOutput output: containerExecution.getOutputs()) {
             try {
                 uploadOutput(output);
             } catch (ContainerException | RuntimeException e) {
@@ -151,7 +153,7 @@ public class ContainerFinalizeHelper {
         log.info("Done uploading command outputs.");
     }
 
-    private void uploadOutput(final CommandOutput output) throws ContainerException {
+    private void uploadOutput(final ContainerExecutionOutput output) throws ContainerException {
         if (log.isInfoEnabled()) {
             log.info(String.format("Uploading command output \"%s\".", output.getName()));
         }
@@ -159,14 +161,9 @@ public class ContainerFinalizeHelper {
             log.debug(output.toString());
         }
 
-        final CommandOutputFiles filesObj = output.getFiles();
-        if (output.getFiles() == null) {
-            throw new ContainerException(String.format("Command output \"%s\" has no files.", output.getName()));
-        }
-
-        final String mountName = filesObj.getMount();
-        final String relativeFilePath = filesObj.getPath();
-        final CommandMount mount = getMount(mountName);
+        final String mountName = output.getMount();
+        final String relativeFilePath = output.getPath();
+        final ContainerExecutionMount mount = getMount(mountName);
         if (mount == null) {
             throw new ContainerException(String.format("Mount \"%s\" does not exist.", mountName));
         }
@@ -181,9 +178,9 @@ public class ContainerFinalizeHelper {
                 StringUtils.isNotBlank(mount.getResource()) ? mount.getResource() :
                         mountName;
 
-        final String parentInputUri = getInputUri(output.getParent());
+        final String parentInputUri = getInputUri(output.getParentInputName());
         if (StringUtils.isBlank(parentInputUri)) {
-            throw new ContainerException(String.format("Cannot upload output \"%s\". Parent \"%s\" URI is blank.", output.getName(), output.getParent()));
+            throw new ContainerException(String.format("Cannot upload output \"%s\". Parent \"%s\" URI is blank.", output.getName(), output.getParentInputName()));
         }
 
         switch (output.getType()) {
@@ -246,7 +243,7 @@ public class ContainerFinalizeHelper {
         }
     }
 
-    private CommandMount getMount(final String mountName) throws ContainerException {
+    private ContainerExecutionMount getMount(final String mountName) throws ContainerException {
         // If mount has been transported, we're done
         if (transportedMounts.containsKey(mountName)) {
             return transportedMounts.get(mountName);
@@ -257,7 +254,7 @@ public class ContainerFinalizeHelper {
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Transporting mount \"%s\".", mountName));
             }
-            final CommandMount mountToTransport = untransportedMounts.get(mountName);
+            final ContainerExecutionMount mountToTransport = untransportedMounts.get(mountName);
             final Path pathOnExecutionMachine = Paths.get(mountToTransport.getHostPath());
             final Path pathOnXnatMachine = transportService.transport("", pathOnExecutionMachine); // TODO this currently does nothing
             mountToTransport.setHostPath(pathOnXnatMachine.toAbsolutePath().toString());

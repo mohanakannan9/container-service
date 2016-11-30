@@ -23,6 +23,7 @@ import org.nrg.containers.model.Command;
 import org.nrg.containers.model.CommandMount;
 import org.nrg.containers.model.CommandRun;
 import org.nrg.containers.model.ContainerExecution;
+import org.nrg.containers.model.ContainerExecutionMount;
 import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerExecutionService;
@@ -219,7 +220,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         }
         if (resolvedCommand.getMountsIn() != null) {
             final String dockerHost = controlApi.getServer().getHost();
-            for (final CommandMount mountIn : resolvedCommand.getMountsIn()) {
+            for (final ContainerExecutionMount mountIn : resolvedCommand.getMountsIn()) {
                 final Path pathOnXnatHost = Paths.get(mountIn.getHostPath());
                 final Path pathOnDockerHost = transporter.transport(dockerHost, pathOnXnatHost);
                 mountIn.setHostPath(pathOnDockerHost.toString());
@@ -227,10 +228,10 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         }
         if (resolvedCommand.getMountsOut() != null) {
             final String dockerHost = controlApi.getServer().getHost();
-            final List<CommandMount> mountsOut = resolvedCommand.getMountsOut();
+            final List<ContainerExecutionMount> mountsOut = resolvedCommand.getMountsOut();
             final List<Path> buildPaths = transporter.getWritableDirectories(dockerHost, mountsOut.size());
             for (int i=0; i < mountsOut.size(); i++) {
-                final CommandMount mountOut = mountsOut.get(i);
+                final ContainerExecutionMount mountOut = mountsOut.get(i);
                 final Path buildPath = buildPaths.get(i);
 
                 mountOut.setHostPath(buildPath.toString());

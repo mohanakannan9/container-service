@@ -69,9 +69,18 @@ public class CommandTest {
 
     private static final String MOUNT_IN = "{\"name\":\"in\", \"type\": \"input\", \"path\":\"/input\", \"file-input\":\"session\", \"resource\":\"a_resource\"}";
     private static final String MOUNT_OUT = "{\"name\":\"out\", \"type\": \"output\", \"path\":\"/output\", \"file-input\":\"session\", \"resource\":\"out\"}";
-    private static final String RESOLVED_MOUNT_IN = "{\"name\":\"in\", \"type\": \"input\", " +
+    private static final String RESOLVED_MOUNT_IN = "{\"name\":\"in\", \"is-input\": true, " +
             "\"path\":\"/input\", \"host-path\":\"/path/to/files\", \"file-input\":\"session\", \"resource\":\"a_resource\"}";
-    private static final String RESOLVED_MOUNT_OUT = "{\"name\":\"out\", \"type\":\"output\", \"path\":\"/output\", \"file-input\":\"session\", \"resource\":\"out\"}";
+    private static final String RESOLVED_MOUNT_OUT = "{\"name\":\"out\", \"is-input\":false, \"path\":\"/output\", \"file-input\":\"session\", \"resource\":\"out\"}";
+    private static final String RESOLVED_OUTPUT_JSON =
+            "{" +
+                    "\"name\":\"the_output\"," +
+                    "\"type\":\"Resource\"," +
+                    "\"label\":\"DATA\"," +
+                    "\"parent\":\"session\"," +
+                    "\"mount\":\"out\"," +
+                    "\"path\":\"relative/path/to/dir\"" +
+                    "}";
 
     private static final String DOCKER_IMAGE_COMMAND_JSON =
             "{\"name\":\"docker_image_command\", \"description\":\"Docker Image command for the test\", " +
@@ -97,7 +106,7 @@ public class CommandTest {
                         "\"foo\": \"%s\"," +
                         "\"session\": \"%s\"" +
                     "}," +
-                    "\"outputs\":[ " + OUTPUT_JSON + "]}";
+                    "\"outputs\":[ " + RESOLVED_OUTPUT_JSON + "]}";
 
     @Autowired
     private ObjectMapper mapper;

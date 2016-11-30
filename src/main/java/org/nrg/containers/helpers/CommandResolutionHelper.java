@@ -22,6 +22,8 @@ import org.nrg.containers.model.CommandInput;
 import org.nrg.containers.model.CommandMount;
 import org.nrg.containers.model.CommandOutput;
 import org.nrg.containers.model.CommandOutputFiles;
+import org.nrg.containers.model.ContainerExecutionMount;
+import org.nrg.containers.model.ContainerExecutionOutput;
 import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.containers.model.xnat.Resource;
 import org.nrg.containers.model.xnat.Scan;
@@ -563,17 +565,18 @@ public class CommandResolutionHelper {
         return aMatch;
     }
 
-    private List<CommandOutput> resolveOutputs() throws CommandResolutionException {
+    private List<ContainerExecutionOutput> resolveOutputs() throws CommandResolutionException {
         log.info("Resolving command outputs.");
         if (command.getOutputs() == null) {
             return null;
         }
 
-        final List<CommandOutput> outputs = Lists.newArrayList();
+        final List<ContainerExecutionOutput> resolvedOutputs = Lists.newArrayList();
         for (final CommandOutput output : command.getOutputs()) {
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Resolving output \"%s\"", output.getName()));
             }
+            final ContainerExecutionOutput resolvedOutput = new ContainerExecutionOutput(output);
 
             final CommandOutputFiles files = output.getFiles();
             // TODO This should be noticed and fixed during command validation
@@ -581,8 +584,7 @@ public class CommandResolutionHelper {
                 throw new CommandResolutionException("Command output \"%s\" has no files.");
             }
 
-            final String resolvedPath = resolveTemplate(files.getPath());
-            files.setPath(resolvedPath);
+            resolvedOutput.setPath(resolveTemplate(files.getPath()));
 
             // TODO Anything else needed to resolve an output?
 
@@ -590,14 +592,14 @@ public class CommandResolutionHelper {
                 log.debug(String.format("Adding resolved output \"%s\" to resolved command.", output.getName()));
             }
 
-            outputs.add(output);
+            resolvedOutputs.add(resolvedOutput);
         }
 
         log.info("Done resolving command outputs.");
         if (log.isDebugEnabled()) {
-            log.debug("Outputs: \n" + outputs);
+            log.debug("Outputs: \n" + resolvedOutputs);
         }
-        return outputs;
+        return resolvedOutputs;
     }
 
     private String resolveCommandLine() throws CommandResolutionException {
@@ -648,30 +650,31 @@ public class CommandResolutionHelper {
         return resolvedMap;
     }
 
-    private List<CommandMount> resolveCommandMounts() throws CommandMountResolutionException {
+    private List<ContainerExecutionMount> resolveCommandMounts() throws CommandMountResolutionException {
         log.info("Resolving mounts.");
         if (command.getRun() == null || command.getRun().getMounts() == null) {
             log.info("No mounts.");
             return Lists.newArrayList();
         }
 
-        final List<CommandMount> commandMounts = Lists.newArrayList();
+        final List<ContainerExecutionMount> resolvedMounts = Lists.newArrayList();
         for (final CommandMount mount : command.getRun().getMounts()) {
             log.info("Resolving mount \"%s\"." + mount.getName());
+            final ContainerExecutionMount resolvedMount = new ContainerExecutionMount(mount);
             if (mount.isInput()) {
-                mount.setHostPath(resolveCommandMountHostPath(mount));
+                resolvedMount.setHostPath(resolveCommandMountHostPath(mount));
             }
 //                mount.setRemotePath(resolveTemplate(mount.getRemotePath(), resolvedInputs));
-            commandMounts.add(mount);
+            resolvedMounts.add(resolvedMount);
         }
 
         log.info("Done resolving mounts.");
         if (log.isDebugEnabled()) {
-            for (final CommandMount mount : commandMounts) {
+            for (final ContainerExecutionMount mount : resolvedMounts) {
                 log.debug(mount.toString());
             }
         }
-        return commandMounts;
+        return resolvedMounts;
     }
 
     private String resolveCommandMountHostPath(final CommandMount mount) throws CommandMountResolutionException {

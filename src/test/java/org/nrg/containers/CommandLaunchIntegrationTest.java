@@ -24,6 +24,8 @@ import org.nrg.containers.model.Command;
 import org.nrg.containers.model.CommandMount;
 import org.nrg.containers.model.CommandOutput;
 import org.nrg.containers.model.ContainerExecution;
+import org.nrg.containers.model.ContainerExecutionMount;
+import org.nrg.containers.model.ContainerExecutionOutput;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.xnat.Project;
 import org.nrg.containers.model.xnat.Resource;
@@ -152,17 +154,17 @@ public class CommandLaunchIntegrationTest {
         assertEquals(resource, mapper.readValue(inputValues.get("resource"), Resource.class));
         assertEquals("-all", inputValues.get("other-recon-all-args"));
 
-        final List<CommandOutput> outputs = execution.getOutputs();
-        assertEquals(Lists.newArrayList("fs", "data"), Lists.transform(outputs, new Function<CommandOutput, String>() {
+        final List<ContainerExecutionOutput> outputs = execution.getOutputs();
+        assertEquals(Lists.newArrayList("fs", "data"), Lists.transform(outputs, new Function<ContainerExecutionOutput, String>() {
             @Nullable
             @Override
-            public String apply(@Nullable final CommandOutput output) {
+            public String apply(@Nullable final ContainerExecutionOutput output) {
                 return output == null ? "" : output.getName();
             }
         }));
 
         assertThat(execution.getMountsOut(), hasSize(1));
-        final CommandMount mountOut = execution.getMountsOut().get(0);
+        final ContainerExecutionMount mountOut = execution.getMountsOut().get(0);
         final String outputPath = mountOut.getHostPath();
         final File outputFile = new File(outputPath + "/out.txt");
         if (!outputFile.canRead()) {

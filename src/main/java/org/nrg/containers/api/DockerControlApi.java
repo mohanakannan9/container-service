@@ -33,6 +33,7 @@ import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.CommandMount;
 import org.nrg.containers.model.Container;
+import org.nrg.containers.model.ContainerExecutionMount;
 import org.nrg.containers.model.DockerHub;
 import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.model.DockerServer;
@@ -207,10 +208,10 @@ public class DockerControlApi implements ContainerControlApi {
         final String dockerImageId = command.getDockerImage();
         final String runCommand = command.getCommandLine();
         final List<String> bindMounts = Lists.newArrayList();
-        for (final CommandMount mount : command.getMountsIn()) {
+        for (final ContainerExecutionMount mount : command.getMountsIn()) {
             bindMounts.add(mount.toBindMountString());
         }
-        for (final CommandMount mount : command.getMountsOut()) {
+        for (final ContainerExecutionMount mount : command.getMountsOut()) {
             bindMounts.add(mount.toBindMountString());
         }
         final List<String> environmentVariables = Lists.newArrayList();

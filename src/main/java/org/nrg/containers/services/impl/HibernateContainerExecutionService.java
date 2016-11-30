@@ -6,8 +6,6 @@ import org.hibernate.Hibernate;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.daos.ContainerExecutionRepository;
 import org.nrg.containers.events.DockerContainerEvent;
-import org.nrg.containers.exceptions.DockerServerException;
-import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.helpers.ContainerFinalizeHelper;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.ContainerExecutionHistory;
@@ -20,10 +18,7 @@ import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
-import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.FileUtils;
-import org.nrg.xnat.restlet.util.XNATRestConstants;
 import org.nrg.xnat.services.archive.CatalogService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,10 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.File;
 import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 
 @Service
