@@ -33,8 +33,8 @@ import static org.junit.Assert.fail;
 @Transactional
 @ContextConfiguration(classes = CommandTestConfig.class)
 public class CommandTest {
-    private static final String RESOURCE_JSON = "{\"id\":1, \"label\":\"a_resource\", \"directory\":\"/path/to/files\"}";
-    private static final String SESSION_JSON = "{\"id\":\"1\", \"label\":\"a_session\", " +
+    private static final String RESOURCE_JSON = "{\"id\":1, \"type\":\"Resource\", \"label\":\"a_resource\", \"directory\":\"/path/to/files\"}";
+    private static final String SESSION_JSON = "{\"id\":\"1\", \"type\":\"Session\", \"label\":\"a_session\", " +
             "\"xsiType\":\"xnat:fakesessiondata\", \"resources\":[" + RESOURCE_JSON + "]}";
 
     private static final String COOL_INPUT_JSON =

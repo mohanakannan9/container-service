@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class Scan extends XnatModelObject {
+    public static Type type = Type.SCAN;
     @JsonIgnore private XnatImagescandataI xnatImagescandata;
     @JsonProperty(value = "parent-id") private String parentId;
     @JsonProperty("scan-type") private String scanType;
@@ -21,18 +22,19 @@ public class Scan extends XnatModelObject {
 
     public Scan() {}
 
-    public Scan(final XnatImagescandataI xnatImagescandata, final String parentId, final String rootArchivePath) {
+    public Scan(final XnatImagescandataI xnatImagescandata, final String parentId, final String parentUri, final String rootArchivePath) {
         this.xnatImagescandata = xnatImagescandata;
         this.id = xnatImagescandata.getId();
         this.xsiType = xnatImagescandata.getXSIType();
         this.scanType = xnatImagescandata.getType();
+        this.uri = parentUri + "/scans/" + id;
 
         this.parentId = parentId;
 
         this.resources = Lists.newArrayList();
         for (final XnatAbstractresourceI xnatAbstractresourceI : xnatImagescandata.getFile()) {
             if (xnatAbstractresourceI instanceof XnatResourcecatalog) {
-                resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, this.id, rootArchivePath));
+                resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, this.id, this.uri, rootArchivePath));
             }
         }
     }
@@ -72,6 +74,10 @@ public class Scan extends XnatModelObject {
 
     public void setResources(final List<Resource> resources) {
         this.resources = resources;
+    }
+
+    public Type getType() {
+        return type;
     }
 
     @Override

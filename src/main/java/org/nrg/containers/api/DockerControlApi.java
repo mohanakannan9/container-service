@@ -307,6 +307,7 @@ public class DockerControlApi implements ContainerControlApi {
             return container.id();
         } catch (DockerException | InterruptedException e) {
             log.error(e.getMessage());
+            log.error(e.getMessage());
             throw new DockerServerException("Could not start container from image " + imageName, e);
         }
     }

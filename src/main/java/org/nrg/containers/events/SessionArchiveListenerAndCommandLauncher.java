@@ -66,12 +66,16 @@ public class SessionArchiveListenerAndCommandLauncher implements Consumer<Event<
                 }
                 runtimeValues.put("session", sessionString);
                 try {
-                    if (log.isDebugEnabled()) {
+                    if (log.isInfoEnabled()) {
                         final String message = String.format(
-                                "Launching command %s for user %s with runtime input values %s",
-                                commandId, sessionArchivedEvent.getUser(), runtimeValues
-                        );
-                        log.debug(message);
+                                "Launching command %s for user \"%s\"", commandId, sessionArchivedEvent.getUser().getLogin());
+                        log.info(message);
+                    }
+                    if (log.isDebugEnabled()) {
+                        log.debug("Runtime parameter values:");
+                        for (final Map.Entry<String, String> paramEntry : runtimeValues.entrySet()) {
+                            log.debug(paramEntry.getKey() + ": " + paramEntry.getValue());
+                        }
                     }
                     commandService.resolveAndLaunchCommand(commandId, runtimeValues, sessionArchivedEvent.getUser());
                 } catch (NotFoundException | CommandResolutionException | NoServerPrefException | DockerServerException e) {

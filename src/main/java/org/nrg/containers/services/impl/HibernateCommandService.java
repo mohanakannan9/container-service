@@ -182,8 +182,13 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     public ContainerExecution launchResolvedCommand(final ResolvedCommand resolvedCommand,
                                                     final UserI userI)
             throws NoServerPrefException, DockerServerException {
+        log.info("Preparing to launch resolved command.");
         final ResolvedCommand preparedToLaunch = prepareToLaunch(resolvedCommand, userI);
+
+        log.info("Launching resolved command.");
         final String containerId = controlApi.launchImage(preparedToLaunch);
+
+        log.info("Recording command launch.");
         return containerExecutionService.save(preparedToLaunch, containerId, userI);
     }
 

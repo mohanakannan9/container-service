@@ -65,12 +65,17 @@ public class ScanArchiveListenerAndCommandLauncher implements Consumer<Event<Sca
                 }
                 runtimeValues.put("scan", scanString);
                 try {
-                    if (log.isDebugEnabled()) {
+                    if (log.isInfoEnabled()) {
                         final String message = String.format(
-                                "Launching command %s for user %s with runtime input values %s",
-                                commandId, scanArchiveEventToLaunchCommands.getUser(), runtimeValues
+                                "Launching command %s for user \"%s\".", commandId, scanArchiveEventToLaunchCommands.getUser().getLogin()
                         );
-                        log.debug(message);
+                        log.info(message);
+                        if (log.isDebugEnabled()) {
+                            log.debug("Runtime parameter values:");
+                            for (final Map.Entry<String, String> paramEntry : runtimeValues.entrySet()) {
+                                log.debug(paramEntry.getKey() + ": " + paramEntry.getValue());
+                            }
+                        }
                     }
                     commandService.resolveAndLaunchCommand(commandId, runtimeValues, scanArchiveEventToLaunchCommands.getUser());
                 } catch (NotFoundException | CommandResolutionException | NoServerPrefException | DockerServerException e) {

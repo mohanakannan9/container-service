@@ -18,6 +18,7 @@ import java.util.Objects;
 
 
 public class Session extends XnatModelObject {
+    public static Type type = Type.SESSION;
     @JsonIgnore private XnatImagesessiondataI xnatImagesessiondata;
     @JsonProperty(value = "parent-id") private String parentId;
     private List<Scan> scans;
@@ -34,24 +35,25 @@ public class Session extends XnatModelObject {
         this.id = xnatImagesessiondata.getId();
         this.label = xnatImagesessiondata.getLabel();
         this.xsiType = xnatImagesessiondata.getXSIType();
+        this.uri = "/experiments/" + id;
 
         this.parentId = xnatImagesessiondata.getSubjectId();
 
         this.scans = Lists.newArrayList();
         for (final XnatImagescandataI xnatImagescandataI : xnatImagesessiondata.getScans_scan()) {
-            this.scans.add(new Scan(xnatImagescandataI, this.id, rootArchivePath));
+            this.scans.add(new Scan(xnatImagescandataI, this.id, this.uri, rootArchivePath));
         }
 
         this.resources = Lists.newArrayList();
         for (final XnatAbstractresourceI xnatAbstractresourceI : xnatImagesessiondata.getResources_resource()) {
             if (xnatAbstractresourceI instanceof XnatResourcecatalog) {
-                resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, this.id, rootArchivePath));
+                resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, this.id, this.uri, rootArchivePath));
             }
         }
 
         this.assessors = Lists.newArrayList();
         for (final XnatImageassessordataI xnatImageassessordataI : xnatImagesessiondata.getAssessors_assessor()) {
-            assessors.add(new Assessor(xnatImageassessordataI, this.id, rootArchivePath));
+            assessors.add(new Assessor(xnatImageassessordataI, this.id, this.uri, rootArchivePath));
         }
     }
 
@@ -98,6 +100,10 @@ public class Session extends XnatModelObject {
 
     public void setScans(final List<Scan> scans) {
         this.scans = scans;
+    }
+
+    public Type getType() {
+        return type;
     }
 
     @Override
