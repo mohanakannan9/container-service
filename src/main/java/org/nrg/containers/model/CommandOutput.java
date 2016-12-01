@@ -1,8 +1,6 @@
 package org.nrg.containers.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
-import io.swagger.annotations.ApiModelProperty;
 
 import javax.persistence.Embeddable;
 import javax.persistence.Transient;
@@ -13,7 +11,7 @@ import java.util.Objects;
 public class CommandOutput implements Serializable {
     private String name;
     private String description;
-    private Type type;
+    private OutputType type;
     private String label;
     private Boolean required;
     private String parent;
@@ -35,11 +33,11 @@ public class CommandOutput implements Serializable {
         this.description = description;
     }
 
-    public Type getType() {
+    public OutputType getType() {
         return type;
     }
 
-    public void setType(final Type type) {
+    public void setType(final OutputType type) {
         this.type = type;
     }
 
@@ -110,10 +108,5 @@ public class CommandOutput implements Serializable {
                 .add("parent", parent)
                 .add("files", files)
                 .toString();
-    }
-
-    public enum Type {
-        @JsonProperty("Resource") RESOURCE,
-        @JsonProperty("Assessor") ASSESSOR
     }
 }

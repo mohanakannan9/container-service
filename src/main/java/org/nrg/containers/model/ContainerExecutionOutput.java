@@ -11,7 +11,7 @@ import java.util.Objects;
 @Embeddable
 public class ContainerExecutionOutput implements Serializable {
     private String name;
-    private Type type;
+    private OutputType type;
     private String label;
     private Boolean required;
     @JsonProperty("parent") private String parentInputName;
@@ -22,14 +22,7 @@ public class ContainerExecutionOutput implements Serializable {
 
     public ContainerExecutionOutput(final CommandOutput commandOutput) {
         this.name = commandOutput.getName();
-        switch (commandOutput.getType()) {
-            case RESOURCE:
-                this.type = Type.RESOURCE;
-                break;
-            case ASSESSOR:
-                this.type = Type.ASSESSOR;
-                break;
-        }
+        this.type = commandOutput.getType();
         this.label = commandOutput.getLabel();
         this.required = commandOutput.getRequired();
         this.parentInputName = commandOutput.getParent();
@@ -47,11 +40,11 @@ public class ContainerExecutionOutput implements Serializable {
         this.name = name;
     }
 
-    public Type getType() {
+    public OutputType getType() {
         return type;
     }
 
-    public void setType(final Type type) {
+    public void setType(final OutputType type) {
         this.type = type;
     }
 
@@ -130,10 +123,5 @@ public class ContainerExecutionOutput implements Serializable {
                 .add("mount", mount)
                 .add("path", path)
                 .toString();
-    }
-
-    public enum Type {
-        @JsonProperty("Resource") RESOURCE,
-        @JsonProperty("Assessor") ASSESSOR
     }
 }
