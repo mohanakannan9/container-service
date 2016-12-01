@@ -573,8 +573,11 @@ public class CommandResolutionHelper {
 
         final List<ContainerExecutionOutput> resolvedOutputs = Lists.newArrayList();
         for (final CommandOutput output : command.getOutputs()) {
+            if (log.isInfoEnabled()) {
+                log.info(String.format("Resolving output \"%s\"", output.getName()));
+            }
             if (log.isDebugEnabled()) {
-                log.debug(String.format("Resolving output \"%s\"", output.getName()));
+                log.debug(output.toString());
             }
             final ContainerExecutionOutput resolvedOutput = new ContainerExecutionOutput(output);
 
@@ -659,7 +662,7 @@ public class CommandResolutionHelper {
 
         final List<ContainerExecutionMount> resolvedMounts = Lists.newArrayList();
         for (final CommandMount mount : command.getRun().getMounts()) {
-            log.info("Resolving mount \"%s\"." + mount.getName());
+            log.info(String.format("Resolving mount \"%s\".", mount.getName()));
             final ContainerExecutionMount resolvedMount = new ContainerExecutionMount(mount);
             if (mount.isInput()) {
                 resolvedMount.setHostPath(resolveCommandMountHostPath(mount));
