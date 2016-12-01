@@ -1,6 +1,7 @@
 package org.nrg.containers.helpers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -30,7 +31,9 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 public class ContainerFinalizeHelper {
@@ -162,7 +165,7 @@ public class ContainerFinalizeHelper {
         }
 
         final String mountName = output.getMount();
-        final String relativeFilePath = output.getPath();
+        final String relativeFilePath = output.getPath() != null ? output.getPath() : "";
         final ContainerExecutionMount mount = getMount(mountName);
         if (mount == null) {
             throw new ContainerException(String.format("Mount \"%s\" does not exist.", mountName));
@@ -171,8 +174,29 @@ public class ContainerFinalizeHelper {
         if (log.isDebugEnabled()) {
             log.debug(String.format("Output files are provided by mount \"%s\": %s", mount.getName(), mount));
         }
-        final String absoluteFilePath = FilenameUtils.concat(mount.getHostPath(), relativeFilePath);
-        final File outputFile = new File(absoluteFilePath);
+
+        if (StringUtils.isBlank(mount.getHostPath())) {
+            throw new ContainerException(String.format("Cannot upload output \"%s\". Mount \"%s\" has blank hostPath.", output.getName(), mount.getName()));
+        }
+
+        final List<File> toUpload;
+        if (StringUtils.isBlank(relativeFilePath)) {
+            // This is fine. It just means upload everything in the build directory.
+            final File buildDir = new File(mount.getHostPath());
+            final File[] buildDirContents = buildDir.listFiles();
+            if (buildDirContents == null || buildDirContents.length == 0) {
+                throw new ContainerException(String.format("Nothing to upload for output \"%s\". Mount \"%s\" hostPath has no files.", output.getName(), mount.getName()));
+            }
+            toUpload = Arrays.asList(buildDirContents);
+        } else {
+            final String filePath = FilenameUtils.concat(mount.getHostPath(), relativeFilePath);
+            if (StringUtils.isBlank(filePath)) {
+                // This shouldn't happen. We know mount.getHostPath() and relativeFilePath are non-blank
+                throw new ContainerException(String.format("Cannot upload output \"%s\". Mount \"%s\" hostPath + output path is blank.", output.getName(), mount.getName()));
+            }
+
+            toUpload = Lists.newArrayList(new File(filePath));
+        }
 
         final String label = StringUtils.isNotBlank(output.getLabel()) ? output.getLabel() :
                 StringUtils.isNotBlank(mount.getResource()) ? mount.getResource() :
@@ -186,11 +210,11 @@ public class ContainerFinalizeHelper {
         switch (output.getType()) {
             case RESOURCE:
                 if (log.isDebugEnabled()) {
-                    final String template = "Inserting file resource.\n\tuser: %s\n\tparentInputUri: %s\n\toutputFile: %s\n\tlabel: %s";
-                    log.debug(String.format(template, userI.getLogin(), parentInputUri, outputFile, label));
+                    final String template = "Inserting file resource.\n\tuser: %s\n\tparentInputUri: %s\n\tlabel: %s\n\ttoUpload: %s";
+                    log.debug(String.format(template, userI.getLogin(), parentInputUri, label, toUpload));
                 }
                 try {
-                    catalogService.insertResources(userI, "/archive" + parentInputUri, outputFile, label, null, null, null);
+                    catalogService.insertResources(userI, "/archive" + parentInputUri, toUpload, label, null, null, null);
                 } catch (Exception e) {
                     throw new ContainerException("Could not upload files to resource.", e);
                 }
