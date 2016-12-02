@@ -9,6 +9,7 @@ import com.google.common.collect.Maps;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerCertificates;
 import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.DockerClient.EventsParam.EventType;
 import com.spotify.docker.client.DockerClient.LogsParam;
 import com.spotify.docker.client.EventStream;
 import com.spotify.docker.client.LogStream;
@@ -34,7 +35,6 @@ import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Command;
-import org.nrg.containers.model.CommandMount;
 import org.nrg.containers.model.Container;
 import org.nrg.containers.model.ContainerExecutionMount;
 import org.nrg.containers.model.DockerHub;
@@ -636,7 +636,14 @@ public class DockerControlApi implements ContainerControlApi {
 
         final List<DockerContainerEvent> events = Lists.newArrayList();
         for (final Event dockerEvent : dockerEventList) {
-            events.add(new DockerContainerEvent(dockerEvent.status(), dockerEvent.id(), dockerEvent.time()));
+            final Event.Actor dockerEventActor = dockerEvent.actor();
+            final DockerContainerEvent containerEvent =
+                    new DockerContainerEvent(dockerEvent.action(),
+                            dockerEventActor.id(),
+                            dockerEvent.time(),
+                            dockerEvent.timeNano(),
+                            dockerEventActor.attributes());
+            events.add(containerEvent);
         }
         return events;
     }
@@ -660,14 +667,19 @@ public class DockerControlApi implements ContainerControlApi {
             if (log.isDebugEnabled()) {
                 log.debug("Reading all docker container events from " + since.getTime() + " to " + until.getTime() + ".");
             }
-            final EventStream eventStream =
-                    client.events(since(since.getTime() / 1000), until((until.getTime() / 1000)), type("container"));
-            if (log.isDebugEnabled()) {
-                log.debug("Got a stream of docker events.");
+            final List<Event> eventList;
+            try (final EventStream eventStream =
+                         client.events(since(since.getTime() / 1000),
+                                 until(until.getTime() / 1000),
+                                 type(EventType.CONTAINER))) {
+
+                if (log.isDebugEnabled()) {
+                    log.debug("Got a stream of docker events.");
+                }
+
+                eventList = Lists.newArrayList(eventStream);
             }
 
-            final List<Event> eventList = Lists.newArrayList(eventStream);
-            eventStream.close();
 
             if (log.isDebugEnabled()) {
                 log.debug("Closed docker event stream.");
