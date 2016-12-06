@@ -10,7 +10,7 @@ apply plugin: 'jacoco'
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
-def vXnat = '1.7.1-SNAPSHOT'
+def vXnat = '1.7.1'
 def vSpring = '4.2.7.RELEASE'
 def vSwagger = '2.4.0'
 def vHibernate = '4.3.11.Final'
