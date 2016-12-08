@@ -107,7 +107,8 @@ public class CommandTest {
                         "\"foo\": \"%s\"," +
                         "\"session\": \"%s\"" +
                     "}," +
-                    "\"outputs\":[ " + RESOLVED_OUTPUT_JSON + "]}";
+                    "\"outputs\":[ " + RESOLVED_OUTPUT_JSON + "]," +
+                    "\"ports\": {\"22\": \"2222\"}}";
 
     @Autowired
     private ObjectMapper mapper;

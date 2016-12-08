@@ -63,9 +63,10 @@ public class CommandRun implements Serializable {
     }
 
     public void setPorts(final Map<String, String> ports) {
-        this.ports = ports != null ?
-                Maps.newHashMap(ports) :
-                Maps.<String, String>newHashMap();
+        this.ports = ports == null ?
+                Maps.<String, String>newHashMap() :
+                ports;
+
     }
 
     @Override

@@ -25,6 +25,7 @@ public class ResolvedCommand implements Serializable {
     @JsonProperty("mounts-out") private List<ContainerExecutionMount> mountsOut;
     @JsonProperty("input-values") private Map<String, String> inputValues;
     private List<ContainerExecutionOutput> outputs;
+    private Map<String, String> ports;
 
     public ResolvedCommand() {}
 
@@ -139,6 +140,16 @@ public class ResolvedCommand implements Serializable {
         this.outputs.add(output);
     }
 
+    public Map<String, String> getPorts() {
+        return ports;
+    }
+
+    public void setPorts(final Map<String, String> ports) {
+        this.ports = ports != null ?
+                Maps.newHashMap(ports) :
+                Maps.<String, String>newHashMap();
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
@@ -151,12 +162,13 @@ public class ResolvedCommand implements Serializable {
                 Objects.equals(this.mountsIn, that.mountsIn) &&
                 Objects.equals(this.mountsOut, that.mountsOut) &&
                 Objects.equals(this.inputValues, that.inputValues) &&
-                Objects.equals(this.outputs, that.outputs);
+                Objects.equals(this.outputs, that.outputs) &&
+                Objects.equals(this.ports, that.ports);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(commandId, commandLine, dockerImage, environmentVariables, mountsIn, mountsOut, inputValues, outputs);
+        return Objects.hash(commandId, commandLine, dockerImage, environmentVariables, mountsIn, mountsOut, inputValues, outputs, ports);
     }
 
     @Override
@@ -170,6 +182,7 @@ public class ResolvedCommand implements Serializable {
                 .add("mountsOut", mountsOut)
                 .add("inputValues", inputValues)
                 .add("outputs", outputs)
+                .add("ports", ports)
                 .toString();
     }
 }

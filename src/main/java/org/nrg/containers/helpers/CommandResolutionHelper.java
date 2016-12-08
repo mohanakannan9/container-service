@@ -13,6 +13,7 @@ import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.TypeRef;
 import com.jayway.jsonpath.spi.mapper.MappingException;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.exceptions.CommandInputResolutionException;
 import org.nrg.containers.exceptions.CommandMountResolutionException;
@@ -101,6 +102,7 @@ public class CommandResolutionHelper {
         resolvedCommand.setCommandLine(resolveCommandLine());
         resolvedCommand.setMounts(resolveCommandMounts());
         resolvedCommand.setEnvironmentVariables(resolveEnvironmentVariables());
+        resolvedCommand.setPorts(resolvePorts());
 
         log.info("Done resolving command.");
         if (log.isDebugEnabled()) {
@@ -627,8 +629,48 @@ public class CommandResolutionHelper {
             return null;
         }
 
+        final Map<String, String> resolvedMap = resolveTemplateMap(envTemplates);
+
+        log.info("Done resolving environment variables.");
+        if (log.isDebugEnabled()) {
+            String message = "Environment variables: ";
+            for (Map.Entry<String, String> env : resolvedMap.entrySet()) {
+                message += env.getKey() + ": " + env.getValue() + ", ";
+            }
+            log.debug(message);
+        }
+        return resolvedMap;
+    }
+
+    private Map<String, String> resolvePorts()
+            throws CommandResolutionException {
+        log.info("Resolving ports.");
+
+        final Map<String, String> portTemplates = command.getRun().getPorts();
+        if (portTemplates == null || portTemplates.isEmpty()) {
+            log.info("No ports to resolve.");
+            return null;
+        }
+
+        final Map<String, String> resolvedMap = resolveTemplateMap(portTemplates);
+
+        log.info("Done resolving ports.");
+        if (log.isDebugEnabled()) {
+            String message = "Ports: ";
+            for (Map.Entry<String, String> env : resolvedMap.entrySet()) {
+                message += env.getKey() + ": " + env.getValue() + ", ";
+            }
+            log.debug(message);
+        }
+        return resolvedMap;
+    }
+
+    private Map<String, String> resolveTemplateMap(final Map<String, String> templateMap) throws CommandResolutionException {
         final Map<String, String> resolvedMap = Maps.newHashMap();
-        for (final Map.Entry<String, String> templateEntry : envTemplates.entrySet()) {
+        if (templateMap == null || templateMap.isEmpty()) {
+            return resolvedMap;
+        }
+        for (final Map.Entry<String, String> templateEntry : templateMap.entrySet()) {
             final String resolvedKey = resolveTemplate(templateEntry.getKey());
             final String resolvedValue = resolveTemplate(templateEntry.getValue());
             resolvedMap.put(resolvedKey, resolvedValue);
@@ -640,15 +682,6 @@ public class CommandResolutionHelper {
                     log.debug(message);
                 }
             }
-        }
-
-        log.info("Done resolving environment variables.");
-        if (log.isDebugEnabled()) {
-            String message = "Environment variables: ";
-            for (Map.Entry<String, String> env : resolvedMap.entrySet()) {
-                message += env.getKey() + ": " + env.getValue() + ", ";
-            }
-            log.debug(message);
         }
         return resolvedMap;
     }
