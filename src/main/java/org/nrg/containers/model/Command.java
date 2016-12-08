@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.MoreObjects.ToStringHelper;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import io.swagger.annotations.ApiModelProperty;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
@@ -14,6 +15,7 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @Entity
@@ -26,6 +28,7 @@ public class Command extends AbstractHibernateEntity {
     private CommandRun run;
     private List<CommandInput> inputs = Lists.newArrayList();
     private List<CommandOutput> outputs = Lists.newArrayList();
+    private Map<String, String> ports = Maps.newHashMap();
 
     @Nonnull
     @ApiModelProperty(value = "The Command's user-readable name. Must be unique for a given docker image.", required = true)
@@ -103,6 +106,17 @@ public class Command extends AbstractHibernateEntity {
                 outputs;
     }
 
+    @ElementCollection
+    public Map<String, String> getPorts() {
+        return ports;
+    }
+
+    public void setPorts(final Map<String, String> ports) {
+        this.ports = ports != null ?
+                Maps.newHashMap(ports) :
+                Maps.<String, String>newHashMap();
+    }
+
     @Override
     public ToStringHelper addParentPropertiesToString(final ToStringHelper helper) {
         return super.addParentPropertiesToString(helper)
@@ -112,7 +126,8 @@ public class Command extends AbstractHibernateEntity {
                 .add("dockerImage", dockerImage)
                 .add("run", run)
                 .add("inputs", inputs)
-                .add("outputs", outputs);
+                .add("outputs", outputs)
+                .add("ports", ports);
     }
 
     @Override
@@ -127,12 +142,13 @@ public class Command extends AbstractHibernateEntity {
                 Objects.equals(this.dockerImage, that.dockerImage) &&
                 Objects.equals(this.run, that.run) &&
                 Objects.equals(this.inputs, that.inputs) &&
-                Objects.equals(this.outputs, that.outputs);
+                Objects.equals(this.outputs, that.outputs) &&
+                Objects.equals(this.ports, that.ports);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, description, infoUrl, dockerImage, run, inputs, outputs);
+        return Objects.hash(name, description, infoUrl, dockerImage, run, inputs, outputs, ports);
     }
 
     @Override

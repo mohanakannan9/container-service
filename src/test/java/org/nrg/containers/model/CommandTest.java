@@ -92,7 +92,8 @@ public class CommandTest {
                     "}," +
                     "\"inputs\":" + INPUT_LIST_JSON + ", " +
                     "\"outputs\":[" + OUTPUT_JSON + "], " +
-                    "\"docker-image\":\"abc123\"}";
+                    "\"docker-image\":\"abc123\"," +
+                    "\"ports\": {\"22\": \"2222\"}}";
 
     private static final String RESOLVED_DOCKER_IMAGE_COMMAND_JSON_TEMPLATE =
             "{\"command-id\":%d, " +
@@ -179,6 +180,7 @@ public class CommandTest {
         assertEquals(commandInputList, command.getInputs());
         assertThat(command.getOutputs(), hasSize(1));
         assertEquals(commandOutput, command.getOutputs().get(0));
+        assertEquals(ImmutableMap.of("22", "2222"), command.getPorts());
 
         final CommandRun run = command.getRun();
         assertEquals("cmd #foo# #my_cool_input#", run.getCommandLine());
