@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-@Embeddable
 public class ResolvedCommand implements Serializable {
 
     @JsonProperty("command-id") private Long commandId;
@@ -58,7 +57,6 @@ public class ResolvedCommand implements Serializable {
         this.dockerImage = dockerImage;
     }
 
-    @ElementCollection
     public Map<String, String> getEnvironmentVariables() {
         return environmentVariables;
     }
@@ -69,7 +67,6 @@ public class ResolvedCommand implements Serializable {
                 Maps.newHashMap(environmentVariables);
     }
 
-    @Transient
     public void addEnvironmentVariables(final Map<String, String> environmentVariables) {
         if (environmentVariables != null) {
             if (this.environmentVariables == null) {
@@ -79,7 +76,6 @@ public class ResolvedCommand implements Serializable {
         }
     }
 
-    @ElementCollection(fetch = FetchType.EAGER)
     public List<ContainerExecutionMount> getMountsIn() {
         return mountsIn;
     }
@@ -90,7 +86,6 @@ public class ResolvedCommand implements Serializable {
                 Lists.newArrayList(mountsIn);
     }
 
-    @ElementCollection(fetch = FetchType.EAGER)
     public List<ContainerExecutionMount> getMountsOut() {
         return mountsOut;
     }
@@ -101,7 +96,6 @@ public class ResolvedCommand implements Serializable {
                 Lists.newArrayList(mountsOut);
     }
 
-    @Transient
     @JsonIgnore
     public void setMounts(final List<ContainerExecutionMount> mounts) {
         final List<ContainerExecutionMount> mountsIn = Lists.newArrayList();
@@ -117,8 +111,6 @@ public class ResolvedCommand implements Serializable {
         setMountsOut(mountsOut);
     }
 
-
-    @ElementCollection
     public Map<String, String> getInputValues() {
         return inputValues;
     }
@@ -129,8 +121,6 @@ public class ResolvedCommand implements Serializable {
                 Maps.newHashMap(inputValues);
     }
 
-
-    @ElementCollection
     public List<ContainerExecutionOutput> getOutputs() {
         return outputs;
     }
@@ -141,7 +131,6 @@ public class ResolvedCommand implements Serializable {
                 Lists.newArrayList(outputs);
     }
 
-    @Transient
     public void addOutput(final ContainerExecutionOutput output) {
         if (this.outputs == null) {
             this.outputs = Lists.newArrayList();
