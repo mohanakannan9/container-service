@@ -28,7 +28,6 @@ public class Command extends AbstractHibernateEntity {
     private CommandRun run;
     private List<CommandInput> inputs = Lists.newArrayList();
     private List<CommandOutput> outputs = Lists.newArrayList();
-    private Map<String, String> ports = Maps.newHashMap();
 
     @Nonnull
     @ApiModelProperty(value = "The Command's user-readable name. Must be unique for a given docker image.", required = true)
@@ -106,17 +105,6 @@ public class Command extends AbstractHibernateEntity {
                 outputs;
     }
 
-    @ElementCollection
-    public Map<String, String> getPorts() {
-        return ports;
-    }
-
-    public void setPorts(final Map<String, String> ports) {
-        this.ports = ports != null ?
-                Maps.newHashMap(ports) :
-                Maps.<String, String>newHashMap();
-    }
-
     @Override
     public ToStringHelper addParentPropertiesToString(final ToStringHelper helper) {
         return super.addParentPropertiesToString(helper)
@@ -126,8 +114,7 @@ public class Command extends AbstractHibernateEntity {
                 .add("dockerImage", dockerImage)
                 .add("run", run)
                 .add("inputs", inputs)
-                .add("outputs", outputs)
-                .add("ports", ports);
+                .add("outputs", outputs);
     }
 
     @Override
@@ -142,13 +129,12 @@ public class Command extends AbstractHibernateEntity {
                 Objects.equals(this.dockerImage, that.dockerImage) &&
                 Objects.equals(this.run, that.run) &&
                 Objects.equals(this.inputs, that.inputs) &&
-                Objects.equals(this.outputs, that.outputs) &&
-                Objects.equals(this.ports, that.ports);
+                Objects.equals(this.outputs, that.outputs);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, description, infoUrl, dockerImage, run, inputs, outputs, ports);
+        return Objects.hash(name, description, infoUrl, dockerImage, run, inputs, outputs);
     }
 
     @Override

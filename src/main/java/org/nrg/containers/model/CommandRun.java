@@ -19,6 +19,7 @@ public class CommandRun implements Serializable {
     @JsonProperty("command-line") private String commandLine;
     @JsonProperty("mounts") private List<CommandMount> mounts = Lists.newArrayList();
     @JsonProperty("environment-variables") private Map<String, String> environmentVariables = Maps.newHashMap();
+    private Map<String, String> ports = Maps.newHashMap();
 
     @Nullable
     @ApiModelProperty("The command that will be executed in the container when the Command is launched.")
@@ -56,6 +57,17 @@ public class CommandRun implements Serializable {
                 environmentVariables;
     }
 
+    @ElementCollection
+    public Map<String, String> getPorts() {
+        return ports;
+    }
+
+    public void setPorts(final Map<String, String> ports) {
+        this.ports = ports != null ?
+                Maps.newHashMap(ports) :
+                Maps.<String, String>newHashMap();
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
@@ -63,12 +75,13 @@ public class CommandRun implements Serializable {
         final CommandRun that = (CommandRun) o;
         return Objects.equals(this.commandLine, that.commandLine) &&
                 Objects.equals(this.mounts, that.mounts) &&
-                Objects.equals(this.environmentVariables, that.environmentVariables);
+                Objects.equals(this.environmentVariables, that.environmentVariables) &&
+                Objects.equals(this.ports, that.ports);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(commandLine, mounts, environmentVariables);
+        return Objects.hash(commandLine, mounts, environmentVariables, ports);
     }
 
     @Override
@@ -77,6 +90,7 @@ public class CommandRun implements Serializable {
                 .add("commandLine", commandLine)
                 .add("mounts", mounts)
                 .add("environmentVariables", environmentVariables)
+                .add("ports", ports)
                 .toString();
     }
 }
