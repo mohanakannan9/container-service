@@ -29,7 +29,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 @XapiRestController
-@RequestMapping(value = "/containerexecutions")
+@RequestMapping(value = "/containers")
 public class ContainerExecutionRestApi extends AbstractXapiRestController {
     private static final String JSON = MediaType.APPLICATION_JSON_UTF8_VALUE;
 
