@@ -56,4 +56,6 @@ public interface ContainerControlApi {
 
     List<DockerContainerEvent> getContainerEvents(final Date since, final Date until) throws NoServerPrefException, DockerServerException;
     List<DockerContainerEvent> getContainerEventsAndThrow(final Date since, final Date until) throws NoServerPrefException, DockerServerException;
+
+    void killContainer(final String id) throws NoServerPrefException, DockerServerException, NotFoundException;
 }

@@ -14,6 +14,7 @@ import com.spotify.docker.client.EventStream;
 import com.spotify.docker.client.LogStream;
 import com.spotify.docker.client.LoggingPullHandler;
 import com.spotify.docker.client.ProgressHandler;
+import com.spotify.docker.client.exceptions.ContainerNotFoundException;
 import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.exceptions.ImageNotFoundException;
@@ -663,6 +664,25 @@ public class DockerControlApi implements ContainerControlApi {
             return eventList;
         } catch (InterruptedException | DockerException e) {
             throw new DockerServerException(e);
+        }
+    }
+
+    @Override
+    public void killContainer(final String id) throws NoServerPrefException, DockerServerException, NotFoundException {
+        try(final DockerClient client = getClient()) {
+            log.info("Killing container " + id);
+            client.killContainer(id);
+        } catch (InterruptedException e) {
+            log.error(e.getMessage());
+            throw new DockerServerException(e);
+        } catch (DockerException e) {
+            if (e.getClass().isAssignableFrom(ContainerNotFoundException.class)) {
+                log.error(e.getMessage());
+                throw new NotFoundException(e);
+            } else {
+                log.error(e.getMessage());
+                throw new DockerServerException(e);
+            }
         }
     }
 

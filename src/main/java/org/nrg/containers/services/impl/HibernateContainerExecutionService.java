@@ -6,6 +6,9 @@ import org.hibernate.Hibernate;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.daos.ContainerExecutionRepository;
 import org.nrg.containers.events.DockerContainerEvent;
+import org.nrg.containers.exceptions.DockerServerException;
+import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.helpers.ContainerFinalizeHelper;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.ContainerExecutionHistory;
@@ -133,5 +136,16 @@ public class HibernateContainerExecutionService
                                    final UserI userI) {
         final ContainerExecution execution = new ContainerExecution(resolvedCommand, containerId, userI.getLogin());
         return create(execution);
+    }
+
+    @Override
+    @Transactional
+    public String kill(final Long containerExecutionId, final UserI userI)
+            throws NoServerPrefException, DockerServerException, NotFoundException {
+        // TODO check user permissions. How?
+        final ContainerExecution containerExecution = retrieve(containerExecutionId);
+        final String containerId = containerExecution.getContainerId();
+        containerControlApi.killContainer(containerId);
+        return containerId;
     }
 }
