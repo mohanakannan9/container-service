@@ -1,6 +1,8 @@
 package org.nrg.containers.model.xnat;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
@@ -14,6 +16,7 @@ import java.io.File;
 import java.util.List;
 import java.util.Objects;
 
+@JsonInclude(Include.NON_NULL)
 public class Resource extends XnatModelObject {
     public static Type type = Type.RESOURCE;
 
@@ -23,6 +26,14 @@ public class Resource extends XnatModelObject {
     private List<XnatFile> files;
 
     public Resource() {}
+
+    public Resource(final XnatResourcecatalog xnatResourcecatalog, final XnatModelObject parent) {
+        this(xnatResourcecatalog, parent.getId(), parent.getUri());
+    }
+
+    public Resource(final XnatResourcecatalog xnatResourcecatalog, final String parentId, final String parentUri) {
+        this(xnatResourcecatalog, parentId, parentUri, null);
+    }
 
     public Resource(final XnatResourcecatalog xnatResourcecatalog, final String parentId, final String parentUri, final String rootArchivePath) {
         this.xnatResourcecatalog = xnatResourcecatalog;

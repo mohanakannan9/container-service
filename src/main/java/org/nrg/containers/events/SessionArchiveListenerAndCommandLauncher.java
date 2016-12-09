@@ -43,7 +43,7 @@ public class SessionArchiveListenerAndCommandLauncher implements Consumer<Event<
     @Override
     public void accept(Event<SessionArchiveEvent> event) {
         final SessionArchiveEvent sessionArchivedEvent = event.getData();
-        final Session session = new Session(sessionArchivedEvent.getSession(), sessionArchivedEvent.getUser());
+        final Session session = new Session(sessionArchivedEvent.getSession());
 
         // Fire ScanArchiveEvent for each contained scan
         for (final Scan scan : session.getScans()) {

@@ -1,6 +1,8 @@
 package org.nrg.containers.model.xnat;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
@@ -16,7 +18,7 @@ import org.nrg.xft.security.UserI;
 import java.util.List;
 import java.util.Objects;
 
-
+@JsonInclude(Include.NON_NULL)
 public class Session extends XnatModelObject {
     public static Type type = Type.SESSION;
     @JsonIgnore private XnatImagesessiondataI xnatImagesessiondata;
@@ -27,9 +29,10 @@ public class Session extends XnatModelObject {
 
     public Session() {}
 
-    public Session(final XnatImagesessiondataI xnatImagesessiondata, final UserI userI) {
-        this(xnatImagesessiondata, XnatProjectdata.getXnatProjectdatasById(xnatImagesessiondata.getProject(), userI, false).getRootArchivePath());
+    public Session(final XnatImagesessiondataI xnatImagesessiondataI) {
+        this(xnatImagesessiondataI, null);
     }
+
     public Session(final XnatImagesessiondataI xnatImagesessiondata, final String rootArchivePath) {
         this.xnatImagesessiondata = xnatImagesessiondata;
         this.id = xnatImagesessiondata.getId();

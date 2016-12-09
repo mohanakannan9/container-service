@@ -1,5 +1,7 @@
 package org.nrg.containers.model.xnat;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -17,6 +19,7 @@ import java.util.Objects;
         @JsonSubTypes.Type(value = Resource.class, name = "Resource"),
         @JsonSubTypes.Type(value = XnatFile.class, name = "File")
 })
+@JsonInclude(Include.NON_NULL)
 public abstract class XnatModelObject {
     protected String id;
     protected String label;
