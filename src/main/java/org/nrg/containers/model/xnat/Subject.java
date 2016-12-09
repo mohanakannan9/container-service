@@ -1,6 +1,8 @@
 package org.nrg.containers.model.xnat;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
@@ -16,6 +18,7 @@ import org.nrg.xft.security.UserI;
 import java.util.List;
 import java.util.Objects;
 
+@JsonInclude(Include.NON_NULL)
 public class Subject extends XnatModelObject {
     public static Type type = Type.SUBJECT;
 
@@ -31,8 +34,8 @@ public class Subject extends XnatModelObject {
 
     public Subject() {}
 
-    public Subject(final XnatSubjectdataI xnatSubjectdata, final String parentId, final UserI userI) {
-        this(xnatSubjectdata, XnatProjectdata.getXnatProjectdatasById(xnatSubjectdata.getProject(), userI, false).getRootArchivePath());
+    public Subject(final XnatSubjectdataI xnatSubjectdataI) {
+        this(xnatSubjectdataI, null);
     }
 
     public Subject(final XnatSubjectdataI xnatSubjectdataI, final String rootArchivePath) {

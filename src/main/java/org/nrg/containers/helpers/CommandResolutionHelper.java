@@ -253,7 +253,7 @@ public class CommandResolutionHelper {
                                         public Session apply(@Nullable String s) {
                                             final XnatImagesessiondata imagesessiondata = XnatImagesessiondata.getXnatImagesessiondatasById(s, userI, true);
                                             if (imagesessiondata != null) {
-                                                return new Session(imagesessiondata, userI);
+                                                return new Session(imagesessiondata);
                                             }
                                             return null;
                                         }

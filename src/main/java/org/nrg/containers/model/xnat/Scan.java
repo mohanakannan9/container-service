@@ -1,6 +1,8 @@
 package org.nrg.containers.model.xnat;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
@@ -13,6 +15,7 @@ import org.nrg.xft.security.UserI;
 import java.util.List;
 import java.util.Objects;
 
+@JsonInclude(Include.NON_NULL)
 public class Scan extends XnatModelObject {
     public static Type type = Type.SCAN;
     @JsonIgnore private XnatImagescandataI xnatImagescandata;
@@ -21,6 +24,14 @@ public class Scan extends XnatModelObject {
     private List<Resource> resources;
 
     public Scan() {}
+
+    public Scan(final XnatImagescandataI xnatImagescandata, final XnatModelObject parent) {
+        this(xnatImagescandata, parent.getId(), parent.getUri());
+    }
+
+    public Scan(final XnatImagescandataI xnatImagescandata, final String parentId, final String parentUri) {
+        this(xnatImagescandata, parentId, parentUri, null);
+    }
 
     public Scan(final XnatImagescandataI xnatImagescandata, final String parentId, final String parentUri, final String rootArchivePath) {
         this.xnatImagescandata = xnatImagescandata;
@@ -39,7 +50,7 @@ public class Scan extends XnatModelObject {
         }
     }
 
-    public XnatImagescandataI loatXnatImagescandataI(UserI userI) {
+    public XnatImagescandataI loatXnatImagescandataI(final UserI userI) {
         xnatImagescandata = XnatImagescandata.getXnatImagescandatasByXnatImagescandataId(id, userI, false);
         return xnatImagescandata;
     }

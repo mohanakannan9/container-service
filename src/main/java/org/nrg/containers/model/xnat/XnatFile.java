@@ -1,12 +1,15 @@
 package org.nrg.containers.model.xnat;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.google.common.base.MoreObjects;
-import com.google.common.collect.Lists;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
+@JsonInclude(Include.NON_NULL)
 public class XnatFile extends XnatModelObject {
     public static Type type = Type.FILE;
     private String name;
@@ -28,7 +31,7 @@ public class XnatFile extends XnatModelObject {
         this.uri = parentUri + "/files/" + name;
         this.name = name;
         this.path = path;
-        this.tags = Lists.newArrayList(tagsCsv.split(","));
+        this.tags = Arrays.asList(tagsCsv.split(","));
         this.format = format;
         this.content = content;
         this.file = file;
@@ -106,7 +109,7 @@ public class XnatFile extends XnatModelObject {
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this)
+        return addParentPropertiesToString(MoreObjects.toStringHelper(this))
                 .add("name", name)
                 .add("path", path)
                 .add("tags", tags)

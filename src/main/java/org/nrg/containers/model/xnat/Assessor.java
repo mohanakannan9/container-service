@@ -1,11 +1,14 @@
 package org.nrg.containers.model.xnat;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatImageassessordataI;
+import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.om.XnatImageassessordata;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xft.security.UserI;
@@ -13,6 +16,7 @@ import org.nrg.xft.security.UserI;
 import java.util.List;
 import java.util.Objects;
 
+@JsonInclude(Include.NON_NULL)
 public class Assessor extends XnatModelObject {
     public static Type type = Type.ASSESSOR;
     @JsonIgnore private XnatImageassessordataI xnatImageassessordata;
@@ -20,6 +24,14 @@ public class Assessor extends XnatModelObject {
     private List<Resource> resources;
 
     public Assessor() {}
+
+    public Assessor(final XnatImageassessordataI xnatImageassessordata, final XnatModelObject parent) {
+        this(xnatImageassessordata, parent.getId(), parent.getUri());
+    }
+
+    public Assessor(final XnatImageassessordataI xnatImageassessordata, final String parentId, final String parentUri) {
+        this(xnatImageassessordata, parentId, parentUri, null);
+    }
 
     public Assessor(final XnatImageassessordataI xnatImageassessordata, final String parentId, final String parentUri, final String rootArchivePath) {
         this.id = xnatImageassessordata.getId();
@@ -35,6 +47,14 @@ public class Assessor extends XnatModelObject {
                 resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, this.id, this.uri, rootArchivePath));
             }
         }
+    }
+
+    public XnatImageassessordataI getXnatImageassessordata() {
+        return xnatImageassessordata;
+    }
+
+    public void setXnatImageassessordata(final XnatImageassessordataI xnatImageassessordata) {
+        this.xnatImageassessordata = xnatImageassessordata;
     }
 
     public String getParentId() {

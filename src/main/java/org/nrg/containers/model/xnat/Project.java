@@ -1,6 +1,8 @@
 package org.nrg.containers.model.xnat;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
@@ -13,6 +15,7 @@ import org.nrg.xft.security.UserI;
 import java.util.List;
 import java.util.Objects;
 
+@JsonInclude(Include.NON_NULL)
 public class Project extends XnatModelObject {
     public static Type type = Type.PROJECT;
     @JsonIgnore private XnatProjectdataI xnatProjectdata;
