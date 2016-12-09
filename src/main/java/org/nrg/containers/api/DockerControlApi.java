@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerCertificates;
 import com.spotify.docker.client.DockerClient;
@@ -24,6 +25,7 @@ import com.spotify.docker.client.messages.Event;
 import com.spotify.docker.client.messages.HostConfig;
 import com.spotify.docker.client.messages.Image;
 import com.spotify.docker.client.messages.ImageInfo;
+import com.spotify.docker.client.messages.PortBinding;
 import com.spotify.docker.client.messages.ProgressMessage;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.events.DockerContainerEvent;
@@ -218,7 +220,7 @@ public class DockerControlApi implements ContainerControlApi {
         for (final Map.Entry<String, String> env : command.getEnvironmentVariables().entrySet()) {
             environmentVariables.add(StringUtils.join(new String[] {env.getKey(), env.getValue()}, "="));
         }
-        return launchImage(getServer(), dockerImageId, runCommand, bindMounts, environmentVariables);
+        return launchImage(getServer(), dockerImageId, runCommand, bindMounts, environmentVariables, command.getPorts());
     }
 
 //    /**
@@ -261,14 +263,42 @@ public class DockerControlApi implements ContainerControlApi {
      * @return ID of created Container
      **/
     private String launchImage(final DockerServer server,
-                              final String imageName,
-                              final String runCommand,
-                              final List<String> volumes,
-                              final List<String> environmentVariables) throws DockerServerException {
+                               final String imageName,
+                               final String runCommand,
+                               final List<String> volumes,
+                               final List<String> environmentVariables,
+                               final Map<String, String> ports) throws DockerServerException {
+
+        final Map<String, List<PortBinding>> portBindings = Maps.newHashMap();
+        final List<String> portStringList = Lists.newArrayList();
+        if (!(ports == null || ports.isEmpty())) {
+            for (final Map.Entry<String, String> portEntry : ports.entrySet()) {
+                final String containerPort = portEntry.getKey();
+                final String hostPort = portEntry.getValue();
+
+                if (StringUtils.isNotBlank(containerPort) && StringUtils.isNotBlank(hostPort)) {
+                    final PortBinding portBinding = new PortBinding();
+                    portBinding.hostPort(hostPort);
+                    portBindings.put(containerPort + "/tcp", Lists.newArrayList(portBinding));
+
+                    portStringList.add("host" + hostPort + "->" + "container" + containerPort);
+                } else if (StringUtils.isNotBlank(containerPort)) {
+                    // hostPort is blank
+                    // TODO log it
+                } else if (StringUtils.isNotBlank(hostPort)) {
+                    // containerPort is blank
+                    // TODO log it
+                } else {
+                    // both are blank
+                    // TODO log it
+                }
+            }
+        }
 
         final HostConfig hostConfig =
                 HostConfig.builder()
                         .binds(volumes)
+                        .portBindings(portBindings)
                         .build();
         final ContainerConfig containerConfig =
                 ContainerConfig.builder()
@@ -282,12 +312,19 @@ public class DockerControlApi implements ContainerControlApi {
 
         if (log.isDebugEnabled()) {
             final String message = String.format(
-                    "Starting container: server %s, image %s, command \"%s\", volumes [%s], environment variables %s",
+                    "Starting container:" +
+                            "\n\tserver %s" +
+                            "\n\timage %s" +
+                            "\n\tcommand \"%s\"" +
+                            "\n\tvolumes [%s]" +
+                            "\n\tenvironment variables [%s]" +
+                            "\n\texposed ports: {%s}",
                     server,
                     imageName,
-                    StringUtils.join(runCommand, " "),
+                    runCommand,
                     StringUtils.join(volumes, ", "),
-                    StringUtils.join(environmentVariables, ", ")
+                    StringUtils.join(environmentVariables, ", "),
+                    StringUtils.join(portStringList, ", ")
             );
             log.debug(message);
         }

@@ -88,7 +88,8 @@ public class CommandTest {
                     "\"run\": {" +
                         "\"environment-variables\":{\"foo\":\"bar\"}, " +
                         "\"command-line\":\"cmd #foo# #my_cool_input#\", " +
-                        "\"mounts\":[" + MOUNT_IN + ", " + MOUNT_OUT + "]" +
+                        "\"mounts\":[" + MOUNT_IN + ", " + MOUNT_OUT + "]," +
+                        "\"ports\": {\"22\": \"2222\"}" +
                     "}," +
                     "\"inputs\":" + INPUT_LIST_JSON + ", " +
                     "\"outputs\":[" + OUTPUT_JSON + "], " +
@@ -106,7 +107,8 @@ public class CommandTest {
                         "\"foo\": \"%s\"," +
                         "\"session\": \"%s\"" +
                     "}," +
-                    "\"outputs\":[ " + RESOLVED_OUTPUT_JSON + "]}";
+                    "\"outputs\":[ " + RESOLVED_OUTPUT_JSON + "]," +
+                    "\"ports\": {\"22\": \"2222\"}}";
 
     @Autowired
     private ObjectMapper mapper;
@@ -184,6 +186,7 @@ public class CommandTest {
         assertEquals("cmd #foo# #my_cool_input#", run.getCommandLine());
         assertEquals(ImmutableMap.of("foo", "bar"), run.getEnvironmentVariables());
         assertEquals(Lists.newArrayList(input, output), run.getMounts());
+        assertEquals(ImmutableMap.of("22", "2222"), run.getPorts());
     }
 
     @Test
