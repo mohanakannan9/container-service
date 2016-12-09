@@ -72,10 +72,11 @@ public class ContainerExecutionRestApi extends AbstractXapiRestController {
     }
 
     @RequestMapping(value = "/{id}/kill", method = POST)
-    public ResponseEntity<String> kill(final @PathVariable Long id)
+    @ResponseBody
+    public String kill(final @PathVariable Long id)
             throws NotFoundException, NoServerPrefException, DockerServerException {
         final UserI userI = XDAT.getUserDetails();
-        return new ResponseEntity<>(containerExecutionService.kill(id, userI), HttpStatus.OK);
+        return containerExecutionService.kill(id, userI);
     }
 
     @ResponseStatus(value = HttpStatus.NOT_FOUND)
