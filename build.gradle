@@ -128,18 +128,30 @@ task fatJar(type: Jar) {
     with jar
 }
 
+task sourceJar(type: Jar, dependsOn: classes) {
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    from javadoc.destinationDir
+}
+
 publishing {
     publications {
         mavenJava(MavenPublication) {
             from components.java
 
-//            artifact sourceJar {
-//                classifier "sources"
-//            }
-//
-//            artifact javadocJar {
-//                classifier "javadoc"
-//            }
+            artifact sourceJar {
+                classifier "sources"
+            }
+
+            artifact javadocJar {
+                classifier "javadoc"
+            }
+
+            artifact fatJar {
+                classifier "all"
+            }
 
             pom.withXml {
                 def root = asNode()
