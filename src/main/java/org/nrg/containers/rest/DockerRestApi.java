@@ -1,20 +1,30 @@
 package org.nrg.containers.rest;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
+import org.nrg.containers.exceptions.UnauthorizedException;
+import org.nrg.containers.model.Command;
 import org.nrg.containers.model.DockerHub;
-import org.nrg.containers.model.DockerImageDto;
+import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.services.DockerService;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.nrg.xapi.model.users.User;
+import org.nrg.xdat.XDAT;
+import org.nrg.xdat.rest.AbstractXapiRestController;
+import org.nrg.xdat.security.helpers.Roles;
+import org.nrg.xdat.security.services.RoleHolder;
+import org.nrg.xdat.security.services.UserManagementServiceI;
+import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,19 +41,31 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.util.List;
 
+import static org.nrg.containers.api.ContainerControlApi.LABEL_KEY;
+import static org.springframework.web.bind.annotation.RequestMethod.DELETE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 @XapiRestController
 @RequestMapping(value = "/docker")
-public class DockerRestApi {
+public class DockerRestApi extends AbstractXapiRestController {
     private static final Logger log = LoggerFactory.getLogger(DockerRestApi.class);
 
     private static final String JSON = MediaType.APPLICATION_JSON_UTF8_VALUE;
     private static final String TEXT = MediaType.TEXT_PLAIN_VALUE;
 
-    @Autowired
     private DockerService dockerService;
+    private ObjectMapper mapper;
+
+    @Autowired
+    public DockerRestApi(final DockerService dockerService,
+                         final ObjectMapper objectMapper,
+                         final UserManagementServiceI userManagementService,
+                         final RoleHolder roleHolder) {
+        super(userManagementService, roleHolder);
+        this.dockerService = dockerService;
+        this.mapper = objectMapper;
+    }
 
     @ApiOperation(value = "Docker server", notes = "Returns Docker server configuration values",
             response = DockerServer.class)
@@ -65,15 +87,18 @@ public class DockerRestApi {
             @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = "/server", method = POST)
     public ResponseEntity<String> setServer(final @RequestBody DockerServer dockerServer)
-            throws InvalidPreferenceName {
+            throws InvalidPreferenceName, JsonProcessingException, UnauthorizedException {
+        final UserI userI = XDAT.getUserDetails();
+        if (!Roles.isSiteAdmin(userI)) {
+            throw new UnauthorizedException(String.format("User %s is not an admin.", userI.getLogin()));
+        }
         if (StringUtils.isBlank(dockerServer.getHost())) {
             return new ResponseEntity<>("Must set the \"host\" property in request body.",
                     HttpStatus.BAD_REQUEST);
         }
 
-        dockerService.setServer(dockerServer);
-
-        return new ResponseEntity<>("", HttpStatus.ACCEPTED);
+        final DockerServer server = dockerService.setServer(dockerServer);
+        return new ResponseEntity<>(mapper.writeValueAsString(server), HttpStatus.ACCEPTED);
     }
 
     @RequestMapping(value = "/server/ping", method = GET)
@@ -91,7 +116,13 @@ public class DockerRestApi {
 
     @RequestMapping(value = "/hubs", method = POST)
     @ResponseBody
-    public ResponseEntity<DockerHub> setHub(final @RequestBody DockerHub hub) throws NrgServiceRuntimeException {
+    public ResponseEntity<DockerHub> setHub(final @RequestBody DockerHub hub)
+            throws NrgServiceRuntimeException, UnauthorizedException {
+        final UserI userI = XDAT.getUserDetails();
+        final User xapiUser = new User(userI);
+        if (!xapiUser.isAdmin()) {
+            throw new UnauthorizedException(String.format("User %s is not an admin.", userI.getLogin()));
+        }
         return new ResponseEntity<>(dockerService.setHub(hub), HttpStatus.CREATED);
     }
 
@@ -104,15 +135,75 @@ public class DockerRestApi {
 
     @RequestMapping(value = "/hubs/{id}/pull", params = {"image"}, method = POST)
     public void pullImageFromHub(final @PathVariable Long hubId,
-                          final @RequestParam(value = "image") String image)
+                                 final @RequestParam(value = "image") String image,
+                                 final @RequestParam(value = "save-commands", defaultValue = "true")
+                                             Boolean saveCommands)
             throws DockerServerException, NotFoundException, NoServerPrefException {
-        dockerService.pullFromHub(hubId, image);
+        dockerService.pullFromHub(hubId, image, saveCommands);
     }
 
-    @RequestMapping(value = "/pull", params = {"image"}, method = POST)
-    public void pullImageFromDefaultHub(final @RequestParam(value = "image") String image)
+    @RequestMapping(value = "/images/pull", params = {"image"}, method = POST)
+    public void pullImageFromDefaultHub(final @RequestParam(value = "image") String image,
+                                        final @RequestParam(value = "save-commands", defaultValue = "true")
+                                                Boolean saveCommands)
             throws DockerServerException, NotFoundException, NoServerPrefException {
-        dockerService.pullFromHub(image);
+        dockerService.pullFromHub(image, saveCommands);
+    }
+
+    @ApiOperation(value = "Get list of images.", notes = "Returns a list of all Docker images.")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "A list of images on the server"),
+            @ApiResponse(code = 424, message = "Admin must set up Docker server."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = "/images", method = GET, produces = JSON)
+    @ResponseBody
+    public List<DockerImage> getAllImages()
+            throws NoServerPrefException, DockerServerException {
+        return dockerService.getImages();
+    }
+
+    @ApiOperation(value = "Get Docker image",
+            notes = "Retrieve information about a Docker image from the docker server")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "Found the image"),
+            @ApiResponse(code = 404, message = "No docker image with given id on the server"),
+            @ApiResponse(code = 424, message = "Admin must set up Docker server."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = "/images/{id}", method = GET, produces = JSON)
+    @ResponseBody
+    public DockerImage getImage(final @PathVariable("id") String id)
+            throws NoServerPrefException, NotFoundException {
+        return dockerService.getImage(id);
+    }
+
+    @ApiOperation(value = "Delete Docker image",
+            notes = "Remove information about a Docker image")
+    @ApiResponses({
+            @ApiResponse(code = 200, message = "Image was removed"),
+            @ApiResponse(code = 404, message = "No docker image with given id on docker server"),
+            @ApiResponse(code = 424, message = "Admin must set up Docker server."),
+            @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = "/images/{id}", method = DELETE)
+    @ResponseBody
+    public void deleteImage(final @PathVariable("id") String id,
+                            final @RequestParam(value = "force", defaultValue = "false") Boolean force)
+            throws NotFoundException, NoServerPrefException, DockerServerException {
+        dockerService.removeImage(id, force);
+    }
+
+    @ApiOperation(value = "Save Commands from labels",
+            notes = "Read labels from Docker image. If any labels contain key " +
+                    LABEL_KEY + ", parse value as list of Commands.")
+//    @ApiResponses({
+//            @ApiResponse(code = 200, message = "Image was removed"),
+//            @ApiResponse(code = 404, message = "No docker image with given id on docker server"),
+//            @ApiResponse(code = 424, message = "Admin must set up Docker server."),
+//            @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = "/images/save", params = "image", method = POST)
+    @ResponseBody
+    public List<Command> saveFromLabels(final @RequestParam("image") String imageId)
+            throws NotFoundException, NoServerPrefException, DockerServerException {
+        return dockerService.saveFromImageLabels(imageId);
     }
 
     @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
@@ -144,5 +235,13 @@ public class DockerRestApi {
     public String handleFailedDependency() {
         return "Set up Docker server before using this REST endpoint.";
     }
+
+    @ResponseStatus(value = HttpStatus.UNAUTHORIZED)
+    @ExceptionHandler(value = {UnauthorizedException.class})
+    public String handleUnauthorized(final Exception e) {
+        return "Unauthorized.\n" + e.getMessage();
+    }
+
+
 }
 

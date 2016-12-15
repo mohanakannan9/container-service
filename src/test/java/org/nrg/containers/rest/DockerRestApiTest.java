@@ -1,34 +1,55 @@
 package org.nrg.containers.rest;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Maps;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.nrg.containers.config.RestApiTestConfig;
+import org.nrg.containers.api.ContainerControlApi;
+import org.nrg.containers.config.DockerRestApiTestConfig;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
+import org.nrg.containers.model.Command;
+import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.services.DockerService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.nrg.xdat.security.services.RoleServiceI;
+import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.TestingAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
+
+import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.nrg.containers.api.ContainerControlApi.LABEL_KEY;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.testSecurityContext;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -36,20 +57,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
-@ContextConfiguration(classes = RestApiTestConfig.class)
+@ContextConfiguration(classes = DockerRestApiTestConfig.class)
 public class DockerRestApiTest {
     private MockMvc mockMvc;
-    private final ObjectMapper mapper = new ObjectMapper();
 
     private final MediaType JSON = MediaType.APPLICATION_JSON_UTF8;
 
     private final static String MOCK_CONTAINER_HOST = "fake://host.url";
+
     private final static String MOCK_CONTAINER_CERT_PATH = "/path/to/file";
     private final static DockerServer MOCK_CONTAINER_SERVER =
             new DockerServer(MOCK_CONTAINER_HOST, MOCK_CONTAINER_CERT_PATH);
-
     private final NoServerPrefException NO_SERVER_PREF_EXCEPTION =
             new NoServerPrefException("message");
+
     private final InvalidPreferenceName INVALID_PREFERENCE_NAME =
             new InvalidPreferenceName("*invalid name*");
     private final DockerServerException DOCKER_SERVER_EXCEPTION =
@@ -57,15 +78,15 @@ public class DockerRestApiTest {
     private final NotFoundException NOT_FOUND_EXCEPTION =
             new NotFoundException("I should think of a message");
 
-    @Autowired
-    private WebApplicationContext wac;
-
-    @Autowired
-    private DockerService mockDockerService;
+    @Autowired private WebApplicationContext wac;
+    @Autowired private DockerService dockerService;
+    @Autowired private ObjectMapper mapper;
+    @Autowired private ContainerControlApi mockContainerControlApi;
+    @Autowired private RoleServiceI mockRoleService;
 
     @Before
     public void setup() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
+        mockMvc = MockMvcBuilders.webAppContextSetup(wac).apply(springSecurity()).build();
     }
 
     @Test
@@ -73,13 +94,15 @@ public class DockerRestApiTest {
 
         final String path = "/docker/server";
 
-        // REQUEST 0: No "onServer" param (defaults to false)
+        final Authentication authentication = new TestingAuthenticationToken("nonAdmin", "nonAdmin");
         final MockHttpServletRequestBuilder request =
-                get(path).accept(JSON);
+                get(path).accept(JSON)
+                        .with(authentication(authentication))
+                        .with(csrf())
+                        .with(testSecurityContext());
 
-        when(mockDockerService.getServer())
-                .thenReturn(MOCK_CONTAINER_SERVER)
-                .thenThrow(NOT_FOUND_EXCEPTION);
+        doReturn(MOCK_CONTAINER_SERVER)
+                .when(mockContainerControlApi).getServer();
 
         final String response =
                 mockMvc.perform(request)
@@ -93,6 +116,9 @@ public class DockerRestApiTest {
                 mapper.readValue(response, DockerServer.class);
         assertThat(responseServer, equalTo(MOCK_CONTAINER_SERVER));
 
+        doThrow(NO_SERVER_PREF_EXCEPTION)
+                .when(mockContainerControlApi).getServer();
+
         // Not found
         final String exceptionResponse =
                 mockMvc.perform(request)
@@ -100,7 +126,7 @@ public class DockerRestApiTest {
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
-        assertEquals("I should think of a message", exceptionResponse);
+        assertThat(exceptionResponse, containsString("message"));
     }
 
     @Test
@@ -111,20 +137,32 @@ public class DockerRestApiTest {
 
         final String path = "/docker/server";
 
-        // REQUEST 0: No "onServer" param (defaults to false)
-        final MockHttpServletRequestBuilder request =
-                post(path).content(containerServerJson).contentType(JSON);
+        final UserI admin = mock(UserI.class);
+        when(admin.getLogin()).thenReturn("admin");
+        when(admin.getPassword()).thenReturn("admin");
+        when(mockRoleService.isSiteAdmin(admin)).thenReturn(true);
 
-        when(mockDockerService.setServer(MOCK_CONTAINER_SERVER))
-                .thenReturn(MOCK_CONTAINER_SERVER);
+        final Authentication authentication = new TestingAuthenticationToken(admin, "admin");
+
+        final MockHttpServletRequestBuilder request =
+                post(path)
+                        .content(containerServerJson)
+                        .contentType(JSON)
+                        .with(authentication(authentication))
+                        .with(csrf())
+                        .with(testSecurityContext());
+
+        doReturn(MOCK_CONTAINER_SERVER)
+                .when(mockContainerControlApi).setServer(MOCK_CONTAINER_SERVER);
 
         mockMvc.perform(request)
                 .andExpect(status().isAccepted());
 
-        verify(mockDockerService, times(1)).setServer(MOCK_CONTAINER_SERVER); // Method has been called once
+        verify(mockContainerControlApi, times(1)).setServer(MOCK_CONTAINER_SERVER); // Method has been called once
 
-        // Now mock out the exception
-        doThrow(INVALID_PREFERENCE_NAME).when(mockDockerService).setServer(MOCK_CONTAINER_SERVER);
+        // Now verify the exception
+        doThrow(INVALID_PREFERENCE_NAME)
+                .when(mockContainerControlApi).setServer(MOCK_CONTAINER_SERVER);
 
         final String exceptionResponse =
                 mockMvc.perform(request)
@@ -134,22 +172,59 @@ public class DockerRestApiTest {
                         .getContentAsString();
         assertThat(exceptionResponse, containsString("*invalid name*"));
 
-        verify(mockDockerService, times(2)).setServer(MOCK_CONTAINER_SERVER);
+        verify(mockContainerControlApi, times(2)).setServer(MOCK_CONTAINER_SERVER);
+    }
+
+    @Test
+    public void testSetServerNonAdmin() throws Exception {
+
+        final String containerServerJson =
+                mapper.writeValueAsString(MOCK_CONTAINER_SERVER);
+
+        final String path = "/docker/server";
+
+        final UserI nonAdmin = mock(UserI.class);
+        when(nonAdmin.getLogin()).thenReturn("nonAdmin");
+        when(nonAdmin.getPassword()).thenReturn("nonAdmin");
+        when(mockRoleService.isSiteAdmin(nonAdmin)).thenReturn(false);
+        final Authentication authentication = new TestingAuthenticationToken(nonAdmin, "nonAdmin");
+
+        final MockHttpServletRequestBuilder request =
+                post(path)
+                        .content(containerServerJson)
+                        .contentType(JSON)
+                        .with(authentication(authentication))
+                        .with(csrf())
+                        .with(testSecurityContext());
+
+        final String exceptionResponse =
+                mockMvc.perform(request)
+                        .andExpect(status().isUnauthorized())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        assertThat(exceptionResponse, containsString("nonAdmin"));
     }
 
     @Test
     public void testPingServer() throws Exception {
         final String path = "/docker/server/ping";
-        final MockHttpServletRequestBuilder request = get(path);
 
-        when(mockDockerService.pingServer())
-                .thenReturn("OK")
-                .thenThrow(DOCKER_SERVER_EXCEPTION)
-                .thenThrow(NO_SERVER_PREF_EXCEPTION);
+        final Authentication authentication = new TestingAuthenticationToken("nonAdmin", "nonAdmin");
+        final MockHttpServletRequestBuilder request =
+                get(path).with(authentication(authentication))
+                        .with(csrf()).with(testSecurityContext());
+
+        doReturn("OK")
+                .when(mockContainerControlApi).pingServer();
 
         mockMvc.perform(request)
                 .andExpect(status().isOk())
                 .andExpect(content().string(equalTo("OK")));
+
+        doThrow(DOCKER_SERVER_EXCEPTION)
+                .when(mockContainerControlApi).pingServer();
 
         final String ISEResponse =
                 mockMvc.perform(request)
@@ -158,6 +233,9 @@ public class DockerRestApiTest {
                         .getResponse()
                         .getContentAsString();
         assertEquals("The Docker server returned an error:\nYour server dun goofed.", ISEResponse);
+
+        doThrow(NO_SERVER_PREF_EXCEPTION)
+                .when(mockContainerControlApi).pingServer();
 
         final String failedDepResponse =
                 mockMvc.perform(request)
@@ -169,91 +247,110 @@ public class DockerRestApiTest {
                 failedDepResponse);
     }
 
-//    @Test
-//    public void testGetHubs() throws Exception {
-//        final String path = "/docker/hubs";
-//        final MockHttpServletRequestBuilder request = get(path).accept(JSON);
-//
-//        final DockerHub hub1 = DockerHub.builder()
-//                .email("user@email.com")
-//                .username("joe_schmoe")
-//                .password("insecure")
-//                .url("http://hub.io")
-//                .name("My cool hub")
-//                .build();
-//        final DockerHub hub2 = DockerHub.builder()
-//                .url("https://index.docker.io/v1/")
-//                .name("Docker Hub")
-//                .build();
-//        final List<DockerHub> hubList = Lists.newArrayList(hub1, hub2);
-//
-//        when(mockDockerService.getHubs())
-//                .thenReturn(hubList);
-//
-//        final String response =
-//                mockMvc.perform(request)
-//                        .andExpect(status().isOk())
-//                        .andExpect(content().contentType(JSON))
-//                        .andReturn()
-//                        .getResponse()
-//                        .getContentAsString();
-//
-//        assertEquals(hubList, mapper.readValue(response, new TypeReference<List<DockerHub>>(){}));
-//    }
+    @Test
+    @Transactional
+    public void testSaveFromLabels() throws Exception {
+        final String labelTestCommandListJson =
+                "[{\"name\": \"label-test\"," +
+                        "\"description\": \"Command to test label-parsing and command-importing code\"," +
+                        "\"run\": {\"command-line\": \"#CMD#\"}," +
+                        "\"inputs\": [{\"name\": \"CMD\", \"description\": \"Command to run\", \"required\": true}]}]";
+        final List<Command> expectedList = mapper.readValue(labelTestCommandListJson, new TypeReference<List<Command>>(){});
+        final Command expected = expectedList.get(0);
 
-//    @Test
-//    public void testSetHub() throws Exception {
-//        final String path = "/docker/hubs";
-//
-//        final DockerHub hub = DockerHub.builder()
-//                .email("user@email.com")
-//                .username("joe_schmoe")
-//                .password("insecure")
-//                .url("http://hub.io")
-//                .build();
-//
-//        doNothing().when(mockDockerService).setHub(hub);
-//
-//        // Make a json representation of the hub
-//        final String hubJsonString = mapper.writeValueAsString(hub);
-//
-////        // Make an html form representation of the hub
-////        final String hubFormString =
-////            String.format("email=%s&username=%s&password=%s&url=%s",
-////                urlEncode(hub.email()),
-////                urlEncode(hub.username()),
-////                urlEncode(hub.password()),
-////                urlEncode(hub.url()));
-//
-//
-//        // send json in
-//        final MockHttpServletRequestBuilder requestJson =
-//                post(path).content(hubJsonString).contentType(JSON);
-//
-//        mockMvc.perform(requestJson)
-//                .andExpect(status().isCreated());
-//
-//        verify(mockDockerService, times(1)).setHub(hub); // Method has been called once
-//
-////        // send form in
-////        final MockHttpServletRequestBuilder requestForm =
-////            post(path).content(hubFormString).contentType(FORM);
-////
-////        mockMvc.perform(requestForm)
-////            .andExpect(status().isOk());
-////
-////        verify(service, times(2)).setHub(hub); // Method has been called twice
-//
-//        // Exception
-//        doThrow(NrgServiceRuntimeException.class).when(mockDockerService).setHub(hub);
-//
-//        final String exceptionResponse =
-//                mockMvc.perform(requestJson)
-//                        .andExpect(status().isBadRequest())
-//                        .andReturn()
-//                        .getResponse()
-//                        .getContentAsString();
-//
-//        assertEquals("Body was not a valid Docker Hub.", exceptionResponse);
-//    }
+        final Map<String, String> imageLabels = Maps.newHashMap();
+        imageLabels.put(LABEL_KEY, labelTestCommandListJson);
+
+        final String fakeImageId = "xnat/thisisfake";
+        final DockerImage fakeDockerImage = new DockerImage();
+        fakeDockerImage.setImageId(fakeImageId);
+        fakeDockerImage.setLabels(imageLabels);
+
+        doReturn(fakeDockerImage)
+            .when(mockContainerControlApi).getImageById(fakeImageId);
+
+        final String path = "/docker/images/save";
+        final Authentication authentication = new TestingAuthenticationToken("nonAdmin", "nonAdmin");
+        final MockHttpServletRequestBuilder request =
+                post(path).param("image", fakeImageId)
+                        .with(authentication(authentication))
+                        .with(csrf()).with(testSecurityContext());
+
+        final String responseStr =
+                mockMvc.perform(request)
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        final List<Command> responseList = mapper.readValue(responseStr, new TypeReference<List<Command>>(){});
+        assertThat(responseList, hasSize(1));
+        final Command response = responseList.get(0);
+
+        // "response" will have been saved, so it will not be exactly equal to "expected"
+        // Must compare attribute-by-attribute
+        assertEquals(expected.getName(), response.getName());
+        assertEquals(expected.getDescription(), response.getDescription());
+        assertEquals(expected.getRun(), response.getRun());
+        assertEquals(expected.getInputs(), response.getInputs());
+        assertEquals(fakeImageId, response.getDockerImage());
+    }
+
+    @Test
+    @Transactional
+    public void testSaveFromLabels2() throws Exception {
+        final String labelTestCommandListJson =
+                "[{\"name\":\"dcm2niix-scan\", \"description\":\"Run dcm2niix on a scan's DICOMs\", " +
+                        "\"run\": {" +
+                            "\"command-line\": \"/run/dcm2niix-scan.sh #scanId# #sessionId#\", " +
+                            "\"mounts\": [" +
+                                "{\"name\":\"DICOM\", \"type\":\"input\", \"path\":\"/input\"}," +
+                                "{\"name\":\"NIFTI\", \"type\":\"output\", \"path\":\"/output\"}" +
+                            "]" +
+                        "}," +
+                        "\"inputs\":[" +
+                            "{\"name\":\"scanId\", \"required\":true, \"parent-property\":\"ID\"}, " +
+                            "{\"name\":\"sessionId\", \"required\":true, \"parent-property\":\"ID\"}" +
+                        "] " +
+                    "}]";
+        final List<Command> expectedList = mapper.readValue(labelTestCommandListJson, new TypeReference<List<Command>>(){});
+        final Command expected = expectedList.get(0);
+
+        final Map<String, String> imageLabels = Maps.newHashMap();
+        imageLabels.put(LABEL_KEY, labelTestCommandListJson);
+
+        final String fakeImageId = "xnat/thisisfake";
+        final DockerImage fakeDockerImage = new DockerImage();
+        fakeDockerImage.setImageId(fakeImageId);
+        fakeDockerImage.setLabels(imageLabels);
+
+        doReturn(fakeDockerImage)
+                .when(mockContainerControlApi).getImageById(fakeImageId);
+
+        final String path = "/docker/images/save";
+        final Authentication authentication = new TestingAuthenticationToken("nonAdmin", "nonAdmin");
+        final MockHttpServletRequestBuilder request =
+                post(path).param("image", fakeImageId)
+                        .with(authentication(authentication))
+                        .with(csrf()).with(testSecurityContext());
+
+        final String responseStr =
+                mockMvc.perform(request)
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        final List<Command> responseList = mapper.readValue(responseStr, new TypeReference<List<Command>>(){});
+        assertThat(responseList, hasSize(1));
+        final Command response = responseList.get(0);
+
+        // "response" will have been saved, so it will not be exactly equal to "expected"
+        // Must compare attribute-by-attribute
+        assertEquals(expected.getName(), response.getName());
+        assertEquals(expected.getDescription(), response.getDescription());
+        assertEquals(expected.getRun(), response.getRun());
+        assertEquals(expected.getInputs(), response.getInputs());
+        assertEquals(fakeImageId, response.getDockerImage());
+    }
 }

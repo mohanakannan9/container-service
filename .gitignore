@@ -15,3 +15,7 @@ build/
 
 # Intellij wants to see this file to configure hibernate, but we don't really need it
 hibernate.cfg.xml
+
+# Ignore script-generated .html and .html.confluence documentation
+*.html
+*.html.confluence
