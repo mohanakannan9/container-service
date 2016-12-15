@@ -1,5 +1,5 @@
 group 'org.nrg'
-version '1.0-alpha.1-SNAPSHOT'
+version '1.0-alpha.1'
 
 apply plugin: 'java'
 apply plugin: 'idea'
