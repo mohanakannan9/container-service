@@ -1,4 +1,4 @@
-# Command
+
 If you want XNAT to execute your docker image, you will need a Command. The Command is a collection of properties that describe your docker image, and which XNAT can read to understand what your image is and how to run it:
 
 * Which docker image is it? What is its ID?
@@ -7,25 +7,8 @@ If you want XNAT to execute your docker image, you will need a Command. The Comm
 * Does it need files? Where should they go? How do you want to get those out of XNAT?
 * Does it produce any files at the end? Those have to get back into XNAT, so where should they go?
 
-## Get your Command into XNAT
-XNAT can read the Command only if it is structured as a JSON object. There are a few ways to get your Command into XNAT:
 
-### UI
-We hope to soon have a web interface for defining / submitting Commands.
-
-### POST  JSON to `/xapi/commands`
-If your docker image already exists on the docker server that XNAT can talk to, you can submit the JSON document to the container-service REST API by POSTing the JSON to `{XNAT}/xapi/commands`.
-
-### Make your docker image "XNAT-ready"
-If you are trying to use a docker image that isn't yours, you will need to define your Command separately from the docker image. But if you control the docker image, you can "bake" one or more Command definitions directly into the image by including it/them as an image label. If you do that, then XNAT can read the Command definitions directly off the image when you first pull it down from Docker Hub or any time later via the REST API.
-
-See the [section on labels in the Dockerfile reference documentation](https://docs.docker.com/engine/reference/builder/#/label) for more information on labeling your images. In short, you can include a label on your image with the key `"org.nrg.commands"`, and with the value being a string representation of a JSON list of Commands. The line in your Dockerfile should look something like this:
-
-        LABEL "org.nrg.commands"="[{command1}, {command2}, ...]"
-
-Each one of those `{commandN}` things above is a full command definition. The label value should be a JSON list (i.e. it should have square brackets `[ ]`) even if you only have one Command definition inside.
-
-## Example command
+# Command object format
 
     {
         "name": "",
@@ -85,13 +68,12 @@ Each one of those `{commandN}` things above is a full command definition. The la
         ]
     }
 
-## JSON parameters
 
 - **name** - The name of the command. The combination of the "name" and "docker-image" values must be unique.
 - **description** - A human-friendly description of the command.
 - **info-url** - A URL where more info on the command, or the image, or both, can be found.
 - **docker-image** - An identifier of the image this command describes. Can be in "repo/image:tag" format or "sha256:123abc..." hash format. If the command JSON is embedded in the labels of a docker image, then this field may be omitted.
-- **run** - Fields that will be used to instruct docker how to run a container from the image.
+- **run** - Fields that will be used to instruct docker how to run a container from the image. See [Run](#run).
     - **command-line** - This string is a templatized version of the command-line string that will be executed inside the container. The templatized portions will be resolved at launch time with the values of the command's inputs. See the section on [template strings](#template-strings) below for more detail.
     - **mounts** - A list of mount points that will be created for your container.
         - **name** - The name of the mount. You can use this to refer to the mount elsewhere in the command, e.g. when creating an output.
@@ -101,7 +83,7 @@ Each one of those `{commandN}` things above is a full command definition. The la
         - **resource** - The label of a resource under the above-named **file-input**, which will provide the files for an input mount.
     - **environment-variables** - Key/value pairs of environment variables to set in the container. Both keys and values can be templates that will be filled by input values at runtime.
     - **ports** - String key/value pairs of ports to expose. The key is the port inside the container, the value is the port to expose out on the host. In other words, entries in this map should be of the form `"container_port": "host_port"`. Keys and values can be templates.
-- **inputs** - A list of inputs that will be used to resolve the command and launch the container.
+- **inputs** - A list of inputs that will be used to resolve the command and launch the container. See [Inputs](#inputs).
     - **name** - The name of the input. You can use this to refer to the input elsewhere in the command.
     - **description** - A human-friendly description of the input.
     - **type** - One of string, boolean, number, file, Project, Subject, Session, Scan, Assessor, Resource, or Config. See the section on [input types](#input-types) below for more. Default: string.
@@ -109,14 +91,14 @@ Each one of those `{commandN}` things above is a full command definition. The la
     - **prerequisites** - A comma-separated string containing the names of other inputs that must be resolved (i.e. receive runtime values) before this input can be resolved. Note that an input's parent is automatically considered a prerequisite to that input, and need not be included in the list of prerequisites.
     - **parent** - The name of another input, which is the "parent" of this input. See the section on [parent inputs](#parent-inputs) for more.
     - **parent-property** - The name of a property of the parent. If this input's parent input is one of the XNAT input types, use `parent-property` to automatically set this input's value to that property of the parent. For instance, if the parent is a `Session`, this input could have `parent-property=label` and its value would be set at runtime to the session's label.
-    - **matcher** - A [JSONPath query string](#jsonpath-query-strings) used to determine if an input value is valid or not. For instance, if the parent input is a `Session`, and this input is a `Scan`, we can make sure that this input only matches scans with a DICOM resource by setting the matcher to `"DICOM" in @.resources[*].label`, or only matches scans of a certain type by setting the matcher to `@.scan-type == "MPRAGE"`.
+    - **matcher** - A [JSONPath filter](#jsonpath-filters) used to determine if an input value is valid or not. For instance, if the parent input is a `Session`, and this input is a `Scan`, we can make sure that this input only matches scans with a DICOM resource by setting the matcher to `"DICOM" in @.resources[*].label`, or only matches scans of a certain type by setting the matcher to `@.scan-type == "MPRAGE"`.
     - **default-value** - A value that will be used if no other value is provided at runtime.
     - **replacement-key** - A shorthand way to refer to this input's value elsewhere in the command. Default: the input's name bracketed by "#"; e.g. for an input named "foo" the default replacement-key is "#foo#".
     - **command-line-flag** - When this input's value is replaced in the command-line string, it is preceded by this flag. E.g. an input with value "foo" and command-line-flag "--flag" will appear in the command-line string as "--flag foo".
     - **command-line-separator** - The character separating the command-line-flag from the value in the command-line. Default: " ".
     - **true-value** - The string to use in the command line for a boolean input when its value is `true`. Some examples: "true", "T", "Y", "1", "--a-flag". Default: "true".
     - **false-value** - The string to use in the command line for a boolean input when its value is `false`. Some examples: "false", "F", "N", "0", "--some-other-flag". Default: "false".
-- **outputs** - A list of outputs that will be used to upload files produced by the container.
+- **outputs** - A liset of outputs that will be used to upload files produced by the container. See [Outputs](#outputs).
     - **name** - The name of the output.
     - **description** - A human-friendly description of the output.
     - **type** - One of "Assessor" or "Resource". Assessor outputs should point to a properly-formatted XML document that holds the details of the assessor object to be created. Resource outputs should point to a file or directory that will be uploaded to a new resource.
@@ -125,6 +107,25 @@ Each one of those `{commandN}` things above is a full command definition. The la
     - **files** - Where the file(s) can be found inside the container.
         - **mount** - The name of a mount, which must be defined in this command and must have type "output", into which your container wrote whatever file(s) you intend to upload.
         - **path** - The relative path within a mount at which output files can be found. Value can be templatized with input replacement keys.
+
+# Run
+The fields within the `run` section are the fields that control how the container will be created. You can configure four aspects of the container: the command-line string used to launch it, the volume mounts, the environment variables, and the ports.
+
+## Mounts
+There are two types of mounts: input and output. Input mounts can have files from the XNAT archives staged into them before container launch, but are read-only. Output mounts are created empty and  ready for containers to write files into.
+
+# Inputs
+Inputs allow you define what information and objects need to be provided when your Command is resolved before the container is launched. They are the way for you to gather all the requirements you need to launch your container: files, command-line arguments, environment variables, etc. Absolutely anything that you need for your container has to either be an input value or, if the input is one of the XNAT object types and the value is a big complex object, be some property or child of an input value.
+
+## Input Types
+string, boolean, number, file, Project, Subject, Session, Scan, Assessor, Resource, Config
+More info to come.
+
+## Parent Inputs
+More info to come.
+
+# Outputs
+If you want your container to produce files that get imported into XNAT, you need to define one or more output objects. You need to define where the files can be found (which output mount they are in, and what is the path within that mount) and where the new to-be-created object will live within XNAT. For the latter, you provide the name of an input, which must be an XNAT object type; the output files will be a new child of that parent input.
 
 # Template Strings
 When you define a Command, you can leave many of the values as "templates". These templates are placeholder strings, also known as "replacement keys", which tell the container service "When you launch a container from this Command, you will have values for your inputs; I want you to use one of those values here."
@@ -136,17 +137,62 @@ Lots of properties in the Command can use template strings:
 * run.ports - Both the container port and host port can be templates.
 * output.files.path - The relative path within a mount at which output files can be found.
 
-# JSONPath Strings
-More info to come.
+# JSONPath
+JSONPath is an expression syntax for searching through a JSON object, similar to the way you can use XPath to search through an XML document. The syntax and operators are documented here at the source repository: [https://github.com/jayway/JsonPath](https://github.com/jayway/JsonPath/blob/master/README.md).
 
-## JSONPath query strings
-More info to come.
+You can use JSONPath strings as values in several Command fields. When the Command is resolved before it is used to launch a container, those JSONPath strings will be replaced with whatever values they refer to. This is similar to the way you can use a [template string](#template-strings) in the Command definition, which gets replaced by a value when the Command is resolved. In fact, anywhere in the Command that you can use a template string, you can also use a JSONPath expression.
 
-# Input Types
-string, boolean, number, file, Project, Subject, Session, Scan, Assessor, Resource, Config
+Note: When you use a JSONPath expression as a value, you must surround it with carets (`^...^`) to signal to the Container Service that it needs to invoke the JSONPath interpreter.
 
-# Parent Inputs
-More info to come.
+JSONPath expressions start at the root of the Command, which is referred to as "`$`".
+
+## JSONPath filters
+The `input.matcher` property uses a special subset of the JSONPath sytax called a "[filter](;https://github.com/jayway/JsonPath/blob/master/README.md#filter-operators)". In JSONPath expressions that can return a list, you can use one of these expressions to filter out non-matching elements. As a simple example, let's say I have the JSON
+
+    {
+        "ice-cream": [
+            {"name": "Strawberry", "flavor": "yummy"},
+            {"name": "Spaghetti", "flavor": "yucky"}
+        ]
+    }
+
+Say I want just the `"name"`s. The JSONPath expression "`$.ice-cream[*].name`" would give back a list:
+
+    ["Strawberry", "Spaghetti"]
+
+But if I filter that list, I can get back just the elements that are `"yummy"`:
+
+    $.ice-cream[?(@.flavor == "yummy")].name
+    ["Strawberry"]
+
+See the [source documentation](https://github.com/jayway/JsonPath/blob/master/README.md#filter-operators) for the filter syntax. The filter is the part inside the parentheses. In the filter expression, we use the character `"@"` to refer to the element that we are checking.
+
+We can use these filter expressions as the value of the `input.matcher`. When the Command is being resolved, a potential input value must not be rejected by the filter, i.e. it must match the filter condition, to be assigned to the input value. In that way, if an input can receive its value from a [parent input](#parent-inputs) which has many children of a certain type, we can select just the one child that we want to be the value for our input.
+
+For example, say we have a Scan input, with a Session input as "parent". That Session may have many child scans, but we can use the `"matcher"` to select one that has a certain scantype by setting it to a filter expression, something like
+
+    @.scan-type in ["T1", "MPRAGE"]
+
+Here's another example from [xnat/dcm2niix-scan](https://github.com/NrgXnat/docker-images/blob/master/dcm2niix-scan/command.json).
+
+    "inputs": [
+        {
+            "name": "scan",
+            "description": "Input scan",
+            "type": "Scan",
+            "required": true,
+            "matcher": "'DICOM' in @.resources[*].label"
+        },
+        {
+            "name": "scan-dicoms",
+            "description": "The scan's dicom resource",
+            "type": "Resource",
+            "parent": "scan",
+            "matcher": "@.label == 'DICOM'"
+        }
+    ]
+
+This Command expects that it will be given a scan as an input, but it wants to run a matcher anyway just to be sure the scan has a DICOM resource (`"matcher": "'DICOM' in @.resources[*].label"`). The second input is a child to the first, and it matches the scan's DICOM resource (`"matcher": "@.label == 'DICOM'"`).
 
 # Examples
 ## Hello world example
