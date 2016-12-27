@@ -1,6 +1,7 @@
 package org.nrg.containers.events;
 
 //import org.apache.commons.codec.binary.StringUtils;
+
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.xdat.XDAT;
@@ -10,6 +11,8 @@ import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.event.entities.WorkflowStatusEvent;
 import org.nrg.xft.security.UserI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import reactor.bus.Event;
 import reactor.bus.EventBus;
@@ -19,12 +22,13 @@ import javax.inject.Inject;
 
 import static reactor.bus.selector.Selectors.type;
 
-
 @Service
 public class SessionTransferredListener implements Consumer<Event<WorkflowStatusEvent>> {
-
-
-    @Inject public SessionTransferredListener(EventBus eventBus ){ eventBus.on(type(WorkflowStatusEvent.class), this); }
+    @Inject
+    public SessionTransferredListener(EventBus eventBus, NrgEventService service) {
+        eventBus.on(type(WorkflowStatusEvent.class), this);
+        _service = service;
+    }
 
     //*
     // Translate "Transferred" workflow event into SessionArchivedEvent for workflow events containing Session type
@@ -37,12 +41,16 @@ public class SessionTransferredListener implements Consumer<Event<WorkflowStatus
             try {
                 final UserI user = Users.getUser(wfsEvent.getUserId());
                 final XnatImagesessiondata session = XnatImagesessiondata.getXnatImagesessiondatasById(wfsEvent.getEntityId(), user, true);
-                final NrgEventService eventService = XDAT.getContextService().getBean(NrgEventService.class);
-                eventService.triggerEvent(new SessionArchiveEvent(session, user));
-
-            } catch (UserNotFoundException | UserInitException e) {
-                e.printStackTrace();
+                _service.triggerEvent(new SessionArchiveEvent(session, user));
+            } catch (UserNotFoundException e) {
+                _log.warn("The specified user was not found: {}", wfsEvent.getUserId());
+            } catch (UserInitException e) {
+                _log.error("An error occurred trying to retrieve the user for a workflow event: " + wfsEvent.getUserId(), e);
             }
         }
     }
+
+    private static final Logger _log = LoggerFactory.getLogger(SessionTransferredListener.class);
+
+    private final NrgEventService _service;
 }
