@@ -24,6 +24,7 @@ public interface ContainerControlApi {
     DockerServer setServer(DockerServer server) throws InvalidPreferenceName;
     void setServer(String host) throws InvalidPreferenceName;
     String pingServer() throws NoServerPrefException, DockerServerException;
+    boolean canConnect();
 
     String pingHub(DockerHub hub) throws DockerServerException, NoServerPrefException;
 

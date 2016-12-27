@@ -1,6 +1,5 @@
 package org.nrg.containers.events;
 
-import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
@@ -19,6 +18,8 @@ public class DockerEventPuller implements Runnable {
     private ContainerControlApi controlApi;
     private DockerServerPrefsBean dockerServerPrefs;
 
+    private boolean haveLoggedEventCheckFailure = false;
+
     @Autowired
     @SuppressWarnings("SpringJavaAutowiringInspection")
     public DockerEventPuller(final ContainerControlApi controlApi,
@@ -32,21 +33,28 @@ public class DockerEventPuller implements Runnable {
         if (log.isDebugEnabled()) {
             log.debug("Attempting to read docker events.");
         }
-        if (StringUtils.isBlank(dockerServerPrefs.getHost())) {
-            log.info("No docker server host set. Skipping attempt to read events.");
+
+        if (!controlApi.canConnect()) {
+            if (!haveLoggedEventCheckFailure) {
+                log.info("Cannot ping docker server. Skipping attempt to read events.");
+                haveLoggedEventCheckFailure = true;
+            }
         } else {
             final Date lastEventCheckTime = dockerServerPrefs.getLastEventCheckTime();
             final Date since = lastEventCheckTime == null ? new Date(0L) : lastEventCheckTime;
 
+            final Date now = new Date();
+
             try {
-                final Date now = new Date();
                 controlApi.getContainerEventsAndThrow(since, now);
                 dockerServerPrefs.setLastEventCheckTime(now);
+                haveLoggedEventCheckFailure = false;
             } catch (NoServerPrefException e) {
                 log.info("Cannot search for Docker container events. No Docker server defined.");
             } catch (DockerServerException e) {
                 log.error("Cannot find Docker container events.", e);
             }
+
         }
     }
 }

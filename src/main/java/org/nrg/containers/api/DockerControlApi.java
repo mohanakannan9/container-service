@@ -109,6 +109,18 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     @Override
+    public boolean canConnect() {
+        try {
+            final String pingResult = pingServer();
+            return StringUtils.isNotBlank(pingResult) && pingResult.equals("OK");
+        } catch (NoServerPrefException | DockerServerException ignored) {
+            // Any actual errors have already been logged. We can safely ignore them here.
+        }
+
+        return false;
+    }
+
+    @Override
     public String pingHub(DockerHub hub) throws DockerServerException, NoServerPrefException {
         final AuthConfig authConfig = AuthConfig.builder()
                 .email(hub.getEmail())
