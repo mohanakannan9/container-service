@@ -2,7 +2,9 @@ package org.nrg.containers.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
+import org.nrg.containers.model.xnat.XnatModelObject;
 
+import javax.persistence.Column;
 import javax.persistence.Embeddable;
 import javax.persistence.Transient;
 import java.io.Serializable;
@@ -17,6 +19,7 @@ public class ContainerExecutionOutput implements Serializable {
     @JsonProperty("parent") private String parentInputName;
     private String mount;
     private String path;
+    private String created;
 
     public ContainerExecutionOutput() {}
 
@@ -93,6 +96,15 @@ public class ContainerExecutionOutput implements Serializable {
         this.path = path;
     }
 
+    @Column(columnDefinition = "TEXT")
+    public String getCreated() {
+        return created;
+    }
+
+    public void setCreated(final String created) {
+        this.created = created;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
@@ -104,12 +116,13 @@ public class ContainerExecutionOutput implements Serializable {
                 Objects.equals(this.required, that.required) &&
                 Objects.equals(this.parentInputName, that.parentInputName) &&
                 Objects.equals(this.mount, that.mount) &&
-                Objects.equals(this.path, that.path);
+                Objects.equals(this.path, that.path) &&
+                Objects.equals(this.created, that.created);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, type, label, required, parentInputName, mount, path);
+        return Objects.hash(name, type, label, required, parentInputName, mount, path, created);
     }
 
     @Override
@@ -122,6 +135,7 @@ public class ContainerExecutionOutput implements Serializable {
                 .add("parent", parentInputName)
                 .add("mount", mount)
                 .add("path", path)
+                .add("created", created)
                 .toString();
     }
 }

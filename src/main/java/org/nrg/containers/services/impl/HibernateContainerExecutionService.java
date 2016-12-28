@@ -110,6 +110,10 @@ public class HibernateContainerExecutionService
 
             }
         }
+
+        if (log.isDebugEnabled()) {
+            log.debug("Done processing docker container event: " + event);
+        }
     }
 
     @Override
@@ -122,11 +126,19 @@ public class HibernateContainerExecutionService
     @Override
     @Transactional
     public void finalize(final ContainerExecution containerExecution, final UserI userI) {
-        if (log.isDebugEnabled()) {
-            log.debug(String.format("Finalizing ContainerExecution %s for container %s", containerExecution.getId(), containerExecution.getContainerId()));
+        if (log.isInfoEnabled()) {
+            log.info(String.format("Finalizing ContainerExecution %s for container %s", containerExecution.getId(), containerExecution.getContainerId()));
         }
 
         ContainerFinalizeHelper.finalizeContainer(containerExecution, userI, containerControlApi, siteConfigPreferences, transportService, permissionsService, catalogService, mapper);
+
+        if (log.isInfoEnabled()) {
+            log.info(String.format("Done uploading for ContainerExecution %s. Now saving information about created outputs.", containerExecution.getId()));
+        }
+        update(containerExecution);
+        if (log.isDebugEnabled()) {
+            log.debug("Done saving outputs for Container " + String.valueOf(containerExecution.getId()));
+        }
     }
 
     @Override
