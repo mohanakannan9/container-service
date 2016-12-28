@@ -6,9 +6,11 @@ import com.google.common.base.MoreObjects;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.persistence.*;
+import javax.persistence.Embeddable;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.Transient;
 import java.io.Serializable;
-import java.util.List;
 import java.util.Objects;
 
 @Embeddable
@@ -170,6 +172,63 @@ public class CommandInput implements Serializable {
 
     public void setValue(final String value) {
         this.value = value;
+    }
+
+    @Transient
+    void update(final CommandInput other, final Boolean ignoreNull) {
+        if (other == null) {
+            return;
+        }
+
+        if (!(StringUtils.isNotBlank(other.name) && this.name.equals(other.name))) {
+            // We can't change the name. That's the identifier.
+            // How did you even get here with differently-named objects?
+            return;
+        }
+
+        if (!this.type.equals(other.type)) {
+            // We can't change the type.
+            // It has a non-null default, so there is no good way to discriminate between an
+            // intentional change to Type.STRING and an attempt to not change.
+            return;
+        }
+
+        if (other.description != null || !ignoreNull) {
+            this.description = other.description;
+        }
+        if (other.required != null || !ignoreNull) {
+            this.required = other.required;
+        }
+        if (other.prerequisites != null || !ignoreNull) {
+            this.prerequisites = other.prerequisites;
+        }
+        if (other.parent != null || !ignoreNull) {
+            this.parent = other.parent;
+        }
+        if (other.parentProperty != null || !ignoreNull) {
+            this.parentProperty = other.parentProperty;
+        }
+        if (other.matcher != null || !ignoreNull) {
+            this.matcher = other.matcher;
+        }
+        if (other.defaultValue != null || !ignoreNull) {
+            this.defaultValue = other.defaultValue;
+        }
+        if (other.rawReplacementKey != null || !ignoreNull) {
+            this.rawReplacementKey = other.rawReplacementKey;
+        }
+        if (other.commandLineFlag != null || !ignoreNull) {
+            this.commandLineFlag = other.commandLineFlag;
+        }
+        if (other.commandLineSeparator != null || !ignoreNull) {
+            this.commandLineSeparator = other.commandLineSeparator;
+        }
+        if (other.trueValue != null || !ignoreNull) {
+            this.trueValue = other.trueValue;
+        }
+        if (other.falseValue != null || !ignoreNull) {
+            this.falseValue = other.falseValue;
+        }
     }
 
     @Override

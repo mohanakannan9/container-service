@@ -16,6 +16,8 @@ import java.util.Map;
 public interface CommandService extends BaseHibernateService<Command> {
     Command get(Long id) throws NotFoundException;
 
+    Command update(Long id, Command updates, Boolean ignoreNull) throws NotFoundException;
+
     ResolvedCommand resolveCommand(final Long commandId,
                                    final Map<String, String> variableRuntimeValues,
                                    final UserI userI)

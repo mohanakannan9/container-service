@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import io.swagger.annotations.ApiModelProperty;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.persistence.Embeddable;
 import javax.persistence.Transient;
@@ -70,6 +71,37 @@ public class CommandMount implements Serializable {
     @ApiModelProperty(hidden = true)
     public String toBindMountString(final String hostPath) {
         return hostPath + ":" + remotePath + (isInput()?":ro":"");
+    }
+
+    @Transient
+    void update(final CommandMount other, final Boolean ignoreNull) {
+        if (other == null) {
+            // This should not happen. Caller should check for null before calling.
+            return;
+        }
+
+        if (!(StringUtils.isNotBlank(other.name) && this.name.equals(other.name))) {
+            // We can't change the name. That's the identifier.
+            // How did you even get here with differently-named objects?
+            return;
+        }
+
+        if (!this.type.equals(other.type)) {
+            // We can't change the type.
+            // It has a non-null default, so there is no good way to discriminate between an
+            // intentional change to Type.INPUT and an attempt to not change.
+            return;
+        }
+
+        if (!(other.remotePath == null && ignoreNull)) {
+            this.remotePath = other.remotePath;
+        }
+        if (!(other.fileInput == null && ignoreNull)) {
+            this.fileInput = other.fileInput;
+        }
+        if (!(other.resource == null && ignoreNull)) {
+            this.resource = other.resource;
+        }
     }
 
     @Override

@@ -3,6 +3,7 @@ package org.nrg.containers.model;
 import com.google.common.base.MoreObjects;
 
 import javax.persistence.Embeddable;
+import javax.persistence.Transient;
 import java.util.Objects;
 
 @Embeddable
@@ -24,6 +25,20 @@ public class CommandOutputFiles {
 
     public void setPath(final String path) {
         this.path = path;
+    }
+
+    @Transient
+    void update(final CommandOutputFiles other, final Boolean ignoreNull) {
+        if (other == null) {
+            return;
+        }
+
+        if (other.mount != null || !ignoreNull) {
+            this.mount = other.mount;
+        }
+        if (other.path != null || !ignoreNull) {
+            this.path = other.path;
+        }
     }
 
     @Override

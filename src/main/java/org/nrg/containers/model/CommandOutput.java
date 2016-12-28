@@ -1,6 +1,7 @@
 package org.nrg.containers.model;
 
 import com.google.common.base.MoreObjects;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.persistence.Embeddable;
 import javax.persistence.Transient;
@@ -76,6 +77,45 @@ public class CommandOutput implements Serializable {
 
     public void setFiles(final CommandOutputFiles files) {
         this.files = files;
+    }
+
+    @Transient
+    void update(final CommandOutput other, final Boolean ignoreNull) {
+        if (other == null) {
+            return;
+        }
+
+        if (!(StringUtils.isNotBlank(other.name) && this.name.equals(other.name))) {
+            // We can't change the name. That's the identifier.
+            // How did you even get here with differently-named objects?
+            return;
+        }
+
+        if (!this.type.equals(other.type)) {
+            // We can't change the type.
+            // It has a non-null default, so there is no good way to discriminate between an
+            // intentional change to Type.STRING and an attempt to not change.
+            return;
+        }
+
+        if (other.description != null || !ignoreNull) {
+            this.description = other.description;
+        }
+        if (other.label != null || !ignoreNull) {
+            this.label = other.label;
+        }
+        if (other.required != null || !ignoreNull) {
+            this.required = other.required;
+        }
+        if (other.parent != null || !ignoreNull) {
+            this.parent = other.parent;
+        }
+
+        if (this.files == null || (other.files == null && !ignoreNull)) {
+            this.files = other.files;
+        } else {
+            this.files.update(other.files, ignoreNull);
+        }
     }
 
     @Override

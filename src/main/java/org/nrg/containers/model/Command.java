@@ -13,7 +13,9 @@ import javax.annotation.Nullable;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -103,6 +105,106 @@ public class Command extends AbstractHibernateEntity {
         this.outputs = outputs == null ?
                 Lists.<CommandOutput>newArrayList() :
                 outputs;
+    }
+
+    @Transient
+    public void update(final Command other, final Boolean ignoreNull) {
+        if (other == null) {
+            return;
+        }
+
+        if (other.description != null || !ignoreNull) {
+            this.description = other.description;
+        }
+        if (other.infoUrl != null || !ignoreNull) {
+            this.infoUrl = other.infoUrl;
+        }
+
+        if (this.run == null || (other.run == null && !ignoreNull)) {
+            this.run = other.run;
+        } else {
+            this.run.update(other.run, ignoreNull);
+        }
+
+        if (this.inputs == null || this.inputs.isEmpty()) {
+            // If we have no inputs, just take what we are given.
+            // No need to go digging through lists when we're comparing to nothing.
+            // Even if the "update" is empty too, no big deal.
+            this.inputs = other.inputs;
+        } else {
+            final Map<String, CommandInput> inputsToUpdateMap = Maps.newHashMap();
+            if (other.inputs != null) {
+                for (final CommandInput otherOutput : other.inputs) {
+                    inputsToUpdateMap.put(otherOutput.getName(), otherOutput);
+                }
+            }
+
+            // Update any inputs that already exist
+            final Iterator<CommandInput> iterator = this.inputs.iterator();
+            while (iterator.hasNext()) {
+                final CommandInput thisInput = iterator.next();
+                if (inputsToUpdateMap.containsKey(thisInput.getName())) {
+                    // The mount we are looking at is in the list of inputs to update
+                    // So update it and keep it in the list.
+                    thisInput.update(inputsToUpdateMap.get(thisInput.getName()), ignoreNull);
+
+                    // Now that we've updated that mount, remove it from the map of ones to update.
+                    inputsToUpdateMap.remove(thisInput.getName());
+                } else {
+                    // The mount we are looking at is not in the list of inputs to update.
+                    // If we ignore nulls, than that's fine, the mount can stay. Do nothing.
+                    // If ignoreNull==false, then not seeing the mount means "remove it".
+                    if (!ignoreNull) {
+                        iterator.remove();
+                    }
+                }
+            }
+
+            // We have now updated/removed all inputs we already knew about.
+            // Any inputs still in the toUpdateMap are ones we didn't know about before,
+            // so we can just add them.
+            this.inputs.addAll(inputsToUpdateMap.values());
+        }
+
+        if (this.outputs == null || this.outputs.isEmpty()) {
+            // If we have no outputs, just take what we are given.
+            // No need to go digging through lists when we're comparing to nothing.
+            // Even if the "update" is empty too, no big deal.
+            this.outputs = other.outputs;
+        } else {
+            final Map<String, CommandOutput> outputsToUpdateMap = Maps.newHashMap();
+            if (other.outputs != null) {
+                for (final CommandOutput otherOutput : other.outputs) {
+                    outputsToUpdateMap.put(otherOutput.getName(), otherOutput);
+                }
+            }
+
+            // Update any outputs that already exist
+            final Iterator<CommandOutput> iterator = this.outputs.iterator();
+            while (iterator.hasNext()) {
+                final CommandOutput thisOutput = iterator.next();
+                if (outputsToUpdateMap.containsKey(thisOutput.getName())) {
+                    // The mount we are looking at is in the list of outputs to update
+                    // So update it and keep it in the list.
+                    thisOutput.update(outputsToUpdateMap.get(thisOutput.getName()), ignoreNull);
+
+                    // Now that we've updated that mount, remove it from the map of ones to update.
+                    outputsToUpdateMap.remove(thisOutput.getName());
+                } else {
+                    // The mount we are looking at is not in the list of outputs to update.
+                    // If we ignore nulls, than that's fine, the mount can stay. Do nothing.
+                    // If ignoreNull==false, then not seeing the mount means "remove it".
+                    if (!ignoreNull) {
+                        iterator.remove();
+                    }
+                }
+            }
+
+            // We have now updated/removed all outputs we already knew about.
+            // Any outputs still in the toUpdateMap are ones we didn't know about before,
+            // so we can just add them.
+            this.outputs.addAll(outputsToUpdateMap.values());
+        }
     }
 
     @Override

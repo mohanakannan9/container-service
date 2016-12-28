@@ -66,8 +66,8 @@ public class CommandRestApi extends AbstractXapiRestController {
     @RequestMapping(value = {"/{id}"}, method = GET)
     @ApiOperation(value = "Get a Command")
     @ResponseBody
-    public Command retrieveCommand(final @PathVariable Long id) {
-        return commandService.retrieve(id);
+    public Command retrieveCommand(final @PathVariable Long id) throws NotFoundException {
+        return commandService.get(id);
     }
 
     @RequestMapping(value = {}, method = POST, produces = JSON)
@@ -90,10 +90,10 @@ public class CommandRestApi extends AbstractXapiRestController {
     @ApiOperation(value = "Update a Command")
     @ResponseBody
     public Command updateCommand(final @RequestBody Command command,
-                                 final @PathVariable Long id) {
-        command.setId(id);
-        commandService.update(command);
-        return command;
+                                 final @PathVariable Long id,
+                                 final @RequestParam(value = "ignore-null", defaultValue = "true")
+                                             Boolean ignoreNull) throws NotFoundException {
+        return commandService.update(id, command, ignoreNull);
     }
 
     @RequestMapping(value = {"/{id}"}, method = DELETE)
@@ -184,6 +184,12 @@ public class CommandRestApi extends AbstractXapiRestController {
 //        }
 //        return null;
 //    }
+
+    @ResponseStatus(value = HttpStatus.NOT_FOUND)
+    @ExceptionHandler(value = {NotFoundException.class})
+    public String handleNotFound(final Exception e) {
+        return e.getMessage();
+    }
 
     @ResponseStatus(value = HttpStatus.FAILED_DEPENDENCY)
     @ExceptionHandler(value = {NoServerPrefException.class})
