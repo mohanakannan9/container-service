@@ -228,7 +228,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
                 (resolvedCommand.getMountsOut() != null && !resolvedCommand.getMountsOut().isEmpty()))) {
             log.debug("Transporting mounts");
         }
-        if (resolvedCommand.getMountsIn() != null) {
+        if (resolvedCommand.getMountsIn() != null && !resolvedCommand.getMountsIn().isEmpty()) {
             final String dockerHost = controlApi.getServer().getHost();
             for (final ContainerExecutionMount mountIn : resolvedCommand.getMountsIn()) {
                 final Path pathOnXnatHost = Paths.get(mountIn.getHostPath());
@@ -236,7 +236,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
                 mountIn.setHostPath(pathOnDockerHost.toString());
             }
         }
-        if (resolvedCommand.getMountsOut() != null) {
+        if (resolvedCommand.getMountsOut() != null && !resolvedCommand.getMountsOut().isEmpty()) {
             final String dockerHost = controlApi.getServer().getHost();
             final List<ContainerExecutionMount> mountsOut = resolvedCommand.getMountsOut();
             final List<Path> buildPaths = transporter.getWritableDirectories(dockerHost, mountsOut.size());
