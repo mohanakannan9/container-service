@@ -2,14 +2,38 @@ package org.nrg.containers.rest;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Sets;
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.Option;
+import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
+import com.jayway.jsonpath.spi.json.JsonProvider;
+import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
+import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.config.CommandRestApiTestConfig;
 import org.nrg.containers.model.Command;
+import org.nrg.containers.model.ContainerExecution;
+import org.nrg.containers.model.DockerServer;
+import org.nrg.containers.model.DockerServerPrefsBean;
+import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.containers.services.CommandService;
+import org.nrg.containers.services.ContainerExecutionService;
+import org.nrg.xdat.entities.AliasToken;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.security.services.RoleServiceI;
+import org.nrg.xdat.security.services.UserManagementServiceI;
+import org.nrg.xdat.services.AliasTokenService;
+import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.TestingAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -19,15 +43,20 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.io.File;
 import java.util.List;
+import java.util.Set;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.testSecurityContext;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -39,22 +68,86 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 @ContextConfiguration(classes = CommandRestApiTestConfig.class)
 public class CommandRestApiTest {
-
+    private UserI mockAdmin;
+    private Authentication authentication;
     private MockMvc mockMvc;
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final String FAKE_URL = "mock://url";
+    private final String FAKE_USERNAME = "fakeuser";
+    private final String FAKE_PASSWORD = "fakepass";
+    private final String FAKE_ALIAS = "fakealias";
+    private final String FAKE_SECRET = "fakesecret";
+    private final String FAKE_DOCKER_IMAGE = "abc123";
     private final MediaType JSON = MediaType.APPLICATION_JSON_UTF8;
     private final MediaType XML = MediaType.APPLICATION_XML;
 
-    @Autowired
-    private WebApplicationContext wac;
+    @Autowired private WebApplicationContext wac;
+    @Autowired private ObjectMapper mapper;
+    @Autowired private CommandService commandService;
+    @Autowired private RoleServiceI mockRoleService;
+    @Autowired private ContainerControlApi mockDockerControlApi;
+    @Autowired private ContainerExecutionService mockContainerExecutionService;
+    @Autowired private AliasTokenService mockAliasTokenService;
+    @Autowired private DockerServerPrefsBean mockDockerServerPrefsBean;
+    @Autowired private SiteConfigPreferences mockSiteConfigPreferences;
+    @Autowired private UserManagementServiceI mockUserManagementServiceI;
 
-    @Autowired
-    private CommandService commandService;
+    @Rule public TemporaryFolder folder = new TemporaryFolder(new File("/tmp"));
 
     @Before
-    public void setup() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
+    public void setup() throws Exception {
+        mockMvc = MockMvcBuilders.webAppContextSetup(wac).apply(springSecurity()).build();
+
+        Configuration.setDefaults(new Configuration.Defaults() {
+
+            private final JsonProvider jsonProvider = new JacksonJsonProvider();
+            private final MappingProvider mappingProvider = new JacksonMappingProvider();
+
+            @Override
+            public JsonProvider jsonProvider() {
+                return jsonProvider;
+            }
+
+            @Override
+            public MappingProvider mappingProvider() {
+                return mappingProvider;
+            }
+
+            @Override
+            public Set<Option> options() {
+                return Sets.newHashSet(Option.DEFAULT_PATH_LEAF_TO_NULL);
+            }
+        });
+
+        // Mock out the prefs bean
+        final String containerHost = "unix:///var/run/docker.sock";
+        final DockerServer dockerServer = new DockerServer(containerHost, null);
+        when(mockDockerServerPrefsBean.getHost()).thenReturn(containerHost);
+        when(mockDockerServerPrefsBean.toDto()).thenReturn(dockerServer);
+        when(mockDockerControlApi.getServer()).thenReturn(dockerServer);
+
+        // Mock the userI
+        mockAdmin = Mockito.mock(UserI.class);
+        when(mockAdmin.getLogin()).thenReturn(FAKE_USERNAME);
+        when(mockAdmin.getPassword()).thenReturn(FAKE_PASSWORD);
+        when(mockRoleService.isSiteAdmin(mockAdmin)).thenReturn(true);
+
+        authentication = new TestingAuthenticationToken(mockAdmin, FAKE_PASSWORD);
+
+        // Mock the user management service
+        when(mockUserManagementServiceI.getUser(FAKE_USERNAME)).thenReturn(mockAdmin);
+
+        // Mock the aliasTokenService
+        final AliasToken mockAliasToken = new AliasToken();
+        mockAliasToken.setAlias(FAKE_ALIAS);
+        mockAliasToken.setSecret(FAKE_SECRET);
+        when(mockAliasTokenService.issueTokenForUser(mockAdmin)).thenReturn(mockAliasToken);
+
+        // Mock the site config preferences
+        when(mockSiteConfigPreferences.getSiteUrl()).thenReturn(FAKE_URL);
+        when(mockSiteConfigPreferences.getProperty("processingUrl", FAKE_URL)).thenReturn(FAKE_URL);
+        when(mockSiteConfigPreferences.getBuildPath()).thenReturn(folder.newFolder().getAbsolutePath()); // transporter makes a directory under build
+        when(mockSiteConfigPreferences.getArchivePath()).thenReturn(folder.newFolder().getAbsolutePath()); // container logs get stored under archive
     }
 
     @Test
@@ -62,13 +155,16 @@ public class CommandRestApiTest {
         final String path = "/commands";
 
         final String commandJson =
-                "{\"name\": \"one\", \"docker-image\":\"abc123\"}";
+                "{\"name\": \"one\", \"docker-image\":\"" + FAKE_DOCKER_IMAGE + "\"}";
         final Command command = mapper.readValue(commandJson, Command.class);
         final Command created = commandService.create(command);
 
 //        when(commandService.getAll()).thenReturn(Lists.newArrayList(command));
 
-        final MockHttpServletRequestBuilder request = get(path);
+        final MockHttpServletRequestBuilder request = get(path)
+                .with(authentication(authentication))
+                .with(csrf())
+                .with(testSecurityContext());
 
         final String response =
                 mockMvc.perform(request)
@@ -84,7 +180,7 @@ public class CommandRestApiTest {
         assertNotEquals(0L, commandResponse.getId());
         assertEquals(created.getId(), commandResponse.getId());
         assertEquals("one", commandResponse.getName());
-        assertEquals("abc123", commandResponse.getDockerImage());
+        assertEquals(FAKE_DOCKER_IMAGE, commandResponse.getDockerImage());
     }
 
     @Test
@@ -92,11 +188,14 @@ public class CommandRestApiTest {
         final String path = "/commands/1";
 
         final String commandJson =
-                "{\"name\": \"one\", \"docker-image\":\"abc123\"}";
+                "{\"name\": \"one\", \"docker-image\":\"" + FAKE_DOCKER_IMAGE + "\"}";
         final Command command = mapper.readValue(commandJson, Command.class);
         final Command created = commandService.create(command);
 
-        final MockHttpServletRequestBuilder request = get(path);
+        final MockHttpServletRequestBuilder request = get(path)
+                .with(authentication(authentication))
+                .with(csrf())
+                .with(testSecurityContext());
 
         final String response =
                 mockMvc.perform(request)
@@ -110,7 +209,7 @@ public class CommandRestApiTest {
         assertNotEquals(0L, commandResponse.getId());
         assertEquals(created.getId(), commandResponse.getId());
         assertEquals("one", commandResponse.getName());
-        assertEquals("abc123", commandResponse.getDockerImage());
+        assertEquals(FAKE_DOCKER_IMAGE, commandResponse.getDockerImage());
     }
 
     @Test
@@ -118,10 +217,13 @@ public class CommandRestApiTest {
         final String path = "/commands";
 
         final String commandJson =
-                "{\"name\": \"toCreate\", \"docker-image\":\"abc123\"}";
+                "{\"name\": \"toCreate\", \"docker-image\":\"" + FAKE_DOCKER_IMAGE + "\"}";
 
         final MockHttpServletRequestBuilder request =
-                post(path).content(commandJson).contentType(JSON);
+                post(path).content(commandJson).contentType(JSON)
+                        .with(authentication(authentication))
+                        .with(csrf())
+                        .with(testSecurityContext());
 
         final String response =
                 mockMvc.perform(request)
@@ -139,7 +241,7 @@ public class CommandRestApiTest {
         assertEquals(retrieved.getId(), commandResponse.getId());
         assertEquals("toCreate", retrieved.getName());
         assertEquals(retrieved.getName(), commandResponse.getName());
-        assertEquals("abc123", retrieved.getDockerImage());
+        assertEquals(FAKE_DOCKER_IMAGE, retrieved.getDockerImage());
         assertEquals(retrieved.getDockerImage(), commandResponse.getDockerImage());
 
         // Errors
@@ -147,7 +249,11 @@ public class CommandRestApiTest {
         mockMvc.perform(request).andExpect(status().isBadRequest());
 
         // No 'Content-type' header
-        final MockHttpServletRequestBuilder noContentType = post(path).content(commandJson);
+        final MockHttpServletRequestBuilder noContentType =
+                post(path).content(commandJson)
+                        .with(authentication(authentication))
+                        .with(csrf())
+                        .with(testSecurityContext());
         mockMvc.perform(noContentType)
                 .andExpect(status().isUnsupportedMediaType());
 
@@ -155,7 +261,10 @@ public class CommandRestApiTest {
         final MockHttpServletRequestBuilder badAccept =
                 post(path).content(commandJson)
                         .contentType(JSON)
-                        .accept(XML);
+                        .accept(XML)
+                        .with(authentication(authentication))
+                        .with(csrf())
+                        .with(testSecurityContext());
         mockMvc.perform(badAccept)
                 .andExpect(status().isNotAcceptable());
     }
@@ -165,13 +274,16 @@ public class CommandRestApiTest {
         final String pathTemplate = "/commands/%d";
 
         final String commandJson =
-                "{\"name\": \"toDelete\", \"docker-image\":\"abc123\"}";
+                "{\"name\": \"toDelete\", \"docker-image\":\"" + FAKE_DOCKER_IMAGE + "\"}";
         final Command command = mapper.readValue(commandJson, Command.class);
         commandService.create(command);
         final Long id = command.getId();
 
         final String path = String.format(pathTemplate, id);
-        final MockHttpServletRequestBuilder request = delete(path);
+        final MockHttpServletRequestBuilder request = delete(path)
+                .with(authentication(authentication))
+                .with(csrf())
+                .with(testSecurityContext());
 
 
         mockMvc.perform(request)
@@ -179,5 +291,63 @@ public class CommandRestApiTest {
 
         final Command retrieved = commandService.retrieve(id);
         assertNull(retrieved);
+    }
+
+    @Test
+    public void testLaunchWithQueryParams() throws Exception {
+        final String pathTemplate = "/commands/%d/launch";
+
+        final String fakeContainerId = "098zyx";
+        final String inputName = "stringInput";
+        final String inputValue = "the super cool value";
+        final String inputJson = "{\"" + inputName + "\": \"" + inputValue + "\"}";
+        final String commandInput = "{\"name\": \"" + inputName + "\"}";
+        final String commandJson =
+                "{\"name\": \"toLaunch\"," +
+                        "\"docker-image\": \"" + FAKE_DOCKER_IMAGE + "\"," +
+                        "\"inputs\": [" + commandInput + "]}";
+        final Command command = mapper.readValue(commandJson, Command.class);
+        commandService.create(command);
+        final Long id = command.getId();
+
+        // This ResolvedCommand will be used in an internal method to "launch" a container
+        final String environmentVariablesJson = "{" +
+                "\"XNAT_HOST\": \"" + FAKE_URL + "\"," +
+                "\"XNAT_USER\": \"" + FAKE_ALIAS + "\"," +
+                "\"XNAT_PASS\": \"" + FAKE_SECRET + "\"" +
+                "}";
+        final String preparedResolvedCommandJson =
+                "{\"command-id\": " + String.valueOf(id) +"," +
+                        "\"docker-image\": \"" + FAKE_DOCKER_IMAGE + "\"," +
+                        "\"env\": " + environmentVariablesJson + "," +
+                        "\"input-values\": " + inputJson + "," +
+                        "\"mounts-in\": []," +
+                        "\"mounts-out\": []," +
+                        "\"outputs\": []," +
+                        "\"ports\": {}" +
+                        "}";
+        final ResolvedCommand preparedResolvedCommand = mapper.readValue(preparedResolvedCommandJson, ResolvedCommand.class);
+        when(mockDockerControlApi.launchImage(preparedResolvedCommand)).thenReturn(fakeContainerId);
+
+        // The (fake) container launch will be recorded in a (fake) ContainerExecution
+        final ContainerExecution containerExecution = new ContainerExecution(preparedResolvedCommand, fakeContainerId, FAKE_USERNAME);
+        when(mockContainerExecutionService.save(preparedResolvedCommand, fakeContainerId, mockAdmin))
+                .thenReturn(containerExecution);
+
+        final String path = String.format(pathTemplate, id);
+        final MockHttpServletRequestBuilder request =
+                post(path).param(inputName, inputValue)
+                        .with(authentication(authentication))
+                        .with(csrf())
+                        .with(testSecurityContext());
+
+        final String response = mockMvc.perform(request)
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        final ContainerExecution containerExecutionResponse = mapper.readValue(response, ContainerExecution.class);
+        assertEquals(containerExecutionResponse, containerExecution);
     }
 }
