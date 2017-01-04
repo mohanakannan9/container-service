@@ -185,12 +185,14 @@ public class CommandRestApiTest {
 
     @Test
     public void testGet() throws Exception {
-        final String path = "/commands/1";
+        final String pathTemplate = "/commands/%d";
 
         final String commandJson =
                 "{\"name\": \"one\", \"docker-image\":\"" + FAKE_DOCKER_IMAGE + "\"}";
         final Command command = mapper.readValue(commandJson, Command.class);
         final Command created = commandService.create(command);
+
+        final String path = String.format(pathTemplate, created.getId());
 
         final MockHttpServletRequestBuilder request = get(path)
                 .with(authentication(authentication))
