@@ -610,7 +610,8 @@ public class CommandResolutionHelper {
     private String resolveCommandLine() throws CommandResolutionException {
         log.info("Resolving command-line string.");
 
-        final String resolvedCommandLine = resolveTemplate(command.getRun().getCommandLine(), resolvedInputCommandLineValuesByReplacementKey);
+        final String resolvedCommandLine = resolveTemplate(command.getRun() != null ? command.getRun().getCommandLine() : null,
+                resolvedInputCommandLineValuesByReplacementKey);
 
         log.info("Done resolving command-line string.");
         if (log.isDebugEnabled()) {
@@ -623,7 +624,7 @@ public class CommandResolutionHelper {
             throws CommandResolutionException {
         log.info("Resolving environment variables.");
 
-        final Map<String, String> envTemplates = command.getRun().getEnvironmentVariables();
+        final Map<String, String> envTemplates = command.getRun() != null ? command.getRun().getEnvironmentVariables() : null;
         if (envTemplates == null || envTemplates.isEmpty()) {
             log.info("No environment variables to resolve.");
             return null;
@@ -646,7 +647,7 @@ public class CommandResolutionHelper {
             throws CommandResolutionException {
         log.info("Resolving ports.");
 
-        final Map<String, String> portTemplates = command.getRun().getPorts();
+        final Map<String, String> portTemplates = command.getRun() != null ? command.getRun().getPorts() : null;
         if (portTemplates == null || portTemplates.isEmpty()) {
             log.info("No ports to resolve.");
             return null;
@@ -688,13 +689,14 @@ public class CommandResolutionHelper {
 
     private List<ContainerExecutionMount> resolveCommandMounts() throws CommandMountResolutionException {
         log.info("Resolving mounts.");
-        if (command.getRun() == null || command.getRun().getMounts() == null) {
+        final List<CommandMount> mountTemplates = command.getRun() != null ? command.getRun().getMounts() : null;
+        if (mountTemplates == null || mountTemplates.isEmpty()) {
             log.info("No mounts.");
             return Lists.newArrayList();
         }
 
         final List<ContainerExecutionMount> resolvedMounts = Lists.newArrayList();
-        for (final CommandMount mount : command.getRun().getMounts()) {
+        for (final CommandMount mount : mountTemplates) {
             log.info(String.format("Resolving mount \"%s\".", mount.getName()));
             final ContainerExecutionMount resolvedMount = new ContainerExecutionMount(mount);
             if (mount.isInput()) {
