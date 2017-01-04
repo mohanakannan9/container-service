@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import springfox.documentation.annotations.ApiIgnore;
 
 import java.util.List;
 import java.util.Map;
@@ -113,7 +114,7 @@ public class CommandRestApi extends AbstractXapiRestController {
     }
 
     @RequestMapping(value = {"/{id}/launch"}, method = POST)
-    @ApiOperation(value = "Resolve a command from the variable values in the query string, and launch it")
+    @ApiIgnore // Swagger UI does not correctly show this API endpoint
     @ResponseBody
     public ContainerExecution launchCommandWQueryParams(final @PathVariable Long id,
                                                         final @RequestParam Map<String, String> allRequestParams)
