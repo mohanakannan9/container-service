@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import springfox.documentation.annotations.ApiIgnore;
 
 import java.util.List;
 import java.util.Map;
@@ -113,14 +114,37 @@ public class CommandRestApi extends AbstractXapiRestController {
     }
 
     @RequestMapping(value = {"/{id}/launch"}, method = POST)
-    @ApiOperation(value = "Resolve a command from the variable values in the query string, and launch it")
+    @ApiIgnore // Swagger UI does not correctly show this API endpoint
     @ResponseBody
-    public ContainerExecution launchCommand(final @PathVariable Long id,
-                                            final @RequestParam Map<String, String> allRequestParams)
+    public ContainerExecution launchCommandWQueryParams(final @PathVariable Long id,
+                                                        final @RequestParam Map<String, String> allRequestParams)
             throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException {
+        log.info("Launch requested for command id " + String.valueOf(id));
+        return launchCommand(id, allRequestParams);
+    }
+
+    @RequestMapping(value = {"/{id}/launch"}, method = POST, consumes = {JSON})
+    @ApiOperation(value = "Resolve a command from the variable values in the request body, and launch it")
+    @ResponseBody
+    public ContainerExecution launchCommandWJsonBody(final @PathVariable Long id,
+                                                     final @RequestBody Map<String, String> allRequestParams)
+            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException {
+        log.info("Launch requested for command id " + String.valueOf(id));
+        return launchCommand(id, allRequestParams);
+    }
+
+    private ContainerExecution launchCommand(final @PathVariable Long id, final @RequestParam Map<String, String> allRequestParams) throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, BadRequestException {
         final UserI userI = XDAT.getUserDetails();
         try {
-            return commandService.resolveAndLaunchCommand(id, allRequestParams, userI);
+            final ContainerExecution containerExecution = commandService.resolveAndLaunchCommand(id, allRequestParams, userI);
+            if (log.isInfoEnabled()) {
+                log.info(String.format("Launched command id %d. Produced container %d.", id,
+                        containerExecution != null ? containerExecution.getId() : null));
+                if (log.isDebugEnabled()) {
+                    log.debug(containerExecution != null ? containerExecution.toString() : "Container execution object is null.");
+                }
+            }
+            return containerExecution;
         } catch (CommandInputResolutionException e) {
             throw new BadRequestException("Must provide value for variable " + e.getInput().getName() + ".", e);
         }
