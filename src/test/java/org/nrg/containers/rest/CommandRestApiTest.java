@@ -350,4 +350,62 @@ public class CommandRestApiTest {
         final ContainerExecution containerExecutionResponse = mapper.readValue(response, ContainerExecution.class);
         assertEquals(containerExecutionResponse, containerExecution);
     }
+
+    @Test
+    public void testLaunchWithParamsInBody() throws Exception {
+        final String pathTemplate = "/commands/%d/launch";
+
+        final String fakeContainerId = "098zyx";
+        final String inputName = "stringInput";
+        final String inputValue = "the super cool value";
+        final String inputJson = "{\"" + inputName + "\": \"" + inputValue + "\"}";
+        final String commandInput = "{\"name\": \"" + inputName + "\"}";
+        final String commandJson =
+                "{\"name\": \"toLaunch\"," +
+                        "\"docker-image\": \"" + FAKE_DOCKER_IMAGE + "\"," +
+                        "\"inputs\": [" + commandInput + "]}";
+        final Command command = mapper.readValue(commandJson, Command.class);
+        commandService.create(command);
+        final Long id = command.getId();
+
+        // This ResolvedCommand will be used in an internal method to "launch" a container
+        final String environmentVariablesJson = "{" +
+                "\"XNAT_HOST\": \"" + FAKE_URL + "\"," +
+                "\"XNAT_USER\": \"" + FAKE_ALIAS + "\"," +
+                "\"XNAT_PASS\": \"" + FAKE_SECRET + "\"" +
+                "}";
+        final String preparedResolvedCommandJson =
+                "{\"command-id\": " + String.valueOf(id) +"," +
+                        "\"docker-image\": \"" + FAKE_DOCKER_IMAGE + "\"," +
+                        "\"env\": " + environmentVariablesJson + "," +
+                        "\"input-values\": " + inputJson + "," +
+                        "\"mounts-in\": []," +
+                        "\"mounts-out\": []," +
+                        "\"outputs\": []," +
+                        "\"ports\": {}" +
+                        "}";
+        final ResolvedCommand preparedResolvedCommand = mapper.readValue(preparedResolvedCommandJson, ResolvedCommand.class);
+        when(mockDockerControlApi.launchImage(preparedResolvedCommand)).thenReturn(fakeContainerId);
+
+        // The (fake) container launch will be recorded in a (fake) ContainerExecution
+        final ContainerExecution containerExecution = new ContainerExecution(preparedResolvedCommand, fakeContainerId, FAKE_USERNAME);
+        when(mockContainerExecutionService.save(preparedResolvedCommand, fakeContainerId, mockAdmin))
+                .thenReturn(containerExecution);
+
+        final String path = String.format(pathTemplate, id);
+        final MockHttpServletRequestBuilder request =
+                post(path).content(inputJson).contentType(JSON)
+                        .with(authentication(authentication))
+                        .with(csrf())
+                        .with(testSecurityContext());
+
+        final String response = mockMvc.perform(request)
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        final ContainerExecution containerExecutionResponse = mapper.readValue(response, ContainerExecution.class);
+        assertEquals(containerExecutionResponse, containerExecution);
+    }
 }
