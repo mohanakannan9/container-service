@@ -50,6 +50,7 @@ public class ContainerFinalizeHelper {
 
     private ContainerExecution containerExecution;
     private UserI userI;
+    private String exitCode;
 
     private Map<String, ContainerExecutionMount> untransportedMounts;
     private Map<String, ContainerExecutionMount> transportedMounts;
@@ -59,6 +60,7 @@ public class ContainerFinalizeHelper {
 
     private ContainerFinalizeHelper(final ContainerExecution containerExecution,
                                     final UserI userI,
+                                    final String exitCode,
                                     final ContainerControlApi containerControlApi,
                                     final SiteConfigPreferences siteConfigPreferences,
                                     final TransportService transportService,
@@ -74,6 +76,7 @@ public class ContainerFinalizeHelper {
 
         this.containerExecution = containerExecution;
         this.userI = userI;
+        this.exitCode = exitCode;
 
         untransportedMounts = Maps.newHashMap();
         transportedMounts = Maps.newHashMap();
@@ -84,6 +87,7 @@ public class ContainerFinalizeHelper {
 
     public static void finalizeContainer(final ContainerExecution containerExecution,
                                          final UserI userI,
+                                         final String exitCode,
                                          final ContainerControlApi containerControlApi,
                                          final SiteConfigPreferences siteConfigPreferences,
                                          final TransportService transportService,
@@ -91,12 +95,14 @@ public class ContainerFinalizeHelper {
                                          final CatalogService catalogService,
                                          final ObjectMapper mapper) {
         final ContainerFinalizeHelper helper =
-                new ContainerFinalizeHelper(containerExecution, userI, containerControlApi, siteConfigPreferences, transportService, permissionsService, catalogService, mapper);
+                new ContainerFinalizeHelper(containerExecution, userI, exitCode, containerControlApi, siteConfigPreferences, transportService, permissionsService, catalogService, mapper);
         helper.finalizeContainer();
     }
 
     private void finalizeContainer() {
         containerExecution.addLogPaths(uploadLogs());
+
+        // TODO Add some stuff with status code. "x" means "don't know", "0" success, greater than 0 failure.
 
         if (containerExecution.getOutputs() != null) {
             if (containerExecution.getMountsOut() != null) {

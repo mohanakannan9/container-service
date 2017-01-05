@@ -1,7 +1,6 @@
 package org.nrg.containers.services.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Hibernate;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.daos.ContainerExecutionRepository;
@@ -30,13 +29,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
-import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class HibernateContainerExecutionService
         extends AbstractHibernateEntityService<ContainerExecution, ContainerExecutionRepository>
         implements ContainerExecutionService {
     private static final Logger log = LoggerFactory.getLogger(HibernateContainerExecutionService.class);
+    private static final Pattern exitCodePattern = Pattern.compile("kill|die|oom\\((\\d+|x)\\)");
     private final String UTF8 = StandardCharsets.UTF_8.name();
 
     private ContainerControlApi containerControlApi;
@@ -83,28 +84,20 @@ public class HibernateContainerExecutionService
         if (log.isDebugEnabled()) {
             log.debug("Processing docker container event: " + event);
         }
-        final List<ContainerExecution> matchingContainerIds = getDao().findByProperty("containerId", event.getContainerId());
+        final ContainerExecution execution = getDao().didRecordEvent(event);
 
-        // Container ID is constrained to be unique, so we can safely take the first element of this list
-        if (matchingContainerIds != null && !matchingContainerIds.isEmpty()) {
-            final ContainerExecution execution = matchingContainerIds.get(0);
-            if (log.isDebugEnabled()) {
-                log.debug("Found matching execution: " + execution.getId());
-            }
+        // execution will be null if either we aren't tracking the container
+        // that this event is about, or if we have already recorded the event
+        if (execution != null ) {
 
-            final ContainerExecutionHistory history = new ContainerExecutionHistory(event.getStatus(), event.getTime());
-            if (log.isDebugEnabled()) {
-                log.debug("Adding history entry: " + history);
-            }
-            execution.addToHistory(history);
-            update(execution);
-
-            if (StringUtils.isNotBlank(event.getStatus()) &&
-                    event.getStatus().matches("kill|die|oom")) {
+            final Matcher exitCodeMatcher =
+                    exitCodePattern.matcher(event.getStatus());
+            if (exitCodeMatcher.matches()) {
+                final String exitCode = exitCodeMatcher.group(1);
                 final String userLogin = execution.getUserId();
                 try {
                     final UserI userI = Users.getUser(userLogin);
-                    finalize(execution, userI);
+                    finalize(execution, userI, exitCode);
                 } catch (UserInitException | UserNotFoundException e) {
                     log.error("Could not finalize container execution. Could not get user details for user " + userLogin, e);
                 }
@@ -121,17 +114,24 @@ public class HibernateContainerExecutionService
     @Transactional
     public void finalize(final Long containerExecutionId, final UserI userI) {
         final ContainerExecution containerExecution = retrieve(containerExecutionId);
-        finalize(containerExecution, userI);
+        String exitCode = "x";
+        for (final ContainerExecutionHistory history : containerExecution.getHistory()) {
+            final Matcher exitCodeMatcher = exitCodePattern.matcher(history.getStatus());
+            if (exitCodeMatcher.matches()) {
+                exitCode = exitCodeMatcher.group(1);
+            }
+        }
+        finalize(containerExecution, userI, exitCode);
     }
 
     @Override
     @Transactional
-    public void finalize(final ContainerExecution containerExecution, final UserI userI) {
+    public void finalize(final ContainerExecution containerExecution, final UserI userI,  final String exitCode) {
         if (log.isInfoEnabled()) {
             log.info(String.format("Finalizing ContainerExecution %s for container %s", containerExecution.getId(), containerExecution.getContainerId()));
         }
 
-        ContainerFinalizeHelper.finalizeContainer(containerExecution, userI, containerControlApi, siteConfigPreferences, transportService, permissionsService, catalogService, mapper);
+        ContainerFinalizeHelper.finalizeContainer(containerExecution, userI, exitCode, containerControlApi, siteConfigPreferences, transportService, permissionsService, catalogService, mapper);
 
         if (log.isInfoEnabled()) {
             log.info(String.format("Done uploading for ContainerExecution %s. Now saving information about created outputs.", containerExecution.getId()));
