@@ -77,11 +77,11 @@ public class CommandRestApi extends AbstractXapiRestController {
             @ApiResponse(code = 201, message = "Created", response = Command.class),
             @ApiResponse(code = 415, message = "Set the Content-type header on the request")
     })
-    public ResponseEntity<Command> createCommand(final @RequestBody Command command)
+    public ResponseEntity<Long> createCommand(final @RequestBody Command command)
             throws BadRequestException {
         try {
             final Command created = commandService.create(command);
-            return new ResponseEntity<>(created, HttpStatus.CREATED);
+            return new ResponseEntity<>(created.getId(), HttpStatus.CREATED);
         } catch (NrgRuntimeException e) {
             throw new BadRequestException(e);
         }
@@ -107,30 +107,33 @@ public class CommandRestApi extends AbstractXapiRestController {
     @RequestMapping(value = {"/launch"}, method = POST)
     @ApiOperation(value = "Launch a container from a resolved command")
     @ResponseBody
-    public ContainerExecution launchCommand(final @RequestBody ResolvedCommand resolvedCommand)
+    public Long launchCommand(final @RequestBody ResolvedCommand resolvedCommand)
             throws NoServerPrefException, DockerServerException {
         final UserI userI = XDAT.getUserDetails();
-        return commandService.launchResolvedCommand(resolvedCommand, userI);
+        final ContainerExecution executed = commandService.launchResolvedCommand(resolvedCommand, userI);
+        return executed.getId();
     }
 
     @RequestMapping(value = {"/{id}/launch"}, method = POST)
     @ApiIgnore // Swagger UI does not correctly show this API endpoint
     @ResponseBody
-    public ContainerExecution launchCommandWQueryParams(final @PathVariable Long id,
+    public Long launchCommandWQueryParams(final @PathVariable Long id,
                                                         final @RequestParam Map<String, String> allRequestParams)
             throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException {
         log.info("Launch requested for command id " + String.valueOf(id));
-        return launchCommand(id, allRequestParams);
+        final ContainerExecution executed = launchCommand(id, allRequestParams);
+        return executed.getId();
     }
 
     @RequestMapping(value = {"/{id}/launch"}, method = POST, consumes = {JSON})
     @ApiOperation(value = "Resolve a command from the variable values in the request body, and launch it")
     @ResponseBody
-    public ContainerExecution launchCommandWJsonBody(final @PathVariable Long id,
+    public Long launchCommandWJsonBody(final @PathVariable Long id,
                                                      final @RequestBody Map<String, String> allRequestParams)
             throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException {
         log.info("Launch requested for command id " + String.valueOf(id));
-        return launchCommand(id, allRequestParams);
+        final ContainerExecution executed = launchCommand(id, allRequestParams);
+        return executed.getId();
     }
 
     private ContainerExecution launchCommand(final @PathVariable Long id, final @RequestParam Map<String, String> allRequestParams) throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, BadRequestException {

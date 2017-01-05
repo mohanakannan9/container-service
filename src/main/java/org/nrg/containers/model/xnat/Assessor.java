@@ -105,7 +105,7 @@ public class Assessor extends XnatModelObject {
     @Override
     public String toString() {
         return addParentPropertiesToString(MoreObjects.toStringHelper(this))
-                .add("parentId", parentId)
+//                .add("parentId", parentId)
                 .add("resources", resources)
                 .toString();
     }

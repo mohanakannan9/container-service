@@ -116,8 +116,8 @@ public class Resource extends XnatModelObject {
     @Override
     public String toString() {
         return addParentPropertiesToString(MoreObjects.toStringHelper(this))
-                .add("parentId", parentId)
-                .add("directory", directory)
+//                .add("parentId", parentId)
+//                .add("directory", directory)
                 .add("files", files)
                 .toString();
     }

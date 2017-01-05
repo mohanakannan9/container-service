@@ -109,13 +109,14 @@ public class XnatFile extends XnatModelObject {
 
     @Override
     public String toString() {
-        return addParentPropertiesToString(MoreObjects.toStringHelper(this))
-                .add("name", name)
-                .add("path", path)
-                .add("tags", tags)
-                .add("format", format)
-                .add("content", content)
-                .add("file", file)
-                .toString();
+        return name;
+//        return addParentPropertiesToString(MoreObjects.toStringHelper(this))
+//                .add("name", name)
+//                .add("path", path)
+//                .add("tags", tags)
+//                .add("format", format)
+//                .add("content", content)
+//                .add("file", file)
+//                .toString();
     }
 }

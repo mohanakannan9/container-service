@@ -235,16 +235,14 @@ public class CommandRestApiTest {
                         .getResponse()
                         .getContentAsString();
 
-        final Command commandResponse = mapper.readValue(response, Command.class);
-        assertNotEquals(0L, commandResponse.getId());
+        final Long idResponse = Long.parseLong(response);
+        assertNotEquals(Long.valueOf(0L), idResponse);
 
-        final Command retrieved = commandService.retrieve(commandResponse.getId());
+        final Command retrieved = commandService.retrieve(idResponse);
         assertNotEquals(0L, retrieved.getId());
-        assertEquals(retrieved.getId(), commandResponse.getId());
+        assertEquals((Long) retrieved.getId(), idResponse);
         assertEquals("toCreate", retrieved.getName());
-        assertEquals(retrieved.getName(), commandResponse.getName());
         assertEquals(FAKE_DOCKER_IMAGE, retrieved.getDockerImage());
-        assertEquals(retrieved.getDockerImage(), commandResponse.getDockerImage());
 
         // Errors
         // Violate unique name+docker-image-id constraint (we'll trigger that by performing the same 'create' request again)
@@ -349,8 +347,8 @@ public class CommandRestApiTest {
                 .getResponse()
                 .getContentAsString();
 
-        final ContainerExecution containerExecutionResponse = mapper.readValue(response, ContainerExecution.class);
-        assertEquals(containerExecutionResponse, containerExecution);
+        final Long idResponse = Long.parseLong(response);
+        assertEquals(idResponse, (Long) containerExecution.getId());
     }
 
     @Test
@@ -407,7 +405,7 @@ public class CommandRestApiTest {
                 .getResponse()
                 .getContentAsString();
 
-        final ContainerExecution containerExecutionResponse = mapper.readValue(response, ContainerExecution.class);
-        assertEquals(containerExecutionResponse, containerExecution);
+        final Long idResponse = Long.parseLong(response);
+        assertEquals(idResponse, (Long) containerExecution.getId());
     }
 }
