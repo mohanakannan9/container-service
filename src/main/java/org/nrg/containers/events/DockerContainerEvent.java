@@ -11,13 +11,13 @@ public class DockerContainerEvent implements DockerEvent {
     private String containerId;
     private Date time;
     private Long timeNano;
-    private Map<String, Object> attributes;
+    private Map<String, String> attributes;
 
     public DockerContainerEvent(final String status,
                                 final String containerId,
                                 final Date time,
                                 final Long timeNano,
-                                final Map<String, Object> attributes) {
+                                final Map<String, String> attributes) {
         this.status = status;
         this.containerId = containerId;
         this.time = time;
@@ -41,7 +41,7 @@ public class DockerContainerEvent implements DockerEvent {
         return timeNano;
     }
 
-    public Map<String, Object> getAttributes() {
+    public Map<String, String> getAttributes() {
         return attributes;
     }
 

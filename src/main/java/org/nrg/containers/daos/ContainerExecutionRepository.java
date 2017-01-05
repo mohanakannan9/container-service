@@ -29,12 +29,11 @@ public class ContainerExecutionRepository extends AbstractHibernateDAO<Container
 
             String status = event.getStatus();
             if (status.matches("kill|die|oom")) {
-                final Map<String, Object> attributes = event.getAttributes();
+                final Map<String, String> attributes = event.getAttributes();
                 final String exitCode =
                         attributes.containsKey("exitCode") &&
-                                attributes.get("exitCode") != null &&
-                                StringUtils.isNotBlank((String)attributes.get("exitCode")) ?
-                                (String) attributes.get("exitCode") :
+                                StringUtils.isNotBlank(attributes.get("exitCode")) ?
+                                attributes.get("exitCode") :
                                 "x";
 
                 status += "(" + exitCode + ")";
