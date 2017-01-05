@@ -169,7 +169,7 @@ public class CommandResolutionHelper {
                 log.debug("Default value: " + input.getDefaultValue());
             }
             if (input.getDefaultValue() != null) {
-                 resolvedValue = resolveJsonpathSubstring(input.getDefaultValue());
+                 resolvedValue = input.getDefaultValue();
             }
 
             // If a value was provided at runtime, use that over the default
@@ -177,8 +177,13 @@ public class CommandResolutionHelper {
                 if (log.isDebugEnabled()) {
                     log.debug("Runtime value: " + inputValues.get(input.getName()));
                 }
-                resolvedValue = resolveJsonpathSubstring(inputValues.get(input.getName()));
+                resolvedValue = inputValues.get(input.getName());
             }
+
+            if (log.isDebugEnabled()) {
+                log.debug("Checking for jsonpath substring in input value");
+            }
+            resolvedValue = resolveJsonpathSubstring(resolvedValue);
 
             if (log.isDebugEnabled()) {
                 log.debug("Matcher: " + input.getMatcher());
