@@ -834,7 +834,8 @@ public class CommandResolutionHelper {
         for (final String replacementKey : valuesMap.keySet()) {
             final String replacementValue = valuesMap.get(replacementKey) != null ? valuesMap.get(replacementKey) : "";
             final String copyForLogging = log.isDebugEnabled() ? toResolve : null;
-            toResolve = toResolve.replaceAll(replacementKey, replacementValue);
+
+            toResolve = toResolve.replace(replacementKey, replacementValue);
             if (log.isDebugEnabled() && copyForLogging != null && !toResolve.equals(copyForLogging)) {
                 log.debug(String.format("%s -> %s", replacementKey, replacementValue));
             }
