@@ -140,19 +140,28 @@ public class ContainerFinalizeHelper {
                 log.info(prefix + "Saving logs to " + destinationPath);
 
                 if (StringUtils.isNotBlank(stdoutLogStr)) {
+                    log.debug("Saving stdout");
                     final File stdoutFile = new File(destination, "stdout.log");
                     FileUtils.OutputToFile(stdoutLogStr, stdoutFile.getAbsolutePath());
                     logPaths.add(stdoutFile.getAbsolutePath());
+                } else {
+                    log.debug("Stdout was blank");
                 }
 
                 if (StringUtils.isNotBlank(stderrLogStr)) {
+                    log.debug("Saving stderr");
                     final File stderrFile = new File(destination, "stderr.log");
                     FileUtils.OutputToFile(stderrLogStr, stderrFile.getAbsolutePath());
                     logPaths.add(stderrFile.getAbsolutePath());
+                } else {
+                    log.debug("Stderr was blank");
                 }
             }
         }
 
+        if (log.isDebugEnabled()) {
+            log.debug("Adding log paths to container");
+        }
         return logPaths;
     }
 
