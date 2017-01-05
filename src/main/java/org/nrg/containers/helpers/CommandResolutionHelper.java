@@ -142,6 +142,7 @@ public class CommandResolutionHelper {
                             "Input %1$s has prerequisite %2$s which has not been resolved. Re-order inputs so %1$s appears after %2$s.",
                             input.getName(), prereq
                     );
+                    log.error(message);
                     throw new CommandInputResolutionException(message, input);
                 }
             }
@@ -158,6 +159,7 @@ public class CommandResolutionHelper {
                             "Input %1$s has prerequisite %2$s which has not been resolved. Re-order inputs so %1$s appears after %2$s.",
                             input.getName(), input.getParent()
                     );
+                    log.error(message);
                     throw new CommandInputResolutionException(message, input);
                 }
             }
