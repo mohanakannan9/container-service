@@ -130,7 +130,7 @@ public class Session extends XnatModelObject {
     @Override
     public String toString() {
         return addParentPropertiesToString(MoreObjects.toStringHelper(this))
-                .add("parentId", parentId)
+//                .add("parentId", parentId)
                 .add("scans", scans)
                 .add("assessors", assessors)
                 .add("resources", resources)
