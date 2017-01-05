@@ -815,7 +815,7 @@ public class CommandResolutionHelper {
         String toResolve = resolveJsonpathSubstring(template);
 
         for (final String replacementKey : valuesMap.keySet()) {
-            final String replacementValue = valuesMap.get(replacementKey);
+            final String replacementValue = valuesMap.get(replacementKey) != null ? valuesMap.get(replacementKey) : "";
             final String copyForLogging = log.isDebugEnabled() ? toResolve : null;
             toResolve = toResolve.replaceAll(replacementKey, replacementValue);
             if (log.isDebugEnabled() && copyForLogging != null && !toResolve.equals(copyForLogging)) {
