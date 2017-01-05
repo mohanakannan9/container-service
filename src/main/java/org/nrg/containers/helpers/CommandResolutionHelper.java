@@ -242,7 +242,7 @@ public class CommandResolutionHelper {
                                 log.error("Could not serialize session to json.", e);
                             }
                         }
-                    } else {
+                    } else if (StringUtils.isNotBlank(resolvedValue)) {
                         // With no parent, we were either given, A. a Session in json, B. a list of Sessions in json, or C. the session id
                         final Session matches;
                         try {
@@ -275,6 +275,8 @@ public class CommandResolutionHelper {
                                 log.error(message, e);
                             }
                         }
+                    } else {
+                        // If value is blank, we will deal with that later
                     }
                     break;
                 case SCAN:
@@ -292,12 +294,13 @@ public class CommandResolutionHelper {
                                 log.error("Could not serialize scan to json.", e);
                             }
                         }
-                    } else {
+                    } else if (StringUtils.isNotBlank(resolvedValue)) {
                         // With no parent, we must have been given the Scan as json
                         final Scan matches;
                         try {
                             matches = resolveXnatModelValue(resolvedValue, resolvedMatcher, Scan.class, null);
                         } catch (CommandInputResolutionException e) {
+                            log.debug(e.getMessage());
                             throw new CommandInputResolutionException(e.getMessage(), input);
                         }
 
@@ -314,6 +317,8 @@ public class CommandResolutionHelper {
                                 log.error(message, e);
                             }
                         }
+                    } else {
+                        // If value is blank, we will deal with that later
                     }
                     break;
                 case ASSESSOR:
@@ -322,7 +327,9 @@ public class CommandResolutionHelper {
                 case CONFIG:
                     final String[] configProps = resolvedValue != null ? resolvedValue.split("/") : null;
                     if (configProps == null || configProps.length != 2) {
-                        throw new CommandInputResolutionException("Config inputs must have a value that can be interpreted as a config_toolname/config_filename string. Input value: " + resolvedValue, input);
+                        final String message = "Config inputs must have a value that can be interpreted as a config_toolname/config_filename string. Input value: " + resolvedValue;
+                        log.debug(message);
+                        throw new CommandInputResolutionException(message, input);
                     }
 
                     final Scope configScope;
@@ -391,6 +398,7 @@ public class CommandResolutionHelper {
             // If resolved value is null, and input is required, that is an error
             if (resolvedValue == null && input.isRequired()) {
                 final String message = String.format("No value could be resolved for required input \"%s\".", input.getName());
+                log.debug(message);
                 throw new CommandInputResolutionException(message, input);
             }
             if (log.isInfoEnabled()) {
@@ -423,7 +431,9 @@ public class CommandResolutionHelper {
             try {
                 commandJson = mapper.writeValueAsString(cachedCommand);
             } catch (JsonProcessingException e) {
-                throw new CommandResolutionException("Could not serialize command to json.", e);
+                final String message = "Could not serialize command to json.";
+                log.debug(message);
+                throw new CommandResolutionException(message, e);
             }
         }
 
@@ -492,6 +502,13 @@ public class CommandResolutionHelper {
         if (log.isDebugEnabled()) {
             log.debug("Value: " + value);
         }
+
+        if (StringUtils.isBlank(value)) {
+            final String message = "Not attempting to resolve blank value.";
+            log.debug(message);
+            throw new CommandInputResolutionException(message, null);
+        }
+
         List<T> mayOrMayNotMatch = Lists.newArrayList();
         if (value.startsWith("{")) {
             try {

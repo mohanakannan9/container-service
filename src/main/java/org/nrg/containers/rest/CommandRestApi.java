@@ -226,4 +226,10 @@ public class CommandRestApi extends AbstractXapiRestController {
     public String handleDockerServerError(final Exception e) {
         return "The Docker server returned an error:\n" + e.getMessage();
     }
+
+    @ResponseStatus(value = HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(value = {BadRequestException.class})
+    public String handleBadRequest(final Exception e) {
+        return "Bad request:\n" + e.getMessage();
+    }
 }
