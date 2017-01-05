@@ -74,6 +74,7 @@ public class HibernateContainerExecutionService
         Hibernate.initialize(entity.getCommandLine());
         Hibernate.initialize(entity.getInputValues());
         Hibernate.initialize(entity.getOutputs());
+        Hibernate.initialize(entity.getLogPaths());
     }
 
     @Override

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.api.ContainerControlApi;
@@ -35,6 +36,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class ContainerFinalizeHelper {
     private static final Logger log = LoggerFactory.getLogger(ContainerFinalizeHelper.class);
@@ -94,7 +96,7 @@ public class ContainerFinalizeHelper {
     }
 
     private void finalizeContainer() {
-        uploadLogs();
+        containerExecution.addLogPaths(uploadLogs());
 
         if (containerExecution.getOutputs() != null) {
             if (containerExecution.getMountsOut() != null) {
@@ -107,13 +109,18 @@ public class ContainerFinalizeHelper {
         }
     }
 
-    private void uploadLogs() {
+    private Set<String> uploadLogs() {
         log.info(prefix + "Getting logs.");
+        final Set<String> logPaths = Sets.newHashSet();
 
         String stdoutLogStr = "";
         String stderrLogStr = "";
         try {
             stdoutLogStr = containerControlApi.getContainerStdoutLog(containerExecution.getContainerId());
+        } catch (DockerServerException | NoServerPrefException e) {
+            log.error(prefix + "Could not get logs.", e);
+        }
+        try {
             stderrLogStr = containerControlApi.getContainerStderrLog(containerExecution.getContainerId());
         } catch (DockerServerException | NoServerPrefException e) {
             log.error(prefix + "Could not get logs.", e);
@@ -133,16 +140,29 @@ public class ContainerFinalizeHelper {
                 log.info(prefix + "Saving logs to " + destinationPath);
 
                 if (StringUtils.isNotBlank(stdoutLogStr)) {
+                    log.debug("Saving stdout");
                     final File stdoutFile = new File(destination, "stdout.log");
                     FileUtils.OutputToFile(stdoutLogStr, stdoutFile.getAbsolutePath());
+                    logPaths.add(stdoutFile.getAbsolutePath());
+                } else {
+                    log.debug("Stdout was blank");
                 }
 
                 if (StringUtils.isNotBlank(stderrLogStr)) {
+                    log.debug("Saving stderr");
                     final File stderrFile = new File(destination, "stderr.log");
                     FileUtils.OutputToFile(stderrLogStr, stderrFile.getAbsolutePath());
+                    logPaths.add(stderrFile.getAbsolutePath());
+                } else {
+                    log.debug("Stderr was blank");
                 }
             }
         }
+
+        if (log.isDebugEnabled()) {
+            log.debug("Adding log paths to container");
+        }
+        return logPaths;
     }
 
     private void uploadOutputs() {
