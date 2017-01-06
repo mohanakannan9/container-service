@@ -13,7 +13,9 @@ import org.nrg.xdat.model.XnatSubjectdataI;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
+import org.nrg.xnat.helpers.uri.archive.SubjectURII;
 
 import java.util.List;
 import java.util.Objects;
@@ -28,21 +30,30 @@ public class Subject extends XnatModelObject {
 
     public Subject() {}
 
+    public Subject(final SubjectURII subjectURII) {
+        this.xnatSubjectdataI = subjectURII.getSubject();
+        this.uri = ((URIManager.DataURIA) subjectURII).getUri();
+        populateProperties(null);
+    }
+
     public Subject(final XnatSubjectdataI xnatSubjectdataI) {
         this(xnatSubjectdataI, null, null);
     }
 
     public Subject(final XnatSubjectdataI xnatSubjectdataI, final String parentUri, final String rootArchivePath) {
         this.xnatSubjectdataI = xnatSubjectdataI;
-
-        this.id = xnatSubjectdataI.getId();
-        this.label = xnatSubjectdataI.getLabel();
-        this.xsiType = xnatSubjectdataI.getXSIType();
         if (parentUri == null) {
             this.uri = UriParserUtils.getArchiveUri(xnatSubjectdataI);
         } else {
             this.uri = parentUri + "/subjects/" + id;
         }
+        populateProperties(rootArchivePath);
+    }
+
+    private void populateProperties(final String rootArchivePath) {
+        this.id = xnatSubjectdataI.getId();
+        this.label = xnatSubjectdataI.getLabel();
+        this.xsiType = xnatSubjectdataI.getXSIType();
 
         this.sessions = Lists.newArrayList();
         for (final XnatExperimentdataI xnatExperimentdataI : xnatSubjectdataI.getExperiments_experiment()) {
