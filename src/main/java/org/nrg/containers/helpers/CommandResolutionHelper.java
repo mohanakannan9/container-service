@@ -248,7 +248,8 @@ public class CommandResolutionHelper {
                         // We have a parent, so pull the value from it
                         // If we have any value set currently, assume it is an ID
 
-                        final List<Session> childList = matchChildFromParent(parent.getValue(), resolvedValue, "sessions", "id", resolvedMatcher, new TypeRef<List<Session>>(){});
+                        final List<Session> childList = matchChildFromParent(parent.getJsonRepresentation(),
+                                resolvedValue, "sessions", "id", resolvedMatcher, new TypeRef<List<Session>>(){});
                         if (childList != null && !childList.isEmpty()) {
                             if (log.isDebugEnabled()) {
                                 log.debug("Selecting first matching result from list " + childList);
