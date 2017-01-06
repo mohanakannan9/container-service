@@ -1,6 +1,5 @@
 package org.nrg.containers.helpers;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -14,7 +13,6 @@ import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.ContainerExecutionMount;
 import org.nrg.containers.model.ContainerExecutionOutput;
-import org.nrg.containers.model.xnat.Resource;
 import org.nrg.containers.model.xnat.XnatModelObject;
 import org.nrg.transporter.TransportService;
 import org.nrg.xdat.om.XnatResourcecatalog;
@@ -22,6 +20,8 @@ import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
+import org.nrg.xnat.helpers.uri.URIManager;
+import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.restlet.util.XNATRestConstants;
 import org.nrg.xnat.services.archive.CatalogService;
 import org.slf4j.Logger;
@@ -176,32 +176,32 @@ public class ContainerFinalizeHelper {
 
 
         for (final ContainerExecutionOutput output: containerExecution.getOutputs()) {
-            XnatModelObject created = null;
+//            XnatModelObject created = null;
             try {
-                created = uploadOutput(output);
+                output.setCreated(uploadOutput(output));
             } catch (ContainerException | RuntimeException e) {
                 log.error("Cannot upload files for command output " + output.getName(), e);
             }
-            if (created != null) {
-                try {
-                    output.setCreated(mapper.writeValueAsString(created));
-                } catch (JsonProcessingException e) {
-                    if (log.isErrorEnabled()) {
-                        String message = prefix;
-                        message += String.format("Files for output \"%s\" were uploaded and saved, but the JSON representation of the object thus created could not be recorded.", output.getName());
-                        if (log.isDebugEnabled()) {
-                            message += "\n" + created;
-                        }
-                        log.error(message, e);
-                    }
-                }
-            }
+//            if (created != null) {
+//                try {
+//                    output.setCreated(mapper.writeValueAsString(created));
+//                } catch (JsonProcessingException e) {
+//                    if (log.isErrorEnabled()) {
+//                        String message = prefix;
+//                        message += String.format("Files for output \"%s\" were uploaded and saved, but the JSON representation of the object thus created could not be recorded.", output.getName());
+//                        if (log.isDebugEnabled()) {
+//                            message += "\n" + created;
+//                        }
+//                        log.error(message, e);
+//                    }
+//                }
+//            }
         }
 
         log.info(prefix + "Done uploading outputs.");
     }
 
-    private XnatModelObject uploadOutput(final ContainerExecutionOutput output) throws ContainerException {
+    private String uploadOutput(final ContainerExecutionOutput output) throws ContainerException {
         if (log.isInfoEnabled()) {
             log.info(String.format(prefix + "Uploading output \"%s\".", output.getName()));
         }
@@ -247,24 +247,29 @@ public class ContainerFinalizeHelper {
                 StringUtils.isNotBlank(mount.getResource()) ? mount.getResource() :
                         mountName;
 
-        final XnatModelObject parent = getInput(output.getParentInputName());
-        if (parent == null) {
+        final String parentUri = getInputValue(output.getParentInputName());
+        if (parentUri == null) {
             throw new ContainerException(String.format(prefix + "Cannot upload output \"%s\". Could not instantiate parent input \"%s\".", output.getName(), output.getParentInputName()));
         }
 
-        XnatModelObject created = null;
+//        XnatModelObject created = null;
+        String createdUri = null;
         switch (output.getType()) {
             case RESOURCE:
                 if (log.isDebugEnabled()) {
-                    final String template = prefix + "Inserting file resource.\n\tuser: %s\n\tparentInputUri: %s\n\tlabel: %s\n\ttoUpload: %s";
-                    log.debug(String.format(template, userI.getLogin(), parent.getUri(), label, toUpload));
+                    final String template = prefix + "Inserting file resource.\n\tuser: %s\n\tparentUri: %s\n\tlabel: %s\n\ttoUpload: %s";
+                    log.debug(String.format(template, userI.getLogin(), parentUri, label, toUpload));
                 }
+                final XnatResourcecatalog resourcecatalog;
                 try {
-                    final XnatResourcecatalog resourcecatalog =
-                            catalogService.insertResources(userI, "/archive" + parent.getUri(), toUpload, label, null, null, null);
-                    created = new Resource(resourcecatalog, parent);
+                     resourcecatalog = catalogService.insertResources(userI, "/archive" + parentUri, toUpload, label, null, null, null);
                 } catch (Exception e) {
                     throw new ContainerException(prefix + "Could not upload files to resource.", e);
+                }
+
+                createdUri = UriParserUtils.getArchiveUri(resourcecatalog);
+                if (StringUtils.isBlank(createdUri)) {
+                    createdUri = parentUri + "/resources/" + resourcecatalog.getLabel();
                 }
                 break;
             case ASSESSOR:
@@ -315,8 +320,8 @@ public class ContainerFinalizeHelper {
         }
 
 
-        log.info(String.format(prefix + "Done uploading output \"%s\".", output.getName()));
-        return created;
+        log.info(String.format(prefix + "Done uploading output \"%s\". URI of created output: %s", output.getName(), createdUri));
+        return createdUri;
     }
 
     private ContainerExecutionMount getMount(final String mountName) throws ContainerException {
@@ -346,16 +351,16 @@ public class ContainerFinalizeHelper {
         throw new ContainerException(String.format(prefix + "Mount \"%s\" does not exist.", mountName));
     }
 
-    private XnatModelObject getInput(final String inputName) {
+    private String getInputValue(final String inputName) {
         if (log.isDebugEnabled()) {
             log.debug(String.format(prefix + "Getting URI for input \"%s\".", inputName));
         }
-        if (inputCache.containsKey(inputName)) {
-            if (log.isDebugEnabled()) {
-                log.debug(prefix + "Input was cached.");
-            }
-            return inputCache.get(inputName);
-        }
+//        if (inputCache.containsKey(inputName)) {
+//            if (log.isDebugEnabled()) {
+//                log.debug(prefix + "Input was cached.");
+//            }
+//            return inputCache.get(inputName);
+//        }
 
         final Map<String, String> inputValues = containerExecution.getInputValues();
         if (!inputValues.containsKey(inputName)) {
@@ -365,28 +370,28 @@ public class ContainerFinalizeHelper {
             return null;
         }
 
-        final String inputValue = containerExecution.getInputValues().get(inputName);
-        try {
-            final XnatModelObject input = mapper.readValue(inputValue, XnatModelObject.class);
-            if (log.isDebugEnabled()) {
-                log.debug(String.format(prefix + "Caching input \"%s\": %s", inputName, input));
-            } else if (log.isInfoEnabled()){
-                log.info(String.format(prefix + "Caching input \"%s\".", inputName));
-            }
-
-            inputCache.put(inputName, input);
-            return input;
-        } catch (IOException e) {
-            if (log.isDebugEnabled()) {
-                // Yes, I know I checked for "debug" and am logging at "error".
-                // I still want this to show up as "error" either way, but I only want the full object to
-                // be logged if you opted into the firehose.
-                log.error(prefix + "Could not deserialize input value:\n" + inputValue, e);
-            } else {
-                log.error(prefix + "Could not deserialize input value.", e);
-            }
-        }
-
-        return null;
+        return inputValues.get(inputName);
+//        try {
+//            final XnatModelObject input = mapper.readValue(inputValue, XnatModelObject.class);
+//            if (log.isDebugEnabled()) {
+//                log.debug(String.format(prefix + "Caching input \"%s\": %s", inputName, input));
+//            } else if (log.isInfoEnabled()){
+//                log.info(String.format(prefix + "Caching input \"%s\".", inputName));
+//            }
+//
+//            inputCache.put(inputName, input);
+//            return input;
+//        } catch (IOException e) {
+//            if (log.isDebugEnabled()) {
+//                // Yes, I know I checked for "debug" and am logging at "error".
+//                // I still want this to show up as "error" either way, but I only want the full object to
+//                // be logged if you opted into the firehose.
+//                log.error(prefix + "Could not deserialize input value:\n" + inputValue, e);
+//            } else {
+//                log.error(prefix + "Could not deserialize input value.", e);
+//            }
+//        }
+//
+//        return null;
     }
 }
