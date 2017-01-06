@@ -141,13 +141,11 @@ public class CommandResolutionTest {
                 "\"uri\":\"" + scanDicomResourceUri + "\", " +
                 "\"type\": \"Resource\", " +
                 "\"label\": \"DICOM\", " +
-                "\"parent-id\": \"" + scanId + "\", " +
                 "\"directory\": \"" + dicomDir + "\"}";
         final String scanRuntimeJson = "{" +
                 "\"id\": \"" + scanId + "\", " +
                 "\"uri\": \"" + scanUri + "\", " +
                 "\"type\": \"Scan\", " +
-                "\"parent-id\": \"" + sessionId + "\", " +
                 "\"scan-type\": \"" + scantype + "\"," +
                 "\"resources\": [" + scanDicomResource + "]" +
                 "}";

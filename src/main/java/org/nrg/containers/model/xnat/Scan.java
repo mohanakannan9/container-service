@@ -6,11 +6,19 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.om.XnatImagescandata;
+import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatResourcecatalog;
+import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.helpers.uri.URIManager;
+import org.nrg.xnat.helpers.uri.UriParserUtils;
+import org.nrg.xnat.helpers.uri.archive.AssessedURII;
+import org.nrg.xnat.helpers.uri.archive.ScanURII;
+import org.nrg.xnat.helpers.uri.archive.impl.ExptScanURI;
 
 import java.util.List;
 import java.util.Objects;
@@ -18,61 +26,55 @@ import java.util.Objects;
 @JsonInclude(Include.NON_NULL)
 public class Scan extends XnatModelObject {
     public static Type type = Type.SCAN;
-    @JsonIgnore private XnatImagescandataI xnatImagescandata;
-    @JsonProperty(value = "parent-id") private String parentId;
+    @JsonIgnore private XnatImagescandataI xnatImagescandataI;
+    @JsonProperty("integer-id") private Integer integerId;
     @JsonProperty("scan-type") private String scanType;
     private List<Resource> resources;
 
     public Scan() {}
 
-    public Scan(final XnatImagescandata xnatImagescandata) {
-        this(xnatImagescandata, xnatImagescandata.getImageSessionId(), "/experiments/" + xnatImagescandata.getImageSessionId());
+    public Scan(final ScanURII scanURII) {
+        this.xnatImagescandataI = scanURII.getScan();
+        this.uri = ((URIManager.ArchiveItemURI)scanURII).getUri();
+        populatePropertiesFromScanData(null);
     }
 
-    public Scan(final XnatImagescandataI xnatImagescandata, final XnatModelObject parent) {
-        this(xnatImagescandata, parent.getId(), parent.getUri());
+    public Scan(final XnatImagescandataI xnatImagescandataI, final String parentUri, final String rootArchivePath) {
+        this.xnatImagescandataI = xnatImagescandataI;
+        if (parentUri == null) {
+            this.uri = UriParserUtils.getArchiveUri(xnatImagescandataI);
+        } else {
+            this.uri = parentUri + "/scans/" + id;
+        }
+        populatePropertiesFromScanData(rootArchivePath);
     }
 
-    public Scan(final XnatImagescandataI xnatImagescandata, final String parentId, final String parentUri) {
-        this(xnatImagescandata, parentId, parentUri, null);
-    }
-
-    public Scan(final XnatImagescandataI xnatImagescandata, final String parentId, final String parentUri, final String rootArchivePath) {
-        this.xnatImagescandata = xnatImagescandata;
-        this.id = xnatImagescandata.getId();
-        this.xsiType = xnatImagescandata.getXSIType();
-        this.scanType = xnatImagescandata.getType();
-        this.uri = parentUri + "/scans/" + id;
-
-        this.parentId = parentId;
+    private void populatePropertiesFromScanData(final String rootArchivePath) {
+        this.integerId = xnatImagescandataI.getXnatImagescandataId();
+        this.id = xnatImagescandataI.getId();
+        this.xsiType = xnatImagescandataI.getXSIType();
+        this.scanType = xnatImagescandataI.getType();
 
         this.resources = Lists.newArrayList();
-        for (final XnatAbstractresourceI xnatAbstractresourceI : xnatImagescandata.getFile()) {
+        for (final XnatAbstractresourceI xnatAbstractresourceI : this.xnatImagescandataI.getFile()) {
             if (xnatAbstractresourceI instanceof XnatResourcecatalog) {
-                resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, this.id, this.uri, rootArchivePath));
+                resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, this.uri, rootArchivePath));
             }
         }
+
     }
 
     public XnatImagescandataI loadXnatImagescandataI(final UserI userI) {
-        xnatImagescandata = XnatImagescandata.getXnatImagescandatasByXnatImagescandataId(id, userI, false);
-        return xnatImagescandata;
+        xnatImagescandataI = XnatImagescandata.getXnatImagescandatasByXnatImagescandataId(integerId, userI, false);
+        return xnatImagescandataI;
     }
 
-    public XnatImagescandataI getXnatImagescandata() {
-        return xnatImagescandata;
+    public XnatImagescandataI getXnatImagescandataI() {
+        return xnatImagescandataI;
     }
 
-    public void setXnatImagescandata(final XnatImagescandataI xnatImagescandata) {
-        this.xnatImagescandata = xnatImagescandata;
-    }
-
-    public String getParentId() {
-        return parentId;
-    }
-
-    public void setParentId(final String parentId) {
-        this.parentId = parentId;
+    public void setXnatImagescandataI(final XnatImagescandataI xnatImagescandataI) {
+        this.xnatImagescandataI = xnatImagescandataI;
     }
 
     public String getScanType() {
@@ -101,21 +103,21 @@ public class Scan extends XnatModelObject {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         final Scan that = (Scan) o;
-        return Objects.equals(this.xnatImagescandata, that.xnatImagescandata) &&
-                Objects.equals(this.parentId, that.parentId) &&
+        return Objects.equals(this.xnatImagescandataI, that.xnatImagescandataI) &&
+                Objects.equals(this.integerId, that.integerId) &&
                 Objects.equals(this.scanType, that.scanType) &&
                 Objects.equals(this.resources, that.resources);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), xnatImagescandata, parentId, scanType, resources);
+        return Objects.hash(super.hashCode(), xnatImagescandataI, integerId, scanType, resources);
     }
 
     @Override
     public String toString() {
         return addParentPropertiesToString(MoreObjects.toStringHelper(this))
-//                .add("parentId", parentId)
+                .add("integerId", integerId)
                 .add("scanType", scanType)
                 .add("resources", resources)
                 .toString();

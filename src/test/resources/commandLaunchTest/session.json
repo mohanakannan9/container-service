@@ -8,7 +8,6 @@
         {
             "id": "scan1",
             "type": "Scan",
-            "parent-id": "session1",
             "xsiType": "xnat:aScan",
             "scan-type": "T1_TEST_SCANTYPE",
             "uri": "/experiments/session1/scans/scan1",

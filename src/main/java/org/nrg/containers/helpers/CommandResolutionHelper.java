@@ -31,12 +31,15 @@ import org.nrg.containers.model.xnat.XnatFile;
 import org.nrg.containers.model.xnat.XnatModelObject;
 import org.nrg.framework.constants.Scope;
 import org.nrg.xdat.om.XnatExperimentdata;
+import org.nrg.xdat.om.XnatImagescandata;
 import org.nrg.xdat.om.XnatImagesessiondata;
+import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.ExperimentURII;
 import org.nrg.xnat.helpers.uri.archive.ScanURII;
+import org.nrg.xnat.helpers.uri.archive.impl.ExptScanURI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -278,7 +281,7 @@ public class CommandResolutionHelper {
 
                                                 if (experiment != null &&
                                                         XnatImagesessiondata.class.isAssignableFrom(experiment.getClass())) {
-                                                    return new Session((XnatImagesessiondata) experiment);
+                                                    return new Session((ExperimentURII) uri);
                                                 }
                                             }
 
@@ -291,7 +294,7 @@ public class CommandResolutionHelper {
                                         public Session apply(@Nullable String s) {
                                             final XnatImagesessiondata imagesessiondata = XnatImagesessiondata.getXnatImagesessiondatasById(s, userI, true);
                                             if (imagesessiondata != null) {
-                                                return new Session(imagesessiondata);
+                                                return new Session(imagesessiondata, null, null);
                                             }
                                             return null;
                                         }
@@ -352,8 +355,8 @@ public class CommandResolutionHelper {
                                         @Override
                                         public Scan apply(@Nullable URIManager.ArchiveItemURI uri) {
                                             if (uri != null &&
-                                                    ScanURII.class.isAssignableFrom(uri.getClass())) {
-                                                return new Scan(((ScanURII) uri).getScan());
+                                                    ExptScanURI.class.isAssignableFrom(uri.getClass())) {
+                                                return new Scan((ExptScanURI) uri);
                                             }
 
                                             return null;

@@ -247,9 +247,12 @@ public class ContainerFinalizeHelper {
                 StringUtils.isNotBlank(mount.getResource()) ? mount.getResource() :
                         mountName;
 
-        final String parentUri = getInputValue(output.getParentInputName());
+        String parentUri = getInputValue(output.getParentInputName());
         if (parentUri == null) {
             throw new ContainerException(String.format(prefix + "Cannot upload output \"%s\". Could not instantiate parent input \"%s\".", output.getName(), output.getParentInputName()));
+        }
+        if (!parentUri.startsWith("/archive")) {
+            parentUri = "/archive" + parentUri;
         }
 
 //        XnatModelObject created = null;
@@ -262,7 +265,7 @@ public class ContainerFinalizeHelper {
                 }
                 final XnatResourcecatalog resourcecatalog;
                 try {
-                     resourcecatalog = catalogService.insertResources(userI, "/archive" + parentUri, toUpload, label, null, null, null);
+                     resourcecatalog = catalogService.insertResources(userI, parentUri, toUpload, label, null, null, null);
                 } catch (Exception e) {
                     throw new ContainerException(prefix + "Could not upload files to resource.", e);
                 }

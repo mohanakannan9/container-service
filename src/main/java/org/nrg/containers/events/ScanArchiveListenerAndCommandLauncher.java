@@ -28,17 +28,19 @@ public class ScanArchiveListenerAndCommandLauncher implements Consumer<Event<Sca
     private static final Logger log = LoggerFactory.getLogger(ScanArchiveListenerAndCommandLauncher.class);
     private static final String EVENT_ID = "ScanArchived";
 
-    @Autowired private ObjectMapper mapper;
-    @Autowired private CommandService commandService;
-    @Autowired private CommandEventMappingService commandEventMappingService;
+    private ObjectMapper mapper;
+    private CommandService commandService;
+    private CommandEventMappingService commandEventMappingService;
 
-     /**
-     * Instantiates a new xft item event listener.
-     *
-     * @param eventBus the event bus
-     */
-    @Inject public ScanArchiveListenerAndCommandLauncher(EventBus eventBus ){
+    @Autowired
+    public ScanArchiveListenerAndCommandLauncher(final EventBus eventBus,
+                                                 final ObjectMapper mapper,
+                                                 final CommandService commandService,
+                                                 final CommandEventMappingService commandEventMappingService) {
         eventBus.on(type(ScanArchiveEventToLaunchCommands.class), this);
+        this.mapper = mapper;
+        this.commandService = commandService;
+        this.commandEventMappingService = commandEventMappingService;
     }
 
 
@@ -56,12 +58,11 @@ public class ScanArchiveListenerAndCommandLauncher implements Consumer<Event<Sca
                 final Map<String, String> runtimeValues = Maps.newHashMap();
 
                 final Scan scan = scanArchiveEventToLaunchCommands.getScan();
-                String scanString = scan.getId();
+                String scanString = scan.getUri();
                 try {
                     scanString = mapper.writeValueAsString(scan);
                 } catch (JsonProcessingException e) {
                     log.error(String.format("Could not serialize Scan %s to json.", scan), e);
-                    runtimeValues.put("sessionId", scan.getParentId());
                 }
                 runtimeValues.put("scan", scanString);
                 try {
