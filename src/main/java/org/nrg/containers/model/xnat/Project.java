@@ -3,14 +3,15 @@ package org.nrg.containers.model.xnat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatProjectdataI;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatResourcecatalog;
+import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.helpers.uri.UriParserUtils;
 
 import java.util.List;
 import java.util.Objects;
@@ -18,37 +19,39 @@ import java.util.Objects;
 @JsonInclude(Include.NON_NULL)
 public class Project extends XnatModelObject {
     public static Type type = Type.PROJECT;
-    @JsonIgnore private XnatProjectdataI xnatProjectdata;
+    @JsonIgnore private XnatProjectdata xnatProjectdata;
     private List<Resource> resources;
     private List<Subject> subjects;
 
     public Project() {}
 
-    public Project(final XnatProjectdata xnatProjectdataI) {
-        this.xnatProjectdata = xnatProjectdataI;
+    public Project(final XnatProjectdata xnatProjectdata) {
+        this.xnatProjectdata = xnatProjectdata;
 
-        this.id = xnatProjectdataI.getId();
-        this.label = xnatProjectdataI.getName();
-        this.xsiType = xnatProjectdataI.getXSIType();
-        this.uri = "/projects/" + id;
+        this.id = xnatProjectdata.getId();
+        this.label = xnatProjectdata.getName();
+        this.xsiType = xnatProjectdata.getXSIType();
+        this.uri = UriParserUtils.getArchiveUri(xnatProjectdata);
 
         this.subjects = Lists.newArrayList();
-        // TODO how do I get subjects from an XnatProjectdata?
+        for (final XnatSubjectdata subject : xnatProjectdata.getParticipants_participant()) {
+            subjects.add(new Subject(subject, this.uri, xnatProjectdata.getRootArchivePath()));
+        }
 
         this.resources = Lists.newArrayList();
-        for (final XnatAbstractresourceI xnatAbstractresourceI: xnatProjectdataI.getResources_resource()) {
+        for (final XnatAbstractresourceI xnatAbstractresourceI: xnatProjectdata.getResources_resource()) {
             if (xnatAbstractresourceI instanceof XnatResourcecatalog) {
-                resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, this.id, this.uri, xnatProjectdataI.getRootArchivePath()));
+                resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, this.uri, xnatProjectdata.getRootArchivePath()));
             }
         }
     }
 
-    public XnatProjectdataI loadXnatProjectdata(final UserI userI) {
+    public XnatProjectdata loadXnatProjectdata(final UserI userI) {
         xnatProjectdata = XnatProjectdata.getXnatProjectdatasById(id, userI, false);
         return xnatProjectdata;
     }
 
-    public XnatProjectdataI getXnatProjectdata() {
+    public XnatProjectdata getXnatProjectdata() {
         return xnatProjectdata;
     }
 

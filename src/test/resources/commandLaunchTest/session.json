@@ -2,20 +2,22 @@
     "id": "session1",
     "type": "Session",
     "label": "session1",
+    "uri": "/experiments/session1",
     "xsiType": "xnat:aSession",
     "scans": [
         {
             "id": "scan1",
             "type": "Scan",
-            "parent-id": "session1",
             "xsiType": "xnat:aScan",
             "scan-type": "T1_TEST_SCANTYPE",
+            "uri": "/experiments/session1/scans/scan1",
             "resources": [
                 {
                     "id": 0,
                     "type": "Resource",
                     "label": "DICOM",
-                    "xsiType": "xnat:aResource"
+                    "xsiType": "xnat:aResource",
+                    "uri": "/experiments/session1/scans/scan1/resources/DICOM"
                 }
             ]
         }

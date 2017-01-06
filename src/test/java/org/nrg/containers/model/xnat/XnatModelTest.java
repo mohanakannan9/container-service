@@ -11,7 +11,6 @@ import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
 import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
-import org.apache.ecs.xhtml.label;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -123,7 +122,7 @@ public class XnatModelTest {
     @Test
     public void testPredicateWithList() throws Exception {
         final String scanRuntimeJson =
-                "{\"id\": \"scan1\", \"type\":\"Scan\", \"parent-id\": \"session1\", " +
+                "{\"id\": \"scan1\", \"type\":\"Scan\", " +
                         "\"scan-type\": \"SCANTYPE\"" +
                         "}";
         final String sessionRuntimeJson =

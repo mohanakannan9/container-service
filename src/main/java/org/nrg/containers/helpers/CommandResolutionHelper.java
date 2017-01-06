@@ -1,7 +1,6 @@
 package org.nrg.containers.helpers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
@@ -13,7 +12,6 @@ import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.TypeRef;
 import com.jayway.jsonpath.spi.mapper.MappingException;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.exceptions.CommandInputResolutionException;
 import org.nrg.containers.exceptions.CommandMountResolutionException;
@@ -32,13 +30,22 @@ import org.nrg.containers.model.xnat.Session;
 import org.nrg.containers.model.xnat.XnatFile;
 import org.nrg.containers.model.xnat.XnatModelObject;
 import org.nrg.framework.constants.Scope;
+import org.nrg.xdat.om.XnatExperimentdata;
+import org.nrg.xdat.om.XnatImagescandata;
 import org.nrg.xdat.om.XnatImagesessiondata;
+import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.helpers.uri.URIManager;
+import org.nrg.xnat.helpers.uri.UriParserUtils;
+import org.nrg.xnat.helpers.uri.archive.ExperimentURII;
+import org.nrg.xnat.helpers.uri.archive.ScanURII;
+import org.nrg.xnat.helpers.uri.archive.impl.ExptScanURI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -165,6 +172,7 @@ public class CommandResolutionHelper {
             }
 
             String resolvedValue = null;
+            String jsonRepresentation = null;
 
             // Give the input its default value
             if (log.isDebugEnabled()) {
@@ -182,9 +190,7 @@ public class CommandResolutionHelper {
                 resolvedValue = inputValues.get(input.getName());
             }
 
-            if (log.isDebugEnabled()) {
-                log.debug("Checking for jsonpath substring in input value");
-            }
+            // Check for JSONPath substring in input value
             resolvedValue = resolveJsonpathSubstring(resolvedValue);
 
             if (log.isDebugEnabled()) {
@@ -193,7 +199,7 @@ public class CommandResolutionHelper {
             final String resolvedMatcher = input.getMatcher() != null ? resolveJsonpathSubstring(input.getMatcher()) : null;
 
             if (log.isDebugEnabled()) {
-                log.debug("Processing input value as a " + input.getType());
+                log.debug("Processing input value as a " + input.getType().getName());
             }
             switch (input.getType()) {
                 case BOOLEAN:
@@ -210,14 +216,19 @@ public class CommandResolutionHelper {
                     break;
                 case FILE:
                     if (parent != null) {
-                        final List<XnatFile> childStringList = matchChildFromParent(parent.getValue(), resolvedValue, "files", "name", resolvedMatcher, new TypeRef<List<XnatFile>>(){});
-                        if (childStringList != null && !childStringList.isEmpty()) {
+                        final List<XnatFile> childList = matchChildFromParent(parent.getJsonRepresentation(),
+                                resolvedValue, "files", "name", resolvedMatcher, new TypeRef<List<XnatFile>>(){});
+                        if (childList != null && !childList.isEmpty()) {
                             if (log.isDebugEnabled()) {
-                                log.debug("Selecting first matching result from list " + childStringList);
+                                log.debug("Selecting first matching result from list " + childList);
                             }
-                            final XnatFile first = childStringList.get(0);
+                            final XnatFile first = childList.get(0);
+                            if (log.isDebugEnabled()) {
+                                log.debug("Setting resolvedValue to uri " + first.getUri());
+                            }
+                            resolvedValue = first.getUri();
                             try {
-                                resolvedValue = mapper.writeValueAsString(first);
+                                jsonRepresentation = mapper.writeValueAsString(first);
                             } catch (JsonProcessingException e) {
                                 log.error("Could not serialize file to json.", e);
                             }
@@ -237,30 +248,53 @@ public class CommandResolutionHelper {
                         // We have a parent, so pull the value from it
                         // If we have any value set currently, assume it is an ID
 
-                        final List<Session> childStringList = matchChildFromParent(parent.getValue(), resolvedValue, "sessions", "id", resolvedMatcher, new TypeRef<List<Session>>(){});
-                        if (childStringList != null && !childStringList.isEmpty()) {
+                        final List<Session> childList = matchChildFromParent(parent.getValue(), resolvedValue, "sessions", "id", resolvedMatcher, new TypeRef<List<Session>>(){});
+                        if (childList != null && !childList.isEmpty()) {
                             if (log.isDebugEnabled()) {
-                                log.debug("Selecting first matching result from list " + childStringList);
+                                log.debug("Selecting first matching result from list " + childList);
                             }
-                            final Session first = childStringList.get(0);
+                            final Session first = childList.get(0);
+
+                            if (log.isDebugEnabled()) {
+                                log.debug("Setting resolvedValue to uri " + first.getUri());
+                            }
+                            resolvedValue = first.getUri();
                             try {
-                                resolvedValue = mapper.writeValueAsString(first);
+                                jsonRepresentation = mapper.writeValueAsString(first);
                             } catch (JsonProcessingException e) {
                                 log.error("Could not serialize session to json.", e);
                             }
                         }
                     } else if (StringUtils.isNotBlank(resolvedValue)) {
-                        // With no parent, we were either given, A. a Session in json, B. a list of Sessions in json, or C. the session id
-                        final Session matches;
+                        // With no parent, we were either given, A. an archive-style URI, or B. the session id
+                        final Session aMatch;
                         try {
-                            matches = resolveXnatModelValue(resolvedValue, resolvedMatcher, Session.class,
+                            aMatch = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Session.class,
+                                    new Function<URIManager.ArchiveItemURI, Session>() {
+                                        @Nullable
+                                        @Override
+                                        public Session apply(@Nullable URIManager.ArchiveItemURI uri) {
+                                            XnatExperimentdata experiment;
+                                            if (uri != null &&
+                                                    ExperimentURII.class.isAssignableFrom(uri.getClass())) {
+                                                experiment = ((ExperimentURII) uri).getExperiment();
+
+                                                if (experiment != null &&
+                                                        XnatImagesessiondata.class.isAssignableFrom(experiment.getClass())) {
+                                                    return new Session((ExperimentURII) uri);
+                                                }
+                                            }
+
+                                            return null;
+                                        }
+                                    },
                                     new Function<String, Session>() {
                                         @Nullable
                                         @Override
                                         public Session apply(@Nullable String s) {
                                             final XnatImagesessiondata imagesessiondata = XnatImagesessiondata.getXnatImagesessiondatasById(s, userI, true);
                                             if (imagesessiondata != null) {
-                                                return new Session(imagesessiondata);
+                                                return new Session(imagesessiondata, null, null);
                                             }
                                             return null;
                                         }
@@ -269,13 +303,17 @@ public class CommandResolutionHelper {
                             throw new CommandInputResolutionException(e.getMessage(), input);
                         }
 
-                        if (matches != null) {
+                        if (aMatch != null) {
+                            if (log.isDebugEnabled()) {
+                                log.debug("Setting resolvedValue to uri " + aMatch.getUri());
+                            }
+                            resolvedValue = aMatch.getUri();
                             try {
-                                resolvedValue = mapper.writeValueAsString(matches);
+                                jsonRepresentation = mapper.writeValueAsString(aMatch);
                             } catch (JsonProcessingException e) {
                                 String message = "Could not serialize session";
                                 if (log.isDebugEnabled()) {
-                                    message += ": " + matches;
+                                    message += ": " + aMatch;
                                 } else {
                                     message += ".";
                                 }
@@ -289,35 +327,57 @@ public class CommandResolutionHelper {
                 case SCAN:
                     if (parent != null) {
                         // We have a parent, so pull the value from it
-                        final List<Scan> childStringList = matchChildFromParent(parent.getValue(), resolvedValue, "scans", "id", resolvedMatcher, new TypeRef<List<Scan>>(){});
-                        if (childStringList != null && !childStringList.isEmpty()) {
+                        final List<Scan> childList = matchChildFromParent(parent.getJsonRepresentation(),
+                                resolvedValue, "scans", "id", resolvedMatcher, new TypeRef<List<Scan>>(){});
+                        if (childList != null && !childList.isEmpty()) {
                             if (log.isDebugEnabled()) {
                                 log.debug("Selecting first matching result from list.");
                             }
-                            final Scan first = childStringList.get(0);
+                            final Scan first = childList.get(0);
+
+                            if (log.isDebugEnabled()) {
+                                log.debug("Setting resolvedValue to uri " + first.getUri());
+                            }
+                            resolvedValue = first.getUri();
                             try {
-                                resolvedValue = mapper.writeValueAsString(first);
+                                jsonRepresentation = mapper.writeValueAsString(first);
                             } catch (JsonProcessingException e) {
                                 log.error("Could not serialize scan to json.", e);
                             }
                         }
                     } else if (StringUtils.isNotBlank(resolvedValue)) {
-                        // With no parent, we must have been given the Scan as json
-                        final Scan matches;
+                        // With no parent, we must have been given the Scan as an archive URI
+                        final Scan aMatch;
                         try {
-                            matches = resolveXnatModelValue(resolvedValue, resolvedMatcher, Scan.class, null);
+                            aMatch = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Scan.class,
+                                    new Function<URIManager.ArchiveItemURI, Scan>() {
+                                        @Nullable
+                                        @Override
+                                        public Scan apply(@Nullable URIManager.ArchiveItemURI uri) {
+                                            if (uri != null &&
+                                                    ExptScanURI.class.isAssignableFrom(uri.getClass())) {
+                                                return new Scan((ExptScanURI) uri);
+                                            }
+
+                                            return null;
+                                        }
+                                    },null);
                         } catch (CommandInputResolutionException e) {
                             log.debug(e.getMessage());
                             throw new CommandInputResolutionException(e.getMessage(), input);
                         }
 
-                        if (matches != null) {
+                        if (aMatch != null) {
+                            if (log.isDebugEnabled()) {
+                                log.debug("Setting resolvedValue to uri " + aMatch.getUri());
+                            }
+                            resolvedValue = aMatch.getUri();
                             try {
-                                resolvedValue = mapper.writeValueAsString(matches);
+                                jsonRepresentation = mapper.writeValueAsString(aMatch);
                             } catch (JsonProcessingException e) {
                                 String message = "Could not serialize scan";
                                 if (log.isDebugEnabled()) {
-                                    message += ": " + matches;
+                                    message += ": " + aMatch;
                                 } else {
                                     message += ".";
                                 }
@@ -345,7 +405,7 @@ public class CommandResolutionHelper {
                     switch (parentType) {
                         case PROJECT:
                             configScope = Scope.Project;
-                            entityId = JsonPath.parse(parent.getValue()).read("$.id");
+                            entityId = JsonPath.parse(parent.getJsonRepresentation()).read("$.id");
                             break;
                         case SUBJECT:
                             // Intentional fallthrough
@@ -356,7 +416,7 @@ public class CommandResolutionHelper {
                         case ASSESSOR:
                             // TODO This probably will not work. Figure out a way to get the project ID from these, or simply throw an error.
                             configScope = Scope.Project;
-                            final List<String> projectIds = JsonPath.parse(parent.getValue()).read("$..projectId");
+                            final List<String> projectIds = JsonPath.parse(parent.getJsonRepresentation()).read("$..projectId");
                             entityId = (projectIds != null && !projectIds.isEmpty()) ? projectIds.get(0) : "";
                             if (StringUtils.isBlank(entityId)) {
                                 throw new CommandInputResolutionException("Could not determine project when resolving config value.", input);
@@ -367,22 +427,35 @@ public class CommandResolutionHelper {
                             entityId = null;
                     }
 
+                    if (log.isDebugEnabled()) {
+                        log.debug(String.format("Attempting to read config %s/%s from %s.", configProps[0], configProps[1],
+                                configScope.equals(Scope.Site) ? "site" : "project " + entityId));
+                    }
                     final String configContents = configService.getConfigContents(configProps[0], configProps[1], configScope, entityId);
                     if (configContents == null) {
                         throw new CommandInputResolutionException("Could not read config " + resolvedValue, input);
                     }
 
+                    if (log.isDebugEnabled()) {
+                        log.debug("Setting resolvedValue to config contents " + configContents);
+                    }
                     resolvedValue = configContents;
                     break;
                 case RESOURCE:
                     if (parent != null) {
                         // We have a parent, so pull the value from it
-                        final List<Resource> childStringList = matchChildFromParent(parent.getValue(), resolvedValue, "resources", "id", resolvedMatcher, new TypeRef<List<Resource>>(){});
+                        final List<Resource> childStringList = matchChildFromParent(parent.getJsonRepresentation(),
+                                resolvedValue, "resources", "id", resolvedMatcher, new TypeRef<List<Resource>>(){});
                         if (childStringList != null && !childStringList.isEmpty()) {
                             log.debug("Selecting first matching result from list.");
                             final Resource first = childStringList.get(0);
+
+                            if (log.isDebugEnabled()) {
+                                log.debug("Setting resolvedValue to uri " + first.getUri());
+                            }
+                            resolvedValue = first.getUri();
                             try {
-                                resolvedValue = mapper.writeValueAsString(first);
+                                jsonRepresentation = mapper.writeValueAsString(first);
                             } catch (JsonProcessingException e) {
                                 log.error("Could not serialize resource to json.", e);
                             }
@@ -394,7 +467,12 @@ public class CommandResolutionHelper {
                 default:
                     if (parent != null && StringUtils.isNotBlank(input.getParentProperty())) {
                         final String propertyToGetFromParent = resolveJsonpathSubstring(input.getParentProperty());
-                        final String parentProperty = JsonPath.parse(parent.getValue()).read("$." + propertyToGetFromParent);
+                        final String parentProperty = JsonPath.parse(parent.getJsonRepresentation()).read("$." + propertyToGetFromParent);
+
+                        if (log.isDebugEnabled()) {
+                            log.debug(String.format("Setting resolvedValue, derived from parent property %s, to value %s.",
+                                    propertyToGetFromParent, parentProperty));
+                        }
                         if (parentProperty != null) {
                             resolvedValue = parentProperty;
                         }
@@ -409,12 +487,10 @@ public class CommandResolutionHelper {
                 throw new CommandInputResolutionException(message, input);
             }
             if (log.isInfoEnabled()) {
-                log.info(String.format("Done resolving input \"%s\".", input.getName()));
-                if (log.isDebugEnabled()) {
-                    log.debug(String.format("Input \"%s\" value: %s", input.getName(), resolvedValue));
-                }
+                log.info(String.format("Done resolving input \"%s\". Value: %s", input.getName(), resolvedValue));
             }
             input.setValue(resolvedValue);
+            input.setJsonRepresentation(jsonRepresentation != null ? jsonRepresentation : resolvedValue);
 
             resolvedInputObjects.put(input.getName(), input);
             resolvedInputValuesByName.put(input.getName(), input.getValue());
@@ -447,7 +523,7 @@ public class CommandResolutionHelper {
         return commandJson;
     }
 
-    private <T extends XnatModelObject> List<T> matchChildFromParent(final String parentValue, final String value, final String childKey, final String valueMatchProperty, final String matcherFromInput, final TypeRef<List<T>> typeRef) {
+    private <T extends XnatModelObject> List<T> matchChildFromParent(final String parentJson, final String value, final String childKey, final String valueMatchProperty, final String matcherFromInput, final TypeRef<List<T>> typeRef) {
         final String matcherFromValue = StringUtils.isNotBlank(value) ?
                 String.format("@.%s == '%s'", valueMatchProperty, value) :
                 "";
@@ -463,14 +539,11 @@ public class CommandResolutionHelper {
         } else {
             fullMatcher = "*";
         }
-        return getChildFromParent(parentValue, childKey, fullMatcher, typeRef);
-    }
 
-    private <T extends XnatModelObject> List<T> getChildFromParent(final String parentJson, final String childKey, final String matcher, final TypeRef<List<T>> typeRef) {
         final String jsonPathSearch = String.format(
                 "$.%s[%s]",
                 childKey,
-                StringUtils.isNotBlank(matcher) ? "?(" + matcher + ")" : "*"
+                StringUtils.isNotBlank(fullMatcher) ? "?(" + fullMatcher + ")" : "*"
         );
         if (log.isInfoEnabled()) {
             log.info(String.format("Attempting to pull value from parent using matcher \"%s\".", jsonPathSearch));
@@ -500,12 +573,14 @@ public class CommandResolutionHelper {
         }
     }
 
-    private <T extends XnatModelObject> T resolveXnatModelValue(final String value,
-                                                                final String matcher,
-                                                                final Class<T> model,
-                                                                final Function<String, T> makeANewModelObject)
+    private <T extends XnatModelObject> T resolveXnatObjectUri(final String value,
+                                                               final String matcher,
+                                                               final Class<T> model,
+                                                               final Function<URIManager.ArchiveItemURI, T> uriToModelObjectFunction,
+                                                               final Function<String, T> stringToModelObjectFunction)
             throws CommandInputResolutionException {
-        log.info("Resolving XNAT model object from value.");
+        final String modelName = model.getSimpleName();
+        log.info("Resolving " + modelName + " from value.");
         if (log.isDebugEnabled()) {
             log.debug("Value: " + value);
         }
@@ -516,53 +591,63 @@ public class CommandResolutionHelper {
             throw new CommandInputResolutionException(message, null);
         }
 
-        List<T> mayOrMayNotMatch = Lists.newArrayList();
-        if (value.startsWith("{")) {
-            try {
-                if (log.isInfoEnabled()) {
-                    log.info(String.format("Attempting to deserialize type \"%s\" from value", model.getName()));
-                }
-                final T modelObject = mapper.readValue(value, model);
-                mayOrMayNotMatch.add(modelObject);
-            } catch (IOException e) {
-                log.error(String.format("Could not deserialize value into type \"%s\".", model.getName()), e);
-            }
-        } else if (value.matches("^\\[\\s*\\{")) {
-            try {
-                if (log.isInfoEnabled()) {
-                    log.info(String.format("Attempting to deserialize a list of type \"%s\" from value", model.getName()));
-                }
-                mayOrMayNotMatch = mapper.readValue(value, new TypeReference<List<T>>(){});
-            } catch (IOException e) {
-                log.error(String.format("Could not deserialize value into a list of \"%s\".", model.getName()), e);
-            }
-        } else if (makeANewModelObject != null) {
+//        List<T> mayOrMayNotMatch = Lists.newArrayList();
+        T newModelObject = null;
+        if (value.startsWith("/")) {
             if (log.isInfoEnabled()) {
-                log.info(String.format("Attempting to create a \"%s\" using value in function %s.", model.getName(), makeANewModelObject));
+                log.info(String.format("Attempting to create a \"%s\" using value as URI.", modelName));
             }
-            final T newModelObject = makeANewModelObject.apply(value);
-            if (newModelObject != null) {
-                mayOrMayNotMatch.add(newModelObject);
+            if (uriToModelObjectFunction == null) {
+                throw new CommandInputResolutionException("ERROR: Cannot instantiate " + modelName + " without a function.", null);
             }
+
+            URIManager.DataURIA uri;
+            try {
+                uri = UriParserUtils.parseURI(value.startsWith("/archive") ? value : "/archive" + value);
+            } catch (MalformedURLException e) {
+                throw new CommandInputResolutionException(String.format("Cannot interpret value as a URI: %s.", value), null, e);
+            }
+
+            if (uri == null || !(uri instanceof URIManager.ArchiveItemURI)) {
+                throw new CommandInputResolutionException(String.format("Cannot interpret value as a URI: %s.", value), null);
+            }
+
+            newModelObject = uriToModelObjectFunction.apply((URIManager.ArchiveItemURI) uri);
+
+        } else if (value.startsWith("{")) {
+            try {
+                if (log.isInfoEnabled()) {
+                    log.info(String.format("Attempting to deserialize type \"%s\" from value", modelName));
+                }
+                newModelObject = mapper.readValue(value, model);
+            } catch (IOException e) {
+                log.error(String.format("Could not deserialize value into type \"%s\".", modelName), e);
+            }
+        } else if (stringToModelObjectFunction != null) {
+            if (log.isInfoEnabled()) {
+                log.info(String.format("Attempting to create a \"%s\" using value in function %s.", modelName, stringToModelObjectFunction));
+            }
+            newModelObject = stringToModelObjectFunction.apply(value);
         }
 
-        if (mayOrMayNotMatch == null || mayOrMayNotMatch.isEmpty()) {
-            throw new CommandInputResolutionException(String.format("Could not instantiate %s from value.", model.getName()), null);
+        if (newModelObject == null) {
+            throw new CommandInputResolutionException("Could not instantiate " + modelName + " from value.", null);
         }
 
         String mayOrMayNotMatchJson;
         try {
-            mayOrMayNotMatchJson = mapper.writeValueAsString(mayOrMayNotMatch);
+            mayOrMayNotMatchJson = mapper.writeValueAsString(newModelObject);
         } catch (JsonProcessingException e) {
-            throw new CommandInputResolutionException(String.format("Could not serialize object to JSON: %s", mayOrMayNotMatch), null, e);
+            throw new CommandInputResolutionException(String.format("Could not serialize object to JSON: %s", newModelObject), null, e);
         }
 
         if (StringUtils.isBlank(mayOrMayNotMatchJson)) {
-            throw new CommandInputResolutionException(String.format("Could not serialize object to JSON: %s", mayOrMayNotMatch), null);
+            throw new CommandInputResolutionException(String.format("Could not serialize object to JSON: %s", newModelObject), null);
         }
 
-        final List<T> doMatch;
+        final T aMatch;
         if (StringUtils.isNotBlank(matcher)) {
+            final List<T> doMatch;
             final String jsonPathSearch = String.format(
                     "$[?(%s)]", matcher
             );
@@ -573,18 +658,15 @@ public class CommandResolutionHelper {
             doMatch = JsonPath.parse(mayOrMayNotMatchJson).read(jsonPathSearch, new TypeRef<List<T>>(){});
 
             if (doMatch == null || doMatch.isEmpty()) {
-                throw new CommandInputResolutionException(String.format("Could not match any \"%s\" with matcher \"%s\".", model.getName(), matcher), null);
+                throw new CommandInputResolutionException(String.format("Could not match any \"%s\" with matcher \"%s\".", modelName, matcher), null);
             }
+
+            aMatch = doMatch.get(0);
         } else {
-            doMatch = mayOrMayNotMatch;
+            aMatch = newModelObject;
         }
 
-        final T aMatch = doMatch.get(0);
-        if (doMatch.size() > 1) {
-            log.warn(String.format("Refusing to implicitly loop over \"%s\" objects. Selecting first match from list of size %d.", model.getName(), doMatch.size()));
-        }
-
-        log.info("Successfully instantiated matching XNAT model object.");
+        log.info(String.format("Successfully instantiated matching %s.", modelName));
         if (log.isDebugEnabled()) {
             log.debug("Match: " + aMatch);
         }
@@ -750,14 +832,14 @@ public class CommandResolutionHelper {
                 final String message = String.format("Cannot resolve mount \"%s\". Source input \"%s\" has no resolved value.", mount.getName(), mount.getFileInput());
                 throw new CommandMountResolutionException(message, mount);
             }
-            final String sourceInputValue = sourceInput.getValue();
+            final String sourceInputJson = sourceInput.getJsonRepresentation();
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Source input has type \"%s\".", sourceInput.getType()));
             }
             switch (sourceInput.getType()) {
                 case RESOURCE:
                     try {
-                        final Resource resource = mapper.readValue(sourceInputValue, Resource.class);
+                        final Resource resource = mapper.readValue(sourceInputJson, Resource.class);
                         hostPath = resource.getDirectory();
                     } catch (IOException e) {
                         String message = "Source input is not a Resource.";
@@ -782,7 +864,7 @@ public class CommandResolutionHelper {
                     if (log.isDebugEnabled()) {
                         log.debug("Looking for child resources on source input.");
                     }
-                    final List<Resource> resources = JsonPath.parse(sourceInputValue).read("$.resources[*]", new TypeRef<List<Resource>>(){});
+                    final List<Resource> resources = JsonPath.parse(sourceInputJson).read("$.resources[*]", new TypeRef<List<Resource>>(){});
                     if (resources == null || resources.isEmpty()) {
                         throw new CommandMountResolutionException(String.format("Could not find any resources for source input \"%s\".", sourceInput), mount);
                     }

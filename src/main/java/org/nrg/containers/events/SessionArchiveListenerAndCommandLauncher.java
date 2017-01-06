@@ -31,13 +31,22 @@ public class SessionArchiveListenerAndCommandLauncher implements Consumer<Event<
     private static final Logger log = LoggerFactory.getLogger(SessionArchiveListenerAndCommandLauncher.class);
     private static final String EVENT_ID = "SessionArchived";
 
-    @Autowired private ObjectMapper mapper;
-    @Autowired private CommandService commandService;
-    @Autowired private CommandEventMappingService commandEventMappingService;
-    @Autowired private NrgEventService eventService;
+    private ObjectMapper mapper;
+    private CommandService commandService;
+    private CommandEventMappingService commandEventMappingService;
+    private NrgEventService eventService;
 
-    @Inject public SessionArchiveListenerAndCommandLauncher(EventBus eventBus ){
-        eventBus.on(type(SessionArchiveEvent.class), this);
+    @Autowired
+    public SessionArchiveListenerAndCommandLauncher(final EventBus eventBus,
+                                                    final ObjectMapper mapper,
+                                                    final CommandService commandService,
+                                                    final CommandEventMappingService commandEventMappingService,
+                                                    final NrgEventService eventService) {
+        eventBus.on(type(ScanArchiveEventToLaunchCommands.class), this);
+        this.mapper = mapper;
+        this.commandService = commandService;
+        this.commandEventMappingService = commandEventMappingService;
+        this.eventService = eventService;
     }
 
     @Override
@@ -55,10 +64,10 @@ public class SessionArchiveListenerAndCommandLauncher implements Consumer<Event<
 
         if (commandEventMappings != null && !commandEventMappings.isEmpty()){
             for (CommandEventMapping commandEventMapping: commandEventMappings) {
-                Long commandId = commandEventMapping.getCommandId();
+                final Long commandId = commandEventMapping.getCommandId();
 
                 final Map<String, String> runtimeValues = Maps.newHashMap();
-                String sessionString = session.getId();
+                String sessionString = session.getUri();
                 try {
                     sessionString = mapper.writeValueAsString(session);
                 } catch (JsonProcessingException e) {

@@ -3,17 +3,19 @@ package org.nrg.containers.model.xnat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatImageassessordataI;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.model.XnatImagesessiondataI;
+import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImagesessiondata;
-import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.helpers.uri.URIManager;
+import org.nrg.xnat.helpers.uri.UriParserUtils;
+import org.nrg.xnat.helpers.uri.archive.ExperimentURII;
 
 import java.util.List;
 import java.util.Objects;
@@ -21,64 +23,70 @@ import java.util.Objects;
 @JsonInclude(Include.NON_NULL)
 public class Session extends XnatModelObject {
     public static Type type = Type.SESSION;
-    @JsonIgnore private XnatImagesessiondataI xnatImagesessiondata;
-    @JsonProperty(value = "parent-id") private String parentId;
+    @JsonIgnore private XnatImagesessiondataI xnatImagesessiondataI;
     private List<Scan> scans;
     private List<Assessor> assessors;
     private List<Resource> resources;
 
     public Session() {}
 
-    public Session(final XnatImagesessiondataI xnatImagesessiondataI) {
-        this(xnatImagesessiondataI, null);
+    public Session(final ExperimentURII experimentURII) {
+        final XnatExperimentdata experiment = experimentURII.getExperiment();
+        if (experiment != null && XnatImagesessiondata.class.isAssignableFrom(experiment.getClass())) {
+            this.xnatImagesessiondataI = (XnatImagesessiondata) experiment;
+            this.uri = ((URIManager.DataURIA) experimentURII).getUri();
+            populatePropertiesFromSessionData(null);
+        }
     }
 
-    public Session(final XnatImagesessiondataI xnatImagesessiondata, final String rootArchivePath) {
-        this.xnatImagesessiondata = xnatImagesessiondata;
-        this.id = xnatImagesessiondata.getId();
-        this.label = xnatImagesessiondata.getLabel();
-        this.xsiType = xnatImagesessiondata.getXSIType();
-        this.uri = "/experiments/" + id;
+    public Session(final XnatImagesessiondataI xnatImagesessiondataI) {
+        this(xnatImagesessiondataI, null, null);
+    }
 
-        this.parentId = xnatImagesessiondata.getSubjectId();
+    public Session(final XnatImagesessiondataI xnatImagesessiondataI, final String parentUri, final String rootArchivePath) {
+        this.xnatImagesessiondataI = xnatImagesessiondataI;
+        if (parentUri == null) {
+            this.uri = UriParserUtils.getArchiveUri(xnatImagesessiondataI);
+        } else {
+            this.uri = parentUri + "/experiments/" + id;
+        }
+        populatePropertiesFromSessionData(rootArchivePath);
+    }
+
+    private void populatePropertiesFromSessionData(final String rootArchivePath) {
+        this.id = xnatImagesessiondataI.getId();
+        this.label = xnatImagesessiondataI.getLabel();
+        this.xsiType = xnatImagesessiondataI.getXSIType();
 
         this.scans = Lists.newArrayList();
-        for (final XnatImagescandataI xnatImagescandataI : xnatImagesessiondata.getScans_scan()) {
-            this.scans.add(new Scan(xnatImagescandataI, this.id, this.uri, rootArchivePath));
+        for (final XnatImagescandataI xnatImagescandataI : xnatImagesessiondataI.getScans_scan()) {
+            this.scans.add(new Scan(xnatImagescandataI, this.uri, rootArchivePath));
         }
 
         this.resources = Lists.newArrayList();
-        for (final XnatAbstractresourceI xnatAbstractresourceI : xnatImagesessiondata.getResources_resource()) {
+        for (final XnatAbstractresourceI xnatAbstractresourceI : xnatImagesessiondataI.getResources_resource()) {
             if (xnatAbstractresourceI instanceof XnatResourcecatalog) {
-                resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, this.id, this.uri, rootArchivePath));
+                resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, this.uri, rootArchivePath));
             }
         }
 
         this.assessors = Lists.newArrayList();
-        for (final XnatImageassessordataI xnatImageassessordataI : xnatImagesessiondata.getAssessors_assessor()) {
-            assessors.add(new Assessor(xnatImageassessordataI, this.id, this.uri, rootArchivePath));
+        for (final XnatImageassessordataI xnatImageassessordataI : xnatImagesessiondataI.getAssessors_assessor()) {
+            assessors.add(new Assessor(xnatImageassessordataI, this.uri, rootArchivePath));
         }
     }
 
     public XnatImagesessiondataI loadXnatImagesessiondata(final UserI userI) {
-        xnatImagesessiondata = XnatImagesessiondata.getXnatImagesessiondatasById(id, userI, false);
-        return xnatImagesessiondata;
+        xnatImagesessiondataI = XnatImagesessiondata.getXnatImagesessiondatasById(id, userI, false);
+        return xnatImagesessiondataI;
     }
 
-    public XnatImagesessiondataI getXnatImagesessiondata() {
-        return xnatImagesessiondata;
+    public XnatImagesessiondataI getXnatImagesessiondataI() {
+        return xnatImagesessiondataI;
     }
 
-    public void setXnatImagesessiondata(final XnatImagesessiondataI xnatImagesessiondata) {
-        this.xnatImagesessiondata = xnatImagesessiondata;
-    }
-
-    public String getParentId() {
-        return parentId;
-    }
-
-    public void setParentId(final String parentId) {
-        this.parentId = parentId;
+    public void setXnatImagesessiondataI(final XnatImagesessiondataI xnatImagesessiondataI) {
+        this.xnatImagesessiondataI = xnatImagesessiondataI;
     }
 
     public List<Resource> getResources() {
@@ -115,8 +123,7 @@ public class Session extends XnatModelObject {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         final Session that = (Session) o;
-        return Objects.equals(this.xnatImagesessiondata, that.xnatImagesessiondata) &&
-                Objects.equals(this.parentId, that.parentId) &&
+        return Objects.equals(this.xnatImagesessiondataI, that.xnatImagesessiondataI) &&
                 Objects.equals(this.scans, that.scans) &&
                 Objects.equals(this.assessors, that.assessors) &&
                 Objects.equals(this.resources, that.resources);
@@ -124,13 +131,12 @@ public class Session extends XnatModelObject {
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), xnatImagesessiondata, parentId, scans, assessors, resources);
+        return Objects.hash(super.hashCode(), xnatImagesessiondataI, scans, assessors, resources);
     }
 
     @Override
     public String toString() {
         return addParentPropertiesToString(MoreObjects.toStringHelper(this))
-//                .add("parentId", parentId)
                 .add("scans", scans)
                 .add("assessors", assessors)
                 .add("resources", resources)
