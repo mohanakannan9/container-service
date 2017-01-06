@@ -643,14 +643,15 @@ public class CommandResolutionHelper {
                         case SCAN:
                             // Intentional fallthrough
                         case ASSESSOR:
-                            // TODO This probably will not work. Figure out a way to get the project ID from these, or simply throw an error.
-                            configScope = Scope.Project;
-                            final List<String> projectIds = JsonPath.parse(parent.getJsonRepresentation()).read("$..projectId");
-                            entityId = (projectIds != null && !projectIds.isEmpty()) ? projectIds.get(0) : "";
-                            if (StringUtils.isBlank(entityId)) {
-                                throw new CommandInputResolutionException("Could not determine project when resolving config value.", input);
-                            }
-                            break;
+                            // TODO Is there any way to make this work? Can we find the project ID for these other input types?
+                            //configScope = Scope.Project;
+                            //final List<String> projectIds = JsonPath.parse(parent.getJsonRepresentation()).read("$..projectId");
+                            //entityId = (projectIds != null && !projectIds.isEmpty()) ? projectIds.get(0) : "";
+                            //if (StringUtils.isBlank(entityId)) {
+                            //    throw new CommandInputResolutionException("Could not determine project when resolving config value.", input);
+                            //}
+                            //break;
+                            throw new CommandInputResolutionException("Config inputs may only have parents of type Project.", input);
                         default:
                             configScope = Scope.Site;
                             entityId = null;
