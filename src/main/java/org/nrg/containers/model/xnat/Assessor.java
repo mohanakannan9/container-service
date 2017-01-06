@@ -10,7 +10,10 @@ import org.nrg.xdat.model.XnatImageassessordataI;
 import org.nrg.xdat.om.XnatImageassessordata;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
+import org.nrg.xnat.helpers.uri.archive.AssessorURII;
+import org.nrg.xnat.helpers.uri.archive.SubjectURII;
 
 import java.util.List;
 import java.util.Objects;
@@ -23,20 +26,30 @@ public class Assessor extends XnatModelObject {
 
     public Assessor() {}
 
+    public Assessor(final AssessorURII assessorURII) {
+        this.xnatImageassessordataI = assessorURII.getAssessor();
+        this.uri = ((URIManager.DataURIA) assessorURII).getUri();
+        populateProperties(null);
+    }
+
     public Assessor(final XnatImageassessordataI xnatImageassessordataI) {
         this(xnatImageassessordataI, null, null);
     }
 
     public Assessor(final XnatImageassessordataI xnatImageassessordataI, final String parentUri, final String rootArchivePath) {
         this.xnatImageassessordataI = xnatImageassessordataI;
-        this.id = xnatImageassessordataI.getId();
-        this.label = xnatImageassessordataI.getLabel();
-        this.xsiType = xnatImageassessordataI.getXSIType();
         if (parentUri == null) {
             this.uri = UriParserUtils.getArchiveUri(xnatImageassessordataI);
         } else {
             this.uri = parentUri + "/assessors/" + id;
         }
+        populateProperties(rootArchivePath);
+    }
+
+    private void populateProperties(final String rootArchivePath) {
+        this.id = xnatImageassessordataI.getId();
+        this.label = xnatImageassessordataI.getLabel();
+        this.xsiType = xnatImageassessordataI.getXSIType();
 
         this.resources = Lists.newArrayList();
         for (final XnatAbstractresourceI xnatAbstractresourceI : xnatImageassessordataI.getResources_resource()) {
