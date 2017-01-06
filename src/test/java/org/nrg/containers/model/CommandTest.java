@@ -33,10 +33,6 @@ import static org.junit.Assert.fail;
 @Transactional
 @ContextConfiguration(classes = CommandTestConfig.class)
 public class CommandTest {
-    private static final String RESOURCE_JSON = "{\"id\":1, \"type\":\"Resource\", \"label\":\"a_resource\", \"directory\":\"/path/to/files\"}";
-    private static final String SESSION_JSON = "{\"id\":\"1\", \"type\":\"Session\", \"label\":\"a_session\", " +
-            "\"xsiType\":\"xnat:fakesessiondata\", \"resources\":[" + RESOURCE_JSON + "]}";
-
     private static final String COOL_INPUT_JSON =
             "{\"name\":\"my_cool_input\", \"description\":\"A boolean value\", " +
                     "\"type\":\"boolean\", \"required\":true," +
@@ -233,18 +229,39 @@ public class CommandTest {
 
     @Test
     public void testResolveCommand() throws Exception {
+        final String sessionId = "1";
+        final String resourceId = "1";
+        final String sessionUri = "/experiments/" + sessionId;
+        final String resourceUri = sessionUri + "/resources/" + resourceId;
+        final String resourceJson = "{" +
+                "\"id\":" + resourceId + ", " +
+                "\"type\":\"Resource\", " +
+                "\"label\":\"a_resource\", " +
+                "\"uri\":\"" + resourceUri + "\", " +
+                "\"directory\":\"/path/to/files\"" +
+                "}";
+        final String sessionJson = "{" +
+                "\"id\":\"1\", " +
+                "\"type\":\"Session\", " +
+                "\"label\":\"a_session\", " +
+                "\"uri\": \"" + sessionUri + "\", " +
+                "\"xsiType\":\"xnat:fakesessiondata\", " +
+                "\"resources\":[" + resourceJson + "]" +
+                "}";
+
 
         final Command command = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, Command.class);
 
         final Map<String, String> runtimeValues = Maps.newHashMap();
         runtimeValues.put("my_cool_input", "false");
-        runtimeValues.put("session", SESSION_JSON);
+        runtimeValues.put("session", sessionJson);
         final ResolvedCommand resolvedCommand = commandService.resolveCommand(command, runtimeValues, null);
 
-        final String filledOutSessionJson = mapper.writeValueAsString(mapper.readValue(SESSION_JSON, Session.class)).replaceAll("\\\"", "\\\\\\\"");
+//        final String filledOutSessionJson = mapper.writeValueAsString(mapper.readValue(sessionJson, Session.class)).replaceAll("\\\"", "\\\\\\\"");
+        final Session session = mapper.readValue(sessionJson, Session.class);
         final String resolvedCommandJson1 =
                 String.format(RESOLVED_DOCKER_IMAGE_COMMAND_JSON_TEMPLATE,
-                        command.getId(), "", "bar", filledOutSessionJson);
+                        command.getId(), "", "bar", session.getUri());
         final ResolvedCommand expected1 = mapper.readValue(resolvedCommandJson1, ResolvedCommand.class);
         assertEquals(expected1, resolvedCommand);
 
@@ -253,7 +270,7 @@ public class CommandTest {
 
         final String resolvedCommandJson2 =
                 String.format(RESOLVED_DOCKER_IMAGE_COMMAND_JSON_TEMPLATE,
-                        command.getId(), "true", "bar", filledOutSessionJson);
+                        command.getId(), "true", "bar", session.getUri());
         final ResolvedCommand expected2 = mapper.readValue(resolvedCommandJson2, ResolvedCommand.class);
         assertEquals(expected2.getEnvironmentVariables(), resolvedCommand2.getEnvironmentVariables());
         assertEquals(expected2.getMountsIn(), resolvedCommand2.getMountsIn());

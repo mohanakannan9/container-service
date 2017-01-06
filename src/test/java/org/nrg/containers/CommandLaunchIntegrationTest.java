@@ -21,13 +21,10 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.nrg.containers.config.IntegrationTestConfig;
 import org.nrg.containers.model.Command;
-import org.nrg.containers.model.CommandMount;
-import org.nrg.containers.model.CommandOutput;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.ContainerExecutionMount;
 import org.nrg.containers.model.ContainerExecutionOutput;
 import org.nrg.containers.model.DockerServerPrefsBean;
-import org.nrg.containers.model.xnat.Project;
 import org.nrg.containers.model.xnat.Resource;
 import org.nrg.containers.model.xnat.Scan;
 import org.nrg.containers.model.xnat.Session;
@@ -48,7 +45,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -147,11 +143,11 @@ public class CommandLaunchIntegrationTest {
         assertEquals(
                 Sets.newHashSet("session", "label", "T1-scantype", "T1", "resource", "other-recon-all-args"),
                 inputValues.keySet());
-        assertEquals(session, mapper.readValue(inputValues.get("session"), Session.class));
+        assertEquals(session.getUri(), inputValues.get("session"));
         assertEquals(session.getLabel(), inputValues.get("label"));
         assertEquals(t1Scantype, inputValues.get("T1-scantype"));
-        assertEquals(scan, mapper.readValue(inputValues.get("T1"), Scan.class));
-        assertEquals(resource, mapper.readValue(inputValues.get("resource"), Resource.class));
+        assertEquals(scan.getUri(), inputValues.get("T1"));
+        assertEquals(resource.getUri(), inputValues.get("resource"));
         assertEquals("-all", inputValues.get("other-recon-all-args"));
 
         final List<ContainerExecutionOutput> outputs = execution.getOutputs();
