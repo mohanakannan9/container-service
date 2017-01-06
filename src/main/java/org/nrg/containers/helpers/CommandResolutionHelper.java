@@ -31,15 +31,12 @@ import org.nrg.containers.model.xnat.XnatFile;
 import org.nrg.containers.model.xnat.XnatModelObject;
 import org.nrg.framework.constants.Scope;
 import org.nrg.xdat.om.XnatExperimentdata;
-import org.nrg.xdat.om.XnatImagescandata;
 import org.nrg.xdat.om.XnatImagesessiondata;
-import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.ExperimentURII;
 import org.nrg.xnat.helpers.uri.archive.ScanURII;
-import org.nrg.xnat.helpers.uri.archive.impl.ExptScanURI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -356,8 +353,8 @@ public class CommandResolutionHelper {
                                         @Override
                                         public Scan apply(@Nullable URIManager.ArchiveItemURI uri) {
                                             if (uri != null &&
-                                                    ExptScanURI.class.isAssignableFrom(uri.getClass())) {
-                                                return new Scan((ExptScanURI) uri);
+                                                    ScanURII.class.isAssignableFrom(uri.getClass())) {
+                                                return new Scan((ScanURII) uri);
                                             }
 
                                             return null;
