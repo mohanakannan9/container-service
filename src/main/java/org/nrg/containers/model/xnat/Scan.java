@@ -25,6 +25,10 @@ public class Scan extends XnatModelObject {
 
     public Scan() {}
 
+    public Scan(final XnatImagescandata xnatImagescandata) {
+        this(xnatImagescandata, xnatImagescandata.getImageSessionId(), "/experiments/" + xnatImagescandata.getImageSessionId());
+    }
+
     public Scan(final XnatImagescandataI xnatImagescandata, final XnatModelObject parent) {
         this(xnatImagescandata, parent.getId(), parent.getUri());
     }
@@ -50,7 +54,7 @@ public class Scan extends XnatModelObject {
         }
     }
 
-    public XnatImagescandataI loatXnatImagescandataI(final UserI userI) {
+    public XnatImagescandataI loadXnatImagescandataI(final UserI userI) {
         xnatImagescandata = XnatImagescandata.getXnatImagescandatasByXnatImagescandataId(id, userI, false);
         return xnatImagescandata;
     }

@@ -1,7 +1,9 @@
 package org.nrg.containers.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.base.MoreObjects;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.StringUtils;
@@ -30,6 +32,7 @@ public class CommandInput implements Serializable {
     @JsonProperty("true-value") private String trueValue;
     @JsonProperty("false-value") private String falseValue;
     private String value;
+    private String jsonRepresentation;
 
     @ApiModelProperty(value = "Name of the command input", required = true)
     public String getName() {
@@ -175,6 +178,15 @@ public class CommandInput implements Serializable {
     }
 
     @Transient
+    public String getJsonRepresentation() {
+        return jsonRepresentation;
+    }
+
+    public void setJsonRepresentation(final String jsonRepresentation) {
+        this.jsonRepresentation = jsonRepresentation;
+    }
+
+    @Transient
     void update(final CommandInput other, final Boolean ignoreNull) {
         if (other == null) {
             return;
@@ -281,16 +293,28 @@ public class CommandInput implements Serializable {
     }
 
     public enum Type {
-        @JsonProperty("string") STRING,
-        @JsonProperty("boolean") BOOLEAN,
-        @JsonProperty("number") NUMBER,
-        @JsonProperty("file") FILE,
-        @JsonProperty("Project") PROJECT,
-        @JsonProperty("Subject") SUBJECT,
-        @JsonProperty("Session") SESSION,
-        @JsonProperty("Scan") SCAN,
-        @JsonProperty("Assessor") ASSESSOR,
-        @JsonProperty("Resource") RESOURCE,
-        @JsonProperty("Config") CONFIG
+        STRING("string"),
+        BOOLEAN("boolean"),
+        NUMBER("number"),
+        FILE("file"),
+        PROJECT("Project"),
+        SUBJECT("Subject"),
+        SESSION("Session"),
+        SCAN("Scan"),
+        ASSESSOR("Assessor"),
+        RESOURCE("Resource"),
+        CONFIG("Config");
+
+        private final String name;
+
+        @JsonCreator
+        Type(final String name) {
+            this.name = name;
+        }
+
+        @JsonValue
+        public String getName() {
+            return name;
+        }
     }
 }
