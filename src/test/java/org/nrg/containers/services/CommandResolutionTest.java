@@ -85,7 +85,7 @@ public class CommandResolutionTest {
 
     @Test
     @Transactional
-    public void testCommandNoTestNameYet() throws Exception {
+    public void testSessionScanResource() throws Exception {
         final String scantype = "SCANTYPE";
         final String scantypeCsv = "\"" + scantype + "\", \"OTHER_SCANTYPE\"";
         final String scantypeCsvEscaped = "\\\"" + scantype + "\\\", \\\"OTHER_SCANTYPE\\\"";
@@ -176,5 +176,54 @@ public class CommandResolutionTest {
         assertThat(inputValues, hasEntry("T1", scanUri));
         assertThat(inputValues, hasEntry("session", sessionUri));
         assertThat(inputValues, hasEntry("dicom", scanDicomResourceUri));
+    }
+
+    @Test
+    @Transactional
+    public void testProject() throws Exception {
+        final String projectInput = "{" +
+                "\"name\": \"project\"," +
+                "\"description\": \"This input accepts a project\"," +
+                "\"type\": \"Project\"," +
+                "\"required\": true" +
+                "}";
+
+        final String commandLine = "echo hello world";
+        final String commandJson =
+                "{\"name\": \"command\", \"description\": \"Testing project inputs\"," +
+                        "\"docker-image\": \"" + BUSYBOX_LATEST + "\"," +
+                        "\"run\": {" +
+                        "\"command-line\": \"" + commandLine + "\"" +
+                        "}," +
+                        "\"inputs\": [" +
+                            projectInput +
+                        "]" +
+                        "}";
+        final Command command = mapper.readValue(commandJson, Command.class);
+        commandService.create(command);
+
+        final String projectId = "aProject";
+        final String projectUri = "/projects/" + projectId;
+        final String projectRuntimeJson = "{" +
+                "\"id\": \"" + projectId + "\", " +
+                "\"label\": \"" + projectId + "\", " +
+                "\"uri\": \"" + projectUri + "\", " +
+                "\"type\": \"Project\"" +
+                "}";
+        final Map<String, String> runtimeValues = Maps.newHashMap();
+        runtimeValues.put("project", projectRuntimeJson);
+
+        final ResolvedCommand resolvedCommand = commandService.resolveCommand(command, runtimeValues, mockUser);
+        assertEquals((Long) command.getId(), resolvedCommand.getCommandId());
+        assertEquals(command.getDockerImage(), resolvedCommand.getDockerImage());
+        assertEquals(commandLine, resolvedCommand.getCommandLine());
+        assertTrue(resolvedCommand.getEnvironmentVariables().isEmpty());
+        assertTrue(resolvedCommand.getMountsIn().isEmpty());
+        assertTrue(resolvedCommand.getMountsOut().isEmpty());
+        assertTrue(resolvedCommand.getPorts().isEmpty());
+        assertTrue(resolvedCommand.getOutputs().isEmpty());
+
+        final Map<String, String> inputValues = resolvedCommand.getInputValues();
+        assertThat(inputValues, hasEntry("project", projectUri));
     }
 }
