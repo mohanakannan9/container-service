@@ -17,11 +17,13 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.nrg.config.services.ConfigService;
 import org.nrg.containers.config.IntegrationTestConfig;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.CommandMount;
 import org.nrg.containers.model.ContainerExecutionMount;
 import org.nrg.containers.model.ResolvedCommand;
+import org.nrg.framework.constants.Scope;
 import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +55,7 @@ public class CommandResolutionTest {
 
     @Autowired private ObjectMapper mapper;
     @Autowired private CommandService commandService;
+    @Autowired private ConfigService mockConfigService;
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder(new File("/tmp"));
@@ -359,5 +362,86 @@ public class CommandResolutionTest {
         final Map<String, String> inputValues = resolvedCommand.getInputValues();
         assertThat(inputValues, hasEntry("session", sessionUri));
         assertThat(inputValues, hasEntry("assessor", assessorUri));
+    }
+
+    @Test
+    public void testConfig() throws Exception {
+        final String siteConfigName = "site-config";
+        final String siteConfigInput = "{" +
+                "\"name\": \"" + siteConfigName + "\", " +
+                "\"type\": \"Config\", " +
+                "\"required\": true" +
+                "}";
+        final String projectInputName = "project";
+        final String projectInput = "{" +
+                "\"name\": \"" + projectInputName + "\", " +
+                "\"description\": \"This input accepts a project\", " +
+                "\"type\": \"Project\", " +
+                "\"required\": true" +
+                "}";
+        final String projectConfigName = "project-config";
+        final String projectConfigInput = "{" +
+                "\"name\": \"" + projectConfigName + "\", " +
+                "\"type\": \"Config\", " +
+                "\"required\": true," +
+                "\"parent\": \"" + projectInputName + "\"" +
+                "}";
+
+        final String commandLine = "echo hello world";
+        final String commandJson = "{" +
+                "\"name\": \"command\", " +
+                "\"description\": \"Testing config inputs\"," +
+                "\"docker-image\": \"" + BUSYBOX_LATEST + "\"," +
+                "\"run\": {" +
+                    "\"command-line\": \"" + commandLine + "\"" +
+                "}," +
+                "\"inputs\": [" +
+                    projectInput + ", " +
+                    siteConfigInput + ", " +
+                    projectConfigInput + //", " +
+                "]" +
+                "}";
+        final Command command = mapper.readValue(commandJson, Command.class);
+        commandService.create(command);
+
+        final String toolname = "toolname";
+        final String siteConfigFilename = "site-config-filename";
+        final String siteConfigContents = "Hey, I am stored in a site config!";
+        when(mockConfigService.getConfigContents(toolname, siteConfigFilename, Scope.Site, null))
+                .thenReturn(siteConfigContents);
+
+        final String projectId = "theProject";
+        final String projectConfigFilename = "project-config-filename";
+        final String projectConfigContents = "Hey, I am stored in a project config!";
+        when(mockConfigService.getConfigContents(toolname, projectConfigFilename, Scope.Project, projectId))
+                .thenReturn(projectConfigContents);
+
+        final String projectUri = "/projects/" + projectId;
+        final String projectRuntimeJson = "{" +
+                "\"id\": \"" + projectId + "\", " +
+                "\"label\": \"" + projectId + "\", " +
+                "\"uri\": \"" + projectUri + "\", " +
+                "\"type\": \"Project\"" +
+                "}";
+
+        final Map<String, String> runtimeValues = Maps.newHashMap();
+        runtimeValues.put(siteConfigName, toolname + "/" + siteConfigFilename);
+        runtimeValues.put(projectConfigName, toolname + "/" + projectConfigFilename);
+        runtimeValues.put(projectInputName, projectRuntimeJson);
+
+        final ResolvedCommand resolvedCommand = commandService.resolveCommand(command, runtimeValues, mockUser);
+        assertEquals((Long) command.getId(), resolvedCommand.getCommandId());
+        assertEquals(command.getDockerImage(), resolvedCommand.getDockerImage());
+        assertEquals(commandLine, resolvedCommand.getCommandLine());
+        assertTrue(resolvedCommand.getEnvironmentVariables().isEmpty());
+        assertTrue(resolvedCommand.getMountsIn().isEmpty());
+        assertTrue(resolvedCommand.getMountsOut().isEmpty());
+        assertTrue(resolvedCommand.getPorts().isEmpty());
+        assertTrue(resolvedCommand.getOutputs().isEmpty());
+
+        final Map<String, String> inputValues = resolvedCommand.getInputValues();
+        assertThat(inputValues, hasEntry(siteConfigName, siteConfigContents));
+        assertThat(inputValues, hasEntry(projectConfigName, projectConfigContents));
+        assertThat(inputValues, hasEntry(projectInputName, projectUri));
     }
 }
