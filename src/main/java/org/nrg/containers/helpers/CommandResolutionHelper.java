@@ -7,6 +7,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.InvalidJsonException;
+import com.jayway.jsonpath.InvalidPathException;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.TypeRef;
@@ -535,7 +536,7 @@ public class CommandResolutionHelper {
         } else if (hasInputMatcher) {
             fullMatcher = matcherFromInput;
         } else {
-            fullMatcher = "*";
+            fullMatcher = "";
         }
 
         final String jsonPathSearch = String.format(
@@ -549,7 +550,7 @@ public class CommandResolutionHelper {
 
         try {
             return JsonPath.parse(parentJson).read(jsonPathSearch, typeRef);
-        } catch (InvalidJsonException | MappingException e) {
+        } catch (InvalidPathException | InvalidJsonException | MappingException e) {
             String message = String.format("Error attempting to pull value using matcher \"%s\" from parent json", jsonPathSearch);
             if (log.isDebugEnabled()) {
                 message += ":\n" + parentJson;
