@@ -268,6 +268,21 @@ public class CommandRestApiTest {
                         .with(testSecurityContext());
         mockMvc.perform(badAccept)
                 .andExpect(status().isNotAcceptable());
+
+        // Blank command
+        final String blankCommand = "{}";
+        final MockHttpServletRequestBuilder blankCommandRequest =
+                post(path).content(blankCommand).contentType(JSON)
+                        .with(authentication(authentication))
+                        .with(csrf())
+                        .with(testSecurityContext());
+        final String blankCommandResponse =
+                mockMvc.perform(blankCommandRequest)
+                        .andExpect(status().isBadRequest())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+        assertEquals("Bad request:\nMust specify a docker image on the command.", blankCommandResponse);
     }
 
     @Test
