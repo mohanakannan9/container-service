@@ -226,4 +226,74 @@ public class CommandResolutionTest {
         final Map<String, String> inputValues = resolvedCommand.getInputValues();
         assertThat(inputValues, hasEntry("project", projectUri));
     }
+
+    @Test
+    @Transactional
+    public void testProjectSubject() throws Exception {
+        final String projectInput = "{" +
+                "\"name\": \"project\", " +
+                "\"description\": \"This input accepts a project\", " +
+                "\"type\": \"Project\", " +
+                "\"required\": true" +
+                "}";
+        final String subjectInput = "{" +
+                "\"name\": \"subject\", " +
+                "\"description\": \"This input accepts a subject\", " +
+                "\"type\": \"Subject\", " +
+                "\"parent\": \"project\", " +
+                "\"required\": true" +
+                "}";
+
+        final String commandLine = "echo hello world";
+        final String commandJson =
+                "{\"name\": \"command\", " +
+                        "\"description\": \"Testing project and subject inputs\"," +
+                        "\"docker-image\": \"" + BUSYBOX_LATEST + "\"," +
+                        "\"run\": {" +
+                        "\"command-line\": \"" + commandLine + "\"" +
+                        "}," +
+                        "\"inputs\": [" +
+                            projectInput + ", " +
+                            subjectInput +
+                        "]" +
+                        "}";
+        final Command command = mapper.readValue(commandJson, Command.class);
+        commandService.create(command);
+
+        final String subjectId = "aSubject";
+        final String projectId = "aProject";
+        final String projectUri = "/projects/" + projectId;
+        final String subjectUri = projectUri + "/subjects/" + subjectId;
+        final String subjectRuntimeJson = "{" +
+                "\"id\": \"" + subjectId + "\", " +
+                "\"label\": \"" + subjectId + "\", " +
+                "\"uri\": \"" + subjectUri + "\", " +
+                "\"type\": \"Subject\"" +
+                "}";
+        final String projectRuntimeJson = "{" +
+                "\"id\": \"" + projectId + "\", " +
+                "\"label\": \"" + projectId + "\", " +
+                "\"uri\": \"" + projectUri + "\", " +
+                "\"type\": \"Project\", " +
+                "\"subjects\" : [" +
+                    subjectRuntimeJson +
+                "]" +
+                "}";
+        final Map<String, String> runtimeValues = Maps.newHashMap();
+        runtimeValues.put("project", projectRuntimeJson);
+
+        final ResolvedCommand resolvedCommand = commandService.resolveCommand(command, runtimeValues, mockUser);
+        assertEquals((Long) command.getId(), resolvedCommand.getCommandId());
+        assertEquals(command.getDockerImage(), resolvedCommand.getDockerImage());
+        assertEquals(commandLine, resolvedCommand.getCommandLine());
+        assertTrue(resolvedCommand.getEnvironmentVariables().isEmpty());
+        assertTrue(resolvedCommand.getMountsIn().isEmpty());
+        assertTrue(resolvedCommand.getMountsOut().isEmpty());
+        assertTrue(resolvedCommand.getPorts().isEmpty());
+        assertTrue(resolvedCommand.getOutputs().isEmpty());
+
+        final Map<String, String> inputValues = resolvedCommand.getInputValues();
+        assertThat(inputValues, hasEntry("project", projectUri));
+        assertThat(inputValues, hasEntry("subject", subjectUri));
+    }
 }
