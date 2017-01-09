@@ -296,4 +296,71 @@ public class CommandResolutionTest {
         assertThat(inputValues, hasEntry("project", projectUri));
         assertThat(inputValues, hasEntry("subject", subjectUri));
     }
+
+    @Test
+    @Transactional
+    public void testSessionAssessor() throws Exception {
+        final String sessionInput = "{" +
+                "\"name\": \"session\", " +
+                "\"type\": \"Session\", " +
+                "\"required\": true}";
+        final String assessorInput = "{" +
+                "\"name\": \"assessor\", " +
+                "\"type\": \"Assessor\", " +
+                "\"parent\": \"session\", " +
+                "\"required\": true" +
+                "}";
+
+        final String commandLine = "echo hello world";
+        final String commandJson =
+                "{\"name\": \"command\", " +
+                        "\"description\": \"Testing project and subject inputs\"," +
+                        "\"docker-image\": \"" + BUSYBOX_LATEST + "\"," +
+                        "\"run\": {" +
+                        "\"command-line\": \"" + commandLine + "\"" +
+                        "}," +
+                        "\"inputs\": [" +
+                            sessionInput + ", " +
+                            assessorInput +
+                        "]" +
+                        "}";
+        final Command command = mapper.readValue(commandJson, Command.class);
+        commandService.create(command);
+
+        final String sessionId = "aSession";
+        final String assessorId = "anAssessor";
+        final String sessionUri = "/experiments/" + sessionId;
+        final String assessorUri = sessionUri + "/assessors/" + assessorId;
+        final String assessorRuntimeJson = "{" +
+                "\"id\": \"" + assessorId + "\", " +
+                "\"label\": \"" + assessorId + "\", " +
+                "\"uri\": \"" + assessorUri + "\", " +
+                "\"type\": \"Assessor\"" +
+                "}";
+        final String sessionRuntimeJson = "{" +
+                "\"id\": \"" + sessionId + "\", " +
+                "\"label\": \"" + sessionId + "\", " +
+                "\"uri\": \"" + sessionUri + "\", " +
+                "\"type\": \"Session\", " +
+                "\"assessors\" : [" +
+                    assessorRuntimeJson +
+                "]" +
+                "}";
+        final Map<String, String> runtimeValues = Maps.newHashMap();
+        runtimeValues.put("session", sessionRuntimeJson);
+
+        final ResolvedCommand resolvedCommand = commandService.resolveCommand(command, runtimeValues, mockUser);
+        assertEquals((Long) command.getId(), resolvedCommand.getCommandId());
+        assertEquals(command.getDockerImage(), resolvedCommand.getDockerImage());
+        assertEquals(commandLine, resolvedCommand.getCommandLine());
+        assertTrue(resolvedCommand.getEnvironmentVariables().isEmpty());
+        assertTrue(resolvedCommand.getMountsIn().isEmpty());
+        assertTrue(resolvedCommand.getMountsOut().isEmpty());
+        assertTrue(resolvedCommand.getPorts().isEmpty());
+        assertTrue(resolvedCommand.getOutputs().isEmpty());
+
+        final Map<String, String> inputValues = resolvedCommand.getInputValues();
+        assertThat(inputValues, hasEntry("session", sessionUri));
+        assertThat(inputValues, hasEntry("assessor", assessorUri));
+    }
 }

@@ -80,11 +80,6 @@ public class Assessor extends XnatModelObject {
         return xnatImageassessordataI;
     }
 
-    @Override
-    public String getUri() {
-        return null;
-    }
-
     public Type getType() {
         return type;
     }
