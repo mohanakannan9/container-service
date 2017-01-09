@@ -44,6 +44,7 @@ import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = IntegrationTestConfig.class)
+@Transactional
 public class CommandResolutionTest {
     private static final Logger log = LoggerFactory.getLogger(CommandResolutionTest.class);
     private final String BUSYBOX_LATEST = "busybox:latest";
@@ -84,7 +85,6 @@ public class CommandResolutionTest {
     }
 
     @Test
-    @Transactional
     public void testSessionScanResource() throws Exception {
         final String scantype = "SCANTYPE";
         final String scantypeCsv = "\"" + scantype + "\", \"OTHER_SCANTYPE\"";
@@ -179,7 +179,6 @@ public class CommandResolutionTest {
     }
 
     @Test
-    @Transactional
     public void testProject() throws Exception {
         final String projectInput = "{" +
                 "\"name\": \"project\"," +
@@ -228,7 +227,6 @@ public class CommandResolutionTest {
     }
 
     @Test
-    @Transactional
     public void testProjectSubject() throws Exception {
         final String projectInput = "{" +
                 "\"name\": \"project\", " +
@@ -298,7 +296,6 @@ public class CommandResolutionTest {
     }
 
     @Test
-    @Transactional
     public void testSessionAssessor() throws Exception {
         final String sessionInput = "{" +
                 "\"name\": \"session\", " +
