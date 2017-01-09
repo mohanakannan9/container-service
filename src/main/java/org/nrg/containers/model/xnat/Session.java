@@ -35,7 +35,7 @@ public class Session extends XnatModelObject {
         if (experiment != null && XnatImagesessiondata.class.isAssignableFrom(experiment.getClass())) {
             this.xnatImagesessiondataI = (XnatImagesessiondata) experiment;
             this.uri = ((URIManager.DataURIA) experimentURII).getUri();
-            populatePropertiesFromSessionData(null);
+            populateProperties(null);
         }
     }
 
@@ -50,10 +50,10 @@ public class Session extends XnatModelObject {
         } else {
             this.uri = parentUri + "/experiments/" + id;
         }
-        populatePropertiesFromSessionData(rootArchivePath);
+        populateProperties(rootArchivePath);
     }
 
-    private void populatePropertiesFromSessionData(final String rootArchivePath) {
+    private void populateProperties(final String rootArchivePath) {
         this.id = xnatImagesessiondataI.getId();
         this.label = xnatImagesessiondataI.getLabel();
         this.xsiType = xnatImagesessiondataI.getXSIType();

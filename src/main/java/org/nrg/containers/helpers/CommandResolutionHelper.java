@@ -25,19 +25,28 @@ import org.nrg.containers.model.CommandOutputFiles;
 import org.nrg.containers.model.ContainerExecutionMount;
 import org.nrg.containers.model.ContainerExecutionOutput;
 import org.nrg.containers.model.ResolvedCommand;
+import org.nrg.containers.model.xnat.Assessor;
+import org.nrg.containers.model.xnat.Project;
 import org.nrg.containers.model.xnat.Resource;
 import org.nrg.containers.model.xnat.Scan;
 import org.nrg.containers.model.xnat.Session;
+import org.nrg.containers.model.xnat.Subject;
 import org.nrg.containers.model.xnat.XnatFile;
 import org.nrg.containers.model.xnat.XnatModelObject;
 import org.nrg.framework.constants.Scope;
 import org.nrg.xdat.om.XnatExperimentdata;
+import org.nrg.xdat.om.XnatImageassessordata;
 import org.nrg.xdat.om.XnatImagesessiondata;
+import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
+import org.nrg.xnat.helpers.uri.archive.AssessorURII;
 import org.nrg.xnat.helpers.uri.archive.ExperimentURII;
+import org.nrg.xnat.helpers.uri.archive.ProjectURII;
 import org.nrg.xnat.helpers.uri.archive.ScanURII;
+import org.nrg.xnat.helpers.uri.archive.SubjectURII;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -236,10 +245,145 @@ public class CommandResolutionHelper {
                     }
                     break;
                 case PROJECT:
-                    // TODO
+                    if (parent != null) {
+                        // TODO This should have already been fixed by command validation
+                        final String message = "Project inputs cannot have parents.";
+                        log.error(message);
+                        throw new CommandInputResolutionException(message, input);
+                    } else if (StringUtils.isNotBlank(resolvedValue)) {
+                        // With no parent, we were either given, A. an archive-style URI, or B. the project id
+                        final Project aMatch;
+                        try {
+                            aMatch = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Project.class,
+                                    new Function<URIManager.ArchiveItemURI, Project>() {
+                                        @Nullable
+                                        @Override
+                                        public Project apply(@Nullable URIManager.ArchiveItemURI uri) {
+                                            if (uri != null &&
+                                                    ProjectURII.class.isAssignableFrom(uri.getClass())) {
+                                                return new Project((ProjectURII) uri);
+                                            }
+
+                                            return null;
+                                        }
+                                    },
+                                    new Function<String, Project>() {
+                                        @Nullable
+                                        @Override
+                                        public Project apply(@Nullable String s) {
+                                            if (StringUtils.isBlank(s)) {
+                                                return null;
+                                            }
+                                            final XnatProjectdata xnatProjectdata = XnatProjectdata.getXnatProjectdatasById(s, userI, true);
+                                            if (xnatProjectdata != null) {
+                                                return new Project(xnatProjectdata);
+                                            }
+                                            return null;
+                                        }
+                                    });
+                        } catch (CommandInputResolutionException e) {
+                            throw new CommandInputResolutionException(e.getMessage(), input);
+                        }
+
+                        if (aMatch != null) {
+                            if (log.isDebugEnabled()) {
+                                log.debug("Setting resolvedValue to uri " + aMatch.getUri());
+                            }
+                            resolvedValue = aMatch.getUri();
+                            try {
+                                jsonRepresentation = mapper.writeValueAsString(aMatch);
+                            } catch (JsonProcessingException e) {
+                                String message = "Could not serialize project";
+                                if (log.isDebugEnabled()) {
+                                    message += ": " + aMatch;
+                                } else {
+                                    message += ".";
+                                }
+                                log.error(message, e);
+                            }
+                        }
+                    } else {
+                        // If value is blank, we will deal with that later
+                    }
                     break;
                 case SUBJECT:
-                    // TODO
+                    if (parent != null) {
+                        // We have a parent, so pull the value from it
+                        // If we have any value set currently, assume it is an ID
+
+                        final List<Subject> childList = matchChildFromParent(parent.getJsonRepresentation(),
+                                resolvedValue, "subjects", "id", resolvedMatcher, new TypeRef<List<Subject>>(){});
+                        if (childList != null && !childList.isEmpty()) {
+                            if (log.isDebugEnabled()) {
+                                log.debug("Selecting first matching result from list " + childList);
+                            }
+                            final Subject first = childList.get(0);
+
+                            if (log.isDebugEnabled()) {
+                                log.debug("Setting resolvedValue to uri " + first.getUri());
+                            }
+                            resolvedValue = first.getUri();
+                            try {
+                                jsonRepresentation = mapper.writeValueAsString(first);
+                            } catch (JsonProcessingException e) {
+                                log.error("Could not serialize subject to json.", e);
+                            }
+                        }
+                    } else if (StringUtils.isNotBlank(resolvedValue)) {
+                        // With no parent, we were either given, A. an archive-style URI, or B. the subject id
+                        final Subject aMatch;
+                        try {
+                            aMatch = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Subject.class,
+                                    new Function<URIManager.ArchiveItemURI, Subject>() {
+                                        @Nullable
+                                        @Override
+                                        public Subject apply(@Nullable URIManager.ArchiveItemURI uri) {
+                                            if (uri != null &&
+                                                    SubjectURII.class.isAssignableFrom(uri.getClass())) {
+                                                return new Subject((SubjectURII) uri);
+                                            }
+
+                                            return null;
+                                        }
+                                    },
+                                    new Function<String, Subject>() {
+                                        @Nullable
+                                        @Override
+                                        public Subject apply(@Nullable String s) {
+                                            if (StringUtils.isBlank(s)) {
+                                                return null;
+                                            }
+                                            final XnatSubjectdata xnatSubjectdata = XnatSubjectdata.getXnatSubjectdatasById(s, userI, true);
+                                            if (xnatSubjectdata != null) {
+                                                return new Subject(xnatSubjectdata);
+                                            }
+                                            return null;
+                                        }
+                                    });
+                        } catch (CommandInputResolutionException e) {
+                            throw new CommandInputResolutionException(e.getMessage(), input);
+                        }
+
+                        if (aMatch != null) {
+                            if (log.isDebugEnabled()) {
+                                log.debug("Setting resolvedValue to uri " + aMatch.getUri());
+                            }
+                            resolvedValue = aMatch.getUri();
+                            try {
+                                jsonRepresentation = mapper.writeValueAsString(aMatch);
+                            } catch (JsonProcessingException e) {
+                                String message = "Could not serialize subject";
+                                if (log.isDebugEnabled()) {
+                                    message += ": " + aMatch;
+                                } else {
+                                    message += ".";
+                                }
+                                log.error(message, e);
+                            }
+                        }
+                    } else {
+                        // If value is blank, we will deal with that later
+                    }
                     break;
                 case SESSION:
                     if (parent != null) {
@@ -291,9 +435,12 @@ public class CommandResolutionHelper {
                                         @Nullable
                                         @Override
                                         public Session apply(@Nullable String s) {
+                                            if (StringUtils.isBlank(s)) {
+                                                return null;
+                                            }
                                             final XnatImagesessiondata imagesessiondata = XnatImagesessiondata.getXnatImagesessiondatasById(s, userI, true);
                                             if (imagesessiondata != null) {
-                                                return new Session(imagesessiondata, null, null);
+                                                return new Session(imagesessiondata);
                                             }
                                             return null;
                                         }
@@ -388,7 +535,90 @@ public class CommandResolutionHelper {
                     }
                     break;
                 case ASSESSOR:
-                    // TODO
+                    if (parent != null) {
+                        // We have a parent, so pull the value from it
+                        // If we have any value set currently, assume it is an ID
+
+                        final List<Assessor> childList = matchChildFromParent(parent.getJsonRepresentation(),
+                                resolvedValue, "assessors", "id", resolvedMatcher, new TypeRef<List<Assessor>>(){});
+                        if (childList != null && !childList.isEmpty()) {
+                            if (log.isDebugEnabled()) {
+                                log.debug("Selecting first matching result from list " + childList);
+                            }
+                            final Assessor first = childList.get(0);
+
+                            if (log.isDebugEnabled()) {
+                                log.debug("Setting resolvedValue to uri " + first.getUri());
+                            }
+                            resolvedValue = first.getUri();
+                            try {
+                                jsonRepresentation = mapper.writeValueAsString(first);
+                            } catch (JsonProcessingException e) {
+                                log.error("Could not serialize assessor to json.", e);
+                            }
+                        }
+                    } else if (StringUtils.isNotBlank(resolvedValue)) {
+                        // With no parent, we were either given, A. an archive-style URI, or B. the assessor id
+                        final Assessor aMatch;
+                        try {
+                            aMatch = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Assessor.class,
+                                    new Function<URIManager.ArchiveItemURI, Assessor>() {
+                                        @Nullable
+                                        @Override
+                                        public Assessor apply(@Nullable URIManager.ArchiveItemURI uri) {
+                                            XnatImageassessordata assessor;
+                                            if (uri != null &&
+                                                    AssessorURII.class.isAssignableFrom(uri.getClass())) {
+                                                assessor = ((AssessorURII) uri).getAssessor();
+
+                                                if (assessor != null &&
+                                                        XnatImageassessordata.class.isAssignableFrom(assessor.getClass())) {
+                                                    return new Assessor((AssessorURII) uri);
+                                                }
+                                            }
+
+                                            return null;
+                                        }
+                                    },
+                                    new Function<String, Assessor>() {
+                                        @Nullable
+                                        @Override
+                                        public Assessor apply(@Nullable String s) {
+                                            if (StringUtils.isBlank(s)) {
+                                                return null;
+                                            }
+                                            final XnatImageassessordata xnatImageassessordata =
+                                                    XnatImageassessordata.getXnatImageassessordatasById(s, userI, true);
+                                            if (xnatImageassessordata != null) {
+                                                return new Assessor(xnatImageassessordata);
+                                            }
+                                            return null;
+                                        }
+                                    });
+                        } catch (CommandInputResolutionException e) {
+                            throw new CommandInputResolutionException(e.getMessage(), input);
+                        }
+
+                        if (aMatch != null) {
+                            if (log.isDebugEnabled()) {
+                                log.debug("Setting resolvedValue to uri " + aMatch.getUri());
+                            }
+                            resolvedValue = aMatch.getUri();
+                            try {
+                                jsonRepresentation = mapper.writeValueAsString(aMatch);
+                            } catch (JsonProcessingException e) {
+                                String message = "Could not serialize assessor";
+                                if (log.isDebugEnabled()) {
+                                    message += ": " + aMatch;
+                                } else {
+                                    message += ".";
+                                }
+                                log.error(message, e);
+                            }
+                        }
+                    } else {
+                        // If value is blank, we will deal with that later
+                    }
                     break;
                 case CONFIG:
                     final String[] configProps = resolvedValue != null ? resolvedValue.split("/") : null;
@@ -413,14 +643,15 @@ public class CommandResolutionHelper {
                         case SCAN:
                             // Intentional fallthrough
                         case ASSESSOR:
-                            // TODO This probably will not work. Figure out a way to get the project ID from these, or simply throw an error.
-                            configScope = Scope.Project;
-                            final List<String> projectIds = JsonPath.parse(parent.getJsonRepresentation()).read("$..projectId");
-                            entityId = (projectIds != null && !projectIds.isEmpty()) ? projectIds.get(0) : "";
-                            if (StringUtils.isBlank(entityId)) {
-                                throw new CommandInputResolutionException("Could not determine project when resolving config value.", input);
-                            }
-                            break;
+                            // TODO Is there any way to make this work? Can we find the project ID for these other input types?
+                            //configScope = Scope.Project;
+                            //final List<String> projectIds = JsonPath.parse(parent.getJsonRepresentation()).read("$..projectId");
+                            //entityId = (projectIds != null && !projectIds.isEmpty()) ? projectIds.get(0) : "";
+                            //if (StringUtils.isBlank(entityId)) {
+                            //    throw new CommandInputResolutionException("Could not determine project when resolving config value.", input);
+                            //}
+                            //break;
+                            throw new CommandInputResolutionException("Config inputs may only have parents of type Project.", input);
                         default:
                             configScope = Scope.Site;
                             entityId = null;

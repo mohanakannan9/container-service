@@ -11,7 +11,9 @@ import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
+import org.nrg.xnat.helpers.uri.archive.ProjectURII;
 
 import java.util.List;
 import java.util.Objects;
@@ -25,13 +27,22 @@ public class Project extends XnatModelObject {
 
     public Project() {}
 
+    public Project(final ProjectURII projectURII) {
+        this.xnatProjectdata = projectURII.getProject();
+        this.uri = ((URIManager.DataURIA) projectURII).getUri();
+        populateProperties();
+    }
+
     public Project(final XnatProjectdata xnatProjectdata) {
         this.xnatProjectdata = xnatProjectdata;
+        this.uri = UriParserUtils.getArchiveUri(xnatProjectdata);
+        populateProperties();
+    }
 
+    private void populateProperties() {
         this.id = xnatProjectdata.getId();
         this.label = xnatProjectdata.getName();
         this.xsiType = xnatProjectdata.getXSIType();
-        this.uri = UriParserUtils.getArchiveUri(xnatProjectdata);
 
         this.subjects = Lists.newArrayList();
         for (final XnatSubjectdata subject : xnatProjectdata.getParticipants_participant()) {

@@ -6,19 +6,14 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
-import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.om.XnatImagescandata;
-import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatResourcecatalog;
-import org.nrg.xdat.om.base.BaseXnatExperimentdata;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
-import org.nrg.xnat.helpers.uri.archive.AssessedURII;
 import org.nrg.xnat.helpers.uri.archive.ScanURII;
-import org.nrg.xnat.helpers.uri.archive.impl.ExptScanURI;
 
 import java.util.List;
 import java.util.Objects;
@@ -36,7 +31,7 @@ public class Scan extends XnatModelObject {
     public Scan(final ScanURII scanURII) {
         this.xnatImagescandataI = scanURII.getScan();
         this.uri = ((URIManager.ArchiveItemURI)scanURII).getUri();
-        populatePropertiesFromScanData(null);
+        populateProperties(null);
     }
 
     public Scan(final XnatImagescandataI xnatImagescandataI, final String parentUri, final String rootArchivePath) {
@@ -46,10 +41,10 @@ public class Scan extends XnatModelObject {
         } else {
             this.uri = parentUri + "/scans/" + id;
         }
-        populatePropertiesFromScanData(rootArchivePath);
+        populateProperties(rootArchivePath);
     }
 
-    private void populatePropertiesFromScanData(final String rootArchivePath) {
+    private void populateProperties(final String rootArchivePath) {
         this.integerId = xnatImagescandataI.getXnatImagescandataId();
         this.id = xnatImagescandataI.getId();
         this.xsiType = xnatImagescandataI.getXSIType();
