@@ -707,7 +707,12 @@ public class CommandResolutionHelper {
 
         log.info("Done resolving command outputs.");
         if (log.isDebugEnabled()) {
-            log.debug("Outputs: \n" + resolvedOutputs);
+            String message = "Outputs: ";
+            if (resolvedOutputs.size() >= 2) {
+                message += "\n";
+            }
+            message += resolvedOutputs;
+            log.debug(message);
         }
         return resolvedOutputs;
     }
