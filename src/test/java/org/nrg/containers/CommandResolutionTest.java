@@ -1,7 +1,6 @@
-package org.nrg.containers.services;
+package org.nrg.containers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.jayway.jsonpath.Configuration;
@@ -10,7 +9,6 @@ import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
 import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
-import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -20,9 +18,8 @@ import org.mockito.Mockito;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.config.IntegrationTestConfig;
 import org.nrg.containers.model.Command;
-import org.nrg.containers.model.CommandMount;
-import org.nrg.containers.model.ContainerExecutionMount;
 import org.nrg.containers.model.ResolvedCommand;
+import org.nrg.containers.services.CommandService;
 import org.nrg.framework.constants.Scope;
 import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
@@ -33,7 +30,6 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
