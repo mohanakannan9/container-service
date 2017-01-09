@@ -3,6 +3,7 @@ package org.nrg.containers.rest;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
+import com.google.common.io.Resources;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
@@ -408,4 +409,35 @@ public class CommandRestApiTest {
         final Long idResponse = Long.parseLong(response);
         assertEquals(idResponse, (Long) containerExecution.getId());
     }
+
+
+    @Test
+    public void testCreateEcatHeaderDump() throws Exception {
+        // A User was attempting to create the command in this resource.
+        // Spring didn't tell us why. See CS-70.
+
+        final String path = "/commands";
+
+        final String dir = Resources.getResource("ecatHeaderDump").getPath();
+        final String commandJsonFile = dir + "/command.json";
+        final Command ecatHeaderDump = mapper.readValue(new File(commandJsonFile), Command.class);
+        final String commandJson = mapper.writeValueAsString(ecatHeaderDump);
+
+        final MockHttpServletRequestBuilder request =
+                post(path).content(commandJson).contentType(JSON)
+                        .with(authentication(authentication))
+                        .with(csrf())
+                        .with(testSecurityContext());
+
+        final String response =
+                mockMvc.perform(request)
+                        .andExpect(status().isCreated())
+                        .andExpect(content().contentType(JSON))
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        assertNotEquals(response, "0");
+    }
+
 }
