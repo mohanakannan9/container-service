@@ -455,4 +455,33 @@ public class CommandRestApiTest {
         assertNotEquals(response, "0");
     }
 
+    @Test
+    public void testSpringUnhelpfulError() throws Exception {
+        // Deliberately trigger Spring's 400 'syntactically incorrect' error
+
+        final String path = "/commands";
+
+        final String badInputType = "fig newton";
+        final String badInputTypeJson = "{" +
+                "\"name\": \"a command name\", " +
+                "\"docker-image\": \"an image\", " +
+                "\"inputs\": [" +
+                    "{\"name\": \"an input name\", \"type\": \"" + badInputType + "\"}" +
+                "}";
+
+        final MockHttpServletRequestBuilder badInputTypeCommandRequest =
+                post(path).content(badInputTypeJson).contentType(JSON)
+                        .with(authentication(authentication))
+                        .with(csrf())
+                        .with(testSecurityContext());
+
+        final String badInputTypeCommandResponse =
+                mockMvc.perform(badInputTypeCommandRequest)
+                        .andExpect(status().isBadRequest())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        assertEquals("", badInputTypeCommandResponse);
+    }
 }
