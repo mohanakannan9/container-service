@@ -4,6 +4,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.exceptions.*;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.ContainerExecution;
@@ -79,6 +80,13 @@ public class CommandRestApi extends AbstractXapiRestController {
     })
     public ResponseEntity<Long> createCommand(final @RequestBody Command command)
             throws BadRequestException {
+        if (StringUtils.isBlank(command.getDockerImage())) {
+            throw new BadRequestException("Must specify a docker image on the command.");
+        }
+        if (StringUtils.isBlank(command.getName())) {
+            throw new BadRequestException("Must specify a name on the command.");
+        }
+
         try {
             final Command created = commandService.create(command);
             return new ResponseEntity<>(created.getId(), HttpStatus.CREATED);

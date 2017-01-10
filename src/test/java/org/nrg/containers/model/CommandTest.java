@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.io.Resources;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.containers.config.CommandTestConfig;
@@ -16,6 +17,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 
@@ -277,5 +279,15 @@ public class CommandTest {
         assertEquals(expected2.getMountsOut(), resolvedCommand2.getMountsOut());
 
         assertEquals("cmd --flag=bar -b", resolvedCommand2.getCommandLine());
+    }
+
+    @Test
+    public void testCreateEcatHeaderDump() throws Exception {
+        // A User was attempting to create the command in this resource.
+        // Spring didn't tell us why. See CS-70.
+        final String dir = Resources.getResource("ecatHeaderDump").getPath();
+        final String commandJsonFile = dir + "/command.json";
+        final Command ecatHeaderDump = mapper.readValue(new File(commandJsonFile), Command.class);
+        commandService.create(ecatHeaderDump);
     }
 }

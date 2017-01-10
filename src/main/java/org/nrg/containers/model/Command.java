@@ -31,7 +31,6 @@ public class Command extends AbstractHibernateEntity {
     private List<CommandInput> inputs = Lists.newArrayList();
     private List<CommandOutput> outputs = Lists.newArrayList();
 
-    @Nonnull
     @ApiModelProperty(value = "The Command's user-readable name. Must be unique for a given docker image.", required = true)
     public String getName() {
         return name;
@@ -41,7 +40,6 @@ public class Command extends AbstractHibernateEntity {
         this.name = name;
     }
 
-    @Nullable
     @ApiModelProperty("A brief description of the Command")
     public String getDescription() {
         return description;
@@ -51,7 +49,6 @@ public class Command extends AbstractHibernateEntity {
         this.description = description;
     }
 
-    @Nullable
     @ApiModelProperty("A URL where users can get more information about the Command")
     public String getInfoUrl() {
         return infoUrl;
@@ -61,7 +58,6 @@ public class Command extends AbstractHibernateEntity {
         this.infoUrl = infoUrl;
     }
 
-    @Nonnull
     @ApiModelProperty(value = "The ID of the docker image where this Command will run", required = true)
     public String getDockerImage() {
         return dockerImage;
@@ -79,7 +75,6 @@ public class Command extends AbstractHibernateEntity {
         this.run = run;
     }
 
-    @Nullable
     @ElementCollection
     @ApiModelProperty("A list of inputs. " +
             "When the Command is launched, these inputs receive values; " +
@@ -94,7 +89,6 @@ public class Command extends AbstractHibernateEntity {
                 inputs;
     }
 
-    @Nullable
     @ElementCollection
     @ApiModelProperty("A list of outputs.")
     public List<CommandOutput> getOutputs() {

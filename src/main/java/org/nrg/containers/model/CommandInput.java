@@ -296,7 +296,7 @@ public class CommandInput implements Serializable {
         STRING("string"),
         BOOLEAN("boolean"),
         NUMBER("number"),
-        FILE("file"),
+        FILE("File"),
         PROJECT("Project"),
         SUBJECT("Subject"),
         SESSION("Session"),
