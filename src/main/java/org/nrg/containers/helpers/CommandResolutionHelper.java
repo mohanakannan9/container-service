@@ -153,7 +153,7 @@ public class CommandResolutionHelper {
             for (final String prereq : prerequisites) {
                 if (!resolvedInputObjects.containsKey(prereq)) {
                     final String message = String.format(
-                            "Input %1$s has prerequisite %2$s which has not been resolved. Re-order inputs so %1$s appears after %2$s.",
+                            "Input \"%1$s\" has prerequisite \"%2$s\" which has not been resolved. Re-order the command inputs so \"%1$s\" appears after \"%2$s\".",
                             input.getName(), prereq
                     );
                     log.error(message);
