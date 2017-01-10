@@ -433,7 +433,7 @@ public class CommandRestApiTest {
 
         final String path = "/commands";
 
-        final String dir = Resources.getResource("ecatHeaderDump").getPath();
+        final String dir = Resources.getResource("ecatHeaderDump").getPath().replace("%20", " ");
         final String commandJsonFile = dir + "/command.json";
         final Command ecatHeaderDump = mapper.readValue(new File(commandJsonFile), Command.class);
         final String commandJson = mapper.writeValueAsString(ecatHeaderDump);
