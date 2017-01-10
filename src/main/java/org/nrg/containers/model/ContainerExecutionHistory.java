@@ -8,13 +8,13 @@ import java.util.Date;
 @Embeddable
 public class ContainerExecutionHistory {
     private String status;
-    private Long timeNano;
+    private String timeNano;
 
     public ContainerExecutionHistory() {}
 
     public ContainerExecutionHistory(final String status, final Long timeNano) {
         this.status = status;
-        this.timeNano = timeNano;
+        this.timeNano = String.valueOf(timeNano);
     }
 
     public String getStatus() {
@@ -25,11 +25,11 @@ public class ContainerExecutionHistory {
         this.status = status;
     }
 
-    public Long getTimeNano() {
+    public String getTimeNano() {
         return timeNano;
     }
 
-    public void setTimeNano(final Long timeNano) {
+    public void setTimeNano(final String timeNano) {
         this.timeNano = timeNano;
     }
 
