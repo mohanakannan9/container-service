@@ -89,7 +89,7 @@ public class DockerRestApi extends AbstractXapiRestController {
     public ResponseEntity<String> setServer(final @RequestBody DockerServer dockerServer)
             throws InvalidPreferenceName, JsonProcessingException, UnauthorizedException {
         final UserI userI = XDAT.getUserDetails();
-        if (!Roles.isSiteAdmin(userI)) {
+        if (!getRoleHolder().isSiteAdmin(userI)) {
             throw new UnauthorizedException(String.format("User %s is not an admin.", userI.getLogin()));
         }
         if (StringUtils.isBlank(dockerServer.getHost())) {
@@ -119,8 +119,7 @@ public class DockerRestApi extends AbstractXapiRestController {
     public ResponseEntity<DockerHub> setHub(final @RequestBody DockerHub hub)
             throws NrgServiceRuntimeException, UnauthorizedException {
         final UserI userI = XDAT.getUserDetails();
-        final User xapiUser = new User(userI);
-        if (!xapiUser.isAdmin()) {
+        if (!getRoleHolder().isSiteAdmin(userI)) {
             throw new UnauthorizedException(String.format("User %s is not an admin.", userI.getLogin()));
         }
         return new ResponseEntity<>(dockerService.setHub(hub), HttpStatus.CREATED);
