@@ -20,7 +20,6 @@ import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.helpers.CommandResolutionHelper;
 import org.nrg.containers.model.Command;
-import org.nrg.containers.model.CommandMount;
 import org.nrg.containers.model.CommandRun;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.ContainerExecutionMount;
