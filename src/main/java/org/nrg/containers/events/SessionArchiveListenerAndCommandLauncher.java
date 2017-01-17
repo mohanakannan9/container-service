@@ -42,7 +42,7 @@ public class SessionArchiveListenerAndCommandLauncher implements Consumer<Event<
                                                     final CommandService commandService,
                                                     final CommandEventMappingService commandEventMappingService,
                                                     final NrgEventService eventService) {
-        eventBus.on(type(ScanArchiveEventToLaunchCommands.class), this);
+        eventBus.on(type(SessionArchiveEvent.class), this);
         this.mapper = mapper;
         this.commandService = commandService;
         this.commandEventMappingService = commandEventMappingService;
