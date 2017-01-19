@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.nrg.containers.events.DockerEventPuller;
 import org.nrg.framework.annotations.XnatPlugin;
 import org.nrg.transporter.config.TransporterConfig;
-import org.nrg.xdat.security.PermissionsServiceImpl;
+import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -32,9 +32,10 @@ public class ContainersConfig {
     // But the Permissions class does some goofy half-context-half-reflection thing,
     // with the implementation class stored as a preference for some reason.
     // So it is what it is. I'll remove it later when that is updated.
+    // See XNAT-4647
     @Bean
     public PermissionsServiceI permissionsService() {
-        return new PermissionsServiceImpl();
+        return Permissions.getPermissionsService();
     }
 
     @Bean
