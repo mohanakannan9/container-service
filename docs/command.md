@@ -1,7 +1,8 @@
 
 If you want XNAT to execute your docker image, you will need a Command. The Command is a collection of properties that describe your docker image, and which XNAT can read to understand what your image is and how to run it:
 
-* Which docker image is it? What is its ID?
+* What kind of image is it? (Currently only docker images are supported.)
+* Which docker image is it? What is its name? ID?
 * Does it have a human-friendly name we can use for it?
 * How do you run it? What does the command-line string look like?
 * Does it need files? Where should they go? How do you want to get those out of XNAT?
@@ -12,29 +13,33 @@ If you want XNAT to execute your docker image, you will need a Command. The Comm
 
     {
         "name": "",
+        "label": "",
         "description": "",
+        "version": "",
+        "schema-version": "1.0",
+        "type": "docker",
         "info-url": "",
-        "docker-image": "",
-        "run": {
-            "command-line": "",
-            "mounts": [
-                {
-                    "name": "",
-                    "type": "",
-                    "path": "",
-                    "file-input": "",
-                    "resource": ""
-                }
-            ],
-            "environment-variables": {
-                "envName1": "envVal1",
-                "envName2": "#inputReplacementKey#"
-            },
-            "ports": {
-                "80": "8080",
-                "22": "52222"
+        "image": "", // only valid for docker images
+        "index": "", // only valid for docker images
+        "hash": "", // only valid for docker images
+        "working-directory": "",
+        "command-line": "",
+        "mounts": [
+            {
+                "name": "",
+                "type": "",
+                "path": "",
+                "file-input": ""
             }
+        ],
+        "environment-variables": {
+            "envName1": "envVal1",
+            "envName2": "#inputReplacementKey#"
         },
+        "ports": {
+            "80": "8080",
+            "22": "52222"
+        }, // "ports" only valid for docker images
         "inputs": [
             {
                 "name": "",
@@ -69,21 +74,26 @@ If you want XNAT to execute your docker image, you will need a Command. The Comm
     }
 
 
-- **name** - The name of the command. The combination of the "name" and "docker-image" values must be unique.
-- **description** - A human-friendly description of the command.
+- **name** - The name of the command. Should be unique, but that is not required.
+- **label** - A short human-friendly name of the command. If none is provided, the name will be used.
+- **description** - A longer, human-friendly description of the command.
+- **version** - The version of the command document you are writing.
+- **schema-version** - The version of this schema you are reading, which is `1.0`. All commands should use `"schema-version": "1.0"`.
+- **type** - The image type. Currently only "docker" is supported.
 - **info-url** - A URL where more info on the command, or the image, or both, can be found.
-- **docker-image** - An identifier of the image this command describes. Can be in "repo/image:tag" format or "sha256:123abc..." hash format. If the command JSON is embedded in the labels of a docker image, then this field may be omitted.
-- **run** - Fields that will be used to instruct docker how to run a container from the image. See [Run](#run).
-    - **command-line** - This string is a templatized version of the command-line string that will be executed inside the container. The templatized portions will be resolved at launch time with the values of the command's inputs. See the section on [template strings](#template-strings) below for more detail.
-    - **mounts** - A list of mount points that will be created for your container.
-        - **name** - The name of the mount. You can use this to refer to the mount elsewhere in the command, e.g. when creating an output.
-        - **type** - Either "input" or "output". Input mounts can have files pre-staged from XNAT, and are created read-only. Output mounts have no pre-staged files, but are writable.
-        - **path** - The absolute path inside your container at which the mount will be created.
-        - **file-input** - The **name** of an input which will be used as the source for the files. If the input has **type** "Resource", the **resource** property below can be omitted and the files in the Resource will be provided to the mount. Otherwise the input must have a **type** that can contain Resources—Project, Subject, Session, Scan, or Assessor—and the value of the **resource** property must be the label of one of the input's resources.
-        - **resource** - The label of a resource under the above-named **file-input**, which will provide the files for an input mount.
-    - **environment-variables** - Key/value pairs of environment variables to set in the container. Both keys and values can be templates that will be filled by input values at runtime.
-    - **ports** - String key/value pairs of ports to expose. The key is the port inside the container, the value is the port to expose out on the host. In other words, entries in this map should be of the form `"container_port": "host_port"`. Keys and values can be templates.
-- **inputs** - A list of inputs that will be used to resolve the command and launch the container. See [Inputs](#inputs).
+- **image** - (Only for docker images) An identifier of the image this command describes. Can be in "repo/image:tag" format or "sha256:123abc..." hash format. If the command JSON is embedded in the labels of a docker image, then this field may be omitted.
+- **index** -
+- **hash** -
+- **working-directory** -
+- **command-line** - This string is a templatized version of the command-line string that will be executed inside the container. The templatized portions will be resolved at launch time with the values of the command's inputs. See the section on [template strings](#template-strings) below for more detail.
+- **mounts** - A list of mount points that will be created for your container.
+    - **name** - The name of the mount. You can use this to refer to the mount elsewhere in the command, e.g. when creating an output.
+    - **type** - Either "input" or "output". Input mounts can have files pre-staged from XNAT, and are created read-only. Output mounts have no pre-staged files, but are writable.
+    - **path** - The absolute path inside your container at which the mount will be created.
+    - **file-input** - The **name** of an input which will be used as the source for the files. If the input has **type** "Resource", the **resource** property below can be omitted and the files in the Resource will be provided to the mount. Otherwise the input must have a **type** that can contain Resources—Project, Subject, Session, Scan, or Assessor—and the value of the **resource** property must be the label of one of the input's resources.
+- **environment-variables** - Key/value pairs of environment variables to set in the container. Both keys and values can be templates that will be filled by input values at runtime.
+- **ports** - (Only for docker images) String key/value pairs of ports to expose. The key is the port inside the container, the value is the port to expose out on the host. In other words, entries in this map should be of the form `"container_port": "host_port"`. Keys and values can be templates.
+- **inputs** - A list of inputs that will be used to resolve the command and launch the container. See [Command Inputs](#command-inputs).
     - **name** - The name of the input. You can use this to refer to the input elsewhere in the command.
     - **description** - A human-friendly description of the input.
     - **type** - One of string, boolean, number, file, Project, Subject, Session, Scan, Assessor, Resource, or Config. See the section on [input types](#input-types) below for more. Default: string.
@@ -98,7 +108,7 @@ If you want XNAT to execute your docker image, you will need a Command. The Comm
     - **command-line-separator** - The character separating the command-line-flag from the value in the command-line. Default: " ".
     - **true-value** - The string to use in the command line for a boolean input when its value is `true`. Some examples: "true", "T", "Y", "1", "--a-flag". Default: "true".
     - **false-value** - The string to use in the command line for a boolean input when its value is `false`. Some examples: "false", "F", "N", "0", "--some-other-flag". Default: "false".
-- **outputs** - A liset of outputs that will be used to upload files produced by the container. See [Outputs](#outputs).
+- **outputs** - A list of outputs that will be used to upload files produced by the container. See [Command Outputs](#command-outputs).
     - **name** - The name of the output.
     - **description** - A human-friendly description of the output.
     - **type** - One of "Assessor" or "Resource". Assessor outputs should point to a properly-formatted XML document that holds the details of the assessor object to be created. Resource outputs should point to a file or directory that will be uploaded to a new resource.
@@ -107,15 +117,21 @@ If you want XNAT to execute your docker image, you will need a Command. The Comm
     - **files** - Where the file(s) can be found inside the container.
         - **mount** - The name of a mount, which must be defined in this command and must have type "output", into which your container wrote whatever file(s) you intend to upload.
         - **path** - The relative path within a mount at which output files can be found. Value can be templatized with input replacement keys.
-
-# Run
-The fields within the `run` section are the fields that control how the container will be created. You can configure four aspects of the container: the command-line string used to launch it, the volume mounts, the environment variables, and the ports.
+- **xnat** - A list of [XNAT Command Wrappers](#xnat-command-wrapper)
+    - **name**
+    - **description**
+    - **inputs** - See [XNAT Inputs](#xnat-inputs)
+    - **derived-inputs** -
+    - **output-handling** - See [XNAT Output Handling](#xnat-output-handling)
 
 ## Mounts
 There are two types of mounts: input and output. Input mounts can have files from the XNAT archives staged into them before container launch, but are read-only. Output mounts are created empty and  ready for containers to write files into.
 
-# Inputs
+# Command Inputs
 Inputs allow you define what information and objects need to be provided when your Command is resolved before the container is launched. They are the way for you to gather all the requirements you need to launch your container: files, command-line arguments, environment variables, etc. Absolutely anything that you need for your container has to either be an input value or, if the input is one of the XNAT object types and the value is a big complex object, be some property or child of an input value.
+
+# XNAT Inputs
+More info to come.
 
 ## Input Types
 string, boolean, number, file, Project, Subject, Session, Scan, Assessor, Resource, Config
@@ -124,8 +140,11 @@ More info to come.
 ## Parent Inputs
 More info to come.
 
-# Outputs
+# Command Outputs
 If you want your container to produce files that get imported into XNAT, you need to define one or more output objects. You need to define where the files can be found (which output mount they are in, and what is the path within that mount) and where the new to-be-created object will live within XNAT. For the latter, you provide the name of an input, which must be an XNAT object type; the output files will be a new child of that parent input.
+
+# XNAT Output Handling
+More info to come.
 
 # Template Strings
 When you define a Command, you can leave many of the values as "templates". These templates are placeholder strings, also known as "replacement keys", which tell the container service "When you launch a container from this Command, you will have values for your inputs; I want you to use one of those values here."
@@ -193,6 +212,11 @@ Here's another example from [xnat/dcm2niix-scan](https://github.com/NrgXnat/dock
     ]
 
 This Command expects that it will be given a scan as an input, but it wants to run a matcher anyway just to be sure the scan has a DICOM resource (`"matcher": "'DICOM' in @.resources[*].label"`). The second input is a child to the first, and it matches the scan's DICOM resource (`"matcher": "@.label == 'DICOM'"`).
+
+# XNAT Command Wrapper
+How do you take in one or more XNAT objects and use their properties and files to launch your Command?
+
+More info to come.
 
 # Examples
 ## Hello world example
