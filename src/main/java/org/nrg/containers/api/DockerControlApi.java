@@ -474,7 +474,7 @@ public class DockerControlApi implements ContainerControlApi {
                             objectMapper.readValue(labelValue, new TypeReference<List<Command>>() {});
                     if (commands != null && !commands.isEmpty()) {
                         for (final Command command : commands) {
-                            command.setDockerImage(dockerImage.getImageId());
+                            command.setImage(dockerImage.getImageId());
                         }
                     }
                     return commands;

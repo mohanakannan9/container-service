@@ -181,7 +181,7 @@ public class CommandRestApiTest {
         assertNotEquals(0L, commandResponse.getId());
         assertEquals(created.getId(), commandResponse.getId());
         assertEquals("one", commandResponse.getName());
-        assertEquals(FAKE_DOCKER_IMAGE, commandResponse.getDockerImage());
+        assertEquals(FAKE_DOCKER_IMAGE, commandResponse.getImage());
     }
 
     @Test
@@ -212,7 +212,7 @@ public class CommandRestApiTest {
         assertNotEquals(0L, commandResponse.getId());
         assertEquals(created.getId(), commandResponse.getId());
         assertEquals("one", commandResponse.getName());
-        assertEquals(FAKE_DOCKER_IMAGE, commandResponse.getDockerImage());
+        assertEquals(FAKE_DOCKER_IMAGE, commandResponse.getImage());
     }
 
     @Test
@@ -243,7 +243,7 @@ public class CommandRestApiTest {
         assertNotEquals(0L, retrieved.getId());
         assertEquals((Long) retrieved.getId(), idResponse);
         assertEquals("toCreate", retrieved.getName());
-        assertEquals(FAKE_DOCKER_IMAGE, retrieved.getDockerImage());
+        assertEquals(FAKE_DOCKER_IMAGE, retrieved.getImage());
 
         // Errors
         // Violate unique name+docker-image-id constraint (we'll trigger that by performing the same 'create' request again)

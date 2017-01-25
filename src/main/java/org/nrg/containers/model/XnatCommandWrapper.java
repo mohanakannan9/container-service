@@ -19,7 +19,6 @@ public class XnatCommandWrapper extends AbstractHibernateEntity {
     private Command command;
     private Set<XnatCommandInput> inputs;
     @JsonProperty("derived-inputs") private Set<XnatCommandInput> derivedInputs;
-    private Set<XnatCommandOutput> outputs;
 
     public String getName() {
         return name;
@@ -64,15 +63,6 @@ public class XnatCommandWrapper extends AbstractHibernateEntity {
         this.derivedInputs = derivedInputs;
     }
 
-    @ElementCollection
-    public Set<XnatCommandOutput> getOutputs() {
-        return outputs;
-    }
-
-    public void setOutputs(final Set<XnatCommandOutput> outputs) {
-        this.outputs = outputs;
-    }
-
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
@@ -83,13 +73,12 @@ public class XnatCommandWrapper extends AbstractHibernateEntity {
                 Objects.equals(this.description, that.description) &&
                 Objects.equals(this.command, that.command) &&
                 Objects.equals(this.inputs, that.inputs) &&
-                Objects.equals(this.derivedInputs, that.derivedInputs) &&
-                Objects.equals(this.outputs, that.outputs);
+                Objects.equals(this.derivedInputs, that.derivedInputs);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), name, description, command, inputs, derivedInputs, outputs);
+        return Objects.hash(super.hashCode(), name, description, command, inputs, derivedInputs);
     }
 
     @Override
@@ -99,8 +88,7 @@ public class XnatCommandWrapper extends AbstractHibernateEntity {
                 .add("description", description)
                 .add("command", command)
                 .add("inputs", inputs)
-                .add("derivedInputs", derivedInputs)
-                .add("outputs", outputs);
+                .add("derivedInputs", derivedInputs);
     }
 
     @Override

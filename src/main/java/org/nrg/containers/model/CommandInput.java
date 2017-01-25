@@ -296,14 +296,7 @@ public class CommandInput implements Serializable {
         STRING("string"),
         BOOLEAN("boolean"),
         NUMBER("number"),
-        FILE("File"),
-        PROJECT("Project"),
-        SUBJECT("Subject"),
-        SESSION("Session"),
-        SCAN("Scan"),
-        ASSESSOR("Assessor"),
-        RESOURCE("Resource"),
-        CONFIG("Config");
+        FILE("file");
 
         private final String name;
 

@@ -19,7 +19,7 @@ public class ContainerExecutionMount implements Serializable {
     @JsonProperty("host-path") private String hostPath;
     @JsonProperty("path") private String remotePath;
     @JsonProperty("file-input") private String fileInput;
-    private String resource;
+    // private String resource;
 
     public ContainerExecutionMount() {}
 
@@ -29,7 +29,7 @@ public class ContainerExecutionMount implements Serializable {
         this.hostPath = null; // Intentionally blank. Will be set later.
         this.remotePath = commandMount.getRemotePath();
         this.fileInput = commandMount.getFileInput();
-        this.resource = commandMount.getResource();
+        // this.resource = commandMount.getResource();
     }
 
     public String getName() {
@@ -78,13 +78,13 @@ public class ContainerExecutionMount implements Serializable {
         this.fileInput = fileInput;
     }
 
-    public String getResource() {
-        return resource;
-    }
-
-    public void setResource(final String resource) {
-        this.resource = resource;
-    }
+    // public String getResource() {
+    //     return resource;
+    // }
+    //
+    // public void setResource(final String resource) {
+    //     this.resource = resource;
+    // }
 
     @Transient
     @ApiModelProperty(hidden = true)
@@ -101,13 +101,13 @@ public class ContainerExecutionMount implements Serializable {
                 Objects.equals(this.isInput, that.isInput) &&
                 Objects.equals(this.hostPath, that.hostPath) &&
                 Objects.equals(this.remotePath, that.remotePath) &&
-                Objects.equals(this.fileInput, that.fileInput) &&
-                Objects.equals(this.resource, that.resource);
+                Objects.equals(this.fileInput, that.fileInput); // &&
+                // Objects.equals(this.resource, that.resource);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, isInput, hostPath, remotePath, fileInput, resource);
+        return Objects.hash(name, isInput, hostPath, remotePath, fileInput);
     }
 
     @Override
@@ -118,7 +118,7 @@ public class ContainerExecutionMount implements Serializable {
                 .add("hostPath", hostPath)
                 .add("remotePath", remotePath)
                 .add("fileInput", fileInput)
-                .add("resource", resource)
+                // .add("resource", resource)
                 .toString();
     }
 }

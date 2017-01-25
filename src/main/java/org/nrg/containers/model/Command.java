@@ -9,8 +9,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.MoreObjects.ToStringHelper;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.envers.Audited;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
@@ -19,7 +19,7 @@ import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.OneToMany;
 import javax.persistence.Transient;
-import java.util.List;
+import java.util.Set;
 import java.util.Map;
 import java.util.Objects;
 
@@ -36,14 +36,14 @@ public abstract class Command extends AbstractHibernateEntity {
     private String version;
     @JsonProperty("schema-version") private String schemaVersion;
     @JsonProperty("info-url") private String infoUrl;
-    // private ContainerImage image;
+    private String image;
     @JsonProperty("working-directory") private String workingDirectory;
     @JsonProperty("command-line") private String commandLine;
-    @JsonProperty("mounts") private List<CommandMount> mounts;
+    @JsonProperty("mounts") private Set<CommandMount> mounts;
     @JsonProperty("environment-variables") private Map<String, String> environmentVariables;
-    private List<CommandInput> inputs;
-    private List<CommandOutput> outputs;
-    @JsonProperty("xnat") private List<XnatCommandWrapper> xnatCommandWrappers;
+    private Set<CommandInput> inputs;
+    private Set<CommandOutput> outputs;
+    @JsonProperty("xnat") private Set<XnatCommandWrapper> xnatCommandWrappers;
 
     public String getName() {
         return name;
@@ -94,6 +94,14 @@ public abstract class Command extends AbstractHibernateEntity {
         this.infoUrl = infoUrl;
     }
 
+    public String getImage() {
+        return image;
+    }
+
+    public void setImage(final String image) {
+        this.image = image;
+    }
+
     public String getWorkingDirectory() {
         return workingDirectory;
     }
@@ -112,13 +120,13 @@ public abstract class Command extends AbstractHibernateEntity {
     }
 
     @ElementCollection
-    public List<CommandMount> getMounts() {
+    public Set<CommandMount> getMounts() {
         return mounts;
     }
 
-    public void setMounts(final List<CommandMount> mounts) {
+    public void setMounts(final Set<CommandMount> mounts) {
         this.mounts = mounts == null ?
-                Lists.<CommandMount>newArrayList() :
+                Sets.<CommandMount>newHashSet() :
                 mounts;
     }
 
@@ -139,36 +147,36 @@ public abstract class Command extends AbstractHibernateEntity {
     @ApiModelProperty("A list of inputs. " +
             "When the Command is launched, these inputs receive values; " +
             "those values will be used to fill in any template strings in the Command's run-template, mounts, or environment variables.")
-    public List<CommandInput> getInputs() {
+    public Set<CommandInput> getInputs() {
         return inputs;
     }
 
-    public void setInputs(final List<CommandInput> inputs) {
+    public void setInputs(final Set<CommandInput> inputs) {
         this.inputs = inputs == null ?
-                Lists.<CommandInput>newArrayList() :
+                Sets.<CommandInput>newHashSet() :
                 inputs;
     }
 
     @ElementCollection
     @ApiModelProperty("A list of outputs.")
-    public List<CommandOutput> getOutputs() {
+    public Set<CommandOutput> getOutputs() {
         return outputs;
     }
 
-    public void setOutputs(final List<CommandOutput> outputs) {
+    public void setOutputs(final Set<CommandOutput> outputs) {
         this.outputs = outputs == null ?
-                Lists.<CommandOutput>newArrayList() :
+                Sets.<CommandOutput>newHashSet() :
                 outputs;
     }
 
     @OneToMany
-    public List<XnatCommandWrapper> getXnatCommandWrappers() {
+    public Set<XnatCommandWrapper> getXnatCommandWrappers() {
         return xnatCommandWrappers;
     }
 
-    public void setXnatCommandWrappers(final List<XnatCommandWrapper> xnatCommandWrappers) {
+    public void setXnatCommandWrappers(final Set<XnatCommandWrapper> xnatCommandWrappers) {
         this.xnatCommandWrappers = xnatCommandWrappers == null ?
-                Lists.<XnatCommandWrapper>newArrayList() :
+                Sets.<XnatCommandWrapper>newHashSet() :
                 xnatCommandWrappers;
     }
 
@@ -179,7 +187,7 @@ public abstract class Command extends AbstractHibernateEntity {
         }
 
         if (this.xnatCommandWrappers == null) {
-            this.xnatCommandWrappers = Lists.newArrayList();
+            this.xnatCommandWrappers = Sets.newHashSet();
         }
         this.xnatCommandWrappers.add(xnatCommandWrapper);
     }
@@ -296,6 +304,7 @@ public abstract class Command extends AbstractHibernateEntity {
                 Objects.equals(this.version, that.version) &&
                 Objects.equals(this.schemaVersion, that.schemaVersion) &&
                 Objects.equals(this.infoUrl, that.infoUrl) &&
+                Objects.equals(this.image, that.image) &&
                 Objects.equals(this.workingDirectory, that.workingDirectory) &&
                 Objects.equals(this.commandLine, that.commandLine) &&
                 Objects.equals(this.mounts, that.mounts) &&
@@ -307,7 +316,7 @@ public abstract class Command extends AbstractHibernateEntity {
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), name, label, description, version, schemaVersion, infoUrl,
+        return Objects.hash(super.hashCode(), name, label, description, version, schemaVersion, infoUrl, image,
                 workingDirectory, commandLine, mounts, environmentVariables, inputs, outputs, xnatCommandWrappers);
     }
 
@@ -320,6 +329,7 @@ public abstract class Command extends AbstractHibernateEntity {
                 .add("version", version)
                 .add("schemaVersion", schemaVersion)
                 .add("infoUrl", infoUrl)
+                .add("image", image)
                 .add("workingDirectory", workingDirectory)
                 .add("commandLine", commandLine)
                 .add("mounts", mounts)

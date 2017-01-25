@@ -293,7 +293,7 @@ public class DockerRestApiTest {
         assertEquals(expected.getDescription(), response.getDescription());
         assertEquals(expected.getRun(), response.getRun());
         assertEquals(expected.getInputs(), response.getInputs());
-        assertEquals(fakeImageId, response.getDockerImage());
+        assertEquals(fakeImageId, response.getImage());
     }
 
     @Test
@@ -351,6 +351,6 @@ public class DockerRestApiTest {
         assertEquals(expected.getDescription(), response.getDescription());
         assertEquals(expected.getRun(), response.getRun());
         assertEquals(expected.getInputs(), response.getInputs());
-        assertEquals(fakeImageId, response.getDockerImage());
+        assertEquals(fakeImageId, response.getImage());
     }
 }

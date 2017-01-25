@@ -6,10 +6,6 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-import javax.persistence.ElementCollection;
-import javax.persistence.Embeddable;
-import javax.persistence.FetchType;
-import javax.persistence.Transient;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +27,7 @@ public class ResolvedCommand implements Serializable {
 
     public ResolvedCommand(final Command command) {
         this.commandId = command.getId();
-        this.dockerImage = command.getDockerImage();
+        this.dockerImage = command.getImage();
     }
 
     public Long getCommandId() {

@@ -171,7 +171,7 @@ public class CommandTest {
 
         final Command command = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, Command.class);
 
-        assertEquals("abc123", command.getDockerImage());
+        assertEquals("abc123", command.getImage());
 
         assertEquals("docker_image_command", command.getName());
         assertEquals("Docker Image command for the test", command.getDescription());
@@ -180,7 +180,7 @@ public class CommandTest {
         assertThat(command.getOutputs(), hasSize(1));
         assertEquals(commandOutput, command.getOutputs().get(0));
 
-        final CommandRun run = command.getRun();
+        // final CommandRun run = command.getRun();
         assertEquals("cmd #foo# #my_cool_input#", run.getCommandLine());
         assertEquals(ImmutableMap.of("foo", "bar"), run.getEnvironmentVariables());
         assertEquals(Lists.newArrayList(input, output), run.getMounts());
@@ -207,16 +207,16 @@ public class CommandTest {
 
         final Command command = new Command();
         command.setName("name");
-        command.setDockerImage("abc123");
+        command.setImage("abc123");
         final Command commandSameDockerImageId = new Command();
         commandSameDockerImageId.setName("different_name");
-        commandSameDockerImageId.setDockerImage("abc123");
+        commandSameDockerImageId.setImage("abc123");
         final Command commandSameName = new Command();
         commandSameName.setName("name");
-        commandSameDockerImageId.setDockerImage("ABC456");
+        commandSameDockerImageId.setImage("ABC456");
         final Command commandSameNameAndDockerImageId = new Command();
         commandSameNameAndDockerImageId.setName("name");
-        commandSameNameAndDockerImageId.setDockerImage("abc123");
+        commandSameNameAndDockerImageId.setImage("abc123");
 
         commandService.create(command);                  // Initial create
         commandService.create(commandSameDockerImageId); // Should be ok

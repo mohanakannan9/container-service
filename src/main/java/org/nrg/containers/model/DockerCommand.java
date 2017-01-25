@@ -16,23 +16,15 @@ import java.util.Objects;
 
 @Entity
 @Audited
-@DiscriminatorColumn(name="type", discriminatorType = DiscriminatorType.STRING)
+@DiscriminatorColumn(name = "type", discriminatorType = DiscriminatorType.STRING)
 @DiscriminatorValue("docker")
 public class DockerCommand extends Command {
     public static final Type type = Type.DOCKER;
 
-    private String image;
+
     private String index;
     private String hash;
     private Map<String, String> ports;
-
-    public String getImage() {
-        return image;
-    }
-
-    public void setImage(final String image) {
-        this.image = image;
-    }
 
     public String getIndex() {
         return index;
@@ -68,22 +60,20 @@ public class DockerCommand extends Command {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         final DockerCommand that = (DockerCommand) o;
-        return Objects.equals(this.image, that.image) &&
-                Objects.equals(this.index, that.index) &&
+        return Objects.equals(this.index, that.index) &&
                 Objects.equals(this.hash, that.hash) &&
                 Objects.equals(this.ports, that.ports);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), image, index, hash, ports);
+        return Objects.hash(super.hashCode(), index, hash, ports);
     }
 
     @Override
     public ToStringHelper addParentPropertiesToString(final ToStringHelper helper) {
         return super.addParentPropertiesToString(helper)
                 .add("type", type)
-                .add("image", image)
                 .add("index", index)
                 .add("hash", hash)
                 .add("ports", ports);

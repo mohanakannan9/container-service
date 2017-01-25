@@ -80,7 +80,7 @@ public class CommandRestApi extends AbstractXapiRestController {
     })
     public ResponseEntity<Long> createCommand(final @RequestBody Command command)
             throws BadRequestException {
-        if (StringUtils.isBlank(command.getDockerImage())) {
+        if (StringUtils.isBlank(command.getImage())) {
             throw new BadRequestException("Must specify a docker image on the command.");
         }
         if (StringUtils.isBlank(command.getName())) {

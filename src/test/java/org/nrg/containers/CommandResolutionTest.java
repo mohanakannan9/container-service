@@ -162,7 +162,7 @@ public class CommandResolutionTest {
 
         final ResolvedCommand resolvedCommand = commandService.resolveCommand(command, runtimeValues, mockUser);
         assertEquals((Long) command.getId(), resolvedCommand.getCommandId());
-        assertEquals(command.getDockerImage(), resolvedCommand.getDockerImage());
+        assertEquals(command.getImage(), resolvedCommand.getDockerImage());
         assertEquals(commandLine, resolvedCommand.getCommandLine());
         assertTrue(resolvedCommand.getEnvironmentVariables().isEmpty());
         assertTrue(resolvedCommand.getMountsIn().isEmpty());
@@ -258,7 +258,7 @@ public class CommandResolutionTest {
 
         final ResolvedCommand resolvedCommand = commandService.resolveCommand(command, runtimeValues, mockUser);
         assertEquals((Long) command.getId(), resolvedCommand.getCommandId());
-        assertEquals(command.getDockerImage(), resolvedCommand.getDockerImage());
+        assertEquals(command.getImage(), resolvedCommand.getDockerImage());
         assertEquals(commandLine, resolvedCommand.getCommandLine());
         assertTrue(resolvedCommand.getEnvironmentVariables().isEmpty());
         assertTrue(resolvedCommand.getMountsIn().isEmpty());
@@ -308,7 +308,7 @@ public class CommandResolutionTest {
 
         final ResolvedCommand resolvedCommand = commandService.resolveCommand(command, runtimeValues, mockUser);
         assertEquals((Long) command.getId(), resolvedCommand.getCommandId());
-        assertEquals(command.getDockerImage(), resolvedCommand.getDockerImage());
+        assertEquals(command.getImage(), resolvedCommand.getDockerImage());
         assertEquals(commandLine, resolvedCommand.getCommandLine());
         assertTrue(resolvedCommand.getEnvironmentVariables().isEmpty());
         assertTrue(resolvedCommand.getMountsIn().isEmpty());
@@ -376,7 +376,7 @@ public class CommandResolutionTest {
 
         final ResolvedCommand resolvedCommand = commandService.resolveCommand(command, runtimeValues, mockUser);
         assertEquals((Long) command.getId(), resolvedCommand.getCommandId());
-        assertEquals(command.getDockerImage(), resolvedCommand.getDockerImage());
+        assertEquals(command.getImage(), resolvedCommand.getDockerImage());
         assertEquals(commandLine, resolvedCommand.getCommandLine());
         assertTrue(resolvedCommand.getEnvironmentVariables().isEmpty());
         assertTrue(resolvedCommand.getMountsIn().isEmpty());
@@ -442,7 +442,7 @@ public class CommandResolutionTest {
 
         final ResolvedCommand resolvedCommand = commandService.resolveCommand(command, runtimeValues, mockUser);
         assertEquals((Long) command.getId(), resolvedCommand.getCommandId());
-        assertEquals(command.getDockerImage(), resolvedCommand.getDockerImage());
+        assertEquals(command.getImage(), resolvedCommand.getDockerImage());
         assertEquals(commandLine, resolvedCommand.getCommandLine());
         assertTrue(resolvedCommand.getEnvironmentVariables().isEmpty());
         assertTrue(resolvedCommand.getMountsIn().isEmpty());
@@ -522,7 +522,7 @@ public class CommandResolutionTest {
 
         final ResolvedCommand resolvedCommand = commandService.resolveCommand(command, runtimeValues, mockUser);
         assertEquals((Long) command.getId(), resolvedCommand.getCommandId());
-        assertEquals(command.getDockerImage(), resolvedCommand.getDockerImage());
+        assertEquals(command.getImage(), resolvedCommand.getDockerImage());
         assertEquals(commandLine, resolvedCommand.getCommandLine());
         assertTrue(resolvedCommand.getEnvironmentVariables().isEmpty());
         assertTrue(resolvedCommand.getMountsIn().isEmpty());
