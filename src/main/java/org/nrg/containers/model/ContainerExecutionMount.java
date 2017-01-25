@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import io.swagger.annotations.ApiModelProperty;
-import org.nrg.containers.model.CommandMount.Type;
 
 import javax.persistence.Embeddable;
 import javax.persistence.Transient;
@@ -15,20 +14,20 @@ import java.util.Objects;
 public class ContainerExecutionMount implements Serializable {
 
     @JsonProperty(required = true) private String name;
-    @JsonProperty("is-input") private boolean isInput;
+    @JsonProperty("is-input") private boolean writable;
     @JsonProperty("host-path") private String hostPath;
     @JsonProperty("path") private String remotePath;
-    @JsonProperty("file-input") private String fileInput;
+    // @JsonProperty("file-input") private String fileInput;
     // private String resource;
 
     public ContainerExecutionMount() {}
 
     public ContainerExecutionMount(final CommandMount commandMount) {
         this.name = commandMount.getName();
-        this.isInput = commandMount.getType().equals(Type.INPUT);
+        this.writable = commandMount.getWritable();
         this.hostPath = null; // Intentionally blank. Will be set later.
         this.remotePath = commandMount.getRemotePath();
-        this.fileInput = commandMount.getFileInput();
+        // this.fileInput = commandMount.getFileInput();
         // this.resource = commandMount.getResource();
     }
 
@@ -40,12 +39,12 @@ public class ContainerExecutionMount implements Serializable {
         this.name = name;
     }
 
-    public boolean getIsInput() {
-        return isInput;
+    public boolean getWritable() {
+        return writable;
     }
 
-    public void setIsInput(final boolean isInput) {
-        this.isInput = isInput;
+    public void setWritable(final boolean writable) {
+        this.writable = writable;
     }
 
     public String getHostPath() {
@@ -66,17 +65,17 @@ public class ContainerExecutionMount implements Serializable {
 
     @Transient
     @JsonIgnore
-    public boolean isInput() {
-        return isInput;
+    public boolean isWritable() {
+        return writable;
     }
 
-    public String getFileInput() {
-        return fileInput;
-    }
-
-    public void setFileInput(final String fileInput) {
-        this.fileInput = fileInput;
-    }
+    // public String getFileInput() {
+    //     return fileInput;
+    // }
+    //
+    // public void setFileInput(final String fileInput) {
+    //     this.fileInput = fileInput;
+    // }
 
     // public String getResource() {
     //     return resource;
@@ -89,7 +88,7 @@ public class ContainerExecutionMount implements Serializable {
     @Transient
     @ApiModelProperty(hidden = true)
     public String toBindMountString() {
-        return hostPath + ":" + remotePath + (isInput?":ro":"");
+        return hostPath + ":" + remotePath + (writable ?":ro":"");
     }
 
     @Override
@@ -98,26 +97,26 @@ public class ContainerExecutionMount implements Serializable {
         if (o == null || getClass() != o.getClass()) return false;
         final ContainerExecutionMount that = (ContainerExecutionMount) o;
         return Objects.equals(this.name, that.name) &&
-                Objects.equals(this.isInput, that.isInput) &&
+                Objects.equals(this.writable, that.writable) &&
                 Objects.equals(this.hostPath, that.hostPath) &&
-                Objects.equals(this.remotePath, that.remotePath) &&
-                Objects.equals(this.fileInput, that.fileInput); // &&
+                Objects.equals(this.remotePath, that.remotePath); // &&
+                // Objects.equals(this.fileInput, that.fileInput) &&
                 // Objects.equals(this.resource, that.resource);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, isInput, hostPath, remotePath, fileInput);
+        return Objects.hash(name, writable, hostPath, remotePath);
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("name", name)
-                .add("isInput", isInput)
+                .add("writable", writable)
                 .add("hostPath", hostPath)
                 .add("remotePath", remotePath)
-                .add("fileInput", fileInput)
+                // .add("fileInput", fileInput)
                 // .add("resource", resource)
                 .toString();
     }

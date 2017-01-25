@@ -21,9 +21,9 @@ public class CommandInput implements Serializable {
     private String description;
     private Type type = Type.STRING;
     private Boolean required;
-    private String prerequisites;
-    private String parent;
-    @JsonProperty("parent-property") private String parentProperty;
+    // private String prerequisites;
+    // private String parent;
+    // @JsonProperty("parent-property") private String parentProperty;
     private String matcher;
     @JsonProperty("default-value") private String defaultValue;
     @JsonProperty("replacement-key") private String rawReplacementKey;
@@ -32,7 +32,7 @@ public class CommandInput implements Serializable {
     @JsonProperty("true-value") private String trueValue;
     @JsonProperty("false-value") private String falseValue;
     private String value;
-    private String jsonRepresentation;
+    // private String jsonRepresentation;
 
     @ApiModelProperty(value = "Name of the command input", required = true)
     public String getName() {
@@ -76,29 +76,29 @@ public class CommandInput implements Serializable {
         this.required = required;
     }
 
-    public String getPrerequisites() {
-        return prerequisites;
-    }
-
-    public void setPrerequisites(final String prerequisites) {
-        this.prerequisites = prerequisites;
-    }
-
-    public String getParent() {
-        return parent;
-    }
-
-    public void setParent(final String parent) {
-        this.parent = parent;
-    }
-
-    public String getParentProperty() {
-        return parentProperty;
-    }
-
-    public void setParentProperty(final String parentProperty) {
-        this.parentProperty = parentProperty;
-    }
+    // public String getPrerequisites() {
+    //     return prerequisites;
+    // }
+    //
+    // public void setPrerequisites(final String prerequisites) {
+    //     this.prerequisites = prerequisites;
+    // }
+    //
+    // public String getParent() {
+    //     return parent;
+    // }
+    //
+    // public void setParent(final String parent) {
+    //     this.parent = parent;
+    // }
+    //
+    // public String getParentProperty() {
+    //     return parentProperty;
+    // }
+    //
+    // public void setParentProperty(final String parentProperty) {
+    //     this.parentProperty = parentProperty;
+    // }
 
     public String getMatcher() {
         return matcher;
@@ -177,70 +177,70 @@ public class CommandInput implements Serializable {
         this.value = value;
     }
 
-    @Transient
-    public String getJsonRepresentation() {
-        return jsonRepresentation;
-    }
-
-    public void setJsonRepresentation(final String jsonRepresentation) {
-        this.jsonRepresentation = jsonRepresentation;
-    }
+    // @Transient
+    // public String getJsonRepresentation() {
+    //     return jsonRepresentation;
+    // }
+    //
+    // public void setJsonRepresentation(final String jsonRepresentation) {
+    //     this.jsonRepresentation = jsonRepresentation;
+    // }
 
     @Transient
     void update(final CommandInput other, final Boolean ignoreNull) {
-        if (other == null) {
-            return;
-        }
-
-        if (!(StringUtils.isNotBlank(other.name) && this.name.equals(other.name))) {
-            // We can't change the name. That's the identifier.
-            // How did you even get here with differently-named objects?
-            return;
-        }
-
-        if (!this.type.equals(other.type)) {
-            // We can't change the type.
-            // It has a non-null default, so there is no good way to discriminate between an
-            // intentional change to Type.STRING and an attempt to not change.
-            return;
-        }
-
-        if (other.description != null || !ignoreNull) {
-            this.description = other.description;
-        }
-        if (other.required != null || !ignoreNull) {
-            this.required = other.required;
-        }
-        if (other.prerequisites != null || !ignoreNull) {
-            this.prerequisites = other.prerequisites;
-        }
-        if (other.parent != null || !ignoreNull) {
-            this.parent = other.parent;
-        }
-        if (other.parentProperty != null || !ignoreNull) {
-            this.parentProperty = other.parentProperty;
-        }
-        if (other.matcher != null || !ignoreNull) {
-            this.matcher = other.matcher;
-        }
-        if (other.defaultValue != null || !ignoreNull) {
-            this.defaultValue = other.defaultValue;
-        }
-        if (other.rawReplacementKey != null || !ignoreNull) {
-            this.rawReplacementKey = other.rawReplacementKey;
-        }
-        if (other.commandLineFlag != null || !ignoreNull) {
-            this.commandLineFlag = other.commandLineFlag;
-        }
-        if (other.commandLineSeparator != null || !ignoreNull) {
-            this.commandLineSeparator = other.commandLineSeparator;
-        }
-        if (other.trueValue != null || !ignoreNull) {
-            this.trueValue = other.trueValue;
-        }
-        if (other.falseValue != null || !ignoreNull) {
-            this.falseValue = other.falseValue;
-        }
+        // if (other == null) {
+        //     return;
+        // }
+        //
+        // if (!(StringUtils.isNotBlank(other.name) && this.name.equals(other.name))) {
+        //     // We can't change the name. That's the identifier.
+        //     // How did you even get here with differently-named objects?
+        //     return;
+        // }
+        //
+        // if (!this.type.equals(other.type)) {
+        //     // We can't change the type.
+        //     // It has a non-null default, so there is no good way to discriminate between an
+        //     // intentional change to Type.STRING and an attempt to not change.
+        //     return;
+        // }
+        //
+        // if (other.description != null || !ignoreNull) {
+        //     this.description = other.description;
+        // }
+        // if (other.required != null || !ignoreNull) {
+        //     this.required = other.required;
+        // }
+        // if (other.prerequisites != null || !ignoreNull) {
+        //     this.prerequisites = other.prerequisites;
+        // }
+        // if (other.parent != null || !ignoreNull) {
+        //     this.parent = other.parent;
+        // }
+        // if (other.parentProperty != null || !ignoreNull) {
+        //     this.parentProperty = other.parentProperty;
+        // }
+        // if (other.matcher != null || !ignoreNull) {
+        //     this.matcher = other.matcher;
+        // }
+        // if (other.defaultValue != null || !ignoreNull) {
+        //     this.defaultValue = other.defaultValue;
+        // }
+        // if (other.rawReplacementKey != null || !ignoreNull) {
+        //     this.rawReplacementKey = other.rawReplacementKey;
+        // }
+        // if (other.commandLineFlag != null || !ignoreNull) {
+        //     this.commandLineFlag = other.commandLineFlag;
+        // }
+        // if (other.commandLineSeparator != null || !ignoreNull) {
+        //     this.commandLineSeparator = other.commandLineSeparator;
+        // }
+        // if (other.trueValue != null || !ignoreNull) {
+        //     this.trueValue = other.trueValue;
+        // }
+        // if (other.falseValue != null || !ignoreNull) {
+        //     this.falseValue = other.falseValue;
+        // }
     }
 
     @Override
@@ -252,9 +252,9 @@ public class CommandInput implements Serializable {
                 Objects.equals(this.description, that.description) &&
                 Objects.equals(this.type, that.type) &&
                 Objects.equals(this.required, that.required) &&
-                Objects.equals(this.prerequisites, that.prerequisites) &&
-                Objects.equals(this.parent, that.parent) &&
-                Objects.equals(this.parentProperty, that.parentProperty) &&
+                // Objects.equals(this.prerequisites, that.prerequisites) &&
+                // Objects.equals(this.parent, that.parent) &&
+                // Objects.equals(this.parentProperty, that.parentProperty) &&
                 Objects.equals(this.matcher, that.matcher) &&
                 Objects.equals(this.defaultValue, that.defaultValue) &&
                 Objects.equals(this.rawReplacementKey, that.rawReplacementKey) &&
@@ -267,7 +267,7 @@ public class CommandInput implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, description, type, required, prerequisites, parent, parentProperty, matcher,
+        return Objects.hash(name, description, type, required, matcher, //prerequisites, parent, parentProperty, matcher,
                 defaultValue, rawReplacementKey, commandLineFlag, commandLineSeparator, trueValue, falseValue, value);
     }
 
@@ -278,9 +278,9 @@ public class CommandInput implements Serializable {
                 .add("description", description)
                 .add("type", type)
                 .add("required", required)
-                .add("prerequisites", prerequisites)
-                .add("parent", parent)
-                .add("parentProperty", parentProperty)
+                // .add("prerequisites", prerequisites)
+                // .add("parent", parent)
+                // .add("parentProperty", parentProperty)
                 .add("matcher", matcher)
                 .add("defaultValue", defaultValue)
                 .add("rawReplacementKey", rawReplacementKey)

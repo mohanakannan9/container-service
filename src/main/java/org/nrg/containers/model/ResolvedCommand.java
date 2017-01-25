@@ -98,7 +98,7 @@ public class ResolvedCommand implements Serializable {
         final List<ContainerExecutionMount> mountsIn = Lists.newArrayList();
         final List<ContainerExecutionMount> mountsOut = Lists.newArrayList();
         for (final ContainerExecutionMount mount : mounts) {
-            if (mount.isInput()) {
+            if (mount.isWritable()) {
                 mountsIn.add(mount);
             } else {
                 mountsOut.add(mount);

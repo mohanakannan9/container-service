@@ -19,7 +19,7 @@ If you want XNAT to execute your docker image, you will need a Command. The Comm
         "schema-version": "1.0",
         "type": "docker",
         "info-url": "",
-        "image": "", // only valid for docker images
+        "image": "",
         "index": "", // only valid for docker images
         "hash": "", // only valid for docker images
         "working-directory": "",
@@ -46,9 +46,6 @@ If you want XNAT to execute your docker image, you will need a Command. The Comm
                 "description": "",
                 "type": "",
                 "required": true,
-                "prerequisites": "",
-                "parent": "",
-                "parent-property": "",
                 "matcher": "",
                 "default-value": "",
                 "replacement-key": "",
@@ -62,13 +59,9 @@ If you want XNAT to execute your docker image, you will need a Command. The Comm
             {
                 "name": "",
                 "description": "",
-                "type": "",
-                "label": "",
-                "parent": "",
-                "files": {
-                    "mount": "",
-                    "path": ""
-                }
+                "required": true,
+                "mount": "",
+                "glob": ""
             }
         ]
     }
@@ -81,26 +74,22 @@ If you want XNAT to execute your docker image, you will need a Command. The Comm
 - **schema-version** - The version of this schema you are reading, which is `1.0`. All commands should use `"schema-version": "1.0"`.
 - **type** - The image type. Currently only "docker" is supported.
 - **info-url** - A URL where more info on the command, or the image, or both, can be found.
-- **image** - (Only for docker images) An identifier of the image this command describes. Can be in "repo/image:tag" format or "sha256:123abc..." hash format. If the command JSON is embedded in the labels of a docker image, then this field may be omitted.
-- **index** -
-- **hash** -
-- **working-directory** -
+- **image** - An identifier of the image this command describes. For Docker images, this should be in "repository/image-name:tag" format. If the command JSON is embedded in the labels of a docker image, then this field may be omitted.
+- **index** - (Docker images only) The index, or hub, where this image can be found. For instance, if the image is on the public Docker Hub, the index value should be "https://index.docker.io/v1/".
+- **hash** - (Docker images only) A sha hash value for the image.
+- **working-directory** - The working directory in which the command line should be executed.
 - **command-line** - This string is a templatized version of the command-line string that will be executed inside the container. The templatized portions will be resolved at launch time with the values of the command's inputs. See the section on [template strings](#template-strings) below for more detail.
 - **mounts** - A list of mount points that will be created for your container.
     - **name** - The name of the mount. You can use this to refer to the mount elsewhere in the command, e.g. when creating an output.
-    - **type** - Either "input" or "output". Input mounts can have files pre-staged from XNAT, and are created read-only. Output mounts have no pre-staged files, but are writable.
+    - **writable** - true/false: whether the mount should be writable. Output mounts are always writable, whereas input mounts are typically read-only but can be made writable with this flag.
     - **path** - The absolute path inside your container at which the mount will be created.
-    - **file-input** - The **name** of an input which will be used as the source for the files. If the input has **type** "Resource", the **resource** property below can be omitted and the files in the Resource will be provided to the mount. Otherwise the input must have a **type** that can contain Resources—Project, Subject, Session, Scan, or Assessor—and the value of the **resource** property must be the label of one of the input's resources.
 - **environment-variables** - Key/value pairs of environment variables to set in the container. Both keys and values can be templates that will be filled by input values at runtime.
-- **ports** - (Only for docker images) String key/value pairs of ports to expose. The key is the port inside the container, the value is the port to expose out on the host. In other words, entries in this map should be of the form `"container_port": "host_port"`. Keys and values can be templates.
+- **ports** - (Docker images only) String key/value pairs of ports to expose. The key is the port inside the container, the value is the port to expose out on the host. In other words, entries in this map should be of the form `"container_port": "host_port"`. Keys and values can be templates.
 - **inputs** - A list of inputs that will be used to resolve the command and launch the container. See [Command Inputs](#command-inputs).
     - **name** - The name of the input. You can use this to refer to the input elsewhere in the command.
     - **description** - A human-friendly description of the input.
-    - **type** - One of string, boolean, number, file, Project, Subject, Session, Scan, Assessor, Resource, or Config. See the section on [input types](#input-types) below for more. Default: string.
+    - **type** - One of string, boolean, number, or file. See the section on [input types](#input-types) below for more. Default: string.
     - **required** - A boolean value (true/false) whether this input is required. If a required input does not have a value at runtime, an error is thrown. Default: false.
-    - **prerequisites** - A comma-separated string containing the names of other inputs that must be resolved (i.e. receive runtime values) before this input can be resolved. Note that an input's parent is automatically considered a prerequisite to that input, and need not be included in the list of prerequisites.
-    - **parent** - The name of another input, which is the "parent" of this input. See the section on [parent inputs](#parent-inputs) for more.
-    - **parent-property** - The name of a property of the parent. If this input's parent input is one of the XNAT input types, use `parent-property` to automatically set this input's value to that property of the parent. For instance, if the parent is a `Session`, this input could have `parent-property=label` and its value would be set at runtime to the session's label.
     - **matcher** - A [JSONPath filter](#jsonpath-filters) used to determine if an input value is valid or not. For instance, if the parent input is a `Session`, and this input is a `Scan`, we can make sure that this input only matches scans with a DICOM resource by setting the matcher to `"DICOM" in @.resources[*].label`, or only matches scans of a certain type by setting the matcher to `@.scan-type == "MPRAGE"`.
     - **default-value** - A value that will be used if no other value is provided at runtime.
     - **replacement-key** - A shorthand way to refer to this input's value elsewhere in the command. Default: the input's name bracketed by "#"; e.g. for an input named "foo" the default replacement-key is "#foo#".
@@ -108,24 +97,31 @@ If you want XNAT to execute your docker image, you will need a Command. The Comm
     - **command-line-separator** - The character separating the command-line-flag from the value in the command-line. Default: " ".
     - **true-value** - The string to use in the command line for a boolean input when its value is `true`. Some examples: "true", "T", "Y", "1", "--a-flag". Default: "true".
     - **false-value** - The string to use in the command line for a boolean input when its value is `false`. Some examples: "false", "F", "N", "0", "--some-other-flag". Default: "false".
+    - **mount** - (Only for inputs of type `"file"`) The name of a mount—which must be defined in this command—into which container service will .
 - **outputs** - A list of outputs that will be used to upload files produced by the container. See [Command Outputs](#command-outputs).
     - **name** - The name of the output.
     - **description** - A human-friendly description of the output.
-    - **type** - One of "Assessor" or "Resource". Assessor outputs should point to a properly-formatted XML document that holds the details of the assessor object to be created. Resource outputs should point to a file or directory that will be uploaded to a new resource.
-    - **label** - The label of the resource that will be created. Required for outputs of Resource type; ignored for outputs of Assessor type.
-    - **parent** - The name of an input, of an XNAT type, under which this output object will be created.
-    - **files** - Where the file(s) can be found inside the container.
-        - **mount** - The name of a mount, which must be defined in this command and must have type "output", into which your container wrote whatever file(s) you intend to upload.
-        - **path** - The relative path within a mount at which output files can be found. Value can be templatized with input replacement keys.
+    - **required** - A boolean value (true/false) whether this output is required. If a required output does not match any files when container is finished, an error is thrown. Default: true.
+    - **mount** - The name of a mount, which must be defined in this command and must have type "output", into which your container wrote whatever file(s) you intend to upload.
+    - **path** - The relative path within a mount at which output files can be found. Value can be templatized with input replacement keys.
+    - **glob** - A glob-style matcher for the files to upload. If `"glob"` is blank, then all files found at relative path `"path"` within the mount will be uploaded.
 - **xnat** - A list of [XNAT Command Wrappers](#xnat-command-wrapper)
     - **name**
     - **description**
     - **inputs** - See [XNAT Inputs](#xnat-inputs)
     - **derived-inputs** -
-    - **output-handling** - See [XNAT Output Handling](#xnat-output-handling)
+    - **output-handlers** - See [XNAT Output Handling](#xnat-output-handling)
 
 ## Mounts
 There are two types of mounts: input and output. Input mounts can have files from the XNAT archives staged into them before container launch, but are read-only. Output mounts are created empty and  ready for containers to write files into.
+
+There are two types of mounts: read-only and writable.
+
+Mounts that are referenced by outputs are always writable. Usually a new directory is created to hold any output files, and it is mounted into the container.
+
+If a mount is not referenced by any output—i.e. it is only used to mount input files—it will typically be read-only and this value will be `false`. This is so that files can be mounted directly from the XNAT archive, which should not be written to directly. However, this means that if a container does try to write anything to a location that is a read-only mount, the container will fail with a runtime error. To avoid this, you can explicitly set a mount to "writable=true". This means that input files will be copied out of the archive and into a writable directory, which will then be mounted.
+
+A mount can be used for both an input and an output. That means the input files will be copied into the directory before launch, and the same directory will be searched for output files upon container completion. If you aren't careful, the input files will be re-uploaded along with the output files. The `outputs.output.path` and `outputs.output.glob` properties can be carefully crafted to avoid this effect.
 
 # Command Inputs
 Inputs allow you define what information and objects need to be provided when your Command is resolved before the container is launched. They are the way for you to gather all the requirements you need to launch your container: files, command-line arguments, environment variables, etc. Absolutely anything that you need for your container has to either be an input value or, if the input is one of the XNAT object types and the value is a big complex object, be some property or child of an input value.
@@ -134,10 +130,11 @@ Inputs allow you define what information and objects need to be provided when yo
 More info to come.
 
 ## Input Types
-string, boolean, number, file, Project, Subject, Session, Scan, Assessor, Resource, Config
-More info to come.
 
-## Parent Inputs
+Command input types: string, boolean, number, file
+
+XNAT Wrapper input types: string, boolean, number, file, Project, Subject, Session, Scan, Assessor, Resource, Config
+
 More info to come.
 
 # Command Outputs
