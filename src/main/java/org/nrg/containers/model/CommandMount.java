@@ -18,7 +18,7 @@ public class CommandMount implements Serializable {
     @JsonProperty(required = true) private Type type = Type.INPUT;
     @JsonProperty("path") private String remotePath;
     @JsonProperty("file-input") private String fileInput;
-    private String resource;
+    // private String resource;
 
     public String getName() {
         return name;
@@ -59,13 +59,13 @@ public class CommandMount implements Serializable {
         this.fileInput = fileInput;
     }
 
-    public String getResource() {
-        return resource;
-    }
-
-    public void setResource(final String resource) {
-        this.resource = resource;
-    }
+    // public String getResource() {
+    //     return resource;
+    // }
+    //
+    // public void setResource(final String resource) {
+    //     this.resource = resource;
+    // }
 
     @Transient
     @ApiModelProperty(hidden = true)
@@ -99,9 +99,9 @@ public class CommandMount implements Serializable {
         if (!(other.fileInput == null && ignoreNull)) {
             this.fileInput = other.fileInput;
         }
-        if (!(other.resource == null && ignoreNull)) {
-            this.resource = other.resource;
-        }
+        // if (!(other.resource == null && ignoreNull)) {
+        //     this.resource = other.resource;
+        // }
     }
 
     @Override
@@ -112,13 +112,13 @@ public class CommandMount implements Serializable {
         return Objects.equals(this.name, that.name) &&
                 Objects.equals(this.type, that.type) &&
                 Objects.equals(this.remotePath, that.remotePath) &&
-                Objects.equals(this.fileInput, that.fileInput) &&
-                Objects.equals(this.resource, that.resource);
+                Objects.equals(this.fileInput, that.fileInput); // &&
+                // Objects.equals(this.resource, that.resource);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, type, remotePath, fileInput, resource);
+        return Objects.hash(name, type, remotePath, fileInput);
     }
 
     @Override
@@ -128,7 +128,7 @@ public class CommandMount implements Serializable {
                 .add("type", type)
                 .add("remotePath", remotePath)
                 .add("fileInput", fileInput)
-                .add("resource", resource)
+                // .add("resource", resource)
                 .toString();
     }
 

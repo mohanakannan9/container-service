@@ -20,7 +20,6 @@ import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.helpers.CommandResolutionHelper;
 import org.nrg.containers.model.Command;
-import org.nrg.containers.model.CommandRun;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.ContainerExecutionMount;
 import org.nrg.containers.model.ResolvedCommand;
@@ -124,15 +123,11 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             return;
         }
         Hibernate.initialize(command);
+        Hibernate.initialize(command.getEnvironmentVariables());
+        Hibernate.initialize(command.getMounts());
         Hibernate.initialize(command.getInputs());
         Hibernate.initialize(command.getOutputs());
-
-        final CommandRun run = command.getRun();
-        if (run != null) {
-            Hibernate.initialize(run.getEnvironmentVariables());
-            Hibernate.initialize(run.getCommandLine());
-            Hibernate.initialize(run.getMounts());
-        }
+        Hibernate.initialize(command.getXnatCommandWrappers());
     }
 
     @Override
