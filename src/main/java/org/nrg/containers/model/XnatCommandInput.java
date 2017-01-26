@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.Sets;
 
 import javax.persistence.ElementCollection;
 import javax.persistence.Embeddable;
@@ -16,7 +17,7 @@ public class XnatCommandInput {
     private Type type;
     @JsonProperty("derived-from-xnat-input") private String derivedFromXnatInput;
     private String matcher;
-    @JsonProperty("provides-value-for-command-input") private String providesValueForCommandInput;
+    @JsonProperty("provides-value-for-command-inputs") private Set<String> providesValueForCommandInputs;
     @JsonProperty("handles-command-outputs") private Set<XnatCommandOutput> commandOutputHandlers;
     @JsonProperty("default-value") private String defaultValue;
     @JsonProperty("user-settable") private Boolean userSettable = true;
@@ -53,12 +54,15 @@ public class XnatCommandInput {
         this.matcher = matcher;
     }
 
-    public String getProvidesValueForCommandInput() {
-        return providesValueForCommandInput;
+    @ElementCollection
+    public Set<String> getProvidesValueForCommandInputs() {
+        return providesValueForCommandInputs;
     }
 
-    public void setProvidesValueForCommandInput(final String providesValueForCommandInput) {
-        this.providesValueForCommandInput = providesValueForCommandInput;
+    public void setProvidesValueForCommandInputs(final Set<String> providesValueForCommandInput) {
+        this.providesValueForCommandInputs = providesValueForCommandInput == null ?
+                Sets.<String>newHashSet() :
+                providesValueForCommandInput;
     }
 
     @ElementCollection
@@ -67,7 +71,9 @@ public class XnatCommandInput {
     }
 
     public void setCommandOutputHandlers(final Set<XnatCommandOutput> commandOutputHandlers) {
-        this.commandOutputHandlers = commandOutputHandlers;
+        this.commandOutputHandlers = commandOutputHandlers == null ?
+                Sets.<XnatCommandOutput>newHashSet() :
+                commandOutputHandlers;
     }
 
     public String getDefaultValue() {
@@ -95,7 +101,7 @@ public class XnatCommandInput {
                 type == that.type &&
                 Objects.equals(this.derivedFromXnatInput, that.derivedFromXnatInput) &&
                 Objects.equals(this.matcher, that.matcher) &&
-                Objects.equals(this.providesValueForCommandInput, that.providesValueForCommandInput) &&
+                Objects.equals(this.providesValueForCommandInputs, that.providesValueForCommandInputs) &&
                 Objects.equals(this.commandOutputHandlers, that.commandOutputHandlers) &&
                 Objects.equals(this.defaultValue, that.defaultValue) &&
                 Objects.equals(this.userSettable, that.userSettable);
@@ -104,7 +110,7 @@ public class XnatCommandInput {
     @Override
     public int hashCode() {
         return Objects.hash(name, type, derivedFromXnatInput, matcher,
-                providesValueForCommandInput, commandOutputHandlers, defaultValue, userSettable);
+                providesValueForCommandInputs, commandOutputHandlers, defaultValue, userSettable);
     }
 
     @Override
@@ -114,7 +120,7 @@ public class XnatCommandInput {
                 .add("type", type)
                 .add("derivedFromXnatInput", derivedFromXnatInput)
                 .add("matcher", matcher)
-                .add("providesValueForCommandInput", providesValueForCommandInput)
+                .add("providesValueForCommandInputs", providesValueForCommandInputs)
                 .add("commandOutputHandlers", commandOutputHandlers)
                 .add("defaultValue", defaultValue)
                 .add("userSettable", userSettable)

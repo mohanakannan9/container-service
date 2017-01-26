@@ -17,7 +17,7 @@ public class XnatCommandWrapper extends AbstractHibernateEntity {
     private String name;
     private String description;
     private Command command;
-    private Set<XnatCommandInput> inputs;
+    @JsonProperty("external-inputs") private Set<XnatCommandInput> externalInputs;
     @JsonProperty("derived-inputs") private Set<XnatCommandInput> derivedInputs;
 
     public String getName() {
@@ -46,12 +46,12 @@ public class XnatCommandWrapper extends AbstractHibernateEntity {
     }
 
     @ElementCollection
-    public Set<XnatCommandInput> getInputs() {
-        return inputs;
+    public Set<XnatCommandInput> getExternalInputs() {
+        return externalInputs;
     }
 
-    public void setInputs(final Set<XnatCommandInput> inputs) {
-        this.inputs = inputs;
+    public void setExternalInputs(final Set<XnatCommandInput> externalInputs) {
+        this.externalInputs = externalInputs;
     }
 
     @ElementCollection
@@ -72,13 +72,13 @@ public class XnatCommandWrapper extends AbstractHibernateEntity {
         return Objects.equals(this.name, that.name) &&
                 Objects.equals(this.description, that.description) &&
                 Objects.equals(this.command, that.command) &&
-                Objects.equals(this.inputs, that.inputs) &&
+                Objects.equals(this.externalInputs, that.externalInputs) &&
                 Objects.equals(this.derivedInputs, that.derivedInputs);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), name, description, command, inputs, derivedInputs);
+        return Objects.hash(super.hashCode(), name, description, command, externalInputs, derivedInputs);
     }
 
     @Override
@@ -87,7 +87,7 @@ public class XnatCommandWrapper extends AbstractHibernateEntity {
                 .add("name", name)
                 .add("description", description)
                 .add("command", command)
-                .add("inputs", inputs)
+                .add("externalInputs", externalInputs)
                 .add("derivedInputs", derivedInputs);
     }
 
