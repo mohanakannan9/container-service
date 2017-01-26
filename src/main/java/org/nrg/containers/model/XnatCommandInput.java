@@ -8,6 +8,7 @@ import com.google.common.collect.Sets;
 
 import javax.persistence.ElementCollection;
 import javax.persistence.Embeddable;
+import javax.persistence.Transient;
 import java.util.Objects;
 import java.util.Set;
 
@@ -16,11 +17,15 @@ public class XnatCommandInput {
     private String name;
     private Type type;
     @JsonProperty("derived-from-xnat-input") private String derivedFromXnatInput;
+    @JsonProperty("derived-from-xnat-object-property") private String derivedFromXnatObjectProperty;
     private String matcher;
     @JsonProperty("provides-value-for-command-inputs") private Set<String> providesValueForCommandInputs;
     @JsonProperty("handles-command-outputs") private Set<XnatCommandOutput> commandOutputHandlers;
     @JsonProperty("default-value") private String defaultValue;
     @JsonProperty("user-settable") private Boolean userSettable = true;
+    private Boolean required;
+    private String value;
+    private String jsonRepresentation;
 
     public String getName() {
         return name;
@@ -44,6 +49,14 @@ public class XnatCommandInput {
 
     public void setDerivedFromXnatInput(final String derivedFromXnatInput) {
         this.derivedFromXnatInput = derivedFromXnatInput;
+    }
+
+    public String getDerivedFromXnatObjectProperty() {
+        return derivedFromXnatObjectProperty;
+    }
+
+    public void setDerivedFromXnatObjectProperty(final String derivedFromXnatObjectProperty) {
+        this.derivedFromXnatObjectProperty = derivedFromXnatObjectProperty;
     }
 
     public String getMatcher() {
@@ -92,6 +105,36 @@ public class XnatCommandInput {
         this.userSettable = userSettable;
     }
 
+    public Boolean getRequired() {
+        return required;
+    }
+
+    public Boolean isRequired() {
+        return required;
+    }
+
+    public void setRequired(final Boolean required) {
+        this.required = required;
+    }
+
+    @Transient
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(final String value) {
+        this.value = value;
+    }
+
+    @Transient
+    public String getJsonRepresentation() {
+        return jsonRepresentation;
+    }
+
+    public void setJsonRepresentation(final String jsonRepresentation) {
+        this.jsonRepresentation = jsonRepresentation;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
@@ -100,17 +143,19 @@ public class XnatCommandInput {
         return Objects.equals(this.name, that.name) &&
                 type == that.type &&
                 Objects.equals(this.derivedFromXnatInput, that.derivedFromXnatInput) &&
+                Objects.equals(this.derivedFromXnatObjectProperty, that.derivedFromXnatObjectProperty) &&
                 Objects.equals(this.matcher, that.matcher) &&
                 Objects.equals(this.providesValueForCommandInputs, that.providesValueForCommandInputs) &&
                 Objects.equals(this.commandOutputHandlers, that.commandOutputHandlers) &&
                 Objects.equals(this.defaultValue, that.defaultValue) &&
-                Objects.equals(this.userSettable, that.userSettable);
+                Objects.equals(this.userSettable, that.userSettable) &&
+                Objects.equals(this.required, that.required);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, type, derivedFromXnatInput, matcher,
-                providesValueForCommandInputs, commandOutputHandlers, defaultValue, userSettable);
+        return Objects.hash(name, type, derivedFromXnatInput, derivedFromXnatObjectProperty, matcher,
+                providesValueForCommandInputs, commandOutputHandlers, defaultValue, userSettable, required);
     }
 
     @Override
@@ -119,11 +164,15 @@ public class XnatCommandInput {
                 .add("name", name)
                 .add("type", type)
                 .add("derivedFromXnatInput", derivedFromXnatInput)
+                .add("derivedFromXnatObjectProperty", derivedFromXnatObjectProperty)
                 .add("matcher", matcher)
                 .add("providesValueForCommandInputs", providesValueForCommandInputs)
                 .add("commandOutputHandlers", commandOutputHandlers)
                 .add("defaultValue", defaultValue)
                 .add("userSettable", userSettable)
+                .add("required", required)
+                .add("value", value)
+                .add("jsonRepresentation", jsonRepresentation)
                 .toString();
     }
 
