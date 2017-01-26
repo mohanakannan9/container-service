@@ -14,7 +14,6 @@ import java.util.Objects;
 @JsonInclude(Include.NON_NULL)
 public class XnatFile extends XnatModelObject {
     private static final Logger log = LoggerFactory.getLogger(XnatFile.class);
-    public static Type type = Type.FILE;
     private String name;
     private String path;
     private List<String> tags;
@@ -44,7 +43,6 @@ public class XnatFile extends XnatModelObject {
         this.file = file;
     }
 
-    @Override
     public Project getProject(final UserI userI) {
         // I don't think there is any way to get the project from this.
         return null;
@@ -96,10 +94,6 @@ public class XnatFile extends XnatModelObject {
 
     public void setFile(final java.io.File file) {
         this.file = file;
-    }
-
-    public Type getType() {
-        return type;
     }
 
     @Override

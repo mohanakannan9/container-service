@@ -22,7 +22,6 @@ import java.util.Objects;
 
 @JsonInclude(Include.NON_NULL)
 public class Scan extends XnatModelObject {
-    public static Type type = Type.SCAN;
     @JsonIgnore private XnatImagescandataI xnatImagescandataI;
     @JsonProperty("integer-id") private Integer integerId;
     @JsonProperty("scan-type") private String scanType;
@@ -80,10 +79,14 @@ public class Scan extends XnatModelObject {
         return null;
     }
 
-    @Override
     public Project getProject(final UserI userI) {
         loadXnatImagescandataI(userI);
         return new Project(xnatImagescandataI.getProject(), userI);
+    }
+
+    public Session getSession(final UserI userI) {
+        loadXnatImagescandataI(userI);
+        return new Session(xnatImagescandataI.getImageSessionId(), userI);
     }
 
     public void loadXnatImagescandataI(final UserI userI) {
@@ -114,10 +117,6 @@ public class Scan extends XnatModelObject {
 
     public void setResources(final List<Resource> resources) {
         this.resources = resources;
-    }
-
-    public Type getType() {
-        return type;
     }
 
     @Override

@@ -23,7 +23,6 @@ import java.util.Objects;
 
 @JsonInclude(Include.NON_NULL)
 public class Assessor extends XnatModelObject {
-    public static Type type = Type.ASSESSOR;
     @JsonIgnore private XnatImageassessordataI xnatImageassessordataI;
     private List<Resource> resources;
 
@@ -101,7 +100,6 @@ public class Assessor extends XnatModelObject {
         };
     }
 
-    @Override
     public Project getProject(final UserI userI) {
         loadXnatImageassessordataI(userI);
         return new Project(xnatImageassessordataI.getProject(), userI);
@@ -127,10 +125,6 @@ public class Assessor extends XnatModelObject {
 
     public void setResources(final List<Resource> resources) {
         this.resources = resources;
-    }
-
-    public Type getType() {
-        return type;
     }
 
     @Override

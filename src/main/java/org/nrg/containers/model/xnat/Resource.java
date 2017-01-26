@@ -13,8 +13,6 @@ import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatResourcecatalogI;
 import org.nrg.xdat.om.XnatAbstractresource;
 import org.nrg.xdat.om.XnatResourcecatalog;
-import org.nrg.xft.ItemI;
-import org.nrg.xft.XFTItem;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
@@ -31,7 +29,6 @@ import java.util.Objects;
 @JsonInclude(Include.NON_NULL)
 public class Resource extends XnatModelObject {
     private static final Logger log = LoggerFactory.getLogger(Resource.class);
-    public static Type type = Type.RESOURCE;
 
     @JsonIgnore private XnatResourcecatalog xnatResourcecatalog;
     @JsonProperty("integer-id") private Integer integerId;
@@ -122,7 +119,6 @@ public class Resource extends XnatModelObject {
         };
     }
 
-    @Override
     public Project getProject(final UserI userI) {
         loadXnatResourcecatalog(userI);
         // TODO This does not work. I wish it did.
@@ -158,10 +154,6 @@ public class Resource extends XnatModelObject {
 
     public void setFiles(final List<XnatFile> files) {
         this.files = files;
-    }
-
-    public Type getType() {
-        return type;
     }
 
     @Override

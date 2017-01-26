@@ -23,7 +23,6 @@ import java.util.Objects;
 
 @JsonInclude(Include.NON_NULL)
 public class Project extends XnatModelObject {
-    public static Type type = Type.PROJECT;
     @JsonIgnore private XnatProjectdata xnatProjectdata;
     private List<Resource> resources;
     private List<Subject> subjects;
@@ -132,10 +131,6 @@ public class Project extends XnatModelObject {
 
     public void setSubjects(final List<Subject> subjects) {
         this.subjects = subjects;
-    }
-
-    public Type getType() {
-        return type;
     }
 
     @Override

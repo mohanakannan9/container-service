@@ -25,13 +25,19 @@ import java.util.Objects;
 
 @JsonInclude(Include.NON_NULL)
 public class Session extends XnatModelObject {
-    public static Type type = Type.SESSION;
     @JsonIgnore private XnatImagesessiondataI xnatImagesessiondataI;
     private List<Scan> scans;
     private List<Assessor> assessors;
     private List<Resource> resources;
 
     public Session() {}
+
+    public Session(final String sessionId, final UserI userI) {
+        this.id = sessionId;
+        loadXnatImagesessiondata(userI);
+        UriParserUtils.getArchiveUri(xnatImagesessiondataI);
+        populateProperties(null);
+    }
 
     public Session(final ExperimentURII experimentURII) {
         final XnatExperimentdata experiment = experimentURII.getExperiment();
@@ -117,10 +123,14 @@ public class Session extends XnatModelObject {
         };
     }
 
-    @Override
     public Project getProject(final UserI userI) {
         loadXnatImagesessiondata(userI);
         return new Project(xnatImagesessiondataI.getProject(), userI);
+    }
+
+    public Subject getSubject(final UserI userI) {
+        loadXnatImagesessiondata(userI);
+        return new Subject(xnatImagesessiondataI.getSubjectId(), userI);
     }
 
     public void loadXnatImagesessiondata(final UserI userI) {
@@ -159,10 +169,6 @@ public class Session extends XnatModelObject {
 
     public void setScans(final List<Scan> scans) {
         this.scans = scans;
-    }
-
-    public Type getType() {
-        return type;
     }
 
     @Override

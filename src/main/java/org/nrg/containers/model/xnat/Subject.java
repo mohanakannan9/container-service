@@ -24,13 +24,19 @@ import java.util.Objects;
 
 @JsonInclude(Include.NON_NULL)
 public class Subject extends XnatModelObject {
-    public static Type type = Type.SUBJECT;
 
     @JsonIgnore private XnatSubjectdataI xnatSubjectdataI;
     private List<Session> sessions;
     private List<Resource> resources;
 
     public Subject() {}
+
+    public Subject(final String subjectId, final UserI userI) {
+        this.id = subjectId;
+        loadXnatSubjectdataI(userI);
+        this.uri = UriParserUtils.getArchiveUri(xnatSubjectdataI);
+        populateProperties(null);
+    }
 
     public Subject(final SubjectURII subjectURII) {
         this.xnatSubjectdataI = subjectURII.getSubject();
@@ -104,7 +110,6 @@ public class Subject extends XnatModelObject {
         };
     }
 
-    @Override
     public Project getProject(final UserI userI) {
         loadXnatSubjectdataI(userI);
         return new Project(xnatSubjectdataI.getProject(), userI);
@@ -138,10 +143,6 @@ public class Subject extends XnatModelObject {
 
     public void setResources(final List<Resource> resources) {
         this.resources = resources;
-    }
-
-    public Type getType() {
-        return type;
     }
 
     @Override
