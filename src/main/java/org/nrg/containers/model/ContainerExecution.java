@@ -44,7 +44,7 @@ public class ContainerExecution extends AbstractHibernateEntity {
         this.userId = userId;
 
         this.commandId = resolvedCommand.getCommandId();
-        this.dockerImage = resolvedCommand.getDockerImage();
+        this.dockerImage = resolvedCommand.getImage();
         this.commandLine = resolvedCommand.getCommandLine();
         this.environmentVariables = resolvedCommand.getEnvironmentVariables() == null ?
                 Maps.<String, String>newHashMap() :
@@ -55,9 +55,9 @@ public class ContainerExecution extends AbstractHibernateEntity {
         this.mountsOut = resolvedCommand.getMountsOut() == null ?
                 Lists.<ContainerExecutionMount>newArrayList() :
                 Lists.newArrayList(resolvedCommand.getMountsOut());
-        this.inputValues = resolvedCommand.getInputValues() == null ?
+        this.inputValues = resolvedCommand.getCommandInputValues() == null ?
                 Maps.<String, String>newHashMap() :
-                Maps.newHashMap(resolvedCommand.getInputValues());
+                Maps.newHashMap(resolvedCommand.getCommandInputValues());
         this.outputs = resolvedCommand.getOutputs() == null ?
                 Lists.<ContainerExecutionOutput>newArrayList() :
                 Lists.newArrayList(resolvedCommand.getOutputs());

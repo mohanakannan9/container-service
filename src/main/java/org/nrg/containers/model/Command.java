@@ -1,12 +1,10 @@
 package org.nrg.containers.model;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
-import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.MoreObjects.ToStringHelper;
 import com.google.common.collect.Maps;
@@ -19,9 +17,9 @@ import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.OneToMany;
 import javax.persistence.Transient;
-import java.util.Set;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 @Entity
 @Audited
@@ -44,6 +42,8 @@ public abstract class Command extends AbstractHibernateEntity {
     private Set<CommandInput> inputs;
     private Set<CommandOutput> outputs;
     @JsonProperty("xnat") private Set<XnatCommandWrapper> xnatCommandWrappers;
+
+    public abstract CommandType getType();
 
     public String getName() {
         return name;
@@ -343,21 +343,5 @@ public abstract class Command extends AbstractHibernateEntity {
     public String toString() {
         return addParentPropertiesToString(MoreObjects.toStringHelper(this))
                 .toString();
-    }
-
-    public enum Type {
-        DOCKER("docker");
-
-        private final String name;
-
-        @JsonCreator
-        Type(final String name) {
-            this.name = name;
-        }
-
-        @JsonValue
-        public String getName() {
-            return name;
-        }
     }
 }

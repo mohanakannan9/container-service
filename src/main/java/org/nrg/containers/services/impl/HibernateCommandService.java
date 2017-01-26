@@ -23,6 +23,7 @@ import org.nrg.containers.model.Command;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.ContainerExecutionMount;
 import org.nrg.containers.model.ResolvedCommand;
+import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerExecutionService;
 import org.nrg.framework.exceptions.NrgRuntimeException;
@@ -180,15 +181,20 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
                                                       final UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException {
         final ResolvedCommand resolvedCommand = resolveCommand(commandId, runtimeValues, userI);
-        return launchResolvedCommand(resolvedCommand, userI);
+        switch (resolvedCommand.getType()) {
+            case DOCKER:
+                return launchResolvedDockerCommand((ResolvedDockerCommand) resolvedCommand, userI);
+            default:
+                return null; // TODO throw error
+        }
     }
 
     @Override
-    public ContainerExecution launchResolvedCommand(final ResolvedCommand resolvedCommand,
-                                                    final UserI userI)
+    public ContainerExecution launchResolvedDockerCommand(final ResolvedDockerCommand resolvedDockerCommand,
+                                                          final UserI userI)
             throws NoServerPrefException, DockerServerException {
         log.info("Preparing to launch resolved command.");
-        final ResolvedCommand preparedToLaunch = prepareToLaunch(resolvedCommand, userI);
+        final ResolvedDockerCommand preparedToLaunch = prepareToLaunch(resolvedDockerCommand, userI);
 
         log.info("Launching resolved command.");
         final String containerId = controlApi.launchImage(preparedToLaunch);
@@ -197,8 +203,8 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         return containerExecutionService.save(preparedToLaunch, containerId, userI);
     }
 
-    private ResolvedCommand prepareToLaunch(final ResolvedCommand resolvedCommand,
-                                            final UserI userI)
+    private ResolvedDockerCommand prepareToLaunch(final ResolvedDockerCommand resolvedDockerCommand,
+                                                  final UserI userI)
             throws NoServerPrefException {
         // Add default environment variables
         final Map<String, String> defaultEnv = Maps.newHashMap();
@@ -215,24 +221,24 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
                 log.debug(String.format("%s=%s", envKey, defaultEnv.get(envKey)));
             }
         }
-        resolvedCommand.addEnvironmentVariables(defaultEnv);
+        resolvedDockerCommand.addEnvironmentVariables(defaultEnv);
 
         // Transport mounts
-        if (log.isDebugEnabled() && ((resolvedCommand.getMountsIn() != null && !resolvedCommand.getMountsIn().isEmpty()) ||
-                (resolvedCommand.getMountsOut() != null && !resolvedCommand.getMountsOut().isEmpty()))) {
+        if (log.isDebugEnabled() && ((resolvedDockerCommand.getMountsIn() != null && !resolvedDockerCommand.getMountsIn().isEmpty()) ||
+                (resolvedDockerCommand.getMountsOut() != null && !resolvedDockerCommand.getMountsOut().isEmpty()))) {
             log.debug("Transporting mounts");
         }
-        if (resolvedCommand.getMountsIn() != null && !resolvedCommand.getMountsIn().isEmpty()) {
+        if (resolvedDockerCommand.getMountsIn() != null && !resolvedDockerCommand.getMountsIn().isEmpty()) {
             final String dockerHost = controlApi.getServer().getHost();
-            for (final ContainerExecutionMount mountIn : resolvedCommand.getMountsIn()) {
+            for (final ContainerExecutionMount mountIn : resolvedDockerCommand.getMountsIn()) {
                 final Path pathOnXnatHost = Paths.get(mountIn.getHostPath());
                 final Path pathOnDockerHost = transporter.transport(dockerHost, pathOnXnatHost);
                 mountIn.setHostPath(pathOnDockerHost.toString());
             }
         }
-        if (resolvedCommand.getMountsOut() != null && !resolvedCommand.getMountsOut().isEmpty()) {
+        if (resolvedDockerCommand.getMountsOut() != null && !resolvedDockerCommand.getMountsOut().isEmpty()) {
             final String dockerHost = controlApi.getServer().getHost();
-            final List<ContainerExecutionMount> mountsOut = resolvedCommand.getMountsOut();
+            final List<ContainerExecutionMount> mountsOut = resolvedDockerCommand.getMountsOut();
             final List<Path> buildPaths = transporter.getWritableDirectories(dockerHost, mountsOut.size());
             for (int i=0; i < mountsOut.size(); i++) {
                 final ContainerExecutionMount mountOut = mountsOut.get(i);
@@ -242,6 +248,6 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             }
         }
 
-        return resolvedCommand;
+        return resolvedDockerCommand;
     }
 }

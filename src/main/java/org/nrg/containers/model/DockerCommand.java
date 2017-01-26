@@ -19,12 +19,15 @@ import java.util.Objects;
 @DiscriminatorColumn(name = "type", discriminatorType = DiscriminatorType.STRING)
 @DiscriminatorValue("docker")
 public class DockerCommand extends Command {
-    public static final Type type = Type.DOCKER;
-
+    public static final CommandType type = CommandType.DOCKER;
 
     private String index;
     private String hash;
     private Map<String, String> ports;
+
+    public CommandType getType() {
+        return type;
+    }
 
     public String getIndex() {
         return index;
@@ -73,7 +76,6 @@ public class DockerCommand extends Command {
     @Override
     public ToStringHelper addParentPropertiesToString(final ToStringHelper helper) {
         return super.addParentPropertiesToString(helper)
-                .add("type", type)
                 .add("index", index)
                 .add("hash", hash)
                 .add("ports", ports);

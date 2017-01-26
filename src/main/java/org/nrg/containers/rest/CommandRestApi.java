@@ -8,7 +8,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.exceptions.*;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.ContainerExecution;
-import org.nrg.containers.model.ResolvedCommand;
+import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.containers.services.CommandService;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NrgRuntimeException;
@@ -115,10 +115,10 @@ public class CommandRestApi extends AbstractXapiRestController {
     @RequestMapping(value = {"/launch"}, method = POST)
     @ApiOperation(value = "Launch a container from a resolved command")
     @ResponseBody
-    public Long launchCommand(final @RequestBody ResolvedCommand resolvedCommand)
+    public Long launchCommand(final @RequestBody ResolvedDockerCommand resolvedDockerCommand)
             throws NoServerPrefException, DockerServerException {
         final UserI userI = XDAT.getUserDetails();
-        final ContainerExecution executed = commandService.launchResolvedCommand(resolvedCommand, userI);
+        final ContainerExecution executed = commandService.launchResolvedDockerCommand(resolvedDockerCommand, userI);
         return executed.getId();
     }
 

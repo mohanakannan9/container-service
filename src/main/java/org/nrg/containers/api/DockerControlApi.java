@@ -41,6 +41,7 @@ import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.ResolvedCommand;
+import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.slf4j.Logger;
@@ -213,26 +214,26 @@ public class DockerControlApi implements ContainerControlApi {
     /**
      * Launch image on Docker server
      *
-     * @param command A ResolvedCommand. All templates are resolved, all mount paths exist.
+     * @param resolvedDockerCommand A ResolvedDockerCommand. All templates are resolved, all mount paths exist.
      * @return ID of created Container
      **/
     @Override
-    public String launchImage(final ResolvedCommand command)
+    public String launchImage(final ResolvedDockerCommand resolvedDockerCommand)
             throws NoServerPrefException, DockerServerException {
-        final String dockerImageId = command.getDockerImage();
-        final String runCommand = command.getCommandLine();
+        final String dockerImageId = resolvedDockerCommand.getImage();
+        final String runCommand = resolvedDockerCommand.getCommandLine();
         final List<String> bindMounts = Lists.newArrayList();
-        for (final ContainerExecutionMount mount : command.getMountsIn()) {
+        for (final ContainerExecutionMount mount : resolvedDockerCommand.getMountsIn()) {
             bindMounts.add(mount.toBindMountString());
         }
-        for (final ContainerExecutionMount mount : command.getMountsOut()) {
+        for (final ContainerExecutionMount mount : resolvedDockerCommand.getMountsOut()) {
             bindMounts.add(mount.toBindMountString());
         }
         final List<String> environmentVariables = Lists.newArrayList();
-        for (final Map.Entry<String, String> env : command.getEnvironmentVariables().entrySet()) {
+        for (final Map.Entry<String, String> env : resolvedDockerCommand.getEnvironmentVariables().entrySet()) {
             environmentVariables.add(StringUtils.join(new String[] {env.getKey(), env.getValue()}, "="));
         }
-        return launchImage(getServer(), dockerImageId, runCommand, bindMounts, environmentVariables, command.getPorts());
+        return launchImage(getServer(), dockerImageId, runCommand, bindMounts, environmentVariables, resolvedDockerCommand.getPorts());
     }
 
 //    /**

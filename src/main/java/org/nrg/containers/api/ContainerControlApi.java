@@ -10,6 +10,7 @@ import org.nrg.containers.model.DockerHub;
 import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.model.ResolvedCommand;
+import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 
 import java.util.Date;
@@ -36,7 +37,7 @@ public interface ContainerControlApi {
     DockerImage pullAndReturnImage(String name) throws NoServerPrefException, DockerServerException;
     DockerImage pullAndReturnImage(String name, DockerHub hub) throws NoServerPrefException, DockerServerException;
 
-    String launchImage(final ResolvedCommand command) throws NoServerPrefException, DockerServerException;
+    String launchImage(final ResolvedDockerCommand dockerCommand) throws NoServerPrefException, DockerServerException;
 //    String launchImage(final String imageName, final List<String> runCommand, final List <String> volumes) throws NoServerPrefException, DockerServerException;
 //    String launchImage(final DockerServer server, final String imageName,
 //                       final List<String> runCommand, final List <String> volumes) throws DockerServerException;
