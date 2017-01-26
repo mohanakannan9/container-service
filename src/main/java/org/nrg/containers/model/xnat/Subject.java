@@ -3,9 +3,10 @@ package org.nrg.containers.model.xnat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
+import org.apache.commons.lang.StringUtils;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatExperimentdataI;
 import org.nrg.xdat.model.XnatImagesessiondataI;
@@ -17,6 +18,7 @@ import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.SubjectURII;
 
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
@@ -70,9 +72,48 @@ public class Subject extends XnatModelObject {
         }
     }
 
-    public XnatSubjectdataI loadXnatSubjectdataI(final UserI userI) {
-        xnatSubjectdataI = XnatSubjectdata.getXnatSubjectdatasById(id, userI, false);
-        return xnatSubjectdataI;
+    public static Function<URIManager.ArchiveItemURI, Subject> uriToModelObjectFunction() {
+        return new Function<URIManager.ArchiveItemURI, Subject>() {
+            @Nullable
+            @Override
+            public Subject apply(@Nullable URIManager.ArchiveItemURI uri) {
+                if (uri != null &&
+                        SubjectURII.class.isAssignableFrom(uri.getClass())) {
+                    return new Subject((SubjectURII) uri);
+                }
+
+                return null;
+            }
+        };
+    }
+
+    public static Function<String, Subject> stringToModelObjectFunction(final UserI userI) {
+        return new Function<String, Subject>() {
+            @Nullable
+            @Override
+            public Subject apply(@Nullable String s) {
+                if (StringUtils.isBlank(s)) {
+                    return null;
+                }
+                final XnatSubjectdata xnatSubjectdata = XnatSubjectdata.getXnatSubjectdatasById(s, userI, true);
+                if (xnatSubjectdata != null) {
+                    return new Subject(xnatSubjectdata);
+                }
+                return null;
+            }
+        };
+    }
+
+    @Override
+    public Project getProject(final UserI userI) {
+        loadXnatSubjectdataI(userI);
+        return new Project(xnatSubjectdataI.getProject(), userI);
+    }
+
+    public void loadXnatSubjectdataI(final UserI userI) {
+        if (xnatSubjectdataI == null) {
+            xnatSubjectdataI = XnatSubjectdata.getXnatSubjectdatasById(id, userI, false);
+        }
     }
 
     public XnatSubjectdataI getXnatSubjectdataI() {

@@ -27,6 +27,8 @@ public abstract class XnatModelObject {
     protected String uri;
 
     public static Type type = null;
+    public abstract Type getType();
+    public void setType(final Type type) {}
 
     public String getId() {
         return id;
@@ -59,10 +61,6 @@ public abstract class XnatModelObject {
     public void setUri(final String uri) {
         this.uri = uri;
     }
-
-    public abstract Type getType();
-
-    public void setType(final Type type) {}
 
     @Override
     public boolean equals(Object o) {

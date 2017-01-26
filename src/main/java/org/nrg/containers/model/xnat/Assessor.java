@@ -3,8 +3,10 @@ package org.nrg.containers.model.xnat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
+import org.apache.commons.lang.StringUtils;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatImageassessordataI;
 import org.nrg.xdat.om.XnatImageassessordata;
@@ -15,6 +17,7 @@ import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.AssessorURII;
 import org.nrg.xnat.helpers.uri.archive.SubjectURII;
 
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
@@ -59,6 +62,57 @@ public class Assessor extends XnatModelObject {
         }
     }
 
+    public static Function<URIManager.ArchiveItemURI, Assessor> uriToModelObjectFunction() {
+        return new Function<URIManager.ArchiveItemURI, Assessor>() {
+            @Nullable
+            @Override
+            public Assessor apply(@Nullable URIManager.ArchiveItemURI uri) {
+                XnatImageassessordata assessor;
+                if (uri != null &&
+                        AssessorURII.class.isAssignableFrom(uri.getClass())) {
+                    assessor = ((AssessorURII) uri).getAssessor();
+
+                    if (assessor != null &&
+                            XnatImageassessordata.class.isAssignableFrom(assessor.getClass())) {
+                        return new Assessor((AssessorURII) uri);
+                    }
+                }
+
+                return null;
+            }
+        };
+    }
+
+    public static Function<String, Assessor> stringToModelObjectFunction(final UserI userI) {
+        return new Function<String, Assessor>() {
+            @Nullable
+            @Override
+            public Assessor apply(@Nullable String s) {
+                if (StringUtils.isBlank(s)) {
+                    return null;
+                }
+                final XnatImageassessordata xnatImageassessordata =
+                        XnatImageassessordata.getXnatImageassessordatasById(s, userI, true);
+                if (xnatImageassessordata != null) {
+                    return new Assessor(xnatImageassessordata);
+                }
+                return null;
+            }
+        };
+    }
+
+    @Override
+    public Project getProject(final UserI userI) {
+        loadXnatImageassessordataI(userI);
+        return new Project(xnatImageassessordataI.getProject(), userI);
+    }
+
+    public void loadXnatImageassessordataI(final UserI userI) {
+        if (xnatImageassessordataI == null) {
+            xnatImageassessordataI = XnatImageassessordata.getXnatImageassessordatasById(id, userI, false);
+        }
+    }
+
     public XnatImageassessordataI getXnatImageassessordataI() {
         return xnatImageassessordataI;
     }
@@ -73,11 +127,6 @@ public class Assessor extends XnatModelObject {
 
     public void setResources(final List<Resource> resources) {
         this.resources = resources;
-    }
-
-    public XnatImageassessordataI loadXnatImageassessordataI(final UserI userI) {
-        xnatImageassessordataI = XnatImageassessordata.getXnatImageassessordatasById(id, userI, false);
-        return xnatImageassessordataI;
     }
 
     public Type getType() {

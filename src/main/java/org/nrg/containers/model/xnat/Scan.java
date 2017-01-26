@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import org.nrg.xdat.model.XnatAbstractresourceI;
@@ -15,6 +16,7 @@ import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.ScanURII;
 
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
@@ -59,9 +61,35 @@ public class Scan extends XnatModelObject {
 
     }
 
-    public XnatImagescandataI loadXnatImagescandataI(final UserI userI) {
-        xnatImagescandataI = XnatImagescandata.getXnatImagescandatasByXnatImagescandataId(integerId, userI, false);
-        return xnatImagescandataI;
+    public static Function<URIManager.ArchiveItemURI, Scan> uriToModelObjectFunction() {
+        return new Function<URIManager.ArchiveItemURI, Scan>() {
+            @Nullable
+            @Override
+            public Scan apply(@Nullable URIManager.ArchiveItemURI uri) {
+                if (uri != null &&
+                        ScanURII.class.isAssignableFrom(uri.getClass())) {
+                    return new Scan((ScanURII) uri);
+                }
+
+                return null;
+            }
+        };
+    }
+
+    public static Function<String, Scan> stringToModelObjectFunction(final UserI userI) {
+        return null;
+    }
+
+    @Override
+    public Project getProject(final UserI userI) {
+        loadXnatImagescandataI(userI);
+        return new Project(xnatImagescandataI.getProject(), userI);
+    }
+
+    public void loadXnatImagescandataI(final UserI userI) {
+        if (xnatImagescandataI == null) {
+            xnatImagescandataI = XnatImagescandata.getXnatImagescandatasByXnatImagescandataId(integerId, userI, false);
+        }
     }
 
     public XnatImagescandataI getXnatImagescandataI() {

@@ -2,6 +2,7 @@ package org.nrg.containers.model.xnat;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,6 +42,12 @@ public class XnatFile extends XnatModelObject {
         this.format = format;
         this.content = content;
         this.file = file;
+    }
+
+    @Override
+    public Project getProject(final UserI userI) {
+        // I don't think there is any way to get the project from this.
+        return null;
     }
 
     public String getName() {

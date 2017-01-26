@@ -3,8 +3,10 @@ package org.nrg.containers.model.xnat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatImageassessordataI;
 import org.nrg.xdat.model.XnatImagescandataI;
@@ -17,6 +19,7 @@ import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.ExperimentURII;
 
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
@@ -76,9 +79,54 @@ public class Session extends XnatModelObject {
         }
     }
 
-    public XnatImagesessiondataI loadXnatImagesessiondata(final UserI userI) {
-        xnatImagesessiondataI = XnatImagesessiondata.getXnatImagesessiondatasById(id, userI, false);
-        return xnatImagesessiondataI;
+    public static Function<URIManager.ArchiveItemURI, Session> uriToModelObjectFunction() {
+        return new Function<URIManager.ArchiveItemURI, Session>() {
+            @Nullable
+            @Override
+            public Session apply(@Nullable URIManager.ArchiveItemURI uri) {
+                XnatExperimentdata experiment;
+                if (uri != null &&
+                        ExperimentURII.class.isAssignableFrom(uri.getClass())) {
+                    experiment = ((ExperimentURII) uri).getExperiment();
+
+                    if (experiment != null &&
+                            XnatImagesessiondata.class.isAssignableFrom(experiment.getClass())) {
+                        return new Session((ExperimentURII) uri);
+                    }
+                }
+
+                return null;
+            }
+        };
+    }
+
+    public static Function<String, Session> stringToModelObjectFunction(final UserI userI) {
+        return new Function<String, Session>() {
+            @Nullable
+            @Override
+            public Session apply(@Nullable String s) {
+                if (StringUtils.isBlank(s)) {
+                    return null;
+                }
+                final XnatImagesessiondata imagesessiondata = XnatImagesessiondata.getXnatImagesessiondatasById(s, userI, true);
+                if (imagesessiondata != null) {
+                    return new Session(imagesessiondata);
+                }
+                return null;
+            }
+        };
+    }
+
+    @Override
+    public Project getProject(final UserI userI) {
+        loadXnatImagesessiondata(userI);
+        return new Project(xnatImagesessiondataI.getProject(), userI);
+    }
+
+    public void loadXnatImagesessiondata(final UserI userI) {
+        if (xnatImagesessiondataI == null) {
+            xnatImagesessiondataI = XnatImagesessiondata.getXnatImagesessiondatasById(id, userI, false);
+        }
     }
 
     public XnatImagesessiondataI getXnatImagesessiondataI() {
