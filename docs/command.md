@@ -63,6 +63,15 @@ If you want XNAT to execute your docker image, you will need a Command. The Comm
                 "mount": "",
                 "glob": ""
             }
+        ],
+        "xnat": [
+            {
+                "name": "",
+                "description": "",
+                "inputs": [
+                ],
+                "derived-inputs": []
+            }
         ]
     }
 
@@ -105,12 +114,20 @@ If you want XNAT to execute your docker image, you will need a Command. The Comm
     - **mount** - The name of a mount, which must be defined in this command and must have type "output", into which your container wrote whatever file(s) you intend to upload.
     - **path** - The relative path within a mount at which output files can be found. Value can be templatized with input replacement keys.
     - **glob** - A glob-style matcher for the files to upload. If `"glob"` is blank, then all files found at relative path `"path"` within the mount will be uploaded.
-- **xnat** - A list of [XNAT Command Wrappers](#xnat-command-wrapper)
-    - **name**
-    - **description**
-    - **inputs** - See [XNAT Inputs](#xnat-inputs)
-    - **derived-inputs** -
-    - **output-handlers** - See [XNAT Output Handling](#xnat-output-handling)
+- **xnat** - A list of [XNAT Command Wrappers](#xnat-command-wrapper), in which you can define how to pull files and properties from XNAT objects into your containers, and upload the containers' outputs back. See the [XNAT Command Wrappers](#xnat-command-wrapper) section below for more.
+    - **name** - A user-friendly name. Example: "dcm2niix on a scan".
+    - **description** - A longer description of what this command wrapper does: What XNAT object(s) does it take as inputs? How does it use those to fill the command's inputs? Where does it upload the command's outputs?
+    - **external-inputs** - A List of Inputs to the Command Wrapper that will come in when a launch is requested. See [XNAT Inputs](#xnat-inputs) for more.
+        - **name**
+        - **type** - One of the basic types (string, boolean, number, file) or the XNAT object types (Project, Subject, Session, Scan, Assessor, Resource, Config). See the section on [input types](#input-types) below for more.
+        - **matcher** -
+        - **default-value**
+        - **user-settable** - true/false. Should this Input be exposed to users who are launching via a UI? See the section [User-settable or not?](#user-settable-or-not) for the use-cases where one might want to set this to "false".
+        - **provides-value-for-command-inputs** - A List of Command Input names, which will each receive their value from this input.
+        - **handles-command-outputs**
+            -
+    - **derived-inputs** - A List of Inputs to the Command Wrapper that will not come in from outside, but instead will be derived from other inputs as parents or children. See [XNAT Inputs](#xnat-inputs) for more.
+
 
 ## Mounts
 There are two types of mounts: input and output. Input mounts can have files from the XNAT archives staged into them before container launch, but are read-only. Output mounts are created empty and  ready for containers to write files into.
@@ -123,10 +140,15 @@ If a mount is not referenced by any output—i.e. it is only used to mount input
 
 A mount can be used for both an input and an output. That means the input files will be copied into the directory before launch, and the same directory will be searched for output files upon container completion. If you aren't careful, the input files will be re-uploaded along with the output files. The `outputs.output.path` and `outputs.output.glob` properties can be carefully crafted to avoid this effect.
 
-# Command Inputs
+# Inputs
+
+## Command Inputs
 Inputs allow you define what information and objects need to be provided when your Command is resolved before the container is launched. They are the way for you to gather all the requirements you need to launch your container: files, command-line arguments, environment variables, etc. Absolutely anything that you need for your container has to either be an input value or, if the input is one of the XNAT object types and the value is a big complex object, be some property or child of an input value.
 
-# XNAT Inputs
+## XNAT Inputs
+More info to come.
+
+### User-settable or not?
 More info to come.
 
 ## Input Types
@@ -137,10 +159,12 @@ XNAT Wrapper input types: string, boolean, number, file, Project, Subject, Sessi
 
 More info to come.
 
-# Command Outputs
+# Outputs
+
+## Command Outputs
 If you want your container to produce files that get imported into XNAT, you need to define one or more output objects. You need to define where the files can be found (which output mount they are in, and what is the path within that mount) and where the new to-be-created object will live within XNAT. For the latter, you provide the name of an input, which must be an XNAT object type; the output files will be a new child of that parent input.
 
-# XNAT Output Handling
+## XNAT Output Handling
 More info to come.
 
 # Template Strings
