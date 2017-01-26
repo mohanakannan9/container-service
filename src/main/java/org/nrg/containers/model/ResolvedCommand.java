@@ -34,7 +34,8 @@ public abstract class ResolvedCommand implements Serializable {
 
     public ResolvedCommand() {}
 
-    public ResolvedCommand(final Command command) {
+    public ResolvedCommand(final Long xnatCommandWrapperId, final Command command) {
+        this.xnatCommandWrapperId = xnatCommandWrapperId;
         this.commandId = command.getId();
         this.image = command.getImage();
     }
