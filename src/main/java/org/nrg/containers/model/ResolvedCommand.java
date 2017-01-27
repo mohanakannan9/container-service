@@ -21,6 +21,7 @@ import java.util.Objects;
 })
 public abstract class ResolvedCommand implements Serializable {
 
+    @JsonProperty("raw-input-values") private Map<String, String> rawInputValues;
     @JsonProperty("xnat-command-wrapper-id") private Long xnatCommandWrapperId;
     @JsonProperty("xnat-input-values") private Map<String, String> xnatInputValues;
     @JsonProperty("command-id") private Long commandId;
@@ -41,6 +42,16 @@ public abstract class ResolvedCommand implements Serializable {
     }
 
     public abstract CommandType getType();
+
+    public Map<String, String> getRawInputValues() {
+        return rawInputValues;
+    }
+
+    public void setRawInputValues(final Map<String, String> rawInputValues) {
+        this.rawInputValues = rawInputValues == null ?
+                Maps.<String, String>newHashMap() :
+                rawInputValues;
+    }
 
     public Long getXnatCommandWrapperId() {
         return xnatCommandWrapperId;
@@ -170,8 +181,9 @@ public abstract class ResolvedCommand implements Serializable {
         if (o == null || getClass() != o.getClass()) return false;
         final ResolvedCommand that = (ResolvedCommand) o;
         return Objects.equals(this.xnatCommandWrapperId, that.xnatCommandWrapperId) &&
-                Objects.equals(this.xnatInputValues, that.xnatInputValues) &&
                 Objects.equals(this.commandId, that.commandId) &&
+                Objects.equals(this.rawInputValues, that.rawInputValues) &&
+                Objects.equals(this.xnatInputValues, that.xnatInputValues) &&
                 Objects.equals(this.commandInputValues, that.commandInputValues) &&
                 Objects.equals(this.image, that.image) &&
                 Objects.equals(this.commandLine, that.commandLine) &&
@@ -183,18 +195,19 @@ public abstract class ResolvedCommand implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(xnatCommandWrapperId, xnatInputValues, commandId, commandInputValues,
+        return Objects.hash(rawInputValues, xnatCommandWrapperId, xnatInputValues, commandId, commandInputValues,
                 image, commandLine, environmentVariables, mountsIn, mountsOut, outputs);
     }
 
     public MoreObjects.ToStringHelper addPropertiesToString(final MoreObjects.ToStringHelper helper) {
         return helper
                 .add("xnatCommandWrapperId", xnatCommandWrapperId)
-                .add("xnatInputValues", xnatInputValues)
                 .add("commandId", commandId)
-                .add("commandInputValues", commandInputValues)
-                .add("commandLine", commandLine)
                 .add("image", image)
+                .add("commandLine", commandLine)
+                .add("rawInputValues", rawInputValues)
+                .add("xnatInputValues", xnatInputValues)
+                .add("commandInputValues", commandInputValues)
                 .add("environmentVariables", environmentVariables)
                 .add("mountsIn", mountsIn)
                 .add("mountsOut", mountsOut)
