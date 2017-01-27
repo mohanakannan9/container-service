@@ -1,6 +1,8 @@
 package org.nrg.containers.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.base.MoreObjects;
 
 import javax.persistence.Embeddable;
@@ -8,8 +10,18 @@ import java.util.Objects;
 
 @Embeddable
 public class XnatCommandOutput {
-    @JsonProperty("command-output-name") private String commandOutputName;
+    @JsonProperty("accepts-command-output") private String commandOutputName;
+    @JsonProperty("as-child-of-xnat-input-object") private String xnatInputName;
+    private Type type;
     private String label;
+
+    public Type getType() {
+        return type;
+    }
+
+    public void setType(final Type type) {
+        this.type = type;
+    }
 
     public String getCommandOutputName() {
         return commandOutputName;
@@ -33,19 +45,38 @@ public class XnatCommandOutput {
         if (o == null || getClass() != o.getClass()) return false;
         final XnatCommandOutput that = (XnatCommandOutput) o;
         return Objects.equals(this.commandOutputName, that.commandOutputName) &&
+                Objects.equals(this.type, that.type) &&
                 Objects.equals(this.label, that.label);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(commandOutputName, label);
+        return Objects.hash(commandOutputName, type, label);
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("commandOutputName", commandOutputName)
+                .add("type", type)
                 .add("label", label)
                 .toString();
+    }
+
+    public enum Type {
+        RESOURCE("Resource"),
+        ASSESSOR("Assessor");
+
+        private final String name;
+
+        @JsonCreator
+        Type(final String name) {
+            this.name = name;
+        }
+
+        @JsonValue
+        public String getName() {
+            return name;
+        }
     }
 }

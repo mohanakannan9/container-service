@@ -2,6 +2,7 @@ package org.nrg.containers.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.Sets;
 import org.hibernate.envers.Audited;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
@@ -19,6 +20,7 @@ public class XnatCommandWrapper extends AbstractHibernateEntity {
     private Command command;
     @JsonProperty("external-inputs") private Set<XnatCommandInput> externalInputs;
     @JsonProperty("derived-inputs") private Set<XnatCommandInput> derivedInputs;
+    @JsonProperty("output-handlers") private Set<XnatCommandOutput> outputHandlers;
 
     public String getName() {
         return name;
@@ -63,6 +65,17 @@ public class XnatCommandWrapper extends AbstractHibernateEntity {
         this.derivedInputs = derivedInputs;
     }
 
+    @ElementCollection
+    public Set<XnatCommandOutput> getOutputHandlers() {
+        return outputHandlers;
+    }
+
+    public void setOutputHandlers(final Set<XnatCommandOutput> outputHandlers) {
+        this.outputHandlers = outputHandlers == null ?
+                Sets.<XnatCommandOutput>newHashSet() :
+                outputHandlers;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
@@ -73,12 +86,13 @@ public class XnatCommandWrapper extends AbstractHibernateEntity {
                 Objects.equals(this.description, that.description) &&
                 Objects.equals(this.command, that.command) &&
                 Objects.equals(this.externalInputs, that.externalInputs) &&
-                Objects.equals(this.derivedInputs, that.derivedInputs);
+                Objects.equals(this.derivedInputs, that.derivedInputs) &&
+                Objects.equals(this.outputHandlers, that.outputHandlers);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), name, description, command, externalInputs, derivedInputs);
+        return Objects.hash(super.hashCode(), name, description, command, externalInputs, derivedInputs, outputHandlers);
     }
 
     @Override
@@ -88,7 +102,8 @@ public class XnatCommandWrapper extends AbstractHibernateEntity {
                 .add("description", description)
                 .add("command", command)
                 .add("externalInputs", externalInputs)
-                .add("derivedInputs", derivedInputs);
+                .add("derivedInputs", derivedInputs)
+                .add("outputHandlers", outputHandlers);
     }
 
     @Override

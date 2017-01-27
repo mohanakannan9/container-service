@@ -36,6 +36,9 @@ public class CommandMount implements Serializable {
     //     this.type = type;
     // }
 
+    public Boolean isWritable() {
+        return writable;
+    }
 
     public Boolean getWritable() {
         return writable;

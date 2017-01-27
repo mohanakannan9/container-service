@@ -1,10 +1,13 @@
 package org.nrg.containers.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Sets;
+import io.swagger.annotations.ApiModelProperty;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.persistence.ElementCollection;
 import javax.persistence.Embeddable;
@@ -20,9 +23,9 @@ public class XnatCommandInput {
     @JsonProperty("derived-from-xnat-object-property") private String derivedFromXnatObjectProperty;
     private String matcher;
     @JsonProperty("provides-value-for-command-inputs") private Set<String> providesValueForCommandInputs;
-    @JsonProperty("handles-command-outputs") private Set<XnatCommandOutput> commandOutputHandlers;
     @JsonProperty("default-value") private String defaultValue;
     @JsonProperty("user-settable") private Boolean userSettable = true;
+    @JsonProperty("replacement-key") private String rawReplacementKey;
     private Boolean required;
     private String value;
     private String jsonRepresentation;
@@ -78,17 +81,6 @@ public class XnatCommandInput {
                 providesValueForCommandInput;
     }
 
-    @ElementCollection
-    public Set<XnatCommandOutput> getCommandOutputHandlers() {
-        return commandOutputHandlers;
-    }
-
-    public void setCommandOutputHandlers(final Set<XnatCommandOutput> commandOutputHandlers) {
-        this.commandOutputHandlers = commandOutputHandlers == null ?
-                Sets.<XnatCommandOutput>newHashSet() :
-                commandOutputHandlers;
-    }
-
     public String getDefaultValue() {
         return defaultValue;
     }
@@ -103,6 +95,21 @@ public class XnatCommandInput {
 
     public void setUserSettable(final Boolean userSettable) {
         this.userSettable = userSettable;
+    }
+
+    @ApiModelProperty(value = "String in the command-line or elsewhere that will be replaced by this input's value. Default: #input_name#", example = "[MY_INPUT]")
+    public String getRawReplacementKey() {
+        return rawReplacementKey;
+    }
+
+    public void setRawReplacementKey(final String rawReplacementKey) {
+        this.rawReplacementKey = rawReplacementKey;
+    }
+
+    @Transient
+    @JsonIgnore
+    public String getReplacementKey() {
+        return StringUtils.isNotBlank(rawReplacementKey) ? rawReplacementKey : "#" + getName() + "#";
     }
 
     public Boolean getRequired() {
@@ -146,16 +153,16 @@ public class XnatCommandInput {
                 Objects.equals(this.derivedFromXnatObjectProperty, that.derivedFromXnatObjectProperty) &&
                 Objects.equals(this.matcher, that.matcher) &&
                 Objects.equals(this.providesValueForCommandInputs, that.providesValueForCommandInputs) &&
-                Objects.equals(this.commandOutputHandlers, that.commandOutputHandlers) &&
                 Objects.equals(this.defaultValue, that.defaultValue) &&
                 Objects.equals(this.userSettable, that.userSettable) &&
+                Objects.equals(this.rawReplacementKey, that.rawReplacementKey) &&
                 Objects.equals(this.required, that.required);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(name, type, derivedFromXnatInput, derivedFromXnatObjectProperty, matcher,
-                providesValueForCommandInputs, commandOutputHandlers, defaultValue, userSettable, required);
+                providesValueForCommandInputs, defaultValue, userSettable, rawReplacementKey, required);
     }
 
     @Override
@@ -167,9 +174,9 @@ public class XnatCommandInput {
                 .add("derivedFromXnatObjectProperty", derivedFromXnatObjectProperty)
                 .add("matcher", matcher)
                 .add("providesValueForCommandInputs", providesValueForCommandInputs)
-                .add("commandOutputHandlers", commandOutputHandlers)
                 .add("defaultValue", defaultValue)
                 .add("userSettable", userSettable)
+                .add("rawReplacementKey", rawReplacementKey)
                 .add("required", required)
                 .add("value", value)
                 .add("jsonRepresentation", jsonRepresentation)
