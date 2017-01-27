@@ -20,7 +20,6 @@ import java.util.Objects;
 import java.util.Set;
 
 @Entity
-@Table(uniqueConstraints = {@UniqueConstraint(columnNames = {"containerId"})})
 public class ContainerExecution extends AbstractHibernateEntity {
     @JsonProperty("command-id") private Long commandId;
     @JsonProperty("docker-image") private String dockerImage;
