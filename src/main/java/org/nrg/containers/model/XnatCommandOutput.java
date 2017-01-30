@@ -31,6 +31,14 @@ public class XnatCommandOutput {
         this.commandOutputName = commandOutputName;
     }
 
+    public String getXnatInputName() {
+        return xnatInputName;
+    }
+
+    public void setXnatInputName(final String xnatInputName) {
+        this.xnatInputName = xnatInputName;
+    }
+
     public String getLabel() {
         return label;
     }
@@ -46,18 +54,20 @@ public class XnatCommandOutput {
         final XnatCommandOutput that = (XnatCommandOutput) o;
         return Objects.equals(this.commandOutputName, that.commandOutputName) &&
                 Objects.equals(this.type, that.type) &&
+                Objects.equals(this.xnatInputName, that.xnatInputName) &&
                 Objects.equals(this.label, that.label);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(commandOutputName, type, label);
+        return Objects.hash(commandOutputName, type, xnatInputName, label);
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("commandOutputName", commandOutputName)
+                .add("xnatInputName", xnatInputName)
                 .add("type", type)
                 .add("label", label)
                 .toString();
