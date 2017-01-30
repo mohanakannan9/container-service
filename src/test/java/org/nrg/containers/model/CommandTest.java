@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Resources;
+import org.codehaus.groovy.tools.shell.commands.DocCommand;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.containers.config.CommandTestConfig;
@@ -21,7 +22,9 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.isIn;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
@@ -177,14 +180,15 @@ public class CommandTest {
         assertEquals("Docker Image command for the test", command.getDescription());
         assertEquals("http://abc.xyz", command.getInfoUrl());
         assertEquals(commandInputList, command.getInputs());
-        assertThat(command.getOutputs(), hasSize(1));
-        assertEquals(commandOutput, command.getOutputs().get(0));
+        assertEquals(ImmutableMap.of("the_output", commandOutput), command.getOutputs());
 
         // final CommandRun run = command.getRun();
-        assertEquals("cmd #foo# #my_cool_input#", run.getCommandLine());
-        assertEquals(ImmutableMap.of("foo", "bar"), run.getEnvironmentVariables());
-        assertEquals(Lists.newArrayList(input, output), run.getMounts());
-        assertEquals(ImmutableMap.of("22", "2222"), run.getPorts());
+        assertEquals("cmd #foo# #my_cool_input#", command.getCommandLine());
+        assertEquals(ImmutableMap.of("foo", "bar"), command.getEnvironmentVariables());
+        assertEquals(ImmutableMap.of(input.getName(), input, output.getName(), output), command.getMounts());
+
+        assertThat(command, instanceOf(DocCommand.class));
+        assertEquals(ImmutableMap.of("22", "2222"), ((DockerCommand)command).getPorts());
     }
 
     @Test
@@ -205,16 +209,16 @@ public class CommandTest {
     public void testCommandConstraint() throws Exception {
         // We cannot create two commands with the same name & docker image id
 
-        final Command command = new Command();
+        final Command command = new DockerCommand();
         command.setName("name");
         command.setImage("abc123");
-        final Command commandSameDockerImageId = new Command();
+        final Command commandSameDockerImageId = new DockerCommand();
         commandSameDockerImageId.setName("different_name");
         commandSameDockerImageId.setImage("abc123");
-        final Command commandSameName = new Command();
+        final Command commandSameName = new DockerCommand();
         commandSameName.setName("name");
         commandSameDockerImageId.setImage("ABC456");
-        final Command commandSameNameAndDockerImageId = new Command();
+        final Command commandSameNameAndDockerImageId = new DockerCommand();
         commandSameNameAndDockerImageId.setName("name");
         commandSameNameAndDockerImageId.setImage("abc123");
 
