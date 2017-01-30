@@ -30,6 +30,19 @@ public class XnatCommandInput {
     private String value;
     private String jsonRepresentation;
 
+    public static XnatCommandInput passthrough(final CommandInput commandInput) {
+        final XnatCommandInput identityInput = new XnatCommandInput();
+        identityInput.setName(commandInput.getName());
+        identityInput.setType(XnatCommandInput.Type.valueOf(commandInput.getType().getName()));
+        identityInput.setMatcher(commandInput.getMatcher());
+        identityInput.setProvidesValueForCommandInputs(Sets.newHashSet(commandInput.getName()));
+        identityInput.setDefaultValue(commandInput.getDefaultValue());
+        identityInput.setUserSettable(true);
+        identityInput.setRequired(commandInput.isRequired());
+
+        return identityInput;
+    }
+
     public String getName() {
         return name;
     }

@@ -24,6 +24,7 @@ import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.ContainerExecutionMount;
 import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.containers.model.ResolvedDockerCommand;
+import org.nrg.containers.model.XnatCommandWrapper;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerExecutionService;
 import org.nrg.framework.exceptions.NrgRuntimeException;
@@ -174,7 +175,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
                                           final Map<String, String> runtimeInputValues,
                                           final UserI userI)
             throws NotFoundException, CommandResolutionException {
-        return CommandResolutionHelper.resolve(command, runtimeInputValues, userI, configService);
+        return CommandResolutionHelper.resolve(XnatCommandWrapper.passthrough(command), command, runtimeInputValues, userI, configService);
     }
 
     @Override

@@ -22,6 +22,21 @@ public class XnatCommandWrapper extends AbstractHibernateEntity {
     @JsonProperty("derived-inputs") private Set<XnatCommandInput> derivedInputs;
     @JsonProperty("output-handlers") private Set<XnatCommandOutput> outputHandlers;
 
+    public static XnatCommandWrapper passthrough(final Command command) {
+        final XnatCommandWrapper identity = new XnatCommandWrapper();
+        identity.command = command;
+
+        final Set<XnatCommandInput> externalInputs = Sets.newHashSet();
+        if (command.getInputs() != null) {
+            for (final CommandInput commandInput : command.getInputs()) {
+                externalInputs.add(XnatCommandInput.passthrough(commandInput));
+            }
+        }
+        identity.setExternalInputs(externalInputs);
+
+        return identity;
+    }
+
     public String getName() {
         return name;
     }
