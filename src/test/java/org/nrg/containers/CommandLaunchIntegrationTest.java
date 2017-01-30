@@ -141,7 +141,7 @@ public class CommandLaunchIntegrationTest {
         final ContainerExecution execution = commandService.resolveAndLaunchCommand(fakeReconAll.getId(), runtimeValues, mockUser);
         Thread.sleep(1000); // Wait for container to finish
 
-        final Map<String, String> inputValues = Maps.newHashMap(execution.getInputValues());
+        final Map<String, String> inputValues = Maps.newHashMap(execution.getCommandInputValues());
         assertEquals(
                 Sets.newHashSet("session", "label", "T1-scantype", "T1", "resource", "other-recon-all-args"),
                 inputValues.keySet());

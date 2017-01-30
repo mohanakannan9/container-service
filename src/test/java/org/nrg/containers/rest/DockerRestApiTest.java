@@ -291,7 +291,8 @@ public class DockerRestApiTest {
         // Must compare attribute-by-attribute
         assertEquals(expected.getName(), response.getName());
         assertEquals(expected.getDescription(), response.getDescription());
-        assertEquals(expected.getRun(), response.getRun());
+        assertEquals(expected.getCommandLine(), response.getCommandLine());
+        assertEquals(expected.getImage(), response.getImage());
         assertEquals(expected.getInputs(), response.getInputs());
         assertEquals(fakeImageId, response.getImage());
     }
@@ -349,7 +350,8 @@ public class DockerRestApiTest {
         // Must compare attribute-by-attribute
         assertEquals(expected.getName(), response.getName());
         assertEquals(expected.getDescription(), response.getDescription());
-        assertEquals(expected.getRun(), response.getRun());
+        assertEquals(expected.getCommandLine(), response.getCommandLine());
+        assertEquals(expected.getImage(), response.getImage());
         assertEquals(expected.getInputs(), response.getInputs());
         assertEquals(fakeImageId, response.getImage());
     }

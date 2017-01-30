@@ -19,6 +19,7 @@ import org.nrg.config.services.ConfigService;
 import org.nrg.containers.config.IntegrationTestConfig;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.ResolvedCommand;
+import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.containers.services.CommandService;
 import org.nrg.framework.constants.Scope;
 import org.nrg.xft.security.UserI;
@@ -35,6 +36,7 @@ import java.util.Set;
 
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -162,15 +164,16 @@ public class CommandResolutionTest {
 
         final ResolvedCommand resolvedCommand = commandService.resolveCommand(command, runtimeValues, mockUser);
         assertEquals((Long) command.getId(), resolvedCommand.getCommandId());
-        assertEquals(command.getImage(), resolvedCommand.getDockerImage());
+        assertEquals(command.getImage(), resolvedCommand.getImage());
         assertEquals(commandLine, resolvedCommand.getCommandLine());
         assertTrue(resolvedCommand.getEnvironmentVariables().isEmpty());
         assertTrue(resolvedCommand.getMountsIn().isEmpty());
         assertTrue(resolvedCommand.getMountsOut().isEmpty());
-        assertTrue(resolvedCommand.getPorts().isEmpty());
         assertTrue(resolvedCommand.getOutputs().isEmpty());
+        assertThat(resolvedCommand, instanceOf(ResolvedDockerCommand.class));
+        assertTrue(((ResolvedDockerCommand) resolvedCommand).getPorts().isEmpty());
 
-        final Map<String, String> inputValues = resolvedCommand.getInputValues();
+        final Map<String, String> inputValues = resolvedCommand.getCommandInputValues();
         assertThat(inputValues, hasEntry("T1-scantype", scantypeCsv));
         assertThat(inputValues, hasEntry("T1", scanUri));
         assertThat(inputValues, hasEntry("session", sessionUri));
@@ -258,15 +261,16 @@ public class CommandResolutionTest {
 
         final ResolvedCommand resolvedCommand = commandService.resolveCommand(command, runtimeValues, mockUser);
         assertEquals((Long) command.getId(), resolvedCommand.getCommandId());
-        assertEquals(command.getImage(), resolvedCommand.getDockerImage());
+        assertEquals(command.getImage(), resolvedCommand.getImage());
         assertEquals(commandLine, resolvedCommand.getCommandLine());
         assertTrue(resolvedCommand.getEnvironmentVariables().isEmpty());
         assertTrue(resolvedCommand.getMountsIn().isEmpty());
         assertTrue(resolvedCommand.getMountsOut().isEmpty());
-        assertTrue(resolvedCommand.getPorts().isEmpty());
         assertTrue(resolvedCommand.getOutputs().isEmpty());
+        assertThat(resolvedCommand, instanceOf(ResolvedDockerCommand.class));
+        assertTrue(((ResolvedDockerCommand) resolvedCommand).getPorts().isEmpty());
 
-        final Map<String, String> inputValues = resolvedCommand.getInputValues();
+        final Map<String, String> inputValues = resolvedCommand.getCommandInputValues();
         assertThat(inputValues, hasEntry(fileInputName, fileUri));
         assertThat(inputValues, hasEntry(resourceInputName, resourceUri));
         assertThat(inputValues, hasEntry(scanInputName, scanUri));
@@ -308,15 +312,16 @@ public class CommandResolutionTest {
 
         final ResolvedCommand resolvedCommand = commandService.resolveCommand(command, runtimeValues, mockUser);
         assertEquals((Long) command.getId(), resolvedCommand.getCommandId());
-        assertEquals(command.getImage(), resolvedCommand.getDockerImage());
+        assertEquals(command.getImage(), resolvedCommand.getImage());
         assertEquals(commandLine, resolvedCommand.getCommandLine());
         assertTrue(resolvedCommand.getEnvironmentVariables().isEmpty());
         assertTrue(resolvedCommand.getMountsIn().isEmpty());
         assertTrue(resolvedCommand.getMountsOut().isEmpty());
-        assertTrue(resolvedCommand.getPorts().isEmpty());
         assertTrue(resolvedCommand.getOutputs().isEmpty());
+        assertThat(resolvedCommand, instanceOf(ResolvedDockerCommand.class));
+        assertTrue(((ResolvedDockerCommand) resolvedCommand).getPorts().isEmpty());
 
-        final Map<String, String> inputValues = resolvedCommand.getInputValues();
+        final Map<String, String> inputValues = resolvedCommand.getCommandInputValues();
         assertThat(inputValues, hasEntry("project", projectUri));
     }
 
@@ -376,15 +381,16 @@ public class CommandResolutionTest {
 
         final ResolvedCommand resolvedCommand = commandService.resolveCommand(command, runtimeValues, mockUser);
         assertEquals((Long) command.getId(), resolvedCommand.getCommandId());
-        assertEquals(command.getImage(), resolvedCommand.getDockerImage());
+        assertEquals(command.getImage(), resolvedCommand.getImage());
         assertEquals(commandLine, resolvedCommand.getCommandLine());
         assertTrue(resolvedCommand.getEnvironmentVariables().isEmpty());
         assertTrue(resolvedCommand.getMountsIn().isEmpty());
         assertTrue(resolvedCommand.getMountsOut().isEmpty());
-        assertTrue(resolvedCommand.getPorts().isEmpty());
         assertTrue(resolvedCommand.getOutputs().isEmpty());
+        assertThat(resolvedCommand, instanceOf(ResolvedDockerCommand.class));
+        assertTrue(((ResolvedDockerCommand) resolvedCommand).getPorts().isEmpty());
 
-        final Map<String, String> inputValues = resolvedCommand.getInputValues();
+        final Map<String, String> inputValues = resolvedCommand.getCommandInputValues();
         assertThat(inputValues, hasEntry("project", projectUri));
         assertThat(inputValues, hasEntry("subject", subjectUri));
     }
@@ -442,15 +448,16 @@ public class CommandResolutionTest {
 
         final ResolvedCommand resolvedCommand = commandService.resolveCommand(command, runtimeValues, mockUser);
         assertEquals((Long) command.getId(), resolvedCommand.getCommandId());
-        assertEquals(command.getImage(), resolvedCommand.getDockerImage());
+        assertEquals(command.getImage(), resolvedCommand.getImage());
         assertEquals(commandLine, resolvedCommand.getCommandLine());
         assertTrue(resolvedCommand.getEnvironmentVariables().isEmpty());
         assertTrue(resolvedCommand.getMountsIn().isEmpty());
         assertTrue(resolvedCommand.getMountsOut().isEmpty());
-        assertTrue(resolvedCommand.getPorts().isEmpty());
         assertTrue(resolvedCommand.getOutputs().isEmpty());
+        assertThat(resolvedCommand, instanceOf(ResolvedDockerCommand.class));
+        assertTrue(((ResolvedDockerCommand) resolvedCommand).getPorts().isEmpty());
 
-        final Map<String, String> inputValues = resolvedCommand.getInputValues();
+        final Map<String, String> inputValues = resolvedCommand.getCommandInputValues();
         assertThat(inputValues, hasEntry("session", sessionUri));
         assertThat(inputValues, hasEntry("assessor", assessorUri));
     }
@@ -522,15 +529,16 @@ public class CommandResolutionTest {
 
         final ResolvedCommand resolvedCommand = commandService.resolveCommand(command, runtimeValues, mockUser);
         assertEquals((Long) command.getId(), resolvedCommand.getCommandId());
-        assertEquals(command.getImage(), resolvedCommand.getDockerImage());
+        assertEquals(command.getImage(), resolvedCommand.getImage());
         assertEquals(commandLine, resolvedCommand.getCommandLine());
         assertTrue(resolvedCommand.getEnvironmentVariables().isEmpty());
         assertTrue(resolvedCommand.getMountsIn().isEmpty());
         assertTrue(resolvedCommand.getMountsOut().isEmpty());
-        assertTrue(resolvedCommand.getPorts().isEmpty());
         assertTrue(resolvedCommand.getOutputs().isEmpty());
+        assertThat(resolvedCommand, instanceOf(ResolvedDockerCommand.class));
+        assertTrue(((ResolvedDockerCommand) resolvedCommand).getPorts().isEmpty());
 
-        final Map<String, String> inputValues = resolvedCommand.getInputValues();
+        final Map<String, String> inputValues = resolvedCommand.getCommandInputValues();
         assertThat(inputValues, hasEntry(siteConfigName, siteConfigContents));
         assertThat(inputValues, hasEntry(projectConfigName, projectConfigContents));
         assertThat(inputValues, hasEntry(projectInputName, projectUri));

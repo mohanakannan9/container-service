@@ -23,6 +23,7 @@ import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.ResolvedCommand;
+import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerExecutionService;
 import org.nrg.xdat.entities.AliasToken;
@@ -342,7 +343,7 @@ public class CommandRestApiTest {
                         "\"outputs\": []," +
                         "\"ports\": {}" +
                         "}";
-        final ResolvedCommand preparedResolvedCommand = mapper.readValue(preparedResolvedCommandJson, ResolvedCommand.class);
+        final ResolvedDockerCommand preparedResolvedCommand = mapper.readValue(preparedResolvedCommandJson, ResolvedDockerCommand.class);
         when(mockDockerControlApi.launchImage(preparedResolvedCommand)).thenReturn(fakeContainerId);
 
         // The (fake) container launch will be recorded in a (fake) ContainerExecution
@@ -400,7 +401,7 @@ public class CommandRestApiTest {
                         "\"outputs\": []," +
                         "\"ports\": {}" +
                         "}";
-        final ResolvedCommand preparedResolvedCommand = mapper.readValue(preparedResolvedCommandJson, ResolvedCommand.class);
+        final ResolvedDockerCommand preparedResolvedCommand = mapper.readValue(preparedResolvedCommandJson, ResolvedDockerCommand.class);
         when(mockDockerControlApi.launchImage(preparedResolvedCommand)).thenReturn(fakeContainerId);
 
         // The (fake) container launch will be recorded in a (fake) ContainerExecution
