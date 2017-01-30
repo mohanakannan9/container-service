@@ -111,11 +111,13 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     @Override
     public Command update(final Long id, final Command updated, final Boolean ignoreNull)
             throws NotFoundException {
-        final Command existing = get(id);
-        existing.update(updated, ignoreNull);
-
-        super.update(existing);
-        return existing;
+        // final Command existing = get(id);
+        // existing.update(updated, ignoreNull);
+        //
+        // super.update(existing);
+        // return existing;
+        // TODO re-write this to save a new version of the command
+        return null;
     }
 
     @Override
