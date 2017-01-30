@@ -176,26 +176,11 @@ public class ContainerFinalizeHelper {
 
 
         for (final ContainerExecutionOutput output: containerExecution.getOutputs()) {
-//            XnatModelObject created = null;
             try {
                 output.setCreated(uploadOutput(output));
             } catch (ContainerException | RuntimeException e) {
                 log.error("Cannot upload files for command output " + output.getName(), e);
             }
-//            if (created != null) {
-//                try {
-//                    output.setCreated(mapper.writeValueAsString(created));
-//                } catch (JsonProcessingException e) {
-//                    if (log.isErrorEnabled()) {
-//                        String message = prefix;
-//                        message += String.format("Files for output \"%s\" were uploaded and saved, but the JSON representation of the object thus created could not be recorded.", output.getName());
-//                        if (log.isDebugEnabled()) {
-//                            message += "\n" + created;
-//                        }
-//                        log.error(message, e);
-//                    }
-//                }
-//            }
         }
 
         log.info(prefix + "Done uploading outputs.");
@@ -243,19 +228,16 @@ public class ContainerFinalizeHelper {
             toUpload = Lists.newArrayList(new File(filePath));
         }
 
-        final String label = StringUtils.isNotBlank(output.getLabel()) ? output.getLabel() :
-                StringUtils.isNotBlank(mount.getResource()) ? mount.getResource() :
-                        mountName;
+        final String label = StringUtils.isNotBlank(output.getLabel()) ? output.getLabel() : mountName;
 
-        String parentUri = getInputValue(output.getParentInputName());
+        String parentUri = getInputValue(output.getHandledByXnatCommandInput());
         if (parentUri == null) {
-            throw new ContainerException(String.format(prefix + "Cannot upload output \"%s\". Could not instantiate parent input \"%s\".", output.getName(), output.getParentInputName()));
+            throw new ContainerException(String.format(prefix + "Cannot upload output \"%s\". Could not instantiate object from input \"%s\".", output.getName(), output.getHandledByXnatCommandInput()));
         }
         if (!parentUri.startsWith("/archive")) {
             parentUri = "/archive" + parentUri;
         }
 
-//        XnatModelObject created = null;
         String createdUri = null;
         switch (output.getType()) {
             case RESOURCE:
@@ -358,14 +340,14 @@ public class ContainerFinalizeHelper {
         if (log.isDebugEnabled()) {
             log.debug(String.format(prefix + "Getting URI for input \"%s\".", inputName));
         }
-//        if (inputCache.containsKey(inputName)) {
-//            if (log.isDebugEnabled()) {
-//                log.debug(prefix + "Input was cached.");
-//            }
-//            return inputCache.get(inputName);
-//        }
+       if (inputCache.containsKey(inputName)) {
+           if (log.isDebugEnabled()) {
+               log.debug(prefix + "Input was cached.");
+           }
+           return inputCache.get(inputName).getUri();
+       }
 
-        final Map<String, String> inputValues = containerExecution.getInputValues();
+        final Map<String, String> inputValues = containerExecution.getXnatInputValues();
         if (!inputValues.containsKey(inputName)) {
             if (log.isDebugEnabled()) {
                 log.debug(String.format(prefix + "No input found with name \"%s\". Input name set: %s", inputName, inputValues.keySet()));
@@ -373,28 +355,29 @@ public class ContainerFinalizeHelper {
             return null;
         }
 
-        return inputValues.get(inputName);
-//        try {
-//            final XnatModelObject input = mapper.readValue(inputValue, XnatModelObject.class);
-//            if (log.isDebugEnabled()) {
-//                log.debug(String.format(prefix + "Caching input \"%s\": %s", inputName, input));
-//            } else if (log.isInfoEnabled()){
-//                log.info(String.format(prefix + "Caching input \"%s\".", inputName));
-//            }
-//
-//            inputCache.put(inputName, input);
-//            return input;
-//        } catch (IOException e) {
-//            if (log.isDebugEnabled()) {
-//                // Yes, I know I checked for "debug" and am logging at "error".
-//                // I still want this to show up as "error" either way, but I only want the full object to
-//                // be logged if you opted into the firehose.
-//                log.error(prefix + "Could not deserialize input value:\n" + inputValue, e);
-//            } else {
-//                log.error(prefix + "Could not deserialize input value.", e);
-//            }
-//        }
-//
-//        return null;
+        final String inputValue = inputValues.get(inputName);
+
+        try {
+            final XnatModelObject input = mapper.readValue(inputValue, XnatModelObject.class);
+            if (log.isDebugEnabled()) {
+                log.debug(String.format(prefix + "Caching input \"%s\": %s", inputName, input));
+            } else if (log.isInfoEnabled()){
+                log.info(String.format(prefix + "Caching input \"%s\".", inputName));
+            }
+
+            inputCache.put(inputName, input);
+            return input.getUri();
+        } catch (IOException e) {
+            if (log.isDebugEnabled()) {
+                // Yes, I know I checked for "debug" and am logging at "error".
+                // I still want this to show up as "error" either way, but I only want the full object to
+                // be logged if you opted into the firehose.
+                log.error(prefix + "Could not deserialize input value:\n" + inputValue, e);
+            } else {
+                log.error(prefix + "Could not deserialize input value.", e);
+            }
+        }
+
+        return null;
     }
 }

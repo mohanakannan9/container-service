@@ -1307,15 +1307,15 @@ public class CommandResolutionHelper {
         }
 
         final List<ContainerExecutionMount> resolvedMounts = Lists.newArrayList();
-        for (final CommandMount mount : mountTemplates) {
-            log.info(String.format("Resolving mount \"%s\".", mount.getName()));
-            final ContainerExecutionMount resolvedMount = new ContainerExecutionMount(mount);
-            if (mount.isInput()) {
-                resolvedMount.setHostPath(resolveCommandMountHostPath(mount));
-            }
-//                mount.setRemotePath(resolveTemplate(mount.getRemotePath(), resolvedInputs));
-            resolvedMounts.add(resolvedMount);
-        }
+        // TODO Temporary comment-out to get code to compile for other tests
+        // for (final CommandMount mount : mountTemplates) {
+        //     log.info(String.format("Resolving mount \"%s\".", mount.getName()));
+        //     final ContainerExecutionMount resolvedMount = new ContainerExecutionMount(mount);
+        //     if (mount.isInput()) {
+        //         resolvedMount.setHostPath(resolveCommandMountHostPath(mount));
+        //     }
+        //     resolvedMounts.add(resolvedMount);
+        // }
 
         log.info("Done resolving mounts.");
         if (log.isDebugEnabled()) {
@@ -1326,86 +1326,87 @@ public class CommandResolutionHelper {
         return resolvedMounts;
     }
 
-    private String resolveCommandMountHostPath(final CommandMount mount) throws CommandMountResolutionException {
-        log.info(String.format("Resolving hostPath for mount \"%s\".", mount.getName()));
-
-        final String hostPath;
-        if (StringUtils.isNotBlank(mount.getFileInput())) {
-
-            final CommandInput sourceInput = resolvedXnatInputObjects.get(mount.getFileInput());
-            if (sourceInput == null || StringUtils.isBlank(sourceInput.getValue())) {
-                final String message = String.format("Cannot resolve mount \"%s\". Source input \"%s\" has no resolved value.", mount.getName(), mount.getFileInput());
-                throw new CommandMountResolutionException(message, mount);
-            }
-            final String sourceInputJson = sourceInput.getJsonRepresentation();
-            if (log.isDebugEnabled()) {
-                log.debug(String.format("Source input has type \"%s\".", sourceInput.getType()));
-            }
-            switch (sourceInput.getType()) {
-                case RESOURCE:
-                    try {
-                        final Resource resource = mapper.readValue(sourceInputJson, Resource.class);
-                        hostPath = resource.getDirectory();
-                    } catch (IOException e) {
-                        String message = "Source input is not a Resource.";
-                        if (log.isDebugEnabled()) {
-                            message += "\ninput: " + sourceInput;
-                        }
-                        throw new CommandMountResolutionException(message, mount, e);
-                    }
-                    break;
-                case FILE:
-                    hostPath = sourceInput.getValue();
-                    break;
-                case PROJECT:
-                    // Intentional fallthrough
-                case SUBJECT:
-                    // Intentional fallthrough
-                case SESSION:
-                    // Intentional fallthrough
-                case SCAN:
-                    // Intentional fallthrough
-                case ASSESSOR:
-                    if (log.isDebugEnabled()) {
-                        log.debug("Looking for child resources on source input.");
-                    }
-                    final List<Resource> resources = JsonPath.parse(sourceInputJson).read("$.resources[*]", new TypeRef<List<Resource>>(){});
-                    if (resources == null || resources.isEmpty()) {
-                        throw new CommandMountResolutionException(String.format("Could not find any resources for source input \"%s\".", sourceInput), mount);
-                    }
-
-                    if (StringUtils.isBlank(mount.getResource()) || resources.size() == 1) {
-                        hostPath = resources.get(0).getDirectory();
-                    } else {
-                        String directory = null;
-                        for (final Resource resource : resources) {
-                            if (resource.getLabel().equals(mount.getResource())) {
-                                directory = resource.getDirectory();
-                                break;
-                            }
-                        }
-                        if (StringUtils.isNotBlank(directory)) {
-                            hostPath = directory;
-                        } else {
-                            throw new CommandMountResolutionException(String.format("Source input \"%s\" has no resource with label \"%s\".", sourceInput.getName(), mount.getResource()), mount);
-                        }
-                    }
-
-                    break;
-                default:
-                    throw new CommandMountResolutionException("I don't know how to resolve a mount from an input of type " + sourceInput.getType(), mount);
-            }
-        } else {
-            throw new CommandMountResolutionException("I don't know how to resolve a mount without a source input.", mount);
-        }
-
-        if (StringUtils.isBlank(hostPath)) {
-            throw new CommandMountResolutionException("Could not resolve command mount host path.", mount);
-        }
-
-        log.info("Resolved host path: " + hostPath);
-        return hostPath;
-    }
+    // TODO Temporary comment-out to get code to compile for other tests
+    // private String resolveCommandMountHostPath(final CommandMount mount) throws CommandMountResolutionException {
+    //     log.info(String.format("Resolving hostPath for mount \"%s\".", mount.getName()));
+    //
+    //     final String hostPath;
+    //     if (StringUtils.isNotBlank(mount.getFileInput())) {
+    //
+    //         final CommandInput sourceInput = resolvedXnatInputObjects.get(mount.getFileInput());
+    //         if (sourceInput == null || StringUtils.isBlank(sourceInput.getValue())) {
+    //             final String message = String.format("Cannot resolve mount \"%s\". Source input \"%s\" has no resolved value.", mount.getName(), mount.getFileInput());
+    //             throw new CommandMountResolutionException(message, mount);
+    //         }
+    //         final String sourceInputJson = sourceInput.getJsonRepresentation();
+    //         if (log.isDebugEnabled()) {
+    //             log.debug(String.format("Source input has type \"%s\".", sourceInput.getType()));
+    //         }
+    //         switch (sourceInput.getType()) {
+    //             case RESOURCE:
+    //                 try {
+    //                     final Resource resource = mapper.readValue(sourceInputJson, Resource.class);
+    //                     hostPath = resource.getDirectory();
+    //                 } catch (IOException e) {
+    //                     String message = "Source input is not a Resource.";
+    //                     if (log.isDebugEnabled()) {
+    //                         message += "\ninput: " + sourceInput;
+    //                     }
+    //                     throw new CommandMountResolutionException(message, mount, e);
+    //                 }
+    //                 break;
+    //             case FILE:
+    //                 hostPath = sourceInput.getValue();
+    //                 break;
+    //             case PROJECT:
+    //                 // Intentional fallthrough
+    //             case SUBJECT:
+    //                 // Intentional fallthrough
+    //             case SESSION:
+    //                 // Intentional fallthrough
+    //             case SCAN:
+    //                 // Intentional fallthrough
+    //             case ASSESSOR:
+    //                 if (log.isDebugEnabled()) {
+    //                     log.debug("Looking for child resources on source input.");
+    //                 }
+    //                 final List<Resource> resources = JsonPath.parse(sourceInputJson).read("$.resources[*]", new TypeRef<List<Resource>>(){});
+    //                 if (resources == null || resources.isEmpty()) {
+    //                     throw new CommandMountResolutionException(String.format("Could not find any resources for source input \"%s\".", sourceInput), mount);
+    //                 }
+    //
+    //                 if (StringUtils.isBlank(mount.getResource()) || resources.size() == 1) {
+    //                     hostPath = resources.get(0).getDirectory();
+    //                 } else {
+    //                     String directory = null;
+    //                     for (final Resource resource : resources) {
+    //                         if (resource.getLabel().equals(mount.getResource())) {
+    //                             directory = resource.getDirectory();
+    //                             break;
+    //                         }
+    //                     }
+    //                     if (StringUtils.isNotBlank(directory)) {
+    //                         hostPath = directory;
+    //                     } else {
+    //                         throw new CommandMountResolutionException(String.format("Source input \"%s\" has no resource with label \"%s\".", sourceInput.getName(), mount.getResource()), mount);
+    //                     }
+    //                 }
+    //
+    //                 break;
+    //             default:
+    //                 throw new CommandMountResolutionException("I don't know how to resolve a mount from an input of type " + sourceInput.getType(), mount);
+    //         }
+    //     } else {
+    //         throw new CommandMountResolutionException("I don't know how to resolve a mount without a source input.", mount);
+    //     }
+    //
+    //     if (StringUtils.isBlank(hostPath)) {
+    //         throw new CommandMountResolutionException("Could not resolve command mount host path.", mount);
+    //     }
+    //
+    //     log.info("Resolved host path: " + hostPath);
+    //     return hostPath;
+    // }
 
     private String resolveTemplate(final String template)
             throws CommandResolutionException {
