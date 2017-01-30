@@ -21,6 +21,7 @@ public class HibernateXnatCommandWrapperService
             return;
         }
         Hibernate.initialize(xnatCommandWrapper);
+        Hibernate.initialize(xnatCommandWrapper.getOutputHandlers());
 
         initializeInputList(xnatCommandWrapper.getExternalInputs());
         initializeInputList(xnatCommandWrapper.getDerivedInputs());
@@ -32,7 +33,6 @@ public class HibernateXnatCommandWrapperService
 
             for (final XnatCommandInput input : inputs) {
                 Hibernate.initialize(input.getProvidesValueForCommandInputs());
-                Hibernate.initialize(input.getCommandOutputHandlers());
             }
         }
     }
