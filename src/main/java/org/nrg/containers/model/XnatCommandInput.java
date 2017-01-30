@@ -22,7 +22,7 @@ public class XnatCommandInput {
     @JsonProperty("derived-from-xnat-input") private String derivedFromXnatInput;
     @JsonProperty("derived-from-xnat-object-property") private String derivedFromXnatObjectProperty;
     private String matcher;
-    @JsonProperty("provides-value-for-command-inputs") private Set<String> providesValueForCommandInputs;
+    @JsonProperty("provides-value-for-command-input") private String providesValueForCommandInput;
     @JsonProperty("default-value") private String defaultValue;
     @JsonProperty("user-settable") private Boolean userSettable = true;
     @JsonProperty("replacement-key") private String rawReplacementKey;
@@ -35,7 +35,7 @@ public class XnatCommandInput {
         identityInput.setName(commandInput.getName());
         identityInput.setType(XnatCommandInput.Type.valueOf(commandInput.getType().getName()));
         identityInput.setMatcher(commandInput.getMatcher());
-        identityInput.setProvidesValueForCommandInputs(Sets.newHashSet(commandInput.getName()));
+        identityInput.setProvidesValueForCommandInput(commandInput.getName());
         identityInput.setDefaultValue(commandInput.getDefaultValue());
         identityInput.setUserSettable(true);
         identityInput.setRequired(commandInput.isRequired());
@@ -83,15 +83,12 @@ public class XnatCommandInput {
         this.matcher = matcher;
     }
 
-    @ElementCollection
-    public Set<String> getProvidesValueForCommandInputs() {
-        return providesValueForCommandInputs;
+    public String getProvidesValueForCommandInput() {
+        return providesValueForCommandInput;
     }
 
-    public void setProvidesValueForCommandInputs(final Set<String> providesValueForCommandInput) {
-        this.providesValueForCommandInputs = providesValueForCommandInput == null ?
-                Sets.<String>newHashSet() :
-                providesValueForCommandInput;
+    public void setProvidesValueForCommandInput(final String providesValueForCommandInput) {
+        this.providesValueForCommandInput = providesValueForCommandInput;
     }
 
     public String getDefaultValue() {
@@ -165,7 +162,7 @@ public class XnatCommandInput {
                 Objects.equals(this.derivedFromXnatInput, that.derivedFromXnatInput) &&
                 Objects.equals(this.derivedFromXnatObjectProperty, that.derivedFromXnatObjectProperty) &&
                 Objects.equals(this.matcher, that.matcher) &&
-                Objects.equals(this.providesValueForCommandInputs, that.providesValueForCommandInputs) &&
+                Objects.equals(this.providesValueForCommandInput, that.providesValueForCommandInput) &&
                 Objects.equals(this.defaultValue, that.defaultValue) &&
                 Objects.equals(this.userSettable, that.userSettable) &&
                 Objects.equals(this.rawReplacementKey, that.rawReplacementKey) &&
@@ -175,7 +172,7 @@ public class XnatCommandInput {
     @Override
     public int hashCode() {
         return Objects.hash(name, type, derivedFromXnatInput, derivedFromXnatObjectProperty, matcher,
-                providesValueForCommandInputs, defaultValue, userSettable, rawReplacementKey, required);
+                providesValueForCommandInput, defaultValue, userSettable, rawReplacementKey, required);
     }
 
     @Override
@@ -186,7 +183,7 @@ public class XnatCommandInput {
                 .add("derivedFromXnatInput", derivedFromXnatInput)
                 .add("derivedFromXnatObjectProperty", derivedFromXnatObjectProperty)
                 .add("matcher", matcher)
-                .add("providesValueForCommandInputs", providesValueForCommandInputs)
+                .add("providesValueForCommandInput", providesValueForCommandInput)
                 .add("defaultValue", defaultValue)
                 .add("userSettable", userSettable)
                 .add("rawReplacementKey", rawReplacementKey)

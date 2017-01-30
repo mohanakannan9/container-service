@@ -7,10 +7,14 @@ import org.nrg.config.services.ConfigService;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.api.DockerControlApi;
 import org.nrg.containers.daos.CommandDao;
+import org.nrg.containers.daos.XnatCommandWrapperRepository;
 import org.nrg.containers.model.Command;
+import org.nrg.containers.model.XnatCommandWrapper;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerExecutionService;
+import org.nrg.containers.services.XnatCommandWrapperService;
 import org.nrg.containers.services.impl.HibernateCommandService;
+import org.nrg.containers.services.impl.HibernateXnatCommandWrapperService;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.transporter.TransportService;
 import org.nrg.transporter.TransportServiceImpl;
@@ -92,6 +96,16 @@ public class CommandTestConfig {
     }
 
     @Bean
+    public XnatCommandWrapperService xnatCommandWrapperService() {
+        return new HibernateXnatCommandWrapperService();
+    }
+
+    @Bean
+    public XnatCommandWrapperRepository xnatCommandWrapperRepository() {
+        return new XnatCommandWrapperRepository();
+    }
+
+    @Bean
     public CommandDao commandDao() {
         return new CommandDao();
     }
@@ -122,7 +136,8 @@ public class CommandTestConfig {
         bean.setDataSource(dataSource);
         bean.setHibernateProperties(properties);
         bean.setAnnotatedClasses(
-                Command.class);
+                Command.class,
+                XnatCommandWrapper.class);
         return bean;
     }
 

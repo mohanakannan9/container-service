@@ -52,10 +52,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.nrg.containers.model.XnatCommandInput.Type.PROJECT;
-import static org.nrg.containers.model.XnatCommandInput.Type.SESSION;
-import static org.nrg.containers.model.XnatCommandInput.Type.SUBJECT;
-
 public class CommandResolutionHelper {
     private static final Logger log = LoggerFactory.getLogger(CommandResolutionHelper.class);
     private static final String JSONPATH_SUBSTRING_REGEX = "\\^(.+)\\^";
@@ -446,7 +442,11 @@ public class CommandResolutionHelper {
             resolvedXnatWrapperInputValuesByName.put(externalInput.getName(), externalInput.getValue());
 
             // If this xnat input provides any command input values, set them now
-            setPreresolvedCommandInputValues(externalInput.getProvidesValueForCommandInputs(), externalInput.getValue());
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Found value for command input \"%s\": \"%s\".",
+                        externalInput.getProvidesValueForCommandInput(), externalInput.getValue()));
+            }
+            resolvedXnatInputValuesByCommandInputName.put(externalInput.getProvidesValueForCommandInput(), externalInput.getValue());
 
             final String replacementKey = externalInput.getReplacementKey();
             if (StringUtils.isBlank(replacementKey)) {
@@ -820,7 +820,11 @@ public class CommandResolutionHelper {
                 resolvedXnatWrapperInputValuesByName.put(derivedInput.getName(), derivedInput.getValue());
 
                 // If this xnat input provides any command input values, set them now
-                setPreresolvedCommandInputValues(derivedInput.getProvidesValueForCommandInputs(), derivedInput.getValue());
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("Found value for command input \"%s\": \"%s\".",
+                            derivedInput.getProvidesValueForCommandInput(), derivedInput.getValue()));
+                }
+                resolvedXnatInputValuesByCommandInputName.put(derivedInput.getProvidesValueForCommandInput(), derivedInput.getValue());
 
                 // // If this xnat input accepts any command outputs, note that now
                 // setCommandOutputDestinationXnatInputNames(derivedInput.getCommandOutputHandlers(), derivedInput.getName());
@@ -838,17 +842,6 @@ public class CommandResolutionHelper {
 
         log.info("Done resolving xnat wrapper inputs.");
         return resolvedXnatWrapperInputValuesByName;
-    }
-
-    private void setPreresolvedCommandInputValues(final Set<String> commandInputNames, final String xnatInputValue) {
-        if (commandInputNames != null && !commandInputNames.isEmpty()) {
-            for (final String commandInputName : commandInputNames) {
-                if (log.isDebugEnabled()) {
-                    log.debug(String.format("Found value for command input \"%s\": \"%s\".", commandInputName, xnatInputValue));
-                }
-                resolvedXnatInputValuesByCommandInputName.put(commandInputName, xnatInputValue);
-            }
-        }
     }
 
     private Map<String, String> resolveInputs() throws CommandResolutionException {

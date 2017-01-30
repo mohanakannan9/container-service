@@ -32,7 +32,7 @@ public class HibernateXnatCommandWrapperService
             Hibernate.initialize(inputs);
 
             for (final XnatCommandInput input : inputs) {
-                Hibernate.initialize(input.getProvidesValueForCommandInputs());
+                Hibernate.initialize(input.getProvidesValueForCommandInput());
             }
         }
     }
