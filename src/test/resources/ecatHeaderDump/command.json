@@ -1,23 +1,22 @@
 {
     "name": "ecat-dump scan",
     "description": "Runs ECAT dump tools on an XNAT scan's ECAT resource",
-    "docker-image": "ecat-dump",
-    "run": {
-        "command-line": "lmhdr /input >> /output/ecat-dump.txt && lshdr /input >> /output/ecat-dump.txt",
-        "mounts": [
-            {
-                "name": "ecat-in",
-                "type": "input",
-                "path": "/input",
-                "file-input": "scan-ecat-file"
-            },
-            {
-                "name": "dump-out",
-                "type": "output",
-                "path": "/output"
-            }
-        ]
-    },
+    "type": "docker",
+    "image": "ecat-dump",
+    "command-line": "lmhdr /input >> /output/ecat-dump.txt && lshdr /input >> /output/ecat-dump.txt",
+    "mounts": [
+        {
+            "name": "ecat-in",
+            "type": "input",
+            "path": "/input",
+            "file-input": "scan-ecat-file"
+        },
+        {
+            "name": "dump-out",
+            "type": "output",
+            "path": "/output"
+        }
+    ],
     "inputs": [
         {
             "name": "scan",

@@ -284,14 +284,4 @@ public class CommandTest {
 
         assertEquals("cmd --flag=bar -b", resolvedCommand2.getCommandLine());
     }
-
-    @Test
-    public void testCreateEcatHeaderDump() throws Exception {
-        // A User was attempting to create the command in this resource.
-        // Spring didn't tell us why. See CS-70.
-        final String dir = Resources.getResource("ecatHeaderDump").getPath().replace("%20", " ");
-        final String commandJsonFile = dir + "/command.json";
-        final Command ecatHeaderDump = mapper.readValue(new File(commandJsonFile), Command.class);
-        commandService.create(ecatHeaderDump);
-    }
 }
