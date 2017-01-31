@@ -11,7 +11,7 @@ import java.util.Objects;
 @Embeddable
 public class XnatCommandOutput {
     @JsonProperty("accepts-command-output") private String commandOutputName;
-    @JsonProperty("as-child-of-xnat-input-object") private String xnatInputName;
+    @JsonProperty("as-child-of-xnat-input") private String xnatInputName;
     private Type type;
     private String label;
 

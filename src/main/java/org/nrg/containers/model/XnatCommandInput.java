@@ -26,7 +26,7 @@ public class XnatCommandInput {
     @JsonProperty("default-value") private String defaultValue;
     @JsonProperty("user-settable") private Boolean userSettable = true;
     @JsonProperty("replacement-key") private String rawReplacementKey;
-    private Boolean required;
+    private boolean required = false;
     private String value;
     private String jsonRepresentation;
 
