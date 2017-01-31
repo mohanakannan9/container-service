@@ -5,6 +5,7 @@ import com.google.common.base.MoreObjects.ToStringHelper;
 import com.google.common.collect.Maps;
 import org.hibernate.envers.Audited;
 
+import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.DiscriminatorType;
 import javax.persistence.DiscriminatorValue;
@@ -26,7 +27,7 @@ public class DockerCommand extends Command {
     private String hash;
     private Map<String, String> ports;
 
-    @Enumerated(EnumType.STRING)
+    @Transient
     public CommandType getType() {
         return type;
     }

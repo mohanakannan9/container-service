@@ -28,12 +28,12 @@ import java.util.Set;
 
 @Entity
 @Audited
-@JsonTypeInfo(use = Id.NONE, include = As.PROPERTY, property = "type", visible = true)
+@JsonTypeInfo(use = Id.NAME, include = As.PROPERTY, property = "type")
 @JsonSubTypes({
         @JsonSubTypes.Type(value = DockerCommand.class, name = "docker")
 })
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-@DiscriminatorColumn(name = "TYPE")
+@DiscriminatorColumn(name = "type")
 public abstract class Command extends AbstractHibernateEntity {
     private String name;
     private String label;

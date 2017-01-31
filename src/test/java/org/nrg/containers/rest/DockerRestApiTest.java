@@ -253,7 +253,8 @@ public class DockerRestApiTest {
         final String labelTestCommandListJson =
                 "[{\"name\": \"label-test\"," +
                         "\"description\": \"Command to test label-parsing and command-importing code\"," +
-                        "\"run\": {\"command-line\": \"#CMD#\"}," +
+                        "\"type\": \"docker\", " +
+                        "\"command-line\": \"#CMD#\"," +
                         "\"inputs\": [{\"name\": \"CMD\", \"description\": \"Command to run\", \"required\": true}]}]";
         final List<Command> expectedList = mapper.readValue(labelTestCommandListJson, new TypeReference<List<Command>>(){});
         final Command expected = expectedList.get(0);
@@ -292,7 +293,7 @@ public class DockerRestApiTest {
         assertEquals(expected.getName(), response.getName());
         assertEquals(expected.getDescription(), response.getDescription());
         assertEquals(expected.getCommandLine(), response.getCommandLine());
-        assertEquals(expected.getImage(), response.getImage());
+        assertEquals(fakeImageId, response.getImage()); // Did not set image ID on "expected"
         assertEquals(expected.getInputs(), response.getInputs());
         assertEquals(fakeImageId, response.getImage());
     }
@@ -302,16 +303,15 @@ public class DockerRestApiTest {
     public void testSaveFromLabels2() throws Exception {
         final String labelTestCommandListJson =
                 "[{\"name\":\"dcm2niix-scan\", \"description\":\"Run dcm2niix on a scan's DICOMs\", " +
-                        "\"run\": {" +
-                            "\"command-line\": \"/run/dcm2niix-scan.sh #scanId# #sessionId#\", " +
-                            "\"mounts\": [" +
-                                "{\"name\":\"DICOM\", \"type\":\"input\", \"path\":\"/input\"}," +
-                                "{\"name\":\"NIFTI\", \"type\":\"output\", \"path\":\"/output\"}" +
-                            "]" +
-                        "}," +
+                        "\"type\": \"docker\", " +
+                        "\"command-line\": \"/run/dcm2niix-scan.sh #scanId# #sessionId#\", " +
+                        "\"mounts\": [" +
+                            "{\"name\":\"DICOM\", \"path\":\"/input\"}," +
+                            "{\"name\":\"NIFTI\", \"path\":\"/output\"}" +
+                        "]," +
                         "\"inputs\":[" +
-                            "{\"name\":\"scanId\", \"required\":true, \"parent-property\":\"ID\"}, " +
-                            "{\"name\":\"sessionId\", \"required\":true, \"parent-property\":\"ID\"}" +
+                            "{\"name\":\"scanId\", \"required\":true}, " +
+                            "{\"name\":\"sessionId\", \"required\":true}" +
                         "] " +
                     "}]";
         final List<Command> expectedList = mapper.readValue(labelTestCommandListJson, new TypeReference<List<Command>>(){});
@@ -351,7 +351,7 @@ public class DockerRestApiTest {
         assertEquals(expected.getName(), response.getName());
         assertEquals(expected.getDescription(), response.getDescription());
         assertEquals(expected.getCommandLine(), response.getCommandLine());
-        assertEquals(expected.getImage(), response.getImage());
+        assertEquals(fakeImageId, response.getImage()); // Did not set image ID on "expected"
         assertEquals(expected.getInputs(), response.getInputs());
         assertEquals(fakeImageId, response.getImage());
     }

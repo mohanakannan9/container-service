@@ -9,7 +9,9 @@ import org.nrg.containers.api.DockerControlApi;
 import org.nrg.containers.daos.CommandDao;
 import org.nrg.containers.daos.ContainerExecutionRepository;
 import org.nrg.containers.model.Command;
+import org.nrg.containers.model.DockerCommand;
 import org.nrg.containers.model.DockerServerPrefsBean;
+import org.nrg.containers.model.XnatCommandWrapper;
 import org.nrg.containers.rest.DockerRestApi;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerExecutionService;
@@ -156,7 +158,9 @@ public class DockerRestApiTestConfig extends WebSecurityConfigurerAdapter {
         bean.setDataSource(dataSource);
         bean.setHibernateProperties(properties);
         bean.setAnnotatedClasses(
-                Command.class);
+                Command.class,
+                DockerCommand.class,
+                XnatCommandWrapper.class);
         return bean;
     }
 
