@@ -8,6 +8,7 @@ import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.api.DockerControlApi;
 import org.nrg.containers.daos.CommandDao;
 import org.nrg.containers.daos.ContainerExecutionRepository;
+import org.nrg.containers.daos.XnatCommandWrapperRepository;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.DockerCommand;
 import org.nrg.containers.model.DockerServerPrefsBean;
@@ -17,9 +18,11 @@ import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerExecutionService;
 import org.nrg.containers.services.DockerHubService;
 import org.nrg.containers.services.DockerService;
+import org.nrg.containers.services.XnatCommandWrapperService;
 import org.nrg.containers.services.impl.DockerServiceImpl;
 import org.nrg.containers.services.impl.HibernateCommandService;
 import org.nrg.containers.services.impl.HibernateContainerExecutionService;
+import org.nrg.containers.services.impl.HibernateXnatCommandWrapperService;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.services.NrgPreferenceService;
@@ -120,14 +123,25 @@ public class DockerRestApiTestConfig extends WebSecurityConfigurerAdapter {
                                          final SiteConfigPreferences siteConfigPreferences,
                                          final TransportService transporter,
                                          final ContainerExecutionService containerExecutionService,
-                                         final ConfigService configService) {
+                                         final ConfigService configService,
+                                         final XnatCommandWrapperService xnatCommandWrapperService) {
         return new HibernateCommandService(controlApi, aliasTokenService, siteConfigPreferences,
-                transporter, containerExecutionService, configService);
+                transporter, containerExecutionService, configService, xnatCommandWrapperService);
     }
 
     @Bean
     public CommandDao commandDao() {
         return new CommandDao();
+    }
+
+    @Bean
+    public XnatCommandWrapperService xnatCommandWrapperService() {
+        return new HibernateXnatCommandWrapperService();
+    }
+
+    @Bean
+    public XnatCommandWrapperRepository xnatCommandWrapperRepository() {
+        return new XnatCommandWrapperRepository();
     }
 
     @Bean

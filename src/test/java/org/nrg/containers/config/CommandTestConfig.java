@@ -91,9 +91,10 @@ public class CommandTestConfig {
                                          final SiteConfigPreferences siteConfigPreferences,
                                          final TransportService transporter,
                                          final ContainerExecutionService containerExecutionService,
-                                         final ConfigService configService) {
+                                         final ConfigService configService,
+                                         final XnatCommandWrapperService xnatCommandWrapperService) {
         return new HibernateCommandService(controlApi, aliasTokenService, siteConfigPreferences,
-                transporter, containerExecutionService, configService);
+                transporter, containerExecutionService, configService, xnatCommandWrapperService);
     }
 
     @Bean

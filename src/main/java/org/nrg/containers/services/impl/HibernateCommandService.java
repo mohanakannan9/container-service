@@ -27,6 +27,7 @@ import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.containers.model.XnatCommandWrapper;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerExecutionService;
+import org.nrg.containers.services.XnatCommandWrapperService;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
@@ -53,12 +54,13 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         implements CommandService {
     private static final Logger log = LoggerFactory.getLogger(HibernateCommandService.class);
 
-    private ContainerControlApi controlApi;
-    private AliasTokenService aliasTokenService;
-    private SiteConfigPreferences siteConfigPreferences;
-    private TransportService transporter;
-    private ContainerExecutionService containerExecutionService;
-    private ConfigService configService;
+    private final ContainerControlApi controlApi;
+    private final AliasTokenService aliasTokenService;
+    private final SiteConfigPreferences siteConfigPreferences;
+    private final TransportService transporter;
+    private final ContainerExecutionService containerExecutionService;
+    private final ConfigService configService;
+    private final XnatCommandWrapperService xnatCommandWrapperService;
 
     @Autowired
     public HibernateCommandService(final ContainerControlApi controlApi,
@@ -66,13 +68,15 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
                                    final SiteConfigPreferences siteConfigPreferences,
                                    final TransportService transporter,
                                    final ContainerExecutionService containerExecutionService,
-                                   final ConfigService configService) {
+                                   final ConfigService configService,
+                                   final XnatCommandWrapperService xnatCommandWrapperService) {
         this.controlApi = controlApi;
         this.aliasTokenService = aliasTokenService;
         this.siteConfigPreferences = siteConfigPreferences;
         this.transporter = transporter;
         this.containerExecutionService = containerExecutionService;
         this.configService = configService;
+        this.xnatCommandWrapperService = xnatCommandWrapperService;
     }
 
     @Override
