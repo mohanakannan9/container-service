@@ -33,7 +33,7 @@ public class XnatCommandInput {
     public static XnatCommandInput passthrough(final CommandInput commandInput) {
         final XnatCommandInput identityInput = new XnatCommandInput();
         identityInput.setName(commandInput.getName());
-        identityInput.setType(XnatCommandInput.Type.valueOf(commandInput.getType().getName()));
+        identityInput.setType(XnatCommandInput.Type.valueOf(commandInput.getType().getName().toUpperCase()));
         identityInput.setMatcher(commandInput.getMatcher());
         identityInput.setProvidesValueForCommandInput(commandInput.getName());
         identityInput.setDefaultValue(commandInput.getDefaultValue());
