@@ -140,7 +140,16 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
 
     @Override
     public Command create(final Command command) throws NrgRuntimeException {
+        return create(command, true);
+    }
+
+    public Command create(final Command command, final boolean saveCommandWrappers) throws NrgRuntimeException {
         try {
+            if (saveCommandWrappers && command.getXnatCommandWrappers() != null) {
+                for (final XnatCommandWrapper xnatCommandWrapper : command.getXnatCommandWrappers()) {
+                    xnatCommandWrapperService.create(xnatCommandWrapper);
+                }
+            }
             return super.create(command);
         } catch (ConstraintViolationException e) {
             throw new NrgServiceRuntimeException("A command already exists with this name and docker image ID.");
