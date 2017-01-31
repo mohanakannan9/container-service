@@ -8,6 +8,9 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinColumns;
+import javax.persistence.JoinTable;
 import javax.persistence.ManyToOne;
 import java.util.Objects;
 import java.util.Set;
@@ -54,6 +57,7 @@ public class XnatCommandWrapper extends AbstractHibernateEntity {
     }
 
     @ManyToOne
+    @JoinColumn(name = "command_fk", insertable = false, updatable = false)
     public Command getCommand() {
         return command;
     }

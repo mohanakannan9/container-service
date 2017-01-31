@@ -13,8 +13,13 @@ import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.envers.Audited;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
+import javax.persistence.DiscriminatorColumn;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Inheritance;
+import javax.persistence.InheritanceType;
 import javax.persistence.OneToMany;
 import javax.persistence.Transient;
 import java.util.Map;
@@ -27,6 +32,8 @@ import java.util.Set;
 @JsonSubTypes({
         @JsonSubTypes.Type(value = DockerCommand.class, name = "docker")
 })
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "TYPE")
 public abstract class Command extends AbstractHibernateEntity {
     private String name;
     private String label;
@@ -43,7 +50,15 @@ public abstract class Command extends AbstractHibernateEntity {
     private Set<CommandOutput> outputs;
     @JsonProperty("xnat") private Set<XnatCommandWrapper> xnatCommandWrappers;
 
+    @Transient
     public abstract CommandType getType();
+
+    // @javax.persistence.Id
+    // @GeneratedValue(strategy = GenerationType.TABLE)
+    // // @Override
+    // public long getId() {
+    //     return super.getId();
+    // }
 
     public String getName() {
         return name;
@@ -169,7 +184,7 @@ public abstract class Command extends AbstractHibernateEntity {
                 outputs;
     }
 
-    @OneToMany
+    @OneToMany(mappedBy = "command")
     public Set<XnatCommandWrapper> getXnatCommandWrappers() {
         return xnatCommandWrappers;
     }

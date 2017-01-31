@@ -9,6 +9,7 @@ import org.nrg.containers.api.DockerControlApi;
 import org.nrg.containers.daos.CommandDao;
 import org.nrg.containers.daos.XnatCommandWrapperRepository;
 import org.nrg.containers.model.Command;
+import org.nrg.containers.model.DockerCommand;
 import org.nrg.containers.model.XnatCommandWrapper;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerExecutionService;
@@ -137,6 +138,7 @@ public class CommandTestConfig {
         bean.setHibernateProperties(properties);
         bean.setAnnotatedClasses(
                 Command.class,
+                DockerCommand.class,
                 XnatCommandWrapper.class);
         return bean;
     }

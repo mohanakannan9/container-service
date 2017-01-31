@@ -10,13 +10,14 @@ import javax.persistence.DiscriminatorType;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.Transient;
 import java.util.Map;
 import java.util.Objects;
 
 @Entity
 @Audited
-@DiscriminatorColumn(name = "type", discriminatorType = DiscriminatorType.STRING)
 @DiscriminatorValue("docker")
 public class DockerCommand extends Command {
     public static final CommandType type = CommandType.DOCKER;
@@ -25,9 +26,12 @@ public class DockerCommand extends Command {
     private String hash;
     private Map<String, String> ports;
 
+    @Enumerated(EnumType.STRING)
     public CommandType getType() {
         return type;
     }
+
+    public void setType(final CommandType type) {}
 
     public String getIndex() {
         return index;
