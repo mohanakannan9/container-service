@@ -9,7 +9,6 @@ import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
 import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
-import org.hibernate.Hibernate;
 import org.hibernate.exception.ConstraintViolationException;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.api.ContainerControlApi;
@@ -123,19 +122,6 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         // return existing;
         // TODO re-write this to save a new version of the command
         return null;
-    }
-
-    @Override
-    public void initialize(final Command command) {
-        if (command == null) {
-            return;
-        }
-        Hibernate.initialize(command);
-        Hibernate.initialize(command.getEnvironmentVariables());
-        Hibernate.initialize(command.getMounts());
-        Hibernate.initialize(command.getInputs());
-        Hibernate.initialize(command.getOutputs());
-        Hibernate.initialize(command.getXnatCommandWrappers());
     }
 
     @Override
