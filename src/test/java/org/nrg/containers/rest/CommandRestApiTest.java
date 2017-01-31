@@ -157,7 +157,7 @@ public class CommandRestApiTest {
         final String path = "/commands";
 
         final String commandJson =
-                "{\"name\": \"one\", \"docker-image\":\"" + FAKE_DOCKER_IMAGE + "\"}";
+                "{\"name\": \"one\", \"type\": \"docker\", \"image\":\"" + FAKE_DOCKER_IMAGE + "\"}";
         final Command command = mapper.readValue(commandJson, Command.class);
         final Command created = commandService.create(command);
 
@@ -190,7 +190,7 @@ public class CommandRestApiTest {
         final String pathTemplate = "/commands/%d";
 
         final String commandJson =
-                "{\"name\": \"one\", \"docker-image\":\"" + FAKE_DOCKER_IMAGE + "\"}";
+                "{\"name\": \"one\", \"type\": \"docker\", \"image\":\"" + FAKE_DOCKER_IMAGE + "\"}";
         final Command command = mapper.readValue(commandJson, Command.class);
         final Command created = commandService.create(command);
 
@@ -221,7 +221,7 @@ public class CommandRestApiTest {
         final String path = "/commands";
 
         final String commandJson =
-                "{\"name\": \"toCreate\", \"docker-image\":\"" + FAKE_DOCKER_IMAGE + "\"}";
+                "{\"name\": \"toCreate\", \"type\": \"docker\", \"image\":\"" + FAKE_DOCKER_IMAGE + "\"}";
 
         final MockHttpServletRequestBuilder request =
                 post(path).content(commandJson).contentType(JSON)
@@ -247,9 +247,6 @@ public class CommandRestApiTest {
         assertEquals(FAKE_DOCKER_IMAGE, retrieved.getImage());
 
         // Errors
-        // Violate unique name+docker-image-id constraint (we'll trigger that by performing the same 'create' request again)
-        mockMvc.perform(request).andExpect(status().isBadRequest());
-
         // No 'Content-type' header
         final MockHttpServletRequestBuilder noContentType =
                 post(path).content(commandJson)
@@ -271,7 +268,7 @@ public class CommandRestApiTest {
                 .andExpect(status().isNotAcceptable());
 
         // Blank command
-        final String blankCommand = "{}";
+        final String blankCommand = "{\"type\": \"docker\"}";
         final MockHttpServletRequestBuilder blankCommandRequest =
                 post(path).content(blankCommand).contentType(JSON)
                         .with(authentication(authentication))
@@ -291,7 +288,7 @@ public class CommandRestApiTest {
         final String pathTemplate = "/commands/%d";
 
         final String commandJson =
-                "{\"name\": \"toDelete\", \"docker-image\":\"" + FAKE_DOCKER_IMAGE + "\"}";
+                "{\"name\": \"toDelete\", \"type\": \"docker\", \"image\":\"" + FAKE_DOCKER_IMAGE + "\"}";
         final Command command = mapper.readValue(commandJson, Command.class);
         commandService.create(command);
         final Long id = command.getId();
@@ -321,7 +318,8 @@ public class CommandRestApiTest {
         final String commandInput = "{\"name\": \"" + inputName + "\"}";
         final String commandJson =
                 "{\"name\": \"toLaunch\"," +
-                        "\"docker-image\": \"" + FAKE_DOCKER_IMAGE + "\"," +
+                        "\"type\": \"docker\", " +
+                        "\"image\": \"" + FAKE_DOCKER_IMAGE + "\"," +
                         "\"inputs\": [" + commandInput + "]}";
         final Command command = mapper.readValue(commandJson, Command.class);
         commandService.create(command);
@@ -335,7 +333,7 @@ public class CommandRestApiTest {
                 "}";
         final String preparedResolvedCommandJson =
                 "{\"command-id\": " + String.valueOf(id) +"," +
-                        "\"docker-image\": \"" + FAKE_DOCKER_IMAGE + "\"," +
+                        "\"image\": \"" + FAKE_DOCKER_IMAGE + "\"," +
                         "\"env\": " + environmentVariablesJson + "," +
                         "\"input-values\": " + inputJson + "," +
                         "\"mounts-in\": []," +
@@ -377,10 +375,12 @@ public class CommandRestApiTest {
         final String inputValue = "the super cool value";
         final String inputJson = "{\"" + inputName + "\": \"" + inputValue + "\"}";
         final String commandInput = "{\"name\": \"" + inputName + "\"}";
-        final String commandJson =
-                "{\"name\": \"toLaunch\"," +
-                        "\"docker-image\": \"" + FAKE_DOCKER_IMAGE + "\"," +
-                        "\"inputs\": [" + commandInput + "]}";
+        final String commandJson = "{" +
+                "\"name\": \"toLaunch\"," +
+                "\"type\": \"docker\", " +
+                "\"image\": \"" + FAKE_DOCKER_IMAGE + "\"," +
+                "\"inputs\": [" + commandInput + "]" +
+                "}";
         final Command command = mapper.readValue(commandJson, Command.class);
         commandService.create(command);
         final Long id = command.getId();
@@ -391,16 +391,16 @@ public class CommandRestApiTest {
                 "\"XNAT_USER\": \"" + FAKE_ALIAS + "\"," +
                 "\"XNAT_PASS\": \"" + FAKE_SECRET + "\"" +
                 "}";
-        final String preparedResolvedCommandJson =
-                "{\"command-id\": " + String.valueOf(id) +"," +
-                        "\"docker-image\": \"" + FAKE_DOCKER_IMAGE + "\"," +
-                        "\"env\": " + environmentVariablesJson + "," +
-                        "\"input-values\": " + inputJson + "," +
-                        "\"mounts-in\": []," +
-                        "\"mounts-out\": []," +
-                        "\"outputs\": []," +
-                        "\"ports\": {}" +
-                        "}";
+        final String preparedResolvedCommandJson = "{" +
+                "\"command-id\": " + String.valueOf(id) +"," +
+                "\"image\": \"" + FAKE_DOCKER_IMAGE + "\"," +
+                "\"env\": " + environmentVariablesJson + "," +
+                "\"raw-input-values\": " + inputJson + "," +
+                "\"mounts-in\": []," +
+                "\"mounts-out\": []," +
+                "\"outputs\": []," +
+                "\"ports\": {}" +
+                "}";
         final ResolvedDockerCommand preparedResolvedCommand = mapper.readValue(preparedResolvedCommandJson, ResolvedDockerCommand.class);
         when(mockDockerControlApi.launchImage(preparedResolvedCommand)).thenReturn(fakeContainerId);
 
