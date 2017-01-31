@@ -57,7 +57,7 @@ public class XnatCommandWrapper extends AbstractHibernateEntity {
     }
 
     @ManyToOne
-    @JoinColumn(name = "command_fk", insertable = false, updatable = false)
+    @JoinColumn(name = "command_id", insertable = false, updatable = false)
     public Command getCommand() {
         return command;
     }
