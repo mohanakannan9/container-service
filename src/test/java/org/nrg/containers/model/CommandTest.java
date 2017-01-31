@@ -3,19 +3,16 @@ package org.nrg.containers.model;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.containers.config.CommandTestConfig;
-import org.nrg.containers.model.xnat.Session;
 import org.nrg.containers.services.CommandService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Map;
 import java.util.Set;
 
 import static org.hamcrest.Matchers.instanceOf;
@@ -56,29 +53,6 @@ public class CommandTest {
 
     private static final String MOUNT_IN = "{\"name\":\"in\", \"writable\": false, \"path\":\"/input\"}";
     private static final String MOUNT_OUT = "{\"name\":\"out\", \"writable\": true, \"path\":\"/output\"}";
-    private static final String RESOLVED_MOUNT_IN = "{" +
-            "\"name\":\"in\", " +
-            "\"writable\": false, " +
-            "\"remote-path\":\"/input\", " +
-            "\"host-path\":\"/path/to/files\", " +
-            "\"file-input\":\"session\", " +
-            "\"resource\":\"a_resource\"" +
-            "}";
-    private static final String RESOLVED_MOUNT_OUT = "{" +
-            "\"name\": \"out\", " +
-            "\"writable\": true, " +
-            "\"path\":\"/output\", " +
-            "\"file-input\":\"session\", " +
-            "\"resource\":\"out\"" +
-            "}";
-    private static final String RESOLVED_OUTPUT_JSON = "{" +
-            "\"name\":\"the_output\"," +
-            "\"type\":\"Resource\"," +
-            "\"label\":\"DATA\"," +
-            "\"parent\":\"session\"," +
-            "\"mount\":\"out\"," +
-            "\"path\":\"relative/path/to/dir\"" +
-            "}";
 
     private static final String DOCKER_IMAGE_COMMAND_JSON = "{" +
             "\"name\":\"docker_image_command\", " +
@@ -92,22 +66,6 @@ public class CommandTest {
             "\"inputs\":" + INPUT_LIST_JSON + ", " +
             "\"outputs\":[" + OUTPUT_JSON + "], " +
             "\"image\":\"abc123\"" +
-            "}";
-
-    private static final String RESOLVED_DOCKER_IMAGE_COMMAND_JSON_TEMPLATE = "{" +
-            "\"command-id\":%d, " +
-            "\"docker-image\":\"abc123\", " +
-            "\"env\":{\"foo\":\"bar\"}, " +
-            "\"command-line\":\"cmd --flag=bar \", " +
-            "\"mounts-in\":[" + RESOLVED_MOUNT_IN + "]," +
-            "\"mounts-out\":[" + RESOLVED_MOUNT_OUT + "]," +
-            "\"input-values\": {" +
-                "\"my_cool_input\": \"%s\"," +
-                "\"foo\": \"%s\"," +
-                "\"session\": \"%s\"" +
-            "}," +
-            "\"outputs\":[ " + RESOLVED_OUTPUT_JSON + "]," +
-            "\"ports\": {\"22\": \"2222\"}" +
             "}";
 
     @Autowired private ObjectMapper mapper;
@@ -190,57 +148,5 @@ public class CommandTest {
         final Command retrievedCommand = commandService.retrieve(command.getId());
 
         assertEquals(command, retrievedCommand);
-    }
-
-    @Test
-    public void testResolveCommand() throws Exception {
-        final String sessionId = "1";
-        final String resourceId = "1";
-        final String sessionUri = "/experiments/" + sessionId;
-        final String resourceUri = sessionUri + "/resources/" + resourceId;
-        final String resourceJson = "{" +
-                "\"id\":" + resourceId + ", " +
-                "\"type\":\"Resource\", " +
-                "\"label\":\"a_resource\", " +
-                "\"uri\":\"" + resourceUri + "\", " +
-                "\"directory\":\"/path/to/files\"" +
-                "}";
-        final String sessionJson = "{" +
-                "\"id\":\"1\", " +
-                "\"type\":\"Session\", " +
-                "\"label\":\"a_session\", " +
-                "\"uri\": \"" + sessionUri + "\", " +
-                "\"xsiType\":\"xnat:fakesessiondata\", " +
-                "\"resources\":[" + resourceJson + "]" +
-                "}";
-
-
-        final Command command = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, Command.class);
-
-        final Map<String, String> runtimeValues = Maps.newHashMap();
-        runtimeValues.put("my_cool_input", "false");
-        runtimeValues.put("session", sessionJson);
-        final ResolvedCommand resolvedCommand = commandService.resolveCommand(command, runtimeValues, null);
-
-//        final String filledOutSessionJson = mapper.writeValueAsString(mapper.readValue(sessionJson, Session.class)).replaceAll("\\\"", "\\\\\\\"");
-        final Session session = mapper.readValue(sessionJson, Session.class);
-        final String resolvedCommandJson1 =
-                String.format(RESOLVED_DOCKER_IMAGE_COMMAND_JSON_TEMPLATE,
-                        command.getId(), "", "bar", session.getUri());
-        final ResolvedCommand expected1 = mapper.readValue(resolvedCommandJson1, ResolvedCommand.class);
-        assertEquals(expected1, resolvedCommand);
-
-        runtimeValues.put("my_cool_input", "true");
-        final ResolvedCommand resolvedCommand2 = commandService.resolveCommand(command, runtimeValues, null);
-
-        final String resolvedCommandJson2 =
-                String.format(RESOLVED_DOCKER_IMAGE_COMMAND_JSON_TEMPLATE,
-                        command.getId(), "true", "bar", session.getUri());
-        final ResolvedCommand expected2 = mapper.readValue(resolvedCommandJson2, ResolvedCommand.class);
-        assertEquals(expected2.getEnvironmentVariables(), resolvedCommand2.getEnvironmentVariables());
-        assertEquals(expected2.getMountsIn(), resolvedCommand2.getMountsIn());
-        assertEquals(expected2.getMountsOut(), resolvedCommand2.getMountsOut());
-
-        assertEquals("cmd --flag=bar -b", resolvedCommand2.getCommandLine());
     }
 }
