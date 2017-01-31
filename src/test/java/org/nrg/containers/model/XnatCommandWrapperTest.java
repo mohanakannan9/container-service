@@ -13,6 +13,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
+import java.util.Set;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
@@ -153,6 +154,25 @@ public class XnatCommandWrapperTest {
 
         assertThat(command.getXnatCommandWrappers(), hasSize(1));
         assertTrue(command.getXnatCommandWrappers().contains(xnatCommandWrapper));
+    }
+
+    @Test
+    public void testPersistCommandWithWrapper() throws Exception {
+
+        final Command command = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, Command.class);
+
+        commandService.create(command);
+        commandService.flush();
+
+        final Command retrievedCommand = commandService.retrieve(command.getId());
+
+        assertEquals(command, retrievedCommand);
+
+        final Set<XnatCommandWrapper> commandWrappers = retrievedCommand.getXnatCommandWrappers();
+        assertThat(commandWrappers, hasSize(1));
+
+        final XnatCommandWrapper xnatCommandWrapper = commandWrappers.iterator().next();
+        assertThat(xnatCommandWrapper.getId(), not(0L));
     }
 
     @Test
