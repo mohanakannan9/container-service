@@ -3,128 +3,115 @@ package org.nrg.containers.model;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.io.Resources;
-import org.codehaus.groovy.tools.shell.commands.DocCommand;
+import com.google.common.collect.Sets;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.containers.config.CommandTestConfig;
 import org.nrg.containers.model.xnat.Session;
 import org.nrg.containers.services.CommandService;
-import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.File;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.isIn;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @Transactional
 @ContextConfiguration(classes = CommandTestConfig.class)
 public class CommandTest {
-    private static final String COOL_INPUT_JSON =
-            "{\"name\":\"my_cool_input\", \"description\":\"A boolean value\", " +
-                    "\"type\":\"boolean\", \"required\":true," +
-                    "\"true-value\":\"-b\", \"false-value\":\"\"}";
-    private static final String FOO_INPUT_JSON =
-            "{\"name\":\"foo\", \"description\":\"A foo that bars\", " +
-                    "\"required\":false," +
-                    "\"default-value\":\"bar\"," +
-                    "\"command-line-flag\":\"--flag\"," +
-                    "\"command-line-separator\":\"=\"}";
-    private static final String SESSION_INPUT_JSON =
-            "{\"name\":\"session\", \"description\":\"A session\", " +
-                    "\"type\":\"Session\", " +
-                    "\"required\":true}";
-    
-    private static final String OUTPUT_JSON =
-            "{" +
-                    "\"name\":\"the_output\"," +
-                    "\"description\":\"It's the output\"," +
-                    "\"type\":\"Resource\"," +
-                    "\"label\":\"DATA\"," +
-                    "\"parent\":\"session\"," +
-                    "\"files\": {" +
-                        "\"mount\":\"out\"," +
-                        "\"path\":\"relative/path/to/dir\"" +
-                    "}" +
+    private static final String COOL_INPUT_JSON = "{" +
+            "\"name\":\"my_cool_input\", " +
+            "\"description\":\"A boolean value\", " +
+            "\"type\":\"boolean\", " +
+            "\"required\":true," +
+            "\"true-value\":\"-b\", " +
+            "\"false-value\":\"\"" +
             "}";
-    private static final String INPUT_LIST_JSON =
-            "[" + COOL_INPUT_JSON + ", " + FOO_INPUT_JSON + "," + SESSION_INPUT_JSON + "]";
+    private static final String FOO_INPUT_JSON = "{" +
+            "\"name\":\"foo\", " +
+            "\"description\":\"A foo that bars\", " +
+            "\"required\":false," +
+            "\"default-value\":\"bar\"," +
+            "\"command-line-flag\":\"--flag\"," +
+            "\"command-line-separator\":\"=\"" +
+            "}";
+    
+    private static final String OUTPUT_JSON = "{" +
+            "\"name\":\"the_output\"," +
+            "\"description\":\"It's the output\"," +
+            "\"mount\":\"out\"," +
+            "\"path\":\"relative/path/to/dir\"" +
+            "}";
+    private static final String INPUT_LIST_JSON = "[" + COOL_INPUT_JSON + ", " + FOO_INPUT_JSON + "]";
 
-    private static final String MOUNT_IN = "{\"name\":\"in\", \"type\": \"input\", \"path\":\"/input\", \"file-input\":\"session\", \"resource\":\"a_resource\"}";
-    private static final String MOUNT_OUT = "{\"name\":\"out\", \"type\": \"output\", \"path\":\"/output\", \"file-input\":\"session\", \"resource\":\"out\"}";
-    private static final String RESOLVED_MOUNT_IN = "{\"name\":\"in\", \"is-input\": true, " +
-            "\"path\":\"/input\", \"host-path\":\"/path/to/files\", \"file-input\":\"session\", \"resource\":\"a_resource\"}";
-    private static final String RESOLVED_MOUNT_OUT = "{\"name\":\"out\", \"is-input\":false, \"path\":\"/output\", \"file-input\":\"session\", \"resource\":\"out\"}";
-    private static final String RESOLVED_OUTPUT_JSON =
-            "{" +
-                    "\"name\":\"the_output\"," +
-                    "\"type\":\"Resource\"," +
-                    "\"label\":\"DATA\"," +
-                    "\"parent\":\"session\"," +
-                    "\"mount\":\"out\"," +
-                    "\"path\":\"relative/path/to/dir\"" +
-                    "}";
+    private static final String MOUNT_IN = "{\"name\":\"in\", \"writable\": false, \"path\":\"/input\"}";
+    private static final String MOUNT_OUT = "{\"name\":\"out\", \"writable\": true, \"path\":\"/output\"}";
+    private static final String RESOLVED_MOUNT_IN = "{" +
+            "\"name\":\"in\", " +
+            "\"writable\": false, " +
+            "\"remote-path\":\"/input\", " +
+            "\"host-path\":\"/path/to/files\", " +
+            "\"file-input\":\"session\", " +
+            "\"resource\":\"a_resource\"" +
+            "}";
+    private static final String RESOLVED_MOUNT_OUT = "{" +
+            "\"name\": \"out\", " +
+            "\"writable\": true, " +
+            "\"path\":\"/output\", " +
+            "\"file-input\":\"session\", " +
+            "\"resource\":\"out\"" +
+            "}";
+    private static final String RESOLVED_OUTPUT_JSON = "{" +
+            "\"name\":\"the_output\"," +
+            "\"type\":\"Resource\"," +
+            "\"label\":\"DATA\"," +
+            "\"parent\":\"session\"," +
+            "\"mount\":\"out\"," +
+            "\"path\":\"relative/path/to/dir\"" +
+            "}";
 
-    private static final String DOCKER_IMAGE_COMMAND_JSON =
-            "{\"name\":\"docker_image_command\", \"description\":\"Docker Image command for the test\", " +
-                    "\"info-url\":\"http://abc.xyz\", " +
-                    "\"run\": {" +
-                        "\"environment-variables\":{\"foo\":\"bar\"}, " +
-                        "\"command-line\":\"cmd #foo# #my_cool_input#\", " +
-                        "\"mounts\":[" + MOUNT_IN + ", " + MOUNT_OUT + "]," +
-                        "\"ports\": {\"22\": \"2222\"}" +
-                    "}," +
-                    "\"inputs\":" + INPUT_LIST_JSON + ", " +
-                    "\"outputs\":[" + OUTPUT_JSON + "], " +
-                    "\"docker-image\":\"abc123\"}";
+    private static final String DOCKER_IMAGE_COMMAND_JSON = "{" +
+            "\"name\":\"docker_image_command\", " +
+            "\"description\":\"Docker Image command for the test\", " +
+            "\"type\": \"docker\", " +
+            "\"info-url\":\"http://abc.xyz\", " +
+            "\"environment-variables\":{\"foo\":\"bar\"}, " +
+            "\"command-line\":\"cmd #foo# #my_cool_input#\", " +
+            "\"mounts\":[" + MOUNT_IN + ", " + MOUNT_OUT + "]," +
+            "\"ports\": {\"22\": \"2222\"}, " +
+            "\"inputs\":" + INPUT_LIST_JSON + ", " +
+            "\"outputs\":[" + OUTPUT_JSON + "], " +
+            "\"image\":\"abc123\"" +
+            "}";
 
-    private static final String RESOLVED_DOCKER_IMAGE_COMMAND_JSON_TEMPLATE =
-            "{\"command-id\":%d, " +
-                    "\"docker-image\":\"abc123\", " +
-                    "\"env\":{\"foo\":\"bar\"}, " +
-                    "\"command-line\":\"cmd --flag=bar \", " +
-                    "\"mounts-in\":[" + RESOLVED_MOUNT_IN + "]," +
-                    "\"mounts-out\":[" + RESOLVED_MOUNT_OUT + "]," +
-                    "\"input-values\": {" +
-                        "\"my_cool_input\": \"%s\"," +
-                        "\"foo\": \"%s\"," +
-                        "\"session\": \"%s\"" +
-                    "}," +
-                    "\"outputs\":[ " + RESOLVED_OUTPUT_JSON + "]," +
-                    "\"ports\": {\"22\": \"2222\"}}";
+    private static final String RESOLVED_DOCKER_IMAGE_COMMAND_JSON_TEMPLATE = "{" +
+            "\"command-id\":%d, " +
+            "\"docker-image\":\"abc123\", " +
+            "\"env\":{\"foo\":\"bar\"}, " +
+            "\"command-line\":\"cmd --flag=bar \", " +
+            "\"mounts-in\":[" + RESOLVED_MOUNT_IN + "]," +
+            "\"mounts-out\":[" + RESOLVED_MOUNT_OUT + "]," +
+            "\"input-values\": {" +
+                "\"my_cool_input\": \"%s\"," +
+                "\"foo\": \"%s\"," +
+                "\"session\": \"%s\"" +
+            "}," +
+            "\"outputs\":[ " + RESOLVED_OUTPUT_JSON + "]," +
+            "\"ports\": {\"22\": \"2222\"}" +
+            "}";
 
-    @Autowired
-    private ObjectMapper mapper;
-
-//    @Autowired
-//    private ScriptService scriptService;
-
-//    @Autowired
-//    private ScriptEnvironmentService scriptEnvironmentService;
-
-    @Autowired
-    private CommandService commandService;
-
-//    @Autowired
-//    private ContainerControlApi mockContainerControlApi;
+    @Autowired private ObjectMapper mapper;
+    @Autowired private CommandService commandService;
 
     @Test
     public void testSpringConfiguration() {
@@ -165,8 +152,8 @@ public class CommandTest {
     @Test
     public void testDeserializeDockerImageCommand() throws Exception {
 
-        final List<CommandInput> commandInputList =
-                mapper.readValue(INPUT_LIST_JSON, new TypeReference<List<CommandInput>>() {});
+        final Set<CommandInput> commandInputList =
+                mapper.readValue(INPUT_LIST_JSON, new TypeReference<Set<CommandInput>>() {});
         final CommandOutput commandOutput = mapper.readValue(OUTPUT_JSON, CommandOutput.class);
 
         final CommandMount input = mapper.readValue(MOUNT_IN, CommandMount.class);
@@ -180,14 +167,14 @@ public class CommandTest {
         assertEquals("Docker Image command for the test", command.getDescription());
         assertEquals("http://abc.xyz", command.getInfoUrl());
         assertEquals(commandInputList, command.getInputs());
-        assertEquals(ImmutableMap.of("the_output", commandOutput), command.getOutputs());
+        assertEquals(Sets.newHashSet(commandOutput), command.getOutputs());
 
         // final CommandRun run = command.getRun();
         assertEquals("cmd #foo# #my_cool_input#", command.getCommandLine());
         assertEquals(ImmutableMap.of("foo", "bar"), command.getEnvironmentVariables());
-        assertEquals(ImmutableMap.of(input.getName(), input, output.getName(), output), command.getMounts());
+        assertEquals(Sets.newHashSet(input, output), command.getMounts());
 
-        assertThat(command, instanceOf(DocCommand.class));
+        assertThat(command, instanceOf(DockerCommand.class));
         assertEquals(ImmutableMap.of("22", "2222"), ((DockerCommand)command).getPorts());
     }
 
@@ -203,34 +190,6 @@ public class CommandTest {
         final Command retrievedCommand = commandService.retrieve(command.getId());
 
         assertEquals(command, retrievedCommand);
-    }
-
-    @Test
-    public void testCommandConstraint() throws Exception {
-        // We cannot create two commands with the same name & docker image id
-
-        final Command command = new DockerCommand();
-        command.setName("name");
-        command.setImage("abc123");
-        final Command commandSameDockerImageId = new DockerCommand();
-        commandSameDockerImageId.setName("different_name");
-        commandSameDockerImageId.setImage("abc123");
-        final Command commandSameName = new DockerCommand();
-        commandSameName.setName("name");
-        commandSameDockerImageId.setImage("ABC456");
-        final Command commandSameNameAndDockerImageId = new DockerCommand();
-        commandSameNameAndDockerImageId.setName("name");
-        commandSameNameAndDockerImageId.setImage("abc123");
-
-        commandService.create(command);                  // Initial create
-        commandService.create(commandSameDockerImageId); // Should be ok
-        commandService.create(commandSameName);          // Should be ok
-        try {
-            commandService.create(commandSameNameAndDockerImageId);
-            fail("Should not be able to create a command with same name and docker image id as one that already exists.");
-        } catch (NrgServiceRuntimeException ignored) {
-            //
-        }
     }
 
     @Test
