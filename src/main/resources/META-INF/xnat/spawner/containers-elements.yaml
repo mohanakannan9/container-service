@@ -1,0 +1,68 @@
+
+####
+#### Container Setup Group
+####
+
+dockerSetupPanel:
+    kind: panel.form
+    name: dockerSetupPanel
+    label: Docker Server Setup
+    url: /xapi/docker/server
+    contentType: json
+    contents:
+        host:
+            kind: panel.input.text
+            name: host
+            label: Host
+        cert-path:
+            kind: panel.input.text
+            name: cert-path
+            label: Certificate Path
+            description: >
+                The typical Docker server connection does not require a certificate path.
+
+imageHostsPanel:
+    kind: panel.form
+    name: imageHosts
+    label: Image Hosts
+    url: /xapi/docker/hubs
+    contentType: json
+    contents:
+        defaultHost:
+            kind: panel.element
+            label: Default Image Host
+            contents:
+                link:
+                    tag: a.link
+                    element:
+                        href: https://hub.docker.com
+                        target: _blank
+                        html: https://hub.docker.com
+        addHostCommand:
+            tag: button#add-image-host.btn1|style=margin-top:15px;
+            content: Add Image Host
+
+
+
+#################################################
+####  Root Site Admin Spawner Config Object  ####
+#################################################
+
+siteSettings:
+    kind: tabs
+    name: containerAdminPage
+    label: Administer Container Service
+    meta:
+        tabGroups:
+            containerServiceTabGroup: Container Service
+    contains: tabs
+    tabs:
+        containerServicesTab:
+            kind: tab
+            name: containerSetupTab
+            label: Container Server Setup
+            group: containerServiceTabGroup
+            active: true
+            contents:
+                ${dockerSetupPanel}
+                ${imageHostsPanel}
