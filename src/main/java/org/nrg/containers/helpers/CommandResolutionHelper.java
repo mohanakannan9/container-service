@@ -99,11 +99,13 @@ public class CommandResolutionHelper {
         // this.resolvedInputCommandLineValuesByReplacementKey = Maps.newHashMap();
         this.userI = userI;
         this.mapper = new ObjectMapper();
+        this.configService = configService;
+        this.jsonpathSubstringPattern = Pattern.compile(JSONPATH_SUBSTRING_REGEX);
+
         this.inputValues = inputValues == null ?
                 Maps.<String, String>newHashMap() :
                 inputValues;
-        this.configService = configService;
-        this.jsonpathSubstringPattern = Pattern.compile(JSONPATH_SUBSTRING_REGEX);
+        resolvedCommand.setRawInputValues(this.inputValues);
     }
 
     public static ResolvedCommand resolve(final XnatCommandWrapper xnatCommandWrapper,
