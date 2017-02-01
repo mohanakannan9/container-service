@@ -446,11 +446,14 @@ public class CommandResolutionHelper {
             resolvedXnatWrapperInputValuesByName.put(externalInput.getName(), externalInput.getValue());
 
             // If this xnat input provides any command input values, set them now
-            if (log.isDebugEnabled()) {
-                log.debug(String.format("Found value for command input \"%s\": \"%s\".",
-                        externalInput.getProvidesValueForCommandInput(), externalInput.getValue()));
+            final String commandInputName = externalInput.getProvidesValueForCommandInput();
+            if (StringUtils.isNotBlank(commandInputName)) {
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("Found value for command input \"%s\": \"%s\".",
+                            commandInputName, externalInput.getValue()));
+                }
+                resolvedXnatInputValuesByCommandInputName.put(commandInputName, externalInput.getValue());
             }
-            resolvedXnatInputValuesByCommandInputName.put(externalInput.getProvidesValueForCommandInput(), externalInput.getValue());
 
             final String replacementKey = externalInput.getReplacementKey();
             if (StringUtils.isBlank(replacementKey)) {
@@ -465,6 +468,7 @@ public class CommandResolutionHelper {
             log.info("Resolving derived xnat wrapper inputs.");
 
             for (final XnatCommandInput derivedInput : xnatCommandWrapper.getDerivedInputs()) {
+                log.info(String.format("Resolving input \"%s\".", derivedInput.getName()));
 
                 if (StringUtils.isBlank(derivedInput.getDerivedFromXnatInput())) {
                     // TODO this should be caught during validation
@@ -824,11 +828,14 @@ public class CommandResolutionHelper {
                 resolvedXnatWrapperInputValuesByName.put(derivedInput.getName(), derivedInput.getValue());
 
                 // If this xnat input provides any command input values, set them now
-                if (log.isDebugEnabled()) {
-                    log.debug(String.format("Found value for command input \"%s\": \"%s\".",
-                            derivedInput.getProvidesValueForCommandInput(), derivedInput.getValue()));
+                final String commandInputName = derivedInput.getProvidesValueForCommandInput();
+                if (StringUtils.isNotBlank(commandInputName)) {
+                    if (log.isDebugEnabled()) {
+                        log.debug(String.format("Found value for command input \"%s\": \"%s\".",
+                                commandInputName, derivedInput.getValue()));
+                    }
+                    resolvedXnatInputValuesByCommandInputName.put(commandInputName, derivedInput.getValue());
                 }
-                resolvedXnatInputValuesByCommandInputName.put(derivedInput.getProvidesValueForCommandInput(), derivedInput.getValue());
 
                 // // If this xnat input accepts any command outputs, note that now
                 // setCommandOutputDestinationXnatInputNames(derivedInput.getCommandOutputHandlers(), derivedInput.getName());
