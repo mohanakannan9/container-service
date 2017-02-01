@@ -24,6 +24,7 @@ public class XnatCommandInput {
     @JsonProperty("derived-from-xnat-object-property") private String derivedFromXnatObjectProperty;
     private String matcher;
     @JsonProperty("provides-value-for-command-input") private String providesValueForCommandInput;
+    @JsonProperty("provides-files-for-command-mount") private String providesFilesForCommandMount;
     @JsonProperty("default-value") private String defaultValue;
     @JsonProperty("user-settable") private Boolean userSettable = true;
     @JsonProperty("replacement-key") private String rawReplacementKey;
@@ -100,6 +101,14 @@ public class XnatCommandInput {
         this.providesValueForCommandInput = providesValueForCommandInput;
     }
 
+    public String getProvidesFilesForCommandMount() {
+        return providesFilesForCommandMount;
+    }
+
+    public void setProvidesFilesForCommandMount(final String providesFilesForCommandMount) {
+        this.providesFilesForCommandMount = providesFilesForCommandMount;
+    }
+
     public String getDefaultValue() {
         return defaultValue;
     }
@@ -173,6 +182,7 @@ public class XnatCommandInput {
                 Objects.equals(this.derivedFromXnatObjectProperty, that.derivedFromXnatObjectProperty) &&
                 Objects.equals(this.matcher, that.matcher) &&
                 Objects.equals(this.providesValueForCommandInput, that.providesValueForCommandInput) &&
+                Objects.equals(this.providesFilesForCommandMount, that.providesFilesForCommandMount) &&
                 Objects.equals(this.defaultValue, that.defaultValue) &&
                 Objects.equals(this.userSettable, that.userSettable) &&
                 Objects.equals(this.rawReplacementKey, that.rawReplacementKey) &&
@@ -182,7 +192,7 @@ public class XnatCommandInput {
     @Override
     public int hashCode() {
         return Objects.hash(name, description, type, derivedFromXnatInput, derivedFromXnatObjectProperty, matcher,
-                providesValueForCommandInput, defaultValue, userSettable, rawReplacementKey, required);
+                providesValueForCommandInput, providesFilesForCommandMount, defaultValue, userSettable, rawReplacementKey, required);
     }
 
     @Override
@@ -195,6 +205,7 @@ public class XnatCommandInput {
                 .add("derivedFromXnatObjectProperty", derivedFromXnatObjectProperty)
                 .add("matcher", matcher)
                 .add("providesValueForCommandInput", providesValueForCommandInput)
+                .add("providesFilesForCommandMount", providesFilesForCommandMount)
                 .add("defaultValue", defaultValue)
                 .add("userSettable", userSettable)
                 .add("rawReplacementKey", rawReplacementKey)
