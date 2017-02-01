@@ -3,6 +3,7 @@ package org.nrg.containers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.io.Resources;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
@@ -20,7 +21,10 @@ import org.nrg.containers.config.IntegrationTestConfig;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.containers.model.ResolvedDockerCommand;
+import org.nrg.containers.model.XnatCommandWrapper;
+import org.nrg.containers.model.xnat.Session;
 import org.nrg.containers.services.CommandService;
+import org.nrg.containers.services.XnatCommandWrapperService;
 import org.nrg.framework.constants.Scope;
 import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
@@ -38,6 +42,7 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
@@ -50,6 +55,9 @@ public class CommandResolutionTest {
     private final String BUSYBOX_LATEST = "busybox:latest";
 
     private UserI mockUser;
+    private Command dummyCommand;
+    private String resourceDir;
+    private Map<String, XnatCommandWrapper> xnatCommandWrappers;
 
     @Autowired private ObjectMapper mapper;
     @Autowired private CommandService commandService;
@@ -59,7 +67,7 @@ public class CommandResolutionTest {
     public TemporaryFolder folder = new TemporaryFolder(new File("/tmp"));
 
     @Before
-    public void setup() {
+    public void setup() throws Exception {
         Configuration.setDefaults(new Configuration.Defaults() {
 
             private final JsonProvider jsonProvider = new JacksonJsonProvider();
@@ -83,101 +91,63 @@ public class CommandResolutionTest {
 
         mockUser = Mockito.mock(UserI.class);
         when(mockUser.getLogin()).thenReturn("mockUser");
+
+        resourceDir = Resources.getResource("commandResolutionTest").getPath().replace("%20", " ");
+        final String commandJsonFile = resourceDir + "/command.json";
+        dummyCommand = mapper.readValue(new File(commandJsonFile), Command.class);
+        commandService.create(dummyCommand);
+
+        xnatCommandWrappers = Maps.newHashMap();
+        for (final XnatCommandWrapper xnatCommandWrapper : dummyCommand.getXnatCommandWrappers()) {
+            xnatCommandWrappers.put(xnatCommandWrapper.getName(), xnatCommandWrapper);
+        }
     }
 
     @Test
     public void testSessionScanResource() throws Exception {
-        final String scantype = "SCANTYPE";
-        final String scantypeCsv = "\"" + scantype + "\", \"OTHER_SCANTYPE\"";
-        final String scantypeCsvEscaped = "\\\"" + scantype + "\\\", \\\"OTHER_SCANTYPE\\\"";
+        // Read the input value from a file
+        final String sessionScanInputFilePath = resourceDir + "/testSessionScanResource/session.json";
 
-        final String sessionCommandInputJson =
-                "{\"name\": \"session\", \"type\": \"Session\", \"required\": true}";
-        final String scantypeCommandInputJson =
-                "{\"name\": \"T1-scantype\", \"description\": \"Scantype of T1 scans\", \"type\": \"string\", " +
-                        "\"default-value\": \"" + scantypeCsvEscaped + "\", \"required\": true}";
-        final String t1CommandInputJson =
-                "{\"name\": \"T1\", \"description\": \"Input T1 scan\"," +
-                        "\"type\": \"Scan\"," +
-                        "\"parent\": \"session\"," +
-                        "\"prerequisites\": \"T1-scantype\"," +
-                        "\"matcher\": \"@.scan-type in [^$.inputs[?(@.name == 'T1-scantype')].value^]\"," +
-                        "\"required\": true" +
-                        "}";
-        final String dicomCommandInputJson =
-                "{\"name\": \"dicom\", \"description\": \"Input resource: DICOM \", " +
-                        "\"type\": \"Resource\", " +
-                        "\"parent\": \"T1\", " +
-                        "\"matcher\": \"@.label == 'DICOM'\"," +
-                        "\"required\": true" +
-                        "}";
-
-        final String commandLine = "echo hello world";
-        final String commandJson =
-                "{\"name\": \"foo\", \"description\": \"Doing some stuff\"," +
-                        "\"docker-image\": \"" + BUSYBOX_LATEST + "\"," +
-                        "\"run\": {" +
-                        "\"command-line\": \"" + commandLine + "\"" +
-                        "}," +
-                        "\"inputs\": [" +
-                            sessionCommandInputJson + "," +
-                            scantypeCommandInputJson + "," +
-                            t1CommandInputJson + "," +
-                            dicomCommandInputJson +
-                        "]" +
-                        "}";
-
-        final Command command = mapper.readValue(commandJson, Command.class);
-        commandService.create(command);
-
+        // I want to set a resource directory at runtime, so pardon me while I do some unchecked stuff with the values I just read
         final String dicomDir = folder.newFolder("DICOM").getAbsolutePath();
-        final String scanDicomResourceId = "0";
-        final String scanId = "scan1";
-        final String sessionId = "session1";
-        final String sessionUri = "/experiments/" + sessionId;
-        final String scanUri = sessionUri + "/scans/" + scanId;
-        final String scanDicomResourceUri = scanUri + "/resources/" + scanDicomResourceId;
-        final String scanDicomResource = "{" +
-                "\"id\":" + scanDicomResourceId + ", " +
-                "\"uri\":\"" + scanDicomResourceUri + "\", " +
-                "\"type\": \"Resource\", " +
-                "\"label\": \"DICOM\", " +
-                "\"directory\": \"" + dicomDir + "\"}";
-        final String scanRuntimeJson = "{" +
-                "\"id\": \"" + scanId + "\", " +
-                "\"uri\": \"" + scanUri + "\", " +
-                "\"type\": \"Scan\", " +
-                "\"scan-type\": \"" + scantype + "\"," +
-                "\"resources\": [" + scanDicomResource + "]" +
-                "}";
-        final String sessionRuntimeJson = "{" +
-                "\"id\": \"" + sessionId + "\", " +
-                "\"uri\": \"" + sessionUri + "\", " +
-                "\"type\": \"Session\", " +
-                "\"label\": \"" + sessionId + "\", " +
-                "\"scans\": [" + scanRuntimeJson + "]" +
-                "}";
+        final Session session = mapper.readValue(new File(sessionScanInputFilePath), Session.class);
+        session.getScans().get(0).getResources().get(0).setDirectory(dicomDir);
+        final String sessionRuntimeJson = mapper.writeValueAsString(session);
+
         final Map<String, String> runtimeValues = Maps.newHashMap();
         runtimeValues.put("session", sessionRuntimeJson);
 
-//        final Session session = mapper.readValue(sessionRuntimeJson, Session.class);
+        final XnatCommandWrapper sessionScanResourceWrapper = xnatCommandWrappers.get("session-scan-resource");
+        assertNotNull(sessionScanResourceWrapper);
 
-        final ResolvedCommand resolvedCommand = commandService.resolveCommand(command, runtimeValues, mockUser);
-        assertEquals((Long) command.getId(), resolvedCommand.getCommandId());
-        assertEquals(command.getImage(), resolvedCommand.getImage());
-        assertEquals(commandLine, resolvedCommand.getCommandLine());
+        final ResolvedCommand resolvedCommand = commandService.resolveCommand(sessionScanResourceWrapper, dummyCommand, runtimeValues, mockUser);
+        assertEquals((Long) dummyCommand.getId(), resolvedCommand.getCommandId());
+        assertEquals((Long) sessionScanResourceWrapper.getId(), resolvedCommand.getXnatCommandWrapperId());
+        assertEquals(dummyCommand.getImage(), resolvedCommand.getImage());
+        assertEquals(dummyCommand.getCommandLine(), resolvedCommand.getCommandLine());
         assertTrue(resolvedCommand.getEnvironmentVariables().isEmpty());
         assertTrue(resolvedCommand.getMountsIn().isEmpty());
         assertTrue(resolvedCommand.getMountsOut().isEmpty());
-        assertTrue(resolvedCommand.getOutputs().isEmpty());
         assertThat(resolvedCommand, instanceOf(ResolvedDockerCommand.class));
         assertTrue(((ResolvedDockerCommand) resolvedCommand).getPorts().isEmpty());
 
-        final Map<String, String> inputValues = resolvedCommand.getCommandInputValues();
-        assertThat(inputValues, hasEntry("T1-scantype", scantypeCsv));
-        assertThat(inputValues, hasEntry("T1", scanUri));
-        assertThat(inputValues, hasEntry("session", sessionUri));
-        assertThat(inputValues, hasEntry("dicom", scanDicomResourceUri));
+        // Raw inputs
+        assertEquals(runtimeValues, resolvedCommand.getRawInputValues());
+
+        // xnat wrapper inputs
+        final Map<String, String> xnatInputValues = resolvedCommand.getXnatInputValues();
+        assertThat(xnatInputValues, hasEntry("T1-scantype", "\"SCANTYPE\", \"OTHER_SCANTYPE\""));
+        assertThat(xnatInputValues, hasEntry("session", session.getUri()));
+        assertThat(xnatInputValues, hasEntry("scan", session.getScans().get(0).getUri()));
+        assertThat(xnatInputValues, hasEntry("dicom", session.getScans().get(0).getResources().get(0).getUri()));
+
+        // command inputs
+        final Map<String, String> commandInputValues = resolvedCommand.getCommandInputValues();
+        assertThat(commandInputValues, hasEntry("file-input", null));
+        // TODO This assertion ^ is what passes now. When I change the resolution code, figure out what value should be there and make the test fail until code works.
+
+        // Outputs
+        assertTrue(resolvedCommand.getOutputs().isEmpty());
     }
 
     @Test

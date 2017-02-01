@@ -1,0 +1,50 @@
+{
+    "name": "hello-world",
+    "description": "a dummy command that does nothing",
+    "type": "docker",
+    "image": "busybox:latest",
+    "command-line": "echo hello world",
+    "inputs": [
+        {
+            "name": "file-input",
+            "type": "file"
+        }
+    ],
+    "xnat": [
+        {
+            "name": "session-scan-resource",
+            "description": "run the dummy command with a session, from which we derive a scan and a resource",
+            "external-inputs": [
+                {
+                    "name": "session",
+                    "type": "Session",
+                    "required": true
+                },
+                {
+                    "name": "T1-scantype",
+                    "description": "scantype of T1 scan",
+                    "type": "string",
+                    "default-value": "\"SCANTYPE\", \"OTHER_SCANTYPE\"",
+                    "required": true
+                }
+            ],
+            "derived-inputs": [
+                {
+                    "name": "scan",
+                    "type": "Scan",
+                    "derived-from-xnat-input": "session",
+                    "matcher": "@.scan-type in [^wrapper:$.external-inputs[?(@.name == 'T1-scantype')].value^]",
+                    "required": true
+                },
+                {
+                    "name": "dicom",
+                    "type": "Resource",
+                    "derived-from-xnat-input": "scan",
+                    "matcher": "@.label == 'DICOM'",
+                    "required": true
+                }
+            ],
+            "output-handlers": []
+        }
+    ]
+}

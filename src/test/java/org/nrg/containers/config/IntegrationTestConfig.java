@@ -12,7 +12,9 @@ import org.nrg.containers.daos.XnatCommandWrapperRepository;
 import org.nrg.containers.events.DockerContainerEventListener;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.ContainerExecution;
+import org.nrg.containers.model.DockerCommand;
 import org.nrg.containers.model.DockerServerPrefsBean;
+import org.nrg.containers.model.XnatCommandWrapper;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerExecutionService;
 import org.nrg.containers.services.XnatCommandWrapperService;
@@ -176,8 +178,9 @@ public class IntegrationTestConfig {
         bean.setHibernateProperties(properties);
         bean.setAnnotatedClasses(
                 Command.class,
+                DockerCommand.class,
+                XnatCommandWrapper.class,
                 ContainerExecution.class);
-//                Preference.class, Tool.class);
 
         return bean;
     }
