@@ -77,7 +77,7 @@ public class XnatCommandWrapperTest {
     private static final String XNAT_COMMAND_WRAPPER_OUTPUT_HANDLER = "{" +
             "\"type\": \"Resource\"" +
             ", \"accepts-command-output\": \"" + COMMAND_OUTPUT_NAME + "\"" +
-            ", \"as-child-of-xnat-input\": \"" + EXTERNAL_INPUT_NAME + "\"" +
+            ", \"as-a-child-of-xnat-input\": \"" + EXTERNAL_INPUT_NAME + "\"" +
             ", \"label\": \"" + OUTPUT_HANDLER_LABEL + "\"" +
             "}";
 
