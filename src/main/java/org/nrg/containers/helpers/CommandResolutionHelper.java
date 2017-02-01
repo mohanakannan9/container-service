@@ -518,7 +518,6 @@ public class CommandResolutionHelper {
                     resolvedValue = inputValues.get(derivedInput.getName());
                 }
 
-                // TODO: is this jsonpath check necessary?
                 // Check for JSONPath substring in input value
                 resolvedValue = resolveJsonpathSubstring(resolvedValue);
 
@@ -987,7 +986,6 @@ public class CommandResolutionHelper {
             // }
 
             String resolvedValue = null;
-            String jsonRepresentation = null;
 
             // Give the input its default value
             if (log.isDebugEnabled()) {
