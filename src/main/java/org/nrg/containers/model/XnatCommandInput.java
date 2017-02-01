@@ -18,6 +18,7 @@ import java.util.Set;
 @Embeddable
 public class XnatCommandInput {
     private String name;
+    private String description;
     private Type type;
     @JsonProperty("derived-from-xnat-input") private String derivedFromXnatInput;
     @JsonProperty("derived-from-xnat-object-property") private String derivedFromXnatObjectProperty;
@@ -49,6 +50,14 @@ public class XnatCommandInput {
 
     public void setName(final String name) {
         this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(final String description) {
+        this.description = description;
     }
 
     public Type getType() {
@@ -158,6 +167,7 @@ public class XnatCommandInput {
         if (o == null || getClass() != o.getClass()) return false;
         final XnatCommandInput that = (XnatCommandInput) o;
         return Objects.equals(this.name, that.name) &&
+                Objects.equals(this.description, that.description) &&
                 type == that.type &&
                 Objects.equals(this.derivedFromXnatInput, that.derivedFromXnatInput) &&
                 Objects.equals(this.derivedFromXnatObjectProperty, that.derivedFromXnatObjectProperty) &&
@@ -171,7 +181,7 @@ public class XnatCommandInput {
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, type, derivedFromXnatInput, derivedFromXnatObjectProperty, matcher,
+        return Objects.hash(name, description, type, derivedFromXnatInput, derivedFromXnatObjectProperty, matcher,
                 providesValueForCommandInput, defaultValue, userSettable, rawReplacementKey, required);
     }
 
@@ -179,6 +189,7 @@ public class XnatCommandInput {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("name", name)
+                .add("description", description)
                 .add("type", type)
                 .add("derivedFromXnatInput", derivedFromXnatInput)
                 .add("derivedFromXnatObjectProperty", derivedFromXnatObjectProperty)
