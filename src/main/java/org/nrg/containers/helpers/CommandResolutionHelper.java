@@ -53,13 +53,15 @@ import java.util.regex.Pattern;
 
 public class CommandResolutionHelper {
     private static final Logger log = LoggerFactory.getLogger(CommandResolutionHelper.class);
-    private static final String JSONPATH_SUBSTRING_REGEX = "\\^(.+)\\^";
+    private static final String JSONPATH_SUBSTRING_REGEX = "\\^(wrapper:)?(.+)\\^";
 
     private final XnatCommandWrapper xnatCommandWrapper;
     private final Command command;
     private final ResolvedCommand resolvedCommand;
     private Command cachedCommand;
     private String commandJson;
+    private XnatCommandWrapper cachedCommandWrapper;
+    private String commandWrapperJson;
     private final Map<String, XnatCommandInput> resolvedXnatInputObjects = Maps.newHashMap();
     private final Map<String, String> resolvedXnatInputValuesByCommandInputName = Maps.newHashMap();
     private final Map<String, String> commandOutputDestinationXnatInputNames = Maps.newHashMap();
@@ -78,6 +80,7 @@ public class CommandResolutionHelper {
                                     final ConfigService configService) throws CommandResolutionException {
         this.xnatCommandWrapper = xnatCommandWrapper;
         this.command = command;
+        this.command.setXnatCommandWrappers(null); // We already have the wrapper we need, so we will blank this out. I hope nothing breaks.
         switch (command.getType()) {
             case DOCKER:
                 resolvedCommand = new ResolvedDockerCommand(xnatCommandWrapper.getId(), (DockerCommand) command);
@@ -88,6 +91,8 @@ public class CommandResolutionHelper {
         }
         this.cachedCommand = null;
         this.commandJson = null;
+        this.cachedCommandWrapper = null;
+        this.commandWrapperJson = null;
         // this.resolvedXnatInputObjects =
         // this.resolvedXnatInputValuesByCommandInputName = Maps.newHashMap();
         // this.resolvedInputValuesByReplacementKey = Maps.newHashMap();
@@ -1000,6 +1005,22 @@ public class CommandResolutionHelper {
         return commandJson;
     }
 
+    private String commandWrapperAsJson() throws CommandResolutionException {
+        if (!xnatCommandWrapper.equals(cachedCommandWrapper)) {
+            cachedCommandWrapper = xnatCommandWrapper;
+
+            try {
+                commandWrapperJson = mapper.writeValueAsString(cachedCommandWrapper);
+            } catch (JsonProcessingException e) {
+                final String message = "Could not serialize command wrapper to json.";
+                log.debug(message);
+                throw new CommandResolutionException(message, e);
+            }
+        }
+
+        return commandWrapperJson;
+    }
+
     private <T extends XnatModelObject> List<T> matchChildFromParent(final String parentJson, final String value, final String childKey, final String valueMatchProperty, final String matcherFromInput, final TypeRef<List<T>> typeRef) {
         final String matcherFromValue = StringUtils.isNotBlank(value) ?
                 String.format("@.%s == '%s'", valueMatchProperty, value) :
@@ -1435,30 +1456,38 @@ public class CommandResolutionHelper {
     }
 
     private String resolveJsonpathSubstring(final String stringThatMayContainJsonpathSubstring) throws CommandResolutionException {
-        if (log.isDebugEnabled()) {
-            log.debug("Checking for JSONPath substring in " + stringThatMayContainJsonpathSubstring);
-        }
         if (StringUtils.isNotBlank(stringThatMayContainJsonpathSubstring)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Checking for JSONPath substring in " + stringThatMayContainJsonpathSubstring);
+            }
 
             final Matcher jsonpathSubstringMatcher = jsonpathSubstringPattern.matcher(stringThatMayContainJsonpathSubstring);
 
             if (jsonpathSubstringMatcher.find()) {
 
                 final String jsonpathSearchWithMarkers = jsonpathSubstringMatcher.group(0);
-                final String jsonpathSearchWithoutMarkers = jsonpathSubstringMatcher.group(1);
+                final String useWrapper = jsonpathSubstringMatcher.group(1);
+                final String jsonpathSearchWithoutMarkers = jsonpathSubstringMatcher.group(2);
 
                 if (log.isDebugEnabled()) {
                     log.debug("Found possible JSONPath substring " + jsonpathSearchWithMarkers);
                 }
 
                 if (StringUtils.isNotBlank(jsonpathSearchWithoutMarkers)) {
-
-                    if(log.isInfoEnabled()) {
-                        log.info("Performing JSONPath search through command with search string " + jsonpathSearchWithoutMarkers);
+                    final Configuration c = Configuration.defaultConfiguration().addOptions(Option.ALWAYS_RETURN_LIST);
+                    final List<String> searchResult;
+                    if (StringUtils.isNotBlank(useWrapper)) {
+                        if(log.isInfoEnabled()) {
+                            log.info("Performing JSONPath search through command wrapper with search string " + jsonpathSearchWithoutMarkers);
+                        }
+                        searchResult = JsonPath.using(c).parse(commandWrapperAsJson()).read(jsonpathSearchWithoutMarkers);
+                    } else {
+                        if(log.isInfoEnabled()) {
+                            log.info("Performing JSONPath search through command with search string " + jsonpathSearchWithoutMarkers);
+                        }
+                        searchResult = JsonPath.using(c).parse(commandAsJson()).read(jsonpathSearchWithoutMarkers);
                     }
 
-                    final Configuration c = Configuration.defaultConfiguration().addOptions(Option.ALWAYS_RETURN_LIST);
-                    final List<String> searchResult = JsonPath.using(c).parse(commandAsJson()).read(jsonpathSearchWithoutMarkers);
                     if (searchResult != null && !searchResult.isEmpty() && searchResult.get(0) != null) {
                         if (log.isInfoEnabled()) {
                             log.info("Search result: " + searchResult);
@@ -1485,9 +1514,9 @@ public class CommandResolutionHelper {
                     }
                 }
             }
-        }
 
-        log.debug("No jsonpath substring found.");
+            log.debug("No jsonpath substring found.");
+        }
         return stringThatMayContainJsonpathSubstring;
     }
 }
