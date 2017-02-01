@@ -36,6 +36,7 @@ import org.nrg.containers.model.xnat.Resource;
 import org.nrg.containers.model.xnat.Scan;
 import org.nrg.containers.model.xnat.Session;
 import org.nrg.containers.model.xnat.Subject;
+import org.nrg.containers.model.xnat.XnatFile;
 import org.nrg.containers.model.xnat.XnatModelObject;
 import org.nrg.framework.constants.Scope;
 import org.nrg.xft.security.UserI;
@@ -583,7 +584,41 @@ public class CommandResolutionHelper {
                         // TODO
                         break;
                     case FILE:
-                        // TODO
+                        XnatFile file = null;
+                        switch (parentInput.getType()) {
+                            case RESOURCE:
+                                final List<XnatFile> childList = matchChildFromParent(parentInput.getJsonRepresentation(),
+                                        resolvedValue, "files", "name", resolvedMatcher, new TypeRef<List<XnatFile>>(){});
+                                if (childList != null && !childList.isEmpty()) {
+                                    if (log.isDebugEnabled()) {
+                                        log.debug("Selecting first matching result from list.");
+                                    }
+                                    file = childList.get(0);
+                                }
+                                break;
+                            default:
+                                final String message = String.format("An input of type \"%s\" cannot be derived from an input of type \"%s\".",
+                                        derivedInput.getType().getName(),
+                                        parentInput.getType().getName());
+                                log.error(message);
+                                throw new XnatCommandInputResolutionException(message, derivedInput);
+                        }
+
+                        if (file == null) {
+                            final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.getName(), parentInput.getName());
+                            log.error(message);
+                            throw new XnatCommandInputResolutionException(message, derivedInput);
+                        }
+
+                        if (log.isDebugEnabled()) {
+                            log.debug("Setting resolvedValue to uri " + file.getUri());
+                        }
+                        resolvedValue = file.getUri();
+                        try {
+                            jsonRepresentation = mapper.writeValueAsString(file);
+                        } catch (JsonProcessingException e) {
+                            log.error("Could not serialize file to json.", e);
+                        }
                         break;
                     case PROJECT:
                         Project project;

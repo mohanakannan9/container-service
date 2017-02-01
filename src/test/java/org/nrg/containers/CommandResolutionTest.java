@@ -199,7 +199,7 @@ public class CommandResolutionTest {
 
         // command inputs
         final Map<String, String> expectedCommandInputValues = Maps.newHashMap();
-        expectedCommandInputValues.put("file-input", null);
+        expectedCommandInputValues.put("file-input", resource.getFiles().get(0).getUri());
         expectedCommandInputValues.put("whatever", scan.getId());
         assertEquals(expectedCommandInputValues, resolvedCommand.getCommandInputValues());
 
