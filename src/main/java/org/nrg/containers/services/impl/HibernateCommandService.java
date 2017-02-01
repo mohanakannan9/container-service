@@ -174,7 +174,31 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
                                           final Map<String, String> runtimeInputValues,
                                           final UserI userI)
             throws NotFoundException, CommandResolutionException {
-        return CommandResolutionHelper.resolve(XnatCommandWrapper.passthrough(command), command, runtimeInputValues, userI, configService);
+        // I was not given a wrapper.
+        // TODO what should I do here? Should I...
+        //  1. Use the "passthrough" wrapper, no matter what
+        //  2. Use the "passthrough" wrapper only if the command has no outputs
+        //  3. check if the command has any wrappers, and use one if it exists
+        //  4. Something else
+        //
+        // I guess for now I'll do 2.
+
+        if (command.getOutputs() != null || !command.getOutputs().isEmpty()) {
+            throw new CommandResolutionException("Cannot resolve command without an XNAT wrapper. Command has outputs that will not be handled.");
+        }
+
+        final XnatCommandWrapper xnatCommandWrapperToResolve = XnatCommandWrapper.passthrough(command);
+
+        return resolveCommand(xnatCommandWrapperToResolve, command, runtimeInputValues, userI);
+    }
+
+    @Override
+    public ResolvedCommand resolveCommand(final XnatCommandWrapper xnatCommandWrapper,
+                                          final Command command,
+                                          final Map<String, String> runtimeInputValues,
+                                          final UserI userI)
+            throws NotFoundException, CommandResolutionException {
+        return CommandResolutionHelper.resolve(xnatCommandWrapper, command, runtimeInputValues, userI, configService);
     }
 
     @Override
