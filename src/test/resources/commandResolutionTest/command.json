@@ -108,6 +108,25 @@
                     "required": true
                 }
             ]
+        },
+        {
+            "name": "session-assessor",
+            "description": "run the dummy command with a session, from which we derive an assessor",
+            "external-inputs": [
+                {
+                    "name": "session",
+                    "type": "Session",
+                    "required": true
+                }
+            ],
+            "derived-inputs": [
+                {
+                    "name": "assessor",
+                    "type": "Assessor",
+                    "derived-from-xnat-input": "session",
+                    "required": true
+                }
+            ]
         }
     ]
 }

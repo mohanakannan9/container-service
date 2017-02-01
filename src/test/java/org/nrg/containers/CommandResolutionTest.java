@@ -147,7 +147,6 @@ public class CommandResolutionTest {
         // command inputs
         final Map<String, String> commandInputValues = resolvedCommand.getCommandInputValues();
         assertThat(commandInputValues, hasEntry("file-input", null));
-        // TODO This assertion ^ is what passes now. When I change the resolution code, figure out what value should be there and make the test fail until code works.
 
         // Outputs
         assertTrue(resolvedCommand.getOutputs().isEmpty());
@@ -285,69 +284,44 @@ public class CommandResolutionTest {
 
     @Test
     public void testSessionAssessor() throws Exception {
-        final String sessionInput = "{" +
-                "\"name\": \"session\", " +
-                "\"type\": \"Session\", " +
-                "\"required\": true}";
-        final String assessorInput = "{" +
-                "\"name\": \"assessor\", " +
-                "\"type\": \"Assessor\", " +
-                "\"parent\": \"session\", " +
-                "\"required\": true" +
-                "}";
+        final String commandWrapperName = "session-assessor";
+        final String inputPath = resourceDir + "/testSessionAssessor/session.json";
 
-        final String commandLine = "echo hello world";
-        final String commandJson =
-                "{\"name\": \"command\", " +
-                        "\"description\": \"Testing project and subject inputs\"," +
-                        "\"docker-image\": \"" + BUSYBOX_LATEST + "\"," +
-                        "\"run\": {" +
-                        "\"command-line\": \"" + commandLine + "\"" +
-                        "}," +
-                        "\"inputs\": [" +
-                            sessionInput + ", " +
-                            assessorInput +
-                        "]" +
-                        "}";
-        final Command command = mapper.readValue(commandJson, Command.class);
-        commandService.create(command);
+        // I want to set a resource directory at runtime, so pardon me while I do some unchecked stuff with the values I just read
+        final Session session = mapper.readValue(new File(inputPath), Session.class);
+        final String sessionRuntimeJson = mapper.writeValueAsString(session);
 
-        final String sessionId = "aSession";
-        final String assessorId = "anAssessor";
-        final String sessionUri = "/experiments/" + sessionId;
-        final String assessorUri = sessionUri + "/assessors/" + assessorId;
-        final String assessorRuntimeJson = "{" +
-                "\"id\": \"" + assessorId + "\", " +
-                "\"label\": \"" + assessorId + "\", " +
-                "\"uri\": \"" + assessorUri + "\", " +
-                "\"type\": \"Assessor\"" +
-                "}";
-        final String sessionRuntimeJson = "{" +
-                "\"id\": \"" + sessionId + "\", " +
-                "\"label\": \"" + sessionId + "\", " +
-                "\"uri\": \"" + sessionUri + "\", " +
-                "\"type\": \"Session\", " +
-                "\"assessors\" : [" +
-                    assessorRuntimeJson +
-                "]" +
-                "}";
         final Map<String, String> runtimeValues = Maps.newHashMap();
         runtimeValues.put("session", sessionRuntimeJson);
 
-        final ResolvedCommand resolvedCommand = commandService.resolveCommand(command, runtimeValues, mockUser);
-        assertEquals((Long) command.getId(), resolvedCommand.getCommandId());
-        assertEquals(command.getImage(), resolvedCommand.getImage());
-        assertEquals(commandLine, resolvedCommand.getCommandLine());
+        final XnatCommandWrapper xnatCommandWrapper = xnatCommandWrappers.get(commandWrapperName);
+        assertNotNull(xnatCommandWrapper);
+
+        final ResolvedCommand resolvedCommand = commandService.resolveCommand(xnatCommandWrapper, dummyCommand, runtimeValues, mockUser);
+        assertEquals((Long) dummyCommand.getId(), resolvedCommand.getCommandId());
+        assertEquals((Long) xnatCommandWrapper.getId(), resolvedCommand.getXnatCommandWrapperId());
+        assertEquals(dummyCommand.getImage(), resolvedCommand.getImage());
+        assertEquals(dummyCommand.getCommandLine(), resolvedCommand.getCommandLine());
         assertTrue(resolvedCommand.getEnvironmentVariables().isEmpty());
         assertTrue(resolvedCommand.getMountsIn().isEmpty());
         assertTrue(resolvedCommand.getMountsOut().isEmpty());
-        assertTrue(resolvedCommand.getOutputs().isEmpty());
         assertThat(resolvedCommand, instanceOf(ResolvedDockerCommand.class));
         assertTrue(((ResolvedDockerCommand) resolvedCommand).getPorts().isEmpty());
 
-        final Map<String, String> inputValues = resolvedCommand.getCommandInputValues();
-        assertThat(inputValues, hasEntry("session", sessionUri));
-        assertThat(inputValues, hasEntry("assessor", assessorUri));
+        // Raw inputs
+        assertEquals(runtimeValues, resolvedCommand.getRawInputValues());
+
+        // xnat wrapper inputs
+        final Map<String, String> xnatInputValues = resolvedCommand.getXnatInputValues();
+        assertThat(xnatInputValues, hasEntry("session", session.getUri()));
+        assertThat(xnatInputValues, hasEntry("assessor", session.getAssessors().get(0).getUri()));
+
+        // command inputs
+        final Map<String, String> commandInputValues = resolvedCommand.getCommandInputValues();
+        assertThat(commandInputValues, hasEntry("file-input", null));
+
+        // Outputs
+        assertTrue(resolvedCommand.getOutputs().isEmpty());
     }
 
     @Test
