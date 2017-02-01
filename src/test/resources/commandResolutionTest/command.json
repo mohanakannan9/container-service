@@ -7,7 +7,8 @@
     "inputs": [
         {
             "name": "file-input",
-            "type": "file"
+            "type": "file",
+            "required": false
         }
     ],
     "xnat": [
@@ -72,6 +73,18 @@
                     "derived-from-xnat-input": "a resource",
                     "required": "true",
                     "provides-value-for-command-input": "file-input"
+                }
+            ]
+        },
+        {
+            "name": "project",
+            "description": "run the dummy command with a project input",
+            "external-inputs": [
+                {
+                    "name": "project",
+                    "description": "this input accepts a project",
+                    "type": "Project",
+                    "required": true
                 }
             ]
         }
