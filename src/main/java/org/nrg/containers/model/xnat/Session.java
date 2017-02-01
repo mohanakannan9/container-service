@@ -11,13 +11,12 @@ import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatImageassessordataI;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.model.XnatImagesessiondataI;
-import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
-import org.nrg.xnat.helpers.uri.archive.ExperimentURII;
+import org.nrg.xnat.helpers.uri.archive.AssessedURII;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -39,11 +38,11 @@ public class Session extends XnatModelObject {
         populateProperties(null);
     }
 
-    public Session(final ExperimentURII experimentURII) {
-        final XnatExperimentdata experiment = experimentURII.getExperiment();
-        if (experiment != null && XnatImagesessiondata.class.isAssignableFrom(experiment.getClass())) {
-            this.xnatImagesessiondataI = (XnatImagesessiondata) experiment;
-            this.uri = ((URIManager.DataURIA) experimentURII).getUri();
+    public Session(final AssessedURII assessedURII) {
+        final XnatImagesessiondata imagesessiondata = assessedURII.getSession();
+        if (imagesessiondata != null && XnatImagesessiondata.class.isAssignableFrom(imagesessiondata.getClass())) {
+            this.xnatImagesessiondataI = imagesessiondata;
+            this.uri = ((URIManager.DataURIA) assessedURII).getUri();
             populateProperties(null);
         }
     }
@@ -90,14 +89,14 @@ public class Session extends XnatModelObject {
             @Nullable
             @Override
             public Session apply(@Nullable URIManager.ArchiveItemURI uri) {
-                XnatExperimentdata experiment;
+                XnatImagesessiondata imageSession;
                 if (uri != null &&
-                        ExperimentURII.class.isAssignableFrom(uri.getClass())) {
-                    experiment = ((ExperimentURII) uri).getExperiment();
+                        AssessedURII.class.isAssignableFrom(uri.getClass())) {
+                    imageSession = ((AssessedURII) uri).getSession();
 
-                    if (experiment != null &&
-                            XnatImagesessiondata.class.isAssignableFrom(experiment.getClass())) {
-                        return new Session((ExperimentURII) uri);
+                    if (imageSession != null &&
+                            XnatImagesessiondata.class.isAssignableFrom(imageSession.getClass())) {
+                        return new Session((AssessedURII) uri);
                     }
                 }
 

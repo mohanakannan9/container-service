@@ -77,8 +77,7 @@ public abstract class XnatModelObject {
         return helper
                 .add("id", id)
                 .add("label", label)
-//                .add("xsiType", xsiType)
-//                .add("type", getType())
+                .add("xsiType", xsiType)
                 .add("uri", uri);
     }
 }
