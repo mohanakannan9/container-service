@@ -9,6 +9,11 @@
             "name": "file-input",
             "type": "file",
             "required": false
+        },
+        {
+            "name": "whatever",
+            "description": "an input that will get filled by something, doesn't matter what",
+            "type": "string"
         }
     ],
     "xnat": [
@@ -43,6 +48,14 @@
                     "derived-from-xnat-input": "scan",
                     "matcher": "@.label == 'DICOM'",
                     "required": true
+                },
+                {
+                    "name": "scan-id",
+                    "type": "string",
+                    "derived-from-xnat-input": "scan",
+                    "derived-from-xnat-object-property": "id",
+                    "provides-value-for-command-input": "whatever",
+                    "required": true
                 }
             ],
             "output-handlers": []
@@ -73,6 +86,14 @@
                     "derived-from-xnat-input": "a resource",
                     "required": "true",
                     "provides-value-for-command-input": "file-input"
+                },
+                {
+                    "name": "scan-id",
+                    "type": "string",
+                    "derived-from-xnat-input": "a scan",
+                    "derived-from-xnat-object-property": "id",
+                    "provides-value-for-command-input": "whatever",
+                    "required": true
                 }
             ]
         },
@@ -84,6 +105,16 @@
                     "name": "project",
                     "description": "this input accepts a project",
                     "type": "Project",
+                    "required": true
+                }
+            ],
+            "derived-inputs": [
+                {
+                    "name": "project-label",
+                    "type": "string",
+                    "derived-from-xnat-input": "project",
+                    "derived-from-xnat-object-property": "label",
+                    "provides-value-for-command-input": "whatever",
                     "required": true
                 }
             ]
@@ -106,6 +137,14 @@
                     "description": "a subject under the project",
                     "derived-from-xnat-input": "project",
                     "required": true
+                },
+                {
+                    "name": "project-label",
+                    "type": "string",
+                    "derived-from-xnat-input": "project",
+                    "derived-from-xnat-object-property": "label",
+                    "provides-value-for-command-input": "whatever",
+                    "required": true
                 }
             ]
         },
@@ -124,6 +163,14 @@
                     "name": "assessor",
                     "type": "Assessor",
                     "derived-from-xnat-input": "session",
+                    "required": true
+                },
+                {
+                    "name": "assessor-label",
+                    "type": "string",
+                    "derived-from-xnat-input": "assessor",
+                    "derived-from-xnat-object-property": "label",
+                    "provides-value-for-command-input": "whatever",
                     "required": true
                 }
             ]

@@ -138,15 +138,19 @@ public class CommandResolutionTest {
         assertEquals(runtimeValues, resolvedCommand.getRawInputValues());
 
         // xnat wrapper inputs
-        final Map<String, String> xnatInputValues = resolvedCommand.getXnatInputValues();
-        assertThat(xnatInputValues, hasEntry("T1-scantype", "\"SCANTYPE\", \"OTHER_SCANTYPE\""));
-        assertThat(xnatInputValues, hasEntry("session", session.getUri()));
-        assertThat(xnatInputValues, hasEntry("scan", session.getScans().get(0).getUri()));
-        assertThat(xnatInputValues, hasEntry("dicom", session.getScans().get(0).getResources().get(0).getUri()));
+        final Map<String, String> expectedXnatInputValues = Maps.newHashMap();
+        expectedXnatInputValues.put("T1-scantype", "\"SCANTYPE\", \"OTHER_SCANTYPE\"");
+        expectedXnatInputValues.put("session", session.getUri());
+        expectedXnatInputValues.put("scan", session.getScans().get(0).getUri());
+        expectedXnatInputValues.put("dicom", session.getScans().get(0).getResources().get(0).getUri());
+        expectedXnatInputValues.put("scan-id", session.getScans().get(0).getId());
+        assertEquals(expectedXnatInputValues, resolvedCommand.getXnatInputValues());
 
         // command inputs
-        final Map<String, String> commandInputValues = resolvedCommand.getCommandInputValues();
-        assertThat(commandInputValues, hasEntry("file-input", null));
+        final Map<String, String> expectedCommandInputValues = Maps.newHashMap();
+        expectedCommandInputValues.put("file-input", null);
+        expectedCommandInputValues.put("whatever", session.getScans().get(0).getId());
+        assertEquals(expectedCommandInputValues, resolvedCommand.getCommandInputValues());
 
         // Outputs
         assertTrue(resolvedCommand.getOutputs().isEmpty());
@@ -186,14 +190,18 @@ public class CommandResolutionTest {
         assertEquals(runtimeValues, resolvedCommand.getRawInputValues());
 
         // xnat wrapper inputs
-        final Map<String, String> xnatInputValues = resolvedCommand.getXnatInputValues();
-        assertThat(xnatInputValues, hasEntry("a scan", scan.getUri()));
-        assertThat(xnatInputValues, hasEntry("a resource", resource.getUri()));
-        assertThat(xnatInputValues, hasEntry("a file", resource.getFiles().get(0).getUri()));
+        final Map<String, String> expectedXnatInputValues = Maps.newHashMap();
+        expectedXnatInputValues.put("a scan", scan.getUri());
+        expectedXnatInputValues.put("a resource", resource.getUri());
+        expectedXnatInputValues.put("a file", resource.getFiles().get(0).getUri());
+        expectedXnatInputValues.put("scan-id", scan.getId());
+        assertEquals(expectedXnatInputValues, resolvedCommand.getXnatInputValues());
 
         // command inputs
-        final Map<String, String> commandInputValues = resolvedCommand.getCommandInputValues();
-        assertThat(commandInputValues, hasEntry("file-input", resource.getFiles().get(0).getPath()));
+        final Map<String, String> expectedCommandInputValues = Maps.newHashMap();
+        expectedCommandInputValues.put("file-input", null);
+        expectedCommandInputValues.put("whatever", scan.getId());
+        assertEquals(expectedCommandInputValues, resolvedCommand.getCommandInputValues());
 
         // Outputs
         assertTrue(resolvedCommand.getOutputs().isEmpty());
@@ -229,12 +237,16 @@ public class CommandResolutionTest {
         assertEquals(runtimeValues, resolvedCommand.getRawInputValues());
 
         // xnat wrapper inputs
-        final Map<String, String> xnatInputValues = resolvedCommand.getXnatInputValues();
-        assertThat(xnatInputValues, hasEntry("project", project.getUri()));
+        final Map<String, String> expectedXnatInputValues = Maps.newHashMap();
+        expectedXnatInputValues.put("project", project.getUri());
+        expectedXnatInputValues.put("project-label", project.getLabel());
+        assertEquals(expectedXnatInputValues, resolvedCommand.getXnatInputValues());
 
         // command inputs
-        final Map<String, String> commandInputValues = resolvedCommand.getCommandInputValues();
-        assertThat(commandInputValues, hasEntry("file-input", null));
+        final Map<String, String> expectedCommandInputValues = Maps.newHashMap();
+        expectedCommandInputValues.put("file-input", null);
+        expectedCommandInputValues.put("whatever", project.getLabel());
+        assertEquals(expectedCommandInputValues, resolvedCommand.getCommandInputValues());
 
         // Outputs
         assertTrue(resolvedCommand.getOutputs().isEmpty());
@@ -270,13 +282,17 @@ public class CommandResolutionTest {
         assertEquals(runtimeValues, resolvedCommand.getRawInputValues());
 
         // xnat wrapper inputs
-        final Map<String, String> xnatInputValues = resolvedCommand.getXnatInputValues();
-        assertThat(xnatInputValues, hasEntry("project", project.getUri()));
-        assertThat(xnatInputValues, hasEntry("subject", project.getSubjects().get(0).getUri()));
+        final Map<String, String> expectedXnatInputValues = Maps.newHashMap();
+        expectedXnatInputValues.put("project", project.getUri());
+        expectedXnatInputValues.put("subject", project.getSubjects().get(0).getUri());
+        expectedXnatInputValues.put("project-label", project.getLabel());
+        assertEquals(expectedXnatInputValues, resolvedCommand.getXnatInputValues());
 
         // command inputs
-        final Map<String, String> commandInputValues = resolvedCommand.getCommandInputValues();
-        assertThat(commandInputValues, hasEntry("file-input", null));
+        final Map<String, String> expectedCommandInputValues = Maps.newHashMap();
+        expectedCommandInputValues.put("file-input", null);
+        expectedCommandInputValues.put("whatever", project.getLabel());
+        assertEquals(expectedCommandInputValues, resolvedCommand.getCommandInputValues());
 
         // Outputs
         assertTrue(resolvedCommand.getOutputs().isEmpty());
@@ -312,13 +328,17 @@ public class CommandResolutionTest {
         assertEquals(runtimeValues, resolvedCommand.getRawInputValues());
 
         // xnat wrapper inputs
-        final Map<String, String> xnatInputValues = resolvedCommand.getXnatInputValues();
-        assertThat(xnatInputValues, hasEntry("session", session.getUri()));
-        assertThat(xnatInputValues, hasEntry("assessor", session.getAssessors().get(0).getUri()));
+        final Map<String, String> expectedXnatInputValues = Maps.newHashMap();
+        expectedXnatInputValues.put("session", session.getUri());
+        expectedXnatInputValues.put("assessor", session.getAssessors().get(0).getUri());
+        expectedXnatInputValues.put("assessor-label", session.getAssessors().get(0).getLabel());
+        assertEquals(expectedXnatInputValues, resolvedCommand.getXnatInputValues());
 
         // command inputs
-        final Map<String, String> commandInputValues = resolvedCommand.getCommandInputValues();
-        assertThat(commandInputValues, hasEntry("file-input", null));
+        final Map<String, String> expectedCommandInputValues = Maps.newHashMap();
+        expectedCommandInputValues.put("file-input", null);
+        expectedCommandInputValues.put("whatever", session.getAssessors().get(0).getLabel());
+        assertEquals(expectedCommandInputValues, resolvedCommand.getCommandInputValues());
 
         // Outputs
         assertTrue(resolvedCommand.getOutputs().isEmpty());

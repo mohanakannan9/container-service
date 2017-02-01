@@ -533,7 +533,48 @@ public class CommandResolutionHelper {
                 }
                 switch (derivedInput.getType()) {
                     case STRING:
-                        // TODO
+                        final String propertyToGet = derivedInput.getDerivedFromXnatObjectProperty();
+                        switch (parentInput.getType()) {
+                            case PROJECT:
+                                // Intentional fallthrough
+                            case SUBJECT:
+                                // Intentional fallthrough
+                            case SESSION:
+                                // Intentional fallthrough
+                            case SCAN:
+                                // Intentional fallthrough
+                            case ASSESSOR:
+                                // Intentional fallthrough
+                            case RESOURCE:
+
+                                final String jsonPathSearch = "$." + propertyToGet +
+                                        (StringUtils.isNotBlank(resolvedMatcher) ? "[?(" + resolvedMatcher + ")]" : "");
+                                if (log.isInfoEnabled()) {
+                                    log.info(String.format("Attempting to pull value from parent using matcher \"%s\".", jsonPathSearch));
+                                }
+
+                                final String parentJson = parentInput.getJsonRepresentation();
+                                try {
+                                    resolvedValue = JsonPath.parse(parentJson).read(jsonPathSearch, new TypeRef<String>(){});
+                                } catch (InvalidPathException | InvalidJsonException | MappingException e) {
+                                    String message = String.format("Error attempting to pull value using matcher \"%s\" from parent json", jsonPathSearch);
+                                    if (log.isDebugEnabled()) {
+                                        message += ":\n" + parentJson;
+                                    } else {
+                                        message += ".";
+                                    }
+                                    log.error(message, e);
+                                    throw new XnatCommandInputResolutionException(message, derivedInput, e);
+                                }
+
+                                break;
+                            default:
+                                final String message = String.format("An input of type \"%s\" cannot be derived from an input of type \"%s\".",
+                                        derivedInput.getType().getName(),
+                                        parentInput.getType().getName());
+                                log.error(message);
+                                throw new XnatCommandInputResolutionException(message, derivedInput);
+                        }
                         break;
                     case BOOLEAN:
                         // TODO
