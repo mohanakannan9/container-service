@@ -243,72 +243,44 @@ public class CommandResolutionTest {
 
     @Test
     public void testProjectSubject() throws Exception {
-        final String projectInput = "{" +
-                "\"name\": \"project\", " +
-                "\"description\": \"This input accepts a project\", " +
-                "\"type\": \"Project\", " +
-                "\"required\": true" +
-                "}";
-        final String subjectInput = "{" +
-                "\"name\": \"subject\", " +
-                "\"description\": \"This input accepts a subject\", " +
-                "\"type\": \"Subject\", " +
-                "\"parent\": \"project\", " +
-                "\"required\": true" +
-                "}";
+        final String commandWrapperName = "project-subject";
+        final String inputPath = resourceDir + "/testProjectSubject/project.json";
 
-        final String commandLine = "echo hello world";
-        final String commandJson =
-                "{\"name\": \"command\", " +
-                        "\"description\": \"Testing project and subject inputs\"," +
-                        "\"docker-image\": \"" + BUSYBOX_LATEST + "\"," +
-                        "\"run\": {" +
-                        "\"command-line\": \"" + commandLine + "\"" +
-                        "}," +
-                        "\"inputs\": [" +
-                            projectInput + ", " +
-                            subjectInput +
-                        "]" +
-                        "}";
-        final Command command = mapper.readValue(commandJson, Command.class);
-        commandService.create(command);
+        // I want to set a resource directory at runtime, so pardon me while I do some unchecked stuff with the values I just read
+        final Project project = mapper.readValue(new File(inputPath), Project.class);
+        final String projectRuntimeJson = mapper.writeValueAsString(project);
 
-        final String subjectId = "aSubject";
-        final String projectId = "aProject";
-        final String projectUri = "/projects/" + projectId;
-        final String subjectUri = projectUri + "/subjects/" + subjectId;
-        final String subjectRuntimeJson = "{" +
-                "\"id\": \"" + subjectId + "\", " +
-                "\"label\": \"" + subjectId + "\", " +
-                "\"uri\": \"" + subjectUri + "\", " +
-                "\"type\": \"Subject\"" +
-                "}";
-        final String projectRuntimeJson = "{" +
-                "\"id\": \"" + projectId + "\", " +
-                "\"label\": \"" + projectId + "\", " +
-                "\"uri\": \"" + projectUri + "\", " +
-                "\"type\": \"Project\", " +
-                "\"subjects\" : [" +
-                    subjectRuntimeJson +
-                "]" +
-                "}";
         final Map<String, String> runtimeValues = Maps.newHashMap();
         runtimeValues.put("project", projectRuntimeJson);
 
-        final ResolvedCommand resolvedCommand = commandService.resolveCommand(command, runtimeValues, mockUser);
-        assertEquals((Long) command.getId(), resolvedCommand.getCommandId());
-        assertEquals(command.getImage(), resolvedCommand.getImage());
-        assertEquals(commandLine, resolvedCommand.getCommandLine());
+        final XnatCommandWrapper xnatCommandWrapper = xnatCommandWrappers.get(commandWrapperName);
+        assertNotNull(xnatCommandWrapper);
+
+        final ResolvedCommand resolvedCommand = commandService.resolveCommand(xnatCommandWrapper, dummyCommand, runtimeValues, mockUser);
+        assertEquals((Long) dummyCommand.getId(), resolvedCommand.getCommandId());
+        assertEquals((Long) xnatCommandWrapper.getId(), resolvedCommand.getXnatCommandWrapperId());
+        assertEquals(dummyCommand.getImage(), resolvedCommand.getImage());
+        assertEquals(dummyCommand.getCommandLine(), resolvedCommand.getCommandLine());
         assertTrue(resolvedCommand.getEnvironmentVariables().isEmpty());
         assertTrue(resolvedCommand.getMountsIn().isEmpty());
         assertTrue(resolvedCommand.getMountsOut().isEmpty());
-        assertTrue(resolvedCommand.getOutputs().isEmpty());
         assertThat(resolvedCommand, instanceOf(ResolvedDockerCommand.class));
         assertTrue(((ResolvedDockerCommand) resolvedCommand).getPorts().isEmpty());
 
-        final Map<String, String> inputValues = resolvedCommand.getCommandInputValues();
-        assertThat(inputValues, hasEntry("project", projectUri));
-        assertThat(inputValues, hasEntry("subject", subjectUri));
+        // Raw inputs
+        assertEquals(runtimeValues, resolvedCommand.getRawInputValues());
+
+        // xnat wrapper inputs
+        final Map<String, String> xnatInputValues = resolvedCommand.getXnatInputValues();
+        assertThat(xnatInputValues, hasEntry("project", project.getUri()));
+        assertThat(xnatInputValues, hasEntry("subject", project.getSubjects().get(0).getUri()));
+
+        // command inputs
+        final Map<String, String> commandInputValues = resolvedCommand.getCommandInputValues();
+        assertThat(commandInputValues, hasEntry("file-input", null));
+
+        // Outputs
+        assertTrue(resolvedCommand.getOutputs().isEmpty());
     }
 
     @Test

@@ -87,6 +87,27 @@
                     "required": true
                 }
             ]
+        },
+        {
+            "name": "project-subject",
+            "description": "run the dummy command with a project input, from which we derive a subject input",
+            "external-inputs": [
+                {
+                    "name": "project",
+                    "description": "this input accepts a project",
+                    "type": "Project",
+                    "required": true
+                }
+            ],
+            "derived-inputs": [
+                {
+                    "name": "subject",
+                    "type": "Subject",
+                    "description": "a subject under the project",
+                    "derived-from-xnat-input": "project",
+                    "required": true
+                }
+            ]
         }
     ]
 }
