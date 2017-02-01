@@ -3,7 +3,7 @@ package org.nrg.containers.model;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Sets;
+import com.google.common.collect.Lists;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.containers.config.CommandTestConfig;
@@ -13,7 +13,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Set;
+import java.util.List;
 
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.not;
@@ -110,8 +110,8 @@ public class CommandTest {
     @Test
     public void testDeserializeDockerImageCommand() throws Exception {
 
-        final Set<CommandInput> commandInputList =
-                mapper.readValue(INPUT_LIST_JSON, new TypeReference<Set<CommandInput>>() {});
+        final List<CommandInput> commandInputList =
+                mapper.readValue(INPUT_LIST_JSON, new TypeReference<List<CommandInput>>() {});
         final CommandOutput commandOutput = mapper.readValue(OUTPUT_JSON, CommandOutput.class);
 
         final CommandMount input = mapper.readValue(MOUNT_IN, CommandMount.class);
@@ -125,12 +125,12 @@ public class CommandTest {
         assertEquals("Docker Image command for the test", command.getDescription());
         assertEquals("http://abc.xyz", command.getInfoUrl());
         assertEquals(commandInputList, command.getInputs());
-        assertEquals(Sets.newHashSet(commandOutput), command.getOutputs());
+        assertEquals(Lists.newArrayList(commandOutput), command.getOutputs());
 
         // final CommandRun run = command.getRun();
         assertEquals("cmd #foo# #my_cool_input#", command.getCommandLine());
         assertEquals(ImmutableMap.of("foo", "bar"), command.getEnvironmentVariables());
-        assertEquals(Sets.newHashSet(input, output), command.getMounts());
+        assertEquals(Lists.newArrayList(input, output), command.getMounts());
 
         assertThat(command, instanceOf(DockerCommand.class));
         assertEquals(ImmutableMap.of("22", "2222"), ((DockerCommand)command).getPorts());

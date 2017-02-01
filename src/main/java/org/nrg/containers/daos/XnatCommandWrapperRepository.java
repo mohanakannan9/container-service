@@ -6,7 +6,7 @@ import org.nrg.containers.model.XnatCommandWrapper;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.springframework.stereotype.Repository;
 
-import java.util.Set;
+import java.util.List;
 
 @Repository
 public class XnatCommandWrapperRepository extends AbstractHibernateDAO<XnatCommandWrapper> {
@@ -22,7 +22,7 @@ public class XnatCommandWrapperRepository extends AbstractHibernateDAO<XnatComma
         initializeInputList(xnatCommandWrapper.getDerivedInputs());
     }
 
-    private void initializeInputList(final Set<XnatCommandInput> inputs) {
+    private void initializeInputList(final List<XnatCommandInput> inputs) {
         if (inputs != null) {
             Hibernate.initialize(inputs);
 

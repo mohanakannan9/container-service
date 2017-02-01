@@ -48,7 +48,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -1293,7 +1292,7 @@ public class CommandResolutionHelper {
 
     private List<ContainerExecutionMount> resolveCommandMounts() throws CommandMountResolutionException {
         log.info("Resolving mounts.");
-        final Set<CommandMount> mountTemplates = command.getMounts();
+        final List<CommandMount> mountTemplates = command.getMounts();
         if (mountTemplates == null || mountTemplates.isEmpty()) {
             log.info("No mounts.");
             return Lists.newArrayList();

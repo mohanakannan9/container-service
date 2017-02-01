@@ -13,7 +13,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
-import java.util.Set;
+import java.util.List;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
@@ -168,10 +168,10 @@ public class XnatCommandWrapperTest {
 
         assertEquals(command, retrievedCommand);
 
-        final Set<XnatCommandWrapper> commandWrappers = retrievedCommand.getXnatCommandWrappers();
+        final List<XnatCommandWrapper> commandWrappers = retrievedCommand.getXnatCommandWrappers();
         assertThat(commandWrappers, hasSize(1));
 
-        final XnatCommandWrapper xnatCommandWrapper = commandWrappers.iterator().next();
+        final XnatCommandWrapper xnatCommandWrapper = commandWrappers.get(0);
         assertThat(xnatCommandWrapper.getId(), not(0L));
     }
 

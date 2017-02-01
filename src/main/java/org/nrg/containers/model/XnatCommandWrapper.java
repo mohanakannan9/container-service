@@ -2,18 +2,16 @@ package org.nrg.containers.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
-import com.google.common.collect.Sets;
+import com.google.common.collect.Lists;
 import org.hibernate.envers.Audited;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
-import javax.persistence.JoinColumns;
-import javax.persistence.JoinTable;
 import javax.persistence.ManyToOne;
+import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 @Entity
 @Audited
@@ -21,15 +19,15 @@ public class XnatCommandWrapper extends AbstractHibernateEntity {
     private String name;
     private String description;
     private Command command;
-    @JsonProperty("external-inputs") private Set<XnatCommandInput> externalInputs;
-    @JsonProperty("derived-inputs") private Set<XnatCommandInput> derivedInputs;
-    @JsonProperty("output-handlers") private Set<XnatCommandOutput> outputHandlers;
+    @JsonProperty("external-inputs") private List<XnatCommandInput> externalInputs;
+    @JsonProperty("derived-inputs") private List<XnatCommandInput> derivedInputs;
+    @JsonProperty("output-handlers") private List<XnatCommandOutput> outputHandlers;
 
     public static XnatCommandWrapper passthrough(final Command command) {
         final XnatCommandWrapper identity = new XnatCommandWrapper();
         identity.command = command;
 
-        final Set<XnatCommandInput> externalInputs = Sets.newHashSet();
+        final List<XnatCommandInput> externalInputs = Lists.newArrayList();
         if (command.getInputs() != null) {
             for (final CommandInput commandInput : command.getInputs()) {
                 externalInputs.add(XnatCommandInput.passthrough(commandInput));
@@ -67,31 +65,35 @@ public class XnatCommandWrapper extends AbstractHibernateEntity {
     }
 
     @ElementCollection
-    public Set<XnatCommandInput> getExternalInputs() {
+    public List<XnatCommandInput> getExternalInputs() {
         return externalInputs;
     }
 
-    public void setExternalInputs(final Set<XnatCommandInput> externalInputs) {
-        this.externalInputs = externalInputs;
+    public void setExternalInputs(final List<XnatCommandInput> externalInputs) {
+        this.externalInputs = externalInputs == null ?
+                Lists.<XnatCommandInput>newArrayList() :
+                externalInputs;
     }
 
     @ElementCollection
-    public Set<XnatCommandInput> getDerivedInputs() {
+    public List<XnatCommandInput> getDerivedInputs() {
         return derivedInputs;
     }
 
-    public void setDerivedInputs(final Set<XnatCommandInput> derivedInputs) {
-        this.derivedInputs = derivedInputs;
+    public void setDerivedInputs(final List<XnatCommandInput> derivedInputs) {
+        this.derivedInputs = derivedInputs == null ?
+                Lists.<XnatCommandInput>newArrayList() :
+                derivedInputs;
     }
 
     @ElementCollection
-    public Set<XnatCommandOutput> getOutputHandlers() {
+    public List<XnatCommandOutput> getOutputHandlers() {
         return outputHandlers;
     }
 
-    public void setOutputHandlers(final Set<XnatCommandOutput> outputHandlers) {
+    public void setOutputHandlers(final List<XnatCommandOutput> outputHandlers) {
         this.outputHandlers = outputHandlers == null ?
-                Sets.<XnatCommandOutput>newHashSet() :
+                Lists.<XnatCommandOutput>newArrayList() :
                 outputHandlers;
     }
 
