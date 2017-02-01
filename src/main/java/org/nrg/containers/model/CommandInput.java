@@ -195,8 +195,7 @@ public class CommandInput implements Serializable {
     public enum Type {
         STRING("string"),
         BOOLEAN("boolean"),
-        NUMBER("number"),
-        FILE("file");
+        NUMBER("number");
 
         private final String name;
 

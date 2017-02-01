@@ -545,6 +545,8 @@ public class CommandResolutionHelper {
                                 // Intentional fallthrough
                             case ASSESSOR:
                                 // Intentional fallthrough
+                            case FILE:
+                                // Intentional fallthrough
                             case RESOURCE:
 
                                 final String jsonPathSearch = "$." + propertyToGet +
@@ -581,6 +583,79 @@ public class CommandResolutionHelper {
                         break;
                     case NUMBER:
                         // TODO
+                        break;
+                    case DIRECTORY:
+                        switch (parentInput.getType()) {
+                            case RESOURCE:
+
+                                final String jsonPathSearch = "$.directory" +
+                                        (StringUtils.isNotBlank(resolvedMatcher) ? "[?(" + resolvedMatcher + ")]" : "");
+                                if (log.isInfoEnabled()) {
+                                    log.info(String.format("Attempting to pull value from parent using matcher \"%s\".", jsonPathSearch));
+                                }
+
+                                final String parentJson = parentInput.getJsonRepresentation();
+                                try {
+                                    resolvedValue = JsonPath.parse(parentJson).read(jsonPathSearch, new TypeRef<String>(){});
+                                } catch (InvalidPathException | InvalidJsonException | MappingException e) {
+                                    String message = String.format("Error attempting to pull value using matcher \"%s\" from parent json", jsonPathSearch);
+                                    if (log.isDebugEnabled()) {
+                                        message += ":\n" + parentJson;
+                                    } else {
+                                        message += ".";
+                                    }
+                                    log.error(message, e);
+                                    throw new XnatCommandInputResolutionException(message, derivedInput, e);
+                                }
+
+                                break;
+                            case PROJECT:
+                                // TODO
+                            case SESSION:
+                                // TODO
+                            case SCAN:
+                                // TODO
+                            case ASSESSOR:
+                                // TODO
+                            default:
+                                final String message = String.format("An input of type \"%s\" cannot be derived from an input of type \"%s\".",
+                                        derivedInput.getType().getName(),
+                                        parentInput.getType().getName());
+                                log.error(message);
+                                throw new XnatCommandInputResolutionException(message, derivedInput);
+                        }
+                        break;
+                    case FILES:
+                        List<XnatFile> files;
+                        switch (parentInput.getType()) {
+                            case RESOURCE:
+                                files = matchChildFromParent(parentInput.getJsonRepresentation(),
+                                        resolvedValue, "files", "name", resolvedMatcher, new TypeRef<List<XnatFile>>(){});
+                                break;
+                            default:
+                                final String message = String.format("An input of type \"%s\" cannot be derived from an input of type \"%s\".",
+                                        derivedInput.getType().getName(),
+                                        parentInput.getType().getName());
+                                log.error(message);
+                                throw new XnatCommandInputResolutionException(message, derivedInput);
+                        }
+
+                        if (files == null) {
+                            final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.getName(), parentInput.getName());
+                            log.error(message);
+                            throw new XnatCommandInputResolutionException(message, derivedInput);
+                        }
+
+                        if (log.isDebugEnabled()) {
+                            log.debug("Setting resolvedValue to list of file json objects " + files);
+                        }
+
+                        try {
+                            jsonRepresentation = mapper.writeValueAsString(files);
+                            resolvedValue = jsonRepresentation;
+                        } catch (JsonProcessingException e) {
+                            log.error("Could not serialize file to json.", e);
+                        }
                         break;
                     case FILE:
                         XnatFile file = null;
@@ -1036,9 +1111,6 @@ public class CommandResolutionHelper {
                     break;
                 case NUMBER:
                     // TODO
-                    break;
-                case FILE:
-                    // TODO anything to do?
                     break;
                 default:
                     // TODO anything to do?

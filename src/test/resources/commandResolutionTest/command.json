@@ -6,8 +6,8 @@
     "command-line": "echo hello world",
     "inputs": [
         {
-            "name": "file-input",
-            "type": "file",
+            "name": "file-path",
+            "type": "string",
             "required": false
         },
         {
@@ -81,11 +81,18 @@
                 },
                 {
                     "name": "a file",
-                    "description": "an input that takes a file",
-                    "type": "file",
+                    "description": "a file",
+                    "type": "File",
                     "derived-from-xnat-input": "a resource",
                     "required": "true",
-                    "provides-value-for-command-input": "file-input"
+                    "provides-value-for-command-input": "file-path"
+                },
+                {
+                    "name": "a file path",
+                    "type": "string",
+                    "derived-from-xnat-input": "a file",
+                    "provides-value-for-command-input": "file-path",
+                    "derived-from-xnat-object-property": "path"
                 },
                 {
                     "name": "scan-id",
