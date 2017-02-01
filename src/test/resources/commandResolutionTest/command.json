@@ -45,6 +45,35 @@
                 }
             ],
             "output-handlers": []
+        },
+        {
+            "name": "scan-resource-file",
+            "description": "run the dummy command with a scan, from which we derive a resource and a file",
+            "external-inputs": [
+                {
+                    "name": "a scan",
+                    "description": "an input that takes a scan",
+                    "type": "Scan",
+                    "required": true
+                }
+            ],
+            "derived-inputs": [
+                {
+                    "name": "a resource",
+                    "description": "an input that takes a resource",
+                    "type": "Resource",
+                    "derived-from-xnat-input": "a scan",
+                    "required": true
+                },
+                {
+                    "name": "a file",
+                    "description": "an input that takes a file",
+                    "type": "file",
+                    "derived-from-xnat-input": "a resource",
+                    "required": "true",
+                    "provides-value-for-command-input": "file-input"
+                }
+            ]
         }
     ]
 }
