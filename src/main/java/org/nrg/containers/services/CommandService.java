@@ -24,6 +24,11 @@ public interface CommandService extends BaseHibernateService<Command> {
                                    final Map<String, String> variableRuntimeValues,
                                    final UserI userI)
             throws NotFoundException, CommandResolutionException;
+    ResolvedCommand resolveCommand(final Long xnatCommandWrapperId,
+                                   final Long commandId,
+                                   final Map<String, String> variableRuntimeValues,
+                                   final UserI userI)
+            throws NotFoundException, CommandResolutionException;
     ResolvedCommand resolveCommand(final Command command,
                                    final Map<String, String> variableRuntimeValues,
                                    final UserI userI)
@@ -35,6 +40,10 @@ public interface CommandService extends BaseHibernateService<Command> {
             throws NotFoundException, CommandResolutionException;
 
     ContainerExecution resolveAndLaunchCommand(final Long commandId,
+                                               final Map<String, String> variableRuntimeValues, final UserI userI)
+            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException;
+    ContainerExecution resolveAndLaunchCommand(final Long xnatCommandWrapperId,
+                                               final Long commandId,
                                                final Map<String, String> variableRuntimeValues, final UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException;
     ContainerExecution launchResolvedDockerCommand(final ResolvedDockerCommand resolvedCommand, final UserI userI)
