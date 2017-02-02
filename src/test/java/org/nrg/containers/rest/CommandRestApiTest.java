@@ -54,6 +54,8 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -335,18 +337,18 @@ public class CommandRestApiTest {
                 "{\"command-id\": " + String.valueOf(id) +"," +
                         "\"image\": \"" + FAKE_DOCKER_IMAGE + "\"," +
                         "\"env\": " + environmentVariablesJson + "," +
-                        "\"input-values\": " + inputJson + "," +
+                        "\"raw-input-values\": " + inputJson + "," +
                         "\"mounts-in\": []," +
                         "\"mounts-out\": []," +
                         "\"outputs\": []," +
                         "\"ports\": {}" +
                         "}";
         final ResolvedDockerCommand preparedResolvedCommand = mapper.readValue(preparedResolvedCommandJson, ResolvedDockerCommand.class);
-        when(mockDockerControlApi.launchImage(preparedResolvedCommand)).thenReturn(fakeContainerId);
-
-        // The (fake) container launch will be recorded in a (fake) ContainerExecution
         final ContainerExecution containerExecution = new ContainerExecution(preparedResolvedCommand, fakeContainerId, FAKE_USERNAME);
-        when(mockContainerExecutionService.save(preparedResolvedCommand, fakeContainerId, mockAdmin))
+
+        // We have to match any resolved command because spring will add a csrf token to the inputs. I don't know how to get that token in advance.
+        when(mockDockerControlApi.launchImage(any(ResolvedDockerCommand.class))).thenReturn(fakeContainerId);
+        when(mockContainerExecutionService.save(any(ResolvedCommand.class), eq(fakeContainerId), eq(mockAdmin)))
                 .thenReturn(containerExecution);
 
         final String path = String.format(pathTemplate, id);
@@ -362,8 +364,7 @@ public class CommandRestApiTest {
                 .getResponse()
                 .getContentAsString();
 
-        final Long idResponse = Long.parseLong(response);
-        assertEquals(idResponse, (Long) containerExecution.getId());
+        assertEquals(fakeContainerId, response);
     }
 
     @Test
@@ -402,11 +403,11 @@ public class CommandRestApiTest {
                 "\"ports\": {}" +
                 "}";
         final ResolvedDockerCommand preparedResolvedCommand = mapper.readValue(preparedResolvedCommandJson, ResolvedDockerCommand.class);
-        when(mockDockerControlApi.launchImage(preparedResolvedCommand)).thenReturn(fakeContainerId);
-
-        // The (fake) container launch will be recorded in a (fake) ContainerExecution
         final ContainerExecution containerExecution = new ContainerExecution(preparedResolvedCommand, fakeContainerId, FAKE_USERNAME);
-        when(mockContainerExecutionService.save(preparedResolvedCommand, fakeContainerId, mockAdmin))
+
+        // We have to match any resolved command because spring will add a csrf token to the inputs. I don't know how to get that token in advance.
+        when(mockDockerControlApi.launchImage(any(ResolvedDockerCommand.class))).thenReturn(fakeContainerId);
+        when(mockContainerExecutionService.save(any(ResolvedCommand.class), eq(fakeContainerId), eq(mockAdmin)))
                 .thenReturn(containerExecution);
 
         final String path = String.format(pathTemplate, id);
@@ -422,8 +423,7 @@ public class CommandRestApiTest {
                 .getResponse()
                 .getContentAsString();
 
-        final Long idResponse = Long.parseLong(response);
-        assertEquals(idResponse, (Long) containerExecution.getId());
+        assertEquals(fakeContainerId, response);
     }
 
 
