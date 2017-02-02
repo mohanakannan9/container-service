@@ -183,7 +183,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         //
         // I guess for now I'll do 2.
 
-        if (command.getOutputs() != null || !command.getOutputs().isEmpty()) {
+        if (command.getOutputs() != null && !command.getOutputs().isEmpty()) {
             throw new CommandResolutionException("Cannot resolve command without an XNAT wrapper. Command has outputs that will not be handled.");
         }
 
