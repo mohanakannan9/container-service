@@ -115,33 +115,33 @@ public class CommandRestApi extends AbstractXapiRestController {
     @RequestMapping(value = {"/launch"}, method = POST)
     @ApiOperation(value = "Launch a container from a resolved command")
     @ResponseBody
-    public Long launchCommand(final @RequestBody ResolvedDockerCommand resolvedDockerCommand)
+    public String launchCommand(final @RequestBody ResolvedDockerCommand resolvedDockerCommand)
             throws NoServerPrefException, DockerServerException {
         final UserI userI = XDAT.getUserDetails();
         final ContainerExecution executed = commandService.launchResolvedDockerCommand(resolvedDockerCommand, userI);
-        return executed.getId();
+        return executed.getContainerId();
     }
 
     @RequestMapping(value = {"/{id}/launch"}, method = POST)
     @ApiIgnore // Swagger UI does not correctly show this API endpoint
     @ResponseBody
-    public Long launchCommandWQueryParams(final @PathVariable Long id,
+    public String launchCommandWQueryParams(final @PathVariable Long id,
                                                         final @RequestParam Map<String, String> allRequestParams)
             throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException {
         log.info("Launch requested for command id " + String.valueOf(id));
         final ContainerExecution executed = launchCommand(id, allRequestParams);
-        return executed.getId();
+        return executed.getContainerId();
     }
 
     @RequestMapping(value = {"/{id}/launch"}, method = POST, consumes = {JSON})
     @ApiOperation(value = "Resolve a command from the variable values in the request body, and launch it")
     @ResponseBody
-    public Long launchCommandWJsonBody(final @PathVariable Long id,
+    public String launchCommandWJsonBody(final @PathVariable Long id,
                                                      final @RequestBody Map<String, String> allRequestParams)
             throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException {
         log.info("Launch requested for command id " + String.valueOf(id));
         final ContainerExecution executed = launchCommand(id, allRequestParams);
-        return executed.getId();
+        return executed.getContainerId();
     }
 
     private ContainerExecution launchCommand(final @PathVariable Long id, final @RequestParam Map<String, String> allRequestParams) throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, BadRequestException {
