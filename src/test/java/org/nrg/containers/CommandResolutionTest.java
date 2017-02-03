@@ -27,8 +27,6 @@ import org.nrg.containers.model.xnat.Resource;
 import org.nrg.containers.model.xnat.Scan;
 import org.nrg.containers.model.xnat.Session;
 import org.nrg.containers.services.CommandService;
-import org.nrg.containers.services.XnatCommandWrapperService;
-import org.nrg.framework.constants.Scope;
 import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,8 +39,6 @@ import java.io.File;
 import java.util.Map;
 import java.util.Set;
 
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -129,8 +125,7 @@ public class CommandResolutionTest {
         assertEquals(dummyCommand.getImage(), resolvedCommand.getImage());
         assertEquals(dummyCommand.getCommandLine(), resolvedCommand.getCommandLine());
         assertTrue(resolvedCommand.getEnvironmentVariables().isEmpty());
-        assertTrue(resolvedCommand.getMountsIn().isEmpty());
-        assertTrue(resolvedCommand.getMountsOut().isEmpty());
+        assertTrue(resolvedCommand.getMounts().isEmpty());
         assertThat(resolvedCommand, instanceOf(ResolvedDockerCommand.class));
         assertTrue(((ResolvedDockerCommand) resolvedCommand).getPorts().isEmpty());
 
@@ -181,8 +176,7 @@ public class CommandResolutionTest {
         assertEquals(dummyCommand.getImage(), resolvedCommand.getImage());
         assertEquals(dummyCommand.getCommandLine(), resolvedCommand.getCommandLine());
         assertTrue(resolvedCommand.getEnvironmentVariables().isEmpty());
-        assertTrue(resolvedCommand.getMountsIn().isEmpty());
-        assertTrue(resolvedCommand.getMountsOut().isEmpty());
+        assertTrue(resolvedCommand.getMounts().isEmpty());
         assertThat(resolvedCommand, instanceOf(ResolvedDockerCommand.class));
         assertTrue(((ResolvedDockerCommand) resolvedCommand).getPorts().isEmpty());
 
@@ -229,8 +223,7 @@ public class CommandResolutionTest {
         assertEquals(dummyCommand.getImage(), resolvedCommand.getImage());
         assertEquals(dummyCommand.getCommandLine(), resolvedCommand.getCommandLine());
         assertTrue(resolvedCommand.getEnvironmentVariables().isEmpty());
-        assertTrue(resolvedCommand.getMountsIn().isEmpty());
-        assertTrue(resolvedCommand.getMountsOut().isEmpty());
+        assertTrue(resolvedCommand.getMounts().isEmpty());
         assertThat(resolvedCommand, instanceOf(ResolvedDockerCommand.class));
         assertTrue(((ResolvedDockerCommand) resolvedCommand).getPorts().isEmpty());
 
@@ -274,8 +267,7 @@ public class CommandResolutionTest {
         assertEquals(dummyCommand.getImage(), resolvedCommand.getImage());
         assertEquals(dummyCommand.getCommandLine(), resolvedCommand.getCommandLine());
         assertTrue(resolvedCommand.getEnvironmentVariables().isEmpty());
-        assertTrue(resolvedCommand.getMountsIn().isEmpty());
-        assertTrue(resolvedCommand.getMountsOut().isEmpty());
+        assertTrue(resolvedCommand.getMounts().isEmpty());
         assertThat(resolvedCommand, instanceOf(ResolvedDockerCommand.class));
         assertTrue(((ResolvedDockerCommand) resolvedCommand).getPorts().isEmpty());
 
@@ -320,8 +312,7 @@ public class CommandResolutionTest {
         assertEquals(dummyCommand.getImage(), resolvedCommand.getImage());
         assertEquals(dummyCommand.getCommandLine(), resolvedCommand.getCommandLine());
         assertTrue(resolvedCommand.getEnvironmentVariables().isEmpty());
-        assertTrue(resolvedCommand.getMountsIn().isEmpty());
-        assertTrue(resolvedCommand.getMountsOut().isEmpty());
+        assertTrue(resolvedCommand.getMounts().isEmpty());
         assertThat(resolvedCommand, instanceOf(ResolvedDockerCommand.class));
         assertTrue(((ResolvedDockerCommand) resolvedCommand).getPorts().isEmpty());
 

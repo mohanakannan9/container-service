@@ -338,8 +338,7 @@ public class CommandRestApiTest {
                         "\"image\": \"" + FAKE_DOCKER_IMAGE + "\"," +
                         "\"env\": " + environmentVariablesJson + "," +
                         "\"raw-input-values\": " + inputJson + "," +
-                        "\"mounts-in\": []," +
-                        "\"mounts-out\": []," +
+                        "\"mounts\": []," +
                         "\"outputs\": []," +
                         "\"ports\": {}" +
                         "}";
@@ -397,8 +396,7 @@ public class CommandRestApiTest {
                 "\"image\": \"" + FAKE_DOCKER_IMAGE + "\"," +
                 "\"env\": " + environmentVariablesJson + "," +
                 "\"raw-input-values\": " + inputJson + "," +
-                "\"mounts-in\": []," +
-                "\"mounts-out\": []," +
+                "\"mounts\": []," +
                 "\"outputs\": []," +
                 "\"ports\": {}" +
                 "}";

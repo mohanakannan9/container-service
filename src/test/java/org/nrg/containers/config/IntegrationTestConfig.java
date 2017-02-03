@@ -12,6 +12,7 @@ import org.nrg.containers.daos.XnatCommandWrapperRepository;
 import org.nrg.containers.events.DockerContainerEventListener;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.ContainerExecution;
+import org.nrg.containers.model.ContainerExecutionMount;
 import org.nrg.containers.model.DockerCommand;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.XnatCommandWrapper;
@@ -180,7 +181,8 @@ public class IntegrationTestConfig {
                 Command.class,
                 DockerCommand.class,
                 XnatCommandWrapper.class,
-                ContainerExecution.class);
+                ContainerExecution.class,
+                ContainerExecutionMount.class);
 
         return bean;
     }

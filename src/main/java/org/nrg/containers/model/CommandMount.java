@@ -14,7 +14,7 @@ public class CommandMount implements Serializable {
 
     @JsonProperty(required = true) private String name;
     private Boolean writable;
-    @JsonProperty("path") private String remotePath;
+    @JsonProperty("path") private String containerPath;
 
     public String getName() {
         return name;
@@ -36,12 +36,12 @@ public class CommandMount implements Serializable {
         this.writable = writable;
     }
 
-    public String getRemotePath() {
-        return remotePath;
+    public String getContainerPath() {
+        return containerPath;
     }
 
-    public void setRemotePath(final String remotePath) {
-        this.remotePath = remotePath;
+    public void setContainerPath(final String remotePath) {
+        this.containerPath = remotePath;
     }
 
 
@@ -49,7 +49,7 @@ public class CommandMount implements Serializable {
     @ApiModelProperty(hidden = true)
     public String toBindMountString(final String hostPath) {
         // return hostPath + ":" + remotePath + (isInput()?":ro":"");
-        return hostPath + ":" + remotePath + (writable?"":":ro");
+        return hostPath + ":" + containerPath + (writable?"":":ro");
     }
 
     @Override
@@ -60,14 +60,14 @@ public class CommandMount implements Serializable {
         return Objects.equals(this.name, that.name) &&
                 // Objects.equals(this.type, that.type) &&
                 Objects.equals(this.writable, that.writable) &&
-                Objects.equals(this.remotePath, that.remotePath); // &&
+                Objects.equals(this.containerPath, that.containerPath); // &&
                 // Objects.equals(this.fileInput, that.fileInput) &&
                 // Objects.equals(this.resource, that.resource);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, writable, remotePath);
+        return Objects.hash(name, writable, containerPath);
     }
 
     @Override
@@ -76,7 +76,7 @@ public class CommandMount implements Serializable {
                 .add("name", name)
                 // .add("type", type)
                 .add("writable", writable)
-                .add("remotePath", remotePath)
+                .add("containerPath", containerPath)
                 // .add("fileInput", fileInput)
                 // .add("resource", resource)
                 .toString();

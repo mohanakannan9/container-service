@@ -8,12 +8,13 @@ import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
-import javax.persistence.Table;
+import javax.persistence.FetchType;
+import javax.persistence.OneToMany;
 import javax.persistence.Transient;
-import javax.persistence.UniqueConstraint;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -26,8 +27,7 @@ public class ContainerExecution extends AbstractHibernateEntity {
     @JsonProperty("docker-image") private String dockerImage;
     @JsonProperty("command-line") private String commandLine;
     @JsonProperty("env") private Map<String, String> environmentVariables = Maps.newHashMap();
-    @JsonProperty("mounts-in") private List<ContainerExecutionMount> mountsIn = Lists.newArrayList();
-    @JsonProperty("mounts-out") private List<ContainerExecutionMount> mountsOut = Lists.newArrayList();
+    @JsonProperty("mounts") private List<ContainerExecutionMount> mounts = Lists.newArrayList();
     @JsonProperty("container-id") private String containerId;
     @JsonProperty("user-id") private String userId;
     @JsonProperty("raw-input-values") private Map<String, String> rawInputValues;
@@ -52,12 +52,9 @@ public class ContainerExecution extends AbstractHibernateEntity {
         this.environmentVariables = resolvedCommand.getEnvironmentVariables() == null ?
                 Maps.<String, String>newHashMap() :
                 Maps.newHashMap(resolvedCommand.getEnvironmentVariables());
-        this.mountsIn = resolvedCommand.getMountsIn() == null ?
+        this.mounts = resolvedCommand.getMounts() == null ?
                 Lists.<ContainerExecutionMount>newArrayList() :
-                Lists.newArrayList(resolvedCommand.getMountsIn());
-        this.mountsOut = resolvedCommand.getMountsOut() == null ?
-                Lists.<ContainerExecutionMount>newArrayList() :
-                Lists.newArrayList(resolvedCommand.getMountsOut());
+                Lists.newArrayList(resolvedCommand.getMounts());
         this.rawInputValues = resolvedCommand.getRawInputValues() == null ?
                 Maps.<String, String>newHashMap() :
                 resolvedCommand.getRawInputValues();
@@ -113,22 +110,13 @@ public class ContainerExecution extends AbstractHibernateEntity {
         this.environmentVariables = environmentVariables;
     }
 
-    @ElementCollection
-    public List<ContainerExecutionMount> getMountsIn() {
-        return mountsIn;
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
+    public List<ContainerExecutionMount> getMounts() {
+        return mounts;
     }
 
-    public void setMountsIn(final List<ContainerExecutionMount> mountsIn) {
-        this.mountsIn = mountsIn;
-    }
-
-    @ElementCollection
-    public List<ContainerExecutionMount> getMountsOut() {
-        return mountsOut;
-    }
-
-    public void setMountsOut(final List<ContainerExecutionMount> mountsOut) {
-        this.mountsOut = mountsOut;
+    public void setMounts(final List<ContainerExecutionMount> mounts) {
+        this.mounts = mounts;
     }
 
     public String getContainerId() {
@@ -252,8 +240,7 @@ public class ContainerExecution extends AbstractHibernateEntity {
                 Objects.equals(this.dockerImage, that.dockerImage) &&
                 Objects.equals(this.commandLine, that.commandLine) &&
                 Objects.equals(this.environmentVariables, that.environmentVariables) &&
-                Objects.equals(this.mountsIn, that.mountsIn) &&
-                Objects.equals(this.mountsOut, that.mountsOut) &&
+                Objects.equals(this.mounts, that.mounts) &&
                 Objects.equals(this.containerId, that.containerId) &&
                 Objects.equals(this.userId, that.userId) &&
                 Objects.equals(this.rawInputValues, that.rawInputValues) &&
@@ -267,7 +254,7 @@ public class ContainerExecution extends AbstractHibernateEntity {
     @Override
     public int hashCode() {
         return Objects.hash(super.getId(), commandId, xnatCommandWrapperId, dockerImage, commandLine, environmentVariables,
-                mountsIn, mountsOut, containerId, userId, rawInputValues, xnatInputValues, commandInputValues, outputs, history, logPaths);
+                mounts, containerId, userId, rawInputValues, xnatInputValues, commandInputValues, outputs, history, logPaths);
     }
 
     @Override
@@ -278,8 +265,7 @@ public class ContainerExecution extends AbstractHibernateEntity {
                 .add("dockerImage", dockerImage)
                 .add("commandLine", commandLine)
                 .add("environmentVariables", environmentVariables)
-                .add("mountsIn", mountsIn)
-                .add("mountsOut", mountsOut)
+                .add("mounts", mounts)
                 .add("containerId", containerId)
                 .add("userId", userId)
                 .add("rawInputValues", rawInputValues)

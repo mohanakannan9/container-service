@@ -5,7 +5,13 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.containers.exceptions.*;
+import org.nrg.containers.exceptions.BadRequestException;
+import org.nrg.containers.exceptions.CommandInputResolutionException;
+import org.nrg.containers.exceptions.CommandResolutionException;
+import org.nrg.containers.exceptions.ContainerMountResolutionException;
+import org.nrg.containers.exceptions.DockerServerException;
+import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.ResolvedDockerCommand;
@@ -116,7 +122,7 @@ public class CommandRestApi extends AbstractXapiRestController {
     @ApiOperation(value = "Launch a container from a resolved command")
     @ResponseBody
     public String launchCommand(final @RequestBody ResolvedDockerCommand resolvedDockerCommand)
-            throws NoServerPrefException, DockerServerException {
+            throws NoServerPrefException, DockerServerException, ContainerMountResolutionException {
         final UserI userI = XDAT.getUserDetails();
         final ContainerExecution executed = commandService.launchResolvedDockerCommand(resolvedDockerCommand, userI);
         return executed.getContainerId();
@@ -144,7 +150,8 @@ public class CommandRestApi extends AbstractXapiRestController {
         return executed.getContainerId();
     }
 
-    private ContainerExecution launchCommand(final @PathVariable Long id, final @RequestParam Map<String, String> allRequestParams) throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, BadRequestException {
+    private ContainerExecution launchCommand(final @PathVariable Long id, final @RequestParam Map<String, String> allRequestParams)
+            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, BadRequestException {
         final UserI userI = XDAT.getUserDetails();
         try {
             final ContainerExecution containerExecution = commandService.resolveAndLaunchCommand(id, allRequestParams, userI);
@@ -236,6 +243,12 @@ public class CommandRestApi extends AbstractXapiRestController {
     @ExceptionHandler(value = {DockerServerException.class})
     public String handleDockerServerError(final Exception e) {
         return "The Docker server returned an error:\n" + e.getMessage();
+    }
+
+    @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
+    @ExceptionHandler(value = {CommandResolutionException.class})
+    public String handleCommandResolutionException(final CommandResolutionException e) {
+        return "The command could not be resolved.\n" + e.getMessage();
     }
 
     @ResponseStatus(value = HttpStatus.BAD_REQUEST)

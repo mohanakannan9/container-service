@@ -1,6 +1,5 @@
 package org.nrg.containers.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -29,8 +28,7 @@ public abstract class ResolvedCommand implements Serializable {
     @JsonProperty("image") private String image;
     @JsonProperty("command-line") private String commandLine;
     @JsonProperty("env") private Map<String, String> environmentVariables;
-    @JsonProperty("mounts-in") private List<ContainerExecutionMount> mountsIn;
-    @JsonProperty("mounts-out") private List<ContainerExecutionMount> mountsOut;
+    @JsonProperty("mounts") private List<ContainerExecutionMount> mounts;
     private List<ContainerExecutionOutput> outputs;
 
     public ResolvedCommand() {}
@@ -112,39 +110,14 @@ public abstract class ResolvedCommand implements Serializable {
         }
     }
 
-    public List<ContainerExecutionMount> getMountsIn() {
-        return mountsIn;
+    public List<ContainerExecutionMount> getMounts() {
+        return mounts;
     }
 
-    public void setMountsIn(final List<ContainerExecutionMount> mountsIn) {
-        this.mountsIn = mountsIn == null ?
-                Lists.<ContainerExecutionMount>newArrayList() :
-                Lists.newArrayList(mountsIn);
-    }
-
-    public List<ContainerExecutionMount> getMountsOut() {
-        return mountsOut;
-    }
-
-    public void setMountsOut(final List<ContainerExecutionMount> mountsOut) {
-        this.mountsOut = mountsOut == null ?
-                Lists.<ContainerExecutionMount>newArrayList() :
-                Lists.newArrayList(mountsOut);
-    }
-
-    @JsonIgnore
     public void setMounts(final List<ContainerExecutionMount> mounts) {
-        final List<ContainerExecutionMount> mountsIn = Lists.newArrayList();
-        final List<ContainerExecutionMount> mountsOut = Lists.newArrayList();
-        for (final ContainerExecutionMount mount : mounts) {
-            if (mount.isWritable()) {
-                mountsIn.add(mount);
-            } else {
-                mountsOut.add(mount);
-            }
-        }
-        setMountsIn(mountsIn);
-        setMountsOut(mountsOut);
+        this.mounts = mounts == null ?
+                Lists.<ContainerExecutionMount>newArrayList() :
+                mounts;
     }
 
     public Map<String, String> getCommandInputValues() {
@@ -188,15 +161,14 @@ public abstract class ResolvedCommand implements Serializable {
                 Objects.equals(this.image, that.image) &&
                 Objects.equals(this.commandLine, that.commandLine) &&
                 Objects.equals(this.environmentVariables, that.environmentVariables) &&
-                Objects.equals(this.mountsIn, that.mountsIn) &&
-                Objects.equals(this.mountsOut, that.mountsOut) &&
+                Objects.equals(this.mounts, that.mounts) &&
                 Objects.equals(this.outputs, that.outputs);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(rawInputValues, xnatCommandWrapperId, xnatInputValues, commandId, commandInputValues,
-                image, commandLine, environmentVariables, mountsIn, mountsOut, outputs);
+                image, commandLine, environmentVariables, mounts, outputs);
     }
 
     public MoreObjects.ToStringHelper addPropertiesToString(final MoreObjects.ToStringHelper helper) {
@@ -209,8 +181,7 @@ public abstract class ResolvedCommand implements Serializable {
                 .add("xnatInputValues", xnatInputValues)
                 .add("commandInputValues", commandInputValues)
                 .add("environmentVariables", environmentVariables)
-                .add("mountsIn", mountsIn)
-                .add("mountsOut", mountsOut)
+                .add("mounts", mounts)
                 .add("outputs", outputs);
     }
 

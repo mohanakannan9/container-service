@@ -104,15 +104,15 @@ public class ContainerFinalizeHelper {
 
         // TODO Add some stuff with status code. "x" means "don't know", "0" success, greater than 0 failure.
 
-        if (containerExecution.getOutputs() != null) {
-            if (containerExecution.getMountsOut() != null) {
-                for (final ContainerExecutionMount mountOut : containerExecution.getMountsOut()) {
-                    untransportedMounts.put(mountOut.getName(), mountOut);
-                }
-            }
-
-            uploadOutputs();
-        }
+        // if (containerExecution.getOutputs() != null) {
+        //     if (containerExecution.getMountsOut() != null) {
+        //         for (final ContainerExecutionMount mountOut : containerExecution.getMountsOut()) {
+        //             untransportedMounts.put(mountOut.getName(), mountOut);
+        //         }
+        //     }
+        //
+        //     uploadOutputs();
+        // }
     }
 
     private Set<String> uploadLogs() {

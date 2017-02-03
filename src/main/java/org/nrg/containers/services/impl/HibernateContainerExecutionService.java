@@ -70,8 +70,7 @@ public class HibernateContainerExecutionService
         Hibernate.initialize(entity);
         Hibernate.initialize(entity.getEnvironmentVariables());
         Hibernate.initialize(entity.getHistory());
-        Hibernate.initialize(entity.getMountsIn());
-        Hibernate.initialize(entity.getMountsOut());
+        Hibernate.initialize(entity.getMounts());
         Hibernate.initialize(entity.getCommandLine());
         Hibernate.initialize(entity.getRawInputValues());
         Hibernate.initialize(entity.getXnatInputValues());

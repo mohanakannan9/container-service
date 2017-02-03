@@ -40,7 +40,6 @@ import org.nrg.containers.model.DockerHub;
 import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.model.DockerServerPrefsBean;
-import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
@@ -223,10 +222,7 @@ public class DockerControlApi implements ContainerControlApi {
         final String dockerImageId = resolvedDockerCommand.getImage();
         final String runCommand = resolvedDockerCommand.getCommandLine();
         final List<String> bindMounts = Lists.newArrayList();
-        for (final ContainerExecutionMount mount : resolvedDockerCommand.getMountsIn()) {
-            bindMounts.add(mount.toBindMountString());
-        }
-        for (final ContainerExecutionMount mount : resolvedDockerCommand.getMountsOut()) {
+        for (final ContainerExecutionMount mount : resolvedDockerCommand.getMounts()) {
             bindMounts.add(mount.toBindMountString());
         }
         final List<String> environmentVariables = Lists.newArrayList();

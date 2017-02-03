@@ -24,6 +24,7 @@ import org.nrg.containers.model.CommandMount;
 import org.nrg.containers.model.CommandOutput;
 import org.nrg.containers.model.ContainerExecutionMount;
 import org.nrg.containers.model.ContainerExecutionOutput;
+import org.nrg.containers.model.ContainerMountFiles;
 import org.nrg.containers.model.DockerCommand;
 import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.containers.model.ResolvedDockerCommand;
@@ -65,7 +66,7 @@ public class CommandResolutionHelper {
     private String commandWrapperJson;
     private final Map<String, XnatCommandInput> resolvedXnatInputObjects = Maps.newHashMap();
     private final Map<String, String> resolvedXnatInputValuesByCommandInputName = Maps.newHashMap();
-    private final Map<String, String> commandOutputDestinationXnatInputNames = Maps.newHashMap();
+    private final Map<String, List<XnatCommandInput>> commandMountsToReceiveFilesFromXnatInputs = Maps.newHashMap();
     private final Map<String, String> resolvedInputValuesByReplacementKey = Maps.newHashMap();
     private final Map<String, String> resolvedInputCommandLineValuesByReplacementKey = Maps.newHashMap();
     private final UserI userI;
@@ -457,6 +458,9 @@ public class CommandResolutionHelper {
                 }
                 resolvedXnatInputValuesByCommandInputName.put(commandInputName, externalInput.getValue());
             }
+
+            // If this xnat input provides files to a mount, note that now
+            addInputToMountsList(externalInput);
 
             final String replacementKey = externalInput.getReplacementKey();
             if (StringUtils.isBlank(replacementKey)) {
@@ -989,8 +993,8 @@ public class CommandResolutionHelper {
                     resolvedXnatInputValuesByCommandInputName.put(commandInputName, derivedInput.getValue());
                 }
 
-                // // If this xnat input accepts any command outputs, note that now
-                // setCommandOutputDestinationXnatInputNames(derivedInput.getCommandOutputHandlers(), derivedInput.getName());
+                // If this xnat input provides files to a mount, note that now
+                addInputToMountsList(derivedInput);
 
                 final String replacementKey = derivedInput.getReplacementKey();
                 if (StringUtils.isBlank(replacementKey)) {
@@ -1005,6 +1009,21 @@ public class CommandResolutionHelper {
 
         log.info("Done resolving xnat wrapper inputs.");
         return resolvedXnatWrapperInputValuesByName;
+    }
+
+    private void addInputToMountsList(final XnatCommandInput input) {
+        if (input != null) {
+            // TODO validate that there is a mount with this name
+            final String mountName = input.getProvidesFilesForCommandMount();
+            if (StringUtils.isNotBlank(mountName)) {
+                List<XnatCommandInput> xnatInputs = commandMountsToReceiveFilesFromXnatInputs.get(mountName);
+                if (xnatInputs == null) {
+                    xnatInputs = Lists.newArrayList();
+                }
+                xnatInputs.add(input);
+                commandMountsToReceiveFilesFromXnatInputs.put(mountName, xnatInputs);
+            }
+        }
     }
 
     private Map<String, String> resolveInputs() throws CommandResolutionException {
@@ -1466,24 +1485,18 @@ public class CommandResolutionHelper {
         return resolvedMap;
     }
 
-    private List<ContainerExecutionMount> resolveCommandMounts() throws CommandMountResolutionException {
+    private List<ContainerExecutionMount> resolveCommandMounts() throws CommandResolutionException {
         log.info("Resolving mounts.");
-        final List<CommandMount> mountTemplates = command.getMounts();
-        if (mountTemplates == null || mountTemplates.isEmpty()) {
+        final List<CommandMount> commandMounts = command.getMounts();
+        if (commandMounts == null || commandMounts.isEmpty()) {
             log.info("No mounts.");
             return Lists.newArrayList();
         }
 
         final List<ContainerExecutionMount> resolvedMounts = Lists.newArrayList();
-        // TODO Temporary comment-out to get code to compile for other tests
-        // for (final CommandMount mount : mountTemplates) {
-        //     log.info(String.format("Resolving mount \"%s\".", mount.getName()));
-        //     final ContainerExecutionMount resolvedMount = new ContainerExecutionMount(mount);
-        //     if (mount.isInput()) {
-        //         resolvedMount.setHostPath(resolveCommandMountHostPath(mount));
-        //     }
-        //     resolvedMounts.add(resolvedMount);
-        // }
+        for (final CommandMount commandMount : commandMounts) {
+            resolvedMounts.add(resolveCommandMount(commandMount));
+        }
 
         log.info("Done resolving mounts.");
         if (log.isDebugEnabled()) {
@@ -1494,87 +1507,108 @@ public class CommandResolutionHelper {
         return resolvedMounts;
     }
 
-    // TODO Temporary comment-out to get code to compile for other tests
-    // private String resolveCommandMountHostPath(final CommandMount mount) throws CommandMountResolutionException {
-    //     log.info(String.format("Resolving hostPath for mount \"%s\".", mount.getName()));
-    //
-    //     final String hostPath;
-    //     if (StringUtils.isNotBlank(mount.getFileInput())) {
-    //
-    //         final CommandInput sourceInput = resolvedXnatInputObjects.get(mount.getFileInput());
-    //         if (sourceInput == null || StringUtils.isBlank(sourceInput.getValue())) {
-    //             final String message = String.format("Cannot resolve mount \"%s\". Source input \"%s\" has no resolved value.", mount.getName(), mount.getFileInput());
-    //             throw new CommandMountResolutionException(message, mount);
-    //         }
-    //         final String sourceInputJson = sourceInput.getJsonRepresentation();
-    //         if (log.isDebugEnabled()) {
-    //             log.debug(String.format("Source input has type \"%s\".", sourceInput.getType()));
-    //         }
-    //         switch (sourceInput.getType()) {
-    //             case RESOURCE:
-    //                 try {
-    //                     final Resource resource = mapper.readValue(sourceInputJson, Resource.class);
-    //                     hostPath = resource.getDirectory();
-    //                 } catch (IOException e) {
-    //                     String message = "Source input is not a Resource.";
-    //                     if (log.isDebugEnabled()) {
-    //                         message += "\ninput: " + sourceInput;
-    //                     }
-    //                     throw new CommandMountResolutionException(message, mount, e);
-    //                 }
-    //                 break;
-    //             case FILE:
-    //                 hostPath = sourceInput.getValue();
-    //                 break;
-    //             case PROJECT:
-    //                 // Intentional fallthrough
-    //             case SUBJECT:
-    //                 // Intentional fallthrough
-    //             case SESSION:
-    //                 // Intentional fallthrough
-    //             case SCAN:
-    //                 // Intentional fallthrough
-    //             case ASSESSOR:
-    //                 if (log.isDebugEnabled()) {
-    //                     log.debug("Looking for child resources on source input.");
-    //                 }
-    //                 final List<Resource> resources = JsonPath.parse(sourceInputJson).read("$.resources[*]", new TypeRef<List<Resource>>(){});
-    //                 if (resources == null || resources.isEmpty()) {
-    //                     throw new CommandMountResolutionException(String.format("Could not find any resources for source input \"%s\".", sourceInput), mount);
-    //                 }
-    //
-    //                 if (StringUtils.isBlank(mount.getResource()) || resources.size() == 1) {
-    //                     hostPath = resources.get(0).getDirectory();
-    //                 } else {
-    //                     String directory = null;
-    //                     for (final Resource resource : resources) {
-    //                         if (resource.getLabel().equals(mount.getResource())) {
-    //                             directory = resource.getDirectory();
-    //                             break;
-    //                         }
-    //                     }
-    //                     if (StringUtils.isNotBlank(directory)) {
-    //                         hostPath = directory;
-    //                     } else {
-    //                         throw new CommandMountResolutionException(String.format("Source input \"%s\" has no resource with label \"%s\".", sourceInput.getName(), mount.getResource()), mount);
-    //                     }
-    //                 }
-    //
-    //                 break;
-    //             default:
-    //                 throw new CommandMountResolutionException("I don't know how to resolve a mount from an input of type " + sourceInput.getType(), mount);
-    //         }
-    //     } else {
-    //         throw new CommandMountResolutionException("I don't know how to resolve a mount without a source input.", mount);
-    //     }
-    //
-    //     if (StringUtils.isBlank(hostPath)) {
-    //         throw new CommandMountResolutionException("Could not resolve command mount host path.", mount);
-    //     }
-    //
-    //     log.info("Resolved host path: " + hostPath);
-    //     return hostPath;
-    // }
+    private ContainerExecutionMount resolveCommandMount(final CommandMount commandMount)
+            throws CommandResolutionException {
+        if (log.isInfoEnabled()) {
+            log.info(String.format("Resolving command mount \"%s\".", commandMount.getName()));
+        }
+
+        final ContainerExecutionMount resolvedMount = new ContainerExecutionMount(commandMount);
+        resolvedMount.setContainerPath(resolveTemplate(commandMount.getContainerPath()));
+
+        final List<XnatCommandInput> sourceInputs = commandMountsToReceiveFilesFromXnatInputs.get(commandMount.getName());
+        if (sourceInputs == null || sourceInputs.isEmpty()) {
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Command mount \"%s\" has no inputs that provide it files. Assuming it is an output mount.", commandMount.getName()));
+            }
+            resolvedMount.setWritable(true);
+        } else {
+            final List<ContainerMountFiles> filesList = Lists.newArrayList();
+            for (final XnatCommandInput sourceInput : sourceInputs) {
+                if (sourceInput == null) {
+                    final String message = String.format("Cannot resolve mount \"%s\". Source input is null.", commandMount.getName());
+                    log.error(message);
+                    throw new CommandMountResolutionException(message, commandMount);
+                } else if (StringUtils.isBlank(sourceInput.getValue())) {
+                    final String message = String.format("Cannot resolve mount \"%s\". Source input \"%s\" has no resolved value.", commandMount.getName(), sourceInput.getName());
+                    log.error(message);
+                    throw new CommandMountResolutionException(message, commandMount);
+                }
+
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("Mount \"%s\" has source input \"%s\" with type \"%s\".", commandMount.getName(), sourceInput.getName(), sourceInput.getType().getName()));
+                }
+                final ContainerMountFiles files = new ContainerMountFiles(sourceInput);
+                switch (sourceInput.getType()) {
+                    case DIRECTORY:
+                        // TODO
+                        break;
+                    case FILES:
+                        // TODO
+                        break;
+                    case FILE:
+                        // TODO
+                        break;
+                    case PROJECT:
+                        // Intentional fallthrough
+                    case SESSION:
+                        // Intentional fallthrough
+                    case SCAN:
+                        // Intentional fallthrough
+                    case ASSESSOR:
+                        // Intentional fallthrough
+                    case RESOURCE:
+                        if (log.isDebugEnabled()) {
+                            log.debug("Looking for directory on source input.");
+                        }
+
+                        final String directory = JsonPath.parse(sourceInput.getJsonRepresentation()).read("directory", String.class);
+                        if (StringUtils.isNotBlank(directory)) {
+                            if (log.isDebugEnabled()) {
+                                log.debug("Setting directory " + directory);
+                            }
+                            files.setRootDirectory(directory);
+                        } else {
+                            String message = "Source input has no directory.";
+                            if (log.isDebugEnabled()) {
+                                message += "\ninput: " + sourceInput;
+                            }
+                            log.error(message);
+                            throw new CommandMountResolutionException(message, commandMount);
+                        }
+
+                        final String uri = JsonPath.parse(sourceInput.getJsonRepresentation()).read("uri", String.class);
+                        if (StringUtils.isNotBlank(uri)) {
+                            files.setFromUri(uri);
+                        } else {
+                            // throw new CommandMountResolutionException(String.format("Source input \"%s\" has no uri.", sourceInput.getName()), commandMount);
+                            // I don't need to throw an exception here, right? This should be fine, right?
+                        }
+
+                        break;
+                    default:
+                        final String message = String.format("I don't know how to provide files to a mount from an input of type \"%s\".", sourceInput.getType().getName());
+                        log.error(message);
+                        throw new CommandMountResolutionException(message, commandMount);
+                }
+
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("Done resolving mount \"%s\", source input \"%s\".", commandMount.getName(), sourceInput.getName()));
+                }
+                filesList.add(files);
+            }
+            resolvedMount.setInputFiles(filesList);
+
+
+        }
+
+
+
+        if (log.isInfoEnabled()) {
+            log.info(String.format("Done resolving command mount \"%s\".", commandMount.getName()));
+        }
+        return resolvedMount;
+    }
 
     private String resolveTemplate(final String template)
             throws CommandResolutionException {

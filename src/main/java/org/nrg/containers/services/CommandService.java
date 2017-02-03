@@ -1,6 +1,7 @@
 package org.nrg.containers.services;
 
 import org.nrg.containers.exceptions.CommandResolutionException;
+import org.nrg.containers.exceptions.ContainerMountResolutionException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
@@ -47,7 +48,7 @@ public interface CommandService extends BaseHibernateService<Command> {
                                                final Map<String, String> variableRuntimeValues, final UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException;
     ContainerExecution launchResolvedDockerCommand(final ResolvedDockerCommand resolvedCommand, final UserI userI)
-            throws NoServerPrefException, DockerServerException;
+            throws NoServerPrefException, DockerServerException, ContainerMountResolutionException;
 
     List<Command> save(final List<Command> commands);
 
