@@ -4,30 +4,11 @@
 ####
 
 dockerSetupPanel:
-    kind: panel.form
+    kind: panel
     name: dockerSetupPanel
     label: Docker Server Setup
-    url: /xapi/docker/server
-    contentType: json
+    footer: false
     contents:
-        defaultHub:
-            kind: panel.element
-            label: Container Server Host(s)
-            contents:
-                link:
-                    tag: a.link
-                    element:
-                        href: "#"
-                        html: Default (https://hub.docker.com)
-        addHub:
-            kind: panel.element
-            contents:
-                button:
-                    tag: button
-                    element:
-                        value: Add Container Server Host
-                        html: Add Container Server Host
-                        class: new-container-host
         containerHostTemplate:
             tag: "div#container-host-editor-template.html-template"
             contents:
@@ -37,37 +18,28 @@ dockerSetupPanel:
                     id: container-host-editor
                     header: false
                     footer: false
-                    action: /xapi/docker/hubs
+                    action: /xapi/docker/server
                     contentType: json
                     contents:
                         pad:
                             tag: div.pad20top
-                        id:
-                            kind: panel.input.hidden
-                            id: hub-id
-                            name: id
+                        host:
+                            kind: panel.input.text
+                            id: host-name
+                            name: host
+                            label: Host Name
+                            validation: not-empty
+                        certPath:
+                            kind: panel.input.text
+                            id: cert-path
+                            name: certPath
+                            label: "Certificate Path"
                             className: hidden
-                        hubName:
-                            kind: panel.input.text
-                            id: hub-name
-                            name: hubName
-                            label: Hub Name
-                            validation: not-empty
-                        hubUrl:
-                            kind: panel.input.text
-                            id: hub-url
-                            name: hubUrl
-                            label: URL
-                            validation: not-empty
-                        hubEnabled:
-                            kind: panel.input.switchbox
-                            id: hub-enabled
-                            name: hubEnabled
-                            label: Enable Hub
-                            onText: Enabled
-                            offText: Disabled
+        containerHostTable:
+            tag: "div#container-host-manager"
         containerHostScript:
-            tag: script|src="~/scripts/xnat/admin/containerManagement.js"
+#            tag: script|src="/scripts/xnat/admin/containerHostManagement.js"
+            tag: script|src="~/scripts/xnat/admin/containerHostManagement.js"
 
 imageHostsPanel:
     kind: panel.form
@@ -87,14 +59,21 @@ imageHostsPanel:
                         target: _blank
                         html: https://hub.docker.com
         addHostCommand:
-            tag: button#add-image-host.btn1|style=margin-top:15px;
-            content: Add Image Host
+            kind: panel.element
+            contents:
+                button:
+                    tag: button.add-image-host
+                    element:
+                        html: Add Image Host
 
 installedImagesPanel:
-    kind: panel
+    kind: panel.dataTable
     name: installedImagesPanel
     label: Installed Container Images and Commands
-    url:
+    url: /xapi/docker/images
+    contentType: json
+
+
 
 #################################################
 ####  Root Site Admin Spawner Config Object  ####
@@ -125,4 +104,4 @@ siteSettings:
             group: containerServiceTabGroup
             active: true
             contents:
-                ${installedImagesPanel}
+#                ${installedImagesPanel}
