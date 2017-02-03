@@ -61,6 +61,11 @@ import static org.mockito.Mockito.when;
 public class CommandLaunchIntegrationTest {
     private UserI mockUser;
 
+    private final String FAKE_USER = "mockUser";
+    private final String FAKE_ALIAS = "alias";
+    private final String FAKE_SECRET = "secret";
+    private final String FAKE_HOST = "mock://url";
+
     @Autowired private ObjectMapper mapper;
     @Autowired private CommandService commandService;
     @Autowired private AliasTokenService mockAliasTokenService;
@@ -100,21 +105,22 @@ public class CommandLaunchIntegrationTest {
 
         // Mock the userI
         mockUser = Mockito.mock(UserI.class);
-        when(mockUser.getLogin()).thenReturn("mockUser");
+        when(mockUser.getLogin()).thenReturn(FAKE_USER);
 
         // Mock the user management service
-        when(mockUserManagementServiceI.getUser("mockUser")).thenReturn(mockUser);
+        when(mockUserManagementServiceI.getUser(FAKE_USER)).thenReturn(mockUser);
 
         // Mock the aliasTokenService
         final AliasToken mockAliasToken = new AliasToken();
-        mockAliasToken.setAlias("alias");
-        mockAliasToken.setSecret("secret");
+        mockAliasToken.setAlias(FAKE_ALIAS);
+        mockAliasToken.setSecret(FAKE_SECRET);
         when(mockAliasTokenService.issueTokenForUser(mockUser)).thenReturn(mockAliasToken);
 
         // Mock the site config preferences
-        when(mockSiteConfigPreferences.getSiteUrl()).thenReturn("mock://url");
+        when(mockSiteConfigPreferences.getSiteUrl()).thenReturn(FAKE_HOST);
         when(mockSiteConfigPreferences.getBuildPath()).thenReturn(folder.newFolder().getAbsolutePath()); // transporter makes a directory under build
         when(mockSiteConfigPreferences.getArchivePath()).thenReturn(folder.newFolder().getAbsolutePath()); // container logs get stored under archive
+        when(mockSiteConfigPreferences.getProperty("processingUrl", FAKE_HOST)).thenReturn(FAKE_HOST);
     }
 
     @Test
@@ -183,6 +189,13 @@ public class CommandLaunchIntegrationTest {
             }
         });
         assertEquals(Lists.newArrayList("data", "text-file"), outputNames);
+
+        // Environment variables
+        final Map<String, String> expectedEnvironmentVariables = Maps.newHashMap();
+        expectedEnvironmentVariables.put("XNAT_USER", FAKE_ALIAS);
+        expectedEnvironmentVariables.put("XNAT_PASS", FAKE_SECRET);
+        expectedEnvironmentVariables.put("XNAT_HOST", FAKE_HOST);
+        assertEquals(expectedEnvironmentVariables, execution.getEnvironmentVariables());
 
         // TODO fix mounts, then revisit this
         // assertThat(execution.getMountsOut(), hasSize(1));
