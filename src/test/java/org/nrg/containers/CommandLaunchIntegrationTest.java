@@ -197,26 +197,45 @@ public class CommandLaunchIntegrationTest {
         expectedEnvironmentVariables.put("XNAT_HOST", FAKE_HOST);
         assertEquals(expectedEnvironmentVariables, execution.getEnvironmentVariables());
 
-        // TODO fix mounts, then revisit this
-        // assertThat(execution.getMountsOut(), hasSize(1));
-        // final ContainerExecutionMount mountOut = execution.getMountsOut().get(0);
-        // final String outputPath = mountOut.getHostPath();
-        // final File outputFile = new File(outputPath + "/out.txt");
-        // if (!outputFile.canRead()) {
-        //     fail("Cannot read output file " + outputFile.getAbsolutePath());
-        // }
-        // final String[] outputFileContents = FileUtils.readFileToString(outputFile).split("\\n");
-        // assertThat(outputFileContents.length, greaterThanOrEqualTo(2));
-        // assertEquals("recon-all -s session1 -all", outputFileContents[0]);
-        //
-        // final File fakeResourceDirFile = new File(fakeResourceDir);
-        // assertNotNull(fakeResourceDirFile);
-        // assertNotNull(fakeResourceDirFile.listFiles());
-        // final List<String> fakeResourceDirFileNames = Lists.newArrayList();
-        // for (final File file : fakeResourceDirFile.listFiles()) {
-        //     fakeResourceDirFileNames.add(file.getName());
-        //
-        // }
-        // assertEquals(fakeResourceDirFileNames, Lists.newArrayList(outputFileContents[1].split(" ")));
+
+        final List<ContainerExecutionMount> mounts = execution.getMounts();
+        assertThat(mounts, hasSize(2));
+
+        ContainerExecutionMount inputMount = null;
+        ContainerExecutionMount outputMount = null;
+        for (final ContainerExecutionMount mount : mounts) {
+            if (mount.getName().equals("input")) {
+                inputMount = mount;
+            } else if (mount.getName().equals("output")) {
+                outputMount = mount;
+            } else {
+                fail("We should not have a mount with name " + mount.getName());
+            }
+        }
+
+        assertNotNull(inputMount);
+        assertEquals("/input", inputMount.getContainerPath());
+        assertEquals(fakeResourceDir, inputMount.getXnatHostPath());
+
+        assertNotNull(outputMount);
+        assertEquals("/output", outputMount.getContainerPath());
+        final String outputPath = outputMount.getXnatHostPath();
+        final File outputFile = new File(outputPath + "/out.txt");
+        if (!outputFile.canRead()) {
+            fail("Cannot read output file " + outputFile.getAbsolutePath());
+        }
+        final String[] outputFileContents = FileUtils.readFileToString(outputFile).split("\\n");
+        assertThat(outputFileContents.length, greaterThanOrEqualTo(2));
+        assertEquals("recon-all -s session1 -all", outputFileContents[0]);
+
+        final File fakeResourceDirFile = new File(fakeResourceDir);
+        assertNotNull(fakeResourceDirFile);
+        assertNotNull(fakeResourceDirFile.listFiles());
+        final List<String> fakeResourceDirFileNames = Lists.newArrayList();
+        for (final File file : fakeResourceDirFile.listFiles()) {
+            fakeResourceDirFileNames.add(file.getName());
+
+        }
+        assertEquals(fakeResourceDirFileNames, Lists.newArrayList(outputFileContents[1].split(" ")));
     }
 }
