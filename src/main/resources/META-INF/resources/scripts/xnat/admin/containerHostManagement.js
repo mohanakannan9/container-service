@@ -95,9 +95,9 @@ var XNAT = getObject(XNAT || {});
             okLabel: 'Save',
             okAction: function(obj){
                 // the form panel is 'containerHostTemplate' in site-admin-element.yaml
-                var $form = obj.$modal.find('#container-host-editor');
-                var $host = $form.find('#host-name');
-                console.log(item.host);
+                var $form = obj.$modal.find('form');
+                var $host = $form.find('input[name=host]');
+                console.log($host);
                 $form.submitJSON({
                     method: isNew ? 'POST' : 'PUT',
                     url: isNew ? xapiUrl() : xapiUrl(item.id),
@@ -108,7 +108,7 @@ var XNAT = getObject(XNAT || {});
                         var errors = 0;
                         var errorMsg = 'Errors were found with the following fields: <ul>';
 
-                        [$form].forEach(function($el){
+                        [$host].forEach(function($el){
                             var el = $el[0];
                             if (!el.value) {
                                 errors++;
