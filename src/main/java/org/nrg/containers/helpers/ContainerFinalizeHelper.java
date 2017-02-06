@@ -20,7 +20,6 @@ import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
-import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.restlet.util.XNATRestConstants;
 import org.nrg.xnat.services.archive.CatalogService;
@@ -104,15 +103,18 @@ public class ContainerFinalizeHelper {
 
         // TODO Add some stuff with status code. "x" means "don't know", "0" success, greater than 0 failure.
 
-        // if (containerExecution.getOutputs() != null) {
-        //     if (containerExecution.getMountsOut() != null) {
-        //         for (final ContainerExecutionMount mountOut : containerExecution.getMountsOut()) {
-        //             untransportedMounts.put(mountOut.getName(), mountOut);
-        //         }
-        //     }
-        //
-        //     uploadOutputs();
-        // }
+        if (containerExecution.getOutputs() != null) {
+            if (containerExecution.getMounts() != null) {
+                for (final ContainerExecutionMount mountOut : containerExecution.getMounts()) {
+                    untransportedMounts.put(mountOut.getName(), mountOut);
+                }
+            }
+
+            final List<Exception> failedRequiredOutputs = uploadOutputs();
+            if (!failedRequiredOutputs.isEmpty()) {
+                // TODO this means a required output was not uploaded. Mark the execution as "failed" with an appropriate status message.
+            }
+        }
     }
 
     private Set<String> uploadLogs() {
@@ -136,7 +138,7 @@ public class ContainerFinalizeHelper {
 
             final String archivePath = siteConfigPreferences.getArchivePath(); // TODO find a place to upload this thing. Root of the archive if sitewide, else under the archive path of the root object
             if (StringUtils.isNotBlank(archivePath)) {
-                                final SimpleDateFormat formatter = new SimpleDateFormat(XNATRestConstants.PREARCHIVE_TIMESTAMP);
+                final SimpleDateFormat formatter = new SimpleDateFormat(XNATRestConstants.PREARCHIVE_TIMESTAMP);
                 final String datestamp = formatter.format(new Date());
                 final String containerExecPath = FileUtils.AppendRootPath(archivePath, "CONTAINER_EXEC/");
                 final String destinationPath = containerExecPath + datestamp + "/LOGS/";
@@ -171,19 +173,23 @@ public class ContainerFinalizeHelper {
         return logPaths;
     }
 
-    private void uploadOutputs() {
+    private List<Exception> uploadOutputs() {
         log.info(prefix + "Uploading outputs.");
 
-
+        final List<Exception> failedRequiredOutputs = Lists.newArrayList();
         for (final ContainerExecutionOutput output: containerExecution.getOutputs()) {
             try {
                 output.setCreated(uploadOutput(output));
             } catch (ContainerException | RuntimeException e) {
                 log.error("Cannot upload files for command output " + output.getName(), e);
+                if (output.isRequired()) {
+                    failedRequiredOutputs.add(e);
+                }
             }
         }
 
         log.info(prefix + "Done uploading outputs.");
+        return failedRequiredOutputs;
     }
 
     private String uploadOutput(final ContainerExecutionOutput output) throws ContainerException {
@@ -195,7 +201,6 @@ public class ContainerFinalizeHelper {
         }
 
         final String mountName = output.getMount();
-        final String relativeFilePath = output.getPath() != null ? output.getPath() : "";
         final ContainerExecutionMount mount = getMount(mountName);
         if (mount == null) {
             throw new ContainerException(String.format(prefix + "Mount \"%s\" does not exist.", mountName));
@@ -205,27 +210,22 @@ public class ContainerFinalizeHelper {
             log.debug(String.format(prefix + "Output files are provided by mount \"%s\": %s", mount.getName(), mount));
         }
 
-        if (StringUtils.isBlank(mount.getHostPath())) {
-            throw new ContainerException(String.format(prefix + "Cannot upload output \"%s\". Mount \"%s\" has blank hostPath.", output.getName(), mount.getName()));
+        final String mountXnatHostPath = mount.getXnatHostPath();
+        if (StringUtils.isBlank(mountXnatHostPath)) {
+            throw new ContainerException(String.format(prefix + "Cannot upload output \"%s\". Mount \"%s\" has a blank path to the files on the XNAT machine.", output.getName(), mount.getName()));
         }
 
-        final List<File> toUpload;
-        if (StringUtils.isBlank(relativeFilePath)) {
-            // This is fine. It just means upload everything in the build directory.
-            final File buildDir = new File(mount.getHostPath());
-            final File[] buildDirContents = buildDir.listFiles();
-            if (buildDirContents == null || buildDirContents.length == 0) {
-                throw new ContainerException(String.format(prefix + "Nothing to upload for output \"%s\". Mount \"%s\" hostPath has no files.", output.getName(), mount.getName()));
-            }
-            toUpload = Arrays.asList(buildDirContents);
-        } else {
-            final String filePath = FilenameUtils.concat(mount.getHostPath(), relativeFilePath);
-            if (StringUtils.isBlank(filePath)) {
-                // This shouldn't happen. We know mount.getHostPath() and relativeFilePath are non-blank
-                throw new ContainerException(String.format(prefix + "Cannot upload output \"%s\". Mount \"%s\" hostPath + output path is blank.", output.getName(), mount.getName()));
-            }
+        final String relativeFilePath = output.getPath() != null ? output.getPath() : "";
+        final String filePath = StringUtils.isBlank(relativeFilePath) ? mountXnatHostPath :
+                FilenameUtils.concat(mountXnatHostPath, relativeFilePath);
+        final String globMatcher = output.getGlob() != null ? output.getGlob() : "";
 
-            toUpload = Lists.newArrayList(new File(filePath));
+        final List<File> toUpload = matchGlob(filePath, globMatcher);
+        if (toUpload == null || toUpload.size() == 0) {
+            if (output.isRequired()) {
+                throw new ContainerException(String.format(prefix + "Nothing to upload for output \"%s\". Mount \"%s\" has no files.", output.getName(), mount.getName()));
+            }
+            return "";
         }
 
         final String label = StringUtils.isNotBlank(output.getLabel()) ? output.getLabel() : mountName;
@@ -245,16 +245,15 @@ public class ContainerFinalizeHelper {
                     final String template = prefix + "Inserting file resource.\n\tuser: %s\n\tparentUri: %s\n\tlabel: %s\n\ttoUpload: %s";
                     log.debug(String.format(template, userI.getLogin(), parentUri, label, toUpload));
                 }
-                final XnatResourcecatalog resourcecatalog;
+
                 try {
-                     resourcecatalog = catalogService.insertResources(userI, parentUri, toUpload, label, null, null, null);
+                    final XnatResourcecatalog resourcecatalog = catalogService.insertResources(userI, parentUri, toUpload, label, null, null, null);
+                    createdUri = UriParserUtils.getArchiveUri(resourcecatalog);
+                    if (StringUtils.isBlank(createdUri)) {
+                        createdUri = parentUri + "/resources/" + resourcecatalog.getLabel();
+                    }
                 } catch (Exception e) {
                     throw new ContainerException(prefix + "Could not upload files to resource.", e);
-                }
-
-                createdUri = UriParserUtils.getArchiveUri(resourcecatalog);
-                if (StringUtils.isBlank(createdUri)) {
-                    createdUri = parentUri + "/resources/" + resourcecatalog.getLabel();
                 }
                 break;
             case ASSESSOR:
@@ -321,9 +320,15 @@ public class ContainerFinalizeHelper {
                 log.debug(String.format(prefix + "Transporting mount \"%s\".", mountName));
             }
             final ContainerExecutionMount mountToTransport = untransportedMounts.get(mountName);
-            final Path pathOnExecutionMachine = Paths.get(mountToTransport.getHostPath());
-            final Path pathOnXnatMachine = transportService.transport("", pathOnExecutionMachine); // TODO this currently does nothing
-            mountToTransport.setHostPath(pathOnXnatMachine.toAbsolutePath().toString());
+
+            if (StringUtils.isBlank(mountToTransport.getXnatHostPath())) {
+                final Path pathOnExecutionMachine = Paths.get(mountToTransport.getContainerHostPath());
+                final Path pathOnXnatMachine = transportService.transport("", pathOnExecutionMachine); // TODO this currently does nothing
+                mountToTransport.setXnatHostPath(pathOnXnatMachine.toAbsolutePath().toString());
+            } else {
+                // TODO add transporter method to transport from specified source path to specified destination path
+                // transporter.transport(sourceMachineName, mountToTransport.getContainerHostPath(), mountToTransport.getXnatHostPath());
+            }
 
             transportedMounts.put(mountName, mountToTransport);
             untransportedMounts.remove(mountName);
@@ -379,5 +384,11 @@ public class ContainerFinalizeHelper {
         }
 
         return null;
+    }
+
+    private List<File> matchGlob(final String rootPath, final String glob) {
+        final File rootDir = new File(rootPath);
+        final File[] files = rootDir.listFiles();
+        return files == null ? Lists.<File>newArrayList() : Arrays.asList(files);
     }
 }
