@@ -86,8 +86,8 @@ var XNAT = getObject(XNAT || {});
             scroll: false,
             padding: '0',
             beforeShow: function(obj){
-                var $form = obj.$modal.find('#container-host-editor-panel');
-                if (item && isDefined(item.id)) {
+                var $form = obj.$modal.find('form');
+                if (item && isDefined(item.host)) {
                     $form.setValues(item);
                 }
             },
