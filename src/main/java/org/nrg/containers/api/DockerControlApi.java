@@ -477,7 +477,7 @@ public class DockerControlApi implements ContainerControlApi {
                     return commands;
                 } catch (IOException e) {
                     // TODO throw exception
-                    log.info("Could not parse Commands from label: %s", labelValue);
+                    log.error("Could not parse Commands from label: " + labelValue, e);
                 }
             }
         }
