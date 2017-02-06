@@ -36,6 +36,7 @@ import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.Container;
 import org.nrg.containers.model.ContainerExecutionMount;
+import org.nrg.containers.model.DockerCommand;
 import org.nrg.containers.model.DockerHub;
 import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.model.DockerServer;
@@ -457,7 +458,13 @@ public class DockerControlApi implements ContainerControlApi {
     public List<Command> parseLabels(final String imageId)
             throws DockerServerException, NoServerPrefException, NotFoundException {
         final DockerImage image = getImageById(imageId);
-        return parseLabels(image);
+        final List<Command> commands = parseLabels(image);
+        if (commands != null) {
+            for (final Command command : commands) {
+                command.setImage(imageId);
+            }
+        }
+        return commands;
     }
 
     @Override
@@ -467,14 +474,14 @@ public class DockerControlApi implements ContainerControlApi {
             final String labelValue = labels.get(LABEL_KEY);
             if (StringUtils.isNotBlank(labelValue)) {
                 try {
-                    final List<Command> commands =
-                            objectMapper.readValue(labelValue, new TypeReference<List<Command>>() {});
+                    final List<DockerCommand> commands =
+                            objectMapper.readValue(labelValue, new TypeReference<List<DockerCommand>>() {});
                     if (commands != null && !commands.isEmpty()) {
-                        for (final Command command : commands) {
-                            command.setImage(dockerImage.getImageId());
+                        for (final DockerCommand command : commands) {
+                            command.setHash(dockerImage.getImageId());
                         }
+                        return Lists.<Command>newArrayList(commands);
                     }
-                    return commands;
                 } catch (IOException e) {
                     // TODO throw exception
                     log.error("Could not parse Commands from label: " + labelValue, e);

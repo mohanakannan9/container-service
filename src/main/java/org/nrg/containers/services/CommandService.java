@@ -10,6 +10,7 @@ import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.containers.model.XnatCommandWrapper;
+import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
 import org.nrg.xft.security.UserI;
 
@@ -50,6 +51,7 @@ public interface CommandService extends BaseHibernateService<Command> {
     ContainerExecution launchResolvedDockerCommand(final ResolvedDockerCommand resolvedCommand, final UserI userI)
             throws NoServerPrefException, DockerServerException, ContainerMountResolutionException;
 
+    Command create(final Command command, final boolean saveCommandWrappers) throws NrgRuntimeException;
     List<Command> save(final List<Command> commands);
 
 //    @VisibleForTesting

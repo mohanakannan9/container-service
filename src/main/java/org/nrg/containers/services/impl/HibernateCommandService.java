@@ -1,6 +1,5 @@
 package org.nrg.containers.services.impl;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.jayway.jsonpath.Configuration;
@@ -53,7 +52,6 @@ import java.util.Set;
 import java.util.UUID;
 
 @Service
-@Transactional
 public class HibernateCommandService extends AbstractHibernateEntityService<Command, CommandDao>
         implements CommandService {
     private static final Logger log = LoggerFactory.getLogger(HibernateCommandService.class);
@@ -109,6 +107,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     }
 
     @Override
+    @Transactional
     public Command get(final Long id) throws NotFoundException {
         final Command command = retrieve(id);
         if (command == null) {
@@ -134,6 +133,8 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         return create(command, true);
     }
 
+    @Override
+    @Transactional
     public Command create(final Command command, final boolean saveCommandWrappers) throws NrgRuntimeException {
         try {
             if (saveCommandWrappers && command.getXnatCommandWrappers() != null) {
@@ -148,21 +149,19 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     }
 
     @Override
+    @Transactional
     public List<Command> save(final List<Command> commands) {
-        final List<Command> saved = Lists.newArrayList();
         if (!(commands == null || commands.isEmpty())) {
             for (final Command command : commands) {
                 try {
                     create(command);
-                    saved.add(command);
                 } catch (NrgServiceRuntimeException e) {
                     // TODO: should I "update" instead of erroring out if command already exists?
                     log.error("Could not save command: " + command, e);
                 }
             }
         }
-        getDao().flush();
-        return saved;
+        return commands;
     }
 
     @Override
