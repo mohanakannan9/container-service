@@ -30,6 +30,7 @@ public abstract class ResolvedCommand implements Serializable {
     @JsonProperty("env") private Map<String, String> environmentVariables;
     @JsonProperty("mounts") private List<ContainerExecutionMount> mounts;
     private List<ContainerExecutionOutput> outputs;
+    @JsonProperty("working-directory") private String workingDirectory;
 
     public ResolvedCommand() {}
 
@@ -148,6 +149,14 @@ public abstract class ResolvedCommand implements Serializable {
         this.outputs.add(output);
     }
 
+    public String getWorkingDirectory() {
+        return workingDirectory;
+    }
+
+    public void setWorkingDirectory(final String workingDirectory) {
+        this.workingDirectory = workingDirectory;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
@@ -162,13 +171,14 @@ public abstract class ResolvedCommand implements Serializable {
                 Objects.equals(this.commandLine, that.commandLine) &&
                 Objects.equals(this.environmentVariables, that.environmentVariables) &&
                 Objects.equals(this.mounts, that.mounts) &&
-                Objects.equals(this.outputs, that.outputs);
+                Objects.equals(this.outputs, that.outputs) &&
+                Objects.equals(this.workingDirectory, that.workingDirectory);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(rawInputValues, xnatCommandWrapperId, xnatInputValues, commandId, commandInputValues,
-                image, commandLine, environmentVariables, mounts, outputs);
+                image, commandLine, environmentVariables, mounts, outputs, workingDirectory);
     }
 
     public MoreObjects.ToStringHelper addPropertiesToString(final MoreObjects.ToStringHelper helper) {
@@ -182,7 +192,8 @@ public abstract class ResolvedCommand implements Serializable {
                 .add("commandInputValues", commandInputValues)
                 .add("environmentVariables", environmentVariables)
                 .add("mounts", mounts)
-                .add("outputs", outputs);
+                .add("outputs", outputs)
+                .add("workingDirectory", workingDirectory);
     }
 
     @Override

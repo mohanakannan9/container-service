@@ -220,8 +220,7 @@ public class DockerControlApi implements ContainerControlApi {
     @Override
     public String launchImage(final ResolvedDockerCommand resolvedDockerCommand)
             throws NoServerPrefException, DockerServerException {
-        final String dockerImageId = resolvedDockerCommand.getImage();
-        final String runCommand = resolvedDockerCommand.getCommandLine();
+
         final List<String> bindMounts = Lists.newArrayList();
         for (final ContainerExecutionMount mount : resolvedDockerCommand.getMounts()) {
             bindMounts.add(mount.toBindMountString());
@@ -230,7 +229,17 @@ public class DockerControlApi implements ContainerControlApi {
         for (final Map.Entry<String, String> env : resolvedDockerCommand.getEnvironmentVariables().entrySet()) {
             environmentVariables.add(StringUtils.join(new String[] {env.getKey(), env.getValue()}, "="));
         }
-        return launchImage(getServer(), dockerImageId, runCommand, bindMounts, environmentVariables, resolvedDockerCommand.getPorts());
+
+        return launchImage(getServer(),
+                resolvedDockerCommand.getImage(),
+                resolvedDockerCommand.getCommandLine(),
+                bindMounts,
+                environmentVariables,
+                resolvedDockerCommand.getPorts(),
+                StringUtils.isNotBlank(resolvedDockerCommand.getWorkingDirectory()) ?
+                        resolvedDockerCommand.getWorkingDirectory() :
+                        null
+        );
     }
 
 //    /**
@@ -277,7 +286,9 @@ public class DockerControlApi implements ContainerControlApi {
                                final String runCommand,
                                final List<String> volumes,
                                final List<String> environmentVariables,
-                               final Map<String, String> ports) throws DockerServerException {
+                               final Map<String, String> ports,
+                               final String workingDirectory)
+            throws DockerServerException {
 
         final Map<String, List<PortBinding>> portBindings = Maps.newHashMap();
         final List<String> portStringList = Lists.newArrayList();
@@ -317,6 +328,7 @@ public class DockerControlApi implements ContainerControlApi {
                         .attachStderr(true)
                         .cmd(Lists.newArrayList("/bin/sh", "-c", runCommand))
                         .env(environmentVariables)
+                        .workingDir(workingDirectory)
                         .build();
 
         if (log.isDebugEnabled()) {
@@ -325,12 +337,14 @@ public class DockerControlApi implements ContainerControlApi {
                             "\n\tserver %s" +
                             "\n\timage %s" +
                             "\n\tcommand \"%s\"" +
+                            "\n\tworking directory \"%s\"" +
                             "\n\tvolumes [%s]" +
                             "\n\tenvironment variables [%s]" +
                             "\n\texposed ports: {%s}",
                     server,
                     imageName,
                     runCommand,
+                    workingDirectory,
                     StringUtils.join(volumes, ", "),
                     StringUtils.join(environmentVariables, ", "),
                     StringUtils.join(portStringList, ", ")
@@ -344,8 +358,9 @@ public class DockerControlApi implements ContainerControlApi {
             if (log.isDebugEnabled()) {
                 log.debug("Starting container: id " + container.id());
             }
-            if (container.getWarnings() != null) {
-                for (String warning : container.getWarnings()) {
+            final List<String> warnings = container.warnings();
+            if (warnings != null) {
+                for (String warning : warnings) {
                     log.warn(warning);
                 }
             }

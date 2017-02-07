@@ -132,6 +132,7 @@ public class CommandResolutionHelper {
         resolvedCommand.setCommandLine(resolveCommandLine());
         resolvedCommand.setMounts(resolveCommandMounts());
         resolvedCommand.setEnvironmentVariables(resolveEnvironmentVariables());
+        resolvedCommand.setWorkingDirectory(resolveTemplate(command.getWorkingDirectory()));
 
         switch (resolvedCommand.getType()) {
             case DOCKER:
