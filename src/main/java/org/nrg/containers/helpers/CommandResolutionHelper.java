@@ -82,7 +82,6 @@ public class CommandResolutionHelper {
                                     final ConfigService configService) throws CommandResolutionException {
         this.xnatCommandWrapper = xnatCommandWrapper;
         this.command = command;
-        this.command.setXnatCommandWrappers(null); // We already have the wrapper we need, so we will blank this out. I hope nothing breaks.
         switch (command.getType()) {
             case DOCKER:
                 resolvedCommand = new ResolvedDockerCommand(xnatCommandWrapper.getId(), (DockerCommand) command);
