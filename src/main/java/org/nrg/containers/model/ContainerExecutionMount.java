@@ -18,7 +18,7 @@ import java.util.Objects;
 
 @Entity
 public class ContainerExecutionMount implements Serializable {
-    private Long id;
+    private long id;
     @JsonProperty(required = true) private String name;
     @JsonProperty("writable") private boolean writable;
     @JsonProperty("xnat-host-path") private String xnatHostPath;
@@ -39,11 +39,11 @@ public class ContainerExecutionMount implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    public Long getId() {
+    public long getId() {
         return id;
     }
 
-    public void setId(final Long id) {
+    public void setId(final long id) {
         this.id = id;
     }
 
