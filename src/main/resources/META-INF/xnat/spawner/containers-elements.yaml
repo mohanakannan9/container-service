@@ -106,11 +106,34 @@ imageHostsPanel:
 #           tag: script|src="~/scripts/xnat/admin/imageHostManagement.js"
 
 installedImagesPanel:
-    kind: panel.dataTable
+    kind: panel
     name: installedImagesPanel
     label: Installed Container Images and Commands
-    url: /xapi/docker/images
-    contentType: json
+    footer: false
+    contents:
+        imageFilterBar:
+            tag: "div#image-filter-bar"
+            # more to come here
+        imageListContainer:
+            tag: "div#image-list-container"
+        commandViewerTemplate:
+            tag: "div#command-viewer-template.html-template"
+                contents:
+                    commandEditor:
+                        kind: panel
+                        name: commandViewer
+                        id: command-viewer
+                        header: false
+                        footer: false
+                        contents:
+                            pad:
+                                tag: div.pad20
+                                contents:
+                                    commandViewerDisplay:
+                                        tag: textarea.commandViewer
+        imagePanelScript:
+            tag: script|src="/scripts/xnat/admin/imageListManagement.js"
+#            tag: script|src="~/scripts/xnat/admin/imageListManagement.js"
 
 
 
