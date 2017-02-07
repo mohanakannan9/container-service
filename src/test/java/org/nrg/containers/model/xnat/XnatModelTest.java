@@ -62,7 +62,6 @@ public class XnatModelTest {
     @Test
     public void testDeserializeFile() throws Exception {
         final XnatFile file = mapper.readValue(FILE_JSON, XnatFile.class);
-        assertEquals(XnatModelObject.Type.FILE, file.getType());
         assertEquals("file.txt", file.getName());
         assertEquals("/path/to/files/file.txt", file.getPath());
         assertEquals(Lists.newArrayList("squishy", "jovial"), file.getTags());
@@ -74,7 +73,6 @@ public class XnatModelTest {
     public void testDeserializeResource() throws Exception {
         final XnatFile file = mapper.readValue(FILE_JSON, XnatFile.class);
         final Resource resource = mapper.readValue(RESOURCE_JSON, Resource.class);
-        assertEquals(XnatModelObject.Type.RESOURCE, resource.getType());
         assertEquals("1", resource.getId());
         assertEquals("a_resource", resource.getLabel());
         assertEquals("/path/to/files", resource.getDirectory());
@@ -85,7 +83,6 @@ public class XnatModelTest {
     public void testDeserializeSession() throws Exception {
         final Resource resource = mapper.readValue(RESOURCE_JSON, Resource.class);
         final Session session = mapper.readValue(SESSION_JSON, Session.class);
-        assertEquals(XnatModelObject.Type.SESSION, session.getType());
         assertEquals("E1", session.getId());
         assertEquals("a_session", session.getLabel());
         assertEquals("xnat:fakesessiondata", session.getXsiType());

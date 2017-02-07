@@ -1,5 +1,6 @@
 package org.nrg.containers.daos;
 
+import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.model.CommandEventMapping;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
@@ -20,7 +21,7 @@ public class CommandEventMappingDao extends AbstractHibernateDAO<CommandEventMap
      */
     public List<CommandEventMapping> findByEventType(final String eventType) {
         if (eventType == null || StringUtils.isBlank(eventType)) {
-            return new ArrayList<CommandEventMapping>();
+            return Lists.newArrayList();
         }
         return findByProperty("eventType", eventType);
     }

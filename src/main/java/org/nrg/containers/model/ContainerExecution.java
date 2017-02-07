@@ -8,29 +8,31 @@ import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
-import javax.persistence.Table;
+import javax.persistence.FetchType;
+import javax.persistence.OneToMany;
 import javax.persistence.Transient;
-import javax.persistence.UniqueConstraint;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
 @Entity
-@Table(uniqueConstraints = {@UniqueConstraint(columnNames = {"containerId"})})
 public class ContainerExecution extends AbstractHibernateEntity {
     @JsonProperty("command-id") private Long commandId;
+    @JsonProperty("xnat-command-wrapper-id") private Long xnatCommandWrapperId;
     @JsonProperty("docker-image") private String dockerImage;
     @JsonProperty("command-line") private String commandLine;
     @JsonProperty("env") private Map<String, String> environmentVariables = Maps.newHashMap();
-    @JsonProperty("mounts-in") private List<ContainerExecutionMount> mountsIn = Lists.newArrayList();
-    @JsonProperty("mounts-out") private List<ContainerExecutionMount> mountsOut = Lists.newArrayList();
+    @JsonProperty("mounts") private List<ContainerExecutionMount> mounts = Lists.newArrayList();
     @JsonProperty("container-id") private String containerId;
     @JsonProperty("user-id") private String userId;
-    @JsonProperty("input-values") private Map<String, String> inputValues = Maps.newHashMap();
+    @JsonProperty("raw-input-values") private Map<String, String> rawInputValues;
+    @JsonProperty("xnat-input-values") private Map<String, String> xnatInputValues;
+    @JsonProperty("command-input-values") private Map<String, String> commandInputValues;
     private List<ContainerExecutionOutput> outputs;
     private List<ContainerExecutionHistory> history = Lists.newArrayList();
     @JsonProperty("log-paths") private Set<String> logPaths;
@@ -44,20 +46,24 @@ public class ContainerExecution extends AbstractHibernateEntity {
         this.userId = userId;
 
         this.commandId = resolvedCommand.getCommandId();
-        this.dockerImage = resolvedCommand.getDockerImage();
+        this.xnatCommandWrapperId = resolvedCommand.getXnatCommandWrapperId();
+        this.dockerImage = resolvedCommand.getImage();
         this.commandLine = resolvedCommand.getCommandLine();
         this.environmentVariables = resolvedCommand.getEnvironmentVariables() == null ?
                 Maps.<String, String>newHashMap() :
                 Maps.newHashMap(resolvedCommand.getEnvironmentVariables());
-        this.mountsIn = resolvedCommand.getMountsIn() == null ?
+        this.mounts = resolvedCommand.getMounts() == null ?
                 Lists.<ContainerExecutionMount>newArrayList() :
-                Lists.newArrayList(resolvedCommand.getMountsIn());
-        this.mountsOut = resolvedCommand.getMountsOut() == null ?
-                Lists.<ContainerExecutionMount>newArrayList() :
-                Lists.newArrayList(resolvedCommand.getMountsOut());
-        this.inputValues = resolvedCommand.getInputValues() == null ?
+                Lists.newArrayList(resolvedCommand.getMounts());
+        this.rawInputValues = resolvedCommand.getRawInputValues() == null ?
                 Maps.<String, String>newHashMap() :
-                Maps.newHashMap(resolvedCommand.getInputValues());
+                resolvedCommand.getRawInputValues();
+        this.xnatInputValues = resolvedCommand.getXnatInputValues() == null ?
+                Maps.<String, String>newHashMap() :
+                resolvedCommand.getXnatInputValues();
+        this.commandInputValues = resolvedCommand.getCommandInputValues() == null ?
+                Maps.<String, String>newHashMap() :
+                resolvedCommand.getCommandInputValues();
         this.outputs = resolvedCommand.getOutputs() == null ?
                 Lists.<ContainerExecutionOutput>newArrayList() :
                 Lists.newArrayList(resolvedCommand.getOutputs());
@@ -69,6 +75,14 @@ public class ContainerExecution extends AbstractHibernateEntity {
 
     public void setCommandId(final Long commandId) {
         this.commandId = commandId;
+    }
+
+    public Long getXnatCommandWrapperId() {
+        return xnatCommandWrapperId;
+    }
+
+    public void setXnatCommandWrapperId(final Long xnatCommandWrapperId) {
+        this.xnatCommandWrapperId = xnatCommandWrapperId;
     }
 
     public String getDockerImage() {
@@ -96,22 +110,13 @@ public class ContainerExecution extends AbstractHibernateEntity {
         this.environmentVariables = environmentVariables;
     }
 
-    @ElementCollection
-    public List<ContainerExecutionMount> getMountsIn() {
-        return mountsIn;
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
+    public List<ContainerExecutionMount> getMounts() {
+        return mounts;
     }
 
-    public void setMountsIn(final List<ContainerExecutionMount> mountsIn) {
-        this.mountsIn = mountsIn;
-    }
-
-    @ElementCollection
-    public List<ContainerExecutionMount> getMountsOut() {
-        return mountsOut;
-    }
-
-    public void setMountsOut(final List<ContainerExecutionMount> mountsOut) {
-        this.mountsOut = mountsOut;
+    public void setMounts(final List<ContainerExecutionMount> mounts) {
+        this.mounts = mounts;
     }
 
     public String getContainerId() {
@@ -132,12 +137,38 @@ public class ContainerExecution extends AbstractHibernateEntity {
 
     @ElementCollection
     @Column(columnDefinition = "TEXT")
-    public Map<String, String> getInputValues() {
-        return inputValues;
+    public Map<String, String> getRawInputValues() {
+        return rawInputValues;
     }
 
-    public void setInputValues(final Map<String, String> inputValues) {
-        this.inputValues = inputValues;
+    public void setRawInputValues(final Map<String, String> rawInputValues) {
+        this.rawInputValues = rawInputValues == null ?
+                Maps.<String, String>newHashMap() :
+                rawInputValues;
+    }
+
+    @ElementCollection
+    @Column(columnDefinition = "TEXT")
+    public Map<String, String> getXnatInputValues() {
+        return xnatInputValues;
+    }
+
+    public void setXnatInputValues(final Map<String, String> xnatInputValues) {
+        this.xnatInputValues = xnatInputValues == null ?
+                Maps.<String, String>newHashMap() :
+                xnatInputValues;
+    }
+
+    @ElementCollection
+    @Column(columnDefinition = "TEXT")
+    public Map<String, String> getCommandInputValues() {
+        return commandInputValues;
+    }
+
+    public void setCommandInputValues(final Map<String, String> commandInputValues) {
+        this.commandInputValues = commandInputValues == null ?
+                Maps.<String, String>newHashMap() :
+                commandInputValues;
     }
 
     @ElementCollection
@@ -205,14 +236,16 @@ public class ContainerExecution extends AbstractHibernateEntity {
         if (!super.equals(o)) return false;
         final ContainerExecution that = (ContainerExecution) o;
         return Objects.equals(this.commandId, that.commandId) &&
+                Objects.equals(this.xnatCommandWrapperId, that.xnatCommandWrapperId) &&
                 Objects.equals(this.dockerImage, that.dockerImage) &&
                 Objects.equals(this.commandLine, that.commandLine) &&
                 Objects.equals(this.environmentVariables, that.environmentVariables) &&
-                Objects.equals(this.mountsIn, that.mountsIn) &&
-                Objects.equals(this.mountsOut, that.mountsOut) &&
+                Objects.equals(this.mounts, that.mounts) &&
                 Objects.equals(this.containerId, that.containerId) &&
                 Objects.equals(this.userId, that.userId) &&
-                Objects.equals(this.inputValues, that.inputValues) &&
+                Objects.equals(this.rawInputValues, that.rawInputValues) &&
+                Objects.equals(this.xnatInputValues, that.xnatInputValues) &&
+                Objects.equals(this.commandInputValues, that.commandInputValues) &&
                 Objects.equals(this.outputs, that.outputs) &&
                 Objects.equals(this.history, that.history) &&
                 Objects.equals(this.logPaths, that.logPaths);
@@ -220,22 +253,24 @@ public class ContainerExecution extends AbstractHibernateEntity {
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.getId(), commandId, dockerImage, commandLine, environmentVariables,
-                mountsIn, mountsOut, containerId, userId, inputValues, outputs, history, logPaths);
+        return Objects.hash(super.getId(), commandId, xnatCommandWrapperId, dockerImage, commandLine, environmentVariables,
+                mounts, containerId, userId, rawInputValues, xnatInputValues, commandInputValues, outputs, history, logPaths);
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("commandId", commandId)
+                .add("xnatCommandWrapperId", xnatCommandWrapperId)
                 .add("dockerImage", dockerImage)
                 .add("commandLine", commandLine)
                 .add("environmentVariables", environmentVariables)
-                .add("mountsIn", mountsIn)
-                .add("mountsOut", mountsOut)
+                .add("mounts", mounts)
                 .add("containerId", containerId)
                 .add("userId", userId)
-                .add("inputValues", inputValues)
+                .add("rawInputValues", rawInputValues)
+                .add("xnatInputValues", xnatInputValues)
+                .add("commandInputValues", commandInputValues)
                 .add("outputs", outputs)
                 .add("history", history)
                 .add("logPaths", logPaths)

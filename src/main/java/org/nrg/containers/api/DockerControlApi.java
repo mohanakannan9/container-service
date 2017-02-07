@@ -36,11 +36,12 @@ import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.Container;
 import org.nrg.containers.model.ContainerExecutionMount;
+import org.nrg.containers.model.DockerCommand;
 import org.nrg.containers.model.DockerHub;
 import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.model.DockerServerPrefsBean;
-import org.nrg.containers.model.ResolvedCommand;
+import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.slf4j.Logger;
@@ -213,26 +214,32 @@ public class DockerControlApi implements ContainerControlApi {
     /**
      * Launch image on Docker server
      *
-     * @param command A ResolvedCommand. All templates are resolved, all mount paths exist.
+     * @param resolvedDockerCommand A ResolvedDockerCommand. All templates are resolved, all mount paths exist.
      * @return ID of created Container
      **/
     @Override
-    public String launchImage(final ResolvedCommand command)
+    public String launchImage(final ResolvedDockerCommand resolvedDockerCommand)
             throws NoServerPrefException, DockerServerException {
-        final String dockerImageId = command.getDockerImage();
-        final String runCommand = command.getCommandLine();
+
         final List<String> bindMounts = Lists.newArrayList();
-        for (final ContainerExecutionMount mount : command.getMountsIn()) {
-            bindMounts.add(mount.toBindMountString());
-        }
-        for (final ContainerExecutionMount mount : command.getMountsOut()) {
+        for (final ContainerExecutionMount mount : resolvedDockerCommand.getMounts()) {
             bindMounts.add(mount.toBindMountString());
         }
         final List<String> environmentVariables = Lists.newArrayList();
-        for (final Map.Entry<String, String> env : command.getEnvironmentVariables().entrySet()) {
+        for (final Map.Entry<String, String> env : resolvedDockerCommand.getEnvironmentVariables().entrySet()) {
             environmentVariables.add(StringUtils.join(new String[] {env.getKey(), env.getValue()}, "="));
         }
-        return launchImage(getServer(), dockerImageId, runCommand, bindMounts, environmentVariables, command.getPorts());
+
+        return launchImage(getServer(),
+                resolvedDockerCommand.getImage(),
+                resolvedDockerCommand.getCommandLine(),
+                bindMounts,
+                environmentVariables,
+                resolvedDockerCommand.getPorts(),
+                StringUtils.isNotBlank(resolvedDockerCommand.getWorkingDirectory()) ?
+                        resolvedDockerCommand.getWorkingDirectory() :
+                        null
+        );
     }
 
 //    /**
@@ -279,7 +286,9 @@ public class DockerControlApi implements ContainerControlApi {
                                final String runCommand,
                                final List<String> volumes,
                                final List<String> environmentVariables,
-                               final Map<String, String> ports) throws DockerServerException {
+                               final Map<String, String> ports,
+                               final String workingDirectory)
+            throws DockerServerException {
 
         final Map<String, List<PortBinding>> portBindings = Maps.newHashMap();
         final List<String> portStringList = Lists.newArrayList();
@@ -319,6 +328,7 @@ public class DockerControlApi implements ContainerControlApi {
                         .attachStderr(true)
                         .cmd(Lists.newArrayList("/bin/sh", "-c", runCommand))
                         .env(environmentVariables)
+                        .workingDir(workingDirectory)
                         .build();
 
         if (log.isDebugEnabled()) {
@@ -327,12 +337,14 @@ public class DockerControlApi implements ContainerControlApi {
                             "\n\tserver %s" +
                             "\n\timage %s" +
                             "\n\tcommand \"%s\"" +
+                            "\n\tworking directory \"%s\"" +
                             "\n\tvolumes [%s]" +
                             "\n\tenvironment variables [%s]" +
                             "\n\texposed ports: {%s}",
                     server,
                     imageName,
                     runCommand,
+                    workingDirectory,
                     StringUtils.join(volumes, ", "),
                     StringUtils.join(environmentVariables, ", "),
                     StringUtils.join(portStringList, ", ")
@@ -346,8 +358,9 @@ public class DockerControlApi implements ContainerControlApi {
             if (log.isDebugEnabled()) {
                 log.debug("Starting container: id " + container.id());
             }
-            if (container.getWarnings() != null) {
-                for (String warning : container.getWarnings()) {
+            final List<String> warnings = container.warnings();
+            if (warnings != null) {
+                for (String warning : warnings) {
                     log.warn(warning);
                 }
             }
@@ -460,7 +473,13 @@ public class DockerControlApi implements ContainerControlApi {
     public List<Command> parseLabels(final String imageId)
             throws DockerServerException, NoServerPrefException, NotFoundException {
         final DockerImage image = getImageById(imageId);
-        return parseLabels(image);
+        final List<Command> commands = parseLabels(image);
+        if (commands != null) {
+            for (final Command command : commands) {
+                command.setImage(imageId);
+            }
+        }
+        return commands;
     }
 
     @Override
@@ -470,17 +489,17 @@ public class DockerControlApi implements ContainerControlApi {
             final String labelValue = labels.get(LABEL_KEY);
             if (StringUtils.isNotBlank(labelValue)) {
                 try {
-                    final List<Command> commands =
-                            objectMapper.readValue(labelValue, new TypeReference<List<Command>>() {});
+                    final List<DockerCommand> commands =
+                            objectMapper.readValue(labelValue, new TypeReference<List<DockerCommand>>() {});
                     if (commands != null && !commands.isEmpty()) {
-                        for (final Command command : commands) {
-                            command.setDockerImage(dockerImage.getImageId());
+                        for (final DockerCommand command : commands) {
+                            command.setHash(dockerImage.getImageId());
                         }
+                        return Lists.<Command>newArrayList(commands);
                     }
-                    return commands;
                 } catch (IOException e) {
                     // TODO throw exception
-                    log.info("Could not parse Commands from label: %s", labelValue);
+                    log.error("Could not parse Commands from label: " + labelValue, e);
                 }
             }
         }

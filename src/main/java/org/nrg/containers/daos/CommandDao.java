@@ -2,7 +2,9 @@ package org.nrg.containers.daos;
 
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
+import org.hibernate.Hibernate;
 import org.nrg.containers.model.Command;
+import org.nrg.containers.model.XnatCommandWrapper;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +16,26 @@ import java.util.Map;
 @Repository
 public class CommandDao extends AbstractHibernateDAO<Command> {
     private static final Logger log = LoggerFactory.getLogger(CommandDao.class);
+
+    @Override
+    public void initialize(final Command command) {
+        if (command == null) {
+            return;
+        }
+        Hibernate.initialize(command);
+        Hibernate.initialize(command.getEnvironmentVariables());
+        Hibernate.initialize(command.getMounts());
+        Hibernate.initialize(command.getInputs());
+        Hibernate.initialize(command.getOutputs());
+        Hibernate.initialize(command.getXnatCommandWrappers());
+        if (command.getXnatCommandWrappers() != null) {
+            for (final XnatCommandWrapper xnatCommandWrapper : command.getXnatCommandWrappers()) {
+                Hibernate.initialize(xnatCommandWrapper.getExternalInputs());
+                Hibernate.initialize(xnatCommandWrapper.getDerivedInputs());
+                Hibernate.initialize(xnatCommandWrapper.getOutputHandlers());
+            }
+        }
+    }
 
     public Command retrieve(final String name, final String dockerImageId) {
         if (StringUtils.isBlank(name) || StringUtils.isBlank(dockerImageId)) {

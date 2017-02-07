@@ -23,6 +23,7 @@ import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.ResolvedCommand;
+import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerExecutionService;
 import org.nrg.xdat.entities.AliasToken;
@@ -53,6 +54,8 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -156,7 +159,7 @@ public class CommandRestApiTest {
         final String path = "/commands";
 
         final String commandJson =
-                "{\"name\": \"one\", \"docker-image\":\"" + FAKE_DOCKER_IMAGE + "\"}";
+                "{\"name\": \"one\", \"type\": \"docker\", \"image\":\"" + FAKE_DOCKER_IMAGE + "\"}";
         final Command command = mapper.readValue(commandJson, Command.class);
         final Command created = commandService.create(command);
 
@@ -181,7 +184,7 @@ public class CommandRestApiTest {
         assertNotEquals(0L, commandResponse.getId());
         assertEquals(created.getId(), commandResponse.getId());
         assertEquals("one", commandResponse.getName());
-        assertEquals(FAKE_DOCKER_IMAGE, commandResponse.getDockerImage());
+        assertEquals(FAKE_DOCKER_IMAGE, commandResponse.getImage());
     }
 
     @Test
@@ -189,7 +192,7 @@ public class CommandRestApiTest {
         final String pathTemplate = "/commands/%d";
 
         final String commandJson =
-                "{\"name\": \"one\", \"docker-image\":\"" + FAKE_DOCKER_IMAGE + "\"}";
+                "{\"name\": \"one\", \"type\": \"docker\", \"image\":\"" + FAKE_DOCKER_IMAGE + "\"}";
         final Command command = mapper.readValue(commandJson, Command.class);
         final Command created = commandService.create(command);
 
@@ -212,7 +215,7 @@ public class CommandRestApiTest {
         assertNotEquals(0L, commandResponse.getId());
         assertEquals(created.getId(), commandResponse.getId());
         assertEquals("one", commandResponse.getName());
-        assertEquals(FAKE_DOCKER_IMAGE, commandResponse.getDockerImage());
+        assertEquals(FAKE_DOCKER_IMAGE, commandResponse.getImage());
     }
 
     @Test
@@ -220,7 +223,7 @@ public class CommandRestApiTest {
         final String path = "/commands";
 
         final String commandJson =
-                "{\"name\": \"toCreate\", \"docker-image\":\"" + FAKE_DOCKER_IMAGE + "\"}";
+                "{\"name\": \"toCreate\", \"type\": \"docker\", \"image\":\"" + FAKE_DOCKER_IMAGE + "\"}";
 
         final MockHttpServletRequestBuilder request =
                 post(path).content(commandJson).contentType(JSON)
@@ -243,12 +246,9 @@ public class CommandRestApiTest {
         assertNotEquals(0L, retrieved.getId());
         assertEquals((Long) retrieved.getId(), idResponse);
         assertEquals("toCreate", retrieved.getName());
-        assertEquals(FAKE_DOCKER_IMAGE, retrieved.getDockerImage());
+        assertEquals(FAKE_DOCKER_IMAGE, retrieved.getImage());
 
         // Errors
-        // Violate unique name+docker-image-id constraint (we'll trigger that by performing the same 'create' request again)
-        mockMvc.perform(request).andExpect(status().isBadRequest());
-
         // No 'Content-type' header
         final MockHttpServletRequestBuilder noContentType =
                 post(path).content(commandJson)
@@ -270,7 +270,7 @@ public class CommandRestApiTest {
                 .andExpect(status().isNotAcceptable());
 
         // Blank command
-        final String blankCommand = "{}";
+        final String blankCommand = "{\"type\": \"docker\"}";
         final MockHttpServletRequestBuilder blankCommandRequest =
                 post(path).content(blankCommand).contentType(JSON)
                         .with(authentication(authentication))
@@ -290,7 +290,7 @@ public class CommandRestApiTest {
         final String pathTemplate = "/commands/%d";
 
         final String commandJson =
-                "{\"name\": \"toDelete\", \"docker-image\":\"" + FAKE_DOCKER_IMAGE + "\"}";
+                "{\"name\": \"toDelete\", \"type\": \"docker\", \"image\":\"" + FAKE_DOCKER_IMAGE + "\"}";
         final Command command = mapper.readValue(commandJson, Command.class);
         commandService.create(command);
         final Long id = command.getId();
@@ -320,7 +320,8 @@ public class CommandRestApiTest {
         final String commandInput = "{\"name\": \"" + inputName + "\"}";
         final String commandJson =
                 "{\"name\": \"toLaunch\"," +
-                        "\"docker-image\": \"" + FAKE_DOCKER_IMAGE + "\"," +
+                        "\"type\": \"docker\", " +
+                        "\"image\": \"" + FAKE_DOCKER_IMAGE + "\"," +
                         "\"inputs\": [" + commandInput + "]}";
         final Command command = mapper.readValue(commandJson, Command.class);
         commandService.create(command);
@@ -334,20 +335,19 @@ public class CommandRestApiTest {
                 "}";
         final String preparedResolvedCommandJson =
                 "{\"command-id\": " + String.valueOf(id) +"," +
-                        "\"docker-image\": \"" + FAKE_DOCKER_IMAGE + "\"," +
+                        "\"image\": \"" + FAKE_DOCKER_IMAGE + "\"," +
                         "\"env\": " + environmentVariablesJson + "," +
-                        "\"input-values\": " + inputJson + "," +
-                        "\"mounts-in\": []," +
-                        "\"mounts-out\": []," +
+                        "\"raw-input-values\": " + inputJson + "," +
+                        "\"mounts\": []," +
                         "\"outputs\": []," +
                         "\"ports\": {}" +
                         "}";
-        final ResolvedCommand preparedResolvedCommand = mapper.readValue(preparedResolvedCommandJson, ResolvedCommand.class);
-        when(mockDockerControlApi.launchImage(preparedResolvedCommand)).thenReturn(fakeContainerId);
-
-        // The (fake) container launch will be recorded in a (fake) ContainerExecution
+        final ResolvedDockerCommand preparedResolvedCommand = mapper.readValue(preparedResolvedCommandJson, ResolvedDockerCommand.class);
         final ContainerExecution containerExecution = new ContainerExecution(preparedResolvedCommand, fakeContainerId, FAKE_USERNAME);
-        when(mockContainerExecutionService.save(preparedResolvedCommand, fakeContainerId, mockAdmin))
+
+        // We have to match any resolved command because spring will add a csrf token to the inputs. I don't know how to get that token in advance.
+        when(mockDockerControlApi.launchImage(any(ResolvedDockerCommand.class))).thenReturn(fakeContainerId);
+        when(mockContainerExecutionService.save(any(ResolvedCommand.class), eq(fakeContainerId), eq(mockAdmin)))
                 .thenReturn(containerExecution);
 
         final String path = String.format(pathTemplate, id);
@@ -363,8 +363,7 @@ public class CommandRestApiTest {
                 .getResponse()
                 .getContentAsString();
 
-        final Long idResponse = Long.parseLong(response);
-        assertEquals(idResponse, (Long) containerExecution.getId());
+        assertEquals(fakeContainerId, response);
     }
 
     @Test
@@ -376,10 +375,12 @@ public class CommandRestApiTest {
         final String inputValue = "the super cool value";
         final String inputJson = "{\"" + inputName + "\": \"" + inputValue + "\"}";
         final String commandInput = "{\"name\": \"" + inputName + "\"}";
-        final String commandJson =
-                "{\"name\": \"toLaunch\"," +
-                        "\"docker-image\": \"" + FAKE_DOCKER_IMAGE + "\"," +
-                        "\"inputs\": [" + commandInput + "]}";
+        final String commandJson = "{" +
+                "\"name\": \"toLaunch\"," +
+                "\"type\": \"docker\", " +
+                "\"image\": \"" + FAKE_DOCKER_IMAGE + "\"," +
+                "\"inputs\": [" + commandInput + "]" +
+                "}";
         final Command command = mapper.readValue(commandJson, Command.class);
         commandService.create(command);
         final Long id = command.getId();
@@ -390,22 +391,21 @@ public class CommandRestApiTest {
                 "\"XNAT_USER\": \"" + FAKE_ALIAS + "\"," +
                 "\"XNAT_PASS\": \"" + FAKE_SECRET + "\"" +
                 "}";
-        final String preparedResolvedCommandJson =
-                "{\"command-id\": " + String.valueOf(id) +"," +
-                        "\"docker-image\": \"" + FAKE_DOCKER_IMAGE + "\"," +
-                        "\"env\": " + environmentVariablesJson + "," +
-                        "\"input-values\": " + inputJson + "," +
-                        "\"mounts-in\": []," +
-                        "\"mounts-out\": []," +
-                        "\"outputs\": []," +
-                        "\"ports\": {}" +
-                        "}";
-        final ResolvedCommand preparedResolvedCommand = mapper.readValue(preparedResolvedCommandJson, ResolvedCommand.class);
-        when(mockDockerControlApi.launchImage(preparedResolvedCommand)).thenReturn(fakeContainerId);
-
-        // The (fake) container launch will be recorded in a (fake) ContainerExecution
+        final String preparedResolvedCommandJson = "{" +
+                "\"command-id\": " + String.valueOf(id) +"," +
+                "\"image\": \"" + FAKE_DOCKER_IMAGE + "\"," +
+                "\"env\": " + environmentVariablesJson + "," +
+                "\"raw-input-values\": " + inputJson + "," +
+                "\"mounts\": []," +
+                "\"outputs\": []," +
+                "\"ports\": {}" +
+                "}";
+        final ResolvedDockerCommand preparedResolvedCommand = mapper.readValue(preparedResolvedCommandJson, ResolvedDockerCommand.class);
         final ContainerExecution containerExecution = new ContainerExecution(preparedResolvedCommand, fakeContainerId, FAKE_USERNAME);
-        when(mockContainerExecutionService.save(preparedResolvedCommand, fakeContainerId, mockAdmin))
+
+        // We have to match any resolved command because spring will add a csrf token to the inputs. I don't know how to get that token in advance.
+        when(mockDockerControlApi.launchImage(any(ResolvedDockerCommand.class))).thenReturn(fakeContainerId);
+        when(mockContainerExecutionService.save(any(ResolvedCommand.class), eq(fakeContainerId), eq(mockAdmin)))
                 .thenReturn(containerExecution);
 
         final String path = String.format(pathTemplate, id);
@@ -421,8 +421,7 @@ public class CommandRestApiTest {
                 .getResponse()
                 .getContentAsString();
 
-        final Long idResponse = Long.parseLong(response);
-        assertEquals(idResponse, (Long) containerExecution.getId());
+        assertEquals(fakeContainerId, response);
     }
 
 

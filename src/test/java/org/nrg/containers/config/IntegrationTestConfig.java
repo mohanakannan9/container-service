@@ -11,7 +11,10 @@ import org.nrg.containers.daos.ContainerExecutionRepository;
 import org.nrg.containers.events.DockerContainerEventListener;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.ContainerExecution;
+import org.nrg.containers.model.ContainerExecutionMount;
+import org.nrg.containers.model.DockerCommand;
 import org.nrg.containers.model.DockerServerPrefsBean;
+import org.nrg.containers.model.XnatCommandWrapper;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerExecutionService;
 import org.nrg.containers.services.impl.HibernateCommandService;
@@ -23,7 +26,6 @@ import org.nrg.transporter.TransportService;
 import org.nrg.transporter.TransportServiceImpl;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.PermissionsServiceI;
-import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xnat.services.archive.CatalogService;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -162,8 +164,10 @@ public class IntegrationTestConfig {
         bean.setHibernateProperties(properties);
         bean.setAnnotatedClasses(
                 Command.class,
-                ContainerExecution.class);
-//                Preference.class, Tool.class);
+                DockerCommand.class,
+                XnatCommandWrapper.class,
+                ContainerExecution.class,
+                ContainerExecutionMount.class);
 
         return bean;
     }

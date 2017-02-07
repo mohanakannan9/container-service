@@ -25,6 +25,7 @@ import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.ContainerExecutionMount;
 import org.nrg.containers.model.ContainerExecutionOutput;
 import org.nrg.containers.model.DockerServerPrefsBean;
+import org.nrg.containers.model.XnatCommandWrapper;
 import org.nrg.containers.model.xnat.Resource;
 import org.nrg.containers.model.xnat.Scan;
 import org.nrg.containers.model.xnat.Session;
@@ -50,6 +51,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.when;
 
@@ -58,6 +60,11 @@ import static org.mockito.Mockito.when;
 @Transactional
 public class CommandLaunchIntegrationTest {
     private UserI mockUser;
+
+    private final String FAKE_USER = "mockUser";
+    private final String FAKE_ALIAS = "alias";
+    private final String FAKE_SECRET = "secret";
+    private final String FAKE_HOST = "mock://url";
 
     @Autowired private ObjectMapper mapper;
     @Autowired private CommandService commandService;
@@ -98,21 +105,22 @@ public class CommandLaunchIntegrationTest {
 
         // Mock the userI
         mockUser = Mockito.mock(UserI.class);
-        when(mockUser.getLogin()).thenReturn("mockUser");
+        when(mockUser.getLogin()).thenReturn(FAKE_USER);
 
         // Mock the user management service
-        when(mockUserManagementServiceI.getUser("mockUser")).thenReturn(mockUser);
+        when(mockUserManagementServiceI.getUser(FAKE_USER)).thenReturn(mockUser);
 
         // Mock the aliasTokenService
         final AliasToken mockAliasToken = new AliasToken();
-        mockAliasToken.setAlias("alias");
-        mockAliasToken.setSecret("secret");
+        mockAliasToken.setAlias(FAKE_ALIAS);
+        mockAliasToken.setSecret(FAKE_SECRET);
         when(mockAliasTokenService.issueTokenForUser(mockUser)).thenReturn(mockAliasToken);
 
         // Mock the site config preferences
-        when(mockSiteConfigPreferences.getSiteUrl()).thenReturn("mock://url");
+        when(mockSiteConfigPreferences.getSiteUrl()).thenReturn(FAKE_HOST);
         when(mockSiteConfigPreferences.getBuildPath()).thenReturn(folder.newFolder().getAbsolutePath()); // transporter makes a directory under build
         when(mockSiteConfigPreferences.getArchivePath()).thenReturn(folder.newFolder().getAbsolutePath()); // container logs get stored under archive
+        when(mockSiteConfigPreferences.getProperty("processingUrl", FAKE_HOST)).thenReturn(FAKE_HOST);
     }
 
     @Test
@@ -121,10 +129,21 @@ public class CommandLaunchIntegrationTest {
         final String commandJsonFile = dir + "/fakeReconAllCommand.json";
         final String sessionJsonFile = dir + "/session.json";
         final String fakeResourceDir = dir + "/fakeResource";
+        final String commandWrapperName = "recon-all-session";
 
         final Command fakeReconAll = mapper.readValue(new File(commandJsonFile), Command.class);
         commandService.create(fakeReconAll);
         commandService.flush();
+        XnatCommandWrapper xnatCommandWrapper = null;
+        if (fakeReconAll.getXnatCommandWrappers() != null) {
+            for (final XnatCommandWrapper xnatCommandWrapperLoop : fakeReconAll.getXnatCommandWrappers()) {
+                if (commandWrapperName.equals(xnatCommandWrapperLoop.getName())) {
+                    xnatCommandWrapper = xnatCommandWrapperLoop;
+                    break;
+                }
+            }
+        }
+        assertNotNull(xnatCommandWrapper);
 
         final Session session = mapper.readValue(new File(sessionJsonFile), Session.class);
         final Scan scan = session.getScans().get(0);
@@ -138,32 +157,69 @@ public class CommandLaunchIntegrationTest {
         runtimeValues.put("session", sessionJson);
         runtimeValues.put("T1-scantype", t1Scantype);
 
-        final ContainerExecution execution = commandService.resolveAndLaunchCommand(fakeReconAll.getId(), runtimeValues, mockUser);
+        final ContainerExecution execution = commandService.resolveAndLaunchCommand(xnatCommandWrapper.getId(), fakeReconAll.getId(), runtimeValues, mockUser);
         Thread.sleep(1000); // Wait for container to finish
 
-        final Map<String, String> inputValues = Maps.newHashMap(execution.getInputValues());
-        assertEquals(
-                Sets.newHashSet("session", "label", "T1-scantype", "T1", "resource", "other-recon-all-args"),
-                inputValues.keySet());
-        assertEquals(session.getUri(), inputValues.get("session"));
-        assertEquals(session.getLabel(), inputValues.get("label"));
-        assertEquals(t1Scantype, inputValues.get("T1-scantype"));
-        assertEquals(scan.getUri(), inputValues.get("T1"));
-        assertEquals(resource.getUri(), inputValues.get("resource"));
-        assertEquals("-all", inputValues.get("other-recon-all-args"));
+        // Raw inputs
+        assertEquals(runtimeValues, execution.getRawInputValues());
 
-        final List<ContainerExecutionOutput> outputs = execution.getOutputs();
-        assertEquals(Lists.newArrayList("fs", "data"), Lists.transform(outputs, new Function<ContainerExecutionOutput, String>() {
+        // xnat wrapper inputs
+        final Map<String, String> expectedXnatInputValues = Maps.newHashMap();
+        expectedXnatInputValues.put("session", session.getUri());
+        expectedXnatInputValues.put("T1-scantype", t1Scantype);
+        expectedXnatInputValues.put("label", session.getLabel());
+        expectedXnatInputValues.put("T1", session.getScans().get(0).getUri());
+        expectedXnatInputValues.put("resource", session.getScans().get(0).getResources().get(0).getUri());
+        assertEquals(expectedXnatInputValues, execution.getXnatInputValues());
+
+        // command inputs
+        final Map<String, String> expectedCommandInputValues = Maps.newHashMap();
+        expectedCommandInputValues.put("subject-id", session.getLabel());
+        expectedCommandInputValues.put("other-recon-all-args", "-all");
+        assertEquals(expectedCommandInputValues, execution.getCommandInputValues());
+
+        // Outputs
+        // assertTrue(resolvedCommand.getOutputs().isEmpty());
+
+        final List<String> outputNames = Lists.transform(execution.getOutputs(), new Function<ContainerExecutionOutput, String>() {
             @Nullable
             @Override
             public String apply(@Nullable final ContainerExecutionOutput output) {
                 return output == null ? "" : output.getName();
             }
-        }));
+        });
+        assertEquals(Lists.newArrayList("data", "text-file"), outputNames);
 
-        assertThat(execution.getMountsOut(), hasSize(1));
-        final ContainerExecutionMount mountOut = execution.getMountsOut().get(0);
-        final String outputPath = mountOut.getHostPath();
+        // Environment variables
+        final Map<String, String> expectedEnvironmentVariables = Maps.newHashMap();
+        expectedEnvironmentVariables.put("XNAT_USER", FAKE_ALIAS);
+        expectedEnvironmentVariables.put("XNAT_PASS", FAKE_SECRET);
+        expectedEnvironmentVariables.put("XNAT_HOST", FAKE_HOST);
+        assertEquals(expectedEnvironmentVariables, execution.getEnvironmentVariables());
+
+
+        final List<ContainerExecutionMount> mounts = execution.getMounts();
+        assertThat(mounts, hasSize(2));
+
+        ContainerExecutionMount inputMount = null;
+        ContainerExecutionMount outputMount = null;
+        for (final ContainerExecutionMount mount : mounts) {
+            if (mount.getName().equals("input")) {
+                inputMount = mount;
+            } else if (mount.getName().equals("output")) {
+                outputMount = mount;
+            } else {
+                fail("We should not have a mount with name " + mount.getName());
+            }
+        }
+
+        assertNotNull(inputMount);
+        assertEquals("/input", inputMount.getContainerPath());
+        assertEquals(fakeResourceDir, inputMount.getXnatHostPath());
+
+        assertNotNull(outputMount);
+        assertEquals("/output", outputMount.getContainerPath());
+        final String outputPath = outputMount.getXnatHostPath();
         final File outputFile = new File(outputPath + "/out.txt");
         if (!outputFile.canRead()) {
             fail("Cannot read output file " + outputFile.getAbsolutePath());

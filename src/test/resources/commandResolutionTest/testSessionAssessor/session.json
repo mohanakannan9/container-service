@@ -1,0 +1,14 @@
+{
+    "id": "aSession",
+    "type": "Session",
+    "label": "aSession",
+    "uri": "/experiments/aSession",
+    "assessors": [
+        {
+            "id": "anAssessor",
+            "type": "Assessor",
+            "uri": "/experiments/aSession/assessors/anAssessor",
+            "label": "anAssessor"
+        }
+    ]
+}

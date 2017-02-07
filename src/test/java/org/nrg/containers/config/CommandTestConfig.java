@@ -5,9 +5,10 @@ import org.hibernate.SessionFactory;
 import org.mockito.Mockito;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.api.ContainerControlApi;
-import org.nrg.containers.api.DockerControlApi;
 import org.nrg.containers.daos.CommandDao;
 import org.nrg.containers.model.Command;
+import org.nrg.containers.model.DockerCommand;
+import org.nrg.containers.model.XnatCommandWrapper;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerExecutionService;
 import org.nrg.containers.services.impl.HibernateCommandService;
@@ -122,7 +123,9 @@ public class CommandTestConfig {
         bean.setDataSource(dataSource);
         bean.setHibernateProperties(properties);
         bean.setAnnotatedClasses(
-                Command.class);
+                Command.class,
+                DockerCommand.class,
+                XnatCommandWrapper.class);
         return bean;
     }
 

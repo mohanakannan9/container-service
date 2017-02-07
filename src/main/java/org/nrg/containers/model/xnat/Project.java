@@ -3,10 +3,11 @@ package org.nrg.containers.model.xnat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
+import org.apache.commons.lang.StringUtils;
 import org.nrg.xdat.model.XnatAbstractresourceI;
-import org.nrg.xdat.model.XnatProjectdataI;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xdat.om.XnatSubjectdata;
@@ -15,17 +16,24 @@ import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.ProjectURII;
 
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
 @JsonInclude(Include.NON_NULL)
 public class Project extends XnatModelObject {
-    public static Type type = Type.PROJECT;
     @JsonIgnore private XnatProjectdata xnatProjectdata;
     private List<Resource> resources;
     private List<Subject> subjects;
 
     public Project() {}
+
+    public Project(final String projectId, final UserI userI) {
+        this.id = projectId;
+        loadXnatProjectdata(userI);
+        this.uri = UriParserUtils.getArchiveUri(xnatProjectdata);
+        populateProperties();
+    }
 
     public Project(final ProjectURII projectURII) {
         this.xnatProjectdata = projectURII.getProject();
@@ -57,9 +65,47 @@ public class Project extends XnatModelObject {
         }
     }
 
-    public XnatProjectdata loadXnatProjectdata(final UserI userI) {
-        xnatProjectdata = XnatProjectdata.getXnatProjectdatasById(id, userI, false);
-        return xnatProjectdata;
+    public static Function<URIManager.ArchiveItemURI, Project> uriToModelObjectFunction() {
+        return new Function<URIManager.ArchiveItemURI, Project>() {
+            @Nullable
+            @Override
+            public Project apply(@Nullable URIManager.ArchiveItemURI uri) {
+                if (uri != null &&
+                        ProjectURII.class.isAssignableFrom(uri.getClass())) {
+                    return new Project((ProjectURII) uri);
+                }
+
+                return null;
+            }
+        };
+    }
+
+    public static Function<String, Project> stringToModelObjectFunction(final UserI userI) {
+        return new Function<String, Project>() {
+            @Nullable
+            @Override
+            public Project apply(@Nullable String s) {
+                if (StringUtils.isBlank(s)) {
+                    return null;
+                }
+                final XnatProjectdata xnatProjectdata = XnatProjectdata.getXnatProjectdatasById(s, userI, true);
+                if (xnatProjectdata != null) {
+                    return new Project(xnatProjectdata);
+                }
+                return null;
+            }
+        };
+    }
+
+    public Project getProject(final UserI userI) {
+        loadXnatProjectdata(userI);
+        return this;
+    }
+
+    public void loadXnatProjectdata(final UserI userI) {
+        if (xnatProjectdata == null) {
+            xnatProjectdata = XnatProjectdata.getXnatProjectdatasById(id, userI, false);
+        }
     }
 
     public XnatProjectdata getXnatProjectdata() {
@@ -84,10 +130,6 @@ public class Project extends XnatModelObject {
 
     public void setSubjects(final List<Subject> subjects) {
         this.subjects = subjects;
-    }
-
-    public Type getType() {
-        return type;
     }
 
     @Override

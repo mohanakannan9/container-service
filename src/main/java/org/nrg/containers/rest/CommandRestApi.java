@@ -5,10 +5,16 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.containers.exceptions.*;
+import org.nrg.containers.exceptions.BadRequestException;
+import org.nrg.containers.exceptions.CommandInputResolutionException;
+import org.nrg.containers.exceptions.CommandResolutionException;
+import org.nrg.containers.exceptions.ContainerMountResolutionException;
+import org.nrg.containers.exceptions.DockerServerException;
+import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.ContainerExecution;
-import org.nrg.containers.model.ResolvedCommand;
+import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.containers.services.CommandService;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NrgRuntimeException;
@@ -80,7 +86,7 @@ public class CommandRestApi extends AbstractXapiRestController {
     })
     public ResponseEntity<Long> createCommand(final @RequestBody Command command)
             throws BadRequestException {
-        if (StringUtils.isBlank(command.getDockerImage())) {
+        if (StringUtils.isBlank(command.getImage())) {
             throw new BadRequestException("Must specify a docker image on the command.");
         }
         if (StringUtils.isBlank(command.getName())) {
@@ -115,36 +121,37 @@ public class CommandRestApi extends AbstractXapiRestController {
     @RequestMapping(value = {"/launch"}, method = POST)
     @ApiOperation(value = "Launch a container from a resolved command")
     @ResponseBody
-    public Long launchCommand(final @RequestBody ResolvedCommand resolvedCommand)
-            throws NoServerPrefException, DockerServerException {
+    public String launchCommand(final @RequestBody ResolvedDockerCommand resolvedDockerCommand)
+            throws NoServerPrefException, DockerServerException, ContainerMountResolutionException {
         final UserI userI = XDAT.getUserDetails();
-        final ContainerExecution executed = commandService.launchResolvedCommand(resolvedCommand, userI);
-        return executed.getId();
+        final ContainerExecution executed = commandService.launchResolvedDockerCommand(resolvedDockerCommand, userI);
+        return executed.getContainerId();
     }
 
     @RequestMapping(value = {"/{id}/launch"}, method = POST)
     @ApiIgnore // Swagger UI does not correctly show this API endpoint
     @ResponseBody
-    public Long launchCommandWQueryParams(final @PathVariable Long id,
+    public String launchCommandWQueryParams(final @PathVariable Long id,
                                                         final @RequestParam Map<String, String> allRequestParams)
             throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException {
         log.info("Launch requested for command id " + String.valueOf(id));
         final ContainerExecution executed = launchCommand(id, allRequestParams);
-        return executed.getId();
+        return executed.getContainerId();
     }
 
     @RequestMapping(value = {"/{id}/launch"}, method = POST, consumes = {JSON})
     @ApiOperation(value = "Resolve a command from the variable values in the request body, and launch it")
     @ResponseBody
-    public Long launchCommandWJsonBody(final @PathVariable Long id,
+    public String launchCommandWJsonBody(final @PathVariable Long id,
                                                      final @RequestBody Map<String, String> allRequestParams)
             throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException {
         log.info("Launch requested for command id " + String.valueOf(id));
         final ContainerExecution executed = launchCommand(id, allRequestParams);
-        return executed.getId();
+        return executed.getContainerId();
     }
 
-    private ContainerExecution launchCommand(final @PathVariable Long id, final @RequestParam Map<String, String> allRequestParams) throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, BadRequestException {
+    private ContainerExecution launchCommand(final @PathVariable Long id, final @RequestParam Map<String, String> allRequestParams)
+            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, BadRequestException {
         final UserI userI = XDAT.getUserDetails();
         try {
             final ContainerExecution containerExecution = commandService.resolveAndLaunchCommand(id, allRequestParams, userI);
@@ -236,6 +243,12 @@ public class CommandRestApi extends AbstractXapiRestController {
     @ExceptionHandler(value = {DockerServerException.class})
     public String handleDockerServerError(final Exception e) {
         return "The Docker server returned an error:\n" + e.getMessage();
+    }
+
+    @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
+    @ExceptionHandler(value = {CommandResolutionException.class})
+    public String handleCommandResolutionException(final CommandResolutionException e) {
+        return "The command could not be resolved.\n" + e.getMessage();
     }
 
     @ResponseStatus(value = HttpStatus.BAD_REQUEST)

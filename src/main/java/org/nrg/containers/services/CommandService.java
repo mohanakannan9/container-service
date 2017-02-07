@@ -1,12 +1,16 @@
 package org.nrg.containers.services;
 
 import org.nrg.containers.exceptions.CommandResolutionException;
+import org.nrg.containers.exceptions.ContainerMountResolutionException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.ResolvedCommand;
+import org.nrg.containers.model.ResolvedDockerCommand;
+import org.nrg.containers.model.XnatCommandWrapper;
+import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
 import org.nrg.xft.security.UserI;
 
@@ -22,7 +26,22 @@ public interface CommandService extends BaseHibernateService<Command> {
                                    final Map<String, String> variableRuntimeValues,
                                    final UserI userI)
             throws NotFoundException, CommandResolutionException;
+    ResolvedCommand resolveCommand(final String xnatCommandWrapperName,
+                                   final Long commandId,
+                                   final Map<String, String> variableRuntimeValues,
+                                   final UserI userI)
+            throws NotFoundException, CommandResolutionException;
+    ResolvedCommand resolveCommand(final Long xnatCommandWrapperId,
+                                   final Long commandId,
+                                   final Map<String, String> variableRuntimeValues,
+                                   final UserI userI)
+            throws NotFoundException, CommandResolutionException;
     ResolvedCommand resolveCommand(final Command command,
+                                   final Map<String, String> variableRuntimeValues,
+                                   final UserI userI)
+            throws NotFoundException, CommandResolutionException;
+    ResolvedCommand resolveCommand(final XnatCommandWrapper xnatCommandWrapper,
+                                   final Command command,
                                    final Map<String, String> variableRuntimeValues,
                                    final UserI userI)
             throws NotFoundException, CommandResolutionException;
@@ -30,8 +49,16 @@ public interface CommandService extends BaseHibernateService<Command> {
     ContainerExecution resolveAndLaunchCommand(final Long commandId,
                                                final Map<String, String> variableRuntimeValues, final UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException;
-    ContainerExecution launchResolvedCommand(final ResolvedCommand resolvedCommand, final UserI userI)
-            throws NoServerPrefException, DockerServerException;
+    ContainerExecution resolveAndLaunchCommand(final String xnatCommandWrapperName,
+                                               final Long commandId,
+                                               final Map<String, String> variableRuntimeValues, final UserI userI)
+            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException;
+    ContainerExecution resolveAndLaunchCommand(final Long xnatCommandWrapperId,
+                                               final Long commandId,
+                                               final Map<String, String> variableRuntimeValues, final UserI userI)
+            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException;
+    ContainerExecution launchResolvedDockerCommand(final ResolvedDockerCommand resolvedCommand, final UserI userI)
+            throws NoServerPrefException, DockerServerException, ContainerMountResolutionException;
 
     List<Command> save(final List<Command> commands);
 
