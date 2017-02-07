@@ -18,7 +18,6 @@ import java.util.Map;
 import java.util.Objects;
 
 @Entity
-@Audited
 @DiscriminatorValue("docker")
 public class DockerCommand extends Command {
     public static final CommandType type = CommandType.DOCKER;

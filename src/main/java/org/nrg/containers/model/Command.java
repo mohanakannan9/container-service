@@ -10,7 +10,6 @@ import com.google.common.base.MoreObjects.ToStringHelper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.swagger.annotations.ApiModelProperty;
-import org.hibernate.envers.Audited;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.DiscriminatorColumn;
@@ -25,7 +24,6 @@ import java.util.Map;
 import java.util.Objects;
 
 @Entity
-@Audited
 @JsonTypeInfo(use = Id.NAME, include = As.PROPERTY, property = "type")
 @JsonSubTypes({
         @JsonSubTypes.Type(value = DockerCommand.class, name = "docker")

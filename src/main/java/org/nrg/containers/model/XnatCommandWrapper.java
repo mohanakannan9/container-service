@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Objects;
 
 @Entity
-@Audited
 public class XnatCommandWrapper extends AbstractHibernateEntity {
     private String name;
     private String description;
