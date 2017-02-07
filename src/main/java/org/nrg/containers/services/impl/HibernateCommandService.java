@@ -139,8 +139,14 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         try {
             if (saveCommandWrappers && command.getXnatCommandWrappers() != null) {
                 for (final XnatCommandWrapper xnatCommandWrapper : command.getXnatCommandWrappers()) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Saving command wrapper " + xnatCommandWrapper.getName());
+                    }
                     xnatCommandWrapperService.create(xnatCommandWrapper);
                 }
+            }
+            if (log.isDebugEnabled()) {
+                log.debug("Saving command " + command.getName());
             }
             return super.create(command);
         } catch (ConstraintViolationException e) {

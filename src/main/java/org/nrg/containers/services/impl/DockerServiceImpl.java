@@ -13,6 +13,8 @@ import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.DockerHubService;
 import org.nrg.containers.services.DockerService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +23,8 @@ import java.util.List;
 
 @Service
 public class DockerServiceImpl implements DockerService {
+    private static final Logger log = LoggerFactory.getLogger(DockerService.class);
+
     private ContainerControlApi controlApi;
     private DockerHubService dockerHubService;
     private CommandService commandService;
@@ -120,7 +124,14 @@ public class DockerServiceImpl implements DockerService {
 
     @Override
     public List<Command> saveFromImageLabels(final String imageId) throws DockerServerException, NotFoundException, NoServerPrefException {
+        if (log.isDebugEnabled()) {
+            log.debug("Parsing labels for " + imageId);
+        }
         final List<Command> parsed = controlApi.parseLabels(imageId);
+
+        if (log.isDebugEnabled()) {
+            log.debug("Saving commands from image labels");
+        }
         return commandService.save(parsed);
     }
 
