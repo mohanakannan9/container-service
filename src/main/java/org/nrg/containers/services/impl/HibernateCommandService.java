@@ -51,6 +51,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @Service
+@Transactional
 public class HibernateCommandService extends AbstractHibernateEntityService<Command, CommandDao>
         implements CommandService {
     private static final Logger log = LoggerFactory.getLogger(HibernateCommandService.class);
@@ -103,7 +104,6 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     }
 
     @Override
-    @Transactional
     public Command get(final Long id) throws NotFoundException {
         final Command command = retrieve(id);
         if (command == null) {
@@ -125,7 +125,6 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     }
 
     @Override
-    @Transactional
     public Command create(final Command command) throws NrgRuntimeException {
         try {
             if (log.isDebugEnabled()) {
@@ -143,7 +142,6 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     }
 
     @Override
-    @Transactional
     public List<Command> save(final List<Command> commands) {
         if (!(commands == null || commands.isEmpty())) {
             for (final Command command : commands) {
