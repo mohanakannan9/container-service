@@ -168,6 +168,32 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     }
 
     @Override
+    public ResolvedCommand resolveCommand(final String xnatCommandWrapperName,
+                                          final Long commandId,
+                                          final Map<String, String> runtimeInputValues,
+                                          final UserI userI)
+            throws NotFoundException, CommandResolutionException {
+        if (StringUtils.isBlank(xnatCommandWrapperName)) {
+            return resolveCommand(commandId, runtimeInputValues, userI);
+        }
+        final Command command = get(commandId);
+        XnatCommandWrapper wrapper = null;
+        if (command.getXnatCommandWrappers() != null) {
+            for (final XnatCommandWrapper xnatCommandWrapper : command.getXnatCommandWrappers()) {
+                if (xnatCommandWrapperName.equals(xnatCommandWrapper.getName())) {
+                    wrapper = xnatCommandWrapper;
+                    break;
+                }
+            }
+        }
+        if (wrapper == null) {
+            throw new NotFoundException(String.format("Command %d has no wrapper with name \"%s\".", commandId, xnatCommandWrapperName));
+        }
+
+        return resolveCommand(wrapper, command, runtimeInputValues, userI);
+    }
+
+    @Override
     public ResolvedCommand resolveCommand(final Long xnatCommandWrapperId,
                                           final Long commandId,
                                           final Map<String, String> runtimeInputValues,
@@ -231,6 +257,21 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
                                                       final UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException {
         final ResolvedCommand resolvedCommand = resolveCommand(commandId, runtimeValues, userI);
+        switch (resolvedCommand.getType()) {
+            case DOCKER:
+                return launchResolvedDockerCommand((ResolvedDockerCommand) resolvedCommand, userI);
+            default:
+                return null; // TODO throw error
+        }
+    }
+
+    @Override
+    public ContainerExecution resolveAndLaunchCommand(final String xnatCommandWrapperName,
+                                                      final Long commandId,
+                                                      final Map<String, String> runtimeValues,
+                                                      final UserI userI)
+            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException {
+        final ResolvedCommand resolvedCommand = resolveCommand(xnatCommandWrapperName, commandId, runtimeValues, userI);
         switch (resolvedCommand.getType()) {
             case DOCKER:
                 return launchResolvedDockerCommand((ResolvedDockerCommand) resolvedCommand, userI);

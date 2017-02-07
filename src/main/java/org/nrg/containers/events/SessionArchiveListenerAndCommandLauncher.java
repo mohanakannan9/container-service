@@ -3,7 +3,11 @@ package org.nrg.containers.events;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
-import org.nrg.containers.exceptions.*;
+import org.apache.commons.lang3.StringUtils;
+import org.nrg.containers.exceptions.CommandResolutionException;
+import org.nrg.containers.exceptions.DockerServerException;
+import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.CommandEventMapping;
 import org.nrg.containers.model.xnat.Scan;
 import org.nrg.containers.model.xnat.Session;
@@ -18,12 +22,10 @@ import reactor.bus.Event;
 import reactor.bus.EventBus;
 import reactor.fn.Consumer;
 
-import javax.inject.Inject;
 import java.util.List;
 import java.util.Map;
 
 import static reactor.bus.selector.Selectors.type;
-
 
 @Service
 @SuppressWarnings("unused")
@@ -65,6 +67,7 @@ public class SessionArchiveListenerAndCommandLauncher implements Consumer<Event<
         if (commandEventMappings != null && !commandEventMappings.isEmpty()){
             for (CommandEventMapping commandEventMapping: commandEventMappings) {
                 final Long commandId = commandEventMapping.getCommandId();
+                final String xnatCommandWrapperName = commandEventMapping.getXnatCommandWrapperName();
 
                 final Map<String, String> runtimeValues = Maps.newHashMap();
                 String sessionString = session.getUri();
@@ -76,8 +79,11 @@ public class SessionArchiveListenerAndCommandLauncher implements Consumer<Event<
                 runtimeValues.put("session", sessionString);
                 try {
                     if (log.isInfoEnabled()) {
+                        final String wrapperMessage = StringUtils.isNotBlank(xnatCommandWrapperName) ?
+                                String.format("wrapper \"%s\"", xnatCommandWrapperName) :
+                                "identity wrapper";
                         final String message = String.format(
-                                "Launching command %s for user \"%s\"", commandId, sessionArchivedEvent.getUser().getLogin());
+                                "Launching command %s, %s, for user \"%s\"", commandId, wrapperMessage, sessionArchivedEvent.getUser().getLogin());
                         log.info(message);
                     }
                     if (log.isDebugEnabled()) {
@@ -86,7 +92,7 @@ public class SessionArchiveListenerAndCommandLauncher implements Consumer<Event<
                             log.debug(paramEntry.getKey() + ": " + paramEntry.getValue());
                         }
                     }
-                    commandService.resolveAndLaunchCommand(commandId, runtimeValues, sessionArchivedEvent.getUser());
+                    commandService.resolveAndLaunchCommand(xnatCommandWrapperName, commandId, runtimeValues, sessionArchivedEvent.getUser());
                 } catch (NotFoundException | CommandResolutionException | NoServerPrefException | DockerServerException e) {
                     log.error("Error launching command " + commandId, e);
                 }

@@ -3,7 +3,11 @@ package org.nrg.containers.events;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
-import org.nrg.containers.exceptions.*;
+import org.apache.commons.lang3.StringUtils;
+import org.nrg.containers.exceptions.CommandResolutionException;
+import org.nrg.containers.exceptions.DockerServerException;
+import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.CommandEventMapping;
 import org.nrg.containers.model.xnat.Scan;
 import org.nrg.containers.services.CommandEventMappingService;
@@ -16,12 +20,10 @@ import reactor.bus.Event;
 import reactor.bus.EventBus;
 import reactor.fn.Consumer;
 
-import javax.inject.Inject;
 import java.util.List;
 import java.util.Map;
 
 import static reactor.bus.selector.Selectors.type;
-
 
 @Service
 public class ScanArchiveListenerAndCommandLauncher implements Consumer<Event<ScanArchiveEventToLaunchCommands>> {
@@ -54,6 +56,7 @@ public class ScanArchiveListenerAndCommandLauncher implements Consumer<Event<Sca
         if (commandEventMappings != null && !commandEventMappings.isEmpty()) {
             for (CommandEventMapping commandEventMapping: commandEventMappings) {
                 final Long commandId = commandEventMapping.getCommandId();
+                final String xnatCommandWrapperName = commandEventMapping.getXnatCommandWrapperName();
 
                 final Map<String, String> runtimeValues = Maps.newHashMap();
 
@@ -67,8 +70,11 @@ public class ScanArchiveListenerAndCommandLauncher implements Consumer<Event<Sca
                 runtimeValues.put("scan", scanString);
                 try {
                     if (log.isInfoEnabled()) {
+                        final String wrapperMessage = StringUtils.isNotBlank(xnatCommandWrapperName) ?
+                                String.format("wrapper \"%s\"", xnatCommandWrapperName) :
+                                "identity wrapper";
                         final String message = String.format(
-                                "Launching command %s for user \"%s\".", commandId, scanArchiveEventToLaunchCommands.getUser().getLogin()
+                                "Launching command %s, %s, for user \"%s\".", commandId, wrapperMessage, scanArchiveEventToLaunchCommands.getUser().getLogin()
                         );
                         log.info(message);
                         if (log.isDebugEnabled()) {
@@ -78,7 +84,7 @@ public class ScanArchiveListenerAndCommandLauncher implements Consumer<Event<Sca
                             }
                         }
                     }
-                    commandService.resolveAndLaunchCommand(commandId, runtimeValues, scanArchiveEventToLaunchCommands.getUser());
+                    commandService.resolveAndLaunchCommand(xnatCommandWrapperName, commandId, runtimeValues, scanArchiveEventToLaunchCommands.getUser());
                 } catch (NotFoundException | CommandResolutionException | NoServerPrefException | DockerServerException e) {
                     log.error("Error launching command " + commandId, e);
                 }
