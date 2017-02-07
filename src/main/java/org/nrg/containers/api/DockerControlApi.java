@@ -18,7 +18,6 @@ import com.spotify.docker.client.exceptions.ContainerNotFoundException;
 import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.exceptions.ImageNotFoundException;
-import com.spotify.docker.client.messages.AuthConfig;
 import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
 import com.spotify.docker.client.messages.ContainerInfo;
@@ -28,6 +27,7 @@ import com.spotify.docker.client.messages.Image;
 import com.spotify.docker.client.messages.ImageInfo;
 import com.spotify.docker.client.messages.PortBinding;
 import com.spotify.docker.client.messages.ProgressMessage;
+import com.spotify.docker.client.messages.RegistryAuth;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.events.DockerContainerEvent;
 import org.nrg.containers.exceptions.DockerServerException;
@@ -121,7 +121,7 @@ public class DockerControlApi implements ContainerControlApi {
 
     @Override
     public String pingHub(DockerHub hub) throws DockerServerException, NoServerPrefException {
-        final AuthConfig authConfig = AuthConfig.builder()
+        final RegistryAuth authConfig = RegistryAuth.builder()
                 .email(hub.getEmail())
                 .username(hub.getUsername())
                 .password(hub.getPassword())
@@ -289,8 +289,7 @@ public class DockerControlApi implements ContainerControlApi {
                 final String hostPort = portEntry.getValue();
 
                 if (StringUtils.isNotBlank(containerPort) && StringUtils.isNotBlank(hostPort)) {
-                    final PortBinding portBinding = new PortBinding();
-                    portBinding.hostPort(hostPort);
+                    final PortBinding portBinding = PortBinding.create(null, hostPort);
                     portBindings.put(containerPort + "/tcp", Lists.newArrayList(portBinding));
 
                     portStringList.add("host" + hostPort + "->" + "container" + containerPort);
@@ -395,7 +394,7 @@ public class DockerControlApi implements ContainerControlApi {
             pullImage(name);
         } else {
             try (final DockerClient client = getClient()) {
-                final AuthConfig authConfig = AuthConfig.builder()
+                final RegistryAuth authConfig = RegistryAuth.builder()
                         .email(hub.getEmail())
                         .username(hub.getUsername())
                         .password(hub.getPassword())
@@ -435,7 +434,7 @@ public class DockerControlApi implements ContainerControlApi {
         } else {
             try (final DockerClient client = getClient()) {
                 final LoadProgressHandler handler = new LoadProgressHandler();
-                final AuthConfig authConfig = AuthConfig.builder()
+                final RegistryAuth authConfig = RegistryAuth.builder()
                         .email(hub.getEmail())
                         .username(hub.getUsername())
                         .password(hub.getPassword())
