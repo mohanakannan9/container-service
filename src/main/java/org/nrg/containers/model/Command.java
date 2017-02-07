@@ -181,7 +181,7 @@ public abstract class Command extends AbstractHibernateEntity {
                 outputs;
     }
 
-    @OneToMany(mappedBy = "command", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "command", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<XnatCommandWrapper> getXnatCommandWrappers() {
         return xnatCommandWrappers;
     }
@@ -197,6 +197,7 @@ public abstract class Command extends AbstractHibernateEntity {
         if (xnatCommandWrapper == null) {
             return;
         }
+        xnatCommandWrapper.setCommand(this);
 
         if (this.xnatCommandWrappers == null) {
             this.xnatCommandWrappers = Lists.newArrayList();

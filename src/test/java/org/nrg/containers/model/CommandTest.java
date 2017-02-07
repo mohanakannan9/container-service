@@ -142,8 +142,8 @@ public class CommandTest {
         final Command command = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, Command.class);
 
         commandService.create(command);
-        commandService.flush();
-        commandService.refresh(command);
+        // commandService.flush();
+        // commandService.refresh(command);
 
         final Command retrievedCommand = commandService.retrieve(command.getId());
 

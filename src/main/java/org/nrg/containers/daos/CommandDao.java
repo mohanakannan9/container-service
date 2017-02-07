@@ -4,6 +4,7 @@ import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Hibernate;
 import org.nrg.containers.model.Command;
+import org.nrg.containers.model.XnatCommandWrapper;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +28,13 @@ public class CommandDao extends AbstractHibernateDAO<Command> {
         Hibernate.initialize(command.getInputs());
         Hibernate.initialize(command.getOutputs());
         Hibernate.initialize(command.getXnatCommandWrappers());
+        if (command.getXnatCommandWrappers() != null) {
+            for (final XnatCommandWrapper xnatCommandWrapper : command.getXnatCommandWrappers()) {
+                Hibernate.initialize(xnatCommandWrapper.getExternalInputs());
+                Hibernate.initialize(xnatCommandWrapper.getDerivedInputs());
+                Hibernate.initialize(xnatCommandWrapper.getOutputHandlers());
+            }
+        }
     }
 
     public Command retrieve(final String name, final String dockerImageId) {

@@ -1,17 +1,15 @@
 package org.nrg.containers.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
-import org.hibernate.envers.Audited;
-import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import java.io.Serializable;
 import java.util.List;
@@ -22,7 +20,7 @@ public class XnatCommandWrapper implements Serializable {
     private long id;
     private String name;
     private String description;
-    private Command command;
+    @JsonIgnore private Command command;
     @JsonProperty("external-inputs") private List<XnatCommandInput> externalInputs;
     @JsonProperty("derived-inputs") private List<XnatCommandInput> derivedInputs;
     @JsonProperty("output-handlers") private List<XnatCommandOutput> outputHandlers;
@@ -69,7 +67,6 @@ public class XnatCommandWrapper implements Serializable {
     }
 
     @ManyToOne
-    @JoinColumn(name = "command_id")
     public Command getCommand() {
         return command;
     }

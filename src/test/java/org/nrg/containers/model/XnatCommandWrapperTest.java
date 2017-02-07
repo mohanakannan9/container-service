@@ -171,6 +171,7 @@ public class XnatCommandWrapperTest {
 
         final XnatCommandWrapper xnatCommandWrapper = commandWrappers.get(0);
         assertThat(xnatCommandWrapper.getId(), not(0L));
+        assertEquals(command, xnatCommandWrapper.getCommand());
     }
 
     @Test

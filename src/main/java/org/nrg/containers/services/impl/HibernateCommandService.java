@@ -131,6 +131,11 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             if (log.isDebugEnabled()) {
                 log.debug("Saving command " + command.getName());
             }
+            if (command.getXnatCommandWrappers() != null) {
+                for (final XnatCommandWrapper xnatCommandWrapper : command.getXnatCommandWrappers()) {
+                    xnatCommandWrapper.setCommand(command);
+                }
+            }
             return super.create(command);
         } catch (ConstraintViolationException e) {
             throw new NrgServiceRuntimeException("A command already exists with this name and docker image ID.");
