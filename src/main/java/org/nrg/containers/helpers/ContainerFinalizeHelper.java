@@ -53,7 +53,6 @@ public class ContainerFinalizeHelper {
 
     private Map<String, ContainerExecutionMount> untransportedMounts;
     private Map<String, ContainerExecutionMount> transportedMounts;
-    private Map<String, XnatModelObject> inputCache;
 
     private String prefix;
 
@@ -79,7 +78,6 @@ public class ContainerFinalizeHelper {
 
         untransportedMounts = Maps.newHashMap();
         transportedMounts = Maps.newHashMap();
-        inputCache = Maps.newHashMap();
 
         prefix = "Container " + containerExecution.getId() + ": ";
     }
@@ -345,12 +343,6 @@ public class ContainerFinalizeHelper {
         if (log.isDebugEnabled()) {
             log.debug(String.format(prefix + "Getting URI for input \"%s\".", inputName));
         }
-       if (inputCache.containsKey(inputName)) {
-           if (log.isDebugEnabled()) {
-               log.debug(prefix + "Input was cached.");
-           }
-           return inputCache.get(inputName).getUri();
-       }
 
         final Map<String, String> inputValues = containerExecution.getXnatInputValues();
         if (!inputValues.containsKey(inputName)) {
@@ -360,30 +352,7 @@ public class ContainerFinalizeHelper {
             return null;
         }
 
-        final String inputValue = inputValues.get(inputName);
-
-        try {
-            final XnatModelObject input = mapper.readValue(inputValue, XnatModelObject.class);
-            if (log.isDebugEnabled()) {
-                log.debug(String.format(prefix + "Caching input \"%s\": %s", inputName, input));
-            } else if (log.isInfoEnabled()){
-                log.info(String.format(prefix + "Caching input \"%s\".", inputName));
-            }
-
-            inputCache.put(inputName, input);
-            return input.getUri();
-        } catch (IOException e) {
-            if (log.isDebugEnabled()) {
-                // Yes, I know I checked for "debug" and am logging at "error".
-                // I still want this to show up as "error" either way, but I only want the full object to
-                // be logged if you opted into the firehose.
-                log.error(prefix + "Could not deserialize input value:\n" + inputValue, e);
-            } else {
-                log.error(prefix + "Could not deserialize input value.", e);
-            }
-        }
-
-        return null;
+        return inputValues.get(inputName);
     }
 
     private List<File> matchGlob(final String rootPath, final String glob) {
