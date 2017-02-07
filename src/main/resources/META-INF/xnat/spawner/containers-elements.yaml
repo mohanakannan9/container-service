@@ -42,29 +42,68 @@ dockerSetupPanel:
             tag: script|src="~/scripts/xnat/admin/containerHostManagement.js"
 
 imageHostsPanel:
-    kind: panel.form
+    kind: panel
     name: imageHosts
     label: Image Hosts
-    url: /xapi/docker/hubs
-    contentType: json
+    footer: false
     contents:
-        defaultHost:
-            kind: panel.element
-            label: Default Image Host
+        imageHostTemplate:
+            tag: "div#image-host-editor-template.html-template"
             contents:
-                link:
-                    tag: a.link
-                    element:
-                        href: https://hub.docker.com
-                        target: _blank
-                        html: https://hub.docker.com
-        addHostCommand:
-            kind: panel.element
-            contents:
-                button:
-                    tag: button.add-image-host
-                    element:
-                        html: Add Image Host
+                imageHostEditor:
+                    kind: panel.form
+                    name: imageHostEditor
+                    id: image-host-editor
+                    header: false
+                    footer: false
+                    action: /xapi/docker/hubs
+                    contentType: json
+                    contents:
+                        pad:
+                            tag: div.pad20
+                            contents:
+                                id:
+                                    kind: panel.input.hidden
+                                    id: id
+                                    name: hubId
+                                name:
+                                    kind: panel.input.text
+                                    id: hub-name
+                                    name: name
+                                    label: Image Hub Name
+                                    validation: not-empty
+                                url:
+                                    kind: panel.input.text
+                                    id: hub-url
+                                    name: url
+                                    label: URL
+                                    validation: url not-empty
+                                divider:
+                                    tag: "hr"
+                                subhead:
+                                    tag: "p"
+                                    content: Optional host login settings
+                                username:
+                                    kind: panel.input.text
+                                    id: hub-username
+                                    name: username
+                                    label: "Username"
+                                email:
+                                    kind: panel.input.text
+                                    id: hub-email
+                                    name: email
+                                    label: "Email Address"
+                                    validation: email
+                                password:
+                                    kind: panel.input.password
+                                    id: hub-password
+                                    name: password
+                                    label: "Password"
+        imageHostTable:
+            tag: "div#image-host-manager"
+        imageHostScript:
+            tag: script|src="/scripts/xnat/admin/imageHostManagement.js"
+#           tag: script|src="~/scripts/xnat/admin/imageHostManagement.js"
 
 installedImagesPanel:
     kind: panel.dataTable
