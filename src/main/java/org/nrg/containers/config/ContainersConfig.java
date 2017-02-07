@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.nrg.containers.events.DockerEventPuller;
 import org.nrg.framework.annotations.XnatPlugin;
 import org.nrg.transporter.config.TransporterConfig;
+import org.nrg.xdat.security.PermissionsServiceImpl;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.springframework.context.annotation.Bean;
@@ -35,7 +36,8 @@ public class ContainersConfig {
     // See XNAT-4647
     @Bean
     public PermissionsServiceI permissionsService() {
-        return Permissions.getPermissionsService();
+        // return Permissions.getPermissionsService();
+        return new PermissionsServiceImpl();
     }
 
     @Bean
