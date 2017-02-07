@@ -53,7 +53,7 @@ public class Subject extends XnatModelObject {
         if (parentUri == null) {
             this.uri = UriParserUtils.getArchiveUri(xnatSubjectdataI);
         } else {
-            this.uri = parentUri + "/subjects/" + id;
+            this.uri = parentUri + "/subjects/" + xnatSubjectdataI.getId();
         }
         populateProperties(rootArchivePath);
     }

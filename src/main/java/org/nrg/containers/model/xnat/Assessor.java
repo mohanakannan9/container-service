@@ -43,7 +43,7 @@ public class Assessor extends XnatModelObject {
         if (parentUri == null) {
             this.uri = UriParserUtils.getArchiveUri(xnatImageassessordataI);
         } else {
-            this.uri = parentUri + "/assessors/" + id;
+            this.uri = parentUri + "/assessors/" + xnatImageassessordataI.getId();
         }
         populateProperties(rootArchivePath);
     }

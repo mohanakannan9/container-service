@@ -57,7 +57,7 @@ public class Resource extends XnatModelObject {
             this.uri = UriParserUtils.getArchiveUri(xnatResourcecatalog); // <-- Does not actually work
             log.error("Cannot construct a resource URI. Parent URI is null.");
         } else {
-            this.uri = parentUri + "/resources/" + id;
+            this.uri = parentUri + "/resources/" + xnatResourcecatalog.getLabel();
         }
 
         populateProperties(rootArchivePath);

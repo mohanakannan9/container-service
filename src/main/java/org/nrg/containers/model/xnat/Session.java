@@ -56,7 +56,7 @@ public class Session extends XnatModelObject {
         if (parentUri == null) {
             this.uri = UriParserUtils.getArchiveUri(xnatImagesessiondataI);
         } else {
-            this.uri = parentUri + "/experiments/" + id;
+            this.uri = parentUri + "/experiments/" + xnatImagesessiondataI.getId();
         }
         populateProperties(rootArchivePath);
     }

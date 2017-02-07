@@ -40,7 +40,7 @@ public class Scan extends XnatModelObject {
         if (parentUri == null) {
             this.uri = UriParserUtils.getArchiveUri(xnatImagescandataI);
         } else {
-            this.uri = parentUri + "/scans/" + id;
+            this.uri = parentUri + "/scans/" + xnatImagescandataI.getId();
         }
         populateProperties(rootArchivePath);
     }
