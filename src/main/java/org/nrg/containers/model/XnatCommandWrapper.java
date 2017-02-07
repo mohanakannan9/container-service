@@ -8,13 +8,18 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 
 @Entity
-public class XnatCommandWrapper extends AbstractHibernateEntity {
+public class XnatCommandWrapper implements Serializable {
+    private long id;
     private String name;
     private String description;
     private Command command;
@@ -37,6 +42,16 @@ public class XnatCommandWrapper extends AbstractHibernateEntity {
         return identity;
     }
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    public long getId() {
+        return id;
+    }
+
+    public void setId(final long id) {
+        this.id = id;
+    }
+
     public String getName() {
         return name;
     }
@@ -54,7 +69,7 @@ public class XnatCommandWrapper extends AbstractHibernateEntity {
     }
 
     @ManyToOne
-    @JoinColumn(name = "command_id", insertable = false, updatable = false)
+    @JoinColumn(name = "command_id")
     public Command getCommand() {
         return command;
     }
@@ -100,9 +115,9 @@ public class XnatCommandWrapper extends AbstractHibernateEntity {
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
         final XnatCommandWrapper that = (XnatCommandWrapper) o;
-        return Objects.equals(this.name, that.name) &&
+        return Objects.equals(this.id, that.id) &&
+                Objects.equals(this.name, that.name) &&
                 Objects.equals(this.description, that.description) &&
                 Objects.equals(this.command, that.command) &&
                 Objects.equals(this.externalInputs, that.externalInputs) &&
@@ -112,23 +127,19 @@ public class XnatCommandWrapper extends AbstractHibernateEntity {
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), name, description, command, externalInputs, derivedInputs, outputHandlers);
+        return Objects.hash(id, name, description, command, externalInputs, derivedInputs, outputHandlers);
     }
 
     @Override
-    public MoreObjects.ToStringHelper addParentPropertiesToString(final MoreObjects.ToStringHelper helper) {
-        return super.addParentPropertiesToString(helper)
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("id", id)
                 .add("name", name)
                 .add("description", description)
                 .add("command", command)
                 .add("externalInputs", externalInputs)
                 .add("derivedInputs", derivedInputs)
-                .add("outputHandlers", outputHandlers);
-    }
-
-    @Override
-    public String toString() {
-        return addParentPropertiesToString(MoreObjects.toStringHelper(this))
+                .add("outputHandlers", outputHandlers)
                 .toString();
     }
 

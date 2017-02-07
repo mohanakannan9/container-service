@@ -29,7 +29,6 @@ import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.containers.model.XnatCommandWrapper;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerExecutionService;
-import org.nrg.containers.services.XnatCommandWrapperService;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
@@ -62,7 +61,6 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     private final TransportService transporter;
     private final ContainerExecutionService containerExecutionService;
     private final ConfigService configService;
-    private final XnatCommandWrapperService xnatCommandWrapperService;
 
     @Autowired
     public HibernateCommandService(final ContainerControlApi controlApi,
@@ -70,15 +68,13 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
                                    final SiteConfigPreferences siteConfigPreferences,
                                    final TransportService transporter,
                                    final ContainerExecutionService containerExecutionService,
-                                   final ConfigService configService,
-                                   final XnatCommandWrapperService xnatCommandWrapperService) {
+                                   final ConfigService configService) {
         this.controlApi = controlApi;
         this.aliasTokenService = aliasTokenService;
         this.siteConfigPreferences = siteConfigPreferences;
         this.transporter = transporter;
         this.containerExecutionService = containerExecutionService;
         this.configService = configService;
-        this.xnatCommandWrapperService = xnatCommandWrapperService;
     }
 
     @Override
@@ -129,22 +125,9 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     }
 
     @Override
-    public Command create(final Command command) throws NrgRuntimeException {
-        return create(command, true);
-    }
-
-    @Override
     @Transactional
-    public Command create(final Command command, final boolean saveCommandWrappers) throws NrgRuntimeException {
+    public Command create(final Command command) throws NrgRuntimeException {
         try {
-            if (saveCommandWrappers && command.getXnatCommandWrappers() != null) {
-                for (final XnatCommandWrapper xnatCommandWrapper : command.getXnatCommandWrappers()) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Saving command wrapper " + xnatCommandWrapper.getName());
-                    }
-                    xnatCommandWrapperService.create(xnatCommandWrapper);
-                }
-            }
             if (log.isDebugEnabled()) {
                 log.debug("Saving command " + command.getName());
             }

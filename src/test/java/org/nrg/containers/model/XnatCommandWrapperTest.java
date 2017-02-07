@@ -6,7 +6,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.containers.config.CommandTestConfig;
 import org.nrg.containers.services.CommandService;
-import org.nrg.containers.services.XnatCommandWrapperService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -109,11 +108,10 @@ public class XnatCommandWrapperTest {
 
     @Autowired private ObjectMapper mapper;
     @Autowired private CommandService commandService;
-    @Autowired private XnatCommandWrapperService commandWrapperService;
 
     @Test
     public void testSpringConfiguration() {
-        assertThat(commandWrapperService, not(nullValue()));
+        assertThat(commandService, not(nullValue()));
     }
 
     @Test

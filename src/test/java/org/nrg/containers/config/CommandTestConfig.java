@@ -5,17 +5,13 @@ import org.hibernate.SessionFactory;
 import org.mockito.Mockito;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.api.ContainerControlApi;
-import org.nrg.containers.api.DockerControlApi;
 import org.nrg.containers.daos.CommandDao;
-import org.nrg.containers.daos.XnatCommandWrapperRepository;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.DockerCommand;
 import org.nrg.containers.model.XnatCommandWrapper;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerExecutionService;
-import org.nrg.containers.services.XnatCommandWrapperService;
 import org.nrg.containers.services.impl.HibernateCommandService;
-import org.nrg.containers.services.impl.HibernateXnatCommandWrapperService;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.transporter.TransportService;
 import org.nrg.transporter.TransportServiceImpl;
@@ -91,20 +87,9 @@ public class CommandTestConfig {
                                          final SiteConfigPreferences siteConfigPreferences,
                                          final TransportService transporter,
                                          final ContainerExecutionService containerExecutionService,
-                                         final ConfigService configService,
-                                         final XnatCommandWrapperService xnatCommandWrapperService) {
+                                         final ConfigService configService) {
         return new HibernateCommandService(controlApi, aliasTokenService, siteConfigPreferences,
-                transporter, containerExecutionService, configService, xnatCommandWrapperService);
-    }
-
-    @Bean
-    public XnatCommandWrapperService xnatCommandWrapperService() {
-        return new HibernateXnatCommandWrapperService();
-    }
-
-    @Bean
-    public XnatCommandWrapperRepository xnatCommandWrapperRepository() {
-        return new XnatCommandWrapperRepository();
+                transporter, containerExecutionService, configService);
     }
 
     @Bean

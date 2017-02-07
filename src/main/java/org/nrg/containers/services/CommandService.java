@@ -51,7 +51,6 @@ public interface CommandService extends BaseHibernateService<Command> {
     ContainerExecution launchResolvedDockerCommand(final ResolvedDockerCommand resolvedCommand, final UserI userI)
             throws NoServerPrefException, DockerServerException, ContainerMountResolutionException;
 
-    Command create(final Command command, final boolean saveCommandWrappers) throws NrgRuntimeException;
     List<Command> save(final List<Command> commands);
 
 //    @VisibleForTesting

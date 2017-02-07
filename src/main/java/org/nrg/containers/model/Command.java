@@ -12,6 +12,7 @@ import com.google.common.collect.Maps;
 import io.swagger.annotations.ApiModelProperty;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
+import javax.persistence.CascadeType;
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
@@ -180,7 +181,7 @@ public abstract class Command extends AbstractHibernateEntity {
                 outputs;
     }
 
-    @OneToMany(mappedBy = "command")
+    @OneToMany(mappedBy = "command", cascade = CascadeType.ALL)
     public List<XnatCommandWrapper> getXnatCommandWrappers() {
         return xnatCommandWrappers;
     }

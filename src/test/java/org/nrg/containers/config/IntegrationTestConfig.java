@@ -8,7 +8,6 @@ import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.api.DockerControlApi;
 import org.nrg.containers.daos.CommandDao;
 import org.nrg.containers.daos.ContainerExecutionRepository;
-import org.nrg.containers.daos.XnatCommandWrapperRepository;
 import org.nrg.containers.events.DockerContainerEventListener;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.ContainerExecution;
@@ -18,10 +17,8 @@ import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.XnatCommandWrapper;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerExecutionService;
-import org.nrg.containers.services.XnatCommandWrapperService;
 import org.nrg.containers.services.impl.HibernateCommandService;
 import org.nrg.containers.services.impl.HibernateContainerExecutionService;
-import org.nrg.containers.services.impl.HibernateXnatCommandWrapperService;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.services.NrgPreferenceService;
@@ -29,7 +26,6 @@ import org.nrg.transporter.TransportService;
 import org.nrg.transporter.TransportServiceImpl;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.PermissionsServiceI;
-import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xnat.services.archive.CatalogService;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -74,25 +70,14 @@ public class IntegrationTestConfig {
                                          final SiteConfigPreferences siteConfigPreferences,
                                          final TransportService transporter,
                                          final ContainerExecutionService containerExecutionService,
-                                         final ConfigService configService,
-                                         final XnatCommandWrapperService xnatCommandWrapperService) {
+                                         final ConfigService configService) {
         return new HibernateCommandService(controlApi, aliasTokenService, siteConfigPreferences,
-                transporter, containerExecutionService, configService, xnatCommandWrapperService);
+                transporter, containerExecutionService, configService);
     }
 
     @Bean
     public CommandDao commandDao() {
         return new CommandDao();
-    }
-
-    @Bean
-    public XnatCommandWrapperService xnatCommandWrapperService() {
-        return new HibernateXnatCommandWrapperService();
-    }
-
-    @Bean
-    public XnatCommandWrapperRepository xnatCommandWrapperRepository() {
-        return new XnatCommandWrapperRepository();
     }
 
     @Bean
