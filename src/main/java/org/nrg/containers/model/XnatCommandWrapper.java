@@ -116,7 +116,6 @@ public class XnatCommandWrapper implements Serializable {
         return Objects.equals(this.id, that.id) &&
                 Objects.equals(this.name, that.name) &&
                 Objects.equals(this.description, that.description) &&
-                Objects.equals(this.command, that.command) &&
                 Objects.equals(this.externalInputs, that.externalInputs) &&
                 Objects.equals(this.derivedInputs, that.derivedInputs) &&
                 Objects.equals(this.outputHandlers, that.outputHandlers);
@@ -124,7 +123,7 @@ public class XnatCommandWrapper implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, description, command, externalInputs, derivedInputs, outputHandlers);
+        return Objects.hash(id, name, description, externalInputs, derivedInputs, outputHandlers);
     }
 
     @Override
@@ -133,7 +132,6 @@ public class XnatCommandWrapper implements Serializable {
                 .add("id", id)
                 .add("name", name)
                 .add("description", description)
-                .add("command", command)
                 .add("externalInputs", externalInputs)
                 .add("derivedInputs", derivedInputs)
                 .add("outputHandlers", outputHandlers)
