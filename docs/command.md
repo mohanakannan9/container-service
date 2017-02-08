@@ -67,9 +67,42 @@ If you want XNAT to execute your docker image, you will need a Command. The Comm
             {
                 "name": "",
                 "description": "",
-                "inputs": [],
-                "derived-inputs": [],
-                "output-handlers": []
+                "external-inputs": [
+                    {
+                        "name": "",
+                        "description": "",
+                        "type": "",
+                        "matcher": "",
+                        "default-value": "",
+                        "user-settable": true,
+                        "replacement-key": "",
+                        "provides-value-for-command-input": "",
+                        "provides-files-for-command-mount": ""
+                    }
+                ],
+                "derived-inputs": [
+                    {
+                        "name": "",
+                        "description": "",
+                        "type": "",
+                        "matcher": "",
+                        "default-value": "",
+                        "user-settable": true,
+                        "replacement-key": "",
+                        "provides-value-for-command-input": "",
+                        "provides-files-for-command-mount": "",
+                        "derived-from-xnat-input": "",
+                        "derived-from-xnat-object-property": ""
+                    }
+                ],
+                "output-handlers": [
+                    {
+                        "type": "",
+                        "accepts-command-output": "",
+                        "as-a-child-of-xnat-input": "",
+                        "label": ""
+                    }
+                ]
             }
         ]
     }
@@ -154,7 +187,7 @@ A mount only has a few properties; we will summarize those here, and go into mor
 * `"path"`, which is the path at which it will be found *inside* the container. You don't need to specify the path outside the container; we will manage that for you.
 * `"writable"` boolean, which specifies whether the mount is read-only or writable.
 
-A little more detail on the `writable` flag. Mounts that are referenced by command outputs are always `writable`. If a mount is not referenced by any output—i.e. it is only used to mount input files—it will typically be read-only. This is so that files can be mounted directly from the XNAT archive, which should never be written to directly. However, this means that if a container does try to write anything to a location that is a read-only mount, the container will fail with a runtime error. To avoid this, you can explicitly set an input mount to "writable=true". This means that, before the container is launched, any input files will be copied out of the archive into a writable directory, which will then be mounted.
+A little more detail on the `writable` flag: Mounts that are referenced by [command outputs](#command-outputs) are always `writable`. If a mount is not referenced by any output—i.e. it is only used to mount input files—it will typically be read-only. This is so that files can be mounted directly from the XNAT archive, which should never be written to directly. However, this means that if a container does try to write anything to a location that is a read-only mount, the container will fail with a runtime error. If you know that a container will write to a location where you want to place input files, you can explicitly set an input mount to "writable=true". This means that before the container is launched, any input files will be copied out of the archive into a writable directory which will then be mounted.
 
 A mount can be used for both an input and an output. That means the input files will be copied into the directory before launch, and the same directory will be searched for output files upon container completion. If you aren't careful, the input files will be re-uploaded along with the output files. The `output.path` and `output.glob` properties can be carefully crafted to avoid this effect.
 
@@ -171,19 +204,27 @@ More info to come.
 # Inputs
 
 ## Command Inputs
-Inputs allow you define what information and objects need to be provided when your Command is resolved before the container is launched. They are the way for you to gather all the requirements you need to launch your container: files, command-line arguments, environment variables, etc. Absolutely anything that you need for your container has to either be an input value or, if the input is one of the XNAT object types and the value is a big complex object, be some property or child of an input value.
+What information does your container need?
+
+Command Inputs allow you define what information needs to be provided in order to launch your container: files, command-line arguments, environment variables, etc. If you need some bit of information to be variable and set at launch time, it should be a command input.
 
 ## XNAT Inputs
-More info to come.
+How do you get information from XNAT into your Command's inputs?
 
-### User-settable or not?
-More info to come.
+At the level of command inputs, it does not necessarily matter where the runtime values come from. They could in principle come from some XNAT object, or from a user's input, or from some other contextual information.
+
+The XNAT inputs—i.e. the `command.xnat.external-inputs` and `command.xnat.derived-inputs` objects—give you a way to tell XNAT how to use XNAT objects—their properties, files, and hierarchical relationships—to provide values to the Command inputs.
+
+## User-settable or not?
+When a user brings up a user interface to launch a container using a Command, they will see some appropriate interface element for each Command input and external XNAT Wrapper input. These interface elements give the user a chance to change the input values before launching the container. If, for some reason, this is not appropriate for a particular input, and users should not be allowed to change the default value, the input can be defined with the property `user-settable=false`. When the user brings up an interface to launch a container, they will see the input and its value but will not be able to change it.
+
+The more common use-case for this parameter is in XNAT-project-specific settings. Perhaps all the inputs in a Command definition have `user-settable=true`, but a project owner may choose to configure particular inputs on the Command to have `user-settable=false`. In this way, they ensure that all containers on their project will be executed with the chosen input value.
 
 ## Input Types
 
-Command input types: string, boolean, number, file
+Command input types: string, boolean, number, file, file[]
 
-XNAT Wrapper input types: string, boolean, number, file, Project, Subject, Session, Scan, Assessor, Resource, Config
+XNAT Wrapper input types: string, boolean, number, file, file[], Project, Subject, Session, Scan, Assessor, Resource, Config
 
 More info to come.
 
@@ -200,19 +241,25 @@ When you define a Command, you can leave many of the values as "templates". Thes
 
 Lots of properties in the Command can use template strings:
 
-* run.command-line - See a simple example in the [Hello world example](#hello-world-example), but also see the caveats in the [complex example](#more-complex-command-line-example) below.
-* run.environment-variables - Both the environment variable name and value can be templates.
-* run.ports - Both the container port and host port can be templates.
-* output.files.path - The relative path within a mount at which output files can be found.
+* `command-line` - See a simple example in the [Hello world example](#hello-world-example), but also see the caveats in the [complex example](#more-complex-command-line-example) below.
+* `environment-variables` - Both the environment variable name and value can be templates.
+* `ports` - Both the container port and host port can be templates.
+* `output.path` - The relative path within a mount at which output files can be found.
 
 # JSONPath
 JSONPath is an expression syntax for searching through a JSON object, similar to the way you can use XPath to search through an XML document. The syntax and operators are documented here at the source repository: [https://github.com/jayway/JsonPath](https://github.com/jayway/JsonPath/blob/master/README.md).
 
 You can use JSONPath strings as values in several Command fields. When the Command is resolved before it is used to launch a container, those JSONPath strings will be replaced with whatever values they refer to. This is similar to the way you can use a [template string](#template-strings) in the Command definition, which gets replaced by a value when the Command is resolved. In fact, anywhere in the Command that you can use a template string, you can also use a JSONPath expression.
 
-Note: When you use a JSONPath expression as a value, you must surround it with carets (`^...^`) to signal to the Container Service that it needs to invoke the JSONPath interpreter.
+When you use a JSONPath expression as a value, you must surround it with carets (`^...^`) to signal to the Container Service that it needs to invoke the JSONPath interpreter.
 
-JSONPath expressions start at the root of the Command, which is referred to as "`$`".
+JSONPath expressions start at the root of the Command, which is referred to as "`$`". For instance, you could get the `path` of a particular mount with name `foo` using the JSONPath expression
+
+    $.mounts[?(@.name = "foo")].path
+
+Again, remember to surround the JSONPath expression with carets (`^`) to signal that it should be evaluated.
+
+You can search through the XNAT Command wrappers in a JSONPath expression just like any other part of the Command: `^$.xnat[?(@.name = "wrapper-name")]...`. To find in the list the particular wrapper that is being evaluated, you would have to hard-code the wrapper name into such an expression, because there is no easy way to find the name at runtime. However, theIre is a shorthand way to search through the particular command wrapper that is being evaulated. Instead of surrounding the JSONPath expression with carets (`^$.thing1.thing2...^`), surround it with carets and the word `"wrapper"` as such: `^wrapper:$.thing3.thing4^`. Now the root of the JSONPath expression (`$`) will refer to the Wrapper, not the Command.
 
 ## JSONPath filters
 The `input.matcher` property uses a special subset of the JSONPath sytax called a "[filter](;https://github.com/jayway/JsonPath/blob/master/README.md#filter-operators)". In JSONPath expressions that can return a list, you can use one of these expressions to filter out non-matching elements. As a simple example, let's say I have the JSON
