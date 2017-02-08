@@ -113,24 +113,84 @@ installedImagesPanel:
     contents:
         imageFilterBar:
             tag: "div#image-filter-bar"
-            # more to come here
         imageListContainer:
             tag: "div#image-list-container"
+        addImageTemplate:
+            tag: "div#add-image-template.html-template"
+            contents:
+                addImageform:
+                    kind: panel
+                    name: addImageForm
+                    id: add-image-form
+                    header: false
+                    footer: false
+                    contents:
+                        pad:
+                            tag: div.pad20
+                            contents:
+                                hubSelector:
+                                    kind: panel.select.single
+                                    name: hubId
+                                    label: Select Image Hub
+                                    element:
+                                        title: Select Image Hub
+                                        disabled: disabled
+                                imageName:
+                                    kind: panel.input.text
+                                    name: image
+                                    label: Image Name
+                                    validation: not-empty
+                                    element:
+                                        title: Enter Image Name
+                                    description: >
+                                        Specify the image name to pull, including the account name (if necessary). For example, to pull the XNAT dcm2niix image, enter "xnat/dcm2niix"
+                                tag:
+                                    kind: panel.input.text
+                                    name: tag
+                                    label: Version Tag
+                                    value: ":latest"
+                                    element:
+                                        title: Enter Version Tag (Optional)
+                                    description: >
+                                        "Specify the tag version of the image to pull. The default is :latest"
+                                saveCommands:
+                                    kind: panel.input.hidden
+                                    name: save-commands
+                                    value: true
+        setCommandDefaults:
+            tag: "div#add-image-template.html-template"
+            contents:
+                setCommandDefaultForm:
+                    kind: panel
+                    name: setCommandDefaultsForm
+                    id: set-command-defaults-form
+                    header: false
+                    footer: false
+                    contents:
+                        pad:
+                            tag: div.pad20
+                            contents:
+                                imageId:
+                                    kind: panel.input.hidden
+                                    name: imageId
+                                commandId:
+                                    kind: panel.input.hidden
+                                    name: commandId
         commandViewerTemplate:
             tag: "div#command-viewer-template.html-template"
-                contents:
-                    commandEditor:
-                        kind: panel
-                        name: commandViewer
-                        id: command-viewer
-                        header: false
-                        footer: false
-                        contents:
-                            pad:
-                                tag: div.pad20
-                                contents:
-                                    commandViewerDisplay:
-                                        tag: textarea.commandViewer
+            contents:
+                commandEditor:
+                    kind: panel
+                    name: commandViewer
+                    id: command-viewer
+                    header: false
+                    footer: false
+                    contents:
+                        pad:
+                            tag: div.pad20
+                            contents:
+                                commandViewerDisplay:
+                                    tag: textarea.commandViewer
         imagePanelScript:
             tag: script|src="/scripts/xnat/admin/imageListManagement.js"
 #            tag: script|src="~/scripts/xnat/admin/imageListManagement.js"
@@ -166,4 +226,4 @@ siteSettings:
             group: containerServiceTabGroup
             active: true
             contents:
-#                ${installedImagesPanel}
+                ${installedImagesPanel}
