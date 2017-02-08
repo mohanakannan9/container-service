@@ -465,7 +465,8 @@ public class CommandRestApiTest {
         final String badInputType = "fig newton";
         final String badInputTypeJson = "{" +
                 "\"name\": \"a command name\", " +
-                "\"docker-image\": \"an image\", " +
+                "\"type\": \"docker\", " +
+                "\"image\": \"an image\", " +
                 "\"inputs\": [" +
                     "{\"name\": \"an input name\", \"type\": \"" + badInputType + "\"}" +
                 "}";
