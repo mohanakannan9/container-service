@@ -2,8 +2,10 @@ package org.nrg.containers.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.Lists;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -42,6 +44,16 @@ public class DockerImage {
 
     public void setTags(final List<String> tags) {
         this.tags = tags;
+    }
+
+    public void addTag(final String tag) {
+        if (StringUtils.isBlank(tag)) {
+            return;
+        }
+        if (this.tags == null) {
+            this.tags = Lists.newArrayList();
+        }
+        this.tags.add(tag);
     }
 
     /**
