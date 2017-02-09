@@ -2,15 +2,12 @@ package org.nrg.containers.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
-import org.hibernate.annotations.Cache;
-import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.Entity;
 import java.util.Objects;
 
 @Entity
-@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
 public class DockerHub extends AbstractHibernateEntity {
 
     @JsonProperty("name") private String name;
