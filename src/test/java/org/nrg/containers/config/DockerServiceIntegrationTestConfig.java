@@ -2,6 +2,7 @@ package org.nrg.containers.config;
 
 import org.mockito.Mockito;
 import org.nrg.containers.api.ContainerControlApi;
+import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.DockerHubService;
 import org.nrg.containers.services.DockerService;
@@ -18,8 +19,9 @@ public class DockerServiceIntegrationTestConfig {
     @Bean
     public DockerService dockerService(final ContainerControlApi controlApi,
                                        final DockerHubService dockerHubService,
-                                       final CommandService commandService) {
-        return new DockerServiceImpl(controlApi, dockerHubService, commandService);
+                                       final CommandService commandService,
+                                       final DockerServerPrefsBean dockerServerPrefsBean) {
+        return new DockerServiceImpl(controlApi, dockerHubService, commandService, dockerServerPrefsBean);
     }
 
     @Bean

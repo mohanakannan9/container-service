@@ -2,7 +2,12 @@ package org.nrg.containers.rest;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.spotify.docker.client.exceptions.VolumeNotFoundException;
+import org.apache.ecs.wml.Do;
+import org.hamcrest.CustomTypeSafeMatcher;
+import org.hamcrest.Matcher;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -12,8 +17,13 @@ import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Command;
+import org.nrg.containers.model.DockerCommand;
 import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.model.DockerServer;
+import org.nrg.containers.model.DockerServerPrefsBean;
+import org.nrg.containers.model.XnatCommandWrapper;
+import org.nrg.containers.rest.models.DockerImageAndCommandSummary;
+import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.DockerService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.xdat.security.services.RoleServiceI;
@@ -35,9 +45,13 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isIn;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -80,10 +94,11 @@ public class DockerRestApiTest {
             new NotFoundException("I should think of a message");
 
     @Autowired private WebApplicationContext wac;
-    @Autowired private DockerService dockerService;
     @Autowired private ObjectMapper mapper;
     @Autowired private ContainerControlApi mockContainerControlApi;
     @Autowired private RoleServiceI mockRoleService;
+    @Autowired private CommandService mockCommandService;
+    @Autowired private DockerServerPrefsBean mockDockerServerPrefsBean;
 
     @Before
     public void setup() {
@@ -251,25 +266,23 @@ public class DockerRestApiTest {
     @Test
     @Transactional
     public void testSaveFromLabels() throws Exception {
-        final String labelTestCommandListJson =
-                "[{\"name\": \"label-test\"," +
+        final String fakeImageId = "xnat/thisisfake";
+        final String labelTestCommandJson =
+                "{\"name\": \"label-test\"," +
                         "\"description\": \"Command to test label-parsing and command-importing code\"," +
                         "\"type\": \"docker\", " +
                         "\"command-line\": \"#CMD#\"," +
-                        "\"inputs\": [{\"name\": \"CMD\", \"description\": \"Command to run\", \"required\": true}]}]";
-        final List<Command> expectedList = mapper.readValue(labelTestCommandListJson, new TypeReference<List<Command>>(){});
-        final Command expected = expectedList.get(0);
+                        "\"inputs\": [{\"name\": \"CMD\", \"description\": \"Command to run\", \"required\": true}]}";
+        final Command expected = mapper.readValue(labelTestCommandJson, Command.class);
+        final Command toReturn = mapper.readValue(labelTestCommandJson, Command.class);
+        toReturn.setImage(fakeImageId);
+        final List<Command> toReturnList = Lists.newArrayList(toReturn);
 
         final Map<String, String> imageLabels = Maps.newHashMap();
-        imageLabels.put(LABEL_KEY, labelTestCommandListJson);
+        imageLabels.put(LABEL_KEY, "[" + labelTestCommandJson + "]");
 
-        final String fakeImageId = "xnat/thisisfake";
-        final DockerImage fakeDockerImage = new DockerImage();
-        fakeDockerImage.setImageId(fakeImageId);
-        fakeDockerImage.setLabels(imageLabels);
-
-        doReturn(fakeDockerImage)
-            .when(mockContainerControlApi).getImageById(fakeImageId);
+        doReturn(toReturnList).when(mockContainerControlApi).parseLabels(fakeImageId);
+        when(mockCommandService.save(toReturnList)).thenReturn(toReturnList);
 
         final String path = "/docker/images/save";
         final Authentication authentication = new TestingAuthenticationToken("nonAdmin", "nonAdmin");
@@ -302,6 +315,7 @@ public class DockerRestApiTest {
     @Test
     @Transactional
     public void testSaveFromLabels2() throws Exception {
+        final String fakeImageId = "xnat/thisisfake";
         final String labelTestCommandListJson =
                 "[{\"name\":\"dcm2niix-scan\", \"description\":\"Run dcm2niix on a scan's DICOMs\", " +
                         "\"type\": \"docker\", " +
@@ -318,16 +332,16 @@ public class DockerRestApiTest {
         final List<Command> expectedList = mapper.readValue(labelTestCommandListJson, new TypeReference<List<Command>>(){});
         final Command expected = expectedList.get(0);
 
+        final List<Command> toReturnList = mapper.readValue(labelTestCommandListJson, new TypeReference<List<Command>>(){});
+        for (final Command toReturn : toReturnList) {
+            toReturn.setImage(fakeImageId);
+        }
+
         final Map<String, String> imageLabels = Maps.newHashMap();
         imageLabels.put(LABEL_KEY, labelTestCommandListJson);
 
-        final String fakeImageId = "xnat/thisisfake";
-        final DockerImage fakeDockerImage = new DockerImage();
-        fakeDockerImage.setImageId(fakeImageId);
-        fakeDockerImage.setLabels(imageLabels);
-
-        doReturn(fakeDockerImage)
-                .when(mockContainerControlApi).getImageById(fakeImageId);
+        doReturn(toReturnList).when(mockContainerControlApi).parseLabels(fakeImageId);
+        when(mockCommandService.save(toReturnList)).thenReturn(toReturnList);
 
         final String path = "/docker/images/save";
         final Authentication authentication = new TestingAuthenticationToken("nonAdmin", "nonAdmin");
@@ -355,5 +369,84 @@ public class DockerRestApiTest {
         assertEquals(fakeImageId, response.getImage()); // Did not set image ID on "expected"
         assertEquals(expected.getInputs(), response.getInputs());
         assertEquals(fakeImageId, response.getImage());
+    }
+
+    @Test
+    public void getImages() throws Exception {
+        final String fakeImageId = "sha256:some godawful hash";
+        final String fakeImageName = "xnat/thisisfake";
+        final DockerImage fakeDockerImage = new DockerImage();
+        fakeDockerImage.setImageId(fakeImageId);
+        fakeDockerImage.addTag(fakeImageName);
+
+        doReturn(Lists.newArrayList(fakeDockerImage)).when(mockContainerControlApi).getAllImages();
+
+        final String path = "/docker/images";
+        final Authentication authentication = new TestingAuthenticationToken("nonAdmin", "nonAdmin");
+        final MockHttpServletRequestBuilder request = get(path)
+                .with(authentication(authentication))
+                .with(csrf()).with(testSecurityContext());
+
+        final String responseStr =
+                mockMvc.perform(request)
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        final List<DockerImage> responseList = mapper.readValue(responseStr, new TypeReference<List<DockerImage>>(){});
+        assertThat(responseList, hasSize(1));
+        assertEquals(fakeDockerImage, responseList.get(0));
+    }
+
+    @Test
+    public void getImageSummaries() throws Exception {
+        final String fakeImageId = "sha256:some godawful hash";
+        final String fakeImageName = "xnat/thisisfake";
+        final DockerImage fakeDockerImage = new DockerImage();
+        fakeDockerImage.setImageId(fakeImageId);
+        fakeDockerImage.addTag(fakeImageName);
+
+        final String fakeCommandName = "fake";
+        final String fakeCommandWrapperName = "fake-on-thing";
+        final XnatCommandWrapper fakeWrapper = new XnatCommandWrapper();
+        fakeWrapper.setName(fakeCommandWrapperName);
+        final DockerCommand fakeCommand = new DockerCommand();
+        fakeCommand.setHash(fakeImageId);
+        fakeCommand.setName(fakeCommandName);
+        fakeCommand.setImage(fakeImageName);
+        fakeCommand.addXnatCommandWrapper(fakeWrapper);
+
+        final String unknownImageName = "unknown";
+        final String unknownCommandName = "image-unknown";
+        final DockerCommand unknownCommand = new DockerCommand();
+        unknownCommand.setName(unknownCommandName);
+        unknownCommand.setImage(unknownImageName);
+
+        doReturn(Lists.newArrayList(fakeDockerImage)).when(mockContainerControlApi).getAllImages();
+        when(mockCommandService.getAll()).thenReturn(Lists.<Command>newArrayList(fakeCommand, unknownCommand));
+        when(mockDockerServerPrefsBean.getName()).thenReturn(MOCK_CONTAINER_SERVER_NAME);
+
+        final List<DockerImageAndCommandSummary> expected = Lists.newArrayList(
+                new DockerImageAndCommandSummary(fakeCommand, MOCK_CONTAINER_SERVER_NAME),
+                new DockerImageAndCommandSummary(unknownCommand, null)
+        );
+
+        final String path = "/docker/image-summaries";
+        final Authentication authentication = new TestingAuthenticationToken("nonAdmin", "nonAdmin");
+        final MockHttpServletRequestBuilder request = get(path)
+                .with(authentication(authentication))
+                .with(csrf()).with(testSecurityContext());
+
+        final String responseStr =
+                mockMvc.perform(request)
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        final List<DockerImageAndCommandSummary> responseList = mapper.readValue(responseStr, new TypeReference<List<DockerImageAndCommandSummary>>(){});
+        assertThat(expected, everyItem(isIn(responseList)));
+        assertThat(responseList, everyItem(isIn(expected)));
     }
 }

@@ -14,14 +14,13 @@ import org.nrg.containers.model.Command;
 import org.nrg.containers.model.DockerHub;
 import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.model.DockerServer;
+import org.nrg.containers.rest.models.DockerImageAndCommandSummary;
 import org.nrg.containers.services.DockerService;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
-import org.nrg.xapi.model.users.User;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.rest.AbstractXapiRestController;
-import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
@@ -156,9 +155,17 @@ public class DockerRestApi extends AbstractXapiRestController {
             @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = "/images", method = GET, produces = JSON)
     @ResponseBody
-    public List<DockerImage> getAllImages()
+    public List<DockerImage> getImages()
             throws NoServerPrefException, DockerServerException {
         return dockerService.getImages();
+    }
+
+    @ApiOperation(value = "Get summary list of images and commands.")
+    @RequestMapping(value = "/image-summaries", method = GET, produces = JSON)
+    @ResponseBody
+    public List<DockerImageAndCommandSummary> getImageSummaries()
+            throws NoServerPrefException, DockerServerException {
+        return dockerService.getImageSummaries();
     }
 
     @ApiOperation(value = "Get Docker image",

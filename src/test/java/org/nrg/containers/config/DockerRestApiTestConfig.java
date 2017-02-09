@@ -67,8 +67,9 @@ public class DockerRestApiTestConfig extends WebSecurityConfigurerAdapter {
     @Bean
     public DockerService dockerService(final ContainerControlApi controlApi,
                                        final DockerHubService dockerHubService,
-                                       final CommandService commandService) {
-        return new DockerServiceImpl(controlApi, dockerHubService, commandService);
+                                       final CommandService commandService,
+                                       final DockerServerPrefsBean dockerServerPrefsBean) {
+        return new DockerServiceImpl(controlApi, dockerHubService, commandService, dockerServerPrefsBean);
     }
 
     @Bean
@@ -90,54 +91,18 @@ public class DockerRestApiTestConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public ContainerExecutionService mockContainerExecutionService() {
-        return Mockito.mock(HibernateContainerExecutionService.class);
-    }
-
-    @Bean
-    public ContainerExecutionRepository mockContainerExecutionRepository() {
-        return Mockito.mock(ContainerExecutionRepository.class);
-    }
-
-    @Bean
-    public AliasTokenService aliasTokenService() {
-        return Mockito.mock(AliasTokenService.class);
-    }
-
-    @Bean
-    public SiteConfigPreferences siteConfigPreferences() {
-        return Mockito.mock(SiteConfigPreferences.class);
-    }
-
-    @Bean
     public NrgPreferenceService nrgPreferenceService() {
         return Mockito.mock(NrgPreferenceService.class);
     }
 
     @Bean
-    public CommandService commandService(final ContainerControlApi controlApi,
-                                         final AliasTokenService aliasTokenService,
-                                         final SiteConfigPreferences siteConfigPreferences,
-                                         final TransportService transporter,
-                                         final ContainerExecutionService containerExecutionService,
-                                         final ConfigService configService) {
-        return new HibernateCommandService(controlApi, aliasTokenService, siteConfigPreferences,
-                transporter, containerExecutionService, configService);
+    public CommandService mockCommandService() {
+        return Mockito.mock(CommandService.class);
     }
 
     @Bean
     public CommandDao commandDao() {
         return new CommandDao();
-    }
-
-    @Bean
-    public TransportService transportService() {
-        return Mockito.mock(TransportServiceImpl.class);
-    }
-
-    @Bean
-    public ConfigService configService() {
-        return Mockito.mock(ConfigService.class);
     }
 
     @Bean
