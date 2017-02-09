@@ -654,9 +654,10 @@ public class DockerControlApi implements ContainerControlApi {
         final List<DockerContainerEvent> events = Lists.newArrayList();
         for (final Event dockerEvent : dockerEventList) {
             final Event.Actor dockerEventActor = dockerEvent.actor();
-            final Map<String, String> attributes = dockerEventActor != null ?
-                    Maps.newHashMap(dockerEventActor.attributes()) :
-                    Maps.<String, String>newHashMap();
+            final Map<String, String> attributes = Maps.newHashMap();
+            if (dockerEventActor != null && dockerEventActor.attributes() != null) {
+                attributes.putAll(dockerEventActor.attributes());
+            }
             if (attributes.containsKey(LABEL_KEY)) {
                 attributes.put(LABEL_KEY, "<elided>");
             }
