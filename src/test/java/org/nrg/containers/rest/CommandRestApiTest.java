@@ -124,8 +124,10 @@ public class CommandRestApiTest {
         });
 
         // Mock out the prefs bean
+        final String containerServerName = "testy test";
         final String containerHost = "unix:///var/run/docker.sock";
-        final DockerServer dockerServer = new DockerServer(containerHost, null);
+        final DockerServer dockerServer = new DockerServer(containerServerName, containerHost, null);
+        when(mockDockerServerPrefsBean.getName()).thenReturn(containerServerName);
         when(mockDockerServerPrefsBean.getHost()).thenReturn(containerHost);
         when(mockDockerServerPrefsBean.toDto()).thenReturn(dockerServer);
         when(mockDockerControlApi.getServer()).thenReturn(dockerServer);

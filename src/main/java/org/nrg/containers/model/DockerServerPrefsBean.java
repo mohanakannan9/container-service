@@ -39,6 +39,22 @@ public class DockerServerPrefsBean extends AbstractPreferenceBean {
         return new DockerServer(this);
     }
 
+    @NrgPreference(defaultValue = "Local socket")
+    public String getName() {
+        return getValue("name");
+    }
+
+    public void setName(final String name) {
+        _log.debug("Setting name: " + name);
+        if (name != null) {
+            try {
+                set(name, "name");
+            } catch (InvalidPreferenceName e) {
+                _log.error("Error setting Docker server preference \"name\".", e.getMessage());
+            }
+        }
+    }
+
     @NrgPreference(defaultValue = "unix:///var/run/docker.sock")
     public String getHost() {
         return getValue("host");
@@ -90,10 +106,11 @@ public class DockerServerPrefsBean extends AbstractPreferenceBean {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-            .add("host", getHost())
-            .add("certPath", getCertPath())
-            .add("lastEventCheckTime", getLastEventCheckTime())
-            .toString();
+                .add("name", getName())
+                .add("host", getHost())
+                .add("certPath", getCertPath())
+                .add("lastEventCheckTime", getLastEventCheckTime())
+                .toString();
     }
 
     @Override
@@ -107,12 +124,13 @@ public class DockerServerPrefsBean extends AbstractPreferenceBean {
 
         DockerServerPrefsBean that = (DockerServerPrefsBean) o;
 
-        return Objects.equals(this.getHost(), that.getHost()) &&
+        return Objects.equals(this.getName(), that.getName()) &&
+                Objects.equals(this.getHost(), that.getHost()) &&
                 Objects.equals(this.getCertPath(), that.getCertPath());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getHost(), getCertPath());
+        return Objects.hash(getName(), getHost(), getCertPath());
     }
 }
