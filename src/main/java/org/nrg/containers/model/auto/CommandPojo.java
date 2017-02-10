@@ -1,10 +1,8 @@
-package org.nrg.containers.rest.models;
+package org.nrg.containers.model.auto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
-import org.nrg.containers.model.XnatCommandInput;
-import org.nrg.containers.model.XnatCommandOutput;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -128,9 +126,9 @@ public abstract class CommandPojo {
         @JsonCreator
         static CommandWrapperPojo create(@JsonProperty("name") String name,
                                          @JsonProperty("description") String description,
-                                         @JsonProperty("external-inputs") List<XnatCommandInput> externalInputs,
-                                         @JsonProperty("derived-inputs") List<XnatCommandInput> derivedInputs,
-                                         @JsonProperty("output-handlers") List<XnatCommandOutput> outputHandlers) {
+                                         @JsonProperty("external-inputs") List<CommandWrapperInputPojo> externalInputs,
+                                         @JsonProperty("derived-inputs") List<CommandWrapperInputPojo> derivedInputs,
+                                         @JsonProperty("output-handlers") List<CommandWrapperOutputPojo> outputHandlers) {
             return new AutoValue_CommandPojo_CommandWrapperPojo(name, description, externalInputs, derivedInputs, outputHandlers);
         }
     }
