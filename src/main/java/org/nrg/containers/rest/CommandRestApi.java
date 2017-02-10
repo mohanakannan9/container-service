@@ -9,6 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.exceptions.BadRequestException;
 import org.nrg.containers.exceptions.CommandInputResolutionException;
 import org.nrg.containers.exceptions.CommandResolutionException;
+import org.nrg.containers.exceptions.CommandValidationException;
 import org.nrg.containers.exceptions.ContainerMountResolutionException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
@@ -16,6 +17,7 @@ import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.ResolvedDockerCommand;
+import org.nrg.containers.model.auto.CommandPojo;
 import org.nrg.containers.services.CommandService;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NrgRuntimeException;
@@ -117,22 +119,12 @@ public class CommandRestApi extends AbstractXapiRestController {
      */
     @RequestMapping(value = {}, method = POST, produces = JSON)
     @ApiOperation(value = "Create a Command", code = 201)
-    @ApiResponses({
-            @ApiResponse(code = 201, message = "Created", response = Command.class),
-            @ApiResponse(code = 415, message = "Set the Content-type header on the request")
-    })
-    public ResponseEntity<Long> createCommand(final @RequestBody Command command)
-            throws BadRequestException {
-        if (StringUtils.isBlank(command.getImage())) {
-            throw new BadRequestException("Must specify a docker image on the command.");
-        }
-        if (StringUtils.isBlank(command.getName())) {
-            throw new BadRequestException("Must specify a name on the command.");
-        }
+    public ResponseEntity<Long> createCommand(final @RequestBody CommandPojo commandPojo)
+            throws BadRequestException, CommandValidationException {
 
         try {
-            final Command created = commandService.create(command);
-            return new ResponseEntity<>(created.getId(), HttpStatus.CREATED);
+            final long createdId = commandService.create(commandPojo);
+            return new ResponseEntity<>(createdId, HttpStatus.CREATED);
         } catch (NrgRuntimeException e) {
             throw new BadRequestException(e);
         }
@@ -245,5 +237,16 @@ public class CommandRestApi extends AbstractXapiRestController {
     @ExceptionHandler(value = {BadRequestException.class})
     public String handleBadRequest(final Exception e) {
         return "Bad request:\n" + e.getMessage();
+    }
+
+    @ResponseStatus(value = HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(value = {CommandValidationException.class})
+    public String handleBadCommand(final CommandValidationException e) {
+        String message = "Invalid command";
+        if (e != null && e.getErrors() != null && !e.getErrors().isEmpty()) {
+            message += ":\n\t";
+            message += StringUtils.join(e.getErrors(), "\n\t");
+        }
+        return message;
     }
 }

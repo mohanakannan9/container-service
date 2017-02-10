@@ -1,5 +1,6 @@
 package org.nrg.containers.services.impl;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.jayway.jsonpath.Configuration;
@@ -15,6 +16,7 @@ import org.nrg.config.services.ConfigService;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.daos.CommandDao;
 import org.nrg.containers.exceptions.CommandResolutionException;
+import org.nrg.containers.exceptions.CommandValidationException;
 import org.nrg.containers.exceptions.ContainerMountResolutionException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
@@ -27,6 +29,7 @@ import org.nrg.containers.model.ContainerMountFiles;
 import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.containers.model.XnatCommandWrapper;
+import org.nrg.containers.model.auto.CommandPojo;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerExecutionService;
 import org.nrg.framework.exceptions.NrgRuntimeException;
@@ -101,6 +104,25 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
                 return Sets.newHashSet(Option.DEFAULT_PATH_LEAF_TO_NULL);
             }
         });
+    }
+
+    @Override
+    public List<String> validate(final CommandPojo commandPojo) {
+        final List<String> errors = Lists.newArrayList();
+        return errors;
+    }
+
+    @Override
+    public long create(final CommandPojo commandPojo) throws CommandValidationException {
+        final List<String> errors = validate(commandPojo);
+        if (errors == null || errors.isEmpty()) {
+            // make a command from the commandpojo
+            // create the command
+            // turn the created command back into a pojo
+            return 0L;
+        } else {
+            throw new CommandValidationException(errors);
+        }
     }
 
     @Override
