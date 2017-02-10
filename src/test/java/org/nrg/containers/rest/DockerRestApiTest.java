@@ -428,8 +428,8 @@ public class DockerRestApiTest {
         when(mockDockerServerPrefsBean.getName()).thenReturn(MOCK_CONTAINER_SERVER_NAME);
 
         final List<DockerImageAndCommandSummary> expected = Lists.newArrayList(
-                new DockerImageAndCommandSummary(fakeCommand, MOCK_CONTAINER_SERVER_NAME),
-                new DockerImageAndCommandSummary(unknownCommand, null)
+                DockerImageAndCommandSummary.create(fakeCommand, MOCK_CONTAINER_SERVER_NAME),
+                DockerImageAndCommandSummary.create(unknownCommand, null)
         );
 
         final String path = "/docker/image-summaries";

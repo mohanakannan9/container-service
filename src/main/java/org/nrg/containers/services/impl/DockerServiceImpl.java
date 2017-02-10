@@ -154,13 +154,13 @@ public class DockerServiceImpl implements DockerService {
                         imagesByName.put(imageNameUsedByTheCommand, unknownImage);
 
                         // Now add the placeholder to the summary list, with server = null
-                        imageToImageSummaryMap.put(unknownImage, new DockerImageAndCommandSummary(command, null));
+                        imageToImageSummaryMap.put(unknownImage, DockerImageAndCommandSummary.create(command, null));
                     } else {
                         // We do have the image, so either make a new summary for it or add this command to an existing summary
                         if (imageToImageSummaryMap.containsKey(dockerImage)) {
                             imageToImageSummaryMap.get(dockerImage).addCommandSummary(command);
                         } else {
-                            imageToImageSummaryMap.put(dockerImage, new DockerImageAndCommandSummary(command, server));
+                            imageToImageSummaryMap.put(dockerImage, DockerImageAndCommandSummary.create(command, server));
                         }
                     }
                 }
