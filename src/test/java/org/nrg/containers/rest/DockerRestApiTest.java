@@ -372,7 +372,7 @@ public class DockerRestApiTest {
     }
 
     @Test
-    public void getImages() throws Exception {
+    public void testGetImages() throws Exception {
         final String fakeImageId = "sha256:some godawful hash";
         final String fakeImageName = "xnat/thisisfake";
         final DockerImage fakeDockerImage = new DockerImage();
@@ -400,7 +400,46 @@ public class DockerRestApiTest {
     }
 
     @Test
-    public void getImageSummaries() throws Exception {
+    public void testImageSummariesJsonRoundTrip() throws Exception {
+        final String fakeImageId = "sha256:some godawful hash";
+        final String fakeImageName = "xnat/thisisfake";
+        final DockerImage fakeDockerImage = new DockerImage();
+        fakeDockerImage.setImageId(fakeImageId);
+        fakeDockerImage.addTag(fakeImageName);
+
+        final String fakeCommandName = "fake";
+        final String fakeCommandWrapperName = "fake-on-thing";
+        final XnatCommandWrapper fakeWrapper = new XnatCommandWrapper();
+        fakeWrapper.setName(fakeCommandWrapperName);
+        final DockerCommand fakeCommand = new DockerCommand();
+        fakeCommand.setHash(fakeImageId);
+        fakeCommand.setName(fakeCommandName);
+        fakeCommand.setImage(fakeImageName);
+        fakeCommand.addXnatCommandWrapper(fakeWrapper);
+
+        final String unknownImageName = "unknown";
+        final String unknownCommandName = "image-unknown";
+        final DockerCommand unknownCommand = new DockerCommand();
+        unknownCommand.setName(unknownCommandName);
+        unknownCommand.setImage(unknownImageName);
+
+        final DockerImageAndCommandSummary fakeSummary = DockerImageAndCommandSummary.create(fakeCommand, MOCK_CONTAINER_SERVER_NAME);
+        final String fakeSummaryJson = mapper.writeValueAsString(fakeSummary);
+        final DockerImageAndCommandSummary deserialized = mapper.readValue(fakeSummaryJson, DockerImageAndCommandSummary.class);
+        assertEquals(fakeSummary, deserialized);
+
+        final List<DockerImageAndCommandSummary> expected = Lists.newArrayList(
+                DockerImageAndCommandSummary.create(fakeCommand, MOCK_CONTAINER_SERVER_NAME),
+                DockerImageAndCommandSummary.create(unknownCommand, null)
+        );
+
+        final List<DockerImageAndCommandSummary> actual = mapper.readValue(mapper.writeValueAsString(expected), new TypeReference<List<DockerImageAndCommandSummary>>(){});
+        assertThat(expected, everyItem(isIn(actual)));
+        assertThat(actual, everyItem(isIn(expected)));
+    }
+
+    @Test
+    public void testGetImageSummaries() throws Exception {
         final String fakeImageId = "sha256:some godawful hash";
         final String fakeImageName = "xnat/thisisfake";
         final DockerImage fakeDockerImage = new DockerImage();
