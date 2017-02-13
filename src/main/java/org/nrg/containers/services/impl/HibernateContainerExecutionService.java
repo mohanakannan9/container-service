@@ -1,6 +1,7 @@
 package org.nrg.containers.services.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import org.hibernate.Hibernate;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.daos.ContainerExecutionRepository;
@@ -16,6 +17,7 @@ import org.nrg.containers.services.ContainerExecutionService;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.transporter.TransportService;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
@@ -47,7 +49,7 @@ public class HibernateContainerExecutionService
     private CatalogService catalogService;
     private ObjectMapper mapper;
 
-    @Autowired
+    @VisibleForTesting
     public HibernateContainerExecutionService(final ContainerControlApi containerControlApi,
                                               final SiteConfigPreferences siteConfigPreferences,
                                               final TransportService transportService,
@@ -58,6 +60,20 @@ public class HibernateContainerExecutionService
         this.siteConfigPreferences = siteConfigPreferences;
         this.transportService = transportService;
         this.permissionsService = permissionsService;
+        this.catalogService = catalogService;
+        this.mapper = mapper;
+    }
+
+    @Autowired
+    public HibernateContainerExecutionService(final ContainerControlApi containerControlApi,
+                                              final SiteConfigPreferences siteConfigPreferences,
+                                              final TransportService transportService,
+                                              final CatalogService catalogService,
+                                              final ObjectMapper mapper) {
+        this.containerControlApi = containerControlApi;
+        this.siteConfigPreferences = siteConfigPreferences;
+        this.transportService = transportService;
+        this.permissionsService = null; // Will be initialized later.
         this.catalogService = catalogService;
         this.mapper = mapper;
     }
@@ -132,7 +148,7 @@ public class HibernateContainerExecutionService
             log.info(String.format("Finalizing ContainerExecution %s for container %s", containerExecution.getId(), containerExecution.getContainerId()));
         }
 
-        ContainerFinalizeHelper.finalizeContainer(containerExecution, userI, exitCode, containerControlApi, siteConfigPreferences, transportService, permissionsService, catalogService, mapper);
+        ContainerFinalizeHelper.finalizeContainer(containerExecution, userI, exitCode, containerControlApi, siteConfigPreferences, transportService, getPermissionsService(), catalogService, mapper);
 
         if (log.isInfoEnabled()) {
             log.info(String.format("Done uploading for ContainerExecution %s. Now saving information about created outputs.", containerExecution.getId()));
@@ -161,5 +177,14 @@ public class HibernateContainerExecutionService
         final String containerId = containerExecution.getContainerId();
         containerControlApi.killContainer(containerId);
         return containerId;
+    }
+
+    private PermissionsServiceI getPermissionsService() {
+        // We need this layer of indirection, rather than wiring in the PermissionsServiceI implementation,
+        // because we need to wait until after XFT/XDAT is fully initialized before getting this. See XNAT-4647.
+        if (permissionsService == null) {
+            permissionsService = Permissions.getPermissionsService();
+        }
+        return permissionsService;
     }
 }

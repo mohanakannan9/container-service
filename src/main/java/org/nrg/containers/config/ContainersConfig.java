@@ -29,17 +29,6 @@ public class ContainersConfig {
         return new ObjectMapper();
     }
 
-    // This should not be here, this bean should live somewhere else.
-    // But the Permissions class does some goofy half-context-half-reflection thing,
-    // with the implementation class stored as a preference for some reason.
-    // So it is what it is. I'll remove it later when that is updated.
-    // See XNAT-4647
-    @Bean
-    public PermissionsServiceI permissionsService() {
-        // return Permissions.getPermissionsService();
-        return new PermissionsServiceImpl();
-    }
-
     @Bean
     public TriggerTask dockerEventPullerTask(final DockerEventPuller dockerEventPuller) {
         return new TriggerTask(
