@@ -7,7 +7,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.model.auto.Command;
-
+import org.hibernate.envers.Audited;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.Set;
 
 @Entity
+@Audited
 public class CommandWrapperEntity implements Serializable {
     private long id;
     private String name;

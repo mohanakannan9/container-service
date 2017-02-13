@@ -12,6 +12,7 @@ import com.google.common.collect.Maps;
 import io.swagger.annotations.ApiModelProperty;
 import org.nrg.containers.exceptions.CommandValidationException;
 import org.nrg.containers.model.auto.Command;
+import org.hibernate.envers.Audited;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.annotation.Nonnull;
@@ -35,6 +36,7 @@ import java.util.Objects;
 })
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "type")
+@Audited
 public abstract class CommandEntity extends AbstractHibernateEntity {
     public static CommandType DEFAULT_TYPE = CommandType.DOCKER;
     private String name;
