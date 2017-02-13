@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface CommandService extends BaseHibernateService<Command> {
+    List<Command> findByProperties(Map<String, Object> properties);
     Command get(Long id) throws NotFoundException;
 
     Command update(Long id, Command updates, Boolean ignoreNull) throws NotFoundException;

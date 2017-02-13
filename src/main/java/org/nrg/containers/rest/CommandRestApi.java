@@ -1,5 +1,6 @@
 package org.nrg.containers.rest;
 
+import com.google.common.collect.Maps;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -47,7 +48,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 @XapiRestController
 @RequestMapping("/commands")
-@Api("Command API for XNAT Action/Context Execution service")
+@Api("Command API for XNAT Container service")
 public class CommandRestApi extends AbstractXapiRestController {
     private static final Logger log = LoggerFactory.getLogger(CommandRestApi.class);
     private static final String JSON = MediaType.APPLICATION_JSON_UTF8_VALUE;
@@ -64,20 +65,56 @@ public class CommandRestApi extends AbstractXapiRestController {
         this.commandService = commandService;
     }
 
-    @RequestMapping(value = {}, method = GET)
+    /*
+    GET COMMANDS
+     */
+    @RequestMapping(value = {}, params = {"!name", "!version", "!image"}, method = GET)
     @ApiOperation(value = "Get all Commands")
     @ResponseBody
     public List<Command> getCommands() {
         return commandService.getAll();
     }
 
+    @RequestMapping(value = {}, method = GET)
+    @ApiOperation(value = "Get Commands by criteria")
+    @ResponseBody
+    public List<Command> getCommands(final @RequestParam String name,
+                                     final @RequestParam String version,
+                                     final @RequestParam String image) throws BadRequestException {
+
+
+        if (StringUtils.isBlank(name) && StringUtils.isBlank(version) && StringUtils.isBlank(image)) {
+            return getCommands();
+        }
+
+        if (StringUtils.isBlank(name) && StringUtils.isNotBlank(version)) {
+            throw new BadRequestException("If \"version\" is specified, must specify \"name\" as well.");
+        }
+
+        final Map<String, Object> properties = Maps.newHashMap();
+        if (StringUtils.isNotBlank(name)) {
+            properties.put("name", name);
+        }
+        if (StringUtils.isNotBlank(version)) {
+            properties.put("version", version);
+        }
+        if (StringUtils.isNotBlank(image)) {
+            properties.put("image", image);
+        }
+
+        return commandService.findByProperties(properties);
+    }
+
     @RequestMapping(value = {"/{id}"}, method = GET)
-    @ApiOperation(value = "Get a Command")
+    @ApiOperation(value = "Get a Command by ID")
     @ResponseBody
     public Command retrieveCommand(final @PathVariable Long id) throws NotFoundException {
         return commandService.get(id);
     }
 
+    /*
+    CREATE COMMANDS
+     */
     @RequestMapping(value = {}, method = POST, produces = JSON)
     @ApiOperation(value = "Create a Command", code = 201)
     @ApiResponses({
@@ -101,6 +138,9 @@ public class CommandRestApi extends AbstractXapiRestController {
         }
     }
 
+    /*
+    UPDATE COMMANDS
+     */
     @RequestMapping(value = {"/{id}"}, method = POST)
     @ApiOperation(value = "Update a Command")
     @ResponseBody
@@ -111,6 +151,9 @@ public class CommandRestApi extends AbstractXapiRestController {
         return commandService.update(id, command, ignoreNull);
     }
 
+    /*
+    DELETE COMMANDS
+     */
     @RequestMapping(value = {"/{id}"}, method = DELETE)
     @ApiOperation(value = "Delete a Command", code = 204)
     public ResponseEntity<String> deleteCommand(final @PathVariable Long id) {
@@ -118,6 +161,9 @@ public class CommandRestApi extends AbstractXapiRestController {
         return new ResponseEntity<>("", HttpStatus.NO_CONTENT);
     }
 
+    /*
+    LAUNCH COMMANDS
+     */
     @RequestMapping(value = {"/launch"}, method = POST)
     @ApiOperation(value = "Launch a container from a resolved command")
     @ResponseBody
@@ -168,65 +214,9 @@ public class CommandRestApi extends AbstractXapiRestController {
         }
     }
 
-    // HACKY TEST API ENDPOINTS
-//    @RequestMapping(value = "/{id}/resolve", method = POST)
-//    @ResponseBody
-//    public ResolvedCommand resolve(final @PathVariable Long id,
-//                                   final @RequestParam Map<String, String> allRequestParams)
-//            throws NotFoundException, CommandInputResolutionException, NoServerPrefException, XFTInitException {
-//        final UserI userI = XDAT.getUserDetails();
-//        final Command command = commandService.retrieve(id);
-//        if (command == null) {
-//            throw new NotFoundException("Could not find Command with id " + id);
-//        }
-//
-//        if (allRequestParams.containsKey("id")) {
-//            final String itemId = allRequestParams.get("id");
-//            if (itemId.contains(":")) {
-//                final String sessionId = StringUtils.substringBeforeLast(itemId, ":");
-//                final String scanId = StringUtils.substringAfterLast(itemId, ":");
-//
-//                final XnatImagesessiondata session = XnatImagesessiondata.getXnatImagesessiondatasById(sessionId, userI, false);
-//                final XnatImagescandata scan = session.getScanById(scanId);
-//
-//                return commandService.prepareToLaunchScan(command, session, scan, userI);
-//            } else {
-//                log.error("Haven't tested anything other than scan yet.");
-//            }
-//        }
-//        return null;
-//    }
-
-//    @RequestMapping(value = "/{id}/launchtest", method = POST)
-//    @ResponseBody
-//    public ContainerExecution launchTest(final @PathVariable Long id,
-//                                   final @RequestParam Map<String, String> allRequestParams)
-//            throws NotFoundException, CommandInputResolutionException, NoServerPrefException, XFTInitException, DockerServerException {
-//        final UserI userI = XDAT.getUserDetails();
-//
-//        if (allRequestParams.containsKey("id")) {
-//            final String itemId = allRequestParams.get("id");
-//            if (itemId.contains(":")) {
-//                final String sessionId = StringUtils.substringBeforeLast(itemId, ":");
-//                final String scanId = StringUtils.substringAfterLast(itemId, ":");
-//
-//                final XnatImagesessiondata session = XnatImagesessiondata.getXnatImagesessiondatasById(sessionId, userI, false);
-//                if (session == null) {
-//                    throw new NotFoundException(String.format("No session with id %s.", sessionId));
-//                }
-//                final XnatImagescandata scan = session.getScanById(scanId);
-//                if (scan == null) {
-//                    throw new NotFoundException(String.format("No scan with id %s on session with id %s.", scanId, sessionId));
-//                }
-//
-//                return commandService.resolveAndLaunchCommand(id, userI, session, scan);
-//            } else {
-//                log.error("Haven't tested anything other than scan yet.");
-//            }
-//        }
-//        return null;
-//    }
-
+    /*
+    EXCEPTION HANDLING
+     */
     @ResponseStatus(value = HttpStatus.NOT_FOUND)
     @ExceptionHandler(value = {NotFoundException.class})
     public String handleNotFound(final Exception e) {

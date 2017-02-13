@@ -113,6 +113,11 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     }
 
     @Override
+    public List<Command> findByProperties(final Map<String, Object> properties) {
+        return getDao().findByProperties(properties);
+    }
+
+    @Override
     public Command update(final Long id, final Command updated, final Boolean ignoreNull)
             throws NotFoundException {
         // final Command existing = get(id);
