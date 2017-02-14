@@ -6,7 +6,7 @@ import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.DockerHub;
 import org.nrg.containers.model.DockerImage;
-import org.nrg.containers.rest.models.DockerImageAndCommandSummary;
+import org.nrg.containers.model.auto.DockerImageAndCommandSummary;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 
@@ -17,9 +17,9 @@ public interface DockerService {
     DockerHub setHub(DockerHub hub);
     String pingHub(Long hubId) throws DockerServerException, NoServerPrefException, NotFoundException;
     String pingHub(DockerHub hub) throws DockerServerException, NoServerPrefException;
-    DockerImage pullFromHub(Long hubId, String image, Boolean saveCommands)
+    DockerImage pullFromHub(Long hubId, String imageName, boolean saveCommands)
             throws DockerServerException, NoServerPrefException, NotFoundException;
-    DockerImage pullFromHub(String image, Boolean saveCommands)
+    DockerImage pullFromHub(String imageName, boolean saveCommands)
             throws DockerServerException, NoServerPrefException, NotFoundException;
 
     DockerServer getServer() throws NotFoundException;
@@ -30,6 +30,5 @@ public interface DockerService {
     List<DockerImageAndCommandSummary> getImageSummaries() throws NoServerPrefException, DockerServerException;
     DockerImage getImage(String imageId) throws NoServerPrefException, NotFoundException;
     void removeImage(String imageId, Boolean force) throws NotFoundException, NoServerPrefException, DockerServerException;
-    List<Command> saveFromImageLabels(String imageId) throws DockerServerException, NotFoundException, NoServerPrefException;
-    List<Command> saveFromImageLabels(DockerImage dockerImage);
+    List<Command> saveFromImageLabels(String imageName) throws DockerServerException, NotFoundException, NoServerPrefException;
 }

@@ -1,6 +1,7 @@
 package org.nrg.containers.services;
 
 import org.nrg.containers.exceptions.CommandResolutionException;
+import org.nrg.containers.exceptions.CommandValidationException;
 import org.nrg.containers.exceptions.ContainerMountResolutionException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
@@ -10,6 +11,7 @@ import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.containers.model.XnatCommandWrapper;
+import org.nrg.containers.model.auto.CommandPojo;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
 import org.nrg.xft.security.UserI;
@@ -18,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 
 public interface CommandService extends BaseHibernateService<Command> {
+    Command create(CommandPojo commandPojo) throws CommandValidationException;
+
     List<Command> findByProperties(Map<String, Object> properties);
     Command get(Long id) throws NotFoundException;
 
@@ -61,7 +65,7 @@ public interface CommandService extends BaseHibernateService<Command> {
     ContainerExecution launchResolvedDockerCommand(final ResolvedDockerCommand resolvedCommand, final UserI userI)
             throws NoServerPrefException, DockerServerException, ContainerMountResolutionException;
 
-    List<Command> save(final List<Command> commands);
+    List<Command> save(final List<CommandPojo> commands);
 
 //    @VisibleForTesting
 //    ResolvedCommand prepareToLaunchScan(Command command,

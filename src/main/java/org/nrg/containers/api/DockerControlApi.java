@@ -33,15 +33,15 @@ import org.nrg.containers.events.DockerContainerEvent;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
-import org.nrg.containers.model.Command;
+import org.nrg.containers.model.CommandType;
 import org.nrg.containers.model.Container;
 import org.nrg.containers.model.ContainerExecutionMount;
-import org.nrg.containers.model.DockerCommand;
 import org.nrg.containers.model.DockerHub;
 import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.ResolvedDockerCommand;
+import org.nrg.containers.model.auto.CommandPojo;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.slf4j.Logger;
@@ -470,33 +470,36 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     @Override
-    public List<Command> parseLabels(final String imageId)
+    public List<CommandPojo> parseLabels(final String imageName)
             throws DockerServerException, NoServerPrefException, NotFoundException {
-        final DockerImage image = getImageById(imageId);
-        final List<Command> commands = parseLabels(image);
-        if (commands != null) {
-            for (final Command command : commands) {
-                command.setImage(imageId);
-            }
-        }
-        return commands;
+        final DockerImage image = getImageById(imageName);
+        return parseLabels(imageName, image);
     }
 
     @Override
-    public List<Command> parseLabels(final DockerImage dockerImage) {
+    public List<CommandPojo> parseLabels(final String imageName, final DockerImage dockerImage) {
         final Map<String, String> labels = dockerImage.getLabels();
         if (labels != null && !labels.isEmpty() && labels.containsKey(LABEL_KEY)) {
             final String labelValue = labels.get(LABEL_KEY);
             if (StringUtils.isNotBlank(labelValue)) {
                 try {
-                    final List<DockerCommand> commands =
-                            objectMapper.readValue(labelValue, new TypeReference<List<DockerCommand>>() {});
-                    if (commands != null && !commands.isEmpty()) {
-                        for (final DockerCommand command : commands) {
-                            command.setHash(dockerImage.getImageId());
+                    final List<CommandPojo> commandsFromLabels =
+                            objectMapper.readValue(labelValue, new TypeReference<List<CommandPojo>>() {});
+                    final List<CommandPojo> commandsToReturn = Lists.newArrayList();
+                    if (commandsFromLabels != null && !commandsFromLabels.isEmpty()) {
+                        for (final CommandPojo commandPojo : commandsFromLabels) {
+                            // The command as read from the image may not contain all the values we want to store
+                            // So we add them now.
+                            commandsToReturn.add(
+                                    commandPojo.toBuilder()
+                                            .type(CommandType.DOCKER.getName())
+                                            .image(imageName)
+                                            .hash(dockerImage.getImageId())
+                                            .build()
+                            );
                         }
-                        return Lists.<Command>newArrayList(commands);
                     }
+                    return commandsToReturn;
                 } catch (IOException e) {
                     // TODO throw exception
                     log.error("Could not parse Commands from label: " + labelValue, e);

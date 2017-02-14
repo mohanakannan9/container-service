@@ -12,6 +12,7 @@ import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.containers.model.ResolvedDockerCommand;
+import org.nrg.containers.model.auto.CommandPojo;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 
 import java.util.Date;
@@ -46,9 +47,9 @@ public interface ContainerControlApi {
 //                       final List<String> runCommand, final List <String> volumes,
 //                       final List<String> environmentVariables) throws DockerServerException;
 
-    List<Command> parseLabels(final String imageId)
+    List<CommandPojo> parseLabels(final String imageName)
             throws DockerServerException, NoServerPrefException, NotFoundException;
-    List<Command> parseLabels(final DockerImage dockerImage);
+    List<CommandPojo> parseLabels(final String imageName, final DockerImage dockerImage);
 
     List<Container> getAllContainers() throws NoServerPrefException, DockerServerException;
     List<Container> getContainers(final Map<String, String> params) throws NoServerPrefException, DockerServerException;

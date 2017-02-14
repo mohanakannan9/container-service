@@ -1,5 +1,6 @@
 package org.nrg.containers.services.impl;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.jayway.jsonpath.Configuration;
@@ -15,6 +16,7 @@ import org.nrg.config.services.ConfigService;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.daos.CommandDao;
 import org.nrg.containers.exceptions.CommandResolutionException;
+import org.nrg.containers.exceptions.CommandValidationException;
 import org.nrg.containers.exceptions.ContainerMountResolutionException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
@@ -27,6 +29,7 @@ import org.nrg.containers.model.ContainerMountFiles;
 import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.containers.model.XnatCommandWrapper;
+import org.nrg.containers.model.auto.CommandPojo;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerExecutionService;
 import org.nrg.framework.exceptions.NrgRuntimeException;
@@ -104,6 +107,33 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     }
 
     @Override
+    public Command create(final CommandPojo commandPojo) throws CommandValidationException {
+        final List<String> errors = commandPojo.validate();
+        if (errors.isEmpty()) {
+            Command toCreate = null;
+            final List<String> thisCommandErrors = Lists.newArrayList();
+            try {
+                toCreate = Command.commandPojoToCommand(commandPojo);
+            } catch (CommandValidationException e) {
+                thisCommandErrors.addAll(e.getErrors());
+            }
+
+            if (toCreate != null && thisCommandErrors.isEmpty()) {
+                try {
+                    return create(toCreate);
+                } catch (NrgServiceRuntimeException e) {
+                    // TODO: should I "update" instead of erroring out if command already exists?
+                    log.error("Could not save command: " + toCreate, e);
+                }
+            }
+
+            return null;
+        } else {
+            throw new CommandValidationException(errors);
+        }
+    }
+
+    @Override
     public Command get(final Long id) throws NotFoundException {
         final Command command = retrieve(id);
         if (command == null) {
@@ -142,23 +172,24 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             }
             return super.create(command);
         } catch (ConstraintViolationException e) {
-            throw new NrgServiceRuntimeException("A command already exists with this name and docker image ID.");
+            throw new NrgServiceRuntimeException("This command duplicates a command already in the database.", e);
         }
     }
 
     @Override
-    public List<Command> save(final List<Command> commands) {
-        if (!(commands == null || commands.isEmpty())) {
-            for (final Command command : commands) {
+    public List<Command> save(final List<CommandPojo> commandPojos) {
+        final List<Command> created = Lists.newArrayList();
+        if (!(commandPojos == null || commandPojos.isEmpty())) {
+            for (final CommandPojo commandPojo : commandPojos) {
                 try {
-                    create(command);
-                } catch (NrgServiceRuntimeException e) {
+                    created.add(create(commandPojo));
+                } catch (CommandValidationException e) {
                     // TODO: should I "update" instead of erroring out if command already exists?
-                    log.error("Could not save command: " + command, e);
+                    log.error("Could not save command " + commandPojo.name(), e);
                 }
             }
         }
-        return commands;
+        return created;
     }
 
     @Override

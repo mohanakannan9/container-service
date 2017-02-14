@@ -9,6 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.exceptions.BadRequestException;
 import org.nrg.containers.exceptions.CommandInputResolutionException;
 import org.nrg.containers.exceptions.CommandResolutionException;
+import org.nrg.containers.exceptions.CommandValidationException;
 import org.nrg.containers.exceptions.ContainerMountResolutionException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
@@ -16,6 +17,7 @@ import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.ResolvedDockerCommand;
+import org.nrg.containers.model.auto.CommandPojo;
 import org.nrg.containers.services.CommandService;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NrgRuntimeException;
@@ -117,22 +119,15 @@ public class CommandRestApi extends AbstractXapiRestController {
      */
     @RequestMapping(value = {}, method = POST, produces = JSON)
     @ApiOperation(value = "Create a Command", code = 201)
-    @ApiResponses({
-            @ApiResponse(code = 201, message = "Created", response = Command.class),
-            @ApiResponse(code = 415, message = "Set the Content-type header on the request")
-    })
-    public ResponseEntity<Long> createCommand(final @RequestBody Command command)
-            throws BadRequestException {
-        if (StringUtils.isBlank(command.getImage())) {
-            throw new BadRequestException("Must specify a docker image on the command.");
-        }
-        if (StringUtils.isBlank(command.getName())) {
-            throw new BadRequestException("Must specify a name on the command.");
-        }
+    public ResponseEntity<Long> createCommand(final @RequestBody CommandPojo commandPojo)
+            throws BadRequestException, CommandValidationException {
 
         try {
-            final Command created = commandService.create(command);
-            return new ResponseEntity<>(created.getId(), HttpStatus.CREATED);
+            final Command command = commandService.create(commandPojo);
+            if (command == null) {
+                return new ResponseEntity<>(0L, HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+            return new ResponseEntity<>(command.getId(), HttpStatus.CREATED);
         } catch (NrgRuntimeException e) {
             throw new BadRequestException(e);
         }
@@ -220,30 +215,52 @@ public class CommandRestApi extends AbstractXapiRestController {
     @ResponseStatus(value = HttpStatus.NOT_FOUND)
     @ExceptionHandler(value = {NotFoundException.class})
     public String handleNotFound(final Exception e) {
-        return e.getMessage();
+        final String message = e.getMessage();
+        log.debug(message);
+        return message;
     }
 
     @ResponseStatus(value = HttpStatus.FAILED_DEPENDENCY)
     @ExceptionHandler(value = {NoServerPrefException.class})
     public String handleFailedDependency(final Exception ignored) {
-        return "Set up Docker server before using this REST endpoint.";
+        final String message = "Set up Docker server before using this REST endpoint.";
+        log.debug(message);
+        return message;
     }
 
     @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(value = {DockerServerException.class})
     public String handleDockerServerError(final Exception e) {
-        return "The Docker server returned an error:\n" + e.getMessage();
+        final String message = "The Docker server returned an error:\n" + e.getMessage();
+        log.debug(message);
+        return message;
     }
 
     @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(value = {CommandResolutionException.class})
     public String handleCommandResolutionException(final CommandResolutionException e) {
-        return "The command could not be resolved.\n" + e.getMessage();
+        final String message = "The command could not be resolved.\n" + e.getMessage();
+        log.debug(message);
+        return message;
     }
 
     @ResponseStatus(value = HttpStatus.BAD_REQUEST)
     @ExceptionHandler(value = {BadRequestException.class})
     public String handleBadRequest(final Exception e) {
-        return "Bad request:\n" + e.getMessage();
+        final String message = "Bad request:\n" + e.getMessage();
+        log.debug(message);
+        return message;
+    }
+
+    @ResponseStatus(value = HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(value = {CommandValidationException.class})
+    public String handleBadCommand(final CommandValidationException e) {
+        String message = "Invalid command";
+        if (e != null && e.getErrors() != null && !e.getErrors().isEmpty()) {
+            message += ":\n\t";
+            message += StringUtils.join(e.getErrors(), "\n\t");
+        }
+        log.debug(message);
+        return message;
     }
 }

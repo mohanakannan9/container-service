@@ -1,5 +1,5 @@
 {
-    "name": "ecat-dump scan",
+    "name": "ecat-dump",
     "description": "Runs ECAT dump tools",
     "type": "docker",
     "image": "ecat-dump",

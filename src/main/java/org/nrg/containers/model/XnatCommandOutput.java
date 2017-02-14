@@ -3,17 +3,45 @@ package org.nrg.containers.model;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.Lists;
+import org.nrg.containers.model.auto.CommandPojo;
 
+import javax.annotation.Nullable;
 import javax.persistence.Embeddable;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 @Embeddable
 public class XnatCommandOutput {
+    public static final Type DEFAULT_TYPE = Type.RESOURCE;
+
     @JsonProperty("accepts-command-output") private String commandOutputName;
     @JsonProperty("as-a-child-of-xnat-input") private String xnatInputName;
     private Type type;
     private String label;
+
+    public static XnatCommandOutput fromPojo(final CommandPojo.CommandWrapperOutputPojo commandWrapperOutputPojo) {
+        final XnatCommandOutput xnatCommandOutput = new XnatCommandOutput();
+        xnatCommandOutput.commandOutputName = commandWrapperOutputPojo.commandOutputName();
+        xnatCommandOutput.xnatInputName = commandWrapperOutputPojo.xnatInputName();
+        xnatCommandOutput.label = commandWrapperOutputPojo.label();
+
+        switch (commandWrapperOutputPojo.type()) {
+            case "Resource":
+                xnatCommandOutput.type = Type.RESOURCE;
+                break;
+            case "Assessor":
+                xnatCommandOutput.type = Type.ASSESSOR;
+                break;
+            default:
+                xnatCommandOutput.type = DEFAULT_TYPE;
+        }
+
+        return xnatCommandOutput;
+    }
 
     public Type getType() {
         return type;
@@ -87,6 +115,16 @@ public class XnatCommandOutput {
         @JsonValue
         public String getName() {
             return name;
+        }
+
+        public static List<String> names() {
+            return Lists.transform(Arrays.asList(Type.values()), new Function<Type, String>() {
+                @Nullable
+                @Override
+                public String apply(@Nullable final Type type) {
+                    return type != null ? type.getName() : "";
+                }
+            });
         }
     }
 }
