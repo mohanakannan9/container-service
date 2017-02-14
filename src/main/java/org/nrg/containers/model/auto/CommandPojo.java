@@ -221,18 +221,32 @@ public abstract class CommandPojo {
             }
             final String knownWrapperInputs = StringUtils.join(wrapperInputNames, ", ");
 
+            final Set<String> handledOutputs = Sets.newHashSet();
             for (final CommandWrapperOutputPojo output : commandWrapperPojo.outputHandlers()) {
                 final List<String> outputErrors = output.validate();
 
                 if (!outputNames.contains(output.commandOutputName())) {
                     errors.add("Output handler refers to unknown command output \"" + output.commandOutputName() + "\". Known outputs: " + knownOutputs + ".");
-                } else if (!wrapperInputNames.contains(output.xnatInputName())) {
+                } else {
+                    handledOutputs.add(output.commandOutputName());
+                }
+
+                if (!wrapperInputNames.contains(output.xnatInputName())) {
                     errors.add("Output handler refers to an unknown XNAT input \"" + output.xnatInputName() + "\". Known inputs: " + knownWrapperInputs + ".");
                 }
 
-
                 if (!outputErrors.isEmpty()) {
                     errors.addAll(outputErrors);
+                }
+            }
+
+            // Check that all command outputs are handled by some output handler
+            if (!handledOutputs.containsAll(outputNames)) {
+                // We know at least one output is not handled. Now find out which.
+                for (final String commandOutput : outputNames) {
+                    if (!handledOutputs.contains(commandOutput)) {
+                        errors.add("Command output \"" + commandOutput + "\" is not handled by any output handler.");
+                    }
                 }
             }
 
