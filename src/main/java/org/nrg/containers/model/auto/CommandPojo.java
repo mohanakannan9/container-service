@@ -118,7 +118,11 @@ public abstract class CommandPojo {
             errors.add("Cannot instantiate command of type \"" + type() + "\". Known types: " + StringUtils.join(commandTypeNames, ", "));
         }
 
-        if (StringUtils.isBlank(this.name())) {
+        if (StringUtils.isBlank(name())) {
+            errors.add("Command name cannot be blank.");
+        }
+
+        if (StringUtils.isBlank(image())) {
             errors.add("Image name cannot be blank.");
         }
 
