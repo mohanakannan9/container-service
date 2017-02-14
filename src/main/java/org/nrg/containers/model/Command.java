@@ -10,6 +10,8 @@ import com.google.common.base.MoreObjects.ToStringHelper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.swagger.annotations.ApiModelProperty;
+import org.nrg.containers.exceptions.CommandValidationException;
+import org.nrg.containers.model.auto.CommandPojo;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.CascadeType;
@@ -32,6 +34,7 @@ import java.util.Objects;
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "type")
 public abstract class Command extends AbstractHibernateEntity {
+    public static CommandType DEFAULT_TYPE = CommandType.DOCKER;
     private String name;
     private String label;
     private String description;
@@ -46,6 +49,52 @@ public abstract class Command extends AbstractHibernateEntity {
     private List<CommandInput> inputs;
     private List<CommandOutput> outputs;
     @JsonProperty("xnat") private List<XnatCommandWrapper> xnatCommandWrappers;
+
+    public static Command commandPojoToCommand(final CommandPojo commandPojo) throws CommandValidationException {
+        final List<String> errors = commandPojo.validate();
+        if (!errors.isEmpty()) {
+            throw new CommandValidationException(commandPojo.name(), errors);
+        }
+
+        final Command command;
+        final String type = commandPojo.type();
+        switch (type) {
+            case "docker":
+                command = DockerCommand.fromPojo(commandPojo);
+                break;
+            default:
+                // This should have been caught already, but still...
+                throw new CommandValidationException(commandPojo.name(), "Cannot instantiate command with type " + type);
+        }
+
+        command.setName(commandPojo.name());
+        command.setLabel(commandPojo.label());
+        command.setDescription(commandPojo.description());
+        command.setVersion(commandPojo.version());
+        command.setSchemaVersion(commandPojo.schemaVersion());
+        command.setInfoUrl(commandPojo.infoUrl());
+        command.setImage(commandPojo.image());
+        command.setWorkingDirectory(commandPojo.workingDirectory());
+        command.setCommandLine(commandPojo.commandLine());
+        command.setEnvironmentVariables(commandPojo.environmentVariables());
+
+        for (final CommandPojo.CommandMountPojo commandMountPojo : commandPojo.mounts()) {
+            command.addMount(CommandMount.fromPojo(commandMountPojo));
+        }
+
+        for (final CommandPojo.CommandInputPojo commandInputPojo : commandPojo.inputs()) {
+            command.addInput(CommandInput.fromPojo(commandInputPojo));
+        }
+
+        for (final CommandPojo.CommandOutputPojo commandOutputPojo : commandPojo.outputs()) {
+            command.addOutput(CommandOutput.fromPojo(commandOutputPojo));
+        }
+        for (final CommandPojo.CommandWrapperPojo commandWrapperPojo : commandPojo.xnatCommandWrappers()) {
+            command.addXnatCommandWrapper(XnatCommandWrapper.fromPojo(commandWrapperPojo));
+        }
+
+        return command;
+    }
 
     @Transient
     public abstract CommandType getType();
@@ -142,6 +191,17 @@ public abstract class Command extends AbstractHibernateEntity {
                 mounts;
     }
 
+    public void addMount(final CommandMount mount) {
+        if (mount == null) {
+            return;
+        }
+
+        if (this.mounts == null) {
+            this.mounts = Lists.newArrayList();
+        }
+        this.mounts.add(mount);
+    }
+
     @ElementCollection
     @ApiModelProperty("A Map of environment variables. Each kay is the environment variable's name, and each value is the environment variable's value." +
             "Both the names and values can use template strings, e.g. #variable-name#, which will be resolved into a value when the Command is launched.")
@@ -169,6 +229,17 @@ public abstract class Command extends AbstractHibernateEntity {
                 inputs;
     }
 
+    public void addInput(final CommandInput input) {
+        if (input == null) {
+            return;
+        }
+
+        if (this.inputs == null) {
+            this.inputs = Lists.newArrayList();
+        }
+        this.inputs.add(input);
+    }
+
     @ElementCollection
     @ApiModelProperty("A list of outputs.")
     public List<CommandOutput> getOutputs() {
@@ -179,6 +250,17 @@ public abstract class Command extends AbstractHibernateEntity {
         this.outputs = outputs == null ?
                 Lists.<CommandOutput>newArrayList() :
                 outputs;
+    }
+
+    public void addOutput(final CommandOutput output) {
+        if (output == null) {
+            return;
+        }
+
+        if (this.outputs == null) {
+            this.outputs = Lists.newArrayList();
+        }
+        this.outputs.add(output);
     }
 
     @OneToMany(mappedBy = "command", cascade = CascadeType.ALL, orphanRemoval = true)

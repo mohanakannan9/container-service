@@ -10,6 +10,7 @@ import org.nrg.containers.model.Command;
 import org.nrg.containers.model.DockerHub;
 import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.model.DockerServerPrefsBean;
+import org.nrg.containers.model.auto.CommandPojo;
 import org.nrg.containers.model.auto.DockerImageAndCommandSummary;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.api.ContainerControlApi;
@@ -70,23 +71,28 @@ public class DockerServiceImpl implements DockerService {
     }
 
     @Override
-    public DockerImage pullFromHub(final Long hubId, final String image, final Boolean saveCommands)
+    public DockerImage pullFromHub(final Long hubId, final String imageName, final boolean saveCommands)
             throws DockerServerException, NoServerPrefException, NotFoundException {
         final DockerHub hub = dockerHubService.retrieve(hubId);
         if (hub == null) {
             throw new NotFoundException("No Docker Hub with id " + hubId);
         }
 
-        final DockerImage dockerImage = controlApi.pullAndReturnImage(image, hub);
-        saveFromImageLabels(dockerImage);
+        final DockerImage dockerImage = controlApi.pullAndReturnImage(imageName, hub);
+        if (saveCommands) {
+            saveFromImageLabels(imageName, dockerImage);
+        }
         return dockerImage;
     }
 
     @Override
-    public DockerImage pullFromHub(final String image, final Boolean saveCommands)
+    public DockerImage pullFromHub(final String imageName, final boolean saveCommands)
             throws DockerServerException, NoServerPrefException {
-        final DockerImage dockerImage = controlApi.pullAndReturnImage(image);
-        saveFromImageLabels(dockerImage);
+        // TODO migrate this to use pullfromHub(defaultHubId, imageName, saveCommands)
+        final DockerImage dockerImage = controlApi.pullAndReturnImage(imageName);
+        if (saveCommands) {
+            saveFromImageLabels(imageName, dockerImage);
+        }
         return dockerImage;
     }
 
@@ -185,11 +191,11 @@ public class DockerServiceImpl implements DockerService {
     }
 
     @Override
-    public List<Command> saveFromImageLabels(final String imageId) throws DockerServerException, NotFoundException, NoServerPrefException {
+    public List<Command> saveFromImageLabels(final String imageName) throws DockerServerException, NotFoundException, NoServerPrefException {
         if (log.isDebugEnabled()) {
-            log.debug("Parsing labels for " + imageId);
+            log.debug("Parsing labels for " + imageName);
         }
-        final List<Command> parsed = controlApi.parseLabels(imageId);
+        final List<CommandPojo> parsed = controlApi.parseLabels(imageName);
 
         if (log.isDebugEnabled()) {
             log.debug("Saving commands from image labels");
@@ -197,10 +203,9 @@ public class DockerServiceImpl implements DockerService {
         return commandService.save(parsed);
     }
 
-    @Override
-    public List<Command> saveFromImageLabels(final DockerImage dockerImage) {
+    private List<Command> saveFromImageLabels(final String imageName, final DockerImage dockerImage) {
 //        commandService.saveFromLabels(imageId);
-        final List<Command> parsed = controlApi.parseLabels(dockerImage);
+        final List<CommandPojo> parsed = controlApi.parseLabels(imageName, dockerImage);
         return commandService.save(parsed);
     }
 }

@@ -123,8 +123,11 @@ public class CommandRestApi extends AbstractXapiRestController {
             throws BadRequestException, CommandValidationException {
 
         try {
-            final long createdId = commandService.create(commandPojo);
-            return new ResponseEntity<>(createdId, HttpStatus.CREATED);
+            final Command command = commandService.create(commandPojo);
+            if (command == null) {
+                return new ResponseEntity<>(0L, HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+            return new ResponseEntity<>(command.getId(), HttpStatus.CREATED);
         } catch (NrgRuntimeException e) {
             throw new BadRequestException(e);
         }

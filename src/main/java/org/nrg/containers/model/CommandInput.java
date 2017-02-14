@@ -5,21 +5,26 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.Lists;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.containers.exceptions.CommandValidationException;
+import org.nrg.containers.model.auto.CommandPojo;
 
 import javax.persistence.Embeddable;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Transient;
 import java.io.Serializable;
+import java.util.List;
 import java.util.Objects;
 
 @Embeddable
 public class CommandInput implements Serializable {
+    public static Type DEFAULT_TYPE = Type.STRING;
     private String name;
     private String description;
-    private Type type = Type.STRING;
+    private Type type = DEFAULT_TYPE;
     private Boolean required;
     private String matcher;
     @JsonProperty("default-value") private String defaultValue;
@@ -29,6 +34,36 @@ public class CommandInput implements Serializable {
     @JsonProperty("true-value") private String trueValue;
     @JsonProperty("false-value") private String falseValue;
     private String value;
+
+    public static CommandInput fromPojo(final CommandPojo.CommandInputPojo commandInputPojo) {
+        final CommandInput commandInput = new CommandInput();
+        commandInput.name = commandInputPojo.name();
+        commandInput.description = commandInputPojo.description();
+        commandInput.required = commandInputPojo.required();
+        commandInput.matcher = commandInputPojo.matcher();
+        commandInput.defaultValue = commandInputPojo.defaultValue();
+        commandInput.rawReplacementKey = commandInputPojo.rawReplacementKey();
+        commandInput.commandLineFlag = commandInputPojo.commandLineFlag();
+        commandInput.commandLineSeparator = commandInputPojo.commandLineSeparator();
+        commandInput.trueValue = commandInputPojo.trueValue();
+        commandInput.falseValue = commandInputPojo.falseValue();
+
+        switch (commandInputPojo.type()) {
+            case "string":
+                commandInput.type = Type.STRING;
+                break;
+            case "boolean":
+                commandInput.type = Type.BOOLEAN;
+                break;
+            case "number":
+                commandInput.type = Type.NUMBER;
+                break;
+            default:
+                commandInput.type = DEFAULT_TYPE;
+        }
+
+        return commandInput;
+    }
 
     @ApiModelProperty(value = "Name of the command input", required = true)
     public String getName() {
@@ -197,7 +232,7 @@ public class CommandInput implements Serializable {
         BOOLEAN("boolean"),
         NUMBER("number");
 
-        private final String name;
+        public final String name;
 
         @JsonCreator
         Type(final String name) {

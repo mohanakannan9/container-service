@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
+import org.nrg.containers.model.auto.CommandPojo;
 
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
@@ -38,6 +39,22 @@ public class XnatCommandWrapper implements Serializable {
         identity.setExternalInputs(externalInputs);
 
         return identity;
+    }
+
+    public static XnatCommandWrapper fromPojo(final CommandPojo.CommandWrapperPojo commandWrapperPojo) {
+        final XnatCommandWrapper xnatCommandWrapper = new XnatCommandWrapper();
+        xnatCommandWrapper.name = commandWrapperPojo.name();
+        xnatCommandWrapper.description = commandWrapperPojo.description();
+        for (final CommandPojo.CommandWrapperInputPojo externalCommandWrapperInputPojo : commandWrapperPojo.externalInputs()) {
+            xnatCommandWrapper.addExternalInput(XnatCommandInput.fromPojo(externalCommandWrapperInputPojo));
+        }
+        for (final CommandPojo.CommandWrapperInputPojo derivedCommandWrapperInputPojo : commandWrapperPojo.derivedInputs()) {
+            xnatCommandWrapper.addDerivedInput(XnatCommandInput.fromPojo(derivedCommandWrapperInputPojo));
+        }
+        for (final CommandPojo.CommandWrapperOutputPojo commandWrapperOutputPojo : commandWrapperPojo.outputHandlers()) {
+            xnatCommandWrapper.addOutputHandler(XnatCommandOutput.fromPojo(commandWrapperOutputPojo));
+        }
+        return xnatCommandWrapper;
     }
 
     @Id
@@ -86,6 +103,17 @@ public class XnatCommandWrapper implements Serializable {
                 externalInputs;
     }
 
+    public void addExternalInput(final XnatCommandInput externalInput) {
+        if (externalInput == null) {
+            return;
+        }
+
+        if (this.externalInputs == null) {
+            this.externalInputs = Lists.newArrayList();
+        }
+        this.externalInputs.add(externalInput);
+    }
+
     @ElementCollection
     public List<XnatCommandInput> getDerivedInputs() {
         return derivedInputs;
@@ -97,6 +125,17 @@ public class XnatCommandWrapper implements Serializable {
                 derivedInputs;
     }
 
+    public void addDerivedInput(final XnatCommandInput derivedInput) {
+        if (derivedInput == null) {
+            return;
+        }
+
+        if (this.derivedInputs == null) {
+            this.derivedInputs = Lists.newArrayList();
+        }
+        this.derivedInputs.add(derivedInput);
+    }
+
     @ElementCollection
     public List<XnatCommandOutput> getOutputHandlers() {
         return outputHandlers;
@@ -106,6 +145,17 @@ public class XnatCommandWrapper implements Serializable {
         this.outputHandlers = outputHandlers == null ?
                 Lists.<XnatCommandOutput>newArrayList() :
                 outputHandlers;
+    }
+
+    public void addOutputHandler(final XnatCommandOutput outputHandler) {
+        if (outputHandler == null) {
+            return;
+        }
+
+        if (this.outputHandlers == null) {
+            this.outputHandlers = Lists.newArrayList();
+        }
+        this.outputHandlers.add(outputHandler);
     }
 
     @Override

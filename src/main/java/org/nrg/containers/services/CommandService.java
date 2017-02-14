@@ -21,7 +21,7 @@ import java.util.Map;
 
 public interface CommandService extends BaseHibernateService<Command> {
     List<String> validate(CommandPojo commandPojo);
-    long create(CommandPojo commandPojo) throws CommandValidationException;
+    Command create(CommandPojo commandPojo) throws CommandValidationException;
 
     List<Command> findByProperties(Map<String, Object> properties);
     Command get(Long id) throws NotFoundException;
@@ -66,7 +66,7 @@ public interface CommandService extends BaseHibernateService<Command> {
     ContainerExecution launchResolvedDockerCommand(final ResolvedDockerCommand resolvedCommand, final UserI userI)
             throws NoServerPrefException, DockerServerException, ContainerMountResolutionException;
 
-    List<Command> save(final List<Command> commands);
+    List<Command> save(final List<CommandPojo> commands);
 
 //    @VisibleForTesting
 //    ResolvedCommand prepareToLaunchScan(Command command,

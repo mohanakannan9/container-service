@@ -4,19 +4,23 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
-import com.google.common.collect.Sets;
+import com.google.common.collect.Lists;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.containers.model.auto.CommandPojo;
 
-import javax.persistence.ElementCollection;
+import javax.annotation.Nullable;
 import javax.persistence.Embeddable;
 import javax.persistence.Transient;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 @Embeddable
 public class XnatCommandInput {
+    public static final Type DEFAULT_TYPE = Type.STRING;
     private String name;
     private String description;
     private Type type;
@@ -43,6 +47,65 @@ public class XnatCommandInput {
         identityInput.setRequired(commandInput.isRequired());
 
         return identityInput;
+    }
+
+    public static XnatCommandInput fromPojo(final CommandPojo.CommandWrapperInputPojo commandWrapperInputPojo) {
+        final XnatCommandInput xnatCommandInput = new XnatCommandInput();
+        xnatCommandInput.name = commandWrapperInputPojo.name();
+        xnatCommandInput.description = commandWrapperInputPojo.description();
+        xnatCommandInput.derivedFromXnatInput = commandWrapperInputPojo.derivedFromXnatInput();
+        xnatCommandInput.derivedFromXnatObjectProperty = commandWrapperInputPojo.derivedFromXnatObjectProperty();
+        xnatCommandInput.matcher = commandWrapperInputPojo.matcher();
+        xnatCommandInput.providesValueForCommandInput = commandWrapperInputPojo.providesValueForCommandInput();
+        xnatCommandInput.providesFilesForCommandMount = commandWrapperInputPojo.providesFilesForCommandMount();
+        xnatCommandInput.defaultValue = commandWrapperInputPojo.defaultValue();
+        xnatCommandInput.userSettable = commandWrapperInputPojo.userSettable();
+        xnatCommandInput.rawReplacementKey = commandWrapperInputPojo.rawReplacementKey();
+        xnatCommandInput.required = commandWrapperInputPojo.required();
+        switch (commandWrapperInputPojo.type()) {
+            case "string":
+                xnatCommandInput.type = Type.STRING;
+                break;
+            case "boolean":
+                xnatCommandInput.type = Type.BOOLEAN;
+                break;
+            case "number":
+                xnatCommandInput.type = Type.NUMBER;
+                break;
+            case "Directory":
+                xnatCommandInput.type = Type.DIRECTORY;
+                break;
+            case "File[]":
+                xnatCommandInput.type = Type.FILES;
+                break;
+            case "File":
+                xnatCommandInput.type = Type.FILE;
+                break;
+            case "Project":
+                xnatCommandInput.type = Type.PROJECT;
+                break;
+            case "Subject":
+                xnatCommandInput.type = Type.SUBJECT;
+                break;
+            case "Session":
+                xnatCommandInput.type = Type.SESSION;
+                break;
+            case "Scan":
+                xnatCommandInput.type = Type.SCAN;
+                break;
+            case "Assessor":
+                xnatCommandInput.type = Type.ASSESSOR;
+                break;
+            case "Resource":
+                xnatCommandInput.type = Type.RESOURCE;
+                break;
+            case "Config":
+                xnatCommandInput.type = Type.CONFIG;
+                break;
+            default:
+                xnatCommandInput.type = DEFAULT_TYPE;
+        }
+        return xnatCommandInput;
     }
 
     public String getName() {
@@ -240,6 +303,16 @@ public class XnatCommandInput {
         @JsonValue
         public String getName() {
             return name;
+        }
+
+        public static List<String> names() {
+            return Lists.transform(Arrays.asList(Type.values()), new Function<Type, String>() {
+                @Nullable
+                @Override
+                public String apply(@Nullable final Type type) {
+                    return type != null ? type.getName() : "";
+                }
+            });
         }
     }
 }

@@ -4,6 +4,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.MoreObjects.ToStringHelper;
 import com.google.common.collect.Maps;
 import org.hibernate.envers.Audited;
+import org.nrg.containers.model.auto.CommandPojo;
 
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
@@ -25,6 +26,14 @@ public class DockerCommand extends Command {
     private String index;
     private String hash;
     private Map<String, String> ports;
+
+    static DockerCommand fromPojo(final CommandPojo commandPojo) {
+        final DockerCommand command = new DockerCommand();
+        command.setIndex(commandPojo.index());
+        command.setHash(commandPojo.hash());
+        command.setPorts(commandPojo.ports());
+        return command;
+    }
 
     @Transient
     public CommandType getType() {

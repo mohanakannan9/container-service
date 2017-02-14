@@ -108,20 +108,33 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
 
     @Override
     public List<String> validate(final CommandPojo commandPojo) {
-        final List<String> errors = Lists.newArrayList();
-        return errors;
+        return commandPojo.validate();
     }
 
     @Override
-    public long create(final CommandPojo commandPojo) throws CommandValidationException {
+    public Command create(final CommandPojo commandPojo) throws CommandValidationException {
         final List<String> errors = validate(commandPojo);
-        if (errors == null || errors.isEmpty()) {
-            // make a command from the commandpojo
-            // create the command
-            // turn the created command back into a pojo
-            return 0L;
+        if (errors.isEmpty()) {
+            Command toCreate = null;
+            final List<String> thisCommandErrors = Lists.newArrayList();
+            try {
+                toCreate = Command.commandPojoToCommand(commandPojo);
+            } catch (CommandValidationException e) {
+                thisCommandErrors.addAll(e.getErrors());
+            }
+
+            if (toCreate != null && thisCommandErrors.isEmpty()) {
+                try {
+                    return create(toCreate);
+                } catch (NrgServiceRuntimeException e) {
+                    // TODO: should I "update" instead of erroring out if command already exists?
+                    log.error("Could not save command: " + toCreate, e);
+                }
+            }
+
+            return null;
         } else {
-            throw new CommandValidationException(errors);
+            throw new CommandValidationException(commandPojo.name(), errors);
         }
     }
 
@@ -164,23 +177,24 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             }
             return super.create(command);
         } catch (ConstraintViolationException e) {
-            throw new NrgServiceRuntimeException("A command already exists with this name and docker image ID.");
+            throw new NrgServiceRuntimeException("This command duplicates a command already in the database.", e);
         }
     }
 
     @Override
-    public List<Command> save(final List<Command> commands) {
-        if (!(commands == null || commands.isEmpty())) {
-            for (final Command command : commands) {
+    public List<Command> save(final List<CommandPojo> commandPojos) {
+        final List<Command> created = Lists.newArrayList();
+        if (!(commandPojos == null || commandPojos.isEmpty())) {
+            for (final CommandPojo commandPojo : commandPojos) {
                 try {
-                    create(command);
-                } catch (NrgServiceRuntimeException e) {
+                    created.add(create(commandPojo));
+                } catch (CommandValidationException e) {
                     // TODO: should I "update" instead of erroring out if command already exists?
-                    log.error("Could not save command: " + command, e);
+                    log.error("Could not save command " + commandPojo.name(), e);
                 }
             }
         }
-        return commands;
+        return created;
     }
 
     @Override

@@ -2,6 +2,7 @@ package org.nrg.containers.rest;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.junit.Before;
@@ -9,15 +10,18 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.config.DockerRestApiTestConfig;
+import org.nrg.containers.exceptions.CommandValidationException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Command;
+import org.nrg.containers.model.CommandInput;
 import org.nrg.containers.model.DockerCommand;
 import org.nrg.containers.model.DockerImage;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.XnatCommandWrapper;
+import org.nrg.containers.model.auto.CommandPojo;
 import org.nrg.containers.model.auto.DockerImageAndCommandSummary;
 import org.nrg.containers.services.CommandService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
@@ -36,6 +40,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 
@@ -48,6 +53,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isIn;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -264,20 +270,20 @@ public class DockerRestApiTest {
         final String fakeImageId = "xnat/thisisfake";
         final String labelTestCommandJson =
                 "{\"name\": \"label-test\"," +
+                        "\"image\": \"" + fakeImageId + "\"," +
                         "\"description\": \"Command to test label-parsing and command-importing code\"," +
                         "\"type\": \"docker\", " +
                         "\"command-line\": \"#CMD#\"," +
                         "\"inputs\": [{\"name\": \"CMD\", \"description\": \"Command to run\", \"required\": true}]}";
-        final Command expected = mapper.readValue(labelTestCommandJson, Command.class);
-        final Command toReturn = mapper.readValue(labelTestCommandJson, Command.class);
-        toReturn.setImage(fakeImageId);
-        final List<Command> toReturnList = Lists.newArrayList(toReturn);
+        final CommandPojo expected = mapper.readValue(labelTestCommandJson, CommandPojo.class);
+        final List<CommandPojo> expectedList = Lists.newArrayList(expected);
+        final List<Command> toReturnList = Lists.newArrayList(Command.commandPojoToCommand(expected));
 
         final Map<String, String> imageLabels = Maps.newHashMap();
         imageLabels.put(LABEL_KEY, "[" + labelTestCommandJson + "]");
 
-        doReturn(toReturnList).when(mockContainerControlApi).parseLabels(fakeImageId);
-        when(mockCommandService.save(toReturnList)).thenReturn(toReturnList);
+        doReturn(expectedList).when(mockContainerControlApi).parseLabels(fakeImageId);
+        when(mockCommandService.save(expectedList)).thenReturn(toReturnList);
 
         final String path = "/docker/images/save";
         final Authentication authentication = new TestingAuthenticationToken("nonAdmin", "nonAdmin");
@@ -299,12 +305,14 @@ public class DockerRestApiTest {
 
         // "response" will have been saved, so it will not be exactly equal to "expected"
         // Must compare attribute-by-attribute
-        assertEquals(expected.getName(), response.getName());
-        assertEquals(expected.getDescription(), response.getDescription());
-        assertEquals(expected.getCommandLine(), response.getCommandLine());
-        assertEquals(fakeImageId, response.getImage()); // Did not set image ID on "expected"
-        assertEquals(expected.getInputs(), response.getInputs());
-        assertEquals(fakeImageId, response.getImage());
+        assertEquals(expected.name(), response.getName());
+        assertEquals(expected.description(), response.getDescription());
+        assertEquals(expected.commandLine(), response.getCommandLine());
+        assertEquals(expected.image(), response.getImage()); // Did not set image ID on "expected"
+
+        for (final CommandPojo.CommandInputPojo commandInputPojo : expected.inputs()) {
+            assertThat(CommandInput.fromPojo(commandInputPojo), isIn(response.getInputs()));
+        }
     }
 
     @Test
@@ -313,6 +321,7 @@ public class DockerRestApiTest {
         final String fakeImageId = "xnat/thisisfake";
         final String labelTestCommandListJson =
                 "[{\"name\":\"dcm2niix-scan\", \"description\":\"Run dcm2niix on a scan's DICOMs\", " +
+                        "\"image\": \"" + fakeImageId + "\"," +
                         "\"type\": \"docker\", " +
                         "\"command-line\": \"/run/dcm2niix-scan.sh #scanId# #sessionId#\", " +
                         "\"mounts\": [" +
@@ -324,19 +333,32 @@ public class DockerRestApiTest {
                             "{\"name\":\"sessionId\", \"required\":true}" +
                         "] " +
                     "}]";
-        final List<Command> expectedList = mapper.readValue(labelTestCommandListJson, new TypeReference<List<Command>>(){});
-        final Command expected = expectedList.get(0);
+        final List<CommandPojo> expectedList = mapper.readValue(labelTestCommandListJson, new TypeReference<List<CommandPojo>>(){});
+        final CommandPojo expected = expectedList.get(0);
 
-        final List<Command> toReturnList = mapper.readValue(labelTestCommandListJson, new TypeReference<List<Command>>(){});
-        for (final Command toReturn : toReturnList) {
-            toReturn.setImage(fakeImageId);
-        }
+        final List<Command> toReturnList = Lists.transform(expectedList, new Function<CommandPojo, Command>() {
+            @Nullable
+            @Override
+            public Command apply(@Nullable final CommandPojo commandPojo) {
+                try {
+                    return Command.commandPojoToCommand(commandPojo);
+                } catch (CommandValidationException e) {
+                    String message = "";
+                    for (final String error : e.getErrors()) {
+                        message += error + "\n";
+                    }
+                    message += e.getMessage();
+                    fail(message);
+                }
+                return null;
+            }
+        });
 
         final Map<String, String> imageLabels = Maps.newHashMap();
         imageLabels.put(LABEL_KEY, labelTestCommandListJson);
 
-        doReturn(toReturnList).when(mockContainerControlApi).parseLabels(fakeImageId);
-        when(mockCommandService.save(toReturnList)).thenReturn(toReturnList);
+        doReturn(expectedList).when(mockContainerControlApi).parseLabels(fakeImageId);
+        when(mockCommandService.save(expectedList)).thenReturn(toReturnList);
 
         final String path = "/docker/images/save";
         final Authentication authentication = new TestingAuthenticationToken("nonAdmin", "nonAdmin");
@@ -358,12 +380,14 @@ public class DockerRestApiTest {
 
         // "response" will have been saved, so it will not be exactly equal to "expected"
         // Must compare attribute-by-attribute
-        assertEquals(expected.getName(), response.getName());
-        assertEquals(expected.getDescription(), response.getDescription());
-        assertEquals(expected.getCommandLine(), response.getCommandLine());
-        assertEquals(fakeImageId, response.getImage()); // Did not set image ID on "expected"
-        assertEquals(expected.getInputs(), response.getInputs());
-        assertEquals(fakeImageId, response.getImage());
+        assertEquals(expected.name(), response.getName());
+        assertEquals(expected.description(), response.getDescription());
+        assertEquals(expected.commandLine(), response.getCommandLine());
+        assertEquals(expected.image(), response.getImage()); // Did not set image ID on "expected"
+        for (final CommandPojo.CommandInputPojo commandInputPojo : expected.inputs()) {
+            assertThat(CommandInput.fromPojo(commandInputPojo), isIn(response.getInputs()));
+        }
+
     }
 
     @Test

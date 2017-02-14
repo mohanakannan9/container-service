@@ -1,10 +1,14 @@
 package org.nrg.containers.model;
 
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.Lists;
+import org.apache.commons.lang3.StringUtils;
+import org.nrg.containers.model.auto.CommandPojo;
 
 import javax.persistence.Embeddable;
 import javax.persistence.Transient;
 import java.io.Serializable;
+import java.util.List;
 import java.util.Objects;
 
 @Embeddable
@@ -15,6 +19,17 @@ public class CommandOutput implements Serializable {
     private String mount;
     private String path;
     private String glob;
+
+    public static CommandOutput fromPojo(final CommandPojo.CommandOutputPojo commandOutputPojo) {
+        final CommandOutput commandOutput = new CommandOutput();
+        commandOutput.name = commandOutputPojo.name();
+        commandOutput.description = commandOutputPojo.description();
+        commandOutput.required = commandOutputPojo.required();
+        commandOutput.mount = commandOutputPojo.mount();
+        commandOutput.path = commandOutputPojo.path();
+        commandOutput.glob = commandOutputPojo.glob();
+        return commandOutput;
+    }
 
     public String getName() {
         return name;
