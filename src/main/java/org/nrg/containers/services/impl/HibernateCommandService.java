@@ -107,13 +107,8 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     }
 
     @Override
-    public List<String> validate(final CommandPojo commandPojo) {
-        return commandPojo.validate();
-    }
-
-    @Override
     public Command create(final CommandPojo commandPojo) throws CommandValidationException {
-        final List<String> errors = validate(commandPojo);
+        final List<String> errors = commandPojo.validate();
         if (errors.isEmpty()) {
             Command toCreate = null;
             final List<String> thisCommandErrors = Lists.newArrayList();

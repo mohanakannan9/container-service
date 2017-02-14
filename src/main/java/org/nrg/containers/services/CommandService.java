@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 
 public interface CommandService extends BaseHibernateService<Command> {
-    List<String> validate(CommandPojo commandPojo);
     Command create(CommandPojo commandPojo) throws CommandValidationException;
 
     List<Command> findByProperties(Map<String, Object> properties);
