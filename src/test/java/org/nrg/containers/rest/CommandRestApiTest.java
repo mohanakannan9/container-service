@@ -284,7 +284,7 @@ public class CommandRestApiTest {
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
-        assertEquals("Bad request:\nMust specify a docker image on the command.", blankCommandResponse);
+        assertEquals("Invalid command:\n\tCommand null: Command name cannot be blank.\n\tCommand null: Image name cannot be blank.", blankCommandResponse);
     }
 
     @Test
