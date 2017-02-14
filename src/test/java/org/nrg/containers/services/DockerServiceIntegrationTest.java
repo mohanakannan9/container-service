@@ -81,7 +81,7 @@ public class DockerServiceIntegrationTest {
     @Test
     public void testSaveCommandFromImageLabels() throws Exception {
         final String imageName = "xnat/testy-test";
-        final String dir = Resources.getResource("dockerServiceIntegrationTest").getPath();
+        final String dir = Resources.getResource("dockerServiceIntegrationTest").getPath().replace("%20", " ");
 
         final DefaultDockerClient client = DefaultDockerClient.fromEnv().build();
         client.build(Paths.get(dir), imageName);

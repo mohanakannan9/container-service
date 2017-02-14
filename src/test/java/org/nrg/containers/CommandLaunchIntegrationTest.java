@@ -125,7 +125,7 @@ public class CommandLaunchIntegrationTest {
 
     @Test
     public void testFakeReconAll() throws Exception {
-        final String dir = Resources.getResource("commandLaunchTest").getPath();
+        final String dir = Resources.getResource("commandLaunchTest").getPath().replace("%20", " ");
         final String commandJsonFile = dir + "/fakeReconAllCommand.json";
         final String sessionJsonFile = dir + "/session.json";
         final String fakeResourceDir = dir + "/fakeResource";
