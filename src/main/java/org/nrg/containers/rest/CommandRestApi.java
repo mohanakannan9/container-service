@@ -215,31 +215,41 @@ public class CommandRestApi extends AbstractXapiRestController {
     @ResponseStatus(value = HttpStatus.NOT_FOUND)
     @ExceptionHandler(value = {NotFoundException.class})
     public String handleNotFound(final Exception e) {
-        return e.getMessage();
+        final String message = e.getMessage();
+        log.debug(message);
+        return message;
     }
 
     @ResponseStatus(value = HttpStatus.FAILED_DEPENDENCY)
     @ExceptionHandler(value = {NoServerPrefException.class})
     public String handleFailedDependency(final Exception ignored) {
-        return "Set up Docker server before using this REST endpoint.";
+        final String message = "Set up Docker server before using this REST endpoint.";
+        log.debug(message);
+        return message;
     }
 
     @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(value = {DockerServerException.class})
     public String handleDockerServerError(final Exception e) {
-        return "The Docker server returned an error:\n" + e.getMessage();
+        final String message = "The Docker server returned an error:\n" + e.getMessage();
+        log.debug(message);
+        return message;
     }
 
     @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(value = {CommandResolutionException.class})
     public String handleCommandResolutionException(final CommandResolutionException e) {
-        return "The command could not be resolved.\n" + e.getMessage();
+        final String message = "The command could not be resolved.\n" + e.getMessage();
+        log.debug(message);
+        return message;
     }
 
     @ResponseStatus(value = HttpStatus.BAD_REQUEST)
     @ExceptionHandler(value = {BadRequestException.class})
     public String handleBadRequest(final Exception e) {
-        return "Bad request:\n" + e.getMessage();
+        final String message = "Bad request:\n" + e.getMessage();
+        log.debug(message);
+        return message;
     }
 
     @ResponseStatus(value = HttpStatus.BAD_REQUEST)
@@ -250,6 +260,7 @@ public class CommandRestApi extends AbstractXapiRestController {
             message += ":\n\t";
             message += StringUtils.join(e.getErrors(), "\n\t");
         }
+        log.debug(message);
         return message;
     }
 }
