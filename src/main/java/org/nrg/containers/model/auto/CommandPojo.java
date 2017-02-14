@@ -121,9 +121,10 @@ public abstract class CommandPojo {
         if (StringUtils.isBlank(name())) {
             errors.add("Command name cannot be blank.");
         }
+        final String commandName = "Command \"" + name() + "\" - ";
 
         if (StringUtils.isBlank(image())) {
-            errors.add("Image name cannot be blank.");
+            errors.add(commandName + "image name cannot be blank.");
         }
 
         final Set<String> mountNames = Sets.newHashSet();
@@ -131,7 +132,7 @@ public abstract class CommandPojo {
             final List<String> mountErrors = mount.validate();
 
             if (mountNames.contains(mount.name())) {
-                errors.add("Command mount name \"" + mount.name() + "\" is not unique.");
+                errors.add(commandName + "mount name \"" + mount.name() + "\" is not unique.");
             } else {
                 mountNames.add(mount.name());
             }
@@ -147,7 +148,7 @@ public abstract class CommandPojo {
             final List<String> inputErrors = input.validate();
 
             if (inputNames.contains(input.name())) {
-                errors.add("Command input name \"" + input.name() + "\" is not unique.");
+                errors.add(commandName + "input name \"" + input.name() + "\" is not unique.");
             } else {
                 inputNames.add(input.name());
             }
@@ -162,13 +163,13 @@ public abstract class CommandPojo {
             final List<String> outputErrors = output.validate();
 
             if (outputNames.contains(output.name())) {
-                errors.add("Command output name \"" + output.name() + "\" is not unique.");
+                errors.add(commandName + "output name \"" + output.name() + "\" is not unique.");
             } else {
                 outputNames.add(output.name());
             }
 
             if (!mountNames.contains(output.mount())) {
-                errors.add("Command output \"" + output.name() + "\" references unknown mount \"" + output.mount() + "\". Known mounts: " + knownMounts);
+                errors.add(commandName + "output \"" + output.name() + "\" references unknown mount \"" + output.mount() + "\". Known mounts: " + knownMounts);
             }
 
             if (!outputErrors.isEmpty()) {
@@ -182,17 +183,18 @@ public abstract class CommandPojo {
             final List<String> wrapperErrors = commandWrapperPojo.validate();
 
             if (wrapperNames.contains(commandWrapperPojo.name())) {
-                errors.add("Xnat wrapper name \"" + commandWrapperPojo.name() + "\" is not unique.");
+                errors.add(commandName + "wrapper name \"" + commandWrapperPojo.name() + "\" is not unique.");
             } else {
                 wrapperNames.add(commandWrapperPojo.name());
             }
+            final String wrapperName = commandName + "wrapper \"" + commandWrapperPojo.name() + "\" - ";
 
             final Set<String> wrapperInputNames = Sets.newHashSet();
             for (final CommandWrapperInputPojo external : commandWrapperPojo.externalInputs()) {
                 final List<String> inputErrors = external.validateExternal();
 
                 if (wrapperInputNames.contains(external.name())) {
-                    errors.add("External input name \"" + external.name() + "\" is not unique.");
+                    errors.add(wrapperName + "external input name \"" + external.name() + "\" is not unique.");
                 } else {
                     wrapperInputNames.add(external.name());
                 }
@@ -207,9 +209,9 @@ public abstract class CommandPojo {
                 final List<String> inputErrors = derived.validateDerived();
 
                 if (wrapperInputNames.contains(derived.name())) {
-                    errors.add("Derived input name \"" + derived.name() + "\" is not unique.");
+                    errors.add(wrapperName + "derived input name \"" + derived.name() + "\" is not unique.");
                 } else if (!wrapperInputNames.contains(derived.derivedFromXnatInput())) {
-                    errors.add("Derived input \"" + derived.name() + "\" is derived from an unknown XNAT input \"" + derived.derivedFromXnatInput() + "\". Known inputs: " + StringUtils.join(wrapperInputNames, ", "));
+                    errors.add(wrapperName + "derived input \"" + derived.name() + "\" is derived from an unknown XNAT input \"" + derived.derivedFromXnatInput() + "\". Known inputs: " + StringUtils.join(wrapperInputNames, ", "));
                 } else {
                     wrapperInputNames.add(derived.name());
                 }
@@ -226,13 +228,13 @@ public abstract class CommandPojo {
                 final List<String> outputErrors = output.validate();
 
                 if (!outputNames.contains(output.commandOutputName())) {
-                    errors.add("Output handler refers to unknown command output \"" + output.commandOutputName() + "\". Known outputs: " + knownOutputs + ".");
+                    errors.add(wrapperName + "output handler refers to unknown command output \"" + output.commandOutputName() + "\". Known outputs: " + knownOutputs + ".");
                 } else {
                     handledOutputs.add(output.commandOutputName());
                 }
 
                 if (!wrapperInputNames.contains(output.xnatInputName())) {
-                    errors.add("Output handler refers to an unknown XNAT input \"" + output.xnatInputName() + "\". Known inputs: " + knownWrapperInputs + ".");
+                    errors.add(wrapperName + "output handler refers to unknown XNAT input \"" + output.xnatInputName() + "\". Known inputs: " + knownWrapperInputs + ".");
                 }
 
                 if (!outputErrors.isEmpty()) {
@@ -245,7 +247,7 @@ public abstract class CommandPojo {
                 // We know at least one output is not handled. Now find out which.
                 for (final String commandOutput : outputNames) {
                     if (!handledOutputs.contains(commandOutput)) {
-                        errors.add("Command output \"" + commandOutput + "\" is not handled by any output handler.");
+                        errors.add(commandName + "command output \"" + commandOutput + "\" is not handled by any output handler.");
                     }
                 }
             }

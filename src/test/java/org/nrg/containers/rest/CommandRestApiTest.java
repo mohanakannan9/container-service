@@ -284,7 +284,7 @@ public class CommandRestApiTest {
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
-        assertEquals("Invalid command:\n\tCommand null: Command name cannot be blank.\n\tCommand null: Image name cannot be blank.", blankCommandResponse);
+        assertEquals("Invalid command:\n\tCommand name cannot be blank.\n\tCommand \"null\" - image name cannot be blank.", blankCommandResponse);
     }
 
     @Test

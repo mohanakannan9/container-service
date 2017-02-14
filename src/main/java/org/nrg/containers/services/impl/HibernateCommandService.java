@@ -129,7 +129,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
 
             return null;
         } else {
-            throw new CommandValidationException(commandPojo.name(), errors);
+            throw new CommandValidationException(errors);
         }
     }
 

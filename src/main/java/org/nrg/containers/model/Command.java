@@ -53,7 +53,7 @@ public abstract class Command extends AbstractHibernateEntity {
     public static Command commandPojoToCommand(final CommandPojo commandPojo) throws CommandValidationException {
         final List<String> errors = commandPojo.validate();
         if (!errors.isEmpty()) {
-            throw new CommandValidationException(commandPojo.name(), errors);
+            throw new CommandValidationException(errors);
         }
 
         final Command command;
@@ -64,7 +64,7 @@ public abstract class Command extends AbstractHibernateEntity {
                 break;
             default:
                 // This should have been caught already, but still...
-                throw new CommandValidationException(commandPojo.name(), "Cannot instantiate command with type " + type);
+                throw new CommandValidationException("Cannot instantiate command with type " + type);
         }
 
         command.setName(commandPojo.name());
