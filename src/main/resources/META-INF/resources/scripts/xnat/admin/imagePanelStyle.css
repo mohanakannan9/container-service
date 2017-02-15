@@ -1,0 +1,11 @@
+.imageContainer {
+    margin: 2em 0;
+    border: 1px solid #e0e0e0;
+    padding: 20px;
+}
+.imageContainer h3 {
+    background: #f3f3f3;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 10px 20px;
+    margin: -20px -20px 0 -20px;
+}

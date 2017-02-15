@@ -27,19 +27,36 @@ var XNAT = getObject(XNAT || {});
     }
 }(function(){
 
-    var imageListManager, undefined,
+    var imageListManager, 
+        imageFilterManager, 
+        addImage,
+        commandListManager,
+        commandDefinition,
+        undefined,
         rootUrl = XNAT.url.rootUrl;
-
+    
     XNAT.admin =
         getObject(XNAT.admin || {});
 
     XNAT.admin.imageListManager = imageListManager =
         getObject(XNAT.admin.imageListManager || {});
 
+    XNAT.admin.imageFilterManager = imageFilterManager =
+        getObject(XNAT.admin.imageFilterManager || {});
+
+    XNAT.admin.addImage = addImage =
+        getObject(XNAT.admin.addImage || {});
+
+    XNAT.admin.commandListManager = commandListManager =
+        getObject(XNAT.admin.commandListManager || {});
+    
+    XNAT.admin.commandDefinition = commandDefinition = 
+        getObject(XNAT.admin.commandDefinition || {});
+
     imageListManager.samples = [
         {
-            "name": "Docker Hub",
-            "url": "https://hub.docker.com",
+            "label": "Docker Hub",
+            "image_id": "https://hub.docker.com",
             "enabled": true
         }
     ];
@@ -53,16 +70,21 @@ var XNAT = getObject(XNAT || {});
         })
     }
 
-    function xapiUrl(appended){
+    function imageUrl(appended){
         appended = isDefined(appended) ? '/' + appended : '';
         return rootUrl('/xapi/docker/images' + appended);
+    }
+
+    function commandUrl(appended){
+        appended = isDefined(appended) ? '/' + appended : '';
+        return rootUrl('/xapi/commands' + appended);
     }
 
     // get the list of images
     imageListManager.getImages = imageListManager.getAll = function(callback){
         callback = isFunction(callback) ? callback : function(){};
         return XNAT.xhr.get({
-            url: xapiUrl(),
+            url: imageUrl(),
             dataType: 'json',
             success: function(data){
                 imageListManager.hosts = data;
@@ -71,37 +93,39 @@ var XNAT = getObject(XNAT || {});
         });
     };
 
-    // dialog to create/edit hosts
-    imageListManager.dialog = function(item, isNew){
-        var tmpl = $('#image-host-editor-template');
-        var doWhat = !item ? 'New' : 'Edit';
-        isNew = firstDefined(isNew, doWhat === 'New');
-        console.log(isNew);
-        // isNew = true;
+    commandListManager.getCommands = commandListManager.getAll = function(callback){
+        callback = isFunction(callback) ? callback : function(){};
+        return XNAT.xhr.get({
+            url: commandUrl(),
+            dataType: 'json',
+            success: function(data){
+                commandListManager.commands = data;
+                callback.apply(this,arguments);
+            }
+        });
+    };
+
+    // dialog to add new images
+    addImage.dialog = function(item){
+        var tmpl = $('#add-image-template');
         item = item || {};
         xmodal.open({
-            title: doWhat + ' Image Hub',
+            title: 'Pull New Image',
             template: tmpl.clone(),
             width: 400,
             height: 420,
             scroll: false,
             padding: '0',
-            beforeShow: function(obj){
-                var $form = obj.$modal.find('form');
-                if (item && isDefined(item.url)) {
-                    $form.setValues(item);
-                }
-            },
             okClose: false,
-            okLabel: 'Save',
+            okLabel: 'Pull Image',
             okAction: function(obj){
                 // the form panel is 'imageListTemplate' in site-admin-element.yaml
                 var $form = obj.$modal.find('form');
-                var $url = $form.find('input[name=url]');
-                var $name = $form.find('input[name=name]');
+                var $image = $form.find('input[name=image]');
+                var $tag = $form.find('input[name=tag]');
                 $form.submitJSON({
-                    method: isNew ? 'POST' : 'PUT',
-                    url: isNew ? xapiUrl() : xapiUrl(item.id),
+                    method: 'POST',
+                    url: imageUrl('pull'),
                     validate: function(){
 
                         $form.find(':input').removeClass('invalid');
@@ -109,7 +133,7 @@ var XNAT = getObject(XNAT || {});
                         var errors = 0;
                         var errorMsg = 'Errors were found with the following fields: <ul>';
 
-                        [$name,$url].forEach(function($el){
+                        [$image,$tag].forEach(function($el){
                             var el = $el[0];
                             if (!el.value) {
                                 errors++;
@@ -127,22 +151,67 @@ var XNAT = getObject(XNAT || {});
                         return errors === 0;
 
                     },
+                    always: function(){
+                        xmodal.loading.open({title: 'Submitting Pull Request',height: '110'});
+                    },
                     success: function(){
                         refreshTable();
                         xmodal.close(obj.$modal);
-                        XNAT.ui.banner.top(2000, 'Saved.', 'success')
+                        XNAT.ui.banner.top(2000, 'Pull request complete.', 'success');
                     }
                 });
             }
         });
     };
 
-    // create table for Image Hosts
-    imageListManager.table = function(imageList, callback){
+    // create a read-only code editor dialog to view a command definition
+    commandDefinition.dialog = function(data){
+        data = data || {};
+
+        var _source = spawn('textarea', JSON.stringify(data, null, 4));
+
+        var _editor = XNAT.app.codeEditor.init(_source, {
+            language: 'json'
+        });
+
+        _editor.openEditor({
+            title: data.name,
+            classes: 'plugin-json',
+            footerContent: '(read-only)',
+            buttons: {
+                // json: {
+                //     label: 'View JSON',
+                //     link: true,
+                //     action: function(){
+                //         xmodal.iframe({
+                //             title: data.id,
+                //             url: _url,
+                //             width: 720, height: 480,
+                //             buttons: { close: { label: 'Close' } }
+                //         })
+                //     }
+                // },
+                close: { label: 'Close' },
+                info: {
+                    label: 'View Command Info',
+                    action: function(){
+                        window.open(data['info-url'],'infoUrl');
+                    }
+                }
+            },
+            afterShow: function(dialog, obj){
+                obj.aceEditor.setReadOnly(true);
+            }
+        });
+    };
+
+
+    // create table for listing comands
+    commandListManager.table = function(callback){
 
         // initialize the table - we'll add to it below
         var chTable = XNAT.table({
-            className: 'image-hosts xnat-table',
+            className: 'enabled-commands xnat-table',
             style: {
                 width: '100%',
                 marginTop: '15px',
@@ -152,52 +221,46 @@ var XNAT = getObject(XNAT || {});
 
         // add table header row
         chTable.tr()
-            .th({ addClass: 'left', html: '<b>ID</b>' })
-            .th('<b>Name</b>')
-            .th('<b>URL</b>')
+            .th({ addClass: 'left', html: '<b>Command</b>' })
+            .th('<b>XNAT Contexts</b>')
+            .th('<b>Version</b>')
+            .th('<b>Image</b>')
             .th('<b>Enabled</b>')
             .th('<b>Actions</b>');
 
-        function editLink(item, text){
+        function viewLink(item, text){
             return spawn('a.link|href=#!', {
                 onclick: function(e){
                     e.preventDefault();
-                    imageListManager.dialog(item, false);
+                    commandDefinition.dialog(item, false);
                 }
             }, [['b', text]]);
         }
 
-        function editButton(item) {
-            return spawn('button.btn.sm.edit', {
-                onclick: function(e){
-                    e.preventDefault();
-                    imageListManager.dialog(item, false);
-                },
-                disabled: "disabled"
-            }, 'Edit');
-        }
-
         function enabledCheckbox(item){
             var enabled = !!item.enabled;
-            var ckbox = spawn('input.image-host-enabled', {
+            var ckbox = spawn('input.command-enabled', {
                 type: 'checkbox',
                 checked: enabled,
                 value: enabled,
-                data: { id: item.id, name: item.name },
+                data: { name: item.name },
                 onchange: function(){
-                    // save the status when clicked
+                /*    // save the status when clicked
                     var checkbox = this;
                     enabled = checkbox.checked;
                     XNAT.xhr.put({
-                        url: xapiUrl(item.id),
+                        url: scpUrl(item.id + '/enabled/' + enabled),
                         success: function(){
                             var status = (enabled ? ' enabled' : ' disabled');
                             checkbox.value = enabled;
-                            XNAT.ui.banner.top(1000, '<b>' + item.name + '</b> ' + status, 'success');
+                            XNAT.ui.banner.top(1000, '<b>' + item.aeTitle + '</b> ' + status, 'success');
+                            console.log(item.aeTitle + status)
                         }
                     });
+                    */
                 }
             });
+
             return spawn('div.center', [
                 spawn('label.switchbox|title=' + item.name, [
                     ckbox,
@@ -206,46 +269,24 @@ var XNAT = getObject(XNAT || {});
             ]);
         }
 
-        function deleteButton(item){
-            return spawn('button.btn.sm.delete', {
-                onclick: function(){
-                    xmodal.confirm({
-                        height: 220,
-                        scroll: false,
-                        content: "" +
-                        "<p>Are you sure you'd like to delete the Container Host at <b>" + item.url + "</b>?</p>" +
-                        "<p><b>This action cannot be undone.</b></p>",
-                        okAction: function(){
-                            console.log('delete id ' + item.id);
-                            XNAT.xhr.delete({
-                                url: xapiUrl(item.id),
-                                success: function(){
-                                    console.log('"'+ item.url + '" deleted');
-                                    XNAT.ui.banner.top(1000, '<b>"'+ item.url + '"</b> deleted.', 'success');
-                                    refreshTable();
-                                }
-                            });
-                        }
-                    })
-                },
-                disabled: "disabled"
-            }, 'Delete');
-        }
-
-        imageListManager.getAll().done(function(data){
+        commandListManager.getAll().done(function(data){
             data = [].concat(data);
             data.forEach(function(item){
-                chTable.tr({ title: item.name, data: { id: item.id, name: item.name, url: item.url}})
-                    .td(['div.center'],item.id)
-                    .td([editLink(item, item.name)]).addClass('name')
-                    .td(item.url)
+                var xnatContexts = '';
+                item.xnat = [].concat(item.xnat);
+                [item.xnat].forEach(function(innerItem,i){
+                    if (xnatContexts.length > 0) xnatContexts += '<br>';
+                    xnatContexts += innerItem[i].description;
+                });
+                chTable.tr({ title: item.name, data: { id: item.id, name: item.name, image: item.image}})
+                    .td([viewLink(item, item.name)]).addClass('name')
+                    // .td(item.name).addClass('name')
+                    .td(xnatContexts)
+                    .td(item.version)
+                    .td(item.image)
                     .td([enabledCheckbox(item)]).addClass('status')
-                    .td([['div.center', [editButton(item), spacer(10), deleteButton(item)]]]);
+                    .td();
             });
-
-            if (imageList){
-                $$(imageList).append(chTable.table);
-            }
 
             if (isFunction(callback)) {
                 callback(chTable.table);
@@ -253,34 +294,34 @@ var XNAT = getObject(XNAT || {});
 
         });
 
-        imageListManager.$table = $(chTable.table);
+        commandListManager.$table = $(chTable.table);
 
         return chTable.table;
     };
 
-    imageListManager.init = function(container){
+    imageFilterManager.init = function(container){
 
-        var $manager = $$(container||'div#image-host-manager');
+        var $manager = $$(container||'div#image-filter-bar');
 
-        imageListManager.container = $manager;
+        imageFilterManager.container = $manager;
 
-        $manager.append(imageListManager.table());
+//        $manager.append(imageListManager.table());
         // imageListManager.table($manager);
 
-        var newReceiver = spawn('button.new-image-host.btn.btn-sm.submit', {
-            html: 'New Image Hub',
+        var newImage = spawn('button.new-image.btn.btn-sm.submit', {
+            html: 'Add New Image',
             onclick: function(){
-                imageListManager.dialog(null, true);
+                addImage.dialog(null);
             }
         });
 
 
 
         // add the 'add new' button at the bottom
-        $manager.append(spawn('div', [
-            newReceiver,
-            ['div.clear.clearfix']
+        $manager.append(spawn('div.pull-right', [
+            newImage
         ]));
+        $manager.append(spawn('div.clear.clearfix'));
 
         return {
             element: $manager[0],
@@ -291,6 +332,25 @@ var XNAT = getObject(XNAT || {});
         };
     };
 
+    imageListManager.init = function(container){
+        var $manager = $$(container||'div#image-list-container');
+
+        imageListManager.container = $manager;
+
+        imageListManager.getAll().done(function(data){
+            data = [].concat(data);
+            [data].forEach(function(item){
+                var imageInfo = item[0];
+//                var imageContainer = "<div><h3>"+ item.tags[0] +"</h3></div>";
+                $manager.append(spawn('div.imageContainer',[
+                    ['h3.imageTitle',imageInfo.tags[0]],
+                    ['div.imageCommandList',[commandListManager.table()]]
+                ]));
+            });
+        });
+    };
+
+
     function refreshTable(){
         imageListManager.$table.remove();
         imageListManager.table(null, function(table){
@@ -298,10 +358,11 @@ var XNAT = getObject(XNAT || {});
         });
     }
 
-    imageListManager.refresh = refreshTable;
+    // imageListManager.refresh = refreshTable;
 
+    imageFilterManager.init();
     imageListManager.init();
 
-    return XNAT.admin.imageListManager = imageListManager;
+//    return XNAT.admin.imageListManager = imageListManager;
 
 }));

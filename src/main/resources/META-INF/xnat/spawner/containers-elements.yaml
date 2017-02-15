@@ -158,7 +158,7 @@ installedImagesPanel:
                                     name: save-commands
                                     value: true
         setCommandDefaults:
-            tag: "div#add-image-template.html-template"
+            tag: "div#set-command-defaults-template.html-template"
             contents:
                 setCommandDefaultForm:
                     kind: panel
@@ -179,7 +179,7 @@ installedImagesPanel:
         commandViewerTemplate:
             tag: "div#command-viewer-template.html-template"
             contents:
-                commandEditor:
+                commandViewer:
                     kind: panel
                     name: commandViewer
                     id: command-viewer
@@ -194,7 +194,8 @@ installedImagesPanel:
         imagePanelScript:
             tag: script|src="/scripts/xnat/admin/imageListManagement.js"
 #            tag: script|src="~/scripts/xnat/admin/imageListManagement.js"
-
+        panelStyleSheet:
+            tag: link|rel="stylesheet"|type="text/css"|href="/scripts/xnat/admin/imagePanelStyle.css"
 
 
 #################################################
