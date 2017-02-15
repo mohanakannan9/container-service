@@ -67,4 +67,21 @@ public class HibernateDockerHubService
     private void setDefault(final DockerHubEntity dockerHubEntity, final String username, final String reason) {
         containerConfigService.setDefaultDockerHubId(dockerHubEntity.getId(), username, reason);
     }
+
+    private boolean isDefault(final long id) {
+        return containerConfigService.getDefaultDockerHubId() == id;
+    }
+
+    @Override
+    public void delete(final DockerHub dockerHub) throws DockerHubDeleteException {
+        delete(retrieve(dockerHub.id()));
+    }
+
+    @Override
+    public void delete(final DockerHubEntity entity) throws DockerHubDeleteException {
+        if (isDefault(entity.getId())) {
+            throw new DockerHubDeleteException("Cannot delete default docker hub. Make another hub default first.");
+        }
+        super.delete(entity);
+    }
 }
