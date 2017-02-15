@@ -12,6 +12,5 @@ public interface DockerHubService extends BaseHibernateService<DockerHubEntity> 
     DockerHub create(DockerHub dockerHub);
 
     DockerHub getDefault() throws NotFoundException;
-    void setDefault(long hubId, String username, String reason) throws NotFoundException;
     void setDefault(DockerHub dockerHub, String username, String reason);
 }

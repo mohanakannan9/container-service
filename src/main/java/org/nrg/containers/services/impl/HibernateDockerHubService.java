@@ -7,7 +7,6 @@ import org.nrg.containers.model.auto.DockerHub;
 import org.nrg.containers.services.ContainerConfigService;
 import org.nrg.containers.services.DockerHubService;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
-import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -57,11 +56,6 @@ public class HibernateDockerHubService
     @Override
     public DockerHub getDefault() throws NotFoundException {
         return get(containerConfigService.getDefaultDockerHubId());
-    }
-
-    @Override
-    public void setDefault(final long hubId, final String username, final String reason) throws NotFoundException {
-        setDefault(getEntity(hubId), username, reason);
     }
 
     @Override

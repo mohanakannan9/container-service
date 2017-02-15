@@ -46,9 +46,4 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
             log.error("Could not save default docker hub config.", e);
         }
     }
-
-    @Override
-    public void setDefaultDockerHubId(final long hubId, final String username) {
-        setDefaultDockerHubId(hubId, username, "");
-    }
 }
