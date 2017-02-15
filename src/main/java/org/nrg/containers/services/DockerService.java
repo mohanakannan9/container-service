@@ -3,9 +3,10 @@ package org.nrg.containers.services;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
+import org.nrg.containers.exceptions.NotUniqueException;
 import org.nrg.containers.model.Command;
-import org.nrg.containers.model.DockerHub;
 import org.nrg.containers.model.auto.DockerImage;
+import org.nrg.containers.model.DockerHubEntity;
 import org.nrg.containers.model.auto.DockerImageAndCommandSummary;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
@@ -13,10 +14,10 @@ import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import java.util.List;
 
 public interface DockerService {
-    List<DockerHub> getHubs();
-    DockerHub setHub(DockerHub hub);
+    List<DockerHubEntity> getHubs();
+    DockerHubEntity setHub(DockerHubEntity hub);
     String pingHub(Long hubId) throws DockerServerException, NoServerPrefException, NotFoundException;
-    String pingHub(DockerHub hub) throws DockerServerException, NoServerPrefException;
+    String pingHub(String hubName) throws DockerServerException, NoServerPrefException, NotUniqueException;
     DockerImage pullFromHub(Long hubId, String imageName, boolean saveCommands)
             throws DockerServerException, NoServerPrefException, NotFoundException;
     DockerImage pullFromHub(String imageName, boolean saveCommands)

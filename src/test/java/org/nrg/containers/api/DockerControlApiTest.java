@@ -16,7 +16,7 @@ import org.nrg.containers.config.DockerControlApiTestConfig;
 import org.nrg.containers.events.DockerContainerEvent;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.model.DockerHub;
+import org.nrg.containers.model.auto.DockerHub;
 import org.nrg.containers.model.auto.DockerImage;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.framework.scope.EntityId;
@@ -174,11 +174,7 @@ public class DockerControlApiTest {
 
     @Test
     public void testPingHub() throws Exception {
-        final DockerHub dockerHub = new DockerHub();
-        dockerHub.setUrl("https://index.docker.io/v1/");
-        dockerHub.setName("Docker Hub");
-
-        assertEquals("OK", controlApi.pingHub(dockerHub));
+        assertEquals("OK", controlApi.pingHub(DockerHub.DEFAULT));
     }
 
     @Test

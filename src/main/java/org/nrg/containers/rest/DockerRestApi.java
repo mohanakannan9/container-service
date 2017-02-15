@@ -11,8 +11,8 @@ import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.exceptions.UnauthorizedException;
 import org.nrg.containers.model.Command;
-import org.nrg.containers.model.DockerHub;
 import org.nrg.containers.model.auto.DockerImage;
+import org.nrg.containers.model.DockerHubEntity;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.model.auto.DockerImageAndCommandSummary;
 import org.nrg.containers.services.DockerService;
@@ -109,13 +109,13 @@ public class DockerRestApi extends AbstractXapiRestController {
 
     @RequestMapping(value = "/hubs", method = GET)
     @ResponseBody
-    public List<DockerHub> getHubs() {
+    public List<DockerHubEntity> getHubs() {
         return dockerService.getHubs();
     }
 
     @RequestMapping(value = "/hubs", method = POST)
     @ResponseBody
-    public ResponseEntity<DockerHub> setHub(final @RequestBody DockerHub hub)
+    public ResponseEntity<DockerHubEntity> setHub(final @RequestBody DockerHubEntity hub)
             throws NrgServiceRuntimeException, UnauthorizedException {
         final UserI userI = XDAT.getUserDetails();
         if (!getRoleHolder().isSiteAdmin(userI)) {
