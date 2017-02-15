@@ -61,13 +61,13 @@ public class DockerServiceImpl implements DockerService {
 
     @Override
     public String pingHub(final Long hubId) throws DockerServerException, NoServerPrefException, NotFoundException {
-        final DockerHub hub = dockerHubService.get(hubId);
+        final DockerHub hub = dockerHubService.getHub(hubId);
         return pingHub(hub);
     }
 
     @Override
     public String pingHub(final String hubName) throws DockerServerException, NoServerPrefException, NotUniqueException {
-        final DockerHub hub = dockerHubService.get(hubName);
+        final DockerHub hub = dockerHubService.getHub(hubName);
 
         return pingHub(hub);
     }
@@ -79,7 +79,7 @@ public class DockerServiceImpl implements DockerService {
     @Override
     public DockerImage pullFromHub(final Long hubId, final String imageName, final boolean saveCommands)
             throws DockerServerException, NoServerPrefException, NotFoundException {
-        final DockerHub hub = dockerHubService.get(hubId);
+        final DockerHub hub = dockerHubService.getHub(hubId);
         final DockerImage dockerImage = controlApi.pullAndReturnImage(imageName, hub);
         if (saveCommands) {
             saveFromImageLabels(imageName, dockerImage);

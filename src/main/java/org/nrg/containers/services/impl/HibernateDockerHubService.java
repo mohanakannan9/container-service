@@ -26,20 +26,16 @@ public class HibernateDockerHubService
     }
 
     @Override
-    public DockerHub get(final long hubId) throws NotFoundException {
-        return getEntity(hubId).toPojo();
-    }
-
-    private DockerHubEntity getEntity(final long hubId) throws NotFoundException {
-        final DockerHubEntity dockerHubEntity = retrieve(hubId);
-        if (dockerHubEntity == null) {
-            throw new NotFoundException(String.format("Hub with id %d not found", hubId));
+    public DockerHub getHub(final long hubId) throws NotFoundException {
+        try {
+            return get(hubId).toPojo();
+        } catch (org.nrg.framework.exceptions.NotFoundException e) {
+            throw new NotFoundException(e);
         }
-        return dockerHubEntity;
     }
 
     @Override
-    public DockerHub get(final String hubName) {
+    public DockerHub getHub(final String hubName) {
         final DockerHubEntity dockerHubEntity = getDao().findByName(hubName);
         return dockerHubEntity == null ? null : dockerHubEntity.toPojo();
     }
@@ -55,7 +51,7 @@ public class HibernateDockerHubService
 
     @Override
     public DockerHub getDefault() throws NotFoundException {
-        return get(containerConfigService.getDefaultDockerHubId());
+        return getHub(containerConfigService.getDefaultDockerHubId());
     }
 
     @Override

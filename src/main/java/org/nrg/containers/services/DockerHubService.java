@@ -6,8 +6,8 @@ import org.nrg.containers.model.auto.DockerHub;
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
 
 public interface DockerHubService extends BaseHibernateService<DockerHubEntity> {
-    DockerHub get(long hubId) throws NotFoundException;
-    DockerHub get(String hubName);
+    DockerHub getHub(long hubId) throws NotFoundException;
+    DockerHub getHub(String hubName);
 
     DockerHub create(DockerHub dockerHub);
 
