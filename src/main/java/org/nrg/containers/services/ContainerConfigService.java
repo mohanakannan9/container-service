@@ -1,8 +1,6 @@
 package org.nrg.containers.services;
 
-import org.nrg.containers.exceptions.NotFoundException;
-
 public interface ContainerConfigService {
-    long getDefaultDockerHubId() throws NotFoundException;
+    long getDefaultDockerHubId();
     void setDefaultDockerHubId(long hubId, String username, String reason);
 }

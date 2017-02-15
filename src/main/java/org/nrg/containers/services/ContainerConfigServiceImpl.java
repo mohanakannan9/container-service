@@ -4,7 +4,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
-import org.nrg.containers.exceptions.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -22,7 +21,7 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
     }
 
     @Override
-    public long getDefaultDockerHubId() throws NotFoundException {
+    public long getDefaultDockerHubId() {
         final Configuration defaultDockerHubConfig = configService.getConfig(TOOL_ID, DEFAULT_DOCKER_HUB_PATH);
         long id = 0L;
         if (defaultDockerHubConfig != null) {
