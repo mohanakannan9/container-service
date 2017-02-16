@@ -122,17 +122,13 @@ public class DockerControlApi implements ContainerControlApi {
     @Override
     public String pingHub(final DockerHub hub) throws DockerServerException, NoServerPrefException {
         try (final DockerClient client = getClient()) {
-            client.pull("connectioncheckonly", registryAuth(hub));
-        }
-        catch (ImageNotFoundException imageNotFoundException){
-            // Expected result: Hub found, bogus image not found
-            return "OK";
+            client.auth(registryAuth(hub));
         }
         catch (Exception e) {
             log.error(e.getMessage());
             throw new DockerServerException(e);
         }
-        return null;
+        return "OK";
     }
 
     private RegistryAuth registryAuth(final DockerHub hub) {
