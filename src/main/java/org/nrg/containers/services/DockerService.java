@@ -18,7 +18,9 @@ public interface DockerService {
     DockerHubEntity setHub(DockerHubEntity hub);
     String pingHub(Long hubId) throws DockerServerException, NoServerPrefException, NotFoundException;
     String pingHub(String hubName) throws DockerServerException, NoServerPrefException, NotUniqueException;
-    DockerImage pullFromHub(Long hubId, String imageName, boolean saveCommands)
+    DockerImage pullFromHub(long hubId, String imageName, boolean saveCommands)
+            throws DockerServerException, NoServerPrefException, NotFoundException;
+    DockerImage pullFromHub(String hubName, String imageName, boolean saveCommands)
             throws DockerServerException, NoServerPrefException, NotFoundException;
     DockerImage pullFromHub(String imageName, boolean saveCommands)
             throws DockerServerException, NoServerPrefException, NotFoundException;

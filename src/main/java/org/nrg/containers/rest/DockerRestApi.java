@@ -132,7 +132,7 @@ public class DockerRestApi extends AbstractXapiRestController {
     }
 
     @RequestMapping(value = "/hubs/{id}/pull", params = {"image"}, method = POST)
-    public void pullImageFromHub(final @PathVariable Long hubId,
+    public void pullImageFromHub(final @PathVariable long hubId,
                                  final @RequestParam(value = "image") String image,
                                  final @RequestParam(value = "save-commands", defaultValue = "true")
                                              Boolean saveCommands)

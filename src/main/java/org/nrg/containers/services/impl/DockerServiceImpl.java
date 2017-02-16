@@ -77,21 +77,27 @@ public class DockerServiceImpl implements DockerService {
     }
 
     @Override
-    public DockerImage pullFromHub(final Long hubId, final String imageName, final boolean saveCommands)
+    public DockerImage pullFromHub(final long hubId, final String imageName, final boolean saveCommands)
             throws DockerServerException, NoServerPrefException, NotFoundException {
-        final DockerHub hub = dockerHubService.getHub(hubId);
-        final DockerImage dockerImage = controlApi.pullAndReturnImage(imageName, hub);
-        if (saveCommands) {
-            saveFromImageLabels(imageName, dockerImage);
-        }
-        return dockerImage;
+        return pullFromHub(dockerHubService.getHub(hubId), imageName, saveCommands);
+    }
+
+    @Override
+    public DockerImage pullFromHub(final String hubName, final String imageName, final boolean saveCommands)
+            throws DockerServerException, NoServerPrefException, NotFoundException {
+        return pullFromHub(dockerHubService.getHub(hubName), imageName, saveCommands);
     }
 
     @Override
     public DockerImage pullFromHub(final String imageName, final boolean saveCommands)
-            throws DockerServerException, NoServerPrefException {
-        // TODO migrate this to use pullfromHub(defaultHubId, imageName, saveCommands)
-        final DockerImage dockerImage = controlApi.pullAndReturnImage(imageName);
+            throws DockerServerException, NoServerPrefException, NotFoundException {
+
+        return pullFromHub(dockerHubService.getDefault(), imageName, saveCommands);
+    }
+
+    private DockerImage pullFromHub(final DockerHub hub, final String imageName, final boolean saveCommands)
+            throws NoServerPrefException, DockerServerException {
+        final DockerImage dockerImage = controlApi.pullAndReturnImage(imageName, hub);
         if (saveCommands) {
             saveFromImageLabels(imageName, dockerImage);
         }
