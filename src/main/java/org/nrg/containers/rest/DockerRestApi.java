@@ -188,7 +188,7 @@ public class DockerRestApi extends AbstractXapiRestController {
         dockerService.pullFromHub(hubId, image, saveCommands);
     }
 
-    @RequestMapping(value = "/images/pull", params = {"image"}, method = POST)
+    @RequestMapping(value = "/pull", params = {"image"}, method = POST)
     public void pullImageFromDefaultHub(final @RequestParam(value = "image") String image,
                                         final @RequestParam(value = "save-commands", defaultValue = "true")
                                                 Boolean saveCommands)
