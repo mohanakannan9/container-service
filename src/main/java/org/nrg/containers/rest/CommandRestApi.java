@@ -80,9 +80,9 @@ public class CommandRestApi extends AbstractXapiRestController {
     @RequestMapping(value = {}, method = GET)
     @ApiOperation(value = "Get Commands by criteria")
     @ResponseBody
-    public List<Command> getCommands(final @RequestParam String name,
-                                     final @RequestParam String version,
-                                     final @RequestParam String image) throws BadRequestException {
+    public List<Command> getCommands(final @RequestParam(required = false) String name,
+                                     final @RequestParam(required = false) String version,
+                                     final @RequestParam(required = false) String image) throws BadRequestException {
 
 
         if (StringUtils.isBlank(name) && StringUtils.isBlank(version) && StringUtils.isBlank(image)) {
@@ -173,7 +173,7 @@ public class CommandRestApi extends AbstractXapiRestController {
     @ApiIgnore // Swagger UI does not correctly show this API endpoint
     @ResponseBody
     public String launchCommandWQueryParams(final @PathVariable Long id,
-                                                        final @RequestParam Map<String, String> allRequestParams)
+                                            final @RequestParam Map<String, String> allRequestParams)
             throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException {
         log.info("Launch requested for command id " + String.valueOf(id));
         final ContainerExecution executed = launchCommand(id, allRequestParams);
@@ -184,7 +184,7 @@ public class CommandRestApi extends AbstractXapiRestController {
     @ApiOperation(value = "Resolve a command from the variable values in the request body, and launch it")
     @ResponseBody
     public String launchCommandWJsonBody(final @PathVariable Long id,
-                                                     final @RequestBody Map<String, String> allRequestParams)
+                                         final @RequestBody Map<String, String> allRequestParams)
             throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException {
         log.info("Launch requested for command id " + String.valueOf(id));
         final ContainerExecution executed = launchCommand(id, allRequestParams);
