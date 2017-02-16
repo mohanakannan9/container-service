@@ -47,7 +47,7 @@ public class DockerControlApiTest {
     private static DockerClient client;
 
     private static final String BUSYBOX_LATEST = "busybox:latest";
-    private static final String UBUNTU_LATEST = "ubuntu:latest";
+    private static final String ALPINE_LATEST = "alpine:latest";
     // private static final String KELSEYM_PYDICOM = "kelseym/pydicom:latest";
     private static final String BUSYBOX_ID = "sha256:47bcc53f74dc94b1920f0b34f6036096526296767650f223433fe65c35f149eb";
     private static final String BUSYBOX_NAME = "busybox:1.24.2-uclibc";
@@ -121,12 +121,12 @@ public class DockerControlApiTest {
     @Test
     public void testGetAllImages() throws Exception {
         client.pull(BUSYBOX_LATEST);
-        client.pull(UBUNTU_LATEST);
+        client.pull(ALPINE_LATEST);
         final List<DockerImage> images = controlApi.getAllImages();
 
         final List<String> imageNames = imagesToTags(images);
         assertThat(BUSYBOX_LATEST, isIn(imageNames));
-        assertThat(UBUNTU_LATEST, isIn(imageNames));
+        assertThat(ALPINE_LATEST, isIn(imageNames));
     }
 
     private List<String> imagesToTags(final List<DockerImage> images) {
