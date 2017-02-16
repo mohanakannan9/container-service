@@ -5,8 +5,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import org.nrg.containers.helpers.CommandLabelHelper;
 import org.nrg.containers.model.Command;
-import org.nrg.containers.model.XnatCommandWrapper;
+import org.nrg.containers.model.DockerImage;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -14,84 +15,63 @@ import java.util.Set;
 
 @AutoValue
 public abstract class DockerImageAndCommandSummary {
-    @JsonProperty("names") public abstract Set<String> imageNames();
+    @Nullable @JsonProperty("image-id") public abstract String imageId();
     @Nullable @JsonProperty("server") public abstract String server();
-    @JsonProperty("commands") public abstract List<CommandSummary> commandSummaries();
+    @JsonProperty("names") public abstract Set<String> imageNames();
+    @JsonProperty("commands") public abstract List<CommandPojo> commands();
 
     @JsonCreator
-    public static DockerImageAndCommandSummary create(@JsonProperty("names") final Set<String> imageNames,
+    public static DockerImageAndCommandSummary create(@JsonProperty("image-id") final String imageId,
                                                       @JsonProperty("server") final String server,
-                                                      @JsonProperty("commands") final List<CommandSummary> commandSummaries) {
+                                                      @JsonProperty("names") final Set<String> imageNames,
+                                                      @JsonProperty("commands") final List<CommandPojo> commands) {
         return new AutoValue_DockerImageAndCommandSummary(
-                imageNames == null ? Sets.<String>newHashSet() : imageNames,
+                imageId == null ? "" : imageId,
                 server,
-                commandSummaries == null ? Lists.<CommandSummary>newArrayList() : commandSummaries);
+                imageNames == null ? Sets.<String>newHashSet() : imageNames,
+                commands == null ? Lists.<CommandPojo>newArrayList() : commands);
     }
 
-    public static DockerImageAndCommandSummary create(final Command command, final String server) {
-        final DockerImageAndCommandSummary created = new AutoValue_DockerImageAndCommandSummary(Sets.<String>newHashSet(), server, Lists.<CommandSummary>newArrayList());
+    public static DockerImageAndCommandSummary create(final DockerImage dockerImage, final String server) {
+        final DockerImageAndCommandSummary created = create(
+                dockerImage.getImageId(),
+                server,
+                dockerImage.getTags() == null ? Sets.<String>newHashSet() : Sets.newHashSet(dockerImage.getTags()),
+                Lists.<CommandPojo>newArrayList());
 
-        created.addCommandSummary(command);
+        CommandLabelHelper.parseLabels(null, dockerImage);
 
         return created;
     }
 
-    public void addCommandSummary(final Command command) {
-        imageNames().add(command.getImage());
-        commandSummaries().add(CommandSummary.create(command));
+    public static DockerImageAndCommandSummary create(final Command command, final String server) {
+        final DockerImageAndCommandSummary created = create("", server, Sets.<String>newHashSet(), Lists.<CommandPojo>newArrayList());
+
+        created.addCommand(CommandPojo.create(command));
+
+        return created;
     }
 
-    @AutoValue
-    static abstract class CommandSummary {
-        @JsonProperty("id") public abstract long id();
-        @Nullable @JsonProperty("name") public abstract String name();
-        @Nullable @JsonProperty("version") public abstract String version();
-        @JsonProperty("wrappers") public abstract List<XnatCommandWrapperSummary> xnatCommandWrapperSummaries();
+    public static DockerImageAndCommandSummary create(final CommandPojo command, final String server) {
+        final DockerImageAndCommandSummary created = create("", server, Sets.<String>newHashSet(), Lists.<CommandPojo>newArrayList());
 
-        @JsonCreator
-        static CommandSummary create(@JsonProperty("id") final long id,
-                                     @JsonProperty("name") final String name,
-                                     @JsonProperty("version") final String version,
-                                     @JsonProperty("wrappers") final List<XnatCommandWrapperSummary> wrappers) {
-            return new AutoValue_DockerImageAndCommandSummary_CommandSummary(id, name, version,
-                    wrappers == null ? Lists.<XnatCommandWrapperSummary>newArrayList() : wrappers);
-        }
+        created.addCommand(command);
 
-        static CommandSummary create(final Command command) {
-            final CommandSummary created =
-                    new AutoValue_DockerImageAndCommandSummary_CommandSummary(
-                            command.getId(),
-                            command.getName(),
-                            command.getVersion(),
-                            Lists.<XnatCommandWrapperSummary>newArrayList());
-            if (command.getXnatCommandWrappers() != null) {
-                for (final XnatCommandWrapper xnatCommandWrapper : command.getXnatCommandWrappers()) {
-                    created.xnatCommandWrapperSummaries().add(XnatCommandWrapperSummary.create(xnatCommandWrapper));
-                }
-            }
-            return created;
+        return created;
+    }
+
+    public void addCommands(final List<CommandPojo> commands) {
+        for (final CommandPojo command : commands) {
+            addCommand(command);
         }
     }
 
-    @AutoValue
-    static abstract class XnatCommandWrapperSummary {
-        @JsonProperty("id") public abstract long id();
-        @Nullable @JsonProperty("name") public abstract String name();
-        @Nullable @JsonProperty("contexts") public abstract Set<String> contexts();
+    public void addCommand(final CommandPojo command) {
+        imageNames().add(command.image());
+        commands().add(command);
+    }
 
-        @JsonCreator
-        static XnatCommandWrapperSummary create(@JsonProperty("id") final long id,
-                                                @JsonProperty("name") final String name,
-                                                @JsonProperty("contexts") final Set<String> contexts) {
-            return new AutoValue_DockerImageAndCommandSummary_XnatCommandWrapperSummary(id, name, contexts);
-        }
-
-        static XnatCommandWrapperSummary create(final XnatCommandWrapper xnatCommandWrapper) {
-            return new AutoValue_DockerImageAndCommandSummary_XnatCommandWrapperSummary(
-                    xnatCommandWrapper.getId(),
-                    xnatCommandWrapper.getName(),
-                    //xnatCommandWrapper.getContexts()); TODO
-                    Sets.newHashSet("I am not storing contexts for the wrappers yet"));
-        }
+    public void addCommand(final Command command) {
+        addCommand(CommandPojo.create(command));
     }
 }

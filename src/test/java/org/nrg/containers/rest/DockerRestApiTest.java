@@ -46,22 +46,22 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isIn;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.anyList;
+import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.nrg.containers.api.ContainerControlApi.LABEL_KEY;
+import static org.nrg.containers.helpers.CommandLabelHelper.LABEL_KEY;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.testSecurityContext;
@@ -284,14 +284,14 @@ public class DockerRestApiTest {
                         "\"command-line\": \"#CMD#\"," +
                         "\"inputs\": [{\"name\": \"CMD\", \"description\": \"Command to run\", \"required\": true}]}";
         final CommandPojo expected = mapper.readValue(labelTestCommandJson, CommandPojo.class);
-        final List<CommandPojo> expectedList = Lists.newArrayList(expected);
         final List<Command> toReturnList = Lists.newArrayList(Command.commandPojoToCommand(expected));
 
         final Map<String, String> imageLabels = Maps.newHashMap();
         imageLabels.put(LABEL_KEY, "[" + labelTestCommandJson + "]");
 
-        doReturn(expectedList).when(mockContainerControlApi).parseLabels(fakeImageId);
-        when(mockCommandService.save(expectedList)).thenReturn(toReturnList);
+        final DockerImage dockerImage = new DockerImage(fakeImageId, null, imageLabels);
+        doReturn(dockerImage).when(mockContainerControlApi).getImageById(fakeImageId);
+        when(mockCommandService.save(anyListOf(CommandPojo.class))).thenReturn(toReturnList);
 
         final String path = "/docker/images/save";
         final MockHttpServletRequestBuilder request =
@@ -364,8 +364,9 @@ public class DockerRestApiTest {
         final Map<String, String> imageLabels = Maps.newHashMap();
         imageLabels.put(LABEL_KEY, labelTestCommandListJson);
 
-        doReturn(expectedList).when(mockContainerControlApi).parseLabels(fakeImageId);
-        when(mockCommandService.save(expectedList)).thenReturn(toReturnList);
+        final DockerImage dockerImage = new DockerImage(fakeImageId, null, imageLabels);
+        doReturn(dockerImage).when(mockContainerControlApi).getImageById(fakeImageId);
+        when(mockCommandService.save(anyListOf(CommandPojo.class))).thenReturn(toReturnList);
 
         final String path = "/docker/images/save";
         final MockHttpServletRequestBuilder request =

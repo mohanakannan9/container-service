@@ -20,8 +20,6 @@ import java.util.List;
 import java.util.Map;
 
 public interface ContainerControlApi {
-    String LABEL_KEY = "org.nrg.commands";
-
     DockerServer getServer() throws NoServerPrefException;
     DockerServer setServer(String host, String certPath) throws InvalidPreferenceName;
     DockerServer setServer(DockerServer server) throws InvalidPreferenceName;
@@ -49,7 +47,6 @@ public interface ContainerControlApi {
 
     List<CommandPojo> parseLabels(final String imageName)
             throws DockerServerException, NoServerPrefException, NotFoundException;
-    List<CommandPojo> parseLabels(final String imageName, final DockerImage dockerImage);
 
     List<Container> getAllContainers() throws NoServerPrefException, DockerServerException;
     List<Container> getContainers(final Map<String, String> params) throws NoServerPrefException, DockerServerException;

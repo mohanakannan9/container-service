@@ -6,6 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
+import org.nrg.containers.helpers.CommandLabelHelper;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.DockerHub;
 import org.nrg.containers.model.DockerImage;
@@ -144,8 +145,10 @@ public class DockerServiceImpl implements DockerService {
             }
         }
 
-        // And store the summaries indexed by image
+        // Store the summaries indexed by image
         final Map<DockerImage, DockerImageAndCommandSummary> imageToImageSummaryMap = Maps.newHashMap();
+
+        // First, add all images that are referred to by commands
         final List<Command> commands = commandService.getAll();
         if (commands != null) {
             for (final Command command : commands) {
@@ -164,12 +167,19 @@ public class DockerServiceImpl implements DockerService {
                     } else {
                         // We do have the image, so either make a new summary for it or add this command to an existing summary
                         if (imageToImageSummaryMap.containsKey(dockerImage)) {
-                            imageToImageSummaryMap.get(dockerImage).addCommandSummary(command);
+                            imageToImageSummaryMap.get(dockerImage).addCommand(command);
                         } else {
                             imageToImageSummaryMap.put(dockerImage, DockerImageAndCommandSummary.create(command, server));
                         }
                     }
                 }
+            }
+        }
+
+        // Now add all the other images that have no commands
+        for (final DockerImage image : rawImages) {
+            if (!imageToImageSummaryMap.containsKey(image)) {
+                imageToImageSummaryMap.put(image, null);
             }
         }
 
@@ -192,20 +202,17 @@ public class DockerServiceImpl implements DockerService {
 
     @Override
     public List<Command> saveFromImageLabels(final String imageName) throws DockerServerException, NotFoundException, NoServerPrefException {
-        if (log.isDebugEnabled()) {
-            log.debug("Parsing labels for " + imageName);
-        }
-        final List<CommandPojo> parsed = controlApi.parseLabels(imageName);
-
-        if (log.isDebugEnabled()) {
-            log.debug("Saving commands from image labels");
-        }
-        return commandService.save(parsed);
+        return saveFromImageLabels(imageName, controlApi.getImageById(imageName));
     }
 
     private List<Command> saveFromImageLabels(final String imageName, final DockerImage dockerImage) {
-//        commandService.saveFromLabels(imageId);
-        final List<CommandPojo> parsed = controlApi.parseLabels(imageName, dockerImage);
+        if (log.isDebugEnabled()) {
+            log.debug("Parsing labels for " + imageName);
+        }
+        final List<CommandPojo> parsed = CommandLabelHelper.parseLabels(imageName, dockerImage);
+        if (log.isDebugEnabled()) {
+            log.debug("Saving commands from image labels");
+        }
         return commandService.save(parsed);
     }
 }
