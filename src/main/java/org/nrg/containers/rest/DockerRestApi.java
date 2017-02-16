@@ -12,8 +12,8 @@ import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.exceptions.UnauthorizedException;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.auto.DockerImage;
-import org.nrg.containers.model.DockerHubEntity;
 import org.nrg.containers.model.DockerServer;
+import org.nrg.containers.model.auto.DockerHub;
 import org.nrg.containers.model.auto.DockerImageAndCommandSummary;
 import org.nrg.containers.services.DockerService;
 import org.nrg.framework.annotations.XapiRestController;
@@ -109,19 +109,19 @@ public class DockerRestApi extends AbstractXapiRestController {
 
     @RequestMapping(value = "/hubs", method = GET)
     @ResponseBody
-    public List<DockerHubEntity> getHubs() {
+    public List<DockerHub> getHubs() {
         return dockerService.getHubs();
     }
 
     @RequestMapping(value = "/hubs", method = POST)
     @ResponseBody
-    public ResponseEntity<DockerHubEntity> setHub(final @RequestBody DockerHubEntity hub)
+    public ResponseEntity<DockerHub> setHub(final @RequestBody DockerHub hub)
             throws NrgServiceRuntimeException, UnauthorizedException {
         final UserI userI = XDAT.getUserDetails();
         if (!getRoleHolder().isSiteAdmin(userI)) {
             throw new UnauthorizedException(String.format("User %s is not an admin.", userI.getLogin()));
         }
-        return new ResponseEntity<>(dockerService.setHub(hub), HttpStatus.CREATED);
+        return new ResponseEntity<>(dockerService.createHub(hub), HttpStatus.CREATED);
     }
 
     @RequestMapping(value = "/hubs/{id}/ping", method = GET)

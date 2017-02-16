@@ -1,5 +1,6 @@
 package org.nrg.containers.services.impl;
 
+import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
@@ -26,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 
@@ -50,12 +52,18 @@ public class DockerServiceImpl implements DockerService {
     }
 
     @Override
-    public List<DockerHubEntity> getHubs() {
-        return dockerHubService.getAll();
+    public List<DockerHub> getHubs() {
+        return Lists.transform(dockerHubService.getAll(), new Function<DockerHubEntity, DockerHub>() {
+            @Nullable
+            @Override
+            public DockerHub apply(@Nullable final DockerHubEntity dockerHubEntity) {
+                return dockerHubEntity == null ? null : dockerHubEntity.toPojo();
+            }
+        });
     }
 
     @Override
-    public DockerHubEntity setHub(final DockerHubEntity hub)  {
+    public DockerHub createHub(final DockerHub hub)  {
         return dockerHubService.create(hub);
     }
 
