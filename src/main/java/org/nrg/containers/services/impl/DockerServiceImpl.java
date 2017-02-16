@@ -68,6 +68,13 @@ public class DockerServiceImpl implements DockerService {
     }
 
     @Override
+    public DockerHub createHubAndSetDefault(final DockerHub hub, final String username, final String reason)  {
+        final DockerHub created = dockerHubService.create(hub);
+        dockerHubService.setDefault(created, username, reason);
+        return created;
+    }
+
+    @Override
     public String pingHub(final Long hubId) throws DockerServerException, NoServerPrefException, NotFoundException {
         final DockerHub hub = dockerHubService.getHub(hubId);
         return pingHub(hub);

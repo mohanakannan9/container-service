@@ -115,13 +115,19 @@ public class DockerRestApi extends AbstractXapiRestController {
 
     @RequestMapping(value = "/hubs", method = POST)
     @ResponseBody
-    public ResponseEntity<DockerHub> setHub(final @RequestBody DockerHub hub)
+    public ResponseEntity<DockerHub> setHub(final @RequestBody DockerHub hub,
+                                            final @RequestParam(value = "default", defaultValue = "false") boolean setDefault,
+                                            final @RequestParam(value = "reason", defaultValue = "User request") String reason)
             throws NrgServiceRuntimeException, UnauthorizedException {
         final UserI userI = XDAT.getUserDetails();
         if (!getRoleHolder().isSiteAdmin(userI)) {
             throw new UnauthorizedException(String.format("User %s is not an admin.", userI.getLogin()));
         }
-        return new ResponseEntity<>(dockerService.createHub(hub), HttpStatus.CREATED);
+        if (setDefault) {
+            return new ResponseEntity<>(dockerService.createHub(hub), HttpStatus.CREATED);
+        } else {
+            return new ResponseEntity<>(dockerService.createHubAndSetDefault(hub, userI.getUsername(), reason), HttpStatus.CREATED);
+        }
     }
 
     @RequestMapping(value = "/hubs/{id}/ping", method = GET)

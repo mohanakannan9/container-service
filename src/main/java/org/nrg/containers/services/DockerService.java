@@ -16,6 +16,7 @@ import java.util.List;
 public interface DockerService {
     List<DockerHub> getHubs();
     DockerHub createHub(DockerHub hub);
+    DockerHub createHubAndSetDefault(DockerHub hub, String username, String reason);
     String pingHub(Long hubId) throws DockerServerException, NoServerPrefException, NotFoundException;
     String pingHub(String hubName) throws DockerServerException, NoServerPrefException, NotUniqueException;
     DockerImage pullFromHub(long hubId, String imageName, boolean saveCommands)
