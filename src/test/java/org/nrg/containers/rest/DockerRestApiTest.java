@@ -278,6 +278,8 @@ public class DockerRestApiTest {
     @Test
     @Transactional
     public void testSaveFromLabels() throws Exception {
+        final String path = "/docker/images/save";
+
         final String fakeImageId = "xnat/thisisfake";
         final String labelTestCommandJson =
                 "{\"name\": \"label-test\"," +
@@ -296,7 +298,6 @@ public class DockerRestApiTest {
         doReturn(dockerImage).when(mockContainerControlApi).getImageById(fakeImageId);
         when(mockCommandService.save(anyListOf(CommandPojo.class))).thenReturn(toReturnList);
 
-        final String path = "/docker/images/save";
         final MockHttpServletRequestBuilder request =
                 post(path).param("image", fakeImageId)
                         .with(authentication(ADMIN_AUTH))
@@ -328,6 +329,8 @@ public class DockerRestApiTest {
     @Test
     @Transactional
     public void testSaveFromLabels2() throws Exception {
+        final String path = "/docker/images/save";
+
         final String fakeImageId = "xnat/thisisfake";
         final String labelTestCommandListJson =
                 "[{\"name\":\"dcm2niix-scan\", \"description\":\"Run dcm2niix on a scan's DICOMs\", " +
@@ -371,7 +374,6 @@ public class DockerRestApiTest {
         doReturn(dockerImage).when(mockContainerControlApi).getImageById(fakeImageId);
         when(mockCommandService.save(anyListOf(CommandPojo.class))).thenReturn(toReturnList);
 
-        final String path = "/docker/images/save";
         final MockHttpServletRequestBuilder request =
                 post(path).param("image", fakeImageId)
                         .with(authentication(ADMIN_AUTH))
@@ -402,6 +404,8 @@ public class DockerRestApiTest {
 
     @Test
     public void testGetImages() throws Exception {
+        final String path = "/docker/images";
+
         final String fakeImageId = "sha256:some godawful hash";
         final String fakeImageName = "xnat/thisisfake";
         final DockerImage fakeDockerImage = DockerImage.create(fakeImageId, null, null);
@@ -409,7 +413,6 @@ public class DockerRestApiTest {
 
         doReturn(Lists.newArrayList(fakeDockerImage)).when(mockContainerControlApi).getAllImages();
 
-        final String path = "/docker/images";
         final MockHttpServletRequestBuilder request = get(path)
                 .with(authentication(NONADMIN_AUTH))
                 .with(csrf()).with(testSecurityContext());
@@ -466,6 +469,8 @@ public class DockerRestApiTest {
 
     @Test
     public void testGetImageSummaries() throws Exception {
+        final String path = "/docker/image-summaries";
+
         // Image exists on server, command refers to image
         final String imageWithSavedCommand_id = "sha256:some godawful hash";
         final String imageWithSavedCommand_name = "xnat/thisisfake";
@@ -515,7 +520,6 @@ public class DockerRestApiTest {
                 DockerImageAndCommandSummary.create(imageWithNonDbCommandLabels, MOCK_CONTAINER_SERVER_NAME)
         );
 
-        final String path = "/docker/image-summaries";
         final MockHttpServletRequestBuilder request = get(path)
                 .with(authentication(NONADMIN_AUTH))
                 .with(csrf()).with(testSecurityContext());
