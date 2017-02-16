@@ -80,9 +80,17 @@ public class DockerServiceImpl implements DockerService {
 
     @Override
     public DockerHub createHubAndSetDefault(final DockerHub hub, final String username, final String reason)  {
-        final DockerHub created = dockerHubService.create(hub);
-        dockerHubService.setDefault(created, username, reason);
-        return created;
+        return dockerHubService.createAndSetDefault(hub, username, reason);
+    }
+
+    @Override
+    public void updateHub(final DockerHub hub) {
+        dockerHubService.update(hub);
+    }
+
+    @Override
+    public void updateHubAndSetDefault(final DockerHub hub, final String username, final String reason) {
+        dockerHubService.updateAndSetDefault(hub, username, reason);
     }
 
     @Override

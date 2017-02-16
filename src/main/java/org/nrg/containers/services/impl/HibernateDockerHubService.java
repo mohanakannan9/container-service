@@ -42,36 +42,60 @@ public class HibernateDockerHubService
 
     @Override
     public DockerHub retrieveHub(final long id) {
-        return convert(retrieve(id));
+        return toPojo(retrieve(id));
     }
 
     @Override
     public DockerHub retrieveHub(final String name) throws NotUniqueException {
-        return convert(retrieve(name));
+        return toPojo(retrieve(name));
     }
 
     @Override
     public DockerHub getHub(final long id) throws NotFoundException {
         try {
-            return convert(get(id));
+            return toPojo(get(id));
         } catch (org.nrg.framework.exceptions.NotFoundException e) {
-            // TODO remove this when I convert to use the framework "get" - XNAT-4682
+            // TODO remove this when I toPojo to use the framework "get" - XNAT-4682
             throw new NotFoundException(e);
         }
     }
 
     @Override
     public DockerHub getHub(final String name) throws NotFoundException, NotUniqueException {
-        return convert(get(name));
+        return toPojo(get(name));
     }
 
     @Override
     public DockerHub create(final DockerHub dockerHub) {
-        final DockerHubEntity created = create(DockerHubEntity.fromPojo(dockerHub));
-        if (created == null) {
-            return null;
-        }
-        return created.toPojo();
+        return toPojo(create(fromPojo(dockerHub)));
+    }
+
+    @Override
+    public DockerHubEntity createAndSetDefault(final DockerHubEntity dockerHubEntity, final String username, final String reason) {
+        final DockerHubEntity created = create(dockerHubEntity);
+        setDefault(created, username, reason);
+        return created;
+    }
+
+    @Override
+    public DockerHub createAndSetDefault(final DockerHub dockerHub, final String username, final String reason) {
+        return toPojo(createAndSetDefault(fromPojo(dockerHub), username, reason));
+    }
+
+    @Override
+    public void update(final DockerHub dockerHub) {
+        update(fromPojo(dockerHub));
+    }
+
+    @Override
+    public void updateAndSetDefault(final DockerHubEntity dockerHubEntity, final String username, final String reason) {
+        update(dockerHubEntity);
+        setDefault(dockerHubEntity, username, reason);
+    }
+
+    @Override
+    public void updateAndSetDefault(final DockerHub dockerHub, final String username, final String reason) {
+        updateAndSetDefault(fromPojo(dockerHub), username, reason);
     }
 
     @Override
@@ -81,12 +105,7 @@ public class HibernateDockerHubService
 
     @Override
     public void setDefault(final DockerHub dockerHub, final String username, final String reason) {
-        DockerHubEntity dockerHubEntity = retrieve(dockerHub.id());
-        if (dockerHubEntity == null) {
-            dockerHubEntity = create(DockerHubEntity.fromPojo(dockerHub));
-        }
-
-        setDefault(dockerHubEntity, username, reason);
+        setDefault(fromPojo(dockerHub), username, reason);
     }
 
     private void setDefault(final DockerHubEntity dockerHubEntity, final String username, final String reason) {
@@ -111,8 +130,12 @@ public class HibernateDockerHubService
         super.delete(entity);
     }
 
-    private DockerHub convert(final DockerHubEntity dockerHubEntity) {
+    private DockerHub toPojo(final DockerHubEntity dockerHubEntity) {
         return dockerHubEntity == null ? null : dockerHubEntity.toPojo();
+    }
+
+    private DockerHubEntity fromPojo(final DockerHub dockerHub) {
+        return dockerHub == null ? null : DockerHubEntity.fromPojo(dockerHub);
     }
 
     private boolean isDefault(final long id) {

@@ -14,14 +14,19 @@ public interface DockerHubService extends BaseHibernateService<DockerHubEntity> 
     DockerHub getHub(long hubId) throws NotFoundException;
     DockerHub getHub(String hubName) throws NotFoundException, NotUniqueException;
 
+    void setDefault(DockerHub dockerHub, String username, String reason);
     DockerHub create(DockerHub dockerHub);
-
+    DockerHubEntity createAndSetDefault(DockerHubEntity dockerHubEntity, String username, String reason);
+    DockerHub createAndSetDefault(DockerHub dockerHub, String username, String reason);
+    void update(DockerHub dockerHub);
+    void updateAndSetDefault(DockerHubEntity dockerHubEntity, String username, String reason);
+    void updateAndSetDefault(DockerHub dockerHub, String username, String reason);
     void delete(long id) throws DockerHubDeleteDefaultException;
     void delete(String name) throws DockerHubDeleteDefaultException, NotUniqueException;
-    void delete(DockerHubEntity entity) throws DockerHubDeleteDefaultException;
 
+    void delete(DockerHubEntity entity) throws DockerHubDeleteDefaultException;
     DockerHub getDefault() throws NotFoundException;
-    void setDefault(DockerHub dockerHub, String username, String reason);
+
 
     class DockerHubDeleteDefaultException extends RuntimeException {
         public DockerHubDeleteDefaultException(final String message) {
