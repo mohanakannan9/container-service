@@ -36,7 +36,7 @@ import org.nrg.containers.helpers.CommandLabelHelper;
 import org.nrg.containers.model.Container;
 import org.nrg.containers.model.ContainerExecutionMount;
 import org.nrg.containers.model.DockerHub;
-import org.nrg.containers.model.DockerImage;
+import org.nrg.containers.model.auto.DockerImage;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.ResolvedDockerCommand;
@@ -737,7 +737,7 @@ public class DockerControlApi implements ContainerControlApi {
             return null;
         }
 
-        return new DockerImage(image.id(), image.repoTags(), image.labels());
+        return DockerImage.create(image.id(), image.repoTags(), image.labels());
     }
 
     /**
@@ -751,7 +751,7 @@ public class DockerControlApi implements ContainerControlApi {
             return null;
         }
 
-        return new DockerImage(image.id(), null, image.config().labels());
+        return DockerImage.create(image.id(), null, image.config().labels());
     }
 
     /**

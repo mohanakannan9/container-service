@@ -9,7 +9,7 @@ import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.helpers.CommandLabelHelper;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.DockerHub;
-import org.nrg.containers.model.DockerImage;
+import org.nrg.containers.model.auto.DockerImage;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.auto.CommandPojo;
 import org.nrg.containers.model.auto.DockerImageAndCommandSummary;
@@ -134,14 +134,14 @@ public class DockerServiceImpl implements DockerService {
         final Map<String, DockerImage> imagesByName = Maps.newHashMap();
         for (final DockerImage image : rawImages) {
             // final DockerImageWithCommandSummary imageWithCommandSummary = new DockerImageWithCommandSummary(image);
-            if (image.getTags() != null && !image.getTags().isEmpty()) {
-                for (final String tag : image.getTags()) {
+            if (image.tags() != null && !image.tags().isEmpty()) {
+                for (final String tag : image.tags()) {
                     imagesByName.put(tag, image);
                 }
             }
 
-            if (StringUtils.isNotBlank(image.getImageId())) {
-                imagesByName.put(image.getImageId(), image);
+            if (StringUtils.isNotBlank(image.imageId())) {
+                imagesByName.put(image.imageId(), image);
             }
         }
 
@@ -158,7 +158,7 @@ public class DockerServiceImpl implements DockerService {
                     if (dockerImage == null) {
                         // the command refers to some image we do not have
                         // Make a placeholder image
-                        final DockerImage unknownImage = new DockerImage();
+                        final DockerImage unknownImage = DockerImage.create(null, null, null);
                         unknownImage.addTag(imageNameUsedByTheCommand);
                         imagesByName.put(imageNameUsedByTheCommand, unknownImage);
 

@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.model.CommandType;
-import org.nrg.containers.model.DockerImage;
+import org.nrg.containers.model.auto.DockerImage;
 import org.nrg.containers.model.auto.CommandPojo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +25,7 @@ public class CommandLabelHelper {
     }
 
     public static List<CommandPojo> parseLabels(final String imageName, final DockerImage dockerImage, final ObjectMapper objectMapper) {
-        final Map<String, String> labels = dockerImage.getLabels();
+        final Map<String, String> labels = dockerImage.labels();
         if (labels != null && !labels.isEmpty() && labels.containsKey(LABEL_KEY)) {
             final String labelValue = labels.get(LABEL_KEY);
             if (StringUtils.isNotBlank(labelValue)) {
@@ -41,7 +41,7 @@ public class CommandLabelHelper {
                                     commandPojo.toBuilder()
                                             .type(CommandType.DOCKER.getName())
                                             .image(imageName)
-                                            .hash(dockerImage.getImageId())
+                                            .hash(dockerImage.imageId())
                                             .build()
                             );
                         }

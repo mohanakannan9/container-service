@@ -17,7 +17,7 @@ import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.CommandInput;
 import org.nrg.containers.model.DockerCommand;
-import org.nrg.containers.model.DockerImage;
+import org.nrg.containers.model.auto.DockerImage;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.XnatCommandWrapper;
@@ -53,7 +53,6 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.isIn;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -289,7 +288,7 @@ public class DockerRestApiTest {
         final Map<String, String> imageLabels = Maps.newHashMap();
         imageLabels.put(LABEL_KEY, "[" + labelTestCommandJson + "]");
 
-        final DockerImage dockerImage = new DockerImage(fakeImageId, null, imageLabels);
+        final DockerImage dockerImage = DockerImage.create(fakeImageId, null, imageLabels);
         doReturn(dockerImage).when(mockContainerControlApi).getImageById(fakeImageId);
         when(mockCommandService.save(anyListOf(CommandPojo.class))).thenReturn(toReturnList);
 
@@ -364,7 +363,7 @@ public class DockerRestApiTest {
         final Map<String, String> imageLabels = Maps.newHashMap();
         imageLabels.put(LABEL_KEY, labelTestCommandListJson);
 
-        final DockerImage dockerImage = new DockerImage(fakeImageId, null, imageLabels);
+        final DockerImage dockerImage = DockerImage.create(fakeImageId, null, imageLabels);
         doReturn(dockerImage).when(mockContainerControlApi).getImageById(fakeImageId);
         when(mockCommandService.save(anyListOf(CommandPojo.class))).thenReturn(toReturnList);
 
@@ -401,8 +400,7 @@ public class DockerRestApiTest {
     public void testGetImages() throws Exception {
         final String fakeImageId = "sha256:some godawful hash";
         final String fakeImageName = "xnat/thisisfake";
-        final DockerImage fakeDockerImage = new DockerImage();
-        fakeDockerImage.setImageId(fakeImageId);
+        final DockerImage fakeDockerImage = DockerImage.create(fakeImageId, null, null);
         fakeDockerImage.addTag(fakeImageName);
 
         doReturn(Lists.newArrayList(fakeDockerImage)).when(mockContainerControlApi).getAllImages();
@@ -428,8 +426,7 @@ public class DockerRestApiTest {
     public void testImageSummariesJsonRoundTrip() throws Exception {
         final String fakeImageId = "sha256:some godawful hash";
         final String fakeImageName = "xnat/thisisfake";
-        final DockerImage fakeDockerImage = new DockerImage();
-        fakeDockerImage.setImageId(fakeImageId);
+        final DockerImage fakeDockerImage = DockerImage.create(fakeImageId, null, null);
         fakeDockerImage.addTag(fakeImageName);
 
         final String fakeCommandName = "fake";
@@ -467,8 +464,7 @@ public class DockerRestApiTest {
     public void testGetImageSummaries() throws Exception {
         final String fakeImageId = "sha256:some godawful hash";
         final String fakeImageName = "xnat/thisisfake";
-        final DockerImage fakeDockerImage = new DockerImage();
-        fakeDockerImage.setImageId(fakeImageId);
+        final DockerImage fakeDockerImage = DockerImage.create(fakeImageId, null, null);
         fakeDockerImage.addTag(fakeImageName);
 
         final String fakeCommandName = "fake";

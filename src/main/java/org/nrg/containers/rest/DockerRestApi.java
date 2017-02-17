@@ -12,7 +12,7 @@ import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.exceptions.UnauthorizedException;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.DockerHub;
-import org.nrg.containers.model.DockerImage;
+import org.nrg.containers.model.auto.DockerImage;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.model.auto.DockerImageAndCommandSummary;
 import org.nrg.containers.services.DockerService;
