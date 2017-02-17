@@ -25,8 +25,10 @@ import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.XnatCommandWrapper;
 import org.nrg.containers.model.auto.CommandPojo;
+import org.nrg.containers.model.auto.DockerHub;
 import org.nrg.containers.model.auto.DockerImageAndCommandSummary;
 import org.nrg.containers.services.CommandService;
+import org.nrg.containers.services.DockerHubService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.xdat.security.services.RoleServiceI;
 import org.nrg.xdat.security.services.UserManagementServiceI;
@@ -110,6 +112,7 @@ public class DockerRestApiTest {
     @Autowired private CommandService mockCommandService;
     @Autowired private DockerServerPrefsBean mockDockerServerPrefsBean;
     @Autowired private UserManagementServiceI mockUserManagementServiceI;
+    @Autowired private DockerHubService mockDockerHubService;
 
     @Before
     public void setup() throws Exception {
@@ -174,10 +177,10 @@ public class DockerRestApiTest {
     @Test
     public void testSetServer() throws Exception {
 
+        final String path = "/docker/server";
+
         final String containerServerJson =
                 mapper.writeValueAsString(MOCK_CONTAINER_SERVER);
-
-        final String path = "/docker/server";
 
         final MockHttpServletRequestBuilder request =
                 post(path)
@@ -212,11 +215,10 @@ public class DockerRestApiTest {
 
     @Test
     public void testSetServerNonAdmin() throws Exception {
+        final String path = "/docker/server";
 
         final String containerServerJson =
                 mapper.writeValueAsString(MOCK_CONTAINER_SERVER);
-
-        final String path = "/docker/server";
 
         final MockHttpServletRequestBuilder request =
                 post(path)
@@ -273,6 +275,31 @@ public class DockerRestApiTest {
                         .getContentAsString();
         assertEquals("Set up Docker server before using this REST endpoint.",
                 failedDepResponse);
+    }
+
+    @Test
+    public void testGetHubs() throws Exception {
+        final String path = "/docker/hubs";
+
+        final MockHttpServletRequestBuilder request =
+                get(path)
+                        .with(authentication(NONADMIN_AUTH))
+                        .with(csrf())
+                        .with(testSecurityContext());
+
+        final DockerHub dockerHub = DockerHub.DEFAULT;
+        final DockerHub privateHub = DockerHub.create(10L, "my hub", "http://localhost", "me", "still me", "me@me.me");
+        final List<DockerHub> hubs = Lists.newArrayList(dockerHub, privateHub);
+        when(mockDockerHubService.getHubs()).thenReturn(hubs);
+
+        final String response =
+                mockMvc.perform(request)
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+        final List<DockerHub> responseList = mapper.readValue(response, new TypeReference<List<DockerHub>>(){});
+        assertEquals(hubs, responseList);
     }
 
     @Test

@@ -54,13 +54,7 @@ public class DockerServiceImpl implements DockerService {
 
     @Override
     public List<DockerHub> getHubs() {
-        return Lists.transform(dockerHubService.getAll(), new Function<DockerHubEntity, DockerHub>() {
-            @Nullable
-            @Override
-            public DockerHub apply(@Nullable final DockerHubEntity dockerHubEntity) {
-                return dockerHubEntity == null ? null : dockerHubEntity.toPojo();
-            }
-        });
+        return dockerHubService.getHubs();
     }
 
     @Override

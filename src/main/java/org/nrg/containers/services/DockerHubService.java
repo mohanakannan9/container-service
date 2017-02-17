@@ -6,6 +6,8 @@ import org.nrg.containers.model.DockerHubEntity;
 import org.nrg.containers.model.auto.DockerHub;
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
 
+import java.util.List;
+
 public interface DockerHubService extends BaseHibernateService<DockerHubEntity> {
     DockerHubEntity retrieve(String name) throws NotUniqueException;
     DockerHubEntity get(String name) throws NotUniqueException, NotFoundException;
@@ -13,6 +15,7 @@ public interface DockerHubService extends BaseHibernateService<DockerHubEntity> 
     DockerHub retrieveHub(String name) throws NotUniqueException;
     DockerHub getHub(long hubId) throws NotFoundException;
     DockerHub getHub(String hubName) throws NotFoundException, NotUniqueException;
+    List<DockerHub> getHubs();
 
     void setDefault(DockerHub dockerHub, String username, String reason);
     DockerHub create(DockerHub dockerHub);
@@ -26,7 +29,6 @@ public interface DockerHubService extends BaseHibernateService<DockerHubEntity> 
 
     void delete(DockerHubEntity entity) throws DockerHubDeleteDefaultException;
     DockerHub getDefault() throws NotFoundException;
-
 
     class DockerHubDeleteDefaultException extends RuntimeException {
         public DockerHubDeleteDefaultException(final String message) {

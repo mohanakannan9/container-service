@@ -1,5 +1,7 @@
 package org.nrg.containers.services.impl;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
 import org.nrg.containers.daos.DockerHubDao;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.exceptions.NotUniqueException;
@@ -12,6 +14,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import javax.annotation.Nullable;
+import java.util.List;
 
 @Service
 @Transactional
@@ -63,6 +68,11 @@ public class HibernateDockerHubService
     @Override
     public DockerHub getHub(final String name) throws NotFoundException, NotUniqueException {
         return toPojo(get(name));
+    }
+
+    @Override
+    public List<DockerHub> getHubs() {
+        return toPojo(getAll());
     }
 
     @Override
@@ -132,6 +142,17 @@ public class HibernateDockerHubService
 
     private DockerHub toPojo(final DockerHubEntity dockerHubEntity) {
         return dockerHubEntity == null ? null : dockerHubEntity.toPojo();
+    }
+
+    private List<DockerHub> toPojo(final List<DockerHubEntity> dockerHubEntityList) {
+        return dockerHubEntityList == null ? null :
+                Lists.transform(dockerHubEntityList, new Function<DockerHubEntity, DockerHub>() {
+                    @Nullable
+                    @Override
+                    public DockerHub apply(@Nullable final DockerHubEntity dockerHubEntity) {
+                        return toPojo(dockerHubEntity);
+                    }
+                });
     }
 
     private DockerHubEntity fromPojo(final DockerHub dockerHub) {
