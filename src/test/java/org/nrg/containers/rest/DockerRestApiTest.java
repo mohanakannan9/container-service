@@ -26,6 +26,7 @@ import org.nrg.containers.model.auto.DockerImageAndCommandSummary;
 import org.nrg.containers.services.CommandService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.xdat.security.services.RoleServiceI;
+import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -81,6 +82,11 @@ public class DockerRestApiTest {
     private final static String MOCK_CONTAINER_SERVER_NAME = "test server";
     private final static String MOCK_CONTAINER_HOST = "fake://host.url";
 
+    private final static String ADMIN_USERNAME = "admin";
+    private final static String NON_ADMIN_USERNAME = "non-admin";
+    private Authentication ADMIN_AUTH;
+    private Authentication NONADMIN_AUTH;
+
     private final static String MOCK_CONTAINER_CERT_PATH = "/path/to/file";
     private final static DockerServer MOCK_CONTAINER_SERVER =
             new DockerServer(MOCK_CONTAINER_SERVER_NAME, MOCK_CONTAINER_HOST, MOCK_CONTAINER_CERT_PATH);
@@ -100,10 +106,27 @@ public class DockerRestApiTest {
     @Autowired private RoleServiceI mockRoleService;
     @Autowired private CommandService mockCommandService;
     @Autowired private DockerServerPrefsBean mockDockerServerPrefsBean;
+    @Autowired private UserManagementServiceI mockUserManagementServiceI;
 
     @Before
-    public void setup() {
+    public void setup() throws Exception {
         mockMvc = MockMvcBuilders.webAppContextSetup(wac).apply(springSecurity()).build();
+
+        final String adminPassword = "admin";
+        final UserI admin = mock(UserI.class);
+        when(admin.getLogin()).thenReturn(ADMIN_USERNAME);
+        when(admin.getPassword()).thenReturn(adminPassword);
+        when(mockRoleService.isSiteAdmin(admin)).thenReturn(true);
+        when(mockUserManagementServiceI.getUser(ADMIN_USERNAME)).thenReturn(admin);
+        ADMIN_AUTH = new TestingAuthenticationToken(admin, adminPassword);
+
+        final String nonAdminPassword = "non-admin-pass";
+        final UserI nonAdmin = mock(UserI.class);
+        when(nonAdmin.getLogin()).thenReturn(NON_ADMIN_USERNAME);
+        when(nonAdmin.getPassword()).thenReturn(nonAdminPassword);
+        when(mockRoleService.isSiteAdmin(nonAdmin)).thenReturn(false);
+        when(mockUserManagementServiceI.getUser(NON_ADMIN_USERNAME)).thenReturn(nonAdmin);
+        NONADMIN_AUTH = new TestingAuthenticationToken(NON_ADMIN_USERNAME, nonAdminPassword);
     }
 
     @Test
@@ -111,10 +134,9 @@ public class DockerRestApiTest {
 
         final String path = "/docker/server";
 
-        final Authentication authentication = new TestingAuthenticationToken("nonAdmin", "nonAdmin");
         final MockHttpServletRequestBuilder request =
                 get(path).accept(JSON)
-                        .with(authentication(authentication))
+                        .with(authentication(NONADMIN_AUTH))
                         .with(csrf())
                         .with(testSecurityContext());
 
@@ -154,18 +176,11 @@ public class DockerRestApiTest {
 
         final String path = "/docker/server";
 
-        final UserI admin = mock(UserI.class);
-        when(admin.getLogin()).thenReturn("admin");
-        when(admin.getPassword()).thenReturn("admin");
-        when(mockRoleService.isSiteAdmin(admin)).thenReturn(true);
-
-        final Authentication authentication = new TestingAuthenticationToken(admin, "admin");
-
         final MockHttpServletRequestBuilder request =
                 post(path)
                         .content(containerServerJson)
                         .contentType(JSON)
-                        .with(authentication(authentication))
+                        .with(authentication(ADMIN_AUTH))
                         .with(csrf())
                         .with(testSecurityContext());
 
@@ -200,17 +215,11 @@ public class DockerRestApiTest {
 
         final String path = "/docker/server";
 
-        final UserI nonAdmin = mock(UserI.class);
-        when(nonAdmin.getLogin()).thenReturn("nonAdmin");
-        when(nonAdmin.getPassword()).thenReturn("nonAdmin");
-        when(mockRoleService.isSiteAdmin(nonAdmin)).thenReturn(false);
-        final Authentication authentication = new TestingAuthenticationToken(nonAdmin, "nonAdmin");
-
         final MockHttpServletRequestBuilder request =
                 post(path)
                         .content(containerServerJson)
                         .contentType(JSON)
-                        .with(authentication(authentication))
+                        .with(authentication(NONADMIN_AUTH))
                         .with(csrf())
                         .with(testSecurityContext());
 
@@ -221,16 +230,15 @@ public class DockerRestApiTest {
                         .getResponse()
                         .getContentAsString();
 
-        assertThat(exceptionResponse, containsString("nonAdmin"));
+        assertThat(exceptionResponse, containsString(NON_ADMIN_USERNAME));
     }
 
     @Test
     public void testPingServer() throws Exception {
         final String path = "/docker/server/ping";
 
-        final Authentication authentication = new TestingAuthenticationToken("nonAdmin", "nonAdmin");
         final MockHttpServletRequestBuilder request =
-                get(path).with(authentication(authentication))
+                get(path).with(authentication(NONADMIN_AUTH))
                         .with(csrf()).with(testSecurityContext());
 
         doReturn("OK")
@@ -286,10 +294,9 @@ public class DockerRestApiTest {
         when(mockCommandService.save(expectedList)).thenReturn(toReturnList);
 
         final String path = "/docker/images/save";
-        final Authentication authentication = new TestingAuthenticationToken("nonAdmin", "nonAdmin");
         final MockHttpServletRequestBuilder request =
                 post(path).param("image", fakeImageId)
-                        .with(authentication(authentication))
+                        .with(authentication(ADMIN_AUTH))
                         .with(csrf()).with(testSecurityContext());
 
         final String responseStr =
@@ -361,10 +368,9 @@ public class DockerRestApiTest {
         when(mockCommandService.save(expectedList)).thenReturn(toReturnList);
 
         final String path = "/docker/images/save";
-        final Authentication authentication = new TestingAuthenticationToken("nonAdmin", "nonAdmin");
         final MockHttpServletRequestBuilder request =
                 post(path).param("image", fakeImageId)
-                        .with(authentication(authentication))
+                        .with(authentication(ADMIN_AUTH))
                         .with(csrf()).with(testSecurityContext());
 
         final String responseStr =
@@ -401,9 +407,8 @@ public class DockerRestApiTest {
         doReturn(Lists.newArrayList(fakeDockerImage)).when(mockContainerControlApi).getAllImages();
 
         final String path = "/docker/images";
-        final Authentication authentication = new TestingAuthenticationToken("nonAdmin", "nonAdmin");
         final MockHttpServletRequestBuilder request = get(path)
-                .with(authentication(authentication))
+                .with(authentication(NONADMIN_AUTH))
                 .with(csrf()).with(testSecurityContext());
 
         final String responseStr =
@@ -491,9 +496,8 @@ public class DockerRestApiTest {
         );
 
         final String path = "/docker/image-summaries";
-        final Authentication authentication = new TestingAuthenticationToken("nonAdmin", "nonAdmin");
         final MockHttpServletRequestBuilder request = get(path)
-                .with(authentication(authentication))
+                .with(authentication(NONADMIN_AUTH))
                 .with(csrf()).with(testSecurityContext());
 
         final String responseStr =
