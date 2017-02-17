@@ -2,6 +2,7 @@ package org.nrg.containers.services.impl;
 
 import org.nrg.containers.daos.DockerHubDao;
 import org.nrg.containers.exceptions.NotFoundException;
+import org.nrg.containers.exceptions.NotUniqueException;
 import org.nrg.containers.model.DockerHubEntity;
 import org.nrg.containers.model.auto.DockerHub;
 import org.nrg.containers.services.ContainerConfigService;
@@ -26,18 +27,42 @@ public class HibernateDockerHubService
     }
 
     @Override
-    public DockerHub getHub(final long hubId) throws NotFoundException {
+    public DockerHubEntity retrieve(final String name) throws NotUniqueException {
+        return getDao().findByName(name);
+    }
+
+    @Override
+    public DockerHubEntity get(final String name) throws NotUniqueException, NotFoundException {
+        final DockerHubEntity dockerHubEntity = getDao().findByName(name);
+        if (dockerHubEntity == null) {
+            throw new NotFoundException("Could not find hub with name " + name);
+        }
+        return dockerHubEntity;
+    }
+
+    @Override
+    public DockerHub retrieveHub(final long id) {
+        return convert(retrieve(id));
+    }
+
+    @Override
+    public DockerHub retrieveHub(final String name) throws NotUniqueException {
+        return convert(retrieve(name));
+    }
+
+    @Override
+    public DockerHub getHub(final long id) throws NotFoundException {
         try {
-            return get(hubId).toPojo();
+            return convert(get(id));
         } catch (org.nrg.framework.exceptions.NotFoundException e) {
+            // TODO remove this when I convert to use the framework "get" - XNAT-4682
             throw new NotFoundException(e);
         }
     }
 
     @Override
-    public DockerHub getHub(final String hubName) {
-        final DockerHubEntity dockerHubEntity = getDao().findByName(hubName);
-        return dockerHubEntity == null ? null : dockerHubEntity.toPojo();
+    public DockerHub getHub(final String name) throws NotFoundException, NotUniqueException {
+        return convert(get(name));
     }
 
     @Override
@@ -56,7 +81,7 @@ public class HibernateDockerHubService
 
     @Override
     public void setDefault(final DockerHub dockerHub, final String username, final String reason) {
-        DockerHubEntity dockerHubEntity = getDao().findByName(dockerHub.name());
+        DockerHubEntity dockerHubEntity = retrieve(dockerHub.id());
         if (dockerHubEntity == null) {
             dockerHubEntity = create(DockerHubEntity.fromPojo(dockerHub));
         }
@@ -68,20 +93,29 @@ public class HibernateDockerHubService
         containerConfigService.setDefaultDockerHubId(dockerHubEntity.getId(), username, reason);
     }
 
-    private boolean isDefault(final long id) {
-        return containerConfigService.getDefaultDockerHubId() == id;
+    @Override
+    public void delete(final long id) throws DockerHubDeleteDefaultException {
+        delete(retrieve(id));
     }
 
     @Override
-    public void delete(final DockerHub dockerHub) throws DockerHubDeleteException {
-        delete(retrieve(dockerHub.id()));
+    public void delete(final String name) throws DockerHubDeleteDefaultException, NotUniqueException {
+        delete(retrieve(name));
     }
 
     @Override
-    public void delete(final DockerHubEntity entity) throws DockerHubDeleteException {
+    public void delete(final DockerHubEntity entity) throws DockerHubDeleteDefaultException {
         if (isDefault(entity.getId())) {
-            throw new DockerHubDeleteException("Cannot delete default docker hub. Make another hub default first.");
+            throw new DockerHubDeleteDefaultException("Cannot delete default docker hub. Make another hub default first.");
         }
         super.delete(entity);
+    }
+
+    private DockerHub convert(final DockerHubEntity dockerHubEntity) {
+        return dockerHubEntity == null ? null : dockerHubEntity.toPojo();
+    }
+
+    private boolean isDefault(final long id) {
+        return containerConfigService.getDefaultDockerHubId() == id;
     }
 }

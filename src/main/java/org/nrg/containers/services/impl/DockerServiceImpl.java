@@ -20,6 +20,7 @@ import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.DockerHubService;
+import org.nrg.containers.services.DockerHubService.DockerHubDeleteDefaultException;
 import org.nrg.containers.services.DockerService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.slf4j.Logger;
@@ -63,6 +64,16 @@ public class DockerServiceImpl implements DockerService {
     }
 
     @Override
+    public DockerHub getHub(final long id) throws NotFoundException {
+        return dockerHubService.getHub(id);
+    }
+
+    @Override
+    public DockerHub getHub(final String name) throws NotFoundException, NotUniqueException {
+        return dockerHubService.getHub(name);
+    }
+
+    @Override
     public DockerHub createHub(final DockerHub hub)  {
         return dockerHubService.create(hub);
     }
@@ -75,13 +86,24 @@ public class DockerServiceImpl implements DockerService {
     }
 
     @Override
+    public void deleteHub(final long id) throws DockerHubDeleteDefaultException {
+        dockerHubService.delete(id);
+    }
+
+    @Override
+    public void deleteHub(final String name) throws DockerHubDeleteDefaultException, NotUniqueException {
+        dockerHubService.delete(name);
+    }
+
+    @Override
     public String pingHub(final Long hubId) throws DockerServerException, NoServerPrefException, NotFoundException {
         final DockerHub hub = dockerHubService.getHub(hubId);
         return pingHub(hub);
     }
 
     @Override
-    public String pingHub(final String hubName) throws DockerServerException, NoServerPrefException, NotUniqueException {
+    public String pingHub(final String hubName)
+            throws DockerServerException, NoServerPrefException, NotUniqueException, NotFoundException {
         final DockerHub hub = dockerHubService.getHub(hubName);
 
         return pingHub(hub);
@@ -99,7 +121,7 @@ public class DockerServiceImpl implements DockerService {
 
     @Override
     public DockerImage pullFromHub(final String hubName, final String imageName, final boolean saveCommands)
-            throws DockerServerException, NoServerPrefException, NotFoundException {
+            throws DockerServerException, NoServerPrefException, NotFoundException, NotUniqueException {
         return pullFromHub(dockerHubService.getHub(hubName), imageName, saveCommands);
     }
 
