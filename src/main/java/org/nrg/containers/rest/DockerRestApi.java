@@ -140,7 +140,7 @@ public class DockerRestApi extends AbstractXapiRestController {
             throws NrgServiceRuntimeException, UnauthorizedException {
         final UserI userI = XDAT.getUserDetails();
         checkCreateOrThrow(userI);
-        if (setDefault) {
+        if (!setDefault) {
             return new ResponseEntity<>(dockerService.createHub(hub), HttpStatus.CREATED);
         } else {
             return new ResponseEntity<>(dockerService.createHubAndSetDefault(hub, userI.getUsername(), reason), HttpStatus.CREATED);
@@ -158,7 +158,7 @@ public class DockerRestApi extends AbstractXapiRestController {
         checkCreateOrThrow(userI);
         final DockerHub toUpdate = id == hub.id() ? hub : DockerHub.create(id, hub.name(), hub.url(), hub.username(), hub.password(), hub.email());
 
-        if (setDefault) {
+        if (!setDefault) {
             dockerService.updateHub(toUpdate);
         } else {
             dockerService.updateHubAndSetDefault(hub, userI.getUsername(), reason);
