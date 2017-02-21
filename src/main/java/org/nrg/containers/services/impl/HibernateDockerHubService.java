@@ -12,6 +12,7 @@ import org.nrg.containers.services.DockerHubService;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +28,7 @@ public class HibernateDockerHubService
 
     private final ContainerConfigService containerConfigService;
 
+    @Autowired
     public HibernateDockerHubService(final ContainerConfigService containerConfigService) {
         this.containerConfigService = containerConfigService;
     }

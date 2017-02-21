@@ -7,6 +7,7 @@ import org.nrg.config.services.ConfigService;
 import org.nrg.containers.services.ContainerConfigService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -17,6 +18,7 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
 
     private final ConfigService configService;
 
+    @Autowired
     public ContainerConfigServiceImpl(final ConfigService configService) {
         this.configService = configService;
     }
