@@ -345,7 +345,6 @@ public class DockerRestApiTest {
                         .getContentAsString();
         final DockerHub privateHub = mapper.readValue(privateHubResponse, DockerHub.class);
         assertEquals(privateHubExpected, privateHub);
-
     }
 
     @Test
@@ -427,7 +426,36 @@ public class DockerRestApiTest {
                         .with(testSecurityContext());
         mockMvc.perform(nonAdminRequest)
                 .andExpect(status().isUnauthorized());
+    }
 
+    @Test
+    public void testPingHub() throws Exception {
+        final String pathTemplate = "/docker/hubs/%s/ping";
+
+        final DockerHub defaultHub = DockerHub.DEFAULT;
+        final long defaultHubId = defaultHub.id();
+        final String defaultHubName = defaultHub.name();
+
+        final String pathById = String.format(pathTemplate, String.valueOf(defaultHubId));
+        final String pathByName = String.format(pathTemplate, defaultHubName);
+
+        when(mockDockerHubService.getHub(defaultHubName)).thenReturn(defaultHub);
+        when(mockDockerHubService.getHub(defaultHubId)).thenReturn(defaultHub);
+        doReturn("OK").when(mockContainerControlApi).pingHub(defaultHub);
+
+        mockMvc.perform(get(pathById)
+                        .with(authentication(NONADMIN_AUTH))
+                        .with(csrf())
+                        .with(testSecurityContext()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(equalTo("OK")));
+
+        mockMvc.perform(get(pathByName)
+                        .with(authentication(NONADMIN_AUTH))
+                        .with(csrf())
+                        .with(testSecurityContext()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(equalTo("OK")));
     }
 
     @Test
