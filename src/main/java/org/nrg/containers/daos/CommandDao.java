@@ -61,6 +61,20 @@ public class CommandDao extends AbstractHibernateDAO<Command> {
                 log.error(message.toString());
             }
         }
+        final Command command = commands.get(0);
+        initialize(command);
         return commands.get(0);
+    }
+
+    @Override
+    public List<Command> findByProperties(final Map<String, Object> properties) {
+        final List<Command> commandList = super.findByProperties(properties);
+        if (commandList == null) {
+            return null;
+        }
+        for (final Command command : commandList) {
+            initialize(command);
+        }
+        return commandList;
     }
 }
