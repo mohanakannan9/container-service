@@ -3,22 +3,33 @@ package org.nrg.containers.services;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
+import org.nrg.containers.exceptions.NotUniqueException;
 import org.nrg.containers.model.Command;
-import org.nrg.containers.model.DockerHub;
+import org.nrg.containers.model.auto.DockerHub;
 import org.nrg.containers.model.auto.DockerImage;
 import org.nrg.containers.model.auto.DockerImageAndCommandSummary;
 import org.nrg.containers.model.DockerServer;
+import org.nrg.containers.services.DockerHubService.DockerHubDeleteDefaultException;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 
 import java.util.List;
 
 public interface DockerService {
     List<DockerHub> getHubs();
-    DockerHub setHub(DockerHub hub);
+    DockerHub getHub(long id) throws NotFoundException;
+    DockerHub getHub(String name) throws NotFoundException, NotUniqueException;
+    DockerHub createHub(DockerHub hub);
+    DockerHub createHubAndSetDefault(DockerHub hub, String username, String reason);
+    void updateHub(DockerHub hub);
+    void updateHubAndSetDefault(DockerHub hub, String username, String reason);
+    void deleteHub(long id) throws DockerHubDeleteDefaultException;
+    void deleteHub(String name) throws DockerHubDeleteDefaultException, NotUniqueException;
     String pingHub(Long hubId) throws DockerServerException, NoServerPrefException, NotFoundException;
-    String pingHub(DockerHub hub) throws DockerServerException, NoServerPrefException;
-    DockerImage pullFromHub(Long hubId, String imageName, boolean saveCommands)
+    String pingHub(String hubName) throws DockerServerException, NoServerPrefException, NotUniqueException, NotFoundException;
+    DockerImage pullFromHub(long hubId, String imageName, boolean saveCommands)
             throws DockerServerException, NoServerPrefException, NotFoundException;
+    DockerImage pullFromHub(String hubName, String imageName, boolean saveCommands)
+            throws DockerServerException, NoServerPrefException, NotFoundException, NotUniqueException;
     DockerImage pullFromHub(String imageName, boolean saveCommands)
             throws DockerServerException, NoServerPrefException, NotFoundException;
 

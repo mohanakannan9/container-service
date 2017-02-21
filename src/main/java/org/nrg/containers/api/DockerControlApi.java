@@ -16,7 +16,6 @@ import com.spotify.docker.client.ProgressHandler;
 import com.spotify.docker.client.exceptions.ContainerNotFoundException;
 import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.exceptions.DockerException;
-import com.spotify.docker.client.exceptions.ImageNotFoundException;
 import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
 import com.spotify.docker.client.messages.ContainerInfo;
@@ -35,12 +34,12 @@ import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.helpers.CommandLabelHelper;
 import org.nrg.containers.model.Container;
 import org.nrg.containers.model.ContainerExecutionMount;
-import org.nrg.containers.model.DockerHub;
 import org.nrg.containers.model.auto.DockerImage;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.containers.model.auto.CommandPojo;
+import org.nrg.containers.model.auto.DockerHub;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.slf4j.Logger;
@@ -120,25 +119,24 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     @Override
-    public String pingHub(DockerHub hub) throws DockerServerException, NoServerPrefException {
-        final RegistryAuth authConfig = RegistryAuth.builder()
-                .email(hub.getEmail())
-                .username(hub.getUsername())
-                .password(hub.getPassword())
-                .serverAddress(hub.getUrl())
-                .build();
+    public String pingHub(final DockerHub hub) throws DockerServerException, NoServerPrefException {
         try (final DockerClient client = getClient()) {
-            client.pull("connectioncheckonly", authConfig);
-        }
-        catch (ImageNotFoundException imageNotFoundException){
-            // Expected result: Hub found, bogus image not found
-            return "OK";
+            client.auth(registryAuth(hub));
         }
         catch (Exception e) {
             log.error(e.getMessage());
             throw new DockerServerException(e);
         }
-        return null;
+        return "OK";
+    }
+
+    private RegistryAuth registryAuth(final DockerHub hub) {
+        return RegistryAuth.builder()
+                .email(hub.email())
+                .username(hub.username())
+                .password(hub.password())
+                .serverAddress(hub.url())
+                .build();
     }
 
     /**
@@ -401,18 +399,12 @@ public class DockerControlApi implements ContainerControlApi {
      *
      **/
     @Override
-    public void pullImage(String name, DockerHub hub) throws NoServerPrefException, DockerServerException {
+    public void pullImage(final String name, final DockerHub hub) throws NoServerPrefException, DockerServerException {
         if (hub == null) {
             pullImage(name);
         } else {
             try (final DockerClient client = getClient()) {
-                final RegistryAuth authConfig = RegistryAuth.builder()
-                        .email(hub.getEmail())
-                        .username(hub.getUsername())
-                        .password(hub.getPassword())
-                        .serverAddress(hub.getUrl())
-                        .build();
-                client.pull(name, authConfig);
+                client.pull(name, registryAuth(hub));
             } catch (DockerException | InterruptedException e) {
                 log.error(e.getMessage());
                 throw new DockerServerException(e);
@@ -446,13 +438,7 @@ public class DockerControlApi implements ContainerControlApi {
         } else {
             try (final DockerClient client = getClient()) {
                 final LoadProgressHandler handler = new LoadProgressHandler();
-                final RegistryAuth authConfig = RegistryAuth.builder()
-                        .email(hub.getEmail())
-                        .username(hub.getUsername())
-                        .password(hub.getPassword())
-                        .serverAddress(hub.getUrl())
-                        .build();
-                client.pull(name, authConfig, handler);
+                client.pull(name, registryAuth(hub), handler);
                 final String imageId = handler.getImageId();
                 try {
                     return getImageById(imageId);
