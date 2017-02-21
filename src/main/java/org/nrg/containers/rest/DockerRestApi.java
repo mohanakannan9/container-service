@@ -23,7 +23,6 @@ import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.rest.AbstractXapiRestController;
-import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
