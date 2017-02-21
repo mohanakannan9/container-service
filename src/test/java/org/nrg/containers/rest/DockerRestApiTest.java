@@ -349,6 +349,52 @@ public class DockerRestApiTest {
     }
 
     @Test
+    public void testGetHubByName() throws Exception {
+        final String pathTemplate = "/docker/hubs/%s";
+
+        final String privateHubName = "my hub";
+        final DockerHub privateHubExpected = DockerHub.create(10L, privateHubName, "http://localhost", "me", "still me", "me@me.me");
+        final DockerHub defaultHubExpected = DockerHub.DEFAULT;
+        final String defaultHubName = defaultHubExpected.name();
+
+        when(mockDockerHubService.getHub(defaultHubName)).thenReturn(defaultHubExpected);
+        when(mockDockerHubService.getHub(privateHubName)).thenReturn(privateHubExpected);
+
+        // Get default hub by id
+        final MockHttpServletRequestBuilder defaultHubRequest =
+                get(String.format(pathTemplate, defaultHubName))
+                        .with(authentication(NONADMIN_AUTH))
+                        .with(csrf())
+                        .with(testSecurityContext());
+
+        final String defaultHubResponse =
+                mockMvc.perform(defaultHubRequest)
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+        final DockerHub defaultHub = mapper.readValue(defaultHubResponse, DockerHub.class);
+        assertEquals(defaultHubExpected, defaultHub);
+
+        // Get private hub
+        final MockHttpServletRequestBuilder privateHubRequest =
+                get(String.format(pathTemplate, privateHubName))
+                        .with(authentication(NONADMIN_AUTH))
+                        .with(csrf())
+                        .with(testSecurityContext());
+
+        final String privateHubResponse =
+                mockMvc.perform(privateHubRequest)
+                        .andExpect(status().isOk())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+        final DockerHub privateHub = mapper.readValue(privateHubResponse, DockerHub.class);
+        assertEquals(privateHubExpected, privateHub);
+
+    }
+
+    @Test
     @Transactional
     public void testSaveFromLabels() throws Exception {
         final String path = "/docker/images/save";
