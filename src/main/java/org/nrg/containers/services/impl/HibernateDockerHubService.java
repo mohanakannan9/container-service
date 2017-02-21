@@ -33,12 +33,26 @@ public class HibernateDockerHubService
 
     @Override
     public DockerHubEntity retrieve(final String name) throws NotUniqueException {
-        return getDao().findByName(name);
+        final DockerHubEntity dockerHubEntity = getDao().findByName(name);
+        if (dockerHubEntity == null) {
+            try {
+                // We didn't find it by name. If the name is a number, maybe they meant to find it by ID?
+                final Long id = Long.valueOf(name);
+
+                // If we got to this line, then the name is a proper ID and we should give them that hub.
+                return retrieve(id);
+            } catch (NumberFormatException ignored) {
+                // Nope, name is not an id
+            }
+        }
+
+        // If we got here, we should return this thing, null or not
+        return dockerHubEntity;
     }
 
     @Override
     public DockerHubEntity get(final String name) throws NotUniqueException, NotFoundException {
-        final DockerHubEntity dockerHubEntity = getDao().findByName(name);
+        final DockerHubEntity dockerHubEntity = retrieve(name);
         if (dockerHubEntity == null) {
             throw new NotFoundException("Could not find hub with name " + name);
         }

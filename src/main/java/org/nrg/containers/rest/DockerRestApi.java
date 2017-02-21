@@ -53,6 +53,9 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 public class DockerRestApi extends AbstractXapiRestController {
     private static final Logger log = LoggerFactory.getLogger(DockerRestApi.class);
 
+    private static final String ID_REGEX = "\\d+";
+    private static final String NAME_REGEX = "\\d*[^\\d]+\\d*";
+
     private static final String JSON = MediaType.APPLICATION_JSON_UTF8_VALUE;
     private static final String TEXT = MediaType.TEXT_PLAIN_VALUE;
 
@@ -115,14 +118,14 @@ public class DockerRestApi extends AbstractXapiRestController {
         return dockerService.getHubs();
     }
 
-    @RequestMapping(value = "/hubs/{id}", method = GET)
+    @RequestMapping(value = "/hubs/{id:" + ID_REGEX + "}", method = GET)
     @ResponseBody
     public DockerHub getHub(final @PathVariable long id) throws NotFoundException, UnauthorizedException {
         checkGetOrThrow();
         return dockerService.getHub(id);
     }
 
-    @RequestMapping(value = "/hubs/{name}", method = GET)
+    @RequestMapping(value = "/hubs/{name:" + NAME_REGEX + "}", method = GET)
     @ResponseBody
     public DockerHub getHub(final @PathVariable String name) throws NotFoundException, NotUniqueException, UnauthorizedException {
         checkGetOrThrow();
@@ -144,7 +147,7 @@ public class DockerRestApi extends AbstractXapiRestController {
         }
     }
 
-    @RequestMapping(value = "/hubs/{id}", method = POST)
+    @RequestMapping(value = "/hubs/{id:" + ID_REGEX + "}", method = POST)
     @ResponseBody
     public ResponseEntity updateHub(final @PathVariable long id,
                                final @RequestBody DockerHub hub,
@@ -163,7 +166,7 @@ public class DockerRestApi extends AbstractXapiRestController {
         return new ResponseEntity(HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/hubs/{id}", method = DELETE)
+    @RequestMapping(value = "/hubs/{id:" + ID_REGEX + "}", method = DELETE)
     @ResponseBody
     public ResponseEntity<String> deleteHub(final @PathVariable long id)
             throws DockerHubDeleteDefaultException, UnauthorizedException {
@@ -172,7 +175,7 @@ public class DockerRestApi extends AbstractXapiRestController {
         return new ResponseEntity<>("", HttpStatus.NO_CONTENT);
     }
 
-    @RequestMapping(value = "/hubs/{name}", method = DELETE)
+    @RequestMapping(value = "/hubs/{name:" + NAME_REGEX + "}", method = DELETE)
     @ResponseBody
     public ResponseEntity<String> deleteHub(final @PathVariable String name)
             throws DockerHubDeleteDefaultException, NotUniqueException, UnauthorizedException {
@@ -181,7 +184,7 @@ public class DockerRestApi extends AbstractXapiRestController {
         return new ResponseEntity<>("", HttpStatus.NO_CONTENT);
     }
 
-    @RequestMapping(value = "/hubs/{id}/ping", method = GET)
+    @RequestMapping(value = "/hubs/{id:" + ID_REGEX + "}/ping", method = GET)
     @ResponseBody
     public String pingHub(final @PathVariable Long id)
             throws NoServerPrefException, DockerServerException, NotFoundException, UnauthorizedException {
@@ -189,7 +192,7 @@ public class DockerRestApi extends AbstractXapiRestController {
         return dockerService.pingHub(id);
     }
 
-    @RequestMapping(value = "/hubs/{name}/ping", method = GET)
+    @RequestMapping(value = "/hubs/{name:" + NAME_REGEX + "}/ping", method = GET)
     @ResponseBody
     public String pingHub(final @PathVariable String name)
             throws NoServerPrefException, DockerServerException, NotFoundException, NotUniqueException, UnauthorizedException {
@@ -197,7 +200,7 @@ public class DockerRestApi extends AbstractXapiRestController {
         return dockerService.pingHub(name);
     }
 
-    @RequestMapping(value = "/hubs/{id}/pull", params = {"image"}, method = POST)
+    @RequestMapping(value = "/hubs/{id:" + ID_REGEX + "}/pull", params = {"image"}, method = POST)
     public void pullImageFromHub(final @PathVariable long hubId,
                                  final @RequestParam(value = "image") String image,
                                  final @RequestParam(value = "save-commands", defaultValue = "true")
