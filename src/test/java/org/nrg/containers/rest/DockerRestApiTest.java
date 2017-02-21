@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -464,37 +465,36 @@ public class DockerRestApiTest {
 
     @Test
     public void testGetImageSummaries() throws Exception {
-        final String fakeImageId = "sha256:some godawful hash";
-        final String fakeImageName = "xnat/thisisfake";
-        final DockerImage fakeDockerImage = DockerImage.create(fakeImageId, null, null);
-        fakeDockerImage.addTag(fakeImageName);
+        final String imageWithSavedCommand_id = "sha256:some godawful hash";
+        final String imageWithSavedCommand_name = "xnat/thisisfake";
+        final DockerImage imageWithSavedCommand = DockerImage.create(imageWithSavedCommand_id, Lists.newArrayList(imageWithSavedCommand_name), null);
 
-        final String fakeCommandName = "fake";
-        final String fakeCommandWrapperName = "fake-on-thing";
-        final CommandWrapperPojo fakeWrapper = CommandWrapperPojo.builder().name(fakeCommandWrapperName).build();
-        final CommandPojo fakeCommand = CommandPojo.builder()
-                .name(fakeCommandName)
-                .image(fakeImageName)
+        final String commandWithImage_name = "fake";
+        final String commandWithImage_wrapperName = "fake-on-thing";
+        final CommandWrapperPojo wrapper = CommandWrapperPojo.builder().name(commandWithImage_wrapperName).build();
+        final CommandPojo commandWithImage = CommandPojo.builder()
+                .name(commandWithImage_name)
+                .image(imageWithSavedCommand_name)
+                .xnatCommandWrappers(Lists.newArrayList(wrapper))
                 .build();
-        fakeCommand.addCommandWrapper(fakeWrapper);
 
-        final Command fakeCommandEntity = Command.commandPojoToCommand(fakeCommand);
+        final Command commandWithImage_entity = Command.commandPojoToCommand(commandWithImage);
 
-        final String unknownImageName = "unknown";
-        final String unknownCommandName = "image-unknown";
+        final String commandWithUnknownImage_imageName = "unknown";
+        final String commandWithUnknownImage_name = "image-unknown";
         final CommandPojo unknownCommand = CommandPojo.builder()
-                .name(unknownCommandName)
-                .image(unknownImageName)
+                .name(commandWithUnknownImage_name)
+                .image(commandWithUnknownImage_imageName)
                 .build();
-        final Command unknownCommandEntity = Command.commandPojoToCommand(unknownCommand);
+        final Command commandWithUnknownImage_entity = Command.commandPojoToCommand(unknownCommand);
 
-        doReturn(Lists.newArrayList(fakeDockerImage)).when(mockContainerControlApi).getAllImages();
-        doReturn(null).when(mockContainerControlApi).getImageById(unknownImageName);
-        when(mockCommandService.getAll()).thenReturn(Lists.newArrayList(fakeCommandEntity, unknownCommandEntity));
+        doReturn(Lists.newArrayList(imageWithSavedCommand)).when(mockContainerControlApi).getAllImages();
+        doReturn(null).when(mockContainerControlApi).getImageById(commandWithUnknownImage_imageName);
+        when(mockCommandService.getAll()).thenReturn(Lists.newArrayList(commandWithImage_entity, commandWithUnknownImage_entity));
         when(mockDockerServerPrefsBean.getName()).thenReturn(MOCK_CONTAINER_SERVER_NAME);
 
         final List<DockerImageAndCommandSummary> expected = Lists.newArrayList(
-                DockerImageAndCommandSummary.create(fakeImageId, MOCK_CONTAINER_SERVER_NAME, fakeCommand),
+                DockerImageAndCommandSummary.create(imageWithSavedCommand_id, MOCK_CONTAINER_SERVER_NAME, commandWithImage),
                 DockerImageAndCommandSummary.create(unknownCommand)
         );
 
