@@ -447,14 +447,14 @@ public class DockerRestApiTest {
         unknownCommand.setName(unknownCommandName);
         unknownCommand.setImage(unknownImageName);
 
-        final DockerImageAndCommandSummary fakeSummary = DockerImageAndCommandSummary.create(fakeCommand, MOCK_CONTAINER_SERVER_NAME);
+        final DockerImageAndCommandSummary fakeSummary = DockerImageAndCommandSummary.create(fakeImageId, MOCK_CONTAINER_SERVER_NAME, fakeCommand);
         final String fakeSummaryJson = mapper.writeValueAsString(fakeSummary);
         final DockerImageAndCommandSummary deserialized = mapper.readValue(fakeSummaryJson, DockerImageAndCommandSummary.class);
         assertEquals(fakeSummary, deserialized);
 
         final List<DockerImageAndCommandSummary> expected = Lists.newArrayList(
-                DockerImageAndCommandSummary.create(fakeCommand, MOCK_CONTAINER_SERVER_NAME),
-                DockerImageAndCommandSummary.create(unknownCommand, null)
+                DockerImageAndCommandSummary.create(fakeImageId, MOCK_CONTAINER_SERVER_NAME, fakeCommand),
+                DockerImageAndCommandSummary.create(unknownCommand)
         );
 
         final List<DockerImageAndCommandSummary> actual = mapper.readValue(mapper.writeValueAsString(expected), new TypeReference<List<DockerImageAndCommandSummary>>(){});
@@ -494,8 +494,8 @@ public class DockerRestApiTest {
         when(mockDockerServerPrefsBean.getName()).thenReturn(MOCK_CONTAINER_SERVER_NAME);
 
         final List<DockerImageAndCommandSummary> expected = Lists.newArrayList(
-                DockerImageAndCommandSummary.create(fakeCommand, MOCK_CONTAINER_SERVER_NAME),
-                DockerImageAndCommandSummary.create(unknownCommand, null)
+                DockerImageAndCommandSummary.create(fakeImageId, MOCK_CONTAINER_SERVER_NAME, fakeCommand),
+                DockerImageAndCommandSummary.create(unknownCommand)
         );
 
         final String path = "/docker/image-summaries";

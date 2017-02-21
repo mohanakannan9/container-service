@@ -33,44 +33,73 @@ public abstract class DockerImageAndCommandSummary {
 
     public static DockerImageAndCommandSummary create(final DockerImage dockerImage, final String server) {
         final DockerImageAndCommandSummary created = create(
-                dockerImage.imageId(),
+                dockerImage == null ? "" : dockerImage.imageId(),
                 server,
-                Sets.newHashSet(dockerImage.tags()),
+                dockerImage == null ? Sets.<String>newHashSet() : Sets.newHashSet(dockerImage.tags()),
                 Lists.<CommandPojo>newArrayList());
 
-        CommandLabelHelper.parseLabels(null, dockerImage);
+        final List<CommandPojo> commandsFromImageLabels = CommandLabelHelper.parseLabels(null, dockerImage);
+        if (commandsFromImageLabels != null) {
+            for (final CommandPojo command : commandsFromImageLabels) {
+                created.addCommand(command);
+            }
+        }
 
         return created;
     }
 
-    public static DockerImageAndCommandSummary create(final Command command, final String server) {
-        final DockerImageAndCommandSummary created = create("", server, Sets.<String>newHashSet(), Lists.<CommandPojo>newArrayList());
-
-        created.addCommand(CommandPojo.create(command));
-
-        return created;
+    public static DockerImageAndCommandSummary create(final String imageId, final String server, final CommandPojo command) {
+        final Set<String> imageNames = Sets.newHashSet(command.image());
+        final List<CommandPojo> commandList = Lists.newArrayList(command);
+        return create(imageId, server, imageNames, commandList);
     }
 
-    public static DockerImageAndCommandSummary create(final CommandPojo command, final String server) {
-        final DockerImageAndCommandSummary created = create("", server, Sets.<String>newHashSet(), Lists.<CommandPojo>newArrayList());
-
-        created.addCommand(command);
-
-        return created;
+    public static DockerImageAndCommandSummary create(final String imageId, final String server, final Command command) {
+        return create(imageId, server, CommandPojo.create(command));
     }
 
-    public void addCommands(final List<CommandPojo> commands) {
-        for (final CommandPojo command : commands) {
-            addCommand(command);
+    public static DockerImageAndCommandSummary create(final CommandPojo command) {
+        final Set<String> imageNames = Sets.newHashSet(command.image());
+        final List<CommandPojo> commandList = Lists.newArrayList(command);
+        return create("", null, imageNames, commandList);
+    }
+
+    public static DockerImageAndCommandSummary create(final Command command) {
+        return create(CommandPojo.create(command));
+    }
+
+    public void addOrUpdateCommand(final CommandPojo commandToAddOrUpdate) {
+        imageNames().add(commandToAddOrUpdate.image());
+
+        // Check to see if the list of commands already has one with this name.
+        // If so, we added the existing command from the labels.
+        // It will not have an id, and might not have any xnat wrappers.
+        // So we should replace it.
+        boolean shouldUpdate = false;
+        int updateIndex = -1;
+        int numCommands = commands().size();
+        for (int i = 0; i < numCommands; i++) {
+            final CommandPojo existingCommand = commands().get(i);
+            if (existingCommand.name().equals(commandToAddOrUpdate.name())) {
+                shouldUpdate = true;
+                updateIndex = i;
+                break;
+            }
+        }
+        if (shouldUpdate && updateIndex > -1) {
+            commands().remove(updateIndex);
+            commands().add(updateIndex, commandToAddOrUpdate);
+        } else {
+            commands().add(commandToAddOrUpdate);
         }
     }
 
-    public void addCommand(final CommandPojo command) {
+    private void addCommand(final CommandPojo command) {
         imageNames().add(command.image());
         commands().add(command);
     }
 
-    public void addCommand(final Command command) {
-        addCommand(CommandPojo.create(command));
+    public void addOrUpdateCommand(final Command commandToAddOrUpdate) {
+        addOrUpdateCommand(CommandPojo.create(commandToAddOrUpdate));
     }
 }

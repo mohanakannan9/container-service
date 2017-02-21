@@ -131,37 +131,40 @@ public class DockerServiceImpl implements DockerService {
         final List<DockerImage> rawImages = controlApi.getAllImages();
 
         // Store the images by every name that someone might call them: all tags and id
-        final Map<String, DockerImage> imagesByName = Maps.newHashMap();
+        final Map<String, DockerImage> imagesByIdUniqueValues = Maps.newHashMap();
+        final Map<String, String> imageIdsByNameDuplicateValues = Maps.newHashMap();
+
+        // Store the summaries indexed by image id
+        final Map<String, DockerImageAndCommandSummary> imageSummariesByImageId = Maps.newHashMap();
         for (final DockerImage image : rawImages) {
-            // final DockerImageWithCommandSummary imageWithCommandSummary = new DockerImageWithCommandSummary(image);
+
             if (image.tags() != null && !image.tags().isEmpty()) {
                 for (final String tag : image.tags()) {
-                    imagesByName.put(tag, image);
+                    imageIdsByNameDuplicateValues.put(tag, image.imageId());
                 }
             }
 
-            // if (StringUtils.isNotBlank(image.imageId())) {
-            //     imagesByName.put(image.imageId(), image);
-            // }
+            if (StringUtils.isNotBlank(image.imageId())) {
+                imagesByIdUniqueValues.put(image.imageId(), image);
+
+                imageSummariesByImageId.put(image.imageId(), DockerImageAndCommandSummary.create(image, server));
+            }
         }
 
-        // Store the summaries indexed by image
-        final Map<DockerImage, DockerImageAndCommandSummary> imageToImageSummaryMap = Maps.newHashMap();
+        // final Map<DockerImage, DockerImageAndCommandSummary> imageToImageSummaryMap = Maps.newHashMap();
 
-        // First, add all images that are referred to by commands
+        // Go through all commands, update the images with command info (or add new images if we can't find them)
         final List<Command> commands = commandService.getAll();
         if (commands != null) {
             for (final Command command : commands) {
                 final String imageNameUsedByTheCommand = command.getImage();
                 if (StringUtils.isNotBlank(imageNameUsedByTheCommand)) {
-                    if (imagesByName.containsKey(imageNameUsedByTheCommand)) {
-                        final DockerImage dockerImage = imagesByName.get(imageNameUsedByTheCommand);
-                        // We do have the image, so either make a new summary for it or add this command to an existing summary
-                        if (imageToImageSummaryMap.containsKey(dockerImage)) {
-                            imageToImageSummaryMap.get(dockerImage).addCommand(command);
-                        } else {
-                            imageToImageSummaryMap.put(dockerImage, DockerImageAndCommandSummary.create(command, server));
-                        }
+                    if (imageIdsByNameDuplicateValues.containsKey(imageNameUsedByTheCommand)) {
+
+                        // We do recognize the image by this name, so either make a new summary for it or add this command to an existing summary
+                        final String dockerImageId = imageIdsByNameDuplicateValues.get(imageNameUsedByTheCommand);
+                        imageSummariesByImageId.get(dockerImageId).addOrUpdateCommand(command);
+
                     } else {
                         // the command refers to some image that either
                         //   A. we have not cached by that name, or
@@ -174,24 +177,20 @@ public class DockerServiceImpl implements DockerService {
                         }
 
                         if (dockerImage != null) {
-                            // This means A: we have the image, just not by this name
-                            dockerImage.addTag(imageNameUsedByTheCommand);
-                            imagesByName.put(imageNameUsedByTheCommand, dockerImage);
+                            // This means A: we have the image on the server, just not by this name
+                            final String dockerImageId = dockerImage.imageId();
 
-                            if (imageToImageSummaryMap.containsKey(dockerImage)) {
-                                imageToImageSummaryMap.get(dockerImage).addCommand(command);
-                            } else {
-                                imageToImageSummaryMap.put(dockerImage, DockerImageAndCommandSummary.create(command, server));
-                            }
+                            imageIdsByNameDuplicateValues.put(imageNameUsedByTheCommand, dockerImageId);
+
+                            final DockerImageAndCommandSummary summary = imageSummariesByImageId.get(dockerImageId);
+                            summary.addOrUpdateCommand(command);
                         } else {
                             // This means B: the command refers to some image that we do not have on the docker server
-                            // Create a placeholder image object
-                            dockerImage = DockerImage.create(null, null, null);
-                            dockerImage.addTag(imageNameUsedByTheCommand);
-                            imagesByName.put(imageNameUsedByTheCommand, dockerImage);
+                            // Create a placeholder image summary object
+                            final DockerImageAndCommandSummary summary = DockerImageAndCommandSummary.create(command);
 
-                            // Now add the placeholder to the summary list, with server = null
-                            imageToImageSummaryMap.put(dockerImage, DockerImageAndCommandSummary.create(command, null));
+                            imageIdsByNameDuplicateValues.put(imageNameUsedByTheCommand, summary.imageId());
+                            imageSummariesByImageId.put(summary.imageId(), summary);
                         }
                     }
                 } else {
@@ -200,14 +199,7 @@ public class DockerServiceImpl implements DockerService {
             }
         }
 
-        // Now add all the other images that have no commands
-        for (final DockerImage image : rawImages) {
-            if (!imageToImageSummaryMap.containsKey(image)) {
-                imageToImageSummaryMap.put(image, DockerImageAndCommandSummary.create(image, server));
-            }
-        }
-
-        return Lists.newArrayList(imageToImageSummaryMap.values());
+        return Lists.newArrayList(imageSummariesByImageId.values());
     }
 
     public DockerImage getImage(final String imageId)
