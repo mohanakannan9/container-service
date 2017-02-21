@@ -3,6 +3,7 @@ package org.nrg.containers.rest;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Function;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -465,6 +466,7 @@ public class DockerRestApiTest {
 
     @Test
     public void testGetImageSummaries() throws Exception {
+        // Image exists on server, command refers to image
         final String imageWithSavedCommand_id = "sha256:some godawful hash";
         final String imageWithSavedCommand_name = "xnat/thisisfake";
         final DockerImage imageWithSavedCommand = DockerImage.create(imageWithSavedCommand_id, Lists.newArrayList(imageWithSavedCommand_name), null);
@@ -480,6 +482,7 @@ public class DockerRestApiTest {
 
         final Command commandWithImage_entity = Command.commandPojoToCommand(commandWithImage);
 
+        // Command refers to image that does not exist on server
         final String commandWithUnknownImage_imageName = "unknown";
         final String commandWithUnknownImage_name = "image-unknown";
         final CommandPojo unknownCommand = CommandPojo.builder()
@@ -488,14 +491,28 @@ public class DockerRestApiTest {
                 .build();
         final Command commandWithUnknownImage_entity = Command.commandPojoToCommand(unknownCommand);
 
-        doReturn(Lists.newArrayList(imageWithSavedCommand)).when(mockContainerControlApi).getAllImages();
+        // Image has command labels, no commands on server
+        final String imageWithNonDbCommandLabels_id = "who:cares:not:me";
+        final String imageWithNonDbCommandLabels_name = "xnat/thisisanotherfake:3.4.5.6";
+        final String imageWithNonDbCommandLabels_commandName = "hi there";
+        final CommandPojo toSaveInImageLabels = CommandPojo.builder().name(imageWithNonDbCommandLabels_commandName).build();
+        final String imageWithNonDbCommandLabels_labelValue = mapper.writeValueAsString(Lists.newArrayList(toSaveInImageLabels));
+        final DockerImage imageWithNonDbCommandLabels = DockerImage.create(
+                imageWithNonDbCommandLabels_id,
+                Lists.newArrayList(imageWithNonDbCommandLabels_name),
+                ImmutableMap.of(LABEL_KEY, imageWithNonDbCommandLabels_labelValue));
+ 
+
+        // Mock out responses
+        doReturn(Lists.newArrayList(imageWithSavedCommand, imageWithNonDbCommandLabels)).when(mockContainerControlApi).getAllImages();
         doReturn(null).when(mockContainerControlApi).getImageById(commandWithUnknownImage_imageName);
         when(mockCommandService.getAll()).thenReturn(Lists.newArrayList(commandWithImage_entity, commandWithUnknownImage_entity));
         when(mockDockerServerPrefsBean.getName()).thenReturn(MOCK_CONTAINER_SERVER_NAME);
 
         final List<DockerImageAndCommandSummary> expected = Lists.newArrayList(
                 DockerImageAndCommandSummary.create(imageWithSavedCommand_id, MOCK_CONTAINER_SERVER_NAME, commandWithImage),
-                DockerImageAndCommandSummary.create(unknownCommand)
+                DockerImageAndCommandSummary.create(unknownCommand),
+                DockerImageAndCommandSummary.create(imageWithNonDbCommandLabels, MOCK_CONTAINER_SERVER_NAME)
         );
 
         final String path = "/docker/image-summaries";
