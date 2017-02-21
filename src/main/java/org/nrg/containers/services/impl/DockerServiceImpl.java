@@ -140,9 +140,9 @@ public class DockerServiceImpl implements DockerService {
                 }
             }
 
-            if (StringUtils.isNotBlank(image.imageId())) {
-                imagesByName.put(image.imageId(), image);
-            }
+            // if (StringUtils.isNotBlank(image.imageId())) {
+            //     imagesByName.put(image.imageId(), image);
+            // }
         }
 
         // Store the summaries indexed by image
@@ -154,24 +154,48 @@ public class DockerServiceImpl implements DockerService {
             for (final Command command : commands) {
                 final String imageNameUsedByTheCommand = command.getImage();
                 if (StringUtils.isNotBlank(imageNameUsedByTheCommand)) {
-                    final DockerImage dockerImage = imagesByName.get(imageNameUsedByTheCommand);
-                    if (dockerImage == null) {
-                        // the command refers to some image we do not have
-                        // Make a placeholder image
-                        final DockerImage unknownImage = DockerImage.create(null, null, null);
-                        unknownImage.addTag(imageNameUsedByTheCommand);
-                        imagesByName.put(imageNameUsedByTheCommand, unknownImage);
-
-                        // Now add the placeholder to the summary list, with server = null
-                        imageToImageSummaryMap.put(unknownImage, DockerImageAndCommandSummary.create(command, null));
-                    } else {
+                    if (imagesByName.containsKey(imageNameUsedByTheCommand)) {
+                        final DockerImage dockerImage = imagesByName.get(imageNameUsedByTheCommand);
                         // We do have the image, so either make a new summary for it or add this command to an existing summary
                         if (imageToImageSummaryMap.containsKey(dockerImage)) {
                             imageToImageSummaryMap.get(dockerImage).addCommand(command);
                         } else {
                             imageToImageSummaryMap.put(dockerImage, DockerImageAndCommandSummary.create(command, server));
                         }
+                    } else {
+                        // the command refers to some image that either
+                        //   A. we have not cached by that name, or
+                        //   B. does not exist on the docker server
+                        DockerImage dockerImage = null;
+                        try {
+                            dockerImage = controlApi.getImageById(imageNameUsedByTheCommand);
+                        } catch (NotFoundException ignored) {
+                            // ignored
+                        }
+
+                        if (dockerImage != null) {
+                            // This means A: we have the image, just not by this name
+                            dockerImage.addTag(imageNameUsedByTheCommand);
+                            imagesByName.put(imageNameUsedByTheCommand, dockerImage);
+
+                            if (imageToImageSummaryMap.containsKey(dockerImage)) {
+                                imageToImageSummaryMap.get(dockerImage).addCommand(command);
+                            } else {
+                                imageToImageSummaryMap.put(dockerImage, DockerImageAndCommandSummary.create(command, server));
+                            }
+                        } else {
+                            // This means B: the command refers to some image that we do not have on the docker server
+                            // Create a placeholder image object
+                            dockerImage = DockerImage.create(null, null, null);
+                            dockerImage.addTag(imageNameUsedByTheCommand);
+                            imagesByName.put(imageNameUsedByTheCommand, dockerImage);
+
+                            // Now add the placeholder to the summary list, with server = null
+                            imageToImageSummaryMap.put(dockerImage, DockerImageAndCommandSummary.create(command, null));
+                        }
                     }
+                } else {
+                    // TODO command does not refer to an image? Should not be possible...
                 }
             }
         }
@@ -179,7 +203,7 @@ public class DockerServiceImpl implements DockerService {
         // Now add all the other images that have no commands
         for (final DockerImage image : rawImages) {
             if (!imageToImageSummaryMap.containsKey(image)) {
-                imageToImageSummaryMap.put(image, null);
+                imageToImageSummaryMap.put(image, DockerImageAndCommandSummary.create(image, server));
             }
         }
 

@@ -50,6 +50,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.isIn;
 import static org.junit.Assert.assertEquals;
@@ -488,6 +489,7 @@ public class DockerRestApiTest {
         final Command unknownCommandEntity = Command.commandPojoToCommand(unknownCommand);
 
         doReturn(Lists.newArrayList(fakeDockerImage)).when(mockContainerControlApi).getAllImages();
+        doReturn(null).when(mockContainerControlApi).getImageById(unknownImageName);
         when(mockCommandService.getAll()).thenReturn(Lists.newArrayList(fakeCommandEntity, unknownCommandEntity));
         when(mockDockerServerPrefsBean.getName()).thenReturn(MOCK_CONTAINER_SERVER_NAME);
 
@@ -511,5 +513,23 @@ public class DockerRestApiTest {
         final List<DockerImageAndCommandSummary> responseList = mapper.readValue(responseStr, new TypeReference<List<DockerImageAndCommandSummary>>(){});
         assertThat(expected, everyItem(isIn(responseList)));
         assertThat(responseList, everyItem(isIn(expected)));
+    }
+
+    @Test
+    public void testListHash() throws Exception {
+        // This is to test a question I have.
+        // If I put a list into a map, then add an item to the list, does the list's hash change?
+        // This would be bad, because the map would "lose" the list
+
+        final Map<List<String>, String> testMap = Maps.newHashMap();
+        final List<String> testList = Lists.newArrayList();
+        final String mapValue = "foo";
+        final String listItem = "bar";
+
+        testMap.put(testList, mapValue);
+        assertThat(testMap, hasEntry(testList, mapValue));
+
+        testList.add(listItem);
+        assertThat(testMap, hasEntry(testList, mapValue));
     }
 }
