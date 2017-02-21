@@ -149,32 +149,15 @@ public abstract class CommandPojo {
     public abstract Builder toBuilder();
 
     public static Builder builder() {
-        return new AutoValue_CommandPojo.Builder();
-    }
-
-    @AutoValue.Builder
-    public abstract static class Builder {
-        public abstract Builder id(final long id);
-        public abstract Builder name(final String name);
-        public abstract Builder label(final String label);
-        public abstract Builder description(final String description);
-        public abstract Builder version(final String version);
-        public abstract Builder schemaVersion(final String schemaVersion);
-        public abstract Builder infoUrl(final String infoUrl);
-        public abstract Builder image(final String image);
-        public abstract Builder type(final String type);
-        public abstract Builder index(final String index);
-        public abstract Builder hash(final String hash);
-        public abstract Builder workingDirectory(final String workingDirectory);
-        public abstract Builder commandLine(final String commandLine);
-        public abstract Builder mounts(final List<CommandMountPojo> mounts);
-        public abstract Builder environmentVariables(final Map<String, String> environmentVariables);
-        public abstract Builder ports(final Map<String, String> ports);
-        public abstract Builder inputs(final List<CommandInputPojo> inputs);
-        public abstract Builder outputs(final List<CommandOutputPojo> outputs);
-        public abstract Builder xnatCommandWrappers(final List<CommandWrapperPojo> xnatCommandWrappers);
-
-        public abstract CommandPojo build();
+        return new AutoValue_CommandPojo.Builder()
+                .id(0L)
+                .type(Command.DEFAULT_TYPE.getName())
+                .mounts(Lists.<CommandMountPojo>newArrayList())
+                .environmentVariables(Maps.<String, String>newHashMap())
+                .ports(Maps.<String, String>newHashMap())
+                .inputs(Lists.<CommandInputPojo>newArrayList())
+                .outputs(Lists.<CommandOutputPojo>newArrayList())
+                .xnatCommandWrappers(Lists.<CommandWrapperPojo>newArrayList());
     }
 
     public List<String> validate() {
@@ -328,6 +311,38 @@ public abstract class CommandPojo {
         return errors;
     }
 
+    public void addCommandWrapper(final CommandWrapperPojo commandWrapperPojo) {
+        if (commandWrapperPojo == null) {
+            return;
+        }
+        this.xnatCommandWrappers().add(commandWrapperPojo);
+    }
+
+    @AutoValue.Builder
+    public abstract static class Builder {
+        public abstract Builder id(final long id);
+        public abstract Builder name(final String name);
+        public abstract Builder label(final String label);
+        public abstract Builder description(final String description);
+        public abstract Builder version(final String version);
+        public abstract Builder schemaVersion(final String schemaVersion);
+        public abstract Builder infoUrl(final String infoUrl);
+        public abstract Builder image(final String image);
+        public abstract Builder type(final String type);
+        public abstract Builder index(final String index);
+        public abstract Builder hash(final String hash);
+        public abstract Builder workingDirectory(final String workingDirectory);
+        public abstract Builder commandLine(final String commandLine);
+        public abstract Builder mounts(final List<CommandMountPojo> mounts);
+        public abstract Builder environmentVariables(final Map<String, String> environmentVariables);
+        public abstract Builder ports(final Map<String, String> ports);
+        public abstract Builder inputs(final List<CommandInputPojo> inputs);
+        public abstract Builder outputs(final List<CommandOutputPojo> outputs);
+        public abstract Builder xnatCommandWrappers(final List<CommandWrapperPojo> xnatCommandWrappers);
+
+        public abstract CommandPojo build();
+    }
+
     @AutoValue
     public static abstract class CommandMountPojo {
         @Nullable @JsonProperty("name") public abstract String name();
@@ -455,10 +470,22 @@ public abstract class CommandPojo {
                                          @JsonProperty("external-inputs") List<CommandWrapperInputPojo> externalInputs,
                                          @JsonProperty("derived-inputs") List<CommandWrapperInputPojo> derivedInputs,
                                          @JsonProperty("output-handlers") List<CommandWrapperOutputPojo> outputHandlers) {
-            return new AutoValue_CommandPojo_CommandWrapperPojo(id, name, description,
-                    externalInputs == null ? Lists.<CommandWrapperInputPojo>newArrayList() : externalInputs,
-                    derivedInputs == null ? Lists.<CommandWrapperInputPojo>newArrayList() : derivedInputs,
-                    outputHandlers == null ? Lists.<CommandWrapperOutputPojo>newArrayList() : outputHandlers);
+            return builder()
+                    .id(id)
+                    .name(name)
+                    .description(description)
+                    .externalInputs(externalInputs == null ? Lists.<CommandWrapperInputPojo>newArrayList() : externalInputs)
+                    .derivedInputs(derivedInputs == null ? Lists.<CommandWrapperInputPojo>newArrayList() : derivedInputs)
+                    .outputHandlers(outputHandlers == null ? Lists.<CommandWrapperOutputPojo>newArrayList() : outputHandlers)
+                    .build();
+        }
+
+        public static Builder builder() {
+            return new AutoValue_CommandPojo_CommandWrapperPojo.Builder()
+                    .id(0L)
+                    .externalInputs(Lists.<CommandWrapperInputPojo>newArrayList())
+                    .derivedInputs(Lists.<CommandWrapperInputPojo>newArrayList())
+                    .outputHandlers(Lists.<CommandWrapperOutputPojo>newArrayList());
         }
 
         static CommandWrapperPojo create(final XnatCommandWrapper xnatCommandWrapper) {
@@ -500,6 +527,18 @@ public abstract class CommandPojo {
             }
 
             return errors;
+        }
+
+        @AutoValue.Builder
+        public abstract static class Builder {
+            public abstract Builder id(final long id);
+            public abstract Builder name(final String name);
+            public abstract Builder description(final String description);
+            public abstract Builder externalInputs(final List<CommandWrapperInputPojo> externalInputs);
+            public abstract Builder derivedInputs(final List<CommandWrapperInputPojo> derivedInputs);
+            public abstract Builder outputHandlers(final List<CommandWrapperOutputPojo> outputHandlers);
+
+            public abstract CommandWrapperPojo build();
         }
     }
 

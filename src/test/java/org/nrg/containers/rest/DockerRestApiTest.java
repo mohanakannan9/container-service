@@ -17,6 +17,7 @@ import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.CommandInput;
 import org.nrg.containers.model.DockerCommand;
+import org.nrg.containers.model.auto.CommandPojo.CommandWrapperPojo;
 import org.nrg.containers.model.auto.DockerImage;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.model.DockerServerPrefsBean;
@@ -469,22 +470,25 @@ public class DockerRestApiTest {
 
         final String fakeCommandName = "fake";
         final String fakeCommandWrapperName = "fake-on-thing";
-        final XnatCommandWrapper fakeWrapper = new XnatCommandWrapper();
-        fakeWrapper.setName(fakeCommandWrapperName);
-        final DockerCommand fakeCommand = new DockerCommand();
-        fakeCommand.setHash(fakeImageId);
-        fakeCommand.setName(fakeCommandName);
-        fakeCommand.setImage(fakeImageName);
-        fakeCommand.addXnatCommandWrapper(fakeWrapper);
+        final CommandWrapperPojo fakeWrapper = CommandWrapperPojo.builder().name(fakeCommandWrapperName).build();
+        final CommandPojo fakeCommand = CommandPojo.builder()
+                .name(fakeCommandName)
+                .image(fakeImageName)
+                .build();
+        fakeCommand.addCommandWrapper(fakeWrapper);
+
+        final Command fakeCommandEntity = Command.commandPojoToCommand(fakeCommand);
 
         final String unknownImageName = "unknown";
         final String unknownCommandName = "image-unknown";
-        final DockerCommand unknownCommand = new DockerCommand();
-        unknownCommand.setName(unknownCommandName);
-        unknownCommand.setImage(unknownImageName);
+        final CommandPojo unknownCommand = CommandPojo.builder()
+                .name(unknownCommandName)
+                .image(unknownImageName)
+                .build();
+        final Command unknownCommandEntity = Command.commandPojoToCommand(unknownCommand);
 
         doReturn(Lists.newArrayList(fakeDockerImage)).when(mockContainerControlApi).getAllImages();
-        when(mockCommandService.getAll()).thenReturn(Lists.<Command>newArrayList(fakeCommand, unknownCommand));
+        when(mockCommandService.getAll()).thenReturn(Lists.newArrayList(fakeCommandEntity, unknownCommandEntity));
         when(mockDockerServerPrefsBean.getName()).thenReturn(MOCK_CONTAINER_SERVER_NAME);
 
         final List<DockerImageAndCommandSummary> expected = Lists.newArrayList(
