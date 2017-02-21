@@ -391,6 +391,42 @@ public class DockerRestApiTest {
                         .getContentAsString();
         final DockerHub privateHub = mapper.readValue(privateHubResponse, DockerHub.class);
         assertEquals(privateHubExpected, privateHub);
+    }
+
+    @Test
+    public void testCreateHub() throws Exception {
+        final String path = "/docker/hubs";
+
+        final DockerHub hubToCreate = DockerHub.create(0L, "a hub name", "http://localhost", "me", "still me", "me@me.me");
+        final DockerHub created = DockerHub.create(10L, "a hub name", "http://localhost", "me", "still me", "me@me.me");
+
+        when(mockDockerHubService.create(hubToCreate)).thenReturn(created);
+
+        final MockHttpServletRequestBuilder request =
+                post(path)
+                        .contentType(JSON)
+                        .content(mapper.writeValueAsString(hubToCreate))
+                        .with(authentication(ADMIN_AUTH))
+                        .with(csrf())
+                        .with(testSecurityContext());
+
+        final String response =
+                mockMvc.perform(request)
+                        .andExpect(status().isCreated())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+        assertEquals(created, mapper.readValue(response, DockerHub.class));
+
+        final MockHttpServletRequestBuilder nonAdminRequest =
+                post(path)
+                        .contentType(JSON)
+                        .content(mapper.writeValueAsString(hubToCreate))
+                        .with(authentication(NONADMIN_AUTH))
+                        .with(csrf())
+                        .with(testSecurityContext());
+        mockMvc.perform(nonAdminRequest)
+                .andExpect(status().isUnauthorized());
 
     }
 
