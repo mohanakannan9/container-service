@@ -1,6 +1,5 @@
 package org.nrg.containers.api;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
@@ -33,11 +32,11 @@ import org.nrg.containers.events.DockerContainerEvent;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
-import org.nrg.containers.model.CommandType;
+import org.nrg.containers.helpers.CommandLabelHelper;
 import org.nrg.containers.model.Container;
 import org.nrg.containers.model.ContainerExecutionMount;
 import org.nrg.containers.model.DockerHub;
-import org.nrg.containers.model.DockerImage;
+import org.nrg.containers.model.auto.DockerImage;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.ResolvedDockerCommand;
@@ -49,7 +48,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Date;
 import java.util.List;
@@ -58,6 +56,7 @@ import java.util.Map;
 import static com.spotify.docker.client.DockerClient.EventsParam.since;
 import static com.spotify.docker.client.DockerClient.EventsParam.type;
 import static com.spotify.docker.client.DockerClient.EventsParam.until;
+import static org.nrg.containers.helpers.CommandLabelHelper.LABEL_KEY;
 
 @Service
 public class DockerControlApi implements ContainerControlApi {
@@ -473,40 +472,7 @@ public class DockerControlApi implements ContainerControlApi {
     public List<CommandPojo> parseLabels(final String imageName)
             throws DockerServerException, NoServerPrefException, NotFoundException {
         final DockerImage image = getImageById(imageName);
-        return parseLabels(imageName, image);
-    }
-
-    @Override
-    public List<CommandPojo> parseLabels(final String imageName, final DockerImage dockerImage) {
-        final Map<String, String> labels = dockerImage.getLabels();
-        if (labels != null && !labels.isEmpty() && labels.containsKey(LABEL_KEY)) {
-            final String labelValue = labels.get(LABEL_KEY);
-            if (StringUtils.isNotBlank(labelValue)) {
-                try {
-                    final List<CommandPojo> commandsFromLabels =
-                            objectMapper.readValue(labelValue, new TypeReference<List<CommandPojo>>() {});
-                    final List<CommandPojo> commandsToReturn = Lists.newArrayList();
-                    if (commandsFromLabels != null && !commandsFromLabels.isEmpty()) {
-                        for (final CommandPojo commandPojo : commandsFromLabels) {
-                            // The command as read from the image may not contain all the values we want to store
-                            // So we add them now.
-                            commandsToReturn.add(
-                                    commandPojo.toBuilder()
-                                            .type(CommandType.DOCKER.getName())
-                                            .image(imageName)
-                                            .hash(dockerImage.getImageId())
-                                            .build()
-                            );
-                        }
-                    }
-                    return commandsToReturn;
-                } catch (IOException e) {
-                    // TODO throw exception
-                    log.error("Could not parse Commands from label: " + labelValue, e);
-                }
-            }
-        }
-        return null;
+        return CommandLabelHelper.parseLabels(imageName, image, objectMapper);
     }
 
     /**
@@ -771,7 +737,7 @@ public class DockerControlApi implements ContainerControlApi {
             return null;
         }
 
-        return new DockerImage(image.id(), image.repoTags(), image.labels());
+        return DockerImage.create(image.id(), image.repoTags(), image.labels());
     }
 
     /**
@@ -785,7 +751,7 @@ public class DockerControlApi implements ContainerControlApi {
             return null;
         }
 
-        return new DockerImage(image.id(), null, image.config().labels());
+        return DockerImage.create(image.id(), null, image.config().labels());
     }
 
     /**

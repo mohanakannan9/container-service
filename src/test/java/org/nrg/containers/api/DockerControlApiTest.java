@@ -17,7 +17,7 @@ import org.nrg.containers.events.DockerContainerEvent;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.DockerHub;
-import org.nrg.containers.model.DockerImage;
+import org.nrg.containers.model.auto.DockerImage;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.framework.scope.EntityId;
 import org.nrg.prefs.services.NrgPreferenceService;
@@ -132,8 +132,8 @@ public class DockerControlApiTest {
     private List<String> imagesToTags(final List<DockerImage> images) {
         final List<String> tags = Lists.newArrayList();
         for (final DockerImage image : images) {
-            if (image.getTags() != null) {
-                tags.addAll(image.getTags());
+            if (image.tags() != null) {
+                tags.addAll(image.tags());
             }
         }
         return tags;

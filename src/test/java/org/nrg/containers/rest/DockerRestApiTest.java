@@ -3,8 +3,10 @@ package org.nrg.containers.rest;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Function;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -17,7 +19,8 @@ import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.Command;
 import org.nrg.containers.model.CommandInput;
 import org.nrg.containers.model.DockerCommand;
-import org.nrg.containers.model.DockerImage;
+import org.nrg.containers.model.auto.CommandPojo.CommandWrapperPojo;
+import org.nrg.containers.model.auto.DockerImage;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.XnatCommandWrapper;
@@ -46,22 +49,22 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isIn;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.nrg.containers.api.ContainerControlApi.LABEL_KEY;
+import static org.nrg.containers.helpers.CommandLabelHelper.LABEL_KEY;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.testSecurityContext;
@@ -284,14 +287,14 @@ public class DockerRestApiTest {
                         "\"command-line\": \"#CMD#\"," +
                         "\"inputs\": [{\"name\": \"CMD\", \"description\": \"Command to run\", \"required\": true}]}";
         final CommandPojo expected = mapper.readValue(labelTestCommandJson, CommandPojo.class);
-        final List<CommandPojo> expectedList = Lists.newArrayList(expected);
         final List<Command> toReturnList = Lists.newArrayList(Command.commandPojoToCommand(expected));
 
         final Map<String, String> imageLabels = Maps.newHashMap();
         imageLabels.put(LABEL_KEY, "[" + labelTestCommandJson + "]");
 
-        doReturn(expectedList).when(mockContainerControlApi).parseLabels(fakeImageId);
-        when(mockCommandService.save(expectedList)).thenReturn(toReturnList);
+        final DockerImage dockerImage = DockerImage.create(fakeImageId, null, imageLabels);
+        doReturn(dockerImage).when(mockContainerControlApi).getImageById(fakeImageId);
+        when(mockCommandService.save(anyListOf(CommandPojo.class))).thenReturn(toReturnList);
 
         final String path = "/docker/images/save";
         final MockHttpServletRequestBuilder request =
@@ -364,8 +367,9 @@ public class DockerRestApiTest {
         final Map<String, String> imageLabels = Maps.newHashMap();
         imageLabels.put(LABEL_KEY, labelTestCommandListJson);
 
-        doReturn(expectedList).when(mockContainerControlApi).parseLabels(fakeImageId);
-        when(mockCommandService.save(expectedList)).thenReturn(toReturnList);
+        final DockerImage dockerImage = DockerImage.create(fakeImageId, null, imageLabels);
+        doReturn(dockerImage).when(mockContainerControlApi).getImageById(fakeImageId);
+        when(mockCommandService.save(anyListOf(CommandPojo.class))).thenReturn(toReturnList);
 
         final String path = "/docker/images/save";
         final MockHttpServletRequestBuilder request =
@@ -400,8 +404,7 @@ public class DockerRestApiTest {
     public void testGetImages() throws Exception {
         final String fakeImageId = "sha256:some godawful hash";
         final String fakeImageName = "xnat/thisisfake";
-        final DockerImage fakeDockerImage = new DockerImage();
-        fakeDockerImage.setImageId(fakeImageId);
+        final DockerImage fakeDockerImage = DockerImage.create(fakeImageId, null, null);
         fakeDockerImage.addTag(fakeImageName);
 
         doReturn(Lists.newArrayList(fakeDockerImage)).when(mockContainerControlApi).getAllImages();
@@ -427,8 +430,7 @@ public class DockerRestApiTest {
     public void testImageSummariesJsonRoundTrip() throws Exception {
         final String fakeImageId = "sha256:some godawful hash";
         final String fakeImageName = "xnat/thisisfake";
-        final DockerImage fakeDockerImage = new DockerImage();
-        fakeDockerImage.setImageId(fakeImageId);
+        final DockerImage fakeDockerImage = DockerImage.create(fakeImageId, null, null);
         fakeDockerImage.addTag(fakeImageName);
 
         final String fakeCommandName = "fake";
@@ -447,14 +449,14 @@ public class DockerRestApiTest {
         unknownCommand.setName(unknownCommandName);
         unknownCommand.setImage(unknownImageName);
 
-        final DockerImageAndCommandSummary fakeSummary = DockerImageAndCommandSummary.create(fakeCommand, MOCK_CONTAINER_SERVER_NAME);
+        final DockerImageAndCommandSummary fakeSummary = DockerImageAndCommandSummary.create(fakeImageId, MOCK_CONTAINER_SERVER_NAME, fakeCommand);
         final String fakeSummaryJson = mapper.writeValueAsString(fakeSummary);
         final DockerImageAndCommandSummary deserialized = mapper.readValue(fakeSummaryJson, DockerImageAndCommandSummary.class);
         assertEquals(fakeSummary, deserialized);
 
         final List<DockerImageAndCommandSummary> expected = Lists.newArrayList(
-                DockerImageAndCommandSummary.create(fakeCommand, MOCK_CONTAINER_SERVER_NAME),
-                DockerImageAndCommandSummary.create(unknownCommand, null)
+                DockerImageAndCommandSummary.create(fakeImageId, MOCK_CONTAINER_SERVER_NAME, fakeCommand),
+                DockerImageAndCommandSummary.create(unknownCommand)
         );
 
         final List<DockerImageAndCommandSummary> actual = mapper.readValue(mapper.writeValueAsString(expected), new TypeReference<List<DockerImageAndCommandSummary>>(){});
@@ -464,35 +466,53 @@ public class DockerRestApiTest {
 
     @Test
     public void testGetImageSummaries() throws Exception {
-        final String fakeImageId = "sha256:some godawful hash";
-        final String fakeImageName = "xnat/thisisfake";
-        final DockerImage fakeDockerImage = new DockerImage();
-        fakeDockerImage.setImageId(fakeImageId);
-        fakeDockerImage.addTag(fakeImageName);
+        // Image exists on server, command refers to image
+        final String imageWithSavedCommand_id = "sha256:some godawful hash";
+        final String imageWithSavedCommand_name = "xnat/thisisfake";
+        final DockerImage imageWithSavedCommand = DockerImage.create(imageWithSavedCommand_id, Lists.newArrayList(imageWithSavedCommand_name), null);
 
-        final String fakeCommandName = "fake";
-        final String fakeCommandWrapperName = "fake-on-thing";
-        final XnatCommandWrapper fakeWrapper = new XnatCommandWrapper();
-        fakeWrapper.setName(fakeCommandWrapperName);
-        final DockerCommand fakeCommand = new DockerCommand();
-        fakeCommand.setHash(fakeImageId);
-        fakeCommand.setName(fakeCommandName);
-        fakeCommand.setImage(fakeImageName);
-        fakeCommand.addXnatCommandWrapper(fakeWrapper);
+        final String commandWithImage_name = "fake";
+        final String commandWithImage_wrapperName = "fake-on-thing";
+        final CommandWrapperPojo wrapper = CommandWrapperPojo.builder().name(commandWithImage_wrapperName).build();
+        final CommandPojo commandWithImage = CommandPojo.builder()
+                .name(commandWithImage_name)
+                .image(imageWithSavedCommand_name)
+                .xnatCommandWrappers(Lists.newArrayList(wrapper))
+                .build();
 
-        final String unknownImageName = "unknown";
-        final String unknownCommandName = "image-unknown";
-        final DockerCommand unknownCommand = new DockerCommand();
-        unknownCommand.setName(unknownCommandName);
-        unknownCommand.setImage(unknownImageName);
+        final Command commandWithImage_entity = Command.commandPojoToCommand(commandWithImage);
 
-        doReturn(Lists.newArrayList(fakeDockerImage)).when(mockContainerControlApi).getAllImages();
-        when(mockCommandService.getAll()).thenReturn(Lists.<Command>newArrayList(fakeCommand, unknownCommand));
+        // Command refers to image that does not exist on server
+        final String commandWithUnknownImage_imageName = "unknown";
+        final String commandWithUnknownImage_name = "image-unknown";
+        final CommandPojo unknownCommand = CommandPojo.builder()
+                .name(commandWithUnknownImage_name)
+                .image(commandWithUnknownImage_imageName)
+                .build();
+        final Command commandWithUnknownImage_entity = Command.commandPojoToCommand(unknownCommand);
+
+        // Image has command labels, no commands on server
+        final String imageWithNonDbCommandLabels_id = "who:cares:not:me";
+        final String imageWithNonDbCommandLabels_name = "xnat/thisisanotherfake:3.4.5.6";
+        final String imageWithNonDbCommandLabels_commandName = "hi there";
+        final CommandPojo toSaveInImageLabels = CommandPojo.builder().name(imageWithNonDbCommandLabels_commandName).build();
+        final String imageWithNonDbCommandLabels_labelValue = mapper.writeValueAsString(Lists.newArrayList(toSaveInImageLabels));
+        final DockerImage imageWithNonDbCommandLabels = DockerImage.create(
+                imageWithNonDbCommandLabels_id,
+                Lists.newArrayList(imageWithNonDbCommandLabels_name),
+                ImmutableMap.of(LABEL_KEY, imageWithNonDbCommandLabels_labelValue));
+ 
+
+        // Mock out responses
+        doReturn(Lists.newArrayList(imageWithSavedCommand, imageWithNonDbCommandLabels)).when(mockContainerControlApi).getAllImages();
+        doReturn(null).when(mockContainerControlApi).getImageById(commandWithUnknownImage_imageName);
+        when(mockCommandService.getAll()).thenReturn(Lists.newArrayList(commandWithImage_entity, commandWithUnknownImage_entity));
         when(mockDockerServerPrefsBean.getName()).thenReturn(MOCK_CONTAINER_SERVER_NAME);
 
         final List<DockerImageAndCommandSummary> expected = Lists.newArrayList(
-                DockerImageAndCommandSummary.create(fakeCommand, MOCK_CONTAINER_SERVER_NAME),
-                DockerImageAndCommandSummary.create(unknownCommand, null)
+                DockerImageAndCommandSummary.create(imageWithSavedCommand_id, MOCK_CONTAINER_SERVER_NAME, commandWithImage),
+                DockerImageAndCommandSummary.create(unknownCommand),
+                DockerImageAndCommandSummary.create(imageWithNonDbCommandLabels, MOCK_CONTAINER_SERVER_NAME)
         );
 
         final String path = "/docker/image-summaries";
@@ -510,5 +530,23 @@ public class DockerRestApiTest {
         final List<DockerImageAndCommandSummary> responseList = mapper.readValue(responseStr, new TypeReference<List<DockerImageAndCommandSummary>>(){});
         assertThat(expected, everyItem(isIn(responseList)));
         assertThat(responseList, everyItem(isIn(expected)));
+    }
+
+    @Test
+    public void testListHash() throws Exception {
+        // This is to test a question I have.
+        // If I put a list into a map, then add an item to the list, does the list's hash change?
+        // This would be bad, because the map would "lose" the list
+
+        final Map<List<String>, String> testMap = Maps.newHashMap();
+        final List<String> testList = Lists.newArrayList();
+        final String mapValue = "foo";
+        final String listItem = "bar";
+
+        testMap.put(testList, mapValue);
+        assertThat(testMap, hasEntry(testList, mapValue));
+
+        testList.add(listItem);
+        assertThat(testMap, hasEntry(testList, mapValue));
     }
 }
