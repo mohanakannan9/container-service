@@ -26,7 +26,7 @@ import java.util.Set;
 @AutoValue
 public abstract class CommandPojo {
     @JsonProperty("id") public abstract long id();
-    @Nullable @JsonProperty("name") public abstract String name();
+    @JsonProperty("name") public abstract String name();
     @Nullable @JsonProperty("label") public abstract String label();
     @Nullable @JsonProperty("description") public abstract String description();
     @Nullable @JsonProperty("version") public abstract String version();
@@ -67,7 +67,7 @@ public abstract class CommandPojo {
                               @JsonProperty("xnat") List<CommandWrapperPojo> xnatCommandWrappers) {
         return builder()
                 .id(id)
-                .name(name)
+                .name(name == null ? "" : name)
                 .label(label)
                 .description(description)
                 .version(version)
@@ -151,6 +151,7 @@ public abstract class CommandPojo {
     public static Builder builder() {
         return new AutoValue_CommandPojo.Builder()
                 .id(0L)
+                .name("")
                 .type(Command.DEFAULT_TYPE.getName())
                 .mounts(Lists.<CommandMountPojo>newArrayList())
                 .environmentVariables(Maps.<String, String>newHashMap())
