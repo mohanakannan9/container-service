@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.helpers.CommandLabelHelper;
 import org.nrg.containers.model.Command;
 
@@ -69,7 +70,7 @@ public abstract class DockerImageAndCommandSummary {
     }
 
     public void addOrUpdateCommand(final CommandPojo commandToAddOrUpdate) {
-        imageNames().add(commandToAddOrUpdate.image());
+        addImageName(commandToAddOrUpdate.image());
 
         // Check to see if the list of commands already has one with this name.
         // If so, we added the existing command from the labels.
@@ -95,11 +96,19 @@ public abstract class DockerImageAndCommandSummary {
     }
 
     private void addCommand(final CommandPojo command) {
-        imageNames().add(command.image());
+        addImageName(command.image());
         commands().add(command);
     }
 
     public void addOrUpdateCommand(final Command commandToAddOrUpdate) {
         addOrUpdateCommand(CommandPojo.create(commandToAddOrUpdate));
+    }
+
+    public void addImageName(final String imageName) {
+        if (StringUtils.isBlank(imageName)) {
+            return;
+        }
+
+        imageNames().add(imageName);
     }
 }
