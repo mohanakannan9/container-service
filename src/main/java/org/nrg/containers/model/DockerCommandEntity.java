@@ -21,7 +21,7 @@ public class DockerCommandEntity extends CommandEntity {
     private String hash;
     private Map<String, String> ports;
 
-    static DockerCommandEntity fromPojo(final Command commandPojo) {
+    public static DockerCommandEntity fromPojo(final Command commandPojo) {
         final DockerCommandEntity command = new DockerCommandEntity();
         command.setIndex(commandPojo.index());
         command.setHash(commandPojo.hash());

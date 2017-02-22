@@ -260,11 +260,11 @@ public class DockerServiceImpl implements DockerService {
     }
 
     @Override
-    public List<CommandEntity> saveFromImageLabels(final String imageName) throws DockerServerException, NotFoundException, NoServerPrefException {
+    public List<Command> saveFromImageLabels(final String imageName) throws DockerServerException, NotFoundException, NoServerPrefException {
         return saveFromImageLabels(imageName, controlApi.getImageById(imageName));
     }
 
-    private List<CommandEntity> saveFromImageLabels(final String imageName, final DockerImage dockerImage) {
+    private List<Command> saveFromImageLabels(final String imageName, final DockerImage dockerImage) {
         if (log.isDebugEnabled()) {
             log.debug("Parsing labels for " + imageName);
         }

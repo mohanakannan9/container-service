@@ -1,5 +1,6 @@
 package org.nrg.containers.services.impl;
 
+import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -46,6 +47,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.Nullable;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -107,30 +109,13 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     }
 
     @Override
-    public CommandEntity create(final Command command) throws CommandValidationException {
-        final List<String> errors = command.validate();
-        if (errors.isEmpty()) {
-            CommandEntity toCreate = null;
-            final List<String> thisCommandErrors = Lists.newArrayList();
-            try {
-                toCreate = CommandEntity.commandPojoToCommand(command);
-            } catch (CommandValidationException e) {
-                thisCommandErrors.addAll(e.getErrors());
-            }
+    public List<Command> getAllCommands() {
+        return toPojo(getAll());
+    }
 
-            if (toCreate != null && thisCommandErrors.isEmpty()) {
-                try {
-                    return create(toCreate);
-                } catch (NrgServiceRuntimeException e) {
-                    // TODO: should I "update" instead of erroring out if command already exists?
-                    log.error("Could not save command: " + toCreate, e);
-                }
-            }
-
-            return null;
-        } else {
-            throw new CommandValidationException(errors);
-        }
+    @Override
+    public Command create(final Command command) throws CommandValidationException {
+        return toPojo(create(fromPojo(command)));
     }
 
     @Override
@@ -143,8 +128,18 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     }
 
     @Override
+    public Command getCommand(final Long id) throws NotFoundException {
+        return toPojo(get(id));
+    }
+
+    @Override
     public List<CommandEntity> findByProperties(final Map<String, Object> properties) {
         return getDao().findByProperties(properties);
+    }
+
+    @Override
+    public List<Command> findCommandByProperties(final Map<String, Object> properties) {
+        return toPojo(findByProperties(properties));
     }
 
     @Override
@@ -157,6 +152,11 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         // return existing;
         // TODO re-write this to save a new version of the command
         return null;
+    }
+
+    @Override
+    public Command update(final Long id, final Command updates, final Boolean ignoreNull) throws NotFoundException, CommandValidationException {
+        return toPojo(update(id, fromPojo(updates), ignoreNull));
     }
 
     @Override
@@ -177,8 +177,8 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     }
 
     @Override
-    public List<CommandEntity> save(final List<Command> commands) {
-        final List<CommandEntity> created = Lists.newArrayList();
+    public List<Command> save(final List<Command> commands) {
+        final List<Command> created = Lists.newArrayList();
         if (!(commands == null || commands.isEmpty())) {
             for (final Command command : commands) {
                 try {
@@ -473,9 +473,29 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         return resolvedDockerCommand;
     }
 
-    public String getBuildDirectory() {
+    private String getBuildDirectory() {
         String buildPath = siteConfigPreferences.getBuildPath();
         final String uuid = UUID.randomUUID().toString();
         return FilenameUtils.concat(buildPath, uuid);
+    }
+
+
+    private Command toPojo(final CommandEntity commandEntity) {
+        return commandEntity == null ? null : Command.create(commandEntity);
+    }
+
+    private List<Command> toPojo(final List<CommandEntity> commandEntityList) {
+        return commandEntityList == null ? null :
+                Lists.transform(commandEntityList, new Function<CommandEntity, Command>() {
+                    @Nullable
+                    @Override
+                    public Command apply(@Nullable final CommandEntity commandEntity) {
+                        return toPojo(commandEntity);
+                    }
+                });
+    }
+
+    private CommandEntity fromPojo(final Command command) throws CommandValidationException {
+        return command == null ? null : CommandEntity.fromPojo(command);
     }
 }

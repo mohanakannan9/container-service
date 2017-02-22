@@ -19,12 +19,16 @@ import java.util.List;
 import java.util.Map;
 
 public interface CommandService extends BaseHibernateService<CommandEntity> {
-    CommandEntity create(Command command) throws CommandValidationException;
+    List<Command> getAllCommands();
+    Command create(Command command) throws CommandValidationException;
 
     List<CommandEntity> findByProperties(Map<String, Object> properties);
+    List<Command> findCommandByProperties(Map<String, Object> properties);
     CommandEntity get(Long id) throws NotFoundException;
+    Command getCommand(Long id) throws NotFoundException;
 
     CommandEntity update(Long id, CommandEntity updates, Boolean ignoreNull) throws NotFoundException;
+    Command update(Long id, Command updates, Boolean ignoreNull) throws NotFoundException, CommandValidationException;
 
     ResolvedCommand resolveCommand(final Long commandId,
                                    final Map<String, String> variableRuntimeValues,
@@ -64,7 +68,7 @@ public interface CommandService extends BaseHibernateService<CommandEntity> {
     ContainerExecution launchResolvedDockerCommand(final ResolvedDockerCommand resolvedCommand, final UserI userI)
             throws NoServerPrefException, DockerServerException, ContainerMountResolutionException;
 
-    List<CommandEntity> save(final List<Command> commands);
+    List<Command> save(final List<Command> commands);
 
 //    @VisibleForTesting
 //    ResolvedCommand prepareToLaunchScan(Command command,

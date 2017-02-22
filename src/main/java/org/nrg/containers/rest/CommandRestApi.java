@@ -71,14 +71,14 @@ public class CommandRestApi extends AbstractXapiRestController {
     @RequestMapping(value = {}, params = {"!name", "!version", "!image"}, method = GET)
     @ApiOperation(value = "Get all Commands")
     @ResponseBody
-    public List<CommandEntity> getCommands() {
-        return commandService.getAll();
+    public List<Command> getCommands() {
+        return commandService.getAllCommands();
     }
 
     @RequestMapping(value = {}, method = GET)
     @ApiOperation(value = "Get Commands by criteria")
     @ResponseBody
-    public List<CommandEntity> getCommands(final @RequestParam(required = false) String name,
+    public List<Command> getCommands(final @RequestParam(required = false) String name,
                                            final @RequestParam(required = false) String version,
                                            final @RequestParam(required = false) String image) throws BadRequestException {
 
@@ -102,14 +102,14 @@ public class CommandRestApi extends AbstractXapiRestController {
             properties.put("image", image);
         }
 
-        return commandService.findByProperties(properties);
+        return commandService.findCommandByProperties(properties);
     }
 
     @RequestMapping(value = {"/{id}"}, method = GET)
     @ApiOperation(value = "Get a Command by ID")
     @ResponseBody
-    public CommandEntity retrieveCommand(final @PathVariable Long id) throws NotFoundException {
-        return commandService.get(id);
+    public Command retrieveCommand(final @PathVariable Long id) throws NotFoundException {
+        return commandService.getCommand(id);
     }
 
     /*
@@ -121,11 +121,11 @@ public class CommandRestApi extends AbstractXapiRestController {
             throws BadRequestException, CommandValidationException {
 
         try {
-            final CommandEntity commandEntity = commandService.create(command);
-            if (commandEntity == null) {
+            final Command created = commandService.create(command);
+            if (created == null) {
                 return new ResponseEntity<>(0L, HttpStatus.INTERNAL_SERVER_ERROR);
             }
-            return new ResponseEntity<>(commandEntity.getId(), HttpStatus.CREATED);
+            return new ResponseEntity<>(created.id(), HttpStatus.CREATED);
         } catch (NrgRuntimeException e) {
             throw new BadRequestException(e);
         }
@@ -137,11 +137,11 @@ public class CommandRestApi extends AbstractXapiRestController {
     @RequestMapping(value = {"/{id}"}, method = POST)
     @ApiOperation(value = "Update a Command")
     @ResponseBody
-    public CommandEntity updateCommand(final @RequestBody CommandEntity commandEntity,
-                                       final @PathVariable Long id,
-                                       final @RequestParam(value = "ignore-null", defaultValue = "true")
-                                             Boolean ignoreNull) throws NotFoundException {
-        return commandService.update(id, commandEntity, ignoreNull);
+    public Command updateCommand(final @RequestBody Command command,
+                                 final @PathVariable Long id,
+                                 final @RequestParam(value = "ignore-null", defaultValue = "true")
+                                             Boolean ignoreNull) throws NotFoundException, CommandValidationException {
+        return commandService.update(id, command, ignoreNull);
     }
 
     /*

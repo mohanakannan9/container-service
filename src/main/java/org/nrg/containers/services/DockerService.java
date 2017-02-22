@@ -5,6 +5,7 @@ import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.exceptions.NotUniqueException;
 import org.nrg.containers.model.CommandEntity;
+import org.nrg.containers.model.auto.Command;
 import org.nrg.containers.model.auto.DockerHub;
 import org.nrg.containers.model.auto.DockerImage;
 import org.nrg.containers.model.auto.DockerImageAndCommandSummary;
@@ -41,5 +42,5 @@ public interface DockerService {
     List<DockerImageAndCommandSummary> getImageSummaries() throws NoServerPrefException, DockerServerException;
     DockerImage getImage(String imageId) throws NoServerPrefException, NotFoundException;
     void removeImage(String imageId, Boolean force) throws NotFoundException, NoServerPrefException, DockerServerException;
-    List<CommandEntity> saveFromImageLabels(String imageName) throws DockerServerException, NotFoundException, NoServerPrefException;
+    List<Command> saveFromImageLabels(String imageName) throws DockerServerException, NotFoundException, NoServerPrefException;
 }

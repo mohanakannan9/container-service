@@ -14,6 +14,7 @@ import org.nrg.containers.config.DockerServiceIntegrationTestConfig;
 import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.CommandWrapperEntity;
+import org.nrg.containers.model.auto.Command;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
@@ -86,15 +87,15 @@ public class DockerServiceIntegrationTest {
         final DefaultDockerClient client = DefaultDockerClient.fromEnv().build();
         client.build(Paths.get(dir), imageName);
 
-        final List<CommandEntity> commandEntities = dockerService.saveFromImageLabels(imageName);
-        assertThat(commandEntities, hasSize(1));
-        final CommandEntity commandEntity = commandEntities.get(0);
-        assertThat(commandEntity.getId(), not(eq(0L)));
+        final List<Command> commands = dockerService.saveFromImageLabels(imageName);
+        assertThat(commands, hasSize(1));
+        final Command command = commands.get(0);
+        assertThat(command.id(), not(eq(0L)));
 
-        final List<CommandWrapperEntity> wrappers = commandEntity.getCommandWrapperEntities();
+        final List<Command.CommandWrapper> wrappers = command.xnatCommandWrappers();
         assertThat(wrappers.size(), greaterThan(0));
-        final CommandWrapperEntity wrapper = wrappers.get(0);
-        assertThat(wrapper.getId(), not(eq(0L)));
+        final Command.CommandWrapper wrapper = wrappers.get(0);
+        assertThat(wrapper.id(), not(eq(0L)));
 
         client.removeImage(imageName);
     }

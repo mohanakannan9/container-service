@@ -88,7 +88,7 @@ public abstract class Command {
                 .build();
     }
 
-    static Command create(final CommandEntity commandEntity) {
+    public static Command create(final CommandEntity commandEntity) {
         Command.Builder builder = builder()
                 .id(commandEntity.getId())
                 .name(commandEntity.getName())
@@ -145,6 +145,8 @@ public abstract class Command {
 
         return builder.build();
     }
+
+
 
     public abstract Builder toBuilder();
 
