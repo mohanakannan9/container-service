@@ -14,7 +14,7 @@ import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.ContainerExecutionMount;
 import org.nrg.containers.model.DockerCommandEntity;
 import org.nrg.containers.model.DockerServerPrefsBean;
-import org.nrg.containers.model.XnatCommandWrapper;
+import org.nrg.containers.model.CommandWrapperEntity;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerExecutionService;
 import org.nrg.containers.services.impl.HibernateCommandService;
@@ -165,7 +165,7 @@ public class IntegrationTestConfig {
         bean.setAnnotatedClasses(
                 CommandEntity.class,
                 DockerCommandEntity.class,
-                XnatCommandWrapper.class,
+                CommandWrapperEntity.class,
                 ContainerExecution.class,
                 ContainerExecutionMount.class);
 

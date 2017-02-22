@@ -28,7 +28,7 @@ import org.nrg.containers.model.ContainerExecutionMount;
 import org.nrg.containers.model.ContainerMountFiles;
 import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.containers.model.ResolvedDockerCommand;
-import org.nrg.containers.model.XnatCommandWrapper;
+import org.nrg.containers.model.CommandWrapperEntity;
 import org.nrg.containers.model.auto.CommandPojo;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerExecutionService;
@@ -165,9 +165,9 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             if (log.isDebugEnabled()) {
                 log.debug("Saving command " + commandEntity.getName());
             }
-            if (commandEntity.getXnatCommandWrappers() != null) {
-                for (final XnatCommandWrapper xnatCommandWrapper : commandEntity.getXnatCommandWrappers()) {
-                    xnatCommandWrapper.setCommandEntity(commandEntity);
+            if (commandEntity.getCommandWrapperEntities() != null) {
+                for (final CommandWrapperEntity commandWrapperEntity : commandEntity.getCommandWrapperEntities()) {
+                    commandWrapperEntity.setCommandEntity(commandEntity);
                 }
             }
             return super.create(commandEntity);
@@ -211,11 +211,11 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             return resolveCommand(commandId, runtimeInputValues, userI);
         }
         final CommandEntity commandEntity = get(commandId);
-        XnatCommandWrapper wrapper = null;
-        if (commandEntity.getXnatCommandWrappers() != null) {
-            for (final XnatCommandWrapper xnatCommandWrapper : commandEntity.getXnatCommandWrappers()) {
-                if (xnatCommandWrapperName.equals(xnatCommandWrapper.getName())) {
-                    wrapper = xnatCommandWrapper;
+        CommandWrapperEntity wrapper = null;
+        if (commandEntity.getCommandWrapperEntities() != null) {
+            for (final CommandWrapperEntity commandWrapperEntity : commandEntity.getCommandWrapperEntities()) {
+                if (xnatCommandWrapperName.equals(commandWrapperEntity.getName())) {
+                    wrapper = commandWrapperEntity;
                     break;
                 }
             }
@@ -237,11 +237,11 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             return resolveCommand(commandId, runtimeInputValues, userI);
         }
         final CommandEntity commandEntity = get(commandId);
-        XnatCommandWrapper wrapper = null;
-        if (commandEntity.getXnatCommandWrappers() != null) {
-            for (final XnatCommandWrapper xnatCommandWrapper : commandEntity.getXnatCommandWrappers()) {
-                if (xnatCommandWrapperId.equals(xnatCommandWrapper.getId())) {
-                    wrapper = xnatCommandWrapper;
+        CommandWrapperEntity wrapper = null;
+        if (commandEntity.getCommandWrapperEntities() != null) {
+            for (final CommandWrapperEntity commandWrapperEntity : commandEntity.getCommandWrapperEntities()) {
+                if (xnatCommandWrapperId.equals(commandWrapperEntity.getId())) {
+                    wrapper = commandWrapperEntity;
                     break;
                 }
             }
@@ -271,18 +271,18 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             throw new CommandResolutionException("Cannot resolve command without an XNAT wrapper. Command has outputs that will not be handled.");
         }
 
-        final XnatCommandWrapper xnatCommandWrapperToResolve = XnatCommandWrapper.passthrough(commandEntity);
+        final CommandWrapperEntity commandWrapperEntityToResolve = CommandWrapperEntity.passthrough(commandEntity);
 
-        return resolveCommand(xnatCommandWrapperToResolve, commandEntity, runtimeInputValues, userI);
+        return resolveCommand(commandWrapperEntityToResolve, commandEntity, runtimeInputValues, userI);
     }
 
     @Override
-    public ResolvedCommand resolveCommand(final XnatCommandWrapper xnatCommandWrapper,
+    public ResolvedCommand resolveCommand(final CommandWrapperEntity commandWrapperEntity,
                                           final CommandEntity commandEntity,
                                           final Map<String, String> runtimeInputValues,
                                           final UserI userI)
             throws NotFoundException, CommandResolutionException {
-        return CommandResolutionHelper.resolve(xnatCommandWrapper, commandEntity, runtimeInputValues, userI, configService);
+        return CommandResolutionHelper.resolve(commandWrapperEntity, commandEntity, runtimeInputValues, userI, configService);
     }
 
     @Override

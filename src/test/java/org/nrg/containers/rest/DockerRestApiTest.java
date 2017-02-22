@@ -22,7 +22,7 @@ import org.nrg.containers.model.auto.CommandPojo.CommandWrapperPojo;
 import org.nrg.containers.model.auto.DockerImage;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.model.DockerServerPrefsBean;
-import org.nrg.containers.model.XnatCommandWrapper;
+import org.nrg.containers.model.CommandWrapperEntity;
 import org.nrg.containers.model.auto.CommandPojo;
 import org.nrg.containers.model.auto.DockerHub;
 import org.nrg.containers.model.auto.DockerImageAndCommandSummary;
@@ -634,7 +634,7 @@ public class DockerRestApiTest {
 
         final String fakeCommandName = "fake";
         final String fakeCommandWrapperName = "fake-on-thing";
-        final XnatCommandWrapper fakeWrapper = new XnatCommandWrapper();
+        final CommandWrapperEntity fakeWrapper = new CommandWrapperEntity();
         fakeWrapper.setName(fakeCommandWrapperName);
         final DockerCommandEntity fakeCommand = new DockerCommandEntity();
         fakeCommand.setHash(fakeImageId);

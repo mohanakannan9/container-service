@@ -30,7 +30,7 @@ import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.containers.model.XnatCommandInput;
 import org.nrg.containers.model.XnatCommandOutput;
-import org.nrg.containers.model.XnatCommandWrapper;
+import org.nrg.containers.model.CommandWrapperEntity;
 import org.nrg.containers.model.xnat.Assessor;
 import org.nrg.containers.model.xnat.Project;
 import org.nrg.containers.model.xnat.Resource;
@@ -57,12 +57,12 @@ public class CommandResolutionHelper {
     private static final Logger log = LoggerFactory.getLogger(CommandResolutionHelper.class);
     private static final String JSONPATH_SUBSTRING_REGEX = "\\^(wrapper:)?(.+)\\^";
 
-    private final XnatCommandWrapper xnatCommandWrapper;
+    private final CommandWrapperEntity commandWrapperEntity;
     private final CommandEntity commandEntity;
     private final ResolvedCommand resolvedCommand;
     private CommandEntity cachedCommandEntity;
     private String commandJson;
-    private XnatCommandWrapper cachedCommandWrapper;
+    private CommandWrapperEntity cachedCommandWrapper;
     private String commandWrapperJson;
     private final Map<String, XnatCommandInput> resolvedXnatInputObjects = Maps.newHashMap();
     private final Map<String, String> resolvedXnatInputValuesByCommandInputName = Maps.newHashMap();
@@ -75,16 +75,16 @@ public class CommandResolutionHelper {
     private final ConfigService configService;
     private final Pattern jsonpathSubstringPattern;
 
-    private CommandResolutionHelper(final XnatCommandWrapper xnatCommandWrapper,
+    private CommandResolutionHelper(final CommandWrapperEntity commandWrapperEntity,
                                     final CommandEntity commandEntity,
                                     final Map<String, String> inputValues,
                                     final UserI userI,
                                     final ConfigService configService) throws CommandResolutionException {
-        this.xnatCommandWrapper = xnatCommandWrapper;
+        this.commandWrapperEntity = commandWrapperEntity;
         this.commandEntity = commandEntity;
         switch (commandEntity.getType()) {
             case DOCKER:
-                resolvedCommand = new ResolvedDockerCommand(xnatCommandWrapper.getId(), (DockerCommandEntity) commandEntity);
+                resolvedCommand = new ResolvedDockerCommand(commandWrapperEntity.getId(), (DockerCommandEntity) commandEntity);
                 break;
             default:
                 // If this happens, it is because I added a new CommandType and didn't add a case to this switch statement. Oops.
@@ -109,13 +109,13 @@ public class CommandResolutionHelper {
         resolvedCommand.setRawInputValues(this.inputValues);
     }
 
-    public static ResolvedCommand resolve(final XnatCommandWrapper xnatCommandWrapper,
+    public static ResolvedCommand resolve(final CommandWrapperEntity commandWrapperEntity,
                                           final CommandEntity commandEntity,
                                           final Map<String, String> inputValues,
                                           final UserI userI,
                                           final ConfigService configService)
             throws CommandResolutionException {
-        final CommandResolutionHelper helper = new CommandResolutionHelper(xnatCommandWrapper, commandEntity, inputValues, userI, configService);
+        final CommandResolutionHelper helper = new CommandResolutionHelper(commandWrapperEntity, commandEntity, inputValues, userI, configService);
         return helper.resolve();
     }
 
@@ -152,8 +152,8 @@ public class CommandResolutionHelper {
     private Map<String, String> resolveXnatWrapperInputs() throws CommandResolutionException {
         log.info("Resolving xnat wrapper inputs.");
 
-        final boolean hasExternalInputs = !(xnatCommandWrapper.getExternalInputs() == null || xnatCommandWrapper.getExternalInputs().isEmpty());
-        final boolean hasDerivedInputs = !(xnatCommandWrapper.getDerivedInputs() == null || xnatCommandWrapper.getDerivedInputs().isEmpty());
+        final boolean hasExternalInputs = !(commandWrapperEntity.getExternalInputs() == null || commandWrapperEntity.getExternalInputs().isEmpty());
+        final boolean hasDerivedInputs = !(commandWrapperEntity.getDerivedInputs() == null || commandWrapperEntity.getDerivedInputs().isEmpty());
 
         if (!hasExternalInputs) {
             if (hasDerivedInputs) {
@@ -169,7 +169,7 @@ public class CommandResolutionHelper {
 
         final Map<String, String> resolvedXnatWrapperInputValuesByName = Maps.newHashMap();
         log.info("Resolving external xnat wrapper inputs.");
-        for (final XnatCommandInput externalInput : xnatCommandWrapper.getExternalInputs()) {
+        for (final XnatCommandInput externalInput : commandWrapperEntity.getExternalInputs()) {
             log.info(String.format("Resolving input \"%s\".", externalInput.getName()));
 
             String resolvedValue = null;
@@ -474,7 +474,7 @@ public class CommandResolutionHelper {
         if (hasDerivedInputs) {
             log.info("Resolving derived xnat wrapper inputs.");
 
-            for (final XnatCommandInput derivedInput : xnatCommandWrapper.getDerivedInputs()) {
+            for (final XnatCommandInput derivedInput : commandWrapperEntity.getDerivedInputs()) {
                 log.info(String.format("Resolving input \"%s\".", derivedInput.getName()));
 
                 if (StringUtils.isBlank(derivedInput.getDerivedFromXnatInput())) {
@@ -1180,8 +1180,8 @@ public class CommandResolutionHelper {
     }
 
     private String commandWrapperAsJson() throws CommandResolutionException {
-        if (!xnatCommandWrapper.equals(cachedCommandWrapper)) {
-            cachedCommandWrapper = xnatCommandWrapper;
+        if (!commandWrapperEntity.equals(cachedCommandWrapper)) {
+            cachedCommandWrapper = commandWrapperEntity;
 
             try {
                 commandWrapperJson = mapper.writeValueAsString(cachedCommandWrapper);
@@ -1352,8 +1352,8 @@ public class CommandResolutionHelper {
         }
 
         final Map<String, XnatCommandOutput> xnatCommandOutputsByCommandOutputName = Maps.newHashMap();
-        if (xnatCommandWrapper.getOutputHandlers() != null) {
-            for (final XnatCommandOutput xnatCommandOutput : xnatCommandWrapper.getOutputHandlers()) {
+        if (commandWrapperEntity.getOutputHandlers() != null) {
+            for (final XnatCommandOutput xnatCommandOutput : commandWrapperEntity.getOutputHandlers()) {
                 xnatCommandOutputsByCommandOutputName.put(xnatCommandOutput.getCommandOutputName(), xnatCommandOutput);
             }
         }

@@ -26,7 +26,7 @@ import static org.junit.Assert.assertTrue;
 @RunWith(SpringJUnit4ClassRunner.class)
 @Transactional
 @ContextConfiguration(classes = CommandTestConfig.class)
-public class XnatCommandWrapperTest {
+public class CommandWrapperEntityTest {
     private static final String COOL_INPUT_JSON = "{" +
             "\"name\":\"my_cool_input\", " +
             "\"description\":\"A boolean value\", " +
@@ -146,12 +146,12 @@ public class XnatCommandWrapperTest {
     @Test
     public void testDeserializeCommandWithCommandWrapper() throws Exception {
 
-        final XnatCommandWrapper xnatCommandWrapper = mapper.readValue(XNAT_COMMAND_WRAPPER, XnatCommandWrapper.class);
+        final CommandWrapperEntity commandWrapperEntity = mapper.readValue(XNAT_COMMAND_WRAPPER, CommandWrapperEntity.class);
 
         final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
 
-        assertThat(commandEntity.getXnatCommandWrappers(), hasSize(1));
-        assertTrue(commandEntity.getXnatCommandWrappers().contains(xnatCommandWrapper));
+        assertThat(commandEntity.getCommandWrapperEntities(), hasSize(1));
+        assertTrue(commandEntity.getCommandWrapperEntities().contains(commandWrapperEntity));
     }
 
     @Test
@@ -166,12 +166,12 @@ public class XnatCommandWrapperTest {
 
         assertEquals(commandEntity, retrievedCommandEntity);
 
-        final List<XnatCommandWrapper> commandWrappers = retrievedCommandEntity.getXnatCommandWrappers();
+        final List<CommandWrapperEntity> commandWrappers = retrievedCommandEntity.getCommandWrapperEntities();
         assertThat(commandWrappers, hasSize(1));
 
-        final XnatCommandWrapper xnatCommandWrapper = commandWrappers.get(0);
-        assertThat(xnatCommandWrapper.getId(), not(0L));
-        assertEquals(commandEntity, xnatCommandWrapper.getCommandEntity());
+        final CommandWrapperEntity commandWrapperEntity = commandWrappers.get(0);
+        assertThat(commandWrapperEntity.getId(), not(0L));
+        assertEquals(commandEntity, commandWrapperEntity.getCommandEntity());
     }
 
     @Test

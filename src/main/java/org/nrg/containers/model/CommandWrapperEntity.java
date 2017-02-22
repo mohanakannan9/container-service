@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Objects;
 
 @Entity
-public class XnatCommandWrapper implements Serializable {
+public class CommandWrapperEntity implements Serializable {
     private long id;
     private String name;
     private String description;
@@ -26,8 +26,8 @@ public class XnatCommandWrapper implements Serializable {
     @JsonProperty("derived-inputs") private List<XnatCommandInput> derivedInputs;
     @JsonProperty("output-handlers") private List<XnatCommandOutput> outputHandlers;
 
-    public static XnatCommandWrapper passthrough(final CommandEntity commandEntity) {
-        final XnatCommandWrapper identity = new XnatCommandWrapper();
+    public static CommandWrapperEntity passthrough(final CommandEntity commandEntity) {
+        final CommandWrapperEntity identity = new CommandWrapperEntity();
         identity.commandEntity = commandEntity;
 
         final List<XnatCommandInput> externalInputs = Lists.newArrayList();
@@ -41,20 +41,20 @@ public class XnatCommandWrapper implements Serializable {
         return identity;
     }
 
-    public static XnatCommandWrapper fromPojo(final CommandPojo.CommandWrapperPojo commandWrapperPojo) {
-        final XnatCommandWrapper xnatCommandWrapper = new XnatCommandWrapper();
-        xnatCommandWrapper.name = commandWrapperPojo.name();
-        xnatCommandWrapper.description = commandWrapperPojo.description();
+    public static CommandWrapperEntity fromPojo(final CommandPojo.CommandWrapperPojo commandWrapperPojo) {
+        final CommandWrapperEntity commandWrapperEntity = new CommandWrapperEntity();
+        commandWrapperEntity.name = commandWrapperPojo.name();
+        commandWrapperEntity.description = commandWrapperPojo.description();
         for (final CommandPojo.CommandWrapperInputPojo externalCommandWrapperInputPojo : commandWrapperPojo.externalInputs()) {
-            xnatCommandWrapper.addExternalInput(XnatCommandInput.fromPojo(externalCommandWrapperInputPojo));
+            commandWrapperEntity.addExternalInput(XnatCommandInput.fromPojo(externalCommandWrapperInputPojo));
         }
         for (final CommandPojo.CommandWrapperInputPojo derivedCommandWrapperInputPojo : commandWrapperPojo.derivedInputs()) {
-            xnatCommandWrapper.addDerivedInput(XnatCommandInput.fromPojo(derivedCommandWrapperInputPojo));
+            commandWrapperEntity.addDerivedInput(XnatCommandInput.fromPojo(derivedCommandWrapperInputPojo));
         }
         for (final CommandPojo.CommandWrapperOutputPojo commandWrapperOutputPojo : commandWrapperPojo.outputHandlers()) {
-            xnatCommandWrapper.addOutputHandler(XnatCommandOutput.fromPojo(commandWrapperOutputPojo));
+            commandWrapperEntity.addOutputHandler(XnatCommandOutput.fromPojo(commandWrapperOutputPojo));
         }
-        return xnatCommandWrapper;
+        return commandWrapperEntity;
     }
 
     @Id
@@ -162,7 +162,7 @@ public class XnatCommandWrapper implements Serializable {
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final XnatCommandWrapper that = (XnatCommandWrapper) o;
+        final CommandWrapperEntity that = (CommandWrapperEntity) o;
         return Objects.equals(this.id, that.id) &&
                 Objects.equals(this.name, that.name) &&
                 Objects.equals(this.description, that.description) &&

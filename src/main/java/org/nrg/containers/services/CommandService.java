@@ -10,7 +10,7 @@ import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.containers.model.ResolvedDockerCommand;
-import org.nrg.containers.model.XnatCommandWrapper;
+import org.nrg.containers.model.CommandWrapperEntity;
 import org.nrg.containers.model.auto.CommandPojo;
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
 import org.nrg.xft.security.UserI;
@@ -44,7 +44,7 @@ public interface CommandService extends BaseHibernateService<CommandEntity> {
                                    final Map<String, String> variableRuntimeValues,
                                    final UserI userI)
             throws NotFoundException, CommandResolutionException;
-    ResolvedCommand resolveCommand(final XnatCommandWrapper xnatCommandWrapper,
+    ResolvedCommand resolveCommand(final CommandWrapperEntity commandWrapperEntity,
                                    final CommandEntity commandEntity,
                                    final Map<String, String> variableRuntimeValues,
                                    final UserI userI)

@@ -16,7 +16,7 @@ import org.nrg.containers.model.CommandType;
 import org.nrg.containers.model.DockerCommandEntity;
 import org.nrg.containers.model.XnatCommandInput;
 import org.nrg.containers.model.XnatCommandOutput;
-import org.nrg.containers.model.XnatCommandWrapper;
+import org.nrg.containers.model.CommandWrapperEntity;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -126,11 +126,11 @@ public abstract class CommandPojo {
                                 return commandOutput == null ? null : CommandOutputPojo.create(commandOutput);
                             }
                         }))
-                .xnatCommandWrappers(commandEntity.getXnatCommandWrappers() == null ? Lists.<CommandWrapperPojo>newArrayList() :
-                        Lists.transform(commandEntity.getXnatCommandWrappers(), new Function<XnatCommandWrapper, CommandWrapperPojo>() {
+                .xnatCommandWrappers(commandEntity.getCommandWrapperEntities() == null ? Lists.<CommandWrapperPojo>newArrayList() :
+                        Lists.transform(commandEntity.getCommandWrapperEntities(), new Function<CommandWrapperEntity, CommandWrapperPojo>() {
                             @Nullable
                             @Override
-                            public CommandWrapperPojo apply(@Nullable final XnatCommandWrapper xnatCommandWrapper) {
+                            public CommandWrapperPojo apply(@Nullable final CommandWrapperEntity xnatCommandWrapper) {
                                 return xnatCommandWrapper == null ? null : CommandWrapperPojo.create(xnatCommandWrapper);
                             }
                         }));
@@ -489,35 +489,35 @@ public abstract class CommandPojo {
                     .outputHandlers(Lists.<CommandWrapperOutputPojo>newArrayList());
         }
 
-        static CommandWrapperPojo create(final XnatCommandWrapper xnatCommandWrapper) {
-            final List<CommandWrapperInputPojo> external = xnatCommandWrapper.getExternalInputs() == null ?
+        static CommandWrapperPojo create(final CommandWrapperEntity commandWrapperEntity) {
+            final List<CommandWrapperInputPojo> external = commandWrapperEntity.getExternalInputs() == null ?
                     Lists.<CommandWrapperInputPojo>newArrayList() :
-                    Lists.transform(xnatCommandWrapper.getExternalInputs(), new Function<XnatCommandInput, CommandWrapperInputPojo>() {
+                    Lists.transform(commandWrapperEntity.getExternalInputs(), new Function<XnatCommandInput, CommandWrapperInputPojo>() {
                         @Nullable
                         @Override
                         public CommandWrapperInputPojo apply(@Nullable final XnatCommandInput xnatCommandInput) {
                             return xnatCommandInput == null ? null : CommandWrapperInputPojo.create(xnatCommandInput);
                         }
                     });
-            final List<CommandWrapperInputPojo> derived = xnatCommandWrapper.getDerivedInputs() == null ?
+            final List<CommandWrapperInputPojo> derived = commandWrapperEntity.getDerivedInputs() == null ?
                     Lists.<CommandWrapperInputPojo>newArrayList() :
-                    Lists.transform(xnatCommandWrapper.getDerivedInputs(), new Function<XnatCommandInput, CommandWrapperInputPojo>() {
+                    Lists.transform(commandWrapperEntity.getDerivedInputs(), new Function<XnatCommandInput, CommandWrapperInputPojo>() {
                         @Nullable
                         @Override
                         public CommandWrapperInputPojo apply(@Nullable final XnatCommandInput xnatCommandInput) {
                             return xnatCommandInput == null ? null : CommandWrapperInputPojo.create(xnatCommandInput);
                         }
                     });
-            final List<CommandWrapperOutputPojo> outputs = xnatCommandWrapper.getOutputHandlers() == null ?
+            final List<CommandWrapperOutputPojo> outputs = commandWrapperEntity.getOutputHandlers() == null ?
                     Lists.<CommandWrapperOutputPojo>newArrayList() :
-                    Lists.transform(xnatCommandWrapper.getOutputHandlers(), new Function<XnatCommandOutput, CommandWrapperOutputPojo>() {
+                    Lists.transform(commandWrapperEntity.getOutputHandlers(), new Function<XnatCommandOutput, CommandWrapperOutputPojo>() {
                         @Nullable
                         @Override
                         public CommandWrapperOutputPojo apply(@Nullable final XnatCommandOutput xnatCommandOutput) {
                             return xnatCommandOutput == null ? null : CommandWrapperOutputPojo.create(xnatCommandOutput);
                         }
                     });
-            return create(xnatCommandWrapper.getId(), xnatCommandWrapper.getName(), xnatCommandWrapper.getDescription(),
+            return create(commandWrapperEntity.getId(), commandWrapperEntity.getName(), commandWrapperEntity.getDescription(),
                     external, derived, outputs);
         }
 

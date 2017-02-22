@@ -4,7 +4,7 @@ import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Hibernate;
 import org.nrg.containers.model.CommandEntity;
-import org.nrg.containers.model.XnatCommandWrapper;
+import org.nrg.containers.model.CommandWrapperEntity;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,12 +27,12 @@ public class CommandDao extends AbstractHibernateDAO<CommandEntity> {
         Hibernate.initialize(commandEntity.getMounts());
         Hibernate.initialize(commandEntity.getInputs());
         Hibernate.initialize(commandEntity.getOutputs());
-        Hibernate.initialize(commandEntity.getXnatCommandWrappers());
-        if (commandEntity.getXnatCommandWrappers() != null) {
-            for (final XnatCommandWrapper xnatCommandWrapper : commandEntity.getXnatCommandWrappers()) {
-                Hibernate.initialize(xnatCommandWrapper.getExternalInputs());
-                Hibernate.initialize(xnatCommandWrapper.getDerivedInputs());
-                Hibernate.initialize(xnatCommandWrapper.getOutputHandlers());
+        Hibernate.initialize(commandEntity.getCommandWrapperEntities());
+        if (commandEntity.getCommandWrapperEntities() != null) {
+            for (final CommandWrapperEntity commandWrapperEntity : commandEntity.getCommandWrapperEntities()) {
+                Hibernate.initialize(commandWrapperEntity.getExternalInputs());
+                Hibernate.initialize(commandWrapperEntity.getDerivedInputs());
+                Hibernate.initialize(commandWrapperEntity.getOutputHandlers());
             }
         }
     }

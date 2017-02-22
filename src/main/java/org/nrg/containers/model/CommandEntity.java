@@ -48,7 +48,7 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
     @JsonProperty("environment-variables") private Map<String, String> environmentVariables;
     private List<CommandInput> inputs;
     private List<CommandOutput> outputs;
-    @JsonProperty("xnat") private List<XnatCommandWrapper> xnatCommandWrappers;
+    @JsonProperty("xnat") private List<CommandWrapperEntity> commandWrapperEntities;
 
     public static CommandEntity commandPojoToCommand(final CommandPojo commandPojo) throws CommandValidationException {
         final List<String> errors = commandPojo.validate();
@@ -90,7 +90,7 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
             commandEntity.addOutput(CommandOutput.fromPojo(commandOutputPojo));
         }
         for (final CommandPojo.CommandWrapperPojo commandWrapperPojo : commandPojo.xnatCommandWrappers()) {
-            commandEntity.addXnatCommandWrapper(XnatCommandWrapper.fromPojo(commandWrapperPojo));
+            commandEntity.addXnatCommandWrapper(CommandWrapperEntity.fromPojo(commandWrapperPojo));
         }
 
         return commandEntity;
@@ -264,27 +264,27 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
     }
 
     @OneToMany(mappedBy = "commandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
-    public List<XnatCommandWrapper> getXnatCommandWrappers() {
-        return xnatCommandWrappers;
+    public List<CommandWrapperEntity> getCommandWrapperEntities() {
+        return commandWrapperEntities;
     }
 
-    public void setXnatCommandWrappers(final List<XnatCommandWrapper> xnatCommandWrappers) {
-        this.xnatCommandWrappers = xnatCommandWrappers == null ?
-                Lists.<XnatCommandWrapper>newArrayList() :
-                xnatCommandWrappers;
+    public void setCommandWrapperEntities(final List<CommandWrapperEntity> commandWrapperEntities) {
+        this.commandWrapperEntities = commandWrapperEntities == null ?
+                Lists.<CommandWrapperEntity>newArrayList() :
+                commandWrapperEntities;
     }
 
     @Transient
-    public void addXnatCommandWrapper(final XnatCommandWrapper xnatCommandWrapper) {
-        if (xnatCommandWrapper == null) {
+    public void addXnatCommandWrapper(final CommandWrapperEntity commandWrapperEntity) {
+        if (commandWrapperEntity == null) {
             return;
         }
-        xnatCommandWrapper.setCommandEntity(this);
+        commandWrapperEntity.setCommandEntity(this);
 
-        if (this.xnatCommandWrappers == null) {
-            this.xnatCommandWrappers = Lists.newArrayList();
+        if (this.commandWrapperEntities == null) {
+            this.commandWrapperEntities = Lists.newArrayList();
         }
-        this.xnatCommandWrappers.add(xnatCommandWrapper);
+        this.commandWrapperEntities.add(commandWrapperEntity);
     }
 
     @Override
@@ -306,13 +306,13 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
                 Objects.equals(this.environmentVariables, that.environmentVariables) &&
                 Objects.equals(this.inputs, that.inputs) &&
                 Objects.equals(this.outputs, that.outputs) &&
-                Objects.equals(this.xnatCommandWrappers, that.xnatCommandWrappers);
+                Objects.equals(this.commandWrapperEntities, that.commandWrapperEntities);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), name, label, description, version, schemaVersion, infoUrl, image,
-                workingDirectory, commandLine, mounts, environmentVariables, inputs, outputs, xnatCommandWrappers);
+                workingDirectory, commandLine, mounts, environmentVariables, inputs, outputs, commandWrapperEntities);
     }
 
     @Override
@@ -331,7 +331,7 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
                 .add("environmentVariables", environmentVariables)
                 .add("inputs", inputs)
                 .add("outputs", outputs)
-                .add("xnatCommandWrappers", xnatCommandWrappers);
+                .add("xnatCommandWrappers", commandWrapperEntities);
     }
 
     @Override

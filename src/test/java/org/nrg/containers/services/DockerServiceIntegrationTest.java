@@ -13,7 +13,7 @@ import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.config.DockerServiceIntegrationTestConfig;
 import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.DockerServerPrefsBean;
-import org.nrg.containers.model.XnatCommandWrapper;
+import org.nrg.containers.model.CommandWrapperEntity;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
@@ -91,9 +91,9 @@ public class DockerServiceIntegrationTest {
         final CommandEntity commandEntity = commandEntities.get(0);
         assertThat(commandEntity.getId(), not(eq(0L)));
 
-        final List<XnatCommandWrapper> wrappers = commandEntity.getXnatCommandWrappers();
+        final List<CommandWrapperEntity> wrappers = commandEntity.getCommandWrapperEntities();
         assertThat(wrappers.size(), greaterThan(0));
-        final XnatCommandWrapper wrapper = wrappers.get(0);
+        final CommandWrapperEntity wrapper = wrappers.get(0);
         assertThat(wrapper.getId(), not(eq(0L)));
 
         client.removeImage(imageName);
