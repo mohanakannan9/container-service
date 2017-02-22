@@ -269,9 +269,13 @@ public class DockerServiceImpl implements DockerService {
             log.debug("Parsing labels for " + imageName);
         }
         final List<Command> parsed = CommandLabelHelper.parseLabels(imageName, dockerImage);
-        if (log.isDebugEnabled()) {
-            log.debug("Saving commands from image labels");
+
+        if (parsed == null || parsed.isEmpty()) {
+            log.debug("Did not find any command labels.");
+            return null;
         }
+
+        log.debug("Saving commands from image labels");
         return commandService.save(parsed);
     }
 }

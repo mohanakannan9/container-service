@@ -25,32 +25,37 @@ public class CommandLabelHelper {
     }
 
     public static List<Command> parseLabels(final String imageName, final DockerImage dockerImage, final ObjectMapper objectMapper) {
+        if (dockerImage == null) {
+            return null;
+        }
         final Map<String, String> labels = dockerImage.labels();
-        if (labels != null && !labels.isEmpty() && labels.containsKey(LABEL_KEY)) {
-            final String labelValue = labels.get(LABEL_KEY);
-            if (StringUtils.isNotBlank(labelValue)) {
-                try {
-                    final List<Command> commandsFromLabels =
-                            objectMapper.readValue(labelValue, new TypeReference<List<Command>>() {});
-                    final List<Command> commandsToReturn = Lists.newArrayList();
-                    if (commandsFromLabels != null && !commandsFromLabels.isEmpty()) {
-                        for (final Command command : commandsFromLabels) {
-                            // The command as read from the image may not contain all the values we want to store
-                            // So we add them now.
-                            commandsToReturn.add(
-                                    command.toBuilder()
-                                            .type(CommandType.DOCKER.getName())
-                                            .image(imageName)
-                                            .hash(dockerImage.imageId())
-                                            .build()
-                            );
-                        }
+        if (labels == null || labels.isEmpty() || !labels.containsKey(LABEL_KEY)) {
+            return null;
+        }
+
+        final String labelValue = labels.get(LABEL_KEY);
+        if (StringUtils.isNotBlank(labelValue)) {
+            try {
+                final List<Command> commandsFromLabels =
+                        objectMapper.readValue(labelValue, new TypeReference<List<Command>>() {});
+                final List<Command> commandsToReturn = Lists.newArrayList();
+                if (commandsFromLabels != null && !commandsFromLabels.isEmpty()) {
+                    for (final Command command : commandsFromLabels) {
+                        // The command as read from the image may not contain all the values we want to store
+                        // So we add them now.
+                        commandsToReturn.add(
+                                command.toBuilder()
+                                        .type(CommandType.DOCKER.getName())
+                                        .image(imageName)
+                                        .hash(dockerImage.imageId())
+                                        .build()
+                        );
                     }
-                    return commandsToReturn;
-                } catch (IOException e) {
-                    // TODO throw exception?
-                    log.error("Could not parse Commands from label: " + labelValue, e);
                 }
+                return commandsToReturn;
+            } catch (IOException e) {
+                // TODO throw exception?
+                log.error("Could not parse Commands from label: " + labelValue, e);
             }
         }
         return null;

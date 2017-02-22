@@ -419,14 +419,15 @@ public class DockerControlApi implements ContainerControlApi {
             try {
                 return getImageById(name);
             } catch (NotFoundException e) {
-                final String m = String.format("The image %s was not found", name);
+                final String m = String.format("Image \"%s\" was not found", name);
                 log.error(m);
-                throw new DockerServerException(m);
+                // throw new DockerServerException(m);
             }
         } catch (DockerException | InterruptedException e) {
             log.error(e.getMessage());
             throw new DockerServerException(e);
         }
+        return null;
     }
 
     @Override
@@ -438,19 +439,20 @@ public class DockerControlApi implements ContainerControlApi {
             try (final DockerClient client = getClient()) {
                 final LoadProgressHandler handler = new LoadProgressHandler();
                 client.pull(name, registryAuth(hub), handler);
-                final String imageId = handler.getImageId();
+                // final String imageId = handler.getImageId();
                 try {
-                    return getImageById(imageId);
+                    return getImageById(name);
                 } catch (NotFoundException e) {
-                    final String m = String.format("The image with id %s was not found", imageId);
+                    final String m = String.format("Image \"%s\" was not found", name);
                     log.error(m);
-                    throw new DockerServerException(m);
+                    // throw new DockerServerException(m);
                 }
             } catch (DockerException | InterruptedException e) {
                 log.error(e.getMessage());
                 throw new DockerServerException(e);
             }
         }
+        return null;
     }
 
     @Override
