@@ -32,8 +32,8 @@ public class CommandWrapperEntity implements Serializable {
 
         final List<CommandWrapperInputEntity> externalInputs = Lists.newArrayList();
         if (commandEntity.getInputs() != null) {
-            for (final CommandInput commandInput : commandEntity.getInputs()) {
-                externalInputs.add(CommandWrapperInputEntity.passthrough(commandInput));
+            for (final CommandInputEntity commandInputEntity : commandEntity.getInputs()) {
+                externalInputs.add(CommandWrapperInputEntity.passthrough(commandInputEntity));
             }
         }
         identity.setExternalInputs(externalInputs);

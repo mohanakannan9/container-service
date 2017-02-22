@@ -16,7 +16,7 @@ import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.CommandEntity;
-import org.nrg.containers.model.CommandInput;
+import org.nrg.containers.model.CommandInputEntity;
 import org.nrg.containers.model.DockerCommandEntity;
 import org.nrg.containers.model.auto.CommandPojo.CommandWrapperPojo;
 import org.nrg.containers.model.auto.DockerImage;
@@ -518,7 +518,7 @@ public class DockerRestApiTest {
         assertEquals(expected.image(), response.getImage()); // Did not set image ID on "expected"
 
         for (final CommandPojo.CommandInputPojo commandInputPojo : expected.inputs()) {
-            assertThat(CommandInput.fromPojo(commandInputPojo), isIn(response.getInputs()));
+            assertThat(CommandInputEntity.fromPojo(commandInputPojo), isIn(response.getInputs()));
         }
     }
 
@@ -593,7 +593,7 @@ public class DockerRestApiTest {
         assertEquals(expected.commandLine(), response.getCommandLine());
         assertEquals(expected.image(), response.getImage()); // Did not set image ID on "expected"
         for (final CommandPojo.CommandInputPojo commandInputPojo : expected.inputs()) {
-            assertThat(CommandInput.fromPojo(commandInputPojo), isIn(response.getInputs()));
+            assertThat(CommandInputEntity.fromPojo(commandInputPojo), isIn(response.getInputs()));
         }
 
     }

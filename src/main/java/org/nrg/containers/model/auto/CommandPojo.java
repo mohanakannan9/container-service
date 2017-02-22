@@ -9,7 +9,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.model.CommandEntity;
-import org.nrg.containers.model.CommandInput;
+import org.nrg.containers.model.CommandInputEntity;
 import org.nrg.containers.model.CommandMountEntity;
 import org.nrg.containers.model.CommandOutput;
 import org.nrg.containers.model.CommandType;
@@ -111,10 +111,10 @@ public abstract class CommandPojo {
                             }
                         }))
                 .inputs(commandEntity.getInputs() == null ? Lists.<CommandInputPojo>newArrayList() :
-                        Lists.transform(commandEntity.getInputs(), new Function<CommandInput, CommandInputPojo>() {
+                        Lists.transform(commandEntity.getInputs(), new Function<CommandInputEntity, CommandInputPojo>() {
                             @Nullable
                             @Override
-                            public CommandInputPojo apply(@Nullable final CommandInput commandInput) {
+                            public CommandInputPojo apply(@Nullable final CommandInputEntity commandInput) {
                                 return commandInput == null ? null : CommandInputPojo.create(commandInput);
                             }
                         }))
@@ -402,13 +402,13 @@ public abstract class CommandPojo {
                                        @JsonProperty("true-value") String trueValue,
                                        @JsonProperty("false-value") String falseValue,
                                        @JsonProperty("value") String value) {
-            return new AutoValue_CommandPojo_CommandInputPojo(name, description, type == null ? CommandInput.DEFAULT_TYPE.getName() : type, required, matcher, defaultValue, rawReplacementKey, commandLineFlag, commandLineSeparator, trueValue, falseValue, value);
+            return new AutoValue_CommandPojo_CommandInputPojo(name, description, type == null ? CommandInputEntity.DEFAULT_TYPE.getName() : type, required, matcher, defaultValue, rawReplacementKey, commandLineFlag, commandLineSeparator, trueValue, falseValue, value);
         }
 
-        static CommandInputPojo create(final CommandInput commandInput) {
-            return create(commandInput.getName(), commandInput.getDescription(), commandInput.getType().getName(), commandInput.isRequired(), commandInput.getMatcher(),
-                    commandInput.getDefaultValue(), commandInput.getRawReplacementKey(), commandInput.getCommandLineFlag(), commandInput.getCommandLineSeparator(),
-                    commandInput.getTrueValue(), commandInput.getFalseValue(), commandInput.getValue());
+        static CommandInputPojo create(final CommandInputEntity commandInputEntity) {
+            return create(commandInputEntity.getName(), commandInputEntity.getDescription(), commandInputEntity.getType().getName(), commandInputEntity.isRequired(), commandInputEntity.getMatcher(),
+                    commandInputEntity.getDefaultValue(), commandInputEntity.getRawReplacementKey(), commandInputEntity.getCommandLineFlag(), commandInputEntity.getCommandLineSeparator(),
+                    commandInputEntity.getTrueValue(), commandInputEntity.getFalseValue(), commandInputEntity.getValue());
         }
 
         List<String> validate() {

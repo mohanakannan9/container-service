@@ -19,7 +19,7 @@ import org.nrg.containers.exceptions.CommandMountResolutionException;
 import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.CommandWrapperInputResolutionException;
 import org.nrg.containers.model.CommandEntity;
-import org.nrg.containers.model.CommandInput;
+import org.nrg.containers.model.CommandInputEntity;
 import org.nrg.containers.model.CommandMountEntity;
 import org.nrg.containers.model.CommandOutput;
 import org.nrg.containers.model.ContainerExecutionMount;
@@ -1035,8 +1035,8 @@ public class CommandResolutionHelper {
         }
 
         final Map<String, String> resolvedInputValuesByName = Maps.newHashMap();
-        for (final CommandInput commandInput : commandEntity.getInputs()) {
-            log.info(String.format("Resolving command input \"%s\".", commandInput.getName()));
+        for (final CommandInputEntity commandInputEntity : commandEntity.getInputs()) {
+            log.info(String.format("Resolving command input \"%s\".", commandInputEntity.getName()));
 
             // // Check that all prerequisites have already been resolved.
             // // TODO Move this to a command validation function. Command should not be saved unless inputs are in correct order. At this stage, we should be able to safely iterate.
@@ -1083,14 +1083,14 @@ public class CommandResolutionHelper {
 
             // Give the input its default value
             if (log.isDebugEnabled()) {
-                log.debug("Default value: " + commandInput.getDefaultValue());
+                log.debug("Default value: " + commandInputEntity.getDefaultValue());
             }
-            if (commandInput.getDefaultValue() != null) {
-                 resolvedValue = commandInput.getDefaultValue();
+            if (commandInputEntity.getDefaultValue() != null) {
+                 resolvedValue = commandInputEntity.getDefaultValue();
             }
 
             // If the input is supposed to get a value from an XNAT input, use that
-            final String preresolvedValue = resolvedXnatInputValuesByCommandInputName.get(commandInput.getName());
+            final String preresolvedValue = resolvedXnatInputValuesByCommandInputName.get(commandInputEntity.getName());
             if (preresolvedValue != null) {
                 if (log.isDebugEnabled()) {
                     log.debug("XNAT Wrapper value: " + preresolvedValue);
@@ -1099,7 +1099,7 @@ public class CommandResolutionHelper {
             }
 
             // If a value was provided at runtime, use that
-            final String runtimeValue = inputValues.get(commandInput.getName());
+            final String runtimeValue = inputValues.get(commandInputEntity.getName());
             if (runtimeValue != null) {
                 if (log.isDebugEnabled()) {
                     log.debug("Runtime value: " + runtimeValue);
@@ -1111,21 +1111,21 @@ public class CommandResolutionHelper {
             resolvedValue = resolveJsonpathSubstring(resolvedValue);
 
             if (log.isDebugEnabled()) {
-                log.debug("Matcher: " + commandInput.getMatcher());
+                log.debug("Matcher: " + commandInputEntity.getMatcher());
             }
-            final String resolvedMatcher = commandInput.getMatcher() != null ? resolveJsonpathSubstring(commandInput.getMatcher()) : null;
+            final String resolvedMatcher = commandInputEntity.getMatcher() != null ? resolveJsonpathSubstring(commandInputEntity.getMatcher()) : null;
 
             if (log.isDebugEnabled()) {
-                log.debug("Processing input value as a " + commandInput.getType().getName());
+                log.debug("Processing input value as a " + commandInputEntity.getType().getName());
             }
-            switch (commandInput.getType()) {
+            switch (commandInputEntity.getType()) {
                 case BOOLEAN:
                     // Parse the value as a boolean, and use the trueValue/falseValue
                     // If those haven't been set, just pass the value through
                     if (Boolean.parseBoolean(resolvedValue)) {
-                        resolvedValue = commandInput.getTrueValue() != null ? commandInput.getTrueValue() : resolvedValue;
+                        resolvedValue = commandInputEntity.getTrueValue() != null ? commandInputEntity.getTrueValue() : resolvedValue;
                     } else {
-                        resolvedValue = commandInput.getFalseValue() != null ? commandInput.getFalseValue() : resolvedValue;
+                        resolvedValue = commandInputEntity.getFalseValue() != null ? commandInputEntity.getFalseValue() : resolvedValue;
                     }
                     break;
                 case NUMBER:
@@ -1137,27 +1137,27 @@ public class CommandResolutionHelper {
 
 
             // If resolved value is null, and input is required, that is an error
-            if (resolvedValue == null && commandInput.isRequired()) {
-                final String message = String.format("No value could be resolved for required input \"%s\".", commandInput.getName());
+            if (resolvedValue == null && commandInputEntity.isRequired()) {
+                final String message = String.format("No value could be resolved for required input \"%s\".", commandInputEntity.getName());
                 log.debug(message);
-                throw new CommandInputResolutionException(message, commandInput);
+                throw new CommandInputResolutionException(message, commandInputEntity);
             }
             if (log.isInfoEnabled()) {
-                log.info(String.format("Done resolving input \"%s\". Value: %s", commandInput.getName(), resolvedValue));
+                log.info(String.format("Done resolving input \"%s\". Value: %s", commandInputEntity.getName(), resolvedValue));
             }
-            commandInput.setValue(resolvedValue);
+            commandInputEntity.setValue(resolvedValue);
             // input.setJsonRepresentation(jsonRepresentation != null ? jsonRepresentation : resolvedValue);
 
             // resolvedXnatInputObjects.put(input.getName(), input);
-            resolvedInputValuesByName.put(commandInput.getName(), commandInput.getValue());
+            resolvedInputValuesByName.put(commandInputEntity.getName(), commandInputEntity.getValue());
 
             // Only substitute the input into the command line if a replacementKey is set
-            final String replacementKey = commandInput.getReplacementKey();
+            final String replacementKey = commandInputEntity.getReplacementKey();
             if (StringUtils.isBlank(replacementKey)) {
                 continue;
             }
             resolvedInputValuesByReplacementKey.put(replacementKey, resolvedValue);
-            resolvedInputCommandLineValuesByReplacementKey.put(replacementKey, getValueForCommandLine(commandInput, resolvedValue));
+            resolvedInputCommandLineValuesByReplacementKey.put(replacementKey, getValueForCommandLine(commandInputEntity, resolvedValue));
         }
 
         return resolvedInputValuesByName;
@@ -1235,7 +1235,7 @@ public class CommandResolutionHelper {
         return null;
     }
 
-    private String getValueForCommandLine(final CommandInput input, final String resolvedInputValue) {
+    private String getValueForCommandLine(final CommandInputEntity input, final String resolvedInputValue) {
         if (StringUtils.isBlank(input.getCommandLineFlag())) {
             return resolvedInputValue;
         } else {

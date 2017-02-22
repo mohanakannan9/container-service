@@ -36,15 +36,15 @@ public class CommandWrapperInputEntity {
     private String value;
     private String jsonRepresentation;
 
-    public static CommandWrapperInputEntity passthrough(final CommandInput commandInput) {
+    public static CommandWrapperInputEntity passthrough(final CommandInputEntity commandInputEntity) {
         final CommandWrapperInputEntity identityInput = new CommandWrapperInputEntity();
-        identityInput.setName(commandInput.getName());
-        identityInput.setType(CommandWrapperInputEntity.Type.valueOf(commandInput.getType().getName().toUpperCase()));
-        identityInput.setMatcher(commandInput.getMatcher());
-        identityInput.setProvidesValueForCommandInput(commandInput.getName());
-        identityInput.setDefaultValue(commandInput.getDefaultValue());
+        identityInput.setName(commandInputEntity.getName());
+        identityInput.setType(CommandWrapperInputEntity.Type.valueOf(commandInputEntity.getType().getName().toUpperCase()));
+        identityInput.setMatcher(commandInputEntity.getMatcher());
+        identityInput.setProvidesValueForCommandInput(commandInputEntity.getName());
+        identityInput.setDefaultValue(commandInputEntity.getDefaultValue());
         identityInput.setUserSettable(true);
-        identityInput.setRequired(commandInput.isRequired());
+        identityInput.setRequired(commandInputEntity.isRequired());
 
         return identityInput;
     }

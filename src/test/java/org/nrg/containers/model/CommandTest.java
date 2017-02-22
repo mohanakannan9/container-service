@@ -79,25 +79,25 @@ public class CommandTest {
 
     @Test
     public void testDeserializeCommandInput() throws Exception {
-        final CommandInput commandInput0 =
-                mapper.readValue(COOL_INPUT_JSON, CommandInput.class);
-        final CommandInput fooInput =
-                mapper.readValue(FOO_INPUT_JSON, CommandInput.class);
+        final CommandInputEntity commandInputEntity0 =
+                mapper.readValue(COOL_INPUT_JSON, CommandInputEntity.class);
+        final CommandInputEntity fooInput =
+                mapper.readValue(FOO_INPUT_JSON, CommandInputEntity.class);
 
-        assertEquals("my_cool_input", commandInput0.getName());
-        assertEquals("A boolean value", commandInput0.getDescription());
-        assertEquals(CommandInput.Type.BOOLEAN, commandInput0.getType());
-        assertEquals(true, commandInput0.isRequired());
-        assertEquals("-b", commandInput0.getTrueValue());
-        assertEquals("", commandInput0.getFalseValue());
-        assertEquals("#my_cool_input#", commandInput0.getReplacementKey());
-        assertEquals("", commandInput0.getCommandLineFlag());
-        assertEquals(" ", commandInput0.getCommandLineSeparator());
-        assertNull(commandInput0.getDefaultValue());
+        assertEquals("my_cool_input", commandInputEntity0.getName());
+        assertEquals("A boolean value", commandInputEntity0.getDescription());
+        assertEquals(CommandInputEntity.Type.BOOLEAN, commandInputEntity0.getType());
+        assertEquals(true, commandInputEntity0.isRequired());
+        assertEquals("-b", commandInputEntity0.getTrueValue());
+        assertEquals("", commandInputEntity0.getFalseValue());
+        assertEquals("#my_cool_input#", commandInputEntity0.getReplacementKey());
+        assertEquals("", commandInputEntity0.getCommandLineFlag());
+        assertEquals(" ", commandInputEntity0.getCommandLineSeparator());
+        assertNull(commandInputEntity0.getDefaultValue());
 
         assertEquals("foo", fooInput.getName());
         assertEquals("A foo that bars", fooInput.getDescription());
-        assertEquals(CommandInput.Type.STRING, fooInput.getType());
+        assertEquals(CommandInputEntity.Type.STRING, fooInput.getType());
         assertEquals(false, fooInput.isRequired());
         assertNull(fooInput.getTrueValue());
         assertNull(fooInput.getFalseValue());
@@ -110,8 +110,8 @@ public class CommandTest {
     @Test
     public void testDeserializeDockerImageCommand() throws Exception {
 
-        final List<CommandInput> commandInputList =
-                mapper.readValue(INPUT_LIST_JSON, new TypeReference<List<CommandInput>>() {});
+        final List<CommandInputEntity> commandInputEntityList =
+                mapper.readValue(INPUT_LIST_JSON, new TypeReference<List<CommandInputEntity>>() {});
         final CommandOutput commandOutput = mapper.readValue(OUTPUT_JSON, CommandOutput.class);
 
         final CommandMountEntity input = mapper.readValue(MOUNT_IN, CommandMountEntity.class);
@@ -124,7 +124,7 @@ public class CommandTest {
         assertEquals("docker_image_command", commandEntity.getName());
         assertEquals("Docker Image command for the test", commandEntity.getDescription());
         assertEquals("http://abc.xyz", commandEntity.getInfoUrl());
-        assertEquals(commandInputList, commandEntity.getInputs());
+        assertEquals(commandInputEntityList, commandEntity.getInputs());
         assertEquals(Lists.newArrayList(commandOutput), commandEntity.getOutputs());
 
         // final CommandRun run = command.getRun();

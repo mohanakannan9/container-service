@@ -5,10 +5,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.base.MoreObjects;
-import com.google.common.collect.Lists;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.containers.exceptions.CommandValidationException;
 import org.nrg.containers.model.auto.CommandPojo;
 
 import javax.persistence.Embeddable;
@@ -16,11 +14,10 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Transient;
 import java.io.Serializable;
-import java.util.List;
 import java.util.Objects;
 
 @Embeddable
-public class CommandInput implements Serializable {
+public class CommandInputEntity implements Serializable {
     public static Type DEFAULT_TYPE = Type.STRING;
     private String name;
     private String description;
@@ -35,34 +32,34 @@ public class CommandInput implements Serializable {
     @JsonProperty("false-value") private String falseValue;
     private String value;
 
-    public static CommandInput fromPojo(final CommandPojo.CommandInputPojo commandInputPojo) {
-        final CommandInput commandInput = new CommandInput();
-        commandInput.name = commandInputPojo.name();
-        commandInput.description = commandInputPojo.description();
-        commandInput.required = commandInputPojo.required();
-        commandInput.matcher = commandInputPojo.matcher();
-        commandInput.defaultValue = commandInputPojo.defaultValue();
-        commandInput.rawReplacementKey = commandInputPojo.rawReplacementKey();
-        commandInput.commandLineFlag = commandInputPojo.commandLineFlag();
-        commandInput.commandLineSeparator = commandInputPojo.commandLineSeparator();
-        commandInput.trueValue = commandInputPojo.trueValue();
-        commandInput.falseValue = commandInputPojo.falseValue();
+    public static CommandInputEntity fromPojo(final CommandPojo.CommandInputPojo commandInputPojo) {
+        final CommandInputEntity commandInputEntity = new CommandInputEntity();
+        commandInputEntity.name = commandInputPojo.name();
+        commandInputEntity.description = commandInputPojo.description();
+        commandInputEntity.required = commandInputPojo.required();
+        commandInputEntity.matcher = commandInputPojo.matcher();
+        commandInputEntity.defaultValue = commandInputPojo.defaultValue();
+        commandInputEntity.rawReplacementKey = commandInputPojo.rawReplacementKey();
+        commandInputEntity.commandLineFlag = commandInputPojo.commandLineFlag();
+        commandInputEntity.commandLineSeparator = commandInputPojo.commandLineSeparator();
+        commandInputEntity.trueValue = commandInputPojo.trueValue();
+        commandInputEntity.falseValue = commandInputPojo.falseValue();
 
         switch (commandInputPojo.type()) {
             case "string":
-                commandInput.type = Type.STRING;
+                commandInputEntity.type = Type.STRING;
                 break;
             case "boolean":
-                commandInput.type = Type.BOOLEAN;
+                commandInputEntity.type = Type.BOOLEAN;
                 break;
             case "number":
-                commandInput.type = Type.NUMBER;
+                commandInputEntity.type = Type.NUMBER;
                 break;
             default:
-                commandInput.type = DEFAULT_TYPE;
+                commandInputEntity.type = DEFAULT_TYPE;
         }
 
-        return commandInput;
+        return commandInputEntity;
     }
 
     @ApiModelProperty(value = "Name of the command input", required = true)
@@ -188,7 +185,7 @@ public class CommandInput implements Serializable {
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final CommandInput that = (CommandInput) o;
+        final CommandInputEntity that = (CommandInputEntity) o;
         return Objects.equals(this.name, that.name) &&
                 Objects.equals(this.description, that.description) &&
                 Objects.equals(this.type, that.type) &&

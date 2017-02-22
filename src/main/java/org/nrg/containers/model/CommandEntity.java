@@ -46,7 +46,7 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
     @JsonProperty("command-line") private String commandLine;
     @JsonProperty("mounts") private List<CommandMountEntity> mounts;
     @JsonProperty("environment-variables") private Map<String, String> environmentVariables;
-    private List<CommandInput> inputs;
+    private List<CommandInputEntity> inputs;
     private List<CommandOutput> outputs;
     @JsonProperty("xnat") private List<CommandWrapperEntity> commandWrapperEntities;
 
@@ -83,7 +83,7 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         }
 
         for (final CommandPojo.CommandInputPojo commandInputPojo : commandPojo.inputs()) {
-            commandEntity.addInput(CommandInput.fromPojo(commandInputPojo));
+            commandEntity.addInput(CommandInputEntity.fromPojo(commandInputPojo));
         }
 
         for (final CommandPojo.CommandOutputPojo commandOutputPojo : commandPojo.outputs()) {
@@ -219,17 +219,17 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
     @ApiModelProperty("A list of inputs. " +
             "When the Command is launched, these inputs receive values; " +
             "those values will be used to fill in any template strings in the Command's run-template, mounts, or environment variables.")
-    public List<CommandInput> getInputs() {
+    public List<CommandInputEntity> getInputs() {
         return inputs;
     }
 
-    public void setInputs(final List<CommandInput> inputs) {
+    public void setInputs(final List<CommandInputEntity> inputs) {
         this.inputs = inputs == null ?
-                Lists.<CommandInput>newArrayList() :
+                Lists.<CommandInputEntity>newArrayList() :
                 inputs;
     }
 
-    public void addInput(final CommandInput input) {
+    public void addInput(final CommandInputEntity input) {
         if (input == null) {
             return;
         }
