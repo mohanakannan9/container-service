@@ -21,7 +21,7 @@ import org.nrg.containers.exceptions.CommandWrapperInputResolutionException;
 import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.CommandInputEntity;
 import org.nrg.containers.model.CommandMountEntity;
-import org.nrg.containers.model.CommandOutput;
+import org.nrg.containers.model.CommandOutputEntity;
 import org.nrg.containers.model.ContainerExecutionMount;
 import org.nrg.containers.model.ContainerExecutionOutput;
 import org.nrg.containers.model.ContainerMountFiles;
@@ -1359,26 +1359,26 @@ public class CommandResolutionHelper {
         }
 
         final List<ContainerExecutionOutput> resolvedOutputs = Lists.newArrayList();
-        for (final CommandOutput commandOutput : commandEntity.getOutputs()) {
+        for (final CommandOutputEntity commandOutputEntity : commandEntity.getOutputs()) {
             if (log.isInfoEnabled()) {
-                log.info(String.format("Resolving command output \"%s\"", commandOutput.getName()));
+                log.info(String.format("Resolving command output \"%s\"", commandOutputEntity.getName()));
             }
             if (log.isDebugEnabled()) {
-                log.debug(commandOutput.toString());
+                log.debug(commandOutputEntity.toString());
             }
 
             // TODO fix this in validation
-            final CommandWrapperOutputEntity commandOutputHandler = xnatCommandOutputsByCommandOutputName.get(commandOutput.getName());
+            final CommandWrapperOutputEntity commandOutputHandler = xnatCommandOutputsByCommandOutputName.get(commandOutputEntity.getName());
             if (commandOutputHandler == null) {
-                throw new CommandResolutionException(String.format("No XNAT object was configured to handle output \"%s\".", commandOutput.getName()));
+                throw new CommandResolutionException(String.format("No XNAT object was configured to handle output \"%s\".", commandOutputEntity.getName()));
             }
             if (log.isDebugEnabled()) {
-                log.debug(String.format("Found XNAT Output Handler for Command output \"%s\".", commandOutput.getName()));
+                log.debug(String.format("Found XNAT Output Handler for Command output \"%s\".", commandOutputEntity.getName()));
             }
 
-            final ContainerExecutionOutput resolvedOutput = new ContainerExecutionOutput(commandOutput, commandOutputHandler);
+            final ContainerExecutionOutput resolvedOutput = new ContainerExecutionOutput(commandOutputEntity, commandOutputHandler);
 
-            resolvedOutput.setPath(resolveTemplate(commandOutput.getPath()));
+            resolvedOutput.setPath(resolveTemplate(commandOutputEntity.getPath()));
             resolvedOutput.setLabel(resolveTemplate(commandOutputHandler.getLabel()));
 
             // TODO Anything else needed to resolve an output?

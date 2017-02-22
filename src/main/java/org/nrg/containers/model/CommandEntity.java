@@ -47,7 +47,7 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
     @JsonProperty("mounts") private List<CommandMountEntity> mounts;
     @JsonProperty("environment-variables") private Map<String, String> environmentVariables;
     private List<CommandInputEntity> inputs;
-    private List<CommandOutput> outputs;
+    private List<CommandOutputEntity> outputs;
     @JsonProperty("xnat") private List<CommandWrapperEntity> commandWrapperEntities;
 
     public static CommandEntity commandPojoToCommand(final CommandPojo commandPojo) throws CommandValidationException {
@@ -87,7 +87,7 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         }
 
         for (final CommandPojo.CommandOutputPojo commandOutputPojo : commandPojo.outputs()) {
-            commandEntity.addOutput(CommandOutput.fromPojo(commandOutputPojo));
+            commandEntity.addOutput(CommandOutputEntity.fromPojo(commandOutputPojo));
         }
         for (final CommandPojo.CommandWrapperPojo commandWrapperPojo : commandPojo.xnatCommandWrappers()) {
             commandEntity.addXnatCommandWrapper(CommandWrapperEntity.fromPojo(commandWrapperPojo));
@@ -242,17 +242,17 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
 
     @ElementCollection
     @ApiModelProperty("A list of outputs.")
-    public List<CommandOutput> getOutputs() {
+    public List<CommandOutputEntity> getOutputs() {
         return outputs;
     }
 
-    public void setOutputs(final List<CommandOutput> outputs) {
+    public void setOutputs(final List<CommandOutputEntity> outputs) {
         this.outputs = outputs == null ?
-                Lists.<CommandOutput>newArrayList() :
+                Lists.<CommandOutputEntity>newArrayList() :
                 outputs;
     }
 
-    public void addOutput(final CommandOutput output) {
+    public void addOutput(final CommandOutputEntity output) {
         if (output == null) {
             return;
         }

@@ -22,12 +22,12 @@ public class ContainerExecutionOutput implements Serializable {
 
     public ContainerExecutionOutput() {}
 
-    public ContainerExecutionOutput(final CommandOutput commandOutput, final CommandWrapperOutputEntity commandOutputHandler) {
-        this.name = commandOutput.getName();
-        this.required = commandOutput.getRequired();
-        this.mount = commandOutput.getMount();
-        this.path = commandOutput.getPath();
-        this.glob = commandOutput.getGlob();
+    public ContainerExecutionOutput(final CommandOutputEntity commandOutputEntity, final CommandWrapperOutputEntity commandOutputHandler) {
+        this.name = commandOutputEntity.getName();
+        this.required = commandOutputEntity.getRequired();
+        this.mount = commandOutputEntity.getMount();
+        this.path = commandOutputEntity.getPath();
+        this.glob = commandOutputEntity.getGlob();
         this.label = commandOutputHandler.getLabel();
         this.type = commandOutputHandler.getType();
         this.handledByXnatCommandInput = commandOutputHandler.getXnatInputName();

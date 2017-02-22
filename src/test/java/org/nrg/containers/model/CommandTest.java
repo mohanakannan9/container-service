@@ -112,7 +112,7 @@ public class CommandTest {
 
         final List<CommandInputEntity> commandInputEntityList =
                 mapper.readValue(INPUT_LIST_JSON, new TypeReference<List<CommandInputEntity>>() {});
-        final CommandOutput commandOutput = mapper.readValue(OUTPUT_JSON, CommandOutput.class);
+        final CommandOutputEntity commandOutputEntity = mapper.readValue(OUTPUT_JSON, CommandOutputEntity.class);
 
         final CommandMountEntity input = mapper.readValue(MOUNT_IN, CommandMountEntity.class);
         final CommandMountEntity output = mapper.readValue(MOUNT_OUT, CommandMountEntity.class);
@@ -125,7 +125,7 @@ public class CommandTest {
         assertEquals("Docker Image command for the test", commandEntity.getDescription());
         assertEquals("http://abc.xyz", commandEntity.getInfoUrl());
         assertEquals(commandInputEntityList, commandEntity.getInputs());
-        assertEquals(Lists.newArrayList(commandOutput), commandEntity.getOutputs());
+        assertEquals(Lists.newArrayList(commandOutputEntity), commandEntity.getOutputs());
 
         // final CommandRun run = command.getRun();
         assertEquals("cmd #foo# #my_cool_input#", commandEntity.getCommandLine());

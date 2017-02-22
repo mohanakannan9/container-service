@@ -11,7 +11,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.CommandInputEntity;
 import org.nrg.containers.model.CommandMountEntity;
-import org.nrg.containers.model.CommandOutput;
+import org.nrg.containers.model.CommandOutputEntity;
 import org.nrg.containers.model.CommandType;
 import org.nrg.containers.model.DockerCommandEntity;
 import org.nrg.containers.model.CommandWrapperInputEntity;
@@ -119,10 +119,10 @@ public abstract class CommandPojo {
                             }
                         }))
                 .outputs(commandEntity.getOutputs() == null ? Lists.<CommandOutputPojo>newArrayList() :
-                        Lists.transform(commandEntity.getOutputs(), new Function<CommandOutput, CommandOutputPojo>() {
+                        Lists.transform(commandEntity.getOutputs(), new Function<CommandOutputEntity, CommandOutputPojo>() {
                             @Nullable
                             @Override
-                            public CommandOutputPojo apply(@Nullable final CommandOutput commandOutput) {
+                            public CommandOutputPojo apply(@Nullable final CommandOutputEntity commandOutput) {
                                 return commandOutput == null ? null : CommandOutputPojo.create(commandOutput);
                             }
                         }))
@@ -438,9 +438,9 @@ public abstract class CommandPojo {
             return new AutoValue_CommandPojo_CommandOutputPojo(name, description, required, mount, path, glob);
         }
 
-        static CommandOutputPojo create(final CommandOutput commandOutput) {
-            return create(commandOutput.getName(), commandOutput.getDescription(), commandOutput.isRequired(), commandOutput.getMount(),
-                    commandOutput.getPath(), commandOutput.getGlob());
+        static CommandOutputPojo create(final CommandOutputEntity commandOutputEntity) {
+            return create(commandOutputEntity.getName(), commandOutputEntity.getDescription(), commandOutputEntity.isRequired(), commandOutputEntity.getMount(),
+                    commandOutputEntity.getPath(), commandOutputEntity.getGlob());
         }
 
         List<String> validate() {
