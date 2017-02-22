@@ -32,9 +32,7 @@ public class DockerEventPuller implements Runnable {
 
     @Override
     public void run() {
-        if (log.isDebugEnabled()) {
-            log.debug("Attempting to read docker events.");
-        }
+        log.trace("Attempting to read docker events.");
 
         if (!controlApi.canConnect()) {
             if (!haveLoggedDockerConnectFailure) {

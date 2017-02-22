@@ -352,9 +352,8 @@ public class DockerControlApi implements ContainerControlApi {
         try (final DockerClient client = getClient(server)) {
             final ContainerCreation container = client.createContainer(containerConfig);
 
-            if (log.isDebugEnabled()) {
-                log.debug("Starting container: id " + container.id());
-            }
+            log.info("Starting container: id " + container.id());
+
             final List<String> warnings = container.warnings();
             if (warnings != null) {
                 for (String warning : warnings) {
@@ -576,9 +575,6 @@ public class DockerControlApi implements ContainerControlApi {
          * @return DockerClient object using default authConfig
          **/
     public DockerClient getClient(final DockerServer server) {
-        if (log.isDebugEnabled()) {
-            log.debug("method getClient, Create server connection, server " + server.getHost());
-        }
 
         DefaultDockerClient.Builder clientBuilder =
             DefaultDockerClient.builder()
@@ -652,17 +648,12 @@ public class DockerControlApi implements ContainerControlApi {
                                  until(until.getTime() / 1000),
                                  type(Event.Type.CONTAINER))) {
 
-                if (log.isDebugEnabled()) {
-                    log.debug("Got a stream of docker events.");
-                }
+                log.trace("Got a stream of docker events.");
 
                 eventList = Lists.newArrayList(eventStream);
             }
 
-
-            if (log.isDebugEnabled()) {
-                log.debug("Closed docker event stream.");
-            }
+            log.trace("Closed docker event stream.");
 
             return eventList;
         } catch (InterruptedException | DockerException e) {

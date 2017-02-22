@@ -45,7 +45,6 @@ public class DockerServerPrefsBean extends AbstractPreferenceBean {
     }
 
     public void setName(final String name) {
-        _log.debug("Setting name: " + name);
         if (name != null) {
             try {
                 set(name, "name");
@@ -61,7 +60,6 @@ public class DockerServerPrefsBean extends AbstractPreferenceBean {
     }
 
     public void setHost(final String host) {
-        _log.debug("Setting host: " + host);
         if (host != null) {
             try {
                 set(host, "host");
@@ -77,7 +75,6 @@ public class DockerServerPrefsBean extends AbstractPreferenceBean {
     }
 
     public void setCertPath(final String certPath) {
-        _log.debug("Setting certPath: " + certPath);
         if (certPath != null) {
             try {
                 set(certPath, "certPath");
@@ -93,7 +90,6 @@ public class DockerServerPrefsBean extends AbstractPreferenceBean {
     }
 
     public void setLastEventCheckTime(final Date lastEventCheckTime) {
-        _log.debug("Setting lastEventCheckTime: " + lastEventCheckTime);
         if (lastEventCheckTime != null) {
             try {
                 setDateValue(lastEventCheckTime, "lastEventCheckTime");
