@@ -6,26 +6,29 @@ import org.nrg.containers.exceptions.ContainerMountResolutionException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
-import org.nrg.containers.model.Command;
+import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.containers.model.ResolvedDockerCommand;
-import org.nrg.containers.model.XnatCommandWrapper;
-import org.nrg.containers.model.auto.CommandPojo;
-import org.nrg.framework.exceptions.NrgRuntimeException;
+import org.nrg.containers.model.CommandWrapperEntity;
+import org.nrg.containers.model.auto.Command;
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
 import org.nrg.xft.security.UserI;
 
 import java.util.List;
 import java.util.Map;
 
-public interface CommandService extends BaseHibernateService<Command> {
-    Command create(CommandPojo commandPojo) throws CommandValidationException;
+public interface CommandService extends BaseHibernateService<CommandEntity> {
+    List<Command> getAllCommands();
+    Command create(Command command) throws CommandValidationException;
 
-    List<Command> findByProperties(Map<String, Object> properties);
-    Command get(Long id) throws NotFoundException;
+    List<CommandEntity> findByProperties(Map<String, Object> properties);
+    List<Command> findCommandByProperties(Map<String, Object> properties);
+    CommandEntity get(Long id) throws NotFoundException;
+    Command getCommand(Long id) throws NotFoundException;
 
-    Command update(Long id, Command updates, Boolean ignoreNull) throws NotFoundException;
+    CommandEntity update(Long id, CommandEntity updates, Boolean ignoreNull) throws NotFoundException;
+    Command update(Long id, Command updates, Boolean ignoreNull) throws NotFoundException, CommandValidationException;
 
     ResolvedCommand resolveCommand(final Long commandId,
                                    final Map<String, String> variableRuntimeValues,
@@ -41,12 +44,12 @@ public interface CommandService extends BaseHibernateService<Command> {
                                    final Map<String, String> variableRuntimeValues,
                                    final UserI userI)
             throws NotFoundException, CommandResolutionException;
-    ResolvedCommand resolveCommand(final Command command,
+    ResolvedCommand resolveCommand(final CommandEntity commandEntity,
                                    final Map<String, String> variableRuntimeValues,
                                    final UserI userI)
             throws NotFoundException, CommandResolutionException;
-    ResolvedCommand resolveCommand(final XnatCommandWrapper xnatCommandWrapper,
-                                   final Command command,
+    ResolvedCommand resolveCommand(final CommandWrapperEntity commandWrapperEntity,
+                                   final CommandEntity commandEntity,
                                    final Map<String, String> variableRuntimeValues,
                                    final UserI userI)
             throws NotFoundException, CommandResolutionException;
@@ -65,7 +68,7 @@ public interface CommandService extends BaseHibernateService<Command> {
     ContainerExecution launchResolvedDockerCommand(final ResolvedDockerCommand resolvedCommand, final UserI userI)
             throws NoServerPrefException, DockerServerException, ContainerMountResolutionException;
 
-    List<Command> save(final List<CommandPojo> commands);
+    List<Command> save(final List<Command> commands);
 
 //    @VisibleForTesting
 //    ResolvedCommand prepareToLaunchScan(Command command,

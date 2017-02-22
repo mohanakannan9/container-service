@@ -4,7 +4,6 @@ package org.nrg.containers.rest;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.nrg.containers.exceptions.BadRequestException;
-import org.nrg.containers.model.Command;
 import org.nrg.containers.model.CommandEventMapping;
 import org.nrg.containers.services.CommandEventMappingService;
 import org.nrg.framework.annotations.XapiRestController;

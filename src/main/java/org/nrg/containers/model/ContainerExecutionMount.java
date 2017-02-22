@@ -28,9 +28,9 @@ public class ContainerExecutionMount implements Serializable {
 
     public ContainerExecutionMount() {}
 
-    public ContainerExecutionMount(final CommandMount commandMount) {
-        this.name = commandMount.getName();
-        this.writable = commandMount.getWritable();
+    public ContainerExecutionMount(final CommandMountEntity commandMountEntity) {
+        this.name = commandMountEntity.getName();
+        this.writable = commandMountEntity.getWritable();
         this.xnatHostPath = null;        // Intentionally blank. Will be set later.
         this.containerHostPath = null;   // Intentionally blank. Will be set later.
         this.containerPath = null;       // Intentionally blank. Will be set later.

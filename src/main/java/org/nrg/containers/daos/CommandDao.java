@@ -3,8 +3,8 @@ package org.nrg.containers.daos;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Hibernate;
-import org.nrg.containers.model.Command;
-import org.nrg.containers.model.XnatCommandWrapper;
+import org.nrg.containers.model.CommandEntity;
+import org.nrg.containers.model.CommandWrapperEntity;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,30 +14,30 @@ import java.util.List;
 import java.util.Map;
 
 @Repository
-public class CommandDao extends AbstractHibernateDAO<Command> {
+public class CommandDao extends AbstractHibernateDAO<CommandEntity> {
     private static final Logger log = LoggerFactory.getLogger(CommandDao.class);
 
     @Override
-    public void initialize(final Command command) {
-        if (command == null) {
+    public void initialize(final CommandEntity commandEntity) {
+        if (commandEntity == null) {
             return;
         }
-        Hibernate.initialize(command);
-        Hibernate.initialize(command.getEnvironmentVariables());
-        Hibernate.initialize(command.getMounts());
-        Hibernate.initialize(command.getInputs());
-        Hibernate.initialize(command.getOutputs());
-        Hibernate.initialize(command.getXnatCommandWrappers());
-        if (command.getXnatCommandWrappers() != null) {
-            for (final XnatCommandWrapper xnatCommandWrapper : command.getXnatCommandWrappers()) {
-                Hibernate.initialize(xnatCommandWrapper.getExternalInputs());
-                Hibernate.initialize(xnatCommandWrapper.getDerivedInputs());
-                Hibernate.initialize(xnatCommandWrapper.getOutputHandlers());
+        Hibernate.initialize(commandEntity);
+        Hibernate.initialize(commandEntity.getEnvironmentVariables());
+        Hibernate.initialize(commandEntity.getMounts());
+        Hibernate.initialize(commandEntity.getInputs());
+        Hibernate.initialize(commandEntity.getOutputs());
+        Hibernate.initialize(commandEntity.getCommandWrapperEntities());
+        if (commandEntity.getCommandWrapperEntities() != null) {
+            for (final CommandWrapperEntity commandWrapperEntity : commandEntity.getCommandWrapperEntities()) {
+                Hibernate.initialize(commandWrapperEntity.getExternalInputs());
+                Hibernate.initialize(commandWrapperEntity.getDerivedInputs());
+                Hibernate.initialize(commandWrapperEntity.getOutputHandlers());
             }
         }
     }
 
-    public Command retrieve(final String name, final String dockerImageId) {
+    public CommandEntity retrieve(final String name, final String dockerImageId) {
         if (StringUtils.isBlank(name) || StringUtils.isBlank(dockerImageId)) {
             return null;
         }
@@ -46,35 +46,35 @@ public class CommandDao extends AbstractHibernateDAO<Command> {
         properties.put("name", name);
         properties.put("dockerImage", dockerImageId);
 
-        final List<Command> commands = findByProperties(properties);
+        final List<CommandEntity> commandEntities = findByProperties(properties);
 
-        if (commands == null || commands.isEmpty()) {
+        if (commandEntities == null || commandEntities.isEmpty()) {
             return null;
-        } else if (commands.size() > 1) {
+        } else if (commandEntities.size() > 1) {
             if (log.isErrorEnabled()) {
                 StringBuilder message = new StringBuilder("Somehow the database contains more than one Command with the same name + docker image id: ");
-                for (final Command command : commands) {
-                    message.append(command.getId());
+                for (final CommandEntity commandEntity : commandEntities) {
+                    message.append(commandEntity.getId());
                     message.append(", ");
                 }
                 message.delete(message.lastIndexOf(","), message.length());
                 log.error(message.toString());
             }
         }
-        final Command command = commands.get(0);
-        initialize(command);
-        return commands.get(0);
+        final CommandEntity commandEntity = commandEntities.get(0);
+        initialize(commandEntity);
+        return commandEntities.get(0);
     }
 
     @Override
-    public List<Command> findByProperties(final Map<String, Object> properties) {
-        final List<Command> commandList = super.findByProperties(properties);
-        if (commandList == null) {
+    public List<CommandEntity> findByProperties(final Map<String, Object> properties) {
+        final List<CommandEntity> commandEntityList = super.findByProperties(properties);
+        if (commandEntityList == null) {
             return null;
         }
-        for (final Command command : commandList) {
-            initialize(command);
+        for (final CommandEntity commandEntity : commandEntityList) {
+            initialize(commandEntity);
         }
-        return commandList;
+        return commandEntityList;
     }
 }

@@ -3,8 +3,6 @@ package org.nrg.containers.rest;
 import com.google.common.collect.Maps;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.exceptions.BadRequestException;
 import org.nrg.containers.exceptions.CommandInputResolutionException;
@@ -14,10 +12,10 @@ import org.nrg.containers.exceptions.ContainerMountResolutionException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
-import org.nrg.containers.model.Command;
+import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.ResolvedDockerCommand;
-import org.nrg.containers.model.auto.CommandPojo;
+import org.nrg.containers.model.auto.Command;
 import org.nrg.containers.services.CommandService;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NrgRuntimeException;
@@ -74,15 +72,15 @@ public class CommandRestApi extends AbstractXapiRestController {
     @ApiOperation(value = "Get all Commands")
     @ResponseBody
     public List<Command> getCommands() {
-        return commandService.getAll();
+        return commandService.getAllCommands();
     }
 
     @RequestMapping(value = {}, method = GET)
     @ApiOperation(value = "Get Commands by criteria")
     @ResponseBody
     public List<Command> getCommands(final @RequestParam(required = false) String name,
-                                     final @RequestParam(required = false) String version,
-                                     final @RequestParam(required = false) String image) throws BadRequestException {
+                                           final @RequestParam(required = false) String version,
+                                           final @RequestParam(required = false) String image) throws BadRequestException {
 
 
         if (StringUtils.isBlank(name) && StringUtils.isBlank(version) && StringUtils.isBlank(image)) {
@@ -104,14 +102,14 @@ public class CommandRestApi extends AbstractXapiRestController {
             properties.put("image", image);
         }
 
-        return commandService.findByProperties(properties);
+        return commandService.findCommandByProperties(properties);
     }
 
     @RequestMapping(value = {"/{id}"}, method = GET)
     @ApiOperation(value = "Get a Command by ID")
     @ResponseBody
     public Command retrieveCommand(final @PathVariable Long id) throws NotFoundException {
-        return commandService.get(id);
+        return commandService.getCommand(id);
     }
 
     /*
@@ -119,15 +117,15 @@ public class CommandRestApi extends AbstractXapiRestController {
      */
     @RequestMapping(value = {}, method = POST, produces = JSON)
     @ApiOperation(value = "Create a Command", code = 201)
-    public ResponseEntity<Long> createCommand(final @RequestBody CommandPojo commandPojo)
+    public ResponseEntity<Long> createCommand(final @RequestBody Command command)
             throws BadRequestException, CommandValidationException {
 
         try {
-            final Command command = commandService.create(commandPojo);
-            if (command == null) {
+            final Command created = commandService.create(command);
+            if (created == null) {
                 return new ResponseEntity<>(0L, HttpStatus.INTERNAL_SERVER_ERROR);
             }
-            return new ResponseEntity<>(command.getId(), HttpStatus.CREATED);
+            return new ResponseEntity<>(created.id(), HttpStatus.CREATED);
         } catch (NrgRuntimeException e) {
             throw new BadRequestException(e);
         }
@@ -142,7 +140,7 @@ public class CommandRestApi extends AbstractXapiRestController {
     public Command updateCommand(final @RequestBody Command command,
                                  final @PathVariable Long id,
                                  final @RequestParam(value = "ignore-null", defaultValue = "true")
-                                             Boolean ignoreNull) throws NotFoundException {
+                                             Boolean ignoreNull) throws NotFoundException, CommandValidationException {
         return commandService.update(id, command, ignoreNull);
     }
 

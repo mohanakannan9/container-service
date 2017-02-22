@@ -2,19 +2,16 @@ package org.nrg.containers.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
-import com.google.common.collect.Lists;
 import io.swagger.annotations.ApiModelProperty;
-import org.apache.commons.lang3.StringUtils;
-import org.nrg.containers.model.auto.CommandPojo;
+import org.nrg.containers.model.auto.Command;
 
 import javax.persistence.Embeddable;
 import javax.persistence.Transient;
 import java.io.Serializable;
-import java.util.List;
 import java.util.Objects;
 
 @Embeddable
-public class CommandMount implements Serializable {
+public class CommandMountEntity implements Serializable {
 
     @JsonProperty(required = true) private String name;
     private Boolean writable;
@@ -48,12 +45,12 @@ public class CommandMount implements Serializable {
         this.containerPath = remotePath;
     }
 
-    static CommandMount fromPojo(final CommandPojo.CommandMountPojo commandMountPojo) {
-        final CommandMount commandMount = new CommandMount();
-        commandMount.name = commandMountPojo.name();
-        commandMount.writable = commandMountPojo.writable();
-        commandMount.containerPath = commandMountPojo.path();
-        return commandMount;
+    static CommandMountEntity fromPojo(final Command.CommandMount commandMount) {
+        final CommandMountEntity commandMountEntity = new CommandMountEntity();
+        commandMountEntity.name = commandMount.name();
+        commandMountEntity.writable = commandMount.writable();
+        commandMountEntity.containerPath = commandMount.path();
+        return commandMountEntity;
     }
 
     @Transient
@@ -67,7 +64,7 @@ public class CommandMount implements Serializable {
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final CommandMount that = (CommandMount) o;
+        final CommandMountEntity that = (CommandMountEntity) o;
         return Objects.equals(this.name, that.name) &&
                 // Objects.equals(this.type, that.type) &&
                 Objects.equals(this.writable, that.writable) &&

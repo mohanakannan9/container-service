@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
-import org.nrg.containers.model.auto.CommandPojo;
+import org.nrg.containers.model.auto.Command;
 
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
@@ -17,23 +17,23 @@ import java.util.List;
 import java.util.Objects;
 
 @Entity
-public class XnatCommandWrapper implements Serializable {
+public class CommandWrapperEntity implements Serializable {
     private long id;
     private String name;
     private String description;
-    @JsonIgnore private Command command;
-    @JsonProperty("external-inputs") private List<XnatCommandInput> externalInputs;
-    @JsonProperty("derived-inputs") private List<XnatCommandInput> derivedInputs;
-    @JsonProperty("output-handlers") private List<XnatCommandOutput> outputHandlers;
+    @JsonIgnore private CommandEntity commandEntity;
+    @JsonProperty("external-inputs") private List<CommandWrapperInputEntity> externalInputs;
+    @JsonProperty("derived-inputs") private List<CommandWrapperInputEntity> derivedInputs;
+    @JsonProperty("output-handlers") private List<CommandWrapperOutputEntity> outputHandlers;
 
-    public static XnatCommandWrapper passthrough(final Command command) {
-        final XnatCommandWrapper identity = new XnatCommandWrapper();
-        identity.command = command;
+    public static CommandWrapperEntity passthrough(final CommandEntity commandEntity) {
+        final CommandWrapperEntity identity = new CommandWrapperEntity();
+        identity.commandEntity = commandEntity;
 
-        final List<XnatCommandInput> externalInputs = Lists.newArrayList();
-        if (command.getInputs() != null) {
-            for (final CommandInput commandInput : command.getInputs()) {
-                externalInputs.add(XnatCommandInput.passthrough(commandInput));
+        final List<CommandWrapperInputEntity> externalInputs = Lists.newArrayList();
+        if (commandEntity.getInputs() != null) {
+            for (final CommandInputEntity commandInputEntity : commandEntity.getInputs()) {
+                externalInputs.add(CommandWrapperInputEntity.passthrough(commandInputEntity));
             }
         }
         identity.setExternalInputs(externalInputs);
@@ -41,20 +41,20 @@ public class XnatCommandWrapper implements Serializable {
         return identity;
     }
 
-    public static XnatCommandWrapper fromPojo(final CommandPojo.CommandWrapperPojo commandWrapperPojo) {
-        final XnatCommandWrapper xnatCommandWrapper = new XnatCommandWrapper();
-        xnatCommandWrapper.name = commandWrapperPojo.name();
-        xnatCommandWrapper.description = commandWrapperPojo.description();
-        for (final CommandPojo.CommandWrapperInputPojo externalCommandWrapperInputPojo : commandWrapperPojo.externalInputs()) {
-            xnatCommandWrapper.addExternalInput(XnatCommandInput.fromPojo(externalCommandWrapperInputPojo));
+    public static CommandWrapperEntity fromPojo(final Command.CommandWrapper commandWrapper) {
+        final CommandWrapperEntity commandWrapperEntity = new CommandWrapperEntity();
+        commandWrapperEntity.name = commandWrapper.name();
+        commandWrapperEntity.description = commandWrapper.description();
+        for (final Command.CommandWrapperInput externalCommandWrapperInput : commandWrapper.externalInputs()) {
+            commandWrapperEntity.addExternalInput(CommandWrapperInputEntity.fromPojo(externalCommandWrapperInput));
         }
-        for (final CommandPojo.CommandWrapperInputPojo derivedCommandWrapperInputPojo : commandWrapperPojo.derivedInputs()) {
-            xnatCommandWrapper.addDerivedInput(XnatCommandInput.fromPojo(derivedCommandWrapperInputPojo));
+        for (final Command.CommandWrapperInput derivedCommandWrapperInput : commandWrapper.derivedInputs()) {
+            commandWrapperEntity.addDerivedInput(CommandWrapperInputEntity.fromPojo(derivedCommandWrapperInput));
         }
-        for (final CommandPojo.CommandWrapperOutputPojo commandWrapperOutputPojo : commandWrapperPojo.outputHandlers()) {
-            xnatCommandWrapper.addOutputHandler(XnatCommandOutput.fromPojo(commandWrapperOutputPojo));
+        for (final Command.CommandWrapperOutput commandWrapperOutput : commandWrapper.outputHandlers()) {
+            commandWrapperEntity.addOutputHandler(CommandWrapperOutputEntity.fromPojo(commandWrapperOutput));
         }
-        return xnatCommandWrapper;
+        return commandWrapperEntity;
     }
 
     @Id
@@ -84,26 +84,26 @@ public class XnatCommandWrapper implements Serializable {
     }
 
     @ManyToOne
-    public Command getCommand() {
-        return command;
+    public CommandEntity getCommandEntity() {
+        return commandEntity;
     }
 
-    public void setCommand(final Command command) {
-        this.command = command;
+    public void setCommandEntity(final CommandEntity commandEntity) {
+        this.commandEntity = commandEntity;
     }
 
     @ElementCollection
-    public List<XnatCommandInput> getExternalInputs() {
+    public List<CommandWrapperInputEntity> getExternalInputs() {
         return externalInputs;
     }
 
-    public void setExternalInputs(final List<XnatCommandInput> externalInputs) {
+    public void setExternalInputs(final List<CommandWrapperInputEntity> externalInputs) {
         this.externalInputs = externalInputs == null ?
-                Lists.<XnatCommandInput>newArrayList() :
+                Lists.<CommandWrapperInputEntity>newArrayList() :
                 externalInputs;
     }
 
-    public void addExternalInput(final XnatCommandInput externalInput) {
+    public void addExternalInput(final CommandWrapperInputEntity externalInput) {
         if (externalInput == null) {
             return;
         }
@@ -115,17 +115,17 @@ public class XnatCommandWrapper implements Serializable {
     }
 
     @ElementCollection
-    public List<XnatCommandInput> getDerivedInputs() {
+    public List<CommandWrapperInputEntity> getDerivedInputs() {
         return derivedInputs;
     }
 
-    public void setDerivedInputs(final List<XnatCommandInput> derivedInputs) {
+    public void setDerivedInputs(final List<CommandWrapperInputEntity> derivedInputs) {
         this.derivedInputs = derivedInputs == null ?
-                Lists.<XnatCommandInput>newArrayList() :
+                Lists.<CommandWrapperInputEntity>newArrayList() :
                 derivedInputs;
     }
 
-    public void addDerivedInput(final XnatCommandInput derivedInput) {
+    public void addDerivedInput(final CommandWrapperInputEntity derivedInput) {
         if (derivedInput == null) {
             return;
         }
@@ -137,17 +137,17 @@ public class XnatCommandWrapper implements Serializable {
     }
 
     @ElementCollection
-    public List<XnatCommandOutput> getOutputHandlers() {
+    public List<CommandWrapperOutputEntity> getOutputHandlers() {
         return outputHandlers;
     }
 
-    public void setOutputHandlers(final List<XnatCommandOutput> outputHandlers) {
+    public void setOutputHandlers(final List<CommandWrapperOutputEntity> outputHandlers) {
         this.outputHandlers = outputHandlers == null ?
-                Lists.<XnatCommandOutput>newArrayList() :
+                Lists.<CommandWrapperOutputEntity>newArrayList() :
                 outputHandlers;
     }
 
-    public void addOutputHandler(final XnatCommandOutput outputHandler) {
+    public void addOutputHandler(final CommandWrapperOutputEntity outputHandler) {
         if (outputHandler == null) {
             return;
         }
@@ -162,7 +162,7 @@ public class XnatCommandWrapper implements Serializable {
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final XnatCommandWrapper that = (XnatCommandWrapper) o;
+        final CommandWrapperEntity that = (CommandWrapperEntity) o;
         return Objects.equals(this.id, that.id) &&
                 Objects.equals(this.name, that.name) &&
                 Objects.equals(this.description, that.description) &&

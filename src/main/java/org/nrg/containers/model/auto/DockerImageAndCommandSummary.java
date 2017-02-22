@@ -7,7 +7,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.helpers.CommandLabelHelper;
-import org.nrg.containers.model.Command;
+import org.nrg.containers.model.CommandEntity;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -18,18 +18,18 @@ public abstract class DockerImageAndCommandSummary {
     @Nullable @JsonProperty("image-id") public abstract String imageId();
     @Nullable @JsonProperty("server") public abstract String server();
     @JsonProperty("names") public abstract Set<String> imageNames();
-    @JsonProperty("commands") public abstract List<CommandPojo> commands();
+    @JsonProperty("commands") public abstract List<Command> commands();
 
     @JsonCreator
     public static DockerImageAndCommandSummary create(@JsonProperty("image-id") final String imageId,
                                                       @JsonProperty("server") final String server,
                                                       @JsonProperty("names") final Set<String> imageNames,
-                                                      @JsonProperty("commands") final List<CommandPojo> commands) {
+                                                      @JsonProperty("commands") final List<Command> commands) {
         return new AutoValue_DockerImageAndCommandSummary(
                 imageId == null ? "" : imageId,
                 server,
                 imageNames == null ? Sets.<String>newHashSet() : imageNames,
-                commands == null ? Lists.<CommandPojo>newArrayList() : commands);
+                commands == null ? Lists.<Command>newArrayList() : commands);
     }
 
     public static DockerImageAndCommandSummary create(final DockerImage dockerImage, final String server) {
@@ -37,11 +37,11 @@ public abstract class DockerImageAndCommandSummary {
                 dockerImage == null ? "" : dockerImage.imageId(),
                 server,
                 dockerImage == null ? Sets.<String>newHashSet() : Sets.newHashSet(dockerImage.tags()),
-                Lists.<CommandPojo>newArrayList());
+                Lists.<Command>newArrayList());
 
-        final List<CommandPojo> commandsFromImageLabels = CommandLabelHelper.parseLabels(null, dockerImage);
+        final List<Command> commandsFromImageLabels = CommandLabelHelper.parseLabels(null, dockerImage);
         if (commandsFromImageLabels != null) {
-            for (final CommandPojo command : commandsFromImageLabels) {
+            for (final Command command : commandsFromImageLabels) {
                 created.addCommand(command);
             }
         }
@@ -49,27 +49,27 @@ public abstract class DockerImageAndCommandSummary {
         return created;
     }
 
-    public static DockerImageAndCommandSummary create(final String imageId, final String server, final CommandPojo command) {
+    public static DockerImageAndCommandSummary create(final String imageId, final String server, final Command command) {
         final Set<String> imageNames = Sets.newHashSet(command.image());
-        final List<CommandPojo> commandList = Lists.newArrayList(command);
+        final List<Command> commandList = Lists.newArrayList(command);
         return create(imageId, server, imageNames, commandList);
     }
 
-    public static DockerImageAndCommandSummary create(final String imageId, final String server, final Command command) {
-        return create(imageId, server, CommandPojo.create(command));
-    }
-
-    public static DockerImageAndCommandSummary create(final CommandPojo command) {
-        final Set<String> imageNames = Sets.newHashSet(command.image());
-        final List<CommandPojo> commandList = Lists.newArrayList(command);
-        return create("", null, imageNames, commandList);
+    public static DockerImageAndCommandSummary create(final String imageId, final String server, final CommandEntity commandEntity) {
+        return create(imageId, server, Command.create(commandEntity));
     }
 
     public static DockerImageAndCommandSummary create(final Command command) {
-        return create(CommandPojo.create(command));
+        final Set<String> imageNames = Sets.newHashSet(command.image());
+        final List<Command> commandList = Lists.newArrayList(command);
+        return create("", null, imageNames, commandList);
     }
 
-    public void addOrUpdateCommand(final CommandPojo commandToAddOrUpdate) {
+    public static DockerImageAndCommandSummary create(final CommandEntity commandEntity) {
+        return create(Command.create(commandEntity));
+    }
+
+    public void addOrUpdateCommand(final Command commandToAddOrUpdate) {
         addImageName(commandToAddOrUpdate.image());
 
         // Check to see if the list of commands already has one with this name.
@@ -80,7 +80,7 @@ public abstract class DockerImageAndCommandSummary {
         int updateIndex = -1;
         int numCommands = commands().size();
         for (int i = 0; i < numCommands; i++) {
-            final CommandPojo existingCommand = commands().get(i);
+            final Command existingCommand = commands().get(i);
             if (existingCommand.name().equals(commandToAddOrUpdate.name())) {
                 shouldUpdate = true;
                 updateIndex = i;
@@ -95,13 +95,13 @@ public abstract class DockerImageAndCommandSummary {
         }
     }
 
-    private void addCommand(final CommandPojo command) {
+    private void addCommand(final Command command) {
         addImageName(command.image());
         commands().add(command);
     }
 
-    public void addOrUpdateCommand(final Command commandToAddOrUpdate) {
-        addOrUpdateCommand(CommandPojo.create(commandToAddOrUpdate));
+    public void addOrUpdateCommand(final CommandEntity commandEntityToAddOrUpdate) {
+        addOrUpdateCommand(Command.create(commandEntityToAddOrUpdate));
     }
 
     public void addImageName(final String imageName) {

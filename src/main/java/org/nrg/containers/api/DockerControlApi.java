@@ -38,7 +38,7 @@ import org.nrg.containers.model.auto.DockerImage;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.ResolvedDockerCommand;
-import org.nrg.containers.model.auto.CommandPojo;
+import org.nrg.containers.model.auto.Command;
 import org.nrg.containers.model.auto.DockerHub;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
@@ -454,7 +454,7 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     @Override
-    public List<CommandPojo> parseLabels(final String imageName)
+    public List<Command> parseLabels(final String imageName)
             throws DockerServerException, NoServerPrefException, NotFoundException {
         final DockerImage image = getImageById(imageName);
         return CommandLabelHelper.parseLabels(imageName, image, objectMapper);

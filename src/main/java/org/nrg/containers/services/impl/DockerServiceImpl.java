@@ -1,6 +1,5 @@
 package org.nrg.containers.services.impl;
 
-import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
@@ -8,12 +7,11 @@ import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.helpers.CommandLabelHelper;
-import org.nrg.containers.model.Command;
+import org.nrg.containers.model.CommandEntity;
+import org.nrg.containers.model.auto.Command;
 import org.nrg.containers.model.auto.DockerImage;
 import org.nrg.containers.exceptions.NotUniqueException;
-import org.nrg.containers.model.DockerHubEntity;
 import org.nrg.containers.model.DockerServerPrefsBean;
-import org.nrg.containers.model.auto.CommandPojo;
 import org.nrg.containers.model.auto.DockerHub;
 import org.nrg.containers.model.auto.DockerImageAndCommandSummary;
 import org.nrg.containers.model.DockerServer;
@@ -28,7 +26,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 
@@ -200,16 +197,16 @@ public class DockerServiceImpl implements DockerService {
         // final Map<DockerImage, DockerImageAndCommandSummary> imageToImageSummaryMap = Maps.newHashMap();
 
         // Go through all commands, update the images with command info (or add new images if we can't find them)
-        final List<Command> commands = commandService.getAll();
-        if (commands != null) {
-            for (final Command command : commands) {
-                final String imageNameUsedByTheCommand = command.getImage();
+        final List<CommandEntity> commandEntities = commandService.getAll();
+        if (commandEntities != null) {
+            for (final CommandEntity commandEntity : commandEntities) {
+                final String imageNameUsedByTheCommand = commandEntity.getImage();
                 if (StringUtils.isNotBlank(imageNameUsedByTheCommand)) {
                     if (imageIdsByNameDuplicateValues.containsKey(imageNameUsedByTheCommand)) {
 
                         // We do recognize the image by this name, so either make a new summary for it or add this command to an existing summary
                         final String dockerImageId = imageIdsByNameDuplicateValues.get(imageNameUsedByTheCommand);
-                        imageSummariesByImageId.get(dockerImageId).addOrUpdateCommand(command);
+                        imageSummariesByImageId.get(dockerImageId).addOrUpdateCommand(commandEntity);
 
                     } else {
                         // the command refers to some image that either
@@ -229,11 +226,11 @@ public class DockerServiceImpl implements DockerService {
                             imageIdsByNameDuplicateValues.put(imageNameUsedByTheCommand, dockerImageId);
 
                             final DockerImageAndCommandSummary summary = imageSummariesByImageId.get(dockerImageId);
-                            summary.addOrUpdateCommand(command);
+                            summary.addOrUpdateCommand(commandEntity);
                         } else {
                             // This means B: the command refers to some image that we do not have on the docker server
                             // Create a placeholder image summary object
-                            final DockerImageAndCommandSummary summary = DockerImageAndCommandSummary.create(command);
+                            final DockerImageAndCommandSummary summary = DockerImageAndCommandSummary.create(commandEntity);
 
                             imageIdsByNameDuplicateValues.put(imageNameUsedByTheCommand, summary.imageId());
                             imageSummariesByImageId.put(summary.imageId(), summary);
@@ -271,7 +268,7 @@ public class DockerServiceImpl implements DockerService {
         if (log.isDebugEnabled()) {
             log.debug("Parsing labels for " + imageName);
         }
-        final List<CommandPojo> parsed = CommandLabelHelper.parseLabels(imageName, dockerImage);
+        final List<Command> parsed = CommandLabelHelper.parseLabels(imageName, dockerImage);
         if (log.isDebugEnabled()) {
             log.debug("Saving commands from image labels");
         }

@@ -9,7 +9,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.containers.model.auto.CommandPojo;
+import org.nrg.containers.model.auto.Command;
 
 import javax.annotation.Nullable;
 import javax.persistence.Embeddable;
@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Objects;
 
 @Embeddable
-public class XnatCommandInput {
+public class CommandWrapperInputEntity {
     public static final Type DEFAULT_TYPE = Type.STRING;
     private String name;
     private String description;
@@ -36,76 +36,76 @@ public class XnatCommandInput {
     private String value;
     private String jsonRepresentation;
 
-    public static XnatCommandInput passthrough(final CommandInput commandInput) {
-        final XnatCommandInput identityInput = new XnatCommandInput();
-        identityInput.setName(commandInput.getName());
-        identityInput.setType(XnatCommandInput.Type.valueOf(commandInput.getType().getName().toUpperCase()));
-        identityInput.setMatcher(commandInput.getMatcher());
-        identityInput.setProvidesValueForCommandInput(commandInput.getName());
-        identityInput.setDefaultValue(commandInput.getDefaultValue());
+    public static CommandWrapperInputEntity passthrough(final CommandInputEntity commandInputEntity) {
+        final CommandWrapperInputEntity identityInput = new CommandWrapperInputEntity();
+        identityInput.setName(commandInputEntity.getName());
+        identityInput.setType(CommandWrapperInputEntity.Type.valueOf(commandInputEntity.getType().getName().toUpperCase()));
+        identityInput.setMatcher(commandInputEntity.getMatcher());
+        identityInput.setProvidesValueForCommandInput(commandInputEntity.getName());
+        identityInput.setDefaultValue(commandInputEntity.getDefaultValue());
         identityInput.setUserSettable(true);
-        identityInput.setRequired(commandInput.isRequired());
+        identityInput.setRequired(commandInputEntity.isRequired());
 
         return identityInput;
     }
 
-    public static XnatCommandInput fromPojo(final CommandPojo.CommandWrapperInputPojo commandWrapperInputPojo) {
-        final XnatCommandInput xnatCommandInput = new XnatCommandInput();
-        xnatCommandInput.name = commandWrapperInputPojo.name();
-        xnatCommandInput.description = commandWrapperInputPojo.description();
-        xnatCommandInput.derivedFromXnatInput = commandWrapperInputPojo.derivedFromXnatInput();
-        xnatCommandInput.derivedFromXnatObjectProperty = commandWrapperInputPojo.derivedFromXnatObjectProperty();
-        xnatCommandInput.matcher = commandWrapperInputPojo.matcher();
-        xnatCommandInput.providesValueForCommandInput = commandWrapperInputPojo.providesValueForCommandInput();
-        xnatCommandInput.providesFilesForCommandMount = commandWrapperInputPojo.providesFilesForCommandMount();
-        xnatCommandInput.defaultValue = commandWrapperInputPojo.defaultValue();
-        xnatCommandInput.userSettable = commandWrapperInputPojo.userSettable();
-        xnatCommandInput.rawReplacementKey = commandWrapperInputPojo.rawReplacementKey();
-        xnatCommandInput.required = commandWrapperInputPojo.required();
-        switch (commandWrapperInputPojo.type()) {
+    public static CommandWrapperInputEntity fromPojo(final Command.CommandWrapperInput commandWrapperInput) {
+        final CommandWrapperInputEntity commandWrapperInputEntity = new CommandWrapperInputEntity();
+        commandWrapperInputEntity.name = commandWrapperInput.name();
+        commandWrapperInputEntity.description = commandWrapperInput.description();
+        commandWrapperInputEntity.derivedFromXnatInput = commandWrapperInput.derivedFromXnatInput();
+        commandWrapperInputEntity.derivedFromXnatObjectProperty = commandWrapperInput.derivedFromXnatObjectProperty();
+        commandWrapperInputEntity.matcher = commandWrapperInput.matcher();
+        commandWrapperInputEntity.providesValueForCommandInput = commandWrapperInput.providesValueForCommandInput();
+        commandWrapperInputEntity.providesFilesForCommandMount = commandWrapperInput.providesFilesForCommandMount();
+        commandWrapperInputEntity.defaultValue = commandWrapperInput.defaultValue();
+        commandWrapperInputEntity.userSettable = commandWrapperInput.userSettable();
+        commandWrapperInputEntity.rawReplacementKey = commandWrapperInput.rawReplacementKey();
+        commandWrapperInputEntity.required = commandWrapperInput.required();
+        switch (commandWrapperInput.type()) {
             case "string":
-                xnatCommandInput.type = Type.STRING;
+                commandWrapperInputEntity.type = Type.STRING;
                 break;
             case "boolean":
-                xnatCommandInput.type = Type.BOOLEAN;
+                commandWrapperInputEntity.type = Type.BOOLEAN;
                 break;
             case "number":
-                xnatCommandInput.type = Type.NUMBER;
+                commandWrapperInputEntity.type = Type.NUMBER;
                 break;
             case "Directory":
-                xnatCommandInput.type = Type.DIRECTORY;
+                commandWrapperInputEntity.type = Type.DIRECTORY;
                 break;
             case "File[]":
-                xnatCommandInput.type = Type.FILES;
+                commandWrapperInputEntity.type = Type.FILES;
                 break;
             case "File":
-                xnatCommandInput.type = Type.FILE;
+                commandWrapperInputEntity.type = Type.FILE;
                 break;
             case "Project":
-                xnatCommandInput.type = Type.PROJECT;
+                commandWrapperInputEntity.type = Type.PROJECT;
                 break;
             case "Subject":
-                xnatCommandInput.type = Type.SUBJECT;
+                commandWrapperInputEntity.type = Type.SUBJECT;
                 break;
             case "Session":
-                xnatCommandInput.type = Type.SESSION;
+                commandWrapperInputEntity.type = Type.SESSION;
                 break;
             case "Scan":
-                xnatCommandInput.type = Type.SCAN;
+                commandWrapperInputEntity.type = Type.SCAN;
                 break;
             case "Assessor":
-                xnatCommandInput.type = Type.ASSESSOR;
+                commandWrapperInputEntity.type = Type.ASSESSOR;
                 break;
             case "Resource":
-                xnatCommandInput.type = Type.RESOURCE;
+                commandWrapperInputEntity.type = Type.RESOURCE;
                 break;
             case "Config":
-                xnatCommandInput.type = Type.CONFIG;
+                commandWrapperInputEntity.type = Type.CONFIG;
                 break;
             default:
-                xnatCommandInput.type = DEFAULT_TYPE;
+                commandWrapperInputEntity.type = DEFAULT_TYPE;
         }
-        return xnatCommandInput;
+        return commandWrapperInputEntity;
     }
 
     public String getName() {
@@ -237,7 +237,7 @@ public class XnatCommandInput {
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final XnatCommandInput that = (XnatCommandInput) o;
+        final CommandWrapperInputEntity that = (CommandWrapperInputEntity) o;
         return Objects.equals(this.name, that.name) &&
                 Objects.equals(this.description, that.description) &&
                 type == that.type &&

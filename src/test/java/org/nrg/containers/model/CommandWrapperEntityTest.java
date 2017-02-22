@@ -26,7 +26,7 @@ import static org.junit.Assert.assertTrue;
 @RunWith(SpringJUnit4ClassRunner.class)
 @Transactional
 @ContextConfiguration(classes = CommandTestConfig.class)
-public class XnatCommandWrapperTest {
+public class CommandWrapperEntityTest {
     private static final String COOL_INPUT_JSON = "{" +
             "\"name\":\"my_cool_input\", " +
             "\"description\":\"A boolean value\", " +
@@ -116,9 +116,9 @@ public class XnatCommandWrapperTest {
 
     @Test
     public void testDeserializeXnatCommandInputsAndOutputs() throws Exception {
-        final XnatCommandInput externalInput = mapper.readValue(XNAT_COMMAND_WRAPPER_EXTERNAL_INPUT, XnatCommandInput.class);
+        final CommandWrapperInputEntity externalInput = mapper.readValue(XNAT_COMMAND_WRAPPER_EXTERNAL_INPUT, CommandWrapperInputEntity.class);
         assertEquals(EXTERNAL_INPUT_NAME, externalInput.getName());
-        assertEquals(XnatCommandInput.Type.SESSION, externalInput.getType());
+        assertEquals(CommandWrapperInputEntity.Type.SESSION, externalInput.getType());
         assertNull(externalInput.getDerivedFromXnatInput());
         assertNull(externalInput.getDerivedFromXnatObjectProperty());
         assertNull(externalInput.getProvidesValueForCommandInput());
@@ -126,9 +126,9 @@ public class XnatCommandWrapperTest {
         assertNull(externalInput.getMatcher());
         assertFalse(externalInput.getRequired());
 
-        final XnatCommandInput derivedInput = mapper.readValue(XNAT_COMMAND_WRAPPER_DERIVED_INPUT, XnatCommandInput.class);
+        final CommandWrapperInputEntity derivedInput = mapper.readValue(XNAT_COMMAND_WRAPPER_DERIVED_INPUT, CommandWrapperInputEntity.class);
         assertEquals(DERIVED_INPUT_NAME, derivedInput.getName());
-        assertEquals(XnatCommandInput.Type.STRING, derivedInput.getType());
+        assertEquals(CommandWrapperInputEntity.Type.STRING, derivedInput.getType());
         assertEquals(EXTERNAL_INPUT_NAME, derivedInput.getDerivedFromXnatInput());
         assertEquals(XNAT_OBJECT_PROPERTY, derivedInput.getDerivedFromXnatObjectProperty());
         assertEquals(STRING_INPUT_NAME, derivedInput.getProvidesValueForCommandInput());
@@ -136,8 +136,8 @@ public class XnatCommandWrapperTest {
         assertNull(derivedInput.getMatcher());
         assertFalse(derivedInput.getRequired());
 
-        final XnatCommandOutput output = mapper.readValue(XNAT_COMMAND_WRAPPER_OUTPUT_HANDLER, XnatCommandOutput.class);
-        assertEquals(XnatCommandOutput.Type.RESOURCE, output.getType());
+        final CommandWrapperOutputEntity output = mapper.readValue(XNAT_COMMAND_WRAPPER_OUTPUT_HANDLER, CommandWrapperOutputEntity.class);
+        assertEquals(CommandWrapperOutputEntity.Type.RESOURCE, output.getType());
         assertEquals(EXTERNAL_INPUT_NAME, output.getXnatInputName());
         assertEquals(COMMAND_OUTPUT_NAME, output.getCommandOutputName());
         assertEquals(OUTPUT_HANDLER_LABEL, output.getLabel());
@@ -146,32 +146,32 @@ public class XnatCommandWrapperTest {
     @Test
     public void testDeserializeCommandWithCommandWrapper() throws Exception {
 
-        final XnatCommandWrapper xnatCommandWrapper = mapper.readValue(XNAT_COMMAND_WRAPPER, XnatCommandWrapper.class);
+        final CommandWrapperEntity commandWrapperEntity = mapper.readValue(XNAT_COMMAND_WRAPPER, CommandWrapperEntity.class);
 
-        final Command command = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, Command.class);
+        final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
 
-        assertThat(command.getXnatCommandWrappers(), hasSize(1));
-        assertTrue(command.getXnatCommandWrappers().contains(xnatCommandWrapper));
+        assertThat(commandEntity.getCommandWrapperEntities(), hasSize(1));
+        assertTrue(commandEntity.getCommandWrapperEntities().contains(commandWrapperEntity));
     }
 
     @Test
     public void testPersistCommandWithWrapper() throws Exception {
 
-        final Command command = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, Command.class);
+        final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
 
-        commandService.create(command);
+        commandService.create(commandEntity);
         commandService.flush();
 
-        final Command retrievedCommand = commandService.retrieve(command.getId());
+        final CommandEntity retrievedCommandEntity = commandService.retrieve(commandEntity.getId());
 
-        assertEquals(command, retrievedCommand);
+        assertEquals(commandEntity, retrievedCommandEntity);
 
-        final List<XnatCommandWrapper> commandWrappers = retrievedCommand.getXnatCommandWrappers();
+        final List<CommandWrapperEntity> commandWrappers = retrievedCommandEntity.getCommandWrapperEntities();
         assertThat(commandWrappers, hasSize(1));
 
-        final XnatCommandWrapper xnatCommandWrapper = commandWrappers.get(0);
-        assertThat(xnatCommandWrapper.getId(), not(0L));
-        assertEquals(command, xnatCommandWrapper.getCommand());
+        final CommandWrapperEntity commandWrapperEntity = commandWrappers.get(0);
+        assertThat(commandWrapperEntity.getId(), not(0L));
+        assertEquals(commandEntity, commandWrapperEntity.getCommandEntity());
     }
 
     @Test
@@ -180,7 +180,7 @@ public class XnatCommandWrapperTest {
         // Spring didn't tell us why. See CS-70.
         final String dir = Resources.getResource("ecatHeaderDump").getPath().replace("%20", " ");
         final String commandJsonFile = dir + "/command.json";
-        final Command ecatHeaderDump = mapper.readValue(new File(commandJsonFile), Command.class);
+        final CommandEntity ecatHeaderDump = mapper.readValue(new File(commandJsonFile), CommandEntity.class);
         commandService.create(ecatHeaderDump);
     }
 }

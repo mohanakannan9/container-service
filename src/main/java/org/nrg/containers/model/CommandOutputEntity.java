@@ -1,18 +1,15 @@
 package org.nrg.containers.model;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.collect.Lists;
-import org.apache.commons.lang3.StringUtils;
-import org.nrg.containers.model.auto.CommandPojo;
+import org.nrg.containers.model.auto.Command;
 
 import javax.persistence.Embeddable;
 import javax.persistence.Transient;
 import java.io.Serializable;
-import java.util.List;
 import java.util.Objects;
 
 @Embeddable
-public class CommandOutput implements Serializable {
+public class CommandOutputEntity implements Serializable {
     private String name;
     private String description;
     private Boolean required;
@@ -20,15 +17,15 @@ public class CommandOutput implements Serializable {
     private String path;
     private String glob;
 
-    public static CommandOutput fromPojo(final CommandPojo.CommandOutputPojo commandOutputPojo) {
-        final CommandOutput commandOutput = new CommandOutput();
-        commandOutput.name = commandOutputPojo.name();
-        commandOutput.description = commandOutputPojo.description();
-        commandOutput.required = commandOutputPojo.required();
-        commandOutput.mount = commandOutputPojo.mount();
-        commandOutput.path = commandOutputPojo.path();
-        commandOutput.glob = commandOutputPojo.glob();
-        return commandOutput;
+    public static CommandOutputEntity fromPojo(final Command.CommandOutput commandOutput) {
+        final CommandOutputEntity commandOutputEntity = new CommandOutputEntity();
+        commandOutputEntity.name = commandOutput.name();
+        commandOutputEntity.description = commandOutput.description();
+        commandOutputEntity.required = commandOutput.required();
+        commandOutputEntity.mount = commandOutput.mount();
+        commandOutputEntity.path = commandOutput.path();
+        commandOutputEntity.glob = commandOutput.glob();
+        return commandOutputEntity;
     }
 
     public String getName() {
@@ -88,7 +85,7 @@ public class CommandOutput implements Serializable {
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final CommandOutput that = (CommandOutput) o;
+        final CommandOutputEntity that = (CommandOutputEntity) o;
         return Objects.equals(this.name, that.name) &&
                 Objects.equals(this.description, that.description) &&
                 Objects.equals(this.required, that.required) &&

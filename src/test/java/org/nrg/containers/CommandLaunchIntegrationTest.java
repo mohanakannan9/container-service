@@ -20,12 +20,12 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.nrg.containers.config.IntegrationTestConfig;
-import org.nrg.containers.model.Command;
+import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.ContainerExecutionMount;
 import org.nrg.containers.model.ContainerExecutionOutput;
 import org.nrg.containers.model.DockerServerPrefsBean;
-import org.nrg.containers.model.XnatCommandWrapper;
+import org.nrg.containers.model.CommandWrapperEntity;
 import org.nrg.containers.model.xnat.Resource;
 import org.nrg.containers.model.xnat.Scan;
 import org.nrg.containers.model.xnat.Session;
@@ -131,19 +131,19 @@ public class CommandLaunchIntegrationTest {
         final String fakeResourceDir = dir + "/fakeResource";
         final String commandWrapperName = "recon-all-session";
 
-        final Command fakeReconAll = mapper.readValue(new File(commandJsonFile), Command.class);
+        final CommandEntity fakeReconAll = mapper.readValue(new File(commandJsonFile), CommandEntity.class);
         commandService.create(fakeReconAll);
         commandService.flush();
-        XnatCommandWrapper xnatCommandWrapper = null;
-        if (fakeReconAll.getXnatCommandWrappers() != null) {
-            for (final XnatCommandWrapper xnatCommandWrapperLoop : fakeReconAll.getXnatCommandWrappers()) {
-                if (commandWrapperName.equals(xnatCommandWrapperLoop.getName())) {
-                    xnatCommandWrapper = xnatCommandWrapperLoop;
+        CommandWrapperEntity commandWrapperEntity = null;
+        if (fakeReconAll.getCommandWrapperEntities() != null) {
+            for (final CommandWrapperEntity commandWrapperEntityLoop : fakeReconAll.getCommandWrapperEntities()) {
+                if (commandWrapperName.equals(commandWrapperEntityLoop.getName())) {
+                    commandWrapperEntity = commandWrapperEntityLoop;
                     break;
                 }
             }
         }
-        assertNotNull(xnatCommandWrapper);
+        assertNotNull(commandWrapperEntity);
 
         final Session session = mapper.readValue(new File(sessionJsonFile), Session.class);
         final Scan scan = session.getScans().get(0);
@@ -157,7 +157,7 @@ public class CommandLaunchIntegrationTest {
         runtimeValues.put("session", sessionJson);
         runtimeValues.put("T1-scantype", t1Scantype);
 
-        final ContainerExecution execution = commandService.resolveAndLaunchCommand(xnatCommandWrapper.getId(), fakeReconAll.getId(), runtimeValues, mockUser);
+        final ContainerExecution execution = commandService.resolveAndLaunchCommand(commandWrapperEntity.getId(), fakeReconAll.getId(), runtimeValues, mockUser);
         Thread.sleep(1000); // Wait for container to finish
 
         // Raw inputs

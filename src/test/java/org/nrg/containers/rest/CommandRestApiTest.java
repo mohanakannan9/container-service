@@ -18,7 +18,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.config.CommandRestApiTestConfig;
-import org.nrg.containers.model.Command;
+import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.model.DockerServerPrefsBean;
@@ -162,8 +162,8 @@ public class CommandRestApiTest {
 
         final String commandJson =
                 "{\"name\": \"one\", \"type\": \"docker\", \"image\":\"" + FAKE_DOCKER_IMAGE + "\"}";
-        final Command command = mapper.readValue(commandJson, Command.class);
-        final Command created = commandService.create(command);
+        final CommandEntity commandEntity = mapper.readValue(commandJson, CommandEntity.class);
+        final CommandEntity created = commandService.create(commandEntity);
 
 //        when(commandService.getAll()).thenReturn(Lists.newArrayList(command));
 
@@ -180,13 +180,13 @@ public class CommandRestApiTest {
                         .getResponse()
                         .getContentAsString();
 
-        final List<Command> commandResponseList = mapper.readValue(response, new TypeReference<List<Command>>() {});
-        assertThat(commandResponseList, hasSize(1));
-        final Command commandResponse = commandResponseList.get(0);
-        assertNotEquals(0L, commandResponse.getId());
-        assertEquals(created.getId(), commandResponse.getId());
-        assertEquals("one", commandResponse.getName());
-        assertEquals(FAKE_DOCKER_IMAGE, commandResponse.getImage());
+        final List<CommandEntity> commandEntityResponseList = mapper.readValue(response, new TypeReference<List<CommandEntity>>() {});
+        assertThat(commandEntityResponseList, hasSize(1));
+        final CommandEntity commandEntityResponse = commandEntityResponseList.get(0);
+        assertNotEquals(0L, commandEntityResponse.getId());
+        assertEquals(created.getId(), commandEntityResponse.getId());
+        assertEquals("one", commandEntityResponse.getName());
+        assertEquals(FAKE_DOCKER_IMAGE, commandEntityResponse.getImage());
     }
 
     @Test
@@ -195,8 +195,8 @@ public class CommandRestApiTest {
 
         final String commandJson =
                 "{\"name\": \"one\", \"type\": \"docker\", \"image\":\"" + FAKE_DOCKER_IMAGE + "\"}";
-        final Command command = mapper.readValue(commandJson, Command.class);
-        final Command created = commandService.create(command);
+        final CommandEntity commandEntity = mapper.readValue(commandJson, CommandEntity.class);
+        final CommandEntity created = commandService.create(commandEntity);
 
         final String path = String.format(pathTemplate, created.getId());
 
@@ -213,11 +213,11 @@ public class CommandRestApiTest {
                         .getResponse()
                         .getContentAsString();
 
-        final Command commandResponse = mapper.readValue(response, Command.class);
-        assertNotEquals(0L, commandResponse.getId());
-        assertEquals(created.getId(), commandResponse.getId());
-        assertEquals("one", commandResponse.getName());
-        assertEquals(FAKE_DOCKER_IMAGE, commandResponse.getImage());
+        final CommandEntity commandEntityResponse = mapper.readValue(response, CommandEntity.class);
+        assertNotEquals(0L, commandEntityResponse.getId());
+        assertEquals(created.getId(), commandEntityResponse.getId());
+        assertEquals("one", commandEntityResponse.getName());
+        assertEquals(FAKE_DOCKER_IMAGE, commandEntityResponse.getImage());
     }
 
     @Test
@@ -244,7 +244,7 @@ public class CommandRestApiTest {
         final Long idResponse = Long.parseLong(response);
         assertNotEquals(Long.valueOf(0L), idResponse);
 
-        final Command retrieved = commandService.retrieve(idResponse);
+        final CommandEntity retrieved = commandService.retrieve(idResponse);
         assertNotEquals(0L, retrieved.getId());
         assertEquals((Long) retrieved.getId(), idResponse);
         assertEquals("toCreate", retrieved.getName());
@@ -293,9 +293,9 @@ public class CommandRestApiTest {
 
         final String commandJson =
                 "{\"name\": \"toDelete\", \"type\": \"docker\", \"image\":\"" + FAKE_DOCKER_IMAGE + "\"}";
-        final Command command = mapper.readValue(commandJson, Command.class);
-        commandService.create(command);
-        final Long id = command.getId();
+        final CommandEntity commandEntity = mapper.readValue(commandJson, CommandEntity.class);
+        commandService.create(commandEntity);
+        final Long id = commandEntity.getId();
 
         final String path = String.format(pathTemplate, id);
         final MockHttpServletRequestBuilder request = delete(path)
@@ -307,7 +307,7 @@ public class CommandRestApiTest {
         mockMvc.perform(request)
                 .andExpect(status().isNoContent());
 
-        final Command retrieved = commandService.retrieve(id);
+        final CommandEntity retrieved = commandService.retrieve(id);
         assertNull(retrieved);
     }
 
@@ -325,9 +325,9 @@ public class CommandRestApiTest {
                         "\"type\": \"docker\", " +
                         "\"image\": \"" + FAKE_DOCKER_IMAGE + "\"," +
                         "\"inputs\": [" + commandInput + "]}";
-        final Command command = mapper.readValue(commandJson, Command.class);
-        commandService.create(command);
-        final Long id = command.getId();
+        final CommandEntity commandEntity = mapper.readValue(commandJson, CommandEntity.class);
+        commandService.create(commandEntity);
+        final Long id = commandEntity.getId();
 
         // This ResolvedCommand will be used in an internal method to "launch" a container
         final String environmentVariablesJson = "{" +
@@ -383,9 +383,9 @@ public class CommandRestApiTest {
                 "\"image\": \"" + FAKE_DOCKER_IMAGE + "\"," +
                 "\"inputs\": [" + commandInput + "]" +
                 "}";
-        final Command command = mapper.readValue(commandJson, Command.class);
-        commandService.create(command);
-        final Long id = command.getId();
+        final CommandEntity commandEntity = mapper.readValue(commandJson, CommandEntity.class);
+        commandService.create(commandEntity);
+        final Long id = commandEntity.getId();
 
         // This ResolvedCommand will be used in an internal method to "launch" a container
         final String environmentVariablesJson = "{" +
@@ -436,7 +436,7 @@ public class CommandRestApiTest {
 
         final String dir = Resources.getResource("ecatHeaderDump").getPath().replace("%20", " ");
         final String commandJsonFile = dir + "/command.json";
-        final Command ecatHeaderDump = mapper.readValue(new File(commandJsonFile), Command.class);
+        final CommandEntity ecatHeaderDump = mapper.readValue(new File(commandJsonFile), CommandEntity.class);
         final String commandJson = mapper.writeValueAsString(ecatHeaderDump);
 
         final MockHttpServletRequestBuilder request =

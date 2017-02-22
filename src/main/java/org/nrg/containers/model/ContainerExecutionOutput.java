@@ -11,7 +11,7 @@ import java.util.Objects;
 @Embeddable
 public class ContainerExecutionOutput implements Serializable {
     private String name;
-    private XnatCommandOutput.Type type;
+    private CommandWrapperOutputEntity.Type type;
     private Boolean required;
     private String mount;
     private String path;
@@ -22,12 +22,12 @@ public class ContainerExecutionOutput implements Serializable {
 
     public ContainerExecutionOutput() {}
 
-    public ContainerExecutionOutput(final CommandOutput commandOutput, final XnatCommandOutput commandOutputHandler) {
-        this.name = commandOutput.getName();
-        this.required = commandOutput.getRequired();
-        this.mount = commandOutput.getMount();
-        this.path = commandOutput.getPath();
-        this.glob = commandOutput.getGlob();
+    public ContainerExecutionOutput(final CommandOutputEntity commandOutputEntity, final CommandWrapperOutputEntity commandOutputHandler) {
+        this.name = commandOutputEntity.getName();
+        this.required = commandOutputEntity.getRequired();
+        this.mount = commandOutputEntity.getMount();
+        this.path = commandOutputEntity.getPath();
+        this.glob = commandOutputEntity.getGlob();
         this.label = commandOutputHandler.getLabel();
         this.type = commandOutputHandler.getType();
         this.handledByXnatCommandInput = commandOutputHandler.getXnatInputName();
@@ -41,11 +41,11 @@ public class ContainerExecutionOutput implements Serializable {
         this.name = name;
     }
 
-    public XnatCommandOutput.Type getType() {
+    public CommandWrapperOutputEntity.Type getType() {
         return type;
     }
 
-    public void setType(final XnatCommandOutput.Type type) {
+    public void setType(final CommandWrapperOutputEntity.Type type) {
         this.type = type;
     }
 

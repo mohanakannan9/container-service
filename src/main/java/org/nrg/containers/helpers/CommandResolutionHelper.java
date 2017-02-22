@@ -17,20 +17,20 @@ import org.nrg.config.services.ConfigService;
 import org.nrg.containers.exceptions.CommandInputResolutionException;
 import org.nrg.containers.exceptions.CommandMountResolutionException;
 import org.nrg.containers.exceptions.CommandResolutionException;
-import org.nrg.containers.exceptions.XnatCommandInputResolutionException;
-import org.nrg.containers.model.Command;
-import org.nrg.containers.model.CommandInput;
-import org.nrg.containers.model.CommandMount;
-import org.nrg.containers.model.CommandOutput;
+import org.nrg.containers.exceptions.CommandWrapperInputResolutionException;
+import org.nrg.containers.model.CommandEntity;
+import org.nrg.containers.model.CommandInputEntity;
+import org.nrg.containers.model.CommandMountEntity;
+import org.nrg.containers.model.CommandOutputEntity;
 import org.nrg.containers.model.ContainerExecutionMount;
 import org.nrg.containers.model.ContainerExecutionOutput;
 import org.nrg.containers.model.ContainerMountFiles;
-import org.nrg.containers.model.DockerCommand;
+import org.nrg.containers.model.DockerCommandEntity;
 import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.containers.model.ResolvedDockerCommand;
-import org.nrg.containers.model.XnatCommandInput;
-import org.nrg.containers.model.XnatCommandOutput;
-import org.nrg.containers.model.XnatCommandWrapper;
+import org.nrg.containers.model.CommandWrapperInputEntity;
+import org.nrg.containers.model.CommandWrapperOutputEntity;
+import org.nrg.containers.model.CommandWrapperEntity;
 import org.nrg.containers.model.xnat.Assessor;
 import org.nrg.containers.model.xnat.Project;
 import org.nrg.containers.model.xnat.Resource;
@@ -57,16 +57,16 @@ public class CommandResolutionHelper {
     private static final Logger log = LoggerFactory.getLogger(CommandResolutionHelper.class);
     private static final String JSONPATH_SUBSTRING_REGEX = "\\^(wrapper:)?(.+)\\^";
 
-    private final XnatCommandWrapper xnatCommandWrapper;
-    private final Command command;
+    private final CommandWrapperEntity commandWrapperEntity;
+    private final CommandEntity commandEntity;
     private final ResolvedCommand resolvedCommand;
-    private Command cachedCommand;
+    private CommandEntity cachedCommandEntity;
     private String commandJson;
-    private XnatCommandWrapper cachedCommandWrapper;
+    private CommandWrapperEntity cachedCommandWrapper;
     private String commandWrapperJson;
-    private final Map<String, XnatCommandInput> resolvedXnatInputObjects = Maps.newHashMap();
+    private final Map<String, CommandWrapperInputEntity> resolvedXnatInputObjects = Maps.newHashMap();
     private final Map<String, String> resolvedXnatInputValuesByCommandInputName = Maps.newHashMap();
-    private final Map<String, List<XnatCommandInput>> commandMountsToReceiveFilesFromXnatInputs = Maps.newHashMap();
+    private final Map<String, List<CommandWrapperInputEntity>> commandMountsToReceiveFilesFromXnatInputs = Maps.newHashMap();
     private final Map<String, String> resolvedInputValuesByReplacementKey = Maps.newHashMap();
     private final Map<String, String> resolvedInputCommandLineValuesByReplacementKey = Maps.newHashMap();
     private final UserI userI;
@@ -75,22 +75,22 @@ public class CommandResolutionHelper {
     private final ConfigService configService;
     private final Pattern jsonpathSubstringPattern;
 
-    private CommandResolutionHelper(final XnatCommandWrapper xnatCommandWrapper,
-                                    final Command command,
+    private CommandResolutionHelper(final CommandWrapperEntity commandWrapperEntity,
+                                    final CommandEntity commandEntity,
                                     final Map<String, String> inputValues,
                                     final UserI userI,
                                     final ConfigService configService) throws CommandResolutionException {
-        this.xnatCommandWrapper = xnatCommandWrapper;
-        this.command = command;
-        switch (command.getType()) {
+        this.commandWrapperEntity = commandWrapperEntity;
+        this.commandEntity = commandEntity;
+        switch (commandEntity.getType()) {
             case DOCKER:
-                resolvedCommand = new ResolvedDockerCommand(xnatCommandWrapper.getId(), (DockerCommand) command);
+                resolvedCommand = new ResolvedDockerCommand(commandWrapperEntity.getId(), (DockerCommandEntity) commandEntity);
                 break;
             default:
                 // If this happens, it is because I added a new CommandType and didn't add a case to this switch statement. Oops.
-                throw new CommandResolutionException(String.format("Unknown command type: \"%s\".", command.getType()));
+                throw new CommandResolutionException(String.format("Unknown command type: \"%s\".", commandEntity.getType()));
         }
-        this.cachedCommand = null;
+        this.cachedCommandEntity = null;
         this.commandJson = null;
         this.cachedCommandWrapper = null;
         this.commandWrapperJson = null;
@@ -109,20 +109,20 @@ public class CommandResolutionHelper {
         resolvedCommand.setRawInputValues(this.inputValues);
     }
 
-    public static ResolvedCommand resolve(final XnatCommandWrapper xnatCommandWrapper,
-                                          final Command command,
+    public static ResolvedCommand resolve(final CommandWrapperEntity commandWrapperEntity,
+                                          final CommandEntity commandEntity,
                                           final Map<String, String> inputValues,
                                           final UserI userI,
                                           final ConfigService configService)
             throws CommandResolutionException {
-        final CommandResolutionHelper helper = new CommandResolutionHelper(xnatCommandWrapper, command, inputValues, userI, configService);
+        final CommandResolutionHelper helper = new CommandResolutionHelper(commandWrapperEntity, commandEntity, inputValues, userI, configService);
         return helper.resolve();
     }
 
     private ResolvedCommand resolve() throws CommandResolutionException {
         log.info("Resolving command.");
         if (log.isDebugEnabled()) {
-            log.debug(command.toString());
+            log.debug(commandEntity.toString());
         }
 
         resolvedCommand.setXnatInputValues(resolveXnatWrapperInputs());
@@ -132,7 +132,7 @@ public class CommandResolutionHelper {
         resolvedCommand.setCommandLine(resolveCommandLine());
         resolvedCommand.setMounts(resolveCommandMounts());
         resolvedCommand.setEnvironmentVariables(resolveEnvironmentVariables());
-        resolvedCommand.setWorkingDirectory(resolveTemplate(command.getWorkingDirectory()));
+        resolvedCommand.setWorkingDirectory(resolveTemplate(commandEntity.getWorkingDirectory()));
 
         switch (resolvedCommand.getType()) {
             case DOCKER:
@@ -152,8 +152,8 @@ public class CommandResolutionHelper {
     private Map<String, String> resolveXnatWrapperInputs() throws CommandResolutionException {
         log.info("Resolving xnat wrapper inputs.");
 
-        final boolean hasExternalInputs = !(xnatCommandWrapper.getExternalInputs() == null || xnatCommandWrapper.getExternalInputs().isEmpty());
-        final boolean hasDerivedInputs = !(xnatCommandWrapper.getDerivedInputs() == null || xnatCommandWrapper.getDerivedInputs().isEmpty());
+        final boolean hasExternalInputs = !(commandWrapperEntity.getExternalInputs() == null || commandWrapperEntity.getExternalInputs().isEmpty());
+        final boolean hasDerivedInputs = !(commandWrapperEntity.getDerivedInputs() == null || commandWrapperEntity.getDerivedInputs().isEmpty());
 
         if (!hasExternalInputs) {
             if (hasDerivedInputs) {
@@ -169,7 +169,7 @@ public class CommandResolutionHelper {
 
         final Map<String, String> resolvedXnatWrapperInputValuesByName = Maps.newHashMap();
         log.info("Resolving external xnat wrapper inputs.");
-        for (final XnatCommandInput externalInput : xnatCommandWrapper.getExternalInputs()) {
+        for (final CommandWrapperInputEntity externalInput : commandWrapperEntity.getExternalInputs()) {
             log.info(String.format("Resolving input \"%s\".", externalInput.getName()));
 
             String resolvedValue = null;
@@ -212,8 +212,8 @@ public class CommandResolutionHelper {
                         try {
                             aProject = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Project.class,
                                     Project.uriToModelObjectFunction(), Project.stringToModelObjectFunction(userI));
-                        } catch (XnatCommandInputResolutionException e) {
-                            throw new XnatCommandInputResolutionException(e.getMessage(), externalInput);
+                        } catch (CommandWrapperInputResolutionException e) {
+                            throw new CommandWrapperInputResolutionException(e.getMessage(), externalInput);
                         }
 
                         if (aProject != null) {
@@ -240,8 +240,8 @@ public class CommandResolutionHelper {
                         try {
                             aSubject = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Subject.class,
                                     Subject.uriToModelObjectFunction(), Subject.stringToModelObjectFunction(userI));
-                        } catch (XnatCommandInputResolutionException e) {
-                            throw new XnatCommandInputResolutionException(e.getMessage(), externalInput);
+                        } catch (CommandWrapperInputResolutionException e) {
+                            throw new CommandWrapperInputResolutionException(e.getMessage(), externalInput);
                         }
 
                         if (aSubject != null) {
@@ -268,8 +268,8 @@ public class CommandResolutionHelper {
                         try {
                             aSession = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Session.class,
                                     Session.uriToModelObjectFunction(), Session.stringToModelObjectFunction(userI));
-                        } catch (XnatCommandInputResolutionException e) {
-                            throw new XnatCommandInputResolutionException(e.getMessage(), externalInput);
+                        } catch (CommandWrapperInputResolutionException e) {
+                            throw new CommandWrapperInputResolutionException(e.getMessage(), externalInput);
                         }
 
                         if (aSession != null) {
@@ -296,9 +296,9 @@ public class CommandResolutionHelper {
                         try {
                             aScan = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Scan.class,
                                     Scan.uriToModelObjectFunction(), Scan.stringToModelObjectFunction(userI));
-                        } catch (XnatCommandInputResolutionException e) {
+                        } catch (CommandWrapperInputResolutionException e) {
                             log.debug(e.getMessage());
-                            throw new XnatCommandInputResolutionException(e.getMessage(), externalInput);
+                            throw new CommandWrapperInputResolutionException(e.getMessage(), externalInput);
                         }
 
                         if (aScan != null) {
@@ -325,8 +325,8 @@ public class CommandResolutionHelper {
                         try {
                             anAssessor = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Assessor.class,
                                     Assessor.uriToModelObjectFunction(), Assessor.stringToModelObjectFunction(userI));
-                        } catch (XnatCommandInputResolutionException e) {
-                            throw new XnatCommandInputResolutionException(e.getMessage(), externalInput);
+                        } catch (CommandWrapperInputResolutionException e) {
+                            throw new CommandWrapperInputResolutionException(e.getMessage(), externalInput);
                         }
 
                         if (anAssessor != null) {
@@ -354,8 +354,8 @@ public class CommandResolutionHelper {
                         try {
                             aResource = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Resource.class,
                                     Resource.uriToModelObjectFunction(), Resource.stringToModelObjectFunction(userI));
-                        } catch (XnatCommandInputResolutionException e) {
-                            throw new XnatCommandInputResolutionException(e.getMessage(), externalInput);
+                        } catch (CommandWrapperInputResolutionException e) {
+                            throw new CommandWrapperInputResolutionException(e.getMessage(), externalInput);
                         }
 
                         if (aResource != null) {
@@ -381,7 +381,7 @@ public class CommandResolutionHelper {
                         if (configProps == null || configProps.length != 2) {
                             final String message = "Config inputs must have a value that can be interpreted as a config_toolname/config_filename string. Input value: " + resolvedValue;
                             log.debug(message);
-                            throw new XnatCommandInputResolutionException(message, externalInput);
+                            throw new CommandWrapperInputResolutionException(message, externalInput);
                         }
 
                         final Scope configScope;
@@ -437,7 +437,7 @@ public class CommandResolutionHelper {
             if (resolvedValue == null && externalInput.isRequired()) {
                 final String message = String.format("No value could be resolved for required input \"%s\".", externalInput.getName());
                 log.debug(message);
-                throw new XnatCommandInputResolutionException(message, externalInput);
+                throw new CommandWrapperInputResolutionException(message, externalInput);
             }
             if (log.isInfoEnabled()) {
                 log.info(String.format("Done resolving input \"%s\". Value: \"%s\".", externalInput.getName(), resolvedValue));
@@ -474,7 +474,7 @@ public class CommandResolutionHelper {
         if (hasDerivedInputs) {
             log.info("Resolving derived xnat wrapper inputs.");
 
-            for (final XnatCommandInput derivedInput : xnatCommandWrapper.getDerivedInputs()) {
+            for (final CommandWrapperInputEntity derivedInput : commandWrapperEntity.getDerivedInputs()) {
                 log.info(String.format("Resolving input \"%s\".", derivedInput.getName()));
 
                 if (StringUtils.isBlank(derivedInput.getDerivedFromXnatInput())) {
@@ -484,7 +484,7 @@ public class CommandResolutionHelper {
                             derivedInput.getName()
                     );
                     log.error(message);
-                    throw new XnatCommandInputResolutionException(message, derivedInput);
+                    throw new CommandWrapperInputResolutionException(message, derivedInput);
                 }
 
                 final String prereq = derivedInput.getDerivedFromXnatInput();
@@ -495,9 +495,9 @@ public class CommandResolutionHelper {
                             derivedInput.getName(), prereq
                     );
                     log.error(message);
-                    throw new XnatCommandInputResolutionException(message, derivedInput);
+                    throw new CommandWrapperInputResolutionException(message, derivedInput);
                 }
-                final XnatCommandInput parentInput = resolvedXnatInputObjects.get(prereq);
+                final CommandWrapperInputEntity parentInput = resolvedXnatInputObjects.get(prereq);
 
                 String resolvedValue = null;
                 String jsonRepresentation = null;
@@ -570,7 +570,7 @@ public class CommandResolutionHelper {
                                         message += ".";
                                     }
                                     log.error(message, e);
-                                    throw new XnatCommandInputResolutionException(message, derivedInput, e);
+                                    throw new CommandWrapperInputResolutionException(message, derivedInput, e);
                                 }
 
                                 break;
@@ -579,7 +579,7 @@ public class CommandResolutionHelper {
                                         derivedInput.getType().getName(),
                                         parentInput.getType().getName());
                                 log.error(message);
-                                throw new XnatCommandInputResolutionException(message, derivedInput);
+                                throw new CommandWrapperInputResolutionException(message, derivedInput);
                         }
                         break;
                     case BOOLEAN:
@@ -609,7 +609,7 @@ public class CommandResolutionHelper {
                                         message += ".";
                                     }
                                     log.error(message, e);
-                                    throw new XnatCommandInputResolutionException(message, derivedInput, e);
+                                    throw new CommandWrapperInputResolutionException(message, derivedInput, e);
                                 }
 
                                 break;
@@ -626,7 +626,7 @@ public class CommandResolutionHelper {
                                         derivedInput.getType().getName(),
                                         parentInput.getType().getName());
                                 log.error(message);
-                                throw new XnatCommandInputResolutionException(message, derivedInput);
+                                throw new CommandWrapperInputResolutionException(message, derivedInput);
                         }
                         break;
                     case FILES:
@@ -641,13 +641,13 @@ public class CommandResolutionHelper {
                                         derivedInput.getType().getName(),
                                         parentInput.getType().getName());
                                 log.error(message);
-                                throw new XnatCommandInputResolutionException(message, derivedInput);
+                                throw new CommandWrapperInputResolutionException(message, derivedInput);
                         }
 
                         if (files == null) {
                             final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.getName(), parentInput.getName());
                             log.error(message);
-                            throw new XnatCommandInputResolutionException(message, derivedInput);
+                            throw new CommandWrapperInputResolutionException(message, derivedInput);
                         }
 
                         if (log.isDebugEnabled()) {
@@ -679,13 +679,13 @@ public class CommandResolutionHelper {
                                         derivedInput.getType().getName(),
                                         parentInput.getType().getName());
                                 log.error(message);
-                                throw new XnatCommandInputResolutionException(message, derivedInput);
+                                throw new CommandWrapperInputResolutionException(message, derivedInput);
                         }
 
                         if (file == null) {
                             final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.getName(), parentInput.getName());
                             log.error(message);
-                            throw new XnatCommandInputResolutionException(message, derivedInput);
+                            throw new CommandWrapperInputResolutionException(message, derivedInput);
                         }
 
                         if (log.isDebugEnabled()) {
@@ -723,18 +723,18 @@ public class CommandResolutionHelper {
                                             derivedInput.getType().getName(),
                                             parentInput.getType().getName());
                                     log.error(message);
-                                    throw new XnatCommandInputResolutionException(message, derivedInput);
+                                    throw new CommandWrapperInputResolutionException(message, derivedInput);
                             }
                         } catch (IOException e) {
                             final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.getName(), parentInput.getName());
                             log.error(message);
-                            throw new XnatCommandInputResolutionException(message, derivedInput, e);
+                            throw new CommandWrapperInputResolutionException(message, derivedInput, e);
                         }
 
                         if (project == null) {
                             final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.getName(), parentInput.getName());
                             log.error(message);
-                            throw new XnatCommandInputResolutionException(message, derivedInput);
+                            throw new CommandWrapperInputResolutionException(message, derivedInput);
                         }
 
                         if (log.isDebugEnabled()) {
@@ -768,7 +768,7 @@ public class CommandResolutionHelper {
                                 } catch (IOException e) {
                                     final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.getName(), parentInput.getName());
                                     log.error(message);
-                                    throw new XnatCommandInputResolutionException(message, derivedInput, e);
+                                    throw new CommandWrapperInputResolutionException(message, derivedInput, e);
                                 }
                                 break;
                             default:
@@ -776,13 +776,13 @@ public class CommandResolutionHelper {
                                         derivedInput.getType().getName(),
                                         parentInput.getType().getName());
                                 log.error(message);
-                                throw new XnatCommandInputResolutionException(message, derivedInput);
+                                throw new CommandWrapperInputResolutionException(message, derivedInput);
                         }
 
                         if (subject == null) {
                             final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.getName(), parentInput.getName());
                             log.error(message);
-                            throw new XnatCommandInputResolutionException(message, derivedInput);
+                            throw new CommandWrapperInputResolutionException(message, derivedInput);
                         }
 
                         if (log.isDebugEnabled()) {
@@ -816,7 +816,7 @@ public class CommandResolutionHelper {
                                 } catch (IOException e) {
                                     final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.getName(), parentInput.getName());
                                     log.error(message);
-                                    throw new XnatCommandInputResolutionException(message, derivedInput, e);
+                                    throw new CommandWrapperInputResolutionException(message, derivedInput, e);
                                 }
 
                                 break;
@@ -825,13 +825,13 @@ public class CommandResolutionHelper {
                                         derivedInput.getType().getName(),
                                         parentInput.getType().getName());
                                 log.error(message);
-                                throw new XnatCommandInputResolutionException(message, derivedInput);
+                                throw new CommandWrapperInputResolutionException(message, derivedInput);
                         }
 
                         if (session == null) {
                             final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.getName(), parentInput.getName());
                             log.error(message);
-                            throw new XnatCommandInputResolutionException(message, derivedInput);
+                            throw new CommandWrapperInputResolutionException(message, derivedInput);
                         }
 
                         if (log.isDebugEnabled()) {
@@ -862,13 +862,13 @@ public class CommandResolutionHelper {
                                         derivedInput.getType().getName(),
                                         parentInput.getType().getName());
                                 log.error(message);
-                                throw new XnatCommandInputResolutionException(message, derivedInput);
+                                throw new CommandWrapperInputResolutionException(message, derivedInput);
                         }
 
                         if (scan == null) {
                             final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.getName(), parentInput.getName());
                             log.error(message);
-                            throw new XnatCommandInputResolutionException(message, derivedInput);
+                            throw new CommandWrapperInputResolutionException(message, derivedInput);
                         }
 
                         if (log.isDebugEnabled()) {
@@ -900,13 +900,13 @@ public class CommandResolutionHelper {
                                         derivedInput.getType().getName(),
                                         parentInput.getType().getName());
                                 log.error(message);
-                                throw new XnatCommandInputResolutionException(message, derivedInput);
+                                throw new CommandWrapperInputResolutionException(message, derivedInput);
                         }
 
                         if (assessor == null) {
                             final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.getName(), parentInput.getName());
                             log.error(message);
-                            throw new XnatCommandInputResolutionException(message, derivedInput);
+                            throw new CommandWrapperInputResolutionException(message, derivedInput);
                         }
 
                         if (log.isDebugEnabled()) {
@@ -943,13 +943,13 @@ public class CommandResolutionHelper {
                                         derivedInput.getType().getName(),
                                         parentInput.getType().getName());
                                 log.error(message);
-                                throw new XnatCommandInputResolutionException(message, derivedInput);
+                                throw new CommandWrapperInputResolutionException(message, derivedInput);
                         }
 
                         if (resource == null) {
                             final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.getName(), parentInput.getName());
                             log.error(message);
-                            throw new XnatCommandInputResolutionException(message, derivedInput);
+                            throw new CommandWrapperInputResolutionException(message, derivedInput);
                         }
 
                         if (log.isDebugEnabled()) {
@@ -971,7 +971,7 @@ public class CommandResolutionHelper {
                 if (resolvedValue == null && derivedInput.isRequired()) {
                     final String message = String.format("No value could be resolved for required input \"%s\".", derivedInput.getName());
                     log.debug(message);
-                    throw new XnatCommandInputResolutionException(message, derivedInput);
+                    throw new CommandWrapperInputResolutionException(message, derivedInput);
                 }
                 if (log.isInfoEnabled()) {
                     log.info(String.format("Done resolving input \"%s\". Value: \"%s\".", derivedInput.getName(), resolvedValue));
@@ -1011,12 +1011,12 @@ public class CommandResolutionHelper {
         return resolvedXnatWrapperInputValuesByName;
     }
 
-    private void addInputToMountsList(final XnatCommandInput input) {
+    private void addInputToMountsList(final CommandWrapperInputEntity input) {
         if (input != null) {
             // TODO validate that there is a mount with this name
             final String mountName = input.getProvidesFilesForCommandMount();
             if (StringUtils.isNotBlank(mountName)) {
-                List<XnatCommandInput> xnatInputs = commandMountsToReceiveFilesFromXnatInputs.get(mountName);
+                List<CommandWrapperInputEntity> xnatInputs = commandMountsToReceiveFilesFromXnatInputs.get(mountName);
                 if (xnatInputs == null) {
                     xnatInputs = Lists.newArrayList();
                 }
@@ -1029,14 +1029,14 @@ public class CommandResolutionHelper {
     private Map<String, String> resolveInputs() throws CommandResolutionException {
         log.info("Resolving command inputs.");
 
-        if (command.getInputs() == null || command.getInputs().isEmpty()) {
+        if (commandEntity.getInputs() == null || commandEntity.getInputs().isEmpty()) {
             log.info("No inputs.");
             return null;
         }
 
         final Map<String, String> resolvedInputValuesByName = Maps.newHashMap();
-        for (final CommandInput commandInput : command.getInputs()) {
-            log.info(String.format("Resolving command input \"%s\".", commandInput.getName()));
+        for (final CommandInputEntity commandInputEntity : commandEntity.getInputs()) {
+            log.info(String.format("Resolving command input \"%s\".", commandInputEntity.getName()));
 
             // // Check that all prerequisites have already been resolved.
             // // TODO Move this to a command validation function. Command should not be saved unless inputs are in correct order. At this stage, we should be able to safely iterate.
@@ -1083,14 +1083,14 @@ public class CommandResolutionHelper {
 
             // Give the input its default value
             if (log.isDebugEnabled()) {
-                log.debug("Default value: " + commandInput.getDefaultValue());
+                log.debug("Default value: " + commandInputEntity.getDefaultValue());
             }
-            if (commandInput.getDefaultValue() != null) {
-                 resolvedValue = commandInput.getDefaultValue();
+            if (commandInputEntity.getDefaultValue() != null) {
+                 resolvedValue = commandInputEntity.getDefaultValue();
             }
 
             // If the input is supposed to get a value from an XNAT input, use that
-            final String preresolvedValue = resolvedXnatInputValuesByCommandInputName.get(commandInput.getName());
+            final String preresolvedValue = resolvedXnatInputValuesByCommandInputName.get(commandInputEntity.getName());
             if (preresolvedValue != null) {
                 if (log.isDebugEnabled()) {
                     log.debug("XNAT Wrapper value: " + preresolvedValue);
@@ -1099,7 +1099,7 @@ public class CommandResolutionHelper {
             }
 
             // If a value was provided at runtime, use that
-            final String runtimeValue = inputValues.get(commandInput.getName());
+            final String runtimeValue = inputValues.get(commandInputEntity.getName());
             if (runtimeValue != null) {
                 if (log.isDebugEnabled()) {
                     log.debug("Runtime value: " + runtimeValue);
@@ -1111,21 +1111,21 @@ public class CommandResolutionHelper {
             resolvedValue = resolveJsonpathSubstring(resolvedValue);
 
             if (log.isDebugEnabled()) {
-                log.debug("Matcher: " + commandInput.getMatcher());
+                log.debug("Matcher: " + commandInputEntity.getMatcher());
             }
-            final String resolvedMatcher = commandInput.getMatcher() != null ? resolveJsonpathSubstring(commandInput.getMatcher()) : null;
+            final String resolvedMatcher = commandInputEntity.getMatcher() != null ? resolveJsonpathSubstring(commandInputEntity.getMatcher()) : null;
 
             if (log.isDebugEnabled()) {
-                log.debug("Processing input value as a " + commandInput.getType().getName());
+                log.debug("Processing input value as a " + commandInputEntity.getType().getName());
             }
-            switch (commandInput.getType()) {
+            switch (commandInputEntity.getType()) {
                 case BOOLEAN:
                     // Parse the value as a boolean, and use the trueValue/falseValue
                     // If those haven't been set, just pass the value through
                     if (Boolean.parseBoolean(resolvedValue)) {
-                        resolvedValue = commandInput.getTrueValue() != null ? commandInput.getTrueValue() : resolvedValue;
+                        resolvedValue = commandInputEntity.getTrueValue() != null ? commandInputEntity.getTrueValue() : resolvedValue;
                     } else {
-                        resolvedValue = commandInput.getFalseValue() != null ? commandInput.getFalseValue() : resolvedValue;
+                        resolvedValue = commandInputEntity.getFalseValue() != null ? commandInputEntity.getFalseValue() : resolvedValue;
                     }
                     break;
                 case NUMBER:
@@ -1137,38 +1137,38 @@ public class CommandResolutionHelper {
 
 
             // If resolved value is null, and input is required, that is an error
-            if (resolvedValue == null && commandInput.isRequired()) {
-                final String message = String.format("No value could be resolved for required input \"%s\".", commandInput.getName());
+            if (resolvedValue == null && commandInputEntity.isRequired()) {
+                final String message = String.format("No value could be resolved for required input \"%s\".", commandInputEntity.getName());
                 log.debug(message);
-                throw new CommandInputResolutionException(message, commandInput);
+                throw new CommandInputResolutionException(message, commandInputEntity);
             }
             if (log.isInfoEnabled()) {
-                log.info(String.format("Done resolving input \"%s\". Value: %s", commandInput.getName(), resolvedValue));
+                log.info(String.format("Done resolving input \"%s\". Value: %s", commandInputEntity.getName(), resolvedValue));
             }
-            commandInput.setValue(resolvedValue);
+            commandInputEntity.setValue(resolvedValue);
             // input.setJsonRepresentation(jsonRepresentation != null ? jsonRepresentation : resolvedValue);
 
             // resolvedXnatInputObjects.put(input.getName(), input);
-            resolvedInputValuesByName.put(commandInput.getName(), commandInput.getValue());
+            resolvedInputValuesByName.put(commandInputEntity.getName(), commandInputEntity.getValue());
 
             // Only substitute the input into the command line if a replacementKey is set
-            final String replacementKey = commandInput.getReplacementKey();
+            final String replacementKey = commandInputEntity.getReplacementKey();
             if (StringUtils.isBlank(replacementKey)) {
                 continue;
             }
             resolvedInputValuesByReplacementKey.put(replacementKey, resolvedValue);
-            resolvedInputCommandLineValuesByReplacementKey.put(replacementKey, getValueForCommandLine(commandInput, resolvedValue));
+            resolvedInputCommandLineValuesByReplacementKey.put(replacementKey, getValueForCommandLine(commandInputEntity, resolvedValue));
         }
 
         return resolvedInputValuesByName;
     }
 
     private String commandAsJson() throws CommandResolutionException {
-        if (!command.equals(cachedCommand)) {
-            cachedCommand = command;
+        if (!commandEntity.equals(cachedCommandEntity)) {
+            cachedCommandEntity = commandEntity;
 
             try {
-                commandJson = mapper.writeValueAsString(cachedCommand);
+                commandJson = mapper.writeValueAsString(cachedCommandEntity);
             } catch (JsonProcessingException e) {
                 final String message = "Could not serialize command to json.";
                 log.debug(message);
@@ -1180,8 +1180,8 @@ public class CommandResolutionHelper {
     }
 
     private String commandWrapperAsJson() throws CommandResolutionException {
-        if (!xnatCommandWrapper.equals(cachedCommandWrapper)) {
-            cachedCommandWrapper = xnatCommandWrapper;
+        if (!commandWrapperEntity.equals(cachedCommandWrapper)) {
+            cachedCommandWrapper = commandWrapperEntity;
 
             try {
                 commandWrapperJson = mapper.writeValueAsString(cachedCommandWrapper);
@@ -1235,7 +1235,7 @@ public class CommandResolutionHelper {
         return null;
     }
 
-    private String getValueForCommandLine(final CommandInput input, final String resolvedInputValue) {
+    private String getValueForCommandLine(final CommandInputEntity input, final String resolvedInputValue) {
         if (StringUtils.isBlank(input.getCommandLineFlag())) {
             return resolvedInputValue;
         } else {
@@ -1250,7 +1250,7 @@ public class CommandResolutionHelper {
                                                                final Class<T> model,
                                                                final Function<URIManager.ArchiveItemURI, T> uriToModelObjectFunction,
                                                                final Function<String, T> stringToModelObjectFunction)
-            throws XnatCommandInputResolutionException {
+            throws CommandWrapperInputResolutionException {
         final String modelName = model.getSimpleName();
         log.info("Resolving " + modelName + " from value.");
         if (log.isDebugEnabled()) {
@@ -1260,7 +1260,7 @@ public class CommandResolutionHelper {
         if (StringUtils.isBlank(value)) {
             final String message = "Not attempting to resolve blank value.";
             log.debug(message);
-            throw new XnatCommandInputResolutionException(message, null);
+            throw new CommandWrapperInputResolutionException(message, null);
         }
 
 //        List<T> mayOrMayNotMatch = Lists.newArrayList();
@@ -1270,18 +1270,18 @@ public class CommandResolutionHelper {
                 log.info(String.format("Attempting to create a \"%s\" using value as URI.", modelName));
             }
             if (uriToModelObjectFunction == null) {
-                throw new XnatCommandInputResolutionException("ERROR: Cannot instantiate " + modelName + " without a function.", null);
+                throw new CommandWrapperInputResolutionException("ERROR: Cannot instantiate " + modelName + " without a function.", null);
             }
 
             URIManager.DataURIA uri;
             try {
                 uri = UriParserUtils.parseURI(value.startsWith("/archive") ? value : "/archive" + value);
             } catch (MalformedURLException e) {
-                throw new XnatCommandInputResolutionException(String.format("Cannot interpret value as a URI: %s.", value), null, e);
+                throw new CommandWrapperInputResolutionException(String.format("Cannot interpret value as a URI: %s.", value), null, e);
             }
 
             if (uri == null || !(uri instanceof URIManager.ArchiveItemURI)) {
-                throw new XnatCommandInputResolutionException(String.format("Cannot interpret value as a URI: %s.", value), null);
+                throw new CommandWrapperInputResolutionException(String.format("Cannot interpret value as a URI: %s.", value), null);
             }
 
             newModelObject = uriToModelObjectFunction.apply((URIManager.ArchiveItemURI) uri);
@@ -1303,18 +1303,18 @@ public class CommandResolutionHelper {
         }
 
         if (newModelObject == null) {
-            throw new XnatCommandInputResolutionException("Could not instantiate " + modelName + " from value.", null);
+            throw new CommandWrapperInputResolutionException("Could not instantiate " + modelName + " from value.", null);
         }
 
         String mayOrMayNotMatchJson;
         try {
             mayOrMayNotMatchJson = mapper.writeValueAsString(newModelObject);
         } catch (JsonProcessingException e) {
-            throw new XnatCommandInputResolutionException(String.format("Could not serialize object to JSON: %s", newModelObject), null, e);
+            throw new CommandWrapperInputResolutionException(String.format("Could not serialize object to JSON: %s", newModelObject), null, e);
         }
 
         if (StringUtils.isBlank(mayOrMayNotMatchJson)) {
-            throw new XnatCommandInputResolutionException(String.format("Could not serialize object to JSON: %s", newModelObject), null);
+            throw new CommandWrapperInputResolutionException(String.format("Could not serialize object to JSON: %s", newModelObject), null);
         }
 
         final T aMatch;
@@ -1330,7 +1330,7 @@ public class CommandResolutionHelper {
             doMatch = JsonPath.parse(mayOrMayNotMatchJson).read(jsonPathSearch, new TypeRef<List<T>>(){});
 
             if (doMatch == null || doMatch.isEmpty()) {
-                throw new XnatCommandInputResolutionException(String.format("Could not match any \"%s\" with matcher \"%s\".", modelName, matcher), null);
+                throw new CommandWrapperInputResolutionException(String.format("Could not match any \"%s\" with matcher \"%s\".", modelName, matcher), null);
             }
 
             aMatch = doMatch.get(0);
@@ -1347,38 +1347,38 @@ public class CommandResolutionHelper {
 
     private List<ContainerExecutionOutput> resolveOutputs() throws CommandResolutionException {
         log.info("Resolving command outputs.");
-        if (command.getOutputs() == null) {
+        if (commandEntity.getOutputs() == null) {
             return null;
         }
 
-        final Map<String, XnatCommandOutput> xnatCommandOutputsByCommandOutputName = Maps.newHashMap();
-        if (xnatCommandWrapper.getOutputHandlers() != null) {
-            for (final XnatCommandOutput xnatCommandOutput : xnatCommandWrapper.getOutputHandlers()) {
-                xnatCommandOutputsByCommandOutputName.put(xnatCommandOutput.getCommandOutputName(), xnatCommandOutput);
+        final Map<String, CommandWrapperOutputEntity> xnatCommandOutputsByCommandOutputName = Maps.newHashMap();
+        if (commandWrapperEntity.getOutputHandlers() != null) {
+            for (final CommandWrapperOutputEntity commandWrapperOutputEntity : commandWrapperEntity.getOutputHandlers()) {
+                xnatCommandOutputsByCommandOutputName.put(commandWrapperOutputEntity.getCommandOutputName(), commandWrapperOutputEntity);
             }
         }
 
         final List<ContainerExecutionOutput> resolvedOutputs = Lists.newArrayList();
-        for (final CommandOutput commandOutput : command.getOutputs()) {
+        for (final CommandOutputEntity commandOutputEntity : commandEntity.getOutputs()) {
             if (log.isInfoEnabled()) {
-                log.info(String.format("Resolving command output \"%s\"", commandOutput.getName()));
+                log.info(String.format("Resolving command output \"%s\"", commandOutputEntity.getName()));
             }
             if (log.isDebugEnabled()) {
-                log.debug(commandOutput.toString());
+                log.debug(commandOutputEntity.toString());
             }
 
             // TODO fix this in validation
-            final XnatCommandOutput commandOutputHandler = xnatCommandOutputsByCommandOutputName.get(commandOutput.getName());
+            final CommandWrapperOutputEntity commandOutputHandler = xnatCommandOutputsByCommandOutputName.get(commandOutputEntity.getName());
             if (commandOutputHandler == null) {
-                throw new CommandResolutionException(String.format("No XNAT object was configured to handle output \"%s\".", commandOutput.getName()));
+                throw new CommandResolutionException(String.format("No XNAT object was configured to handle output \"%s\".", commandOutputEntity.getName()));
             }
             if (log.isDebugEnabled()) {
-                log.debug(String.format("Found XNAT Output Handler for Command output \"%s\".", commandOutput.getName()));
+                log.debug(String.format("Found XNAT Output Handler for Command output \"%s\".", commandOutputEntity.getName()));
             }
 
-            final ContainerExecutionOutput resolvedOutput = new ContainerExecutionOutput(commandOutput, commandOutputHandler);
+            final ContainerExecutionOutput resolvedOutput = new ContainerExecutionOutput(commandOutputEntity, commandOutputHandler);
 
-            resolvedOutput.setPath(resolveTemplate(commandOutput.getPath()));
+            resolvedOutput.setPath(resolveTemplate(commandOutputEntity.getPath()));
             resolvedOutput.setLabel(resolveTemplate(commandOutputHandler.getLabel()));
 
             // TODO Anything else needed to resolve an output?
@@ -1405,7 +1405,7 @@ public class CommandResolutionHelper {
     private String resolveCommandLine() throws CommandResolutionException {
         log.info("Resolving command-line string.");
 
-        final String resolvedCommandLine = resolveTemplate(command.getCommandLine(), resolvedInputCommandLineValuesByReplacementKey);
+        final String resolvedCommandLine = resolveTemplate(commandEntity.getCommandLine(), resolvedInputCommandLineValuesByReplacementKey);
 
         log.info("Done resolving command-line string.");
         if (log.isDebugEnabled()) {
@@ -1418,7 +1418,7 @@ public class CommandResolutionHelper {
             throws CommandResolutionException {
         log.info("Resolving environment variables.");
 
-        final Map<String, String> envTemplates = command.getEnvironmentVariables();
+        final Map<String, String> envTemplates = commandEntity.getEnvironmentVariables();
         if (envTemplates == null || envTemplates.isEmpty()) {
             log.info("No environment variables to resolve.");
             return null;
@@ -1439,11 +1439,11 @@ public class CommandResolutionHelper {
 
     private Map<String, String> resolvePorts()
             throws CommandResolutionException {
-        if (!DockerCommand.class.isAssignableFrom(command.getClass())) {
+        if (!DockerCommandEntity.class.isAssignableFrom(commandEntity.getClass())) {
             return null;
         }
         log.info("Resolving ports.");
-        final DockerCommand dockerCommand = (DockerCommand) command;
+        final DockerCommandEntity dockerCommand = (DockerCommandEntity) commandEntity;
 
         final Map<String, String> portTemplates = dockerCommand.getPorts();
         if (portTemplates == null || portTemplates.isEmpty()) {
@@ -1487,15 +1487,15 @@ public class CommandResolutionHelper {
 
     private List<ContainerExecutionMount> resolveCommandMounts() throws CommandResolutionException {
         log.info("Resolving mounts.");
-        final List<CommandMount> commandMounts = command.getMounts();
-        if (commandMounts == null || commandMounts.isEmpty()) {
+        final List<CommandMountEntity> commandMountEntities = commandEntity.getMounts();
+        if (commandMountEntities == null || commandMountEntities.isEmpty()) {
             log.info("No mounts.");
             return Lists.newArrayList();
         }
 
         final List<ContainerExecutionMount> resolvedMounts = Lists.newArrayList();
-        for (final CommandMount commandMount : commandMounts) {
-            resolvedMounts.add(resolveCommandMount(commandMount));
+        for (final CommandMountEntity commandMountEntity : commandMountEntities) {
+            resolvedMounts.add(resolveCommandMount(commandMountEntity));
         }
 
         log.info("Done resolving mounts.");
@@ -1507,36 +1507,36 @@ public class CommandResolutionHelper {
         return resolvedMounts;
     }
 
-    private ContainerExecutionMount resolveCommandMount(final CommandMount commandMount)
+    private ContainerExecutionMount resolveCommandMount(final CommandMountEntity commandMountEntity)
             throws CommandResolutionException {
         if (log.isInfoEnabled()) {
-            log.info(String.format("Resolving command mount \"%s\".", commandMount.getName()));
+            log.info(String.format("Resolving command mount \"%s\".", commandMountEntity.getName()));
         }
 
-        final ContainerExecutionMount resolvedMount = new ContainerExecutionMount(commandMount);
-        resolvedMount.setContainerPath(resolveTemplate(commandMount.getContainerPath()));
+        final ContainerExecutionMount resolvedMount = new ContainerExecutionMount(commandMountEntity);
+        resolvedMount.setContainerPath(resolveTemplate(commandMountEntity.getContainerPath()));
 
-        final List<XnatCommandInput> sourceInputs = commandMountsToReceiveFilesFromXnatInputs.get(commandMount.getName());
+        final List<CommandWrapperInputEntity> sourceInputs = commandMountsToReceiveFilesFromXnatInputs.get(commandMountEntity.getName());
         if (sourceInputs == null || sourceInputs.isEmpty()) {
             if (log.isDebugEnabled()) {
-                log.debug(String.format("Command mount \"%s\" has no inputs that provide it files. Assuming it is an output mount.", commandMount.getName()));
+                log.debug(String.format("Command mount \"%s\" has no inputs that provide it files. Assuming it is an output mount.", commandMountEntity.getName()));
             }
             resolvedMount.setWritable(true);
         } else {
             final List<ContainerMountFiles> filesList = Lists.newArrayList();
-            for (final XnatCommandInput sourceInput : sourceInputs) {
+            for (final CommandWrapperInputEntity sourceInput : sourceInputs) {
                 if (sourceInput == null) {
-                    final String message = String.format("Cannot resolve mount \"%s\". Source input is null.", commandMount.getName());
+                    final String message = String.format("Cannot resolve mount \"%s\". Source input is null.", commandMountEntity.getName());
                     log.error(message);
-                    throw new CommandMountResolutionException(message, commandMount);
+                    throw new CommandMountResolutionException(message, commandMountEntity);
                 } else if (StringUtils.isBlank(sourceInput.getValue())) {
-                    final String message = String.format("Cannot resolve mount \"%s\". Source input \"%s\" has no resolved value.", commandMount.getName(), sourceInput.getName());
+                    final String message = String.format("Cannot resolve mount \"%s\". Source input \"%s\" has no resolved value.", commandMountEntity.getName(), sourceInput.getName());
                     log.error(message);
-                    throw new CommandMountResolutionException(message, commandMount);
+                    throw new CommandMountResolutionException(message, commandMountEntity);
                 }
 
                 if (log.isDebugEnabled()) {
-                    log.debug(String.format("Mount \"%s\" has source input \"%s\" with type \"%s\".", commandMount.getName(), sourceInput.getName(), sourceInput.getType().getName()));
+                    log.debug(String.format("Mount \"%s\" has source input \"%s\" with type \"%s\".", commandMountEntity.getName(), sourceInput.getName(), sourceInput.getType().getName()));
                 }
                 final ContainerMountFiles files = new ContainerMountFiles(sourceInput);
                 switch (sourceInput.getType()) {
@@ -1574,7 +1574,7 @@ public class CommandResolutionHelper {
                                 message += "\ninput: " + sourceInput;
                             }
                             log.error(message);
-                            throw new CommandMountResolutionException(message, commandMount);
+                            throw new CommandMountResolutionException(message, commandMountEntity);
                         }
 
                         final String uri = JsonPath.parse(sourceInput.getJsonRepresentation()).read("uri", String.class);
@@ -1589,11 +1589,11 @@ public class CommandResolutionHelper {
                     default:
                         final String message = String.format("I don't know how to provide files to a mount from an input of type \"%s\".", sourceInput.getType().getName());
                         log.error(message);
-                        throw new CommandMountResolutionException(message, commandMount);
+                        throw new CommandMountResolutionException(message, commandMountEntity);
                 }
 
                 if (log.isDebugEnabled()) {
-                    log.debug(String.format("Done resolving mount \"%s\", source input \"%s\".", commandMount.getName(), sourceInput.getName()));
+                    log.debug(String.format("Done resolving mount \"%s\", source input \"%s\".", commandMountEntity.getName(), sourceInput.getName()));
                 }
                 filesList.add(files);
             }
@@ -1605,7 +1605,7 @@ public class CommandResolutionHelper {
 
 
         if (log.isInfoEnabled()) {
-            log.info(String.format("Done resolving command mount \"%s\".", commandMount.getName()));
+            log.info(String.format("Done resolving command mount \"%s\".", commandMountEntity.getName()));
         }
         return resolvedMount;
     }

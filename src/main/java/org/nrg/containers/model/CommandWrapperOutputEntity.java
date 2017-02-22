@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
-import org.nrg.containers.model.auto.CommandPojo;
+import org.nrg.containers.model.auto.Command;
 
 import javax.annotation.Nullable;
 import javax.persistence.Embeddable;
@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Objects;
 
 @Embeddable
-public class XnatCommandOutput {
+public class CommandWrapperOutputEntity {
     public static final Type DEFAULT_TYPE = Type.RESOURCE;
 
     @JsonProperty("accepts-command-output") private String commandOutputName;
@@ -23,24 +23,24 @@ public class XnatCommandOutput {
     private Type type;
     private String label;
 
-    public static XnatCommandOutput fromPojo(final CommandPojo.CommandWrapperOutputPojo commandWrapperOutputPojo) {
-        final XnatCommandOutput xnatCommandOutput = new XnatCommandOutput();
-        xnatCommandOutput.commandOutputName = commandWrapperOutputPojo.commandOutputName();
-        xnatCommandOutput.xnatInputName = commandWrapperOutputPojo.xnatInputName();
-        xnatCommandOutput.label = commandWrapperOutputPojo.label();
+    public static CommandWrapperOutputEntity fromPojo(final Command.CommandWrapperOutput commandWrapperOutput) {
+        final CommandWrapperOutputEntity commandWrapperOutputEntity = new CommandWrapperOutputEntity();
+        commandWrapperOutputEntity.commandOutputName = commandWrapperOutput.commandOutputName();
+        commandWrapperOutputEntity.xnatInputName = commandWrapperOutput.xnatInputName();
+        commandWrapperOutputEntity.label = commandWrapperOutput.label();
 
-        switch (commandWrapperOutputPojo.type()) {
+        switch (commandWrapperOutput.type()) {
             case "Resource":
-                xnatCommandOutput.type = Type.RESOURCE;
+                commandWrapperOutputEntity.type = Type.RESOURCE;
                 break;
             case "Assessor":
-                xnatCommandOutput.type = Type.ASSESSOR;
+                commandWrapperOutputEntity.type = Type.ASSESSOR;
                 break;
             default:
-                xnatCommandOutput.type = DEFAULT_TYPE;
+                commandWrapperOutputEntity.type = DEFAULT_TYPE;
         }
 
-        return xnatCommandOutput;
+        return commandWrapperOutputEntity;
     }
 
     public Type getType() {
@@ -79,7 +79,7 @@ public class XnatCommandOutput {
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final XnatCommandOutput that = (XnatCommandOutput) o;
+        final CommandWrapperOutputEntity that = (CommandWrapperOutputEntity) o;
         return Objects.equals(this.commandOutputName, that.commandOutputName) &&
                 Objects.equals(this.type, that.type) &&
                 Objects.equals(this.xnatInputName, that.xnatInputName) &&

@@ -11,7 +11,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.swagger.annotations.ApiModelProperty;
 import org.nrg.containers.exceptions.CommandValidationException;
-import org.nrg.containers.model.auto.CommandPojo;
+import org.nrg.containers.model.auto.Command;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.CascadeType;
@@ -29,11 +29,11 @@ import java.util.Objects;
 @Entity
 @JsonTypeInfo(use = Id.NAME, include = As.PROPERTY, property = "type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = DockerCommand.class, name = "docker")
+        @JsonSubTypes.Type(value = DockerCommandEntity.class, name = "docker")
 })
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "type")
-public abstract class Command extends AbstractHibernateEntity {
+public abstract class CommandEntity extends AbstractHibernateEntity {
     public static CommandType DEFAULT_TYPE = CommandType.DOCKER;
     private String name;
     private String label;
@@ -44,56 +44,56 @@ public abstract class Command extends AbstractHibernateEntity {
     private String image;
     @JsonProperty("working-directory") private String workingDirectory;
     @JsonProperty("command-line") private String commandLine;
-    @JsonProperty("mounts") private List<CommandMount> mounts;
+    @JsonProperty("mounts") private List<CommandMountEntity> mounts;
     @JsonProperty("environment-variables") private Map<String, String> environmentVariables;
-    private List<CommandInput> inputs;
-    private List<CommandOutput> outputs;
-    @JsonProperty("xnat") private List<XnatCommandWrapper> xnatCommandWrappers;
+    private List<CommandInputEntity> inputs;
+    private List<CommandOutputEntity> outputs;
+    @JsonProperty("xnat") private List<CommandWrapperEntity> commandWrapperEntities;
 
-    public static Command commandPojoToCommand(final CommandPojo commandPojo) throws CommandValidationException {
-        final List<String> errors = commandPojo.validate();
+    public static CommandEntity fromPojo(final Command command) throws CommandValidationException {
+        final List<String> errors = command.validate();
         if (!errors.isEmpty()) {
             throw new CommandValidationException(errors);
         }
 
-        final Command command;
-        final String type = commandPojo.type();
+        final CommandEntity commandEntity;
+        final String type = command.type();
         switch (type) {
             case "docker":
-                command = DockerCommand.fromPojo(commandPojo);
+                commandEntity = DockerCommandEntity.fromPojo(command);
                 break;
             default:
                 // This should have been caught already, but still...
                 throw new CommandValidationException("Cannot instantiate command with type " + type);
         }
 
-        command.setName(commandPojo.name());
-        command.setLabel(commandPojo.label());
-        command.setDescription(commandPojo.description());
-        command.setVersion(commandPojo.version());
-        command.setSchemaVersion(commandPojo.schemaVersion());
-        command.setInfoUrl(commandPojo.infoUrl());
-        command.setImage(commandPojo.image());
-        command.setWorkingDirectory(commandPojo.workingDirectory());
-        command.setCommandLine(commandPojo.commandLine());
-        command.setEnvironmentVariables(commandPojo.environmentVariables());
+        commandEntity.setName(command.name());
+        commandEntity.setLabel(command.label());
+        commandEntity.setDescription(command.description());
+        commandEntity.setVersion(command.version());
+        commandEntity.setSchemaVersion(command.schemaVersion());
+        commandEntity.setInfoUrl(command.infoUrl());
+        commandEntity.setImage(command.image());
+        commandEntity.setWorkingDirectory(command.workingDirectory());
+        commandEntity.setCommandLine(command.commandLine());
+        commandEntity.setEnvironmentVariables(command.environmentVariables());
 
-        for (final CommandPojo.CommandMountPojo commandMountPojo : commandPojo.mounts()) {
-            command.addMount(CommandMount.fromPojo(commandMountPojo));
+        for (final Command.CommandMount commandMount : command.mounts()) {
+            commandEntity.addMount(CommandMountEntity.fromPojo(commandMount));
         }
 
-        for (final CommandPojo.CommandInputPojo commandInputPojo : commandPojo.inputs()) {
-            command.addInput(CommandInput.fromPojo(commandInputPojo));
+        for (final Command.CommandInput commandInput : command.inputs()) {
+            commandEntity.addInput(CommandInputEntity.fromPojo(commandInput));
         }
 
-        for (final CommandPojo.CommandOutputPojo commandOutputPojo : commandPojo.outputs()) {
-            command.addOutput(CommandOutput.fromPojo(commandOutputPojo));
+        for (final Command.CommandOutput commandOutput : command.outputs()) {
+            commandEntity.addOutput(CommandOutputEntity.fromPojo(commandOutput));
         }
-        for (final CommandPojo.CommandWrapperPojo commandWrapperPojo : commandPojo.xnatCommandWrappers()) {
-            command.addXnatCommandWrapper(XnatCommandWrapper.fromPojo(commandWrapperPojo));
+        for (final Command.CommandWrapper commandWrapper : command.xnatCommandWrappers()) {
+            commandEntity.addXnatCommandWrapper(CommandWrapperEntity.fromPojo(commandWrapper));
         }
 
-        return command;
+        return commandEntity;
     }
 
     @Transient
@@ -181,17 +181,17 @@ public abstract class Command extends AbstractHibernateEntity {
     }
 
     @ElementCollection
-    public List<CommandMount> getMounts() {
+    public List<CommandMountEntity> getMounts() {
         return mounts;
     }
 
-    public void setMounts(final List<CommandMount> mounts) {
+    public void setMounts(final List<CommandMountEntity> mounts) {
         this.mounts = mounts == null ?
-                Lists.<CommandMount>newArrayList() :
+                Lists.<CommandMountEntity>newArrayList() :
                 mounts;
     }
 
-    public void addMount(final CommandMount mount) {
+    public void addMount(final CommandMountEntity mount) {
         if (mount == null) {
             return;
         }
@@ -219,17 +219,17 @@ public abstract class Command extends AbstractHibernateEntity {
     @ApiModelProperty("A list of inputs. " +
             "When the Command is launched, these inputs receive values; " +
             "those values will be used to fill in any template strings in the Command's run-template, mounts, or environment variables.")
-    public List<CommandInput> getInputs() {
+    public List<CommandInputEntity> getInputs() {
         return inputs;
     }
 
-    public void setInputs(final List<CommandInput> inputs) {
+    public void setInputs(final List<CommandInputEntity> inputs) {
         this.inputs = inputs == null ?
-                Lists.<CommandInput>newArrayList() :
+                Lists.<CommandInputEntity>newArrayList() :
                 inputs;
     }
 
-    public void addInput(final CommandInput input) {
+    public void addInput(final CommandInputEntity input) {
         if (input == null) {
             return;
         }
@@ -242,17 +242,17 @@ public abstract class Command extends AbstractHibernateEntity {
 
     @ElementCollection
     @ApiModelProperty("A list of outputs.")
-    public List<CommandOutput> getOutputs() {
+    public List<CommandOutputEntity> getOutputs() {
         return outputs;
     }
 
-    public void setOutputs(final List<CommandOutput> outputs) {
+    public void setOutputs(final List<CommandOutputEntity> outputs) {
         this.outputs = outputs == null ?
-                Lists.<CommandOutput>newArrayList() :
+                Lists.<CommandOutputEntity>newArrayList() :
                 outputs;
     }
 
-    public void addOutput(final CommandOutput output) {
+    public void addOutput(final CommandOutputEntity output) {
         if (output == null) {
             return;
         }
@@ -263,28 +263,28 @@ public abstract class Command extends AbstractHibernateEntity {
         this.outputs.add(output);
     }
 
-    @OneToMany(mappedBy = "command", cascade = CascadeType.ALL, orphanRemoval = true)
-    public List<XnatCommandWrapper> getXnatCommandWrappers() {
-        return xnatCommandWrappers;
+    @OneToMany(mappedBy = "commandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+    public List<CommandWrapperEntity> getCommandWrapperEntities() {
+        return commandWrapperEntities;
     }
 
-    public void setXnatCommandWrappers(final List<XnatCommandWrapper> xnatCommandWrappers) {
-        this.xnatCommandWrappers = xnatCommandWrappers == null ?
-                Lists.<XnatCommandWrapper>newArrayList() :
-                xnatCommandWrappers;
+    public void setCommandWrapperEntities(final List<CommandWrapperEntity> commandWrapperEntities) {
+        this.commandWrapperEntities = commandWrapperEntities == null ?
+                Lists.<CommandWrapperEntity>newArrayList() :
+                commandWrapperEntities;
     }
 
     @Transient
-    public void addXnatCommandWrapper(final XnatCommandWrapper xnatCommandWrapper) {
-        if (xnatCommandWrapper == null) {
+    public void addXnatCommandWrapper(final CommandWrapperEntity commandWrapperEntity) {
+        if (commandWrapperEntity == null) {
             return;
         }
-        xnatCommandWrapper.setCommand(this);
+        commandWrapperEntity.setCommandEntity(this);
 
-        if (this.xnatCommandWrappers == null) {
-            this.xnatCommandWrappers = Lists.newArrayList();
+        if (this.commandWrapperEntities == null) {
+            this.commandWrapperEntities = Lists.newArrayList();
         }
-        this.xnatCommandWrappers.add(xnatCommandWrapper);
+        this.commandWrapperEntities.add(commandWrapperEntity);
     }
 
     @Override
@@ -292,7 +292,7 @@ public abstract class Command extends AbstractHibernateEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
-        final Command that = (Command) o;
+        final CommandEntity that = (CommandEntity) o;
         return Objects.equals(this.name, that.name) &&
                 Objects.equals(this.label, that.label) &&
                 Objects.equals(this.description, that.description) &&
@@ -306,13 +306,13 @@ public abstract class Command extends AbstractHibernateEntity {
                 Objects.equals(this.environmentVariables, that.environmentVariables) &&
                 Objects.equals(this.inputs, that.inputs) &&
                 Objects.equals(this.outputs, that.outputs) &&
-                Objects.equals(this.xnatCommandWrappers, that.xnatCommandWrappers);
+                Objects.equals(this.commandWrapperEntities, that.commandWrapperEntities);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), name, label, description, version, schemaVersion, infoUrl, image,
-                workingDirectory, commandLine, mounts, environmentVariables, inputs, outputs, xnatCommandWrappers);
+                workingDirectory, commandLine, mounts, environmentVariables, inputs, outputs, commandWrapperEntities);
     }
 
     @Override
@@ -331,7 +331,7 @@ public abstract class Command extends AbstractHibernateEntity {
                 .add("environmentVariables", environmentVariables)
                 .add("inputs", inputs)
                 .add("outputs", outputs)
-                .add("xnatCommandWrappers", xnatCommandWrappers);
+                .add("xnatCommandWrappers", commandWrapperEntities);
     }
 
     @Override
