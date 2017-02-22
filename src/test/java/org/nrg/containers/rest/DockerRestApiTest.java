@@ -289,7 +289,10 @@ public class DockerRestApiTest {
         final DockerHub dockerHub = DockerHub.DEFAULT;
         final DockerHub privateHub = DockerHub.create(10L, "my hub", "http://localhost", "me", "still me", "me@me.me");
         final List<DockerHub> hubs = Lists.newArrayList(dockerHub, privateHub);
+        final String obscuredHubJson = mapper.writeValueAsString(hubs);
+
         when(mockDockerHubService.getHubs()).thenReturn(hubs);
+
 
         final String response =
                 mockMvc.perform(request)
@@ -297,8 +300,7 @@ public class DockerRestApiTest {
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
-        final List<DockerHub> responseList = mapper.readValue(response, new TypeReference<List<DockerHub>>(){});
-        assertEquals(hubs, responseList);
+        assertEquals(obscuredHubJson, response);
     }
 
     @Test
@@ -307,13 +309,15 @@ public class DockerRestApiTest {
 
         final long privateHubId = 10L;
         final DockerHub privateHubExpected = DockerHub.create(privateHubId, "my hub", "http://localhost", "me", "still me", "me@me.me");
+        final String privateHubObscuredJson = mapper.writeValueAsString(privateHubExpected);
         final DockerHub defaultHubExpected = DockerHub.DEFAULT;
+        final String defaultHubObscuredJson = mapper.writeValueAsString(defaultHubExpected);
         final long defaultHubId = defaultHubExpected.id();
 
         when(mockDockerHubService.getHub(defaultHubId)).thenReturn(defaultHubExpected);
         when(mockDockerHubService.getHub(privateHubId)).thenReturn(privateHubExpected);
 
-        // Get default hub by id
+        // Get default hub
         final MockHttpServletRequestBuilder defaultHubRequest =
                 get(String.format(pathTemplate, defaultHubId))
                         .with(authentication(NONADMIN_AUTH))
@@ -326,8 +330,7 @@ public class DockerRestApiTest {
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
-        final DockerHub defaultHub = mapper.readValue(defaultHubResponse, DockerHub.class);
-        assertEquals(defaultHubExpected, defaultHub);
+        assertEquals(defaultHubObscuredJson, defaultHubResponse);
 
         // Get private hub
         final MockHttpServletRequestBuilder privateHubRequest =
@@ -342,8 +345,7 @@ public class DockerRestApiTest {
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
-        final DockerHub privateHub = mapper.readValue(privateHubResponse, DockerHub.class);
-        assertEquals(privateHubExpected, privateHub);
+        assertEquals(privateHubObscuredJson, privateHubResponse);
     }
 
     @Test
@@ -352,13 +354,15 @@ public class DockerRestApiTest {
 
         final String privateHubName = "my hub";
         final DockerHub privateHubExpected = DockerHub.create(10L, privateHubName, "http://localhost", "me", "still me", "me@me.me");
+        final String privateHubObscuredJson = mapper.writeValueAsString(privateHubExpected);
         final DockerHub defaultHubExpected = DockerHub.DEFAULT;
+        final String defaultHubObscuredJson = mapper.writeValueAsString(defaultHubExpected);
         final String defaultHubName = defaultHubExpected.name();
 
         when(mockDockerHubService.getHub(defaultHubName)).thenReturn(defaultHubExpected);
         when(mockDockerHubService.getHub(privateHubName)).thenReturn(privateHubExpected);
 
-        // Get default hub by id
+        // Get default hub
         final MockHttpServletRequestBuilder defaultHubRequest =
                 get(String.format(pathTemplate, defaultHubName))
                         .with(authentication(NONADMIN_AUTH))
@@ -371,8 +375,7 @@ public class DockerRestApiTest {
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
-        final DockerHub defaultHub = mapper.readValue(defaultHubResponse, DockerHub.class);
-        assertEquals(defaultHubExpected, defaultHub);
+        assertEquals(defaultHubObscuredJson, defaultHubResponse);
 
         // Get private hub
         final MockHttpServletRequestBuilder privateHubRequest =
@@ -387,23 +390,34 @@ public class DockerRestApiTest {
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
-        final DockerHub privateHub = mapper.readValue(privateHubResponse, DockerHub.class);
-        assertEquals(privateHubExpected, privateHub);
+        assertEquals(privateHubObscuredJson, privateHubResponse);
     }
 
     @Test
     public void testCreateHub() throws Exception {
         final String path = "/docker/hubs";
 
-        final DockerHub hubToCreate = DockerHub.create(0L, "a hub name", "http://localhost", "me", "still me", "me@me.me");
+        // Because we obscure the username and password in the json representation in docker hubs,
+        // we have to write the json directly, not create an object an serialized json from it.
+        final String hubToCreateJson = "{" +
+                "\"id\": 0" +
+                ", \"name\": \"a hub name\"" +
+                ", \"url\": \"http://localhost\"" +
+                ", \"username\": \"me\"" +
+                ", \"password\": \"Still me\"" +
+                ", \"email\": \"me@me.me\"" +
+                "}";
+        final DockerHub hubToCreate = mapper.readValue(hubToCreateJson, DockerHub.class);
+
         final DockerHub created = DockerHub.create(10L, "a hub name", "http://localhost", "me", "still me", "me@me.me");
+        final String createdObscuredJson = mapper.writeValueAsString(created);
 
         when(mockDockerHubService.create(hubToCreate)).thenReturn(created);
 
         final MockHttpServletRequestBuilder request =
                 post(path)
                         .contentType(JSON)
-                        .content(mapper.writeValueAsString(hubToCreate))
+                        .content(hubToCreateJson)
                         .with(authentication(ADMIN_AUTH))
                         .with(csrf())
                         .with(testSecurityContext());
@@ -414,7 +428,7 @@ public class DockerRestApiTest {
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
-        assertEquals(created, mapper.readValue(response, DockerHub.class));
+        assertEquals(createdObscuredJson, response);
 
         final MockHttpServletRequestBuilder nonAdminRequest =
                 post(path)
