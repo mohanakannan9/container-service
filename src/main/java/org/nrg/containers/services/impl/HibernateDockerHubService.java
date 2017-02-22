@@ -125,8 +125,13 @@ public class HibernateDockerHubService
     }
 
     @Override
-    public DockerHub getDefault() throws NotFoundException {
-        return getHub(containerConfigService.getDefaultDockerHubId());
+    public long getDefaultHubId() {
+        return containerConfigService.getDefaultDockerHubId();
+    }
+
+    @Override
+    public DockerHub getDefault() {
+        return retrieveHub(getDefaultHubId());
     }
 
     @Override

@@ -28,7 +28,9 @@ public interface DockerHubService extends BaseHibernateService<DockerHubEntity> 
     void delete(String name) throws DockerHubDeleteDefaultException, NotUniqueException;
 
     void delete(DockerHubEntity entity) throws DockerHubDeleteDefaultException;
-    DockerHub getDefault() throws NotFoundException;
+
+    long getDefaultHubId();
+    DockerHub getDefault();
 
     class DockerHubDeleteDefaultException extends RuntimeException {
         public DockerHubDeleteDefaultException(final String message) {
