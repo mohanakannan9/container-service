@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
-import org.nrg.containers.model.auto.CommandPojo;
+import org.nrg.containers.model.auto.Command;
 
 import javax.annotation.Nullable;
 import javax.persistence.Embeddable;
@@ -23,13 +23,13 @@ public class CommandWrapperOutputEntity {
     private Type type;
     private String label;
 
-    public static CommandWrapperOutputEntity fromPojo(final CommandPojo.CommandWrapperOutputPojo commandWrapperOutputPojo) {
+    public static CommandWrapperOutputEntity fromPojo(final Command.CommandWrapperOutput commandWrapperOutput) {
         final CommandWrapperOutputEntity commandWrapperOutputEntity = new CommandWrapperOutputEntity();
-        commandWrapperOutputEntity.commandOutputName = commandWrapperOutputPojo.commandOutputName();
-        commandWrapperOutputEntity.xnatInputName = commandWrapperOutputPojo.xnatInputName();
-        commandWrapperOutputEntity.label = commandWrapperOutputPojo.label();
+        commandWrapperOutputEntity.commandOutputName = commandWrapperOutput.commandOutputName();
+        commandWrapperOutputEntity.xnatInputName = commandWrapperOutput.xnatInputName();
+        commandWrapperOutputEntity.label = commandWrapperOutput.label();
 
-        switch (commandWrapperOutputPojo.type()) {
+        switch (commandWrapperOutput.type()) {
             case "Resource":
                 commandWrapperOutputEntity.type = Type.RESOURCE;
                 break;

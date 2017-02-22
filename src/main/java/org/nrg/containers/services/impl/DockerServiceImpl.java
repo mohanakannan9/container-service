@@ -8,10 +8,10 @@ import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.helpers.CommandLabelHelper;
 import org.nrg.containers.model.CommandEntity;
+import org.nrg.containers.model.auto.Command;
 import org.nrg.containers.model.auto.DockerImage;
 import org.nrg.containers.exceptions.NotUniqueException;
 import org.nrg.containers.model.DockerServerPrefsBean;
-import org.nrg.containers.model.auto.CommandPojo;
 import org.nrg.containers.model.auto.DockerHub;
 import org.nrg.containers.model.auto.DockerImageAndCommandSummary;
 import org.nrg.containers.model.DockerServer;
@@ -268,7 +268,7 @@ public class DockerServiceImpl implements DockerService {
         if (log.isDebugEnabled()) {
             log.debug("Parsing labels for " + imageName);
         }
-        final List<CommandPojo> parsed = CommandLabelHelper.parseLabels(imageName, dockerImage);
+        final List<Command> parsed = CommandLabelHelper.parseLabels(imageName, dockerImage);
         if (log.isDebugEnabled()) {
             log.debug("Saving commands from image labels");
         }

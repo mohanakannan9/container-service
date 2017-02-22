@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.base.MoreObjects;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.containers.model.auto.CommandPojo;
+import org.nrg.containers.model.auto.Command;
 
 import javax.persistence.Embeddable;
 import javax.persistence.EnumType;
@@ -32,20 +32,20 @@ public class CommandInputEntity implements Serializable {
     @JsonProperty("false-value") private String falseValue;
     private String value;
 
-    public static CommandInputEntity fromPojo(final CommandPojo.CommandInputPojo commandInputPojo) {
+    public static CommandInputEntity fromPojo(final Command.CommandInput commandInput) {
         final CommandInputEntity commandInputEntity = new CommandInputEntity();
-        commandInputEntity.name = commandInputPojo.name();
-        commandInputEntity.description = commandInputPojo.description();
-        commandInputEntity.required = commandInputPojo.required();
-        commandInputEntity.matcher = commandInputPojo.matcher();
-        commandInputEntity.defaultValue = commandInputPojo.defaultValue();
-        commandInputEntity.rawReplacementKey = commandInputPojo.rawReplacementKey();
-        commandInputEntity.commandLineFlag = commandInputPojo.commandLineFlag();
-        commandInputEntity.commandLineSeparator = commandInputPojo.commandLineSeparator();
-        commandInputEntity.trueValue = commandInputPojo.trueValue();
-        commandInputEntity.falseValue = commandInputPojo.falseValue();
+        commandInputEntity.name = commandInput.name();
+        commandInputEntity.description = commandInput.description();
+        commandInputEntity.required = commandInput.required();
+        commandInputEntity.matcher = commandInput.matcher();
+        commandInputEntity.defaultValue = commandInput.defaultValue();
+        commandInputEntity.rawReplacementKey = commandInput.rawReplacementKey();
+        commandInputEntity.commandLineFlag = commandInput.commandLineFlag();
+        commandInputEntity.commandLineSeparator = commandInput.commandLineSeparator();
+        commandInputEntity.trueValue = commandInput.trueValue();
+        commandInputEntity.falseValue = commandInput.falseValue();
 
-        switch (commandInputPojo.type()) {
+        switch (commandInput.type()) {
             case "string":
                 commandInputEntity.type = Type.STRING;
                 break;

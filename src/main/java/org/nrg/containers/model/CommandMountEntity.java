@@ -3,7 +3,7 @@ package org.nrg.containers.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import io.swagger.annotations.ApiModelProperty;
-import org.nrg.containers.model.auto.CommandPojo;
+import org.nrg.containers.model.auto.Command;
 
 import javax.persistence.Embeddable;
 import javax.persistence.Transient;
@@ -45,11 +45,11 @@ public class CommandMountEntity implements Serializable {
         this.containerPath = remotePath;
     }
 
-    static CommandMountEntity fromPojo(final CommandPojo.CommandMountPojo commandMountPojo) {
+    static CommandMountEntity fromPojo(final Command.CommandMount commandMount) {
         final CommandMountEntity commandMountEntity = new CommandMountEntity();
-        commandMountEntity.name = commandMountPojo.name();
-        commandMountEntity.writable = commandMountPojo.writable();
-        commandMountEntity.containerPath = commandMountPojo.path();
+        commandMountEntity.name = commandMount.name();
+        commandMountEntity.writable = commandMount.writable();
+        commandMountEntity.containerPath = commandMount.path();
         return commandMountEntity;
     }
 

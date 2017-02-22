@@ -6,7 +6,7 @@ import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.model.CommandType;
 import org.nrg.containers.model.auto.DockerImage;
-import org.nrg.containers.model.auto.CommandPojo;
+import org.nrg.containers.model.auto.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,25 +20,25 @@ public class CommandLabelHelper {
     public static final String LABEL_KEY = "org.nrg.commands";
 
 
-    public static List<CommandPojo> parseLabels(final String imageName, final DockerImage dockerImage) {
+    public static List<Command> parseLabels(final String imageName, final DockerImage dockerImage) {
         return parseLabels(imageName, dockerImage, new ObjectMapper());
     }
 
-    public static List<CommandPojo> parseLabels(final String imageName, final DockerImage dockerImage, final ObjectMapper objectMapper) {
+    public static List<Command> parseLabels(final String imageName, final DockerImage dockerImage, final ObjectMapper objectMapper) {
         final Map<String, String> labels = dockerImage.labels();
         if (labels != null && !labels.isEmpty() && labels.containsKey(LABEL_KEY)) {
             final String labelValue = labels.get(LABEL_KEY);
             if (StringUtils.isNotBlank(labelValue)) {
                 try {
-                    final List<CommandPojo> commandsFromLabels =
-                            objectMapper.readValue(labelValue, new TypeReference<List<CommandPojo>>() {});
-                    final List<CommandPojo> commandsToReturn = Lists.newArrayList();
+                    final List<Command> commandsFromLabels =
+                            objectMapper.readValue(labelValue, new TypeReference<List<Command>>() {});
+                    final List<Command> commandsToReturn = Lists.newArrayList();
                     if (commandsFromLabels != null && !commandsFromLabels.isEmpty()) {
-                        for (final CommandPojo commandPojo : commandsFromLabels) {
+                        for (final Command command : commandsFromLabels) {
                             // The command as read from the image may not contain all the values we want to store
                             // So we add them now.
                             commandsToReturn.add(
-                                    commandPojo.toBuilder()
+                                    command.toBuilder()
                                             .type(CommandType.DOCKER.getName())
                                             .image(imageName)
                                             .hash(dockerImage.imageId())

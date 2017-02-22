@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 @AutoValue
-public abstract class CommandPojo {
+public abstract class Command {
     @JsonProperty("id") public abstract long id();
     @JsonProperty("name") public abstract String name();
     @Nullable @JsonProperty("label") public abstract String label();
@@ -38,33 +38,33 @@ public abstract class CommandPojo {
     @Nullable @JsonProperty("hash") public abstract String hash();
     @Nullable @JsonProperty("working-directory") public abstract String workingDirectory();
     @Nullable @JsonProperty("command-line") public abstract String commandLine();
-    @JsonProperty("mounts") public abstract List<CommandMountPojo> mounts();
+    @JsonProperty("mounts") public abstract List<CommandMount> mounts();
     @JsonProperty("environment-variables") public abstract Map<String, String> environmentVariables();
     @JsonProperty("ports") public abstract Map<String, String> ports();
-    @JsonProperty("inputs") public abstract List<CommandInputPojo> inputs();
-    @JsonProperty("outputs") public abstract List<CommandOutputPojo> outputs();
-    @JsonProperty("xnat") public abstract List<CommandWrapperPojo> xnatCommandWrappers();
+    @JsonProperty("inputs") public abstract List<CommandInput> inputs();
+    @JsonProperty("outputs") public abstract List<CommandOutput> outputs();
+    @JsonProperty("xnat") public abstract List<CommandWrapper> xnatCommandWrappers();
 
     @JsonCreator
-    static CommandPojo create(@JsonProperty("id") long id,
-                              @JsonProperty("name") String name,
-                              @JsonProperty("label") String label,
-                              @JsonProperty("description") String description,
-                              @JsonProperty("version") String version,
-                              @JsonProperty("schema-version") String schemaVersion,
-                              @JsonProperty("info-url") String infoUrl,
-                              @JsonProperty("image") String image,
-                              @JsonProperty("type") String type,
-                              @JsonProperty("index") String index,
-                              @JsonProperty("hash") String hash,
-                              @JsonProperty("working-directory") String workingDirectory,
-                              @JsonProperty("command-line") String commandLine,
-                              @JsonProperty("mounts") List<CommandMountPojo> mounts,
-                              @JsonProperty("environment-variables") Map<String, String> environmentVariables,
-                              @JsonProperty("ports") Map<String, String> ports,
-                              @JsonProperty("inputs") List<CommandInputPojo> inputs,
-                              @JsonProperty("outputs") List<CommandOutputPojo> outputs,
-                              @JsonProperty("xnat") List<CommandWrapperPojo> xnatCommandWrappers) {
+    static Command create(@JsonProperty("id") long id,
+                          @JsonProperty("name") String name,
+                          @JsonProperty("label") String label,
+                          @JsonProperty("description") String description,
+                          @JsonProperty("version") String version,
+                          @JsonProperty("schema-version") String schemaVersion,
+                          @JsonProperty("info-url") String infoUrl,
+                          @JsonProperty("image") String image,
+                          @JsonProperty("type") String type,
+                          @JsonProperty("index") String index,
+                          @JsonProperty("hash") String hash,
+                          @JsonProperty("working-directory") String workingDirectory,
+                          @JsonProperty("command-line") String commandLine,
+                          @JsonProperty("mounts") List<CommandMount> mounts,
+                          @JsonProperty("environment-variables") Map<String, String> environmentVariables,
+                          @JsonProperty("ports") Map<String, String> ports,
+                          @JsonProperty("inputs") List<CommandInput> inputs,
+                          @JsonProperty("outputs") List<CommandOutput> outputs,
+                          @JsonProperty("xnat") List<CommandWrapper> xnatCommandWrappers) {
         return builder()
                 .id(id)
                 .name(name == null ? "" : name)
@@ -79,17 +79,17 @@ public abstract class CommandPojo {
                 .hash(hash)
                 .workingDirectory(workingDirectory)
                 .commandLine(commandLine)
-                .mounts(mounts == null ? Lists.<CommandMountPojo>newArrayList() : mounts)
+                .mounts(mounts == null ? Lists.<CommandMount>newArrayList() : mounts)
                 .environmentVariables(environmentVariables == null ? Maps.<String, String>newHashMap() : environmentVariables)
                 .ports(ports == null ? Maps.<String, String>newHashMap() : ports)
-                .inputs(inputs == null ? Lists.<CommandInputPojo>newArrayList() : inputs)
-                .outputs(outputs == null ? Lists.<CommandOutputPojo>newArrayList() : outputs)
-                .xnatCommandWrappers(xnatCommandWrappers == null ? Lists.<CommandWrapperPojo>newArrayList() : xnatCommandWrappers)
+                .inputs(inputs == null ? Lists.<CommandInput>newArrayList() : inputs)
+                .outputs(outputs == null ? Lists.<CommandOutput>newArrayList() : outputs)
+                .xnatCommandWrappers(xnatCommandWrappers == null ? Lists.<CommandWrapper>newArrayList() : xnatCommandWrappers)
                 .build();
     }
 
-    static CommandPojo create(final CommandEntity commandEntity) {
-        CommandPojo.Builder builder = builder()
+    static Command create(final CommandEntity commandEntity) {
+        Command.Builder builder = builder()
                 .id(commandEntity.getId())
                 .name(commandEntity.getName())
                 .label(commandEntity.getLabel())
@@ -102,36 +102,36 @@ public abstract class CommandPojo {
                 .workingDirectory(commandEntity.getWorkingDirectory())
                 .commandLine(commandEntity.getCommandLine())
                 .environmentVariables(commandEntity.getEnvironmentVariables() == null ? Maps.<String, String>newHashMap() : commandEntity.getEnvironmentVariables())
-                .mounts(commandEntity.getMounts() == null ? Lists.<CommandMountPojo>newArrayList() :
-                        Lists.transform(commandEntity.getMounts(), new Function<CommandMountEntity, CommandMountPojo>() {
+                .mounts(commandEntity.getMounts() == null ? Lists.<CommandMount>newArrayList() :
+                        Lists.transform(commandEntity.getMounts(), new Function<CommandMountEntity, CommandMount>() {
                             @Nullable
                             @Override
-                            public CommandMountPojo apply(@Nullable final CommandMountEntity mount) {
-                                return mount == null ? null : CommandMountPojo.create(mount);
+                            public CommandMount apply(@Nullable final CommandMountEntity mount) {
+                                return mount == null ? null : CommandMount.create(mount);
                             }
                         }))
-                .inputs(commandEntity.getInputs() == null ? Lists.<CommandInputPojo>newArrayList() :
-                        Lists.transform(commandEntity.getInputs(), new Function<CommandInputEntity, CommandInputPojo>() {
+                .inputs(commandEntity.getInputs() == null ? Lists.<CommandInput>newArrayList() :
+                        Lists.transform(commandEntity.getInputs(), new Function<CommandInputEntity, CommandInput>() {
                             @Nullable
                             @Override
-                            public CommandInputPojo apply(@Nullable final CommandInputEntity commandInput) {
-                                return commandInput == null ? null : CommandInputPojo.create(commandInput);
+                            public CommandInput apply(@Nullable final CommandInputEntity commandInput) {
+                                return commandInput == null ? null : CommandInput.create(commandInput);
                             }
                         }))
-                .outputs(commandEntity.getOutputs() == null ? Lists.<CommandOutputPojo>newArrayList() :
-                        Lists.transform(commandEntity.getOutputs(), new Function<CommandOutputEntity, CommandOutputPojo>() {
+                .outputs(commandEntity.getOutputs() == null ? Lists.<CommandOutput>newArrayList() :
+                        Lists.transform(commandEntity.getOutputs(), new Function<CommandOutputEntity, CommandOutput>() {
                             @Nullable
                             @Override
-                            public CommandOutputPojo apply(@Nullable final CommandOutputEntity commandOutput) {
-                                return commandOutput == null ? null : CommandOutputPojo.create(commandOutput);
+                            public CommandOutput apply(@Nullable final CommandOutputEntity commandOutput) {
+                                return commandOutput == null ? null : CommandOutput.create(commandOutput);
                             }
                         }))
-                .xnatCommandWrappers(commandEntity.getCommandWrapperEntities() == null ? Lists.<CommandWrapperPojo>newArrayList() :
-                        Lists.transform(commandEntity.getCommandWrapperEntities(), new Function<CommandWrapperEntity, CommandWrapperPojo>() {
+                .xnatCommandWrappers(commandEntity.getCommandWrapperEntities() == null ? Lists.<CommandWrapper>newArrayList() :
+                        Lists.transform(commandEntity.getCommandWrapperEntities(), new Function<CommandWrapperEntity, CommandWrapper>() {
                             @Nullable
                             @Override
-                            public CommandWrapperPojo apply(@Nullable final CommandWrapperEntity xnatCommandWrapper) {
-                                return xnatCommandWrapper == null ? null : CommandWrapperPojo.create(xnatCommandWrapper);
+                            public CommandWrapper apply(@Nullable final CommandWrapperEntity xnatCommandWrapper) {
+                                return xnatCommandWrapper == null ? null : CommandWrapper.create(xnatCommandWrapper);
                             }
                         }));
 
@@ -149,16 +149,16 @@ public abstract class CommandPojo {
     public abstract Builder toBuilder();
 
     public static Builder builder() {
-        return new AutoValue_CommandPojo.Builder()
+        return new AutoValue_Command.Builder()
                 .id(0L)
                 .name("")
                 .type(CommandEntity.DEFAULT_TYPE.getName())
-                .mounts(Lists.<CommandMountPojo>newArrayList())
+                .mounts(Lists.<CommandMount>newArrayList())
                 .environmentVariables(Maps.<String, String>newHashMap())
                 .ports(Maps.<String, String>newHashMap())
-                .inputs(Lists.<CommandInputPojo>newArrayList())
-                .outputs(Lists.<CommandOutputPojo>newArrayList())
-                .xnatCommandWrappers(Lists.<CommandWrapperPojo>newArrayList());
+                .inputs(Lists.<CommandInput>newArrayList())
+                .outputs(Lists.<CommandOutput>newArrayList())
+                .xnatCommandWrappers(Lists.<CommandWrapper>newArrayList());
     }
 
     public List<String> validate() {
@@ -179,7 +179,7 @@ public abstract class CommandPojo {
         }
 
         final Set<String> mountNames = Sets.newHashSet();
-        for (final CommandMountPojo mount : mounts()) {
+        for (final CommandMount mount : mounts()) {
             final List<String> mountErrors = mount.validate();
 
             if (mountNames.contains(mount.name())) {
@@ -195,7 +195,7 @@ public abstract class CommandPojo {
         final String knownMounts = StringUtils.join(mountNames, ", ");
 
         final Set<String> inputNames = Sets.newHashSet();
-        for (final CommandInputPojo input : inputs()) {
+        for (final CommandInput input : inputs()) {
             final List<String> inputErrors = input.validate();
 
             if (inputNames.contains(input.name())) {
@@ -210,7 +210,7 @@ public abstract class CommandPojo {
         }
 
         final Set<String> outputNames = Sets.newHashSet();
-        for (final CommandOutputPojo output : outputs()) {
+        for (final CommandOutput output : outputs()) {
             final List<String> outputErrors = output.validate();
 
             if (outputNames.contains(output.name())) {
@@ -230,18 +230,18 @@ public abstract class CommandPojo {
         final String knownOutputs = StringUtils.join(outputNames, ", ");
 
         final Set<String> wrapperNames = Sets.newHashSet();
-        for (final CommandWrapperPojo commandWrapperPojo : xnatCommandWrappers()) {
-            final List<String> wrapperErrors = commandWrapperPojo.validate();
+        for (final CommandWrapper commandWrapper : xnatCommandWrappers()) {
+            final List<String> wrapperErrors = commandWrapper.validate();
 
-            if (wrapperNames.contains(commandWrapperPojo.name())) {
-                errors.add(commandName + "wrapper name \"" + commandWrapperPojo.name() + "\" is not unique.");
+            if (wrapperNames.contains(commandWrapper.name())) {
+                errors.add(commandName + "wrapper name \"" + commandWrapper.name() + "\" is not unique.");
             } else {
-                wrapperNames.add(commandWrapperPojo.name());
+                wrapperNames.add(commandWrapper.name());
             }
-            final String wrapperName = commandName + "wrapper \"" + commandWrapperPojo.name() + "\" - ";
+            final String wrapperName = commandName + "wrapper \"" + commandWrapper.name() + "\" - ";
 
             final Set<String> wrapperInputNames = Sets.newHashSet();
-            for (final CommandWrapperInputPojo external : commandWrapperPojo.externalInputs()) {
+            for (final CommandWrapperInput external : commandWrapper.externalInputs()) {
                 final List<String> inputErrors = external.validateExternal();
 
                 if (wrapperInputNames.contains(external.name())) {
@@ -256,7 +256,7 @@ public abstract class CommandPojo {
                 }
             }
 
-            for (final CommandWrapperInputPojo derived : commandWrapperPojo.derivedInputs()) {
+            for (final CommandWrapperInput derived : commandWrapper.derivedInputs()) {
                 final List<String> inputErrors = derived.validateDerived();
 
                 if (wrapperInputNames.contains(derived.name())) {
@@ -275,7 +275,7 @@ public abstract class CommandPojo {
             final String knownWrapperInputs = StringUtils.join(wrapperInputNames, ", ");
 
             final Set<String> handledOutputs = Sets.newHashSet();
-            for (final CommandWrapperOutputPojo output : commandWrapperPojo.outputHandlers()) {
+            for (final CommandWrapperOutput output : commandWrapper.outputHandlers()) {
                 final List<String> outputErrors = output.validate();
 
                 if (!outputNames.contains(output.commandOutputName())) {
@@ -312,11 +312,11 @@ public abstract class CommandPojo {
         return errors;
     }
 
-    public void addCommandWrapper(final CommandWrapperPojo commandWrapperPojo) {
-        if (commandWrapperPojo == null) {
+    public void addCommandWrapper(final CommandWrapper commandWrapper) {
+        if (commandWrapper == null) {
             return;
         }
-        this.xnatCommandWrappers().add(commandWrapperPojo);
+        this.xnatCommandWrappers().add(commandWrapper);
     }
 
     @AutoValue.Builder
@@ -334,31 +334,31 @@ public abstract class CommandPojo {
         public abstract Builder hash(final String hash);
         public abstract Builder workingDirectory(final String workingDirectory);
         public abstract Builder commandLine(final String commandLine);
-        public abstract Builder mounts(final List<CommandMountPojo> mounts);
+        public abstract Builder mounts(final List<CommandMount> mounts);
         public abstract Builder environmentVariables(final Map<String, String> environmentVariables);
         public abstract Builder ports(final Map<String, String> ports);
-        public abstract Builder inputs(final List<CommandInputPojo> inputs);
-        public abstract Builder outputs(final List<CommandOutputPojo> outputs);
-        public abstract Builder xnatCommandWrappers(final List<CommandWrapperPojo> xnatCommandWrappers);
+        public abstract Builder inputs(final List<CommandInput> inputs);
+        public abstract Builder outputs(final List<CommandOutput> outputs);
+        public abstract Builder xnatCommandWrappers(final List<CommandWrapper> xnatCommandWrappers);
 
-        public abstract CommandPojo build();
+        public abstract Command build();
     }
 
     @AutoValue
-    public static abstract class CommandMountPojo {
+    public static abstract class CommandMount {
         @Nullable @JsonProperty("name") public abstract String name();
         @Nullable @JsonProperty("writable") public abstract Boolean writable();
         @Nullable @JsonProperty("path") public abstract String path();
 
         @JsonCreator
-        static CommandMountPojo create(@JsonProperty("name") String name,
-                                       @JsonProperty("writable") Boolean writable,
-                                       @JsonProperty("path") String path) {
-            return new AutoValue_CommandPojo_CommandMountPojo(name, writable, path);
+        static CommandMount create(@JsonProperty("name") String name,
+                                   @JsonProperty("writable") Boolean writable,
+                                   @JsonProperty("path") String path) {
+            return new AutoValue_Command_CommandMount(name, writable, path);
         }
 
-        static CommandMountPojo create(final CommandMountEntity mount) {
-            return CommandMountPojo.create(mount.getName(), mount.isWritable(), mount.getContainerPath());
+        static CommandMount create(final CommandMountEntity mount) {
+            return CommandMount.create(mount.getName(), mount.isWritable(), mount.getContainerPath());
         }
 
         List<String> validate() {
@@ -375,7 +375,7 @@ public abstract class CommandPojo {
     }
 
     @AutoValue
-    public static abstract class CommandInputPojo {
+    public static abstract class CommandInput {
         @Nullable @JsonProperty("name") public abstract String name();
         @Nullable @JsonProperty("description") public abstract String description();
         @JsonProperty("type") public abstract String type();
@@ -390,22 +390,22 @@ public abstract class CommandPojo {
         @Nullable @JsonProperty("value") public abstract String value();
 
         @JsonCreator
-        static CommandInputPojo create(@JsonProperty("name") String name,
-                                       @JsonProperty("description") String description,
-                                       @JsonProperty("type") String type,
-                                       @JsonProperty("required") Boolean required,
-                                       @JsonProperty("matcher") String matcher,
-                                       @JsonProperty("default-value") String defaultValue,
-                                       @JsonProperty("replacement-key") String rawReplacementKey,
-                                       @JsonProperty("command-line-flag") String commandLineFlag,
-                                       @JsonProperty("command-line-separator") String commandLineSeparator,
-                                       @JsonProperty("true-value") String trueValue,
-                                       @JsonProperty("false-value") String falseValue,
-                                       @JsonProperty("value") String value) {
-            return new AutoValue_CommandPojo_CommandInputPojo(name, description, type == null ? CommandInputEntity.DEFAULT_TYPE.getName() : type, required, matcher, defaultValue, rawReplacementKey, commandLineFlag, commandLineSeparator, trueValue, falseValue, value);
+        static CommandInput create(@JsonProperty("name") String name,
+                                   @JsonProperty("description") String description,
+                                   @JsonProperty("type") String type,
+                                   @JsonProperty("required") Boolean required,
+                                   @JsonProperty("matcher") String matcher,
+                                   @JsonProperty("default-value") String defaultValue,
+                                   @JsonProperty("replacement-key") String rawReplacementKey,
+                                   @JsonProperty("command-line-flag") String commandLineFlag,
+                                   @JsonProperty("command-line-separator") String commandLineSeparator,
+                                   @JsonProperty("true-value") String trueValue,
+                                   @JsonProperty("false-value") String falseValue,
+                                   @JsonProperty("value") String value) {
+            return new AutoValue_Command_CommandInput(name, description, type == null ? CommandInputEntity.DEFAULT_TYPE.getName() : type, required, matcher, defaultValue, rawReplacementKey, commandLineFlag, commandLineSeparator, trueValue, falseValue, value);
         }
 
-        static CommandInputPojo create(final CommandInputEntity commandInputEntity) {
+        static CommandInput create(final CommandInputEntity commandInputEntity) {
             return create(commandInputEntity.getName(), commandInputEntity.getDescription(), commandInputEntity.getType().getName(), commandInputEntity.isRequired(), commandInputEntity.getMatcher(),
                     commandInputEntity.getDefaultValue(), commandInputEntity.getRawReplacementKey(), commandInputEntity.getCommandLineFlag(), commandInputEntity.getCommandLineSeparator(),
                     commandInputEntity.getTrueValue(), commandInputEntity.getFalseValue(), commandInputEntity.getValue());
@@ -420,7 +420,7 @@ public abstract class CommandPojo {
         }
     }
     @AutoValue
-    public static abstract class CommandOutputPojo {
+    public static abstract class CommandOutput {
         @Nullable @JsonProperty("name") public abstract String name();
         @Nullable @JsonProperty("description") public abstract String description();
         @Nullable @JsonProperty("required") public abstract Boolean required();
@@ -429,16 +429,16 @@ public abstract class CommandPojo {
         @Nullable @JsonProperty("glob") public abstract String glob();
 
         @JsonCreator
-        static CommandOutputPojo create(@JsonProperty("name") String name,
-                                        @JsonProperty("description") String description,
-                                        @JsonProperty("required") Boolean required,
-                                        @JsonProperty("mount") String mount,
-                                        @JsonProperty("path") String path,
-                                        @JsonProperty("glob") String glob) {
-            return new AutoValue_CommandPojo_CommandOutputPojo(name, description, required, mount, path, glob);
+        static CommandOutput create(@JsonProperty("name") String name,
+                                    @JsonProperty("description") String description,
+                                    @JsonProperty("required") Boolean required,
+                                    @JsonProperty("mount") String mount,
+                                    @JsonProperty("path") String path,
+                                    @JsonProperty("glob") String glob) {
+            return new AutoValue_Command_CommandOutput(name, description, required, mount, path, glob);
         }
 
-        static CommandOutputPojo create(final CommandOutputEntity commandOutputEntity) {
+        static CommandOutput create(final CommandOutputEntity commandOutputEntity) {
             return create(commandOutputEntity.getName(), commandOutputEntity.getDescription(), commandOutputEntity.isRequired(), commandOutputEntity.getMount(),
                     commandOutputEntity.getPath(), commandOutputEntity.getGlob());
         }
@@ -456,65 +456,65 @@ public abstract class CommandPojo {
     }
 
     @AutoValue
-    public static abstract class CommandWrapperPojo {
+    public static abstract class CommandWrapper {
         @JsonProperty("id") public abstract long id();
         @Nullable @JsonProperty("name") public abstract String name();
         @Nullable @JsonProperty("description") public abstract String description();
-        @JsonProperty("external-inputs") public abstract List<CommandWrapperInputPojo> externalInputs();
-        @JsonProperty("derived-inputs") public abstract List<CommandWrapperInputPojo> derivedInputs();
-        @JsonProperty("output-handlers") public abstract List<CommandWrapperOutputPojo> outputHandlers();
+        @JsonProperty("external-inputs") public abstract List<CommandWrapperInput> externalInputs();
+        @JsonProperty("derived-inputs") public abstract List<CommandWrapperInput> derivedInputs();
+        @JsonProperty("output-handlers") public abstract List<CommandWrapperOutput> outputHandlers();
 
         @JsonCreator
-        static CommandWrapperPojo create(@JsonProperty("id") long id,
-                                         @JsonProperty("name") String name,
-                                         @JsonProperty("description") String description,
-                                         @JsonProperty("external-inputs") List<CommandWrapperInputPojo> externalInputs,
-                                         @JsonProperty("derived-inputs") List<CommandWrapperInputPojo> derivedInputs,
-                                         @JsonProperty("output-handlers") List<CommandWrapperOutputPojo> outputHandlers) {
+        static CommandWrapper create(@JsonProperty("id") long id,
+                                     @JsonProperty("name") String name,
+                                     @JsonProperty("description") String description,
+                                     @JsonProperty("external-inputs") List<CommandWrapperInput> externalInputs,
+                                     @JsonProperty("derived-inputs") List<CommandWrapperInput> derivedInputs,
+                                     @JsonProperty("output-handlers") List<CommandWrapperOutput> outputHandlers) {
             return builder()
                     .id(id)
                     .name(name)
                     .description(description)
-                    .externalInputs(externalInputs == null ? Lists.<CommandWrapperInputPojo>newArrayList() : externalInputs)
-                    .derivedInputs(derivedInputs == null ? Lists.<CommandWrapperInputPojo>newArrayList() : derivedInputs)
-                    .outputHandlers(outputHandlers == null ? Lists.<CommandWrapperOutputPojo>newArrayList() : outputHandlers)
+                    .externalInputs(externalInputs == null ? Lists.<CommandWrapperInput>newArrayList() : externalInputs)
+                    .derivedInputs(derivedInputs == null ? Lists.<CommandWrapperInput>newArrayList() : derivedInputs)
+                    .outputHandlers(outputHandlers == null ? Lists.<CommandWrapperOutput>newArrayList() : outputHandlers)
                     .build();
         }
 
         public static Builder builder() {
-            return new AutoValue_CommandPojo_CommandWrapperPojo.Builder()
+            return new AutoValue_Command_CommandWrapper.Builder()
                     .id(0L)
-                    .externalInputs(Lists.<CommandWrapperInputPojo>newArrayList())
-                    .derivedInputs(Lists.<CommandWrapperInputPojo>newArrayList())
-                    .outputHandlers(Lists.<CommandWrapperOutputPojo>newArrayList());
+                    .externalInputs(Lists.<CommandWrapperInput>newArrayList())
+                    .derivedInputs(Lists.<CommandWrapperInput>newArrayList())
+                    .outputHandlers(Lists.<CommandWrapperOutput>newArrayList());
         }
 
-        static CommandWrapperPojo create(final CommandWrapperEntity commandWrapperEntity) {
-            final List<CommandWrapperInputPojo> external = commandWrapperEntity.getExternalInputs() == null ?
-                    Lists.<CommandWrapperInputPojo>newArrayList() :
-                    Lists.transform(commandWrapperEntity.getExternalInputs(), new Function<CommandWrapperInputEntity, CommandWrapperInputPojo>() {
+        static CommandWrapper create(final CommandWrapperEntity commandWrapperEntity) {
+            final List<CommandWrapperInput> external = commandWrapperEntity.getExternalInputs() == null ?
+                    Lists.<CommandWrapperInput>newArrayList() :
+                    Lists.transform(commandWrapperEntity.getExternalInputs(), new Function<CommandWrapperInputEntity, CommandWrapperInput>() {
                         @Nullable
                         @Override
-                        public CommandWrapperInputPojo apply(@Nullable final CommandWrapperInputEntity xnatCommandInput) {
-                            return xnatCommandInput == null ? null : CommandWrapperInputPojo.create(xnatCommandInput);
+                        public CommandWrapperInput apply(@Nullable final CommandWrapperInputEntity xnatCommandInput) {
+                            return xnatCommandInput == null ? null : CommandWrapperInput.create(xnatCommandInput);
                         }
                     });
-            final List<CommandWrapperInputPojo> derived = commandWrapperEntity.getDerivedInputs() == null ?
-                    Lists.<CommandWrapperInputPojo>newArrayList() :
-                    Lists.transform(commandWrapperEntity.getDerivedInputs(), new Function<CommandWrapperInputEntity, CommandWrapperInputPojo>() {
+            final List<CommandWrapperInput> derived = commandWrapperEntity.getDerivedInputs() == null ?
+                    Lists.<CommandWrapperInput>newArrayList() :
+                    Lists.transform(commandWrapperEntity.getDerivedInputs(), new Function<CommandWrapperInputEntity, CommandWrapperInput>() {
                         @Nullable
                         @Override
-                        public CommandWrapperInputPojo apply(@Nullable final CommandWrapperInputEntity xnatCommandInput) {
-                            return xnatCommandInput == null ? null : CommandWrapperInputPojo.create(xnatCommandInput);
+                        public CommandWrapperInput apply(@Nullable final CommandWrapperInputEntity xnatCommandInput) {
+                            return xnatCommandInput == null ? null : CommandWrapperInput.create(xnatCommandInput);
                         }
                     });
-            final List<CommandWrapperOutputPojo> outputs = commandWrapperEntity.getOutputHandlers() == null ?
-                    Lists.<CommandWrapperOutputPojo>newArrayList() :
-                    Lists.transform(commandWrapperEntity.getOutputHandlers(), new Function<CommandWrapperOutputEntity, CommandWrapperOutputPojo>() {
+            final List<CommandWrapperOutput> outputs = commandWrapperEntity.getOutputHandlers() == null ?
+                    Lists.<CommandWrapperOutput>newArrayList() :
+                    Lists.transform(commandWrapperEntity.getOutputHandlers(), new Function<CommandWrapperOutputEntity, CommandWrapperOutput>() {
                         @Nullable
                         @Override
-                        public CommandWrapperOutputPojo apply(@Nullable final CommandWrapperOutputEntity xnatCommandOutput) {
-                            return xnatCommandOutput == null ? null : CommandWrapperOutputPojo.create(xnatCommandOutput);
+                        public CommandWrapperOutput apply(@Nullable final CommandWrapperOutputEntity xnatCommandOutput) {
+                            return xnatCommandOutput == null ? null : CommandWrapperOutput.create(xnatCommandOutput);
                         }
                     });
             return create(commandWrapperEntity.getId(), commandWrapperEntity.getName(), commandWrapperEntity.getDescription(),
@@ -535,16 +535,16 @@ public abstract class CommandPojo {
             public abstract Builder id(final long id);
             public abstract Builder name(final String name);
             public abstract Builder description(final String description);
-            public abstract Builder externalInputs(final List<CommandWrapperInputPojo> externalInputs);
-            public abstract Builder derivedInputs(final List<CommandWrapperInputPojo> derivedInputs);
-            public abstract Builder outputHandlers(final List<CommandWrapperOutputPojo> outputHandlers);
+            public abstract Builder externalInputs(final List<CommandWrapperInput> externalInputs);
+            public abstract Builder derivedInputs(final List<CommandWrapperInput> derivedInputs);
+            public abstract Builder outputHandlers(final List<CommandWrapperOutput> outputHandlers);
 
-            public abstract CommandWrapperPojo build();
+            public abstract CommandWrapper build();
         }
     }
 
     @AutoValue
-    public static abstract class CommandWrapperInputPojo {
+    public static abstract class CommandWrapperInput {
         @Nullable @JsonProperty("name") public abstract String name();
         @Nullable @JsonProperty("description") public abstract String description();
         @JsonProperty("type") public abstract String type();
@@ -560,20 +560,20 @@ public abstract class CommandPojo {
         @Nullable @JsonProperty("value") public abstract String value();
 
         @JsonCreator
-        static CommandWrapperInputPojo create(@JsonProperty("name") String name,
-                                              @JsonProperty("description") String description,
-                                              @JsonProperty("type") String type,
-                                              @JsonProperty("derived-from-xnat-input") String derivedFromXnatInput,
-                                              @JsonProperty("derived-from-xnat-object-property") String derivedFromXnatObjectProperty,
-                                              @JsonProperty("matcher") String matcher,
-                                              @JsonProperty("provides-value-for-command-input") String providesValueForCommandInput,
-                                              @JsonProperty("provides-files-for-command-mount") String providesFilesForCommandMount,
-                                              @JsonProperty("default-value") String defaultValue,
-                                              @JsonProperty("user-settable") Boolean userSettable,
-                                              @JsonProperty("replacement-key") String rawReplacementKey,
-                                              @JsonProperty("required") Boolean required,
-                                              @JsonProperty("value") String value) {
-            return new AutoValue_CommandPojo_CommandWrapperInputPojo(
+        static CommandWrapperInput create(@JsonProperty("name") String name,
+                                          @JsonProperty("description") String description,
+                                          @JsonProperty("type") String type,
+                                          @JsonProperty("derived-from-xnat-input") String derivedFromXnatInput,
+                                          @JsonProperty("derived-from-xnat-object-property") String derivedFromXnatObjectProperty,
+                                          @JsonProperty("matcher") String matcher,
+                                          @JsonProperty("provides-value-for-command-input") String providesValueForCommandInput,
+                                          @JsonProperty("provides-files-for-command-mount") String providesFilesForCommandMount,
+                                          @JsonProperty("default-value") String defaultValue,
+                                          @JsonProperty("user-settable") Boolean userSettable,
+                                          @JsonProperty("replacement-key") String rawReplacementKey,
+                                          @JsonProperty("required") Boolean required,
+                                          @JsonProperty("value") String value) {
+            return new AutoValue_Command_CommandWrapperInput(
                     name,
                     description,
                     type == null ? CommandWrapperInputEntity.DEFAULT_TYPE.getName() : type,
@@ -589,7 +589,7 @@ public abstract class CommandPojo {
                     value);
         }
 
-        static CommandWrapperInputPojo create(final CommandWrapperInputEntity wrapperInput) {
+        static CommandWrapperInput create(final CommandWrapperInputEntity wrapperInput) {
             return create(wrapperInput.getName(), wrapperInput.getDescription(), wrapperInput.getType().getName(), wrapperInput.getDerivedFromXnatInput(),
                     wrapperInput.getDerivedFromXnatObjectProperty(), wrapperInput.getMatcher(), wrapperInput.getProvidesValueForCommandInput(),
                     wrapperInput.getProvidesFilesForCommandMount(), wrapperInput.getDefaultValue(), wrapperInput.getUserSettable(), wrapperInput.getRawReplacementKey(),
@@ -623,25 +623,25 @@ public abstract class CommandPojo {
     }
 
     @AutoValue
-    public static abstract class CommandWrapperOutputPojo {
+    public static abstract class CommandWrapperOutput {
         @Nullable @JsonProperty("accepts-command-output") public abstract String commandOutputName();
         @Nullable @JsonProperty("as-a-child-of-xnat-input") public abstract String xnatInputName();
         @JsonProperty("type") public abstract String type();
         @Nullable @JsonProperty("label") public abstract String label();
 
         @JsonCreator
-        static CommandWrapperOutputPojo create(@JsonProperty("accepts-command-output") String commandOutputName,
-                                               @JsonProperty("as-a-child-of-xnat-input") String xnatInputName,
-                                               @JsonProperty("type") String type,
-                                               @JsonProperty("label") String label) {
-            return new AutoValue_CommandPojo_CommandWrapperOutputPojo(
+        static CommandWrapperOutput create(@JsonProperty("accepts-command-output") String commandOutputName,
+                                           @JsonProperty("as-a-child-of-xnat-input") String xnatInputName,
+                                           @JsonProperty("type") String type,
+                                           @JsonProperty("label") String label) {
+            return new AutoValue_Command_CommandWrapperOutput(
                     commandOutputName,
                     xnatInputName,
                     type == null ? CommandWrapperOutputEntity.DEFAULT_TYPE.getName() : type,
                     label);
         }
 
-        static CommandWrapperOutputPojo create(final CommandWrapperOutputEntity wrapperOutput) {
+        static CommandWrapperOutput create(final CommandWrapperOutputEntity wrapperOutput) {
             return create(wrapperOutput.getCommandOutputName(), wrapperOutput.getXnatInputName(), wrapperOutput.getType().getName(), wrapperOutput.getLabel());
         }
 

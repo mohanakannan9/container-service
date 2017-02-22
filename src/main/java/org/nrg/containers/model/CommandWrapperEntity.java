@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
-import org.nrg.containers.model.auto.CommandPojo;
+import org.nrg.containers.model.auto.Command;
 
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
@@ -41,18 +41,18 @@ public class CommandWrapperEntity implements Serializable {
         return identity;
     }
 
-    public static CommandWrapperEntity fromPojo(final CommandPojo.CommandWrapperPojo commandWrapperPojo) {
+    public static CommandWrapperEntity fromPojo(final Command.CommandWrapper commandWrapper) {
         final CommandWrapperEntity commandWrapperEntity = new CommandWrapperEntity();
-        commandWrapperEntity.name = commandWrapperPojo.name();
-        commandWrapperEntity.description = commandWrapperPojo.description();
-        for (final CommandPojo.CommandWrapperInputPojo externalCommandWrapperInputPojo : commandWrapperPojo.externalInputs()) {
-            commandWrapperEntity.addExternalInput(CommandWrapperInputEntity.fromPojo(externalCommandWrapperInputPojo));
+        commandWrapperEntity.name = commandWrapper.name();
+        commandWrapperEntity.description = commandWrapper.description();
+        for (final Command.CommandWrapperInput externalCommandWrapperInput : commandWrapper.externalInputs()) {
+            commandWrapperEntity.addExternalInput(CommandWrapperInputEntity.fromPojo(externalCommandWrapperInput));
         }
-        for (final CommandPojo.CommandWrapperInputPojo derivedCommandWrapperInputPojo : commandWrapperPojo.derivedInputs()) {
-            commandWrapperEntity.addDerivedInput(CommandWrapperInputEntity.fromPojo(derivedCommandWrapperInputPojo));
+        for (final Command.CommandWrapperInput derivedCommandWrapperInput : commandWrapper.derivedInputs()) {
+            commandWrapperEntity.addDerivedInput(CommandWrapperInputEntity.fromPojo(derivedCommandWrapperInput));
         }
-        for (final CommandPojo.CommandWrapperOutputPojo commandWrapperOutputPojo : commandWrapperPojo.outputHandlers()) {
-            commandWrapperEntity.addOutputHandler(CommandWrapperOutputEntity.fromPojo(commandWrapperOutputPojo));
+        for (final Command.CommandWrapperOutput commandWrapperOutput : commandWrapper.outputHandlers()) {
+            commandWrapperEntity.addOutputHandler(CommandWrapperOutputEntity.fromPojo(commandWrapperOutput));
         }
         return commandWrapperEntity;
     }

@@ -29,7 +29,7 @@ import org.nrg.containers.model.ContainerMountFiles;
 import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.containers.model.CommandWrapperEntity;
-import org.nrg.containers.model.auto.CommandPojo;
+import org.nrg.containers.model.auto.Command;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerExecutionService;
 import org.nrg.framework.exceptions.NrgRuntimeException;
@@ -107,13 +107,13 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     }
 
     @Override
-    public CommandEntity create(final CommandPojo commandPojo) throws CommandValidationException {
-        final List<String> errors = commandPojo.validate();
+    public CommandEntity create(final Command command) throws CommandValidationException {
+        final List<String> errors = command.validate();
         if (errors.isEmpty()) {
             CommandEntity toCreate = null;
             final List<String> thisCommandErrors = Lists.newArrayList();
             try {
-                toCreate = CommandEntity.commandPojoToCommand(commandPojo);
+                toCreate = CommandEntity.commandPojoToCommand(command);
             } catch (CommandValidationException e) {
                 thisCommandErrors.addAll(e.getErrors());
             }
@@ -177,15 +177,15 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     }
 
     @Override
-    public List<CommandEntity> save(final List<CommandPojo> commandPojos) {
+    public List<CommandEntity> save(final List<Command> commands) {
         final List<CommandEntity> created = Lists.newArrayList();
-        if (!(commandPojos == null || commandPojos.isEmpty())) {
-            for (final CommandPojo commandPojo : commandPojos) {
+        if (!(commands == null || commands.isEmpty())) {
+            for (final Command command : commands) {
                 try {
-                    created.add(create(commandPojo));
+                    created.add(create(command));
                 } catch (CommandValidationException e) {
                     // TODO: should I "update" instead of erroring out if command already exists?
-                    log.error("Could not save command " + commandPojo.name(), e);
+                    log.error("Could not save command " + command.name(), e);
                 }
             }
         }

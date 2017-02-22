@@ -15,7 +15,7 @@ import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.ResolvedDockerCommand;
-import org.nrg.containers.model.auto.CommandPojo;
+import org.nrg.containers.model.auto.Command;
 import org.nrg.containers.services.CommandService;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NrgRuntimeException;
@@ -117,11 +117,11 @@ public class CommandRestApi extends AbstractXapiRestController {
      */
     @RequestMapping(value = {}, method = POST, produces = JSON)
     @ApiOperation(value = "Create a Command", code = 201)
-    public ResponseEntity<Long> createCommand(final @RequestBody CommandPojo commandPojo)
+    public ResponseEntity<Long> createCommand(final @RequestBody Command command)
             throws BadRequestException, CommandValidationException {
 
         try {
-            final CommandEntity commandEntity = commandService.create(commandPojo);
+            final CommandEntity commandEntity = commandService.create(command);
             if (commandEntity == null) {
                 return new ResponseEntity<>(0L, HttpStatus.INTERNAL_SERVER_ERROR);
             }

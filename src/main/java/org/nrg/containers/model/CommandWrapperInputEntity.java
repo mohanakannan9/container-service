@@ -9,7 +9,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.containers.model.auto.CommandPojo;
+import org.nrg.containers.model.auto.Command;
 
 import javax.annotation.Nullable;
 import javax.persistence.Embeddable;
@@ -49,20 +49,20 @@ public class CommandWrapperInputEntity {
         return identityInput;
     }
 
-    public static CommandWrapperInputEntity fromPojo(final CommandPojo.CommandWrapperInputPojo commandWrapperInputPojo) {
+    public static CommandWrapperInputEntity fromPojo(final Command.CommandWrapperInput commandWrapperInput) {
         final CommandWrapperInputEntity commandWrapperInputEntity = new CommandWrapperInputEntity();
-        commandWrapperInputEntity.name = commandWrapperInputPojo.name();
-        commandWrapperInputEntity.description = commandWrapperInputPojo.description();
-        commandWrapperInputEntity.derivedFromXnatInput = commandWrapperInputPojo.derivedFromXnatInput();
-        commandWrapperInputEntity.derivedFromXnatObjectProperty = commandWrapperInputPojo.derivedFromXnatObjectProperty();
-        commandWrapperInputEntity.matcher = commandWrapperInputPojo.matcher();
-        commandWrapperInputEntity.providesValueForCommandInput = commandWrapperInputPojo.providesValueForCommandInput();
-        commandWrapperInputEntity.providesFilesForCommandMount = commandWrapperInputPojo.providesFilesForCommandMount();
-        commandWrapperInputEntity.defaultValue = commandWrapperInputPojo.defaultValue();
-        commandWrapperInputEntity.userSettable = commandWrapperInputPojo.userSettable();
-        commandWrapperInputEntity.rawReplacementKey = commandWrapperInputPojo.rawReplacementKey();
-        commandWrapperInputEntity.required = commandWrapperInputPojo.required();
-        switch (commandWrapperInputPojo.type()) {
+        commandWrapperInputEntity.name = commandWrapperInput.name();
+        commandWrapperInputEntity.description = commandWrapperInput.description();
+        commandWrapperInputEntity.derivedFromXnatInput = commandWrapperInput.derivedFromXnatInput();
+        commandWrapperInputEntity.derivedFromXnatObjectProperty = commandWrapperInput.derivedFromXnatObjectProperty();
+        commandWrapperInputEntity.matcher = commandWrapperInput.matcher();
+        commandWrapperInputEntity.providesValueForCommandInput = commandWrapperInput.providesValueForCommandInput();
+        commandWrapperInputEntity.providesFilesForCommandMount = commandWrapperInput.providesFilesForCommandMount();
+        commandWrapperInputEntity.defaultValue = commandWrapperInput.defaultValue();
+        commandWrapperInputEntity.userSettable = commandWrapperInput.userSettable();
+        commandWrapperInputEntity.rawReplacementKey = commandWrapperInput.rawReplacementKey();
+        commandWrapperInputEntity.required = commandWrapperInput.required();
+        switch (commandWrapperInput.type()) {
             case "string":
                 commandWrapperInputEntity.type = Type.STRING;
                 break;

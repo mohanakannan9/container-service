@@ -3,7 +3,7 @@ package org.nrg.containers.model;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.MoreObjects.ToStringHelper;
 import com.google.common.collect.Maps;
-import org.nrg.containers.model.auto.CommandPojo;
+import org.nrg.containers.model.auto.Command;
 
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.ElementCollection;
@@ -21,7 +21,7 @@ public class DockerCommandEntity extends CommandEntity {
     private String hash;
     private Map<String, String> ports;
 
-    static DockerCommandEntity fromPojo(final CommandPojo commandPojo) {
+    static DockerCommandEntity fromPojo(final Command commandPojo) {
         final DockerCommandEntity command = new DockerCommandEntity();
         command.setIndex(commandPojo.index());
         command.setHash(commandPojo.hash());

@@ -11,7 +11,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.swagger.annotations.ApiModelProperty;
 import org.nrg.containers.exceptions.CommandValidationException;
-import org.nrg.containers.model.auto.CommandPojo;
+import org.nrg.containers.model.auto.Command;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.CascadeType;
@@ -50,47 +50,47 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
     private List<CommandOutputEntity> outputs;
     @JsonProperty("xnat") private List<CommandWrapperEntity> commandWrapperEntities;
 
-    public static CommandEntity commandPojoToCommand(final CommandPojo commandPojo) throws CommandValidationException {
-        final List<String> errors = commandPojo.validate();
+    public static CommandEntity commandPojoToCommand(final Command command) throws CommandValidationException {
+        final List<String> errors = command.validate();
         if (!errors.isEmpty()) {
             throw new CommandValidationException(errors);
         }
 
         final CommandEntity commandEntity;
-        final String type = commandPojo.type();
+        final String type = command.type();
         switch (type) {
             case "docker":
-                commandEntity = DockerCommandEntity.fromPojo(commandPojo);
+                commandEntity = DockerCommandEntity.fromPojo(command);
                 break;
             default:
                 // This should have been caught already, but still...
                 throw new CommandValidationException("Cannot instantiate command with type " + type);
         }
 
-        commandEntity.setName(commandPojo.name());
-        commandEntity.setLabel(commandPojo.label());
-        commandEntity.setDescription(commandPojo.description());
-        commandEntity.setVersion(commandPojo.version());
-        commandEntity.setSchemaVersion(commandPojo.schemaVersion());
-        commandEntity.setInfoUrl(commandPojo.infoUrl());
-        commandEntity.setImage(commandPojo.image());
-        commandEntity.setWorkingDirectory(commandPojo.workingDirectory());
-        commandEntity.setCommandLine(commandPojo.commandLine());
-        commandEntity.setEnvironmentVariables(commandPojo.environmentVariables());
+        commandEntity.setName(command.name());
+        commandEntity.setLabel(command.label());
+        commandEntity.setDescription(command.description());
+        commandEntity.setVersion(command.version());
+        commandEntity.setSchemaVersion(command.schemaVersion());
+        commandEntity.setInfoUrl(command.infoUrl());
+        commandEntity.setImage(command.image());
+        commandEntity.setWorkingDirectory(command.workingDirectory());
+        commandEntity.setCommandLine(command.commandLine());
+        commandEntity.setEnvironmentVariables(command.environmentVariables());
 
-        for (final CommandPojo.CommandMountPojo commandMountPojo : commandPojo.mounts()) {
-            commandEntity.addMount(CommandMountEntity.fromPojo(commandMountPojo));
+        for (final Command.CommandMount commandMount : command.mounts()) {
+            commandEntity.addMount(CommandMountEntity.fromPojo(commandMount));
         }
 
-        for (final CommandPojo.CommandInputPojo commandInputPojo : commandPojo.inputs()) {
-            commandEntity.addInput(CommandInputEntity.fromPojo(commandInputPojo));
+        for (final Command.CommandInput commandInput : command.inputs()) {
+            commandEntity.addInput(CommandInputEntity.fromPojo(commandInput));
         }
 
-        for (final CommandPojo.CommandOutputPojo commandOutputPojo : commandPojo.outputs()) {
-            commandEntity.addOutput(CommandOutputEntity.fromPojo(commandOutputPojo));
+        for (final Command.CommandOutput commandOutput : command.outputs()) {
+            commandEntity.addOutput(CommandOutputEntity.fromPojo(commandOutput));
         }
-        for (final CommandPojo.CommandWrapperPojo commandWrapperPojo : commandPojo.xnatCommandWrappers()) {
-            commandEntity.addXnatCommandWrapper(CommandWrapperEntity.fromPojo(commandWrapperPojo));
+        for (final Command.CommandWrapper commandWrapper : command.xnatCommandWrappers()) {
+            commandEntity.addXnatCommandWrapper(CommandWrapperEntity.fromPojo(commandWrapper));
         }
 
         return commandEntity;

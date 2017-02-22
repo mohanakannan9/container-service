@@ -1,7 +1,7 @@
 package org.nrg.containers.model;
 
 import com.google.common.base.MoreObjects;
-import org.nrg.containers.model.auto.CommandPojo;
+import org.nrg.containers.model.auto.Command;
 
 import javax.persistence.Embeddable;
 import javax.persistence.Transient;
@@ -17,14 +17,14 @@ public class CommandOutputEntity implements Serializable {
     private String path;
     private String glob;
 
-    public static CommandOutputEntity fromPojo(final CommandPojo.CommandOutputPojo commandOutputPojo) {
+    public static CommandOutputEntity fromPojo(final Command.CommandOutput commandOutput) {
         final CommandOutputEntity commandOutputEntity = new CommandOutputEntity();
-        commandOutputEntity.name = commandOutputPojo.name();
-        commandOutputEntity.description = commandOutputPojo.description();
-        commandOutputEntity.required = commandOutputPojo.required();
-        commandOutputEntity.mount = commandOutputPojo.mount();
-        commandOutputEntity.path = commandOutputPojo.path();
-        commandOutputEntity.glob = commandOutputPojo.glob();
+        commandOutputEntity.name = commandOutput.name();
+        commandOutputEntity.description = commandOutput.description();
+        commandOutputEntity.required = commandOutput.required();
+        commandOutputEntity.mount = commandOutput.mount();
+        commandOutputEntity.path = commandOutput.path();
+        commandOutputEntity.glob = commandOutput.glob();
         return commandOutputEntity;
     }
 
