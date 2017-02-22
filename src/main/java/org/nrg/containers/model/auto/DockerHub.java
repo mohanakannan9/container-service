@@ -1,8 +1,10 @@
 package org.nrg.containers.model.auto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
+import com.google.common.base.MoreObjects;
 
 import javax.annotation.Nullable;
 
@@ -15,9 +17,23 @@ public abstract class DockerHub {
     @JsonProperty("id") public abstract long id();
     @Nullable @JsonProperty("name") public abstract String name();
     @Nullable @JsonProperty("url") public abstract String url();
-    @Nullable @JsonProperty("username") public abstract String username();
-    @Nullable @JsonProperty("password") public abstract String password();
+    @Nullable @JsonIgnore public abstract String username();
+    @Nullable @JsonIgnore public abstract String password();
     @Nullable @JsonProperty("email") public abstract String email();
+
+    @JsonProperty("username")
+    public String obscuredUsername() {
+        return obscuredString();
+    }
+
+    @JsonProperty("password")
+    public String obscuredPassword() {
+        return obscuredString();
+    }
+
+    private String obscuredString() {
+        return "*****";
+    }
 
     @JsonCreator
     public static DockerHub create(@JsonProperty("id") final Long id,
@@ -27,5 +43,16 @@ public abstract class DockerHub {
                                    @JsonProperty("password") final String password,
                                    @JsonProperty("email") final String email) {
         return new AutoValue_DockerHub(id == null ? 0L : id, name, url, username, password, email);
+    }
+
+    @Override
+    public final String toString() {
+        return MoreObjects.toStringHelper("DockerHub")
+                .add("id", id())
+                .add("name", name())
+                .add("email", email())
+                .add("username", obscuredUsername())
+                .add("password", obscuredPassword())
+                .toString();
     }
 }
