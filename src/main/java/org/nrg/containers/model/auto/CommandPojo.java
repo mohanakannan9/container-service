@@ -14,7 +14,7 @@ import org.nrg.containers.model.CommandMount;
 import org.nrg.containers.model.CommandOutput;
 import org.nrg.containers.model.CommandType;
 import org.nrg.containers.model.DockerCommandEntity;
-import org.nrg.containers.model.XnatCommandInput;
+import org.nrg.containers.model.CommandWrapperInputEntity;
 import org.nrg.containers.model.XnatCommandOutput;
 import org.nrg.containers.model.CommandWrapperEntity;
 
@@ -492,19 +492,19 @@ public abstract class CommandPojo {
         static CommandWrapperPojo create(final CommandWrapperEntity commandWrapperEntity) {
             final List<CommandWrapperInputPojo> external = commandWrapperEntity.getExternalInputs() == null ?
                     Lists.<CommandWrapperInputPojo>newArrayList() :
-                    Lists.transform(commandWrapperEntity.getExternalInputs(), new Function<XnatCommandInput, CommandWrapperInputPojo>() {
+                    Lists.transform(commandWrapperEntity.getExternalInputs(), new Function<CommandWrapperInputEntity, CommandWrapperInputPojo>() {
                         @Nullable
                         @Override
-                        public CommandWrapperInputPojo apply(@Nullable final XnatCommandInput xnatCommandInput) {
+                        public CommandWrapperInputPojo apply(@Nullable final CommandWrapperInputEntity xnatCommandInput) {
                             return xnatCommandInput == null ? null : CommandWrapperInputPojo.create(xnatCommandInput);
                         }
                     });
             final List<CommandWrapperInputPojo> derived = commandWrapperEntity.getDerivedInputs() == null ?
                     Lists.<CommandWrapperInputPojo>newArrayList() :
-                    Lists.transform(commandWrapperEntity.getDerivedInputs(), new Function<XnatCommandInput, CommandWrapperInputPojo>() {
+                    Lists.transform(commandWrapperEntity.getDerivedInputs(), new Function<CommandWrapperInputEntity, CommandWrapperInputPojo>() {
                         @Nullable
                         @Override
-                        public CommandWrapperInputPojo apply(@Nullable final XnatCommandInput xnatCommandInput) {
+                        public CommandWrapperInputPojo apply(@Nullable final CommandWrapperInputEntity xnatCommandInput) {
                             return xnatCommandInput == null ? null : CommandWrapperInputPojo.create(xnatCommandInput);
                         }
                     });
@@ -576,7 +576,7 @@ public abstract class CommandPojo {
             return new AutoValue_CommandPojo_CommandWrapperInputPojo(
                     name,
                     description,
-                    type == null ? XnatCommandInput.DEFAULT_TYPE.getName() : type,
+                    type == null ? CommandWrapperInputEntity.DEFAULT_TYPE.getName() : type,
                     derivedFromXnatInput,
                     derivedFromXnatObjectProperty,
                     matcher,
@@ -589,7 +589,7 @@ public abstract class CommandPojo {
                     value);
         }
 
-        static CommandWrapperInputPojo create(final XnatCommandInput wrapperInput) {
+        static CommandWrapperInputPojo create(final CommandWrapperInputEntity wrapperInput) {
             return create(wrapperInput.getName(), wrapperInput.getDescription(), wrapperInput.getType().getName(), wrapperInput.getDerivedFromXnatInput(),
                     wrapperInput.getDerivedFromXnatObjectProperty(), wrapperInput.getMatcher(), wrapperInput.getProvidesValueForCommandInput(),
                     wrapperInput.getProvidesFilesForCommandMount(), wrapperInput.getDefaultValue(), wrapperInput.getUserSettable(), wrapperInput.getRawReplacementKey(),
@@ -602,7 +602,7 @@ public abstract class CommandPojo {
                 errors.add("Name cannot be blank.");
             }
 
-            final List<String> types = XnatCommandInput.Type.names();
+            final List<String> types = CommandWrapperInputEntity.Type.names();
             if (!types.contains(type())) {
                 errors.add("Unknown type \"" + type() + "\". Known types: " + StringUtils.join(types, ", "));
             }

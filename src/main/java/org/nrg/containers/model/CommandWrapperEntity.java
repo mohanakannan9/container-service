@@ -22,18 +22,18 @@ public class CommandWrapperEntity implements Serializable {
     private String name;
     private String description;
     @JsonIgnore private CommandEntity commandEntity;
-    @JsonProperty("external-inputs") private List<XnatCommandInput> externalInputs;
-    @JsonProperty("derived-inputs") private List<XnatCommandInput> derivedInputs;
+    @JsonProperty("external-inputs") private List<CommandWrapperInputEntity> externalInputs;
+    @JsonProperty("derived-inputs") private List<CommandWrapperInputEntity> derivedInputs;
     @JsonProperty("output-handlers") private List<XnatCommandOutput> outputHandlers;
 
     public static CommandWrapperEntity passthrough(final CommandEntity commandEntity) {
         final CommandWrapperEntity identity = new CommandWrapperEntity();
         identity.commandEntity = commandEntity;
 
-        final List<XnatCommandInput> externalInputs = Lists.newArrayList();
+        final List<CommandWrapperInputEntity> externalInputs = Lists.newArrayList();
         if (commandEntity.getInputs() != null) {
             for (final CommandInput commandInput : commandEntity.getInputs()) {
-                externalInputs.add(XnatCommandInput.passthrough(commandInput));
+                externalInputs.add(CommandWrapperInputEntity.passthrough(commandInput));
             }
         }
         identity.setExternalInputs(externalInputs);
@@ -46,10 +46,10 @@ public class CommandWrapperEntity implements Serializable {
         commandWrapperEntity.name = commandWrapperPojo.name();
         commandWrapperEntity.description = commandWrapperPojo.description();
         for (final CommandPojo.CommandWrapperInputPojo externalCommandWrapperInputPojo : commandWrapperPojo.externalInputs()) {
-            commandWrapperEntity.addExternalInput(XnatCommandInput.fromPojo(externalCommandWrapperInputPojo));
+            commandWrapperEntity.addExternalInput(CommandWrapperInputEntity.fromPojo(externalCommandWrapperInputPojo));
         }
         for (final CommandPojo.CommandWrapperInputPojo derivedCommandWrapperInputPojo : commandWrapperPojo.derivedInputs()) {
-            commandWrapperEntity.addDerivedInput(XnatCommandInput.fromPojo(derivedCommandWrapperInputPojo));
+            commandWrapperEntity.addDerivedInput(CommandWrapperInputEntity.fromPojo(derivedCommandWrapperInputPojo));
         }
         for (final CommandPojo.CommandWrapperOutputPojo commandWrapperOutputPojo : commandWrapperPojo.outputHandlers()) {
             commandWrapperEntity.addOutputHandler(XnatCommandOutput.fromPojo(commandWrapperOutputPojo));
@@ -93,17 +93,17 @@ public class CommandWrapperEntity implements Serializable {
     }
 
     @ElementCollection
-    public List<XnatCommandInput> getExternalInputs() {
+    public List<CommandWrapperInputEntity> getExternalInputs() {
         return externalInputs;
     }
 
-    public void setExternalInputs(final List<XnatCommandInput> externalInputs) {
+    public void setExternalInputs(final List<CommandWrapperInputEntity> externalInputs) {
         this.externalInputs = externalInputs == null ?
-                Lists.<XnatCommandInput>newArrayList() :
+                Lists.<CommandWrapperInputEntity>newArrayList() :
                 externalInputs;
     }
 
-    public void addExternalInput(final XnatCommandInput externalInput) {
+    public void addExternalInput(final CommandWrapperInputEntity externalInput) {
         if (externalInput == null) {
             return;
         }
@@ -115,17 +115,17 @@ public class CommandWrapperEntity implements Serializable {
     }
 
     @ElementCollection
-    public List<XnatCommandInput> getDerivedInputs() {
+    public List<CommandWrapperInputEntity> getDerivedInputs() {
         return derivedInputs;
     }
 
-    public void setDerivedInputs(final List<XnatCommandInput> derivedInputs) {
+    public void setDerivedInputs(final List<CommandWrapperInputEntity> derivedInputs) {
         this.derivedInputs = derivedInputs == null ?
-                Lists.<XnatCommandInput>newArrayList() :
+                Lists.<CommandWrapperInputEntity>newArrayList() :
                 derivedInputs;
     }
 
-    public void addDerivedInput(final XnatCommandInput derivedInput) {
+    public void addDerivedInput(final CommandWrapperInputEntity derivedInput) {
         if (derivedInput == null) {
             return;
         }

@@ -15,8 +15,8 @@ public class ContainerMountFiles {
 
     public ContainerMountFiles() {}
 
-    public ContainerMountFiles(final XnatCommandInput xnatCommandInput) {
-        this.fromXnatInput = xnatCommandInput.getName();
+    public ContainerMountFiles(final CommandWrapperInputEntity commandWrapperInputEntity) {
+        this.fromXnatInput = commandWrapperInputEntity.getName();
     }
 
     public String getFromXnatInput() {

@@ -116,9 +116,9 @@ public class CommandWrapperEntityTest {
 
     @Test
     public void testDeserializeXnatCommandInputsAndOutputs() throws Exception {
-        final XnatCommandInput externalInput = mapper.readValue(XNAT_COMMAND_WRAPPER_EXTERNAL_INPUT, XnatCommandInput.class);
+        final CommandWrapperInputEntity externalInput = mapper.readValue(XNAT_COMMAND_WRAPPER_EXTERNAL_INPUT, CommandWrapperInputEntity.class);
         assertEquals(EXTERNAL_INPUT_NAME, externalInput.getName());
-        assertEquals(XnatCommandInput.Type.SESSION, externalInput.getType());
+        assertEquals(CommandWrapperInputEntity.Type.SESSION, externalInput.getType());
         assertNull(externalInput.getDerivedFromXnatInput());
         assertNull(externalInput.getDerivedFromXnatObjectProperty());
         assertNull(externalInput.getProvidesValueForCommandInput());
@@ -126,9 +126,9 @@ public class CommandWrapperEntityTest {
         assertNull(externalInput.getMatcher());
         assertFalse(externalInput.getRequired());
 
-        final XnatCommandInput derivedInput = mapper.readValue(XNAT_COMMAND_WRAPPER_DERIVED_INPUT, XnatCommandInput.class);
+        final CommandWrapperInputEntity derivedInput = mapper.readValue(XNAT_COMMAND_WRAPPER_DERIVED_INPUT, CommandWrapperInputEntity.class);
         assertEquals(DERIVED_INPUT_NAME, derivedInput.getName());
-        assertEquals(XnatCommandInput.Type.STRING, derivedInput.getType());
+        assertEquals(CommandWrapperInputEntity.Type.STRING, derivedInput.getType());
         assertEquals(EXTERNAL_INPUT_NAME, derivedInput.getDerivedFromXnatInput());
         assertEquals(XNAT_OBJECT_PROPERTY, derivedInput.getDerivedFromXnatObjectProperty());
         assertEquals(STRING_INPUT_NAME, derivedInput.getProvidesValueForCommandInput());
