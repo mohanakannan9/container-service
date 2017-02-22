@@ -155,7 +155,7 @@ var XNAT = getObject(XNAT || {});
             .th({ addClass: 'left', html: '<b>ID</b>' })
             .th('<b>Name</b>')
             .th('<b>URL</b>')
-            .th('<b>Enabled</b>')
+            .th('<b>Default</b>')
             .th('<b>Actions</b>');
 
         function editLink(item, text){
@@ -177,8 +177,8 @@ var XNAT = getObject(XNAT || {});
             }, 'Edit');
         }
 
-        function enabledCheckbox(item){
-            var enabled = !!item.enabled;
+        function defaultCheckbox(item){
+            var defaultVal = !!item.default;
             var ckbox = spawn('input.image-host-enabled', {
                 type: 'checkbox',
                 checked: enabled,
@@ -187,12 +187,12 @@ var XNAT = getObject(XNAT || {});
                 onchange: function(){
                     // save the status when clicked
                     var checkbox = this;
-                    enabled = checkbox.checked;
+                    defaultVal = checkbox.checked;
                     XNAT.xhr.put({
                         url: xapiUrl(item.id),
                         success: function(){
-                            var status = (enabled ? ' enabled' : ' disabled');
-                            checkbox.value = enabled;
+                            var status = (defaultVal ? ' enabled' : ' disabled');
+                            checkbox.value = defaultVal;
                             XNAT.ui.banner.top(1000, '<b>' + item.name + '</b> ' + status, 'success');
                         }
                     });
@@ -204,6 +204,31 @@ var XNAT = getObject(XNAT || {});
                     ['span.switchbox-outer', [['span.switchbox-inner']]]
                 ])
             ]);
+        }
+
+        function defaultToggle(item){
+            var defaultVal = !!item.default;
+            var rdo = spawn('input.image-host-enabled', {
+                type: 'radio',
+                name: 'defaultHub',
+                checked: defaultVal,
+                value: 'default',
+                data: { id: item.id, name: item.name },
+                onchange: function(){
+                    // save the status when clicked
+                    var radio = this;
+                    defaultVal = radio.checked;
+                    XNAT.xhr.post({
+                        url: xapiUrl(item.id+'?default=true'),
+                        success: function(){
+                            radio.value = defaultVal;
+                            radio.checked = 'checked';
+                            XNAT.ui.banner.top(1000, '<b>' + item.name + '</b> set as default', 'success');
+                        }
+                    });
+                }
+            });
+            return spawn('div.center', [rdo]);
         }
 
         function deleteButton(item){
@@ -239,7 +264,7 @@ var XNAT = getObject(XNAT || {});
                     .td(['div.center'],item.id)
                     .td([editLink(item, item.name)]).addClass('name')
                     .td(item.url)
-                    .td([enabledCheckbox(item)]).addClass('status')
+                    .td([defaultToggle(item)]).addClass('status')
                     .td([['div.center', [editButton(item), spacer(10), deleteButton(item)]]]);
             });
 

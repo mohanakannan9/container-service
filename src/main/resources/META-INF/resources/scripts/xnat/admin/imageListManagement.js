@@ -225,7 +225,7 @@ var XNAT = getObject(XNAT || {});
             .th('<b>XNAT Contexts</b>')
             .th('<b>Version</b>')
             .th('<b>Image</b>')
-            .th('<b>Enabled</b>')
+            // .th('<b>Enabled</b>')
             .th('<b>Actions</b>');
 
         function viewLink(item, text){
@@ -269,24 +269,55 @@ var XNAT = getObject(XNAT || {});
             ]);
         }
 
+        function deleteCommandButton(item){
+            return spawn('button.btn.sm.delete', {
+                onclick: function(){
+                    xmodal.confirm({
+                        height: 220,
+                        scroll: false,
+                        content: "" +
+                        "<p>Are you sure you'd like to delete the <b>" + item.name + "</b> command definition?</p>" +
+                        "<p><b>This action cannot be undone.</b></p>",
+                        okAction: function(){
+                            console.log('delete id ' + item.id);
+                            XNAT.xhr.delete({
+                                url: commandUrl(item.id),
+                                success: function(){
+                                    console.log('"'+ item.name + '" command deleted');
+                                    XNAT.ui.banner.top(1000, '<b>"'+ item.name + '"</b> deleted.', 'success');
+                                    refreshTable();
+                                }
+                            });
+                        }
+                    })
+                }
+            }, 'Delete');
+        }
+
         commandListManager.getAll().done(function(data){
             data = [].concat(data);
-            data.forEach(function(item){
-                var xnatContexts = '';
-                item.xnat = [].concat(item.xnat);
-                [item.xnat].forEach(function(innerItem,i){
-                    if (xnatContexts.length > 0) xnatContexts += '<br>';
-                    xnatContexts += innerItem[i].description;
+            if (data.length > 0) {
+                data.forEach(function(item){
+                    var xnatContexts = '';
+                    item.xnat = [].concat(item.xnat);
+                    [item.xnat].forEach(function(innerItem,i){
+                        if (xnatContexts.length > 0) xnatContexts += '<br>';
+                        xnatContexts += innerItem[i].description;
+                    });
+                    chTable.tr({ title: item.name, data: { id: item.id, name: item.name, image: item.image}})
+                        .td([viewLink(item, item.name)]).addClass('name')
+                        // .td(item.name).addClass('name')
+                        .td(xnatContexts)
+                        .td(item.version)
+                        .td(item.image)
+                        // .td([enabledCheckbox(item)]).addClass('status')
+                        .td([['div.center', [deleteCommandButton(item)]]]);
                 });
-                chTable.tr({ title: item.name, data: { id: item.id, name: item.name, image: item.image}})
-                    .td([viewLink(item, item.name)]).addClass('name')
-                    // .td(item.name).addClass('name')
-                    .td(xnatContexts)
-                    .td(item.version)
-                    .td(item.image)
-                    .td([enabledCheckbox(item)]).addClass('status')
-                    .td();
-            });
+            } else {
+                chTable.tr({ title: 'no commands found'})
+                    .td('No commands found').attr('colspan:5');
+            }
+
 
             if (isFunction(callback)) {
                 callback(chTable.table);
@@ -352,10 +383,8 @@ var XNAT = getObject(XNAT || {});
 
 
     function refreshTable(){
-        imageListManager.$table.remove();
-        imageListManager.table(null, function(table){
-            imageListManager.container.prepend(table);
-        });
+        imageListManager.container.remove();
+        imageListManager.init();
     }
 
     // imageListManager.refresh = refreshTable;

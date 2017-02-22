@@ -225,6 +225,6 @@ siteSettings:
             name: imagesCommandsTab
             label: "Images & Commands"
             group: containerServiceTabGroup
-            active: true
+            active: false
             contents:
                 ${installedImagesPanel}
