@@ -10,7 +10,7 @@ import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.CommandInput;
-import org.nrg.containers.model.CommandMount;
+import org.nrg.containers.model.CommandMountEntity;
 import org.nrg.containers.model.CommandOutput;
 import org.nrg.containers.model.CommandType;
 import org.nrg.containers.model.DockerCommandEntity;
@@ -103,10 +103,10 @@ public abstract class CommandPojo {
                 .commandLine(commandEntity.getCommandLine())
                 .environmentVariables(commandEntity.getEnvironmentVariables() == null ? Maps.<String, String>newHashMap() : commandEntity.getEnvironmentVariables())
                 .mounts(commandEntity.getMounts() == null ? Lists.<CommandMountPojo>newArrayList() :
-                        Lists.transform(commandEntity.getMounts(), new Function<CommandMount, CommandMountPojo>() {
+                        Lists.transform(commandEntity.getMounts(), new Function<CommandMountEntity, CommandMountPojo>() {
                             @Nullable
                             @Override
-                            public CommandMountPojo apply(@Nullable final CommandMount mount) {
+                            public CommandMountPojo apply(@Nullable final CommandMountEntity mount) {
                                 return mount == null ? null : CommandMountPojo.create(mount);
                             }
                         }))
@@ -357,7 +357,7 @@ public abstract class CommandPojo {
             return new AutoValue_CommandPojo_CommandMountPojo(name, writable, path);
         }
 
-        static CommandMountPojo create(final CommandMount mount) {
+        static CommandMountPojo create(final CommandMountEntity mount) {
             return CommandMountPojo.create(mount.getName(), mount.isWritable(), mount.getContainerPath());
         }
 

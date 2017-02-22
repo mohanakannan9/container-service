@@ -1,21 +1,21 @@
 package org.nrg.containers.exceptions;
 
-import org.nrg.containers.model.CommandMount;
+import org.nrg.containers.model.CommandMountEntity;
 
 public class CommandMountResolutionException extends CommandResolutionException {
-    final CommandMount mount;
+    final CommandMountEntity mount;
 
-    public CommandMountResolutionException(final String message, final CommandMount mount) {
+    public CommandMountResolutionException(final String message, final CommandMountEntity mount) {
         super(message);
         this.mount = mount;
     }
 
-    public CommandMountResolutionException(final String message, final CommandMount mount, final Throwable cause) {
+    public CommandMountResolutionException(final String message, final CommandMountEntity mount, final Throwable cause) {
         super(message, cause);
         this.mount = mount;
     }
 
-    public CommandMount getMount() {
+    public CommandMountEntity getMount() {
         return mount;
     }
 }

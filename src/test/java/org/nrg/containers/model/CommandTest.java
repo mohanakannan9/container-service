@@ -114,8 +114,8 @@ public class CommandTest {
                 mapper.readValue(INPUT_LIST_JSON, new TypeReference<List<CommandInput>>() {});
         final CommandOutput commandOutput = mapper.readValue(OUTPUT_JSON, CommandOutput.class);
 
-        final CommandMount input = mapper.readValue(MOUNT_IN, CommandMount.class);
-        final CommandMount output = mapper.readValue(MOUNT_OUT, CommandMount.class);
+        final CommandMountEntity input = mapper.readValue(MOUNT_IN, CommandMountEntity.class);
+        final CommandMountEntity output = mapper.readValue(MOUNT_OUT, CommandMountEntity.class);
 
         final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
 

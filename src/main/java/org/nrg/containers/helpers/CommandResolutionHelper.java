@@ -20,7 +20,7 @@ import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.CommandWrapperInputResolutionException;
 import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.CommandInput;
-import org.nrg.containers.model.CommandMount;
+import org.nrg.containers.model.CommandMountEntity;
 import org.nrg.containers.model.CommandOutput;
 import org.nrg.containers.model.ContainerExecutionMount;
 import org.nrg.containers.model.ContainerExecutionOutput;
@@ -1487,15 +1487,15 @@ public class CommandResolutionHelper {
 
     private List<ContainerExecutionMount> resolveCommandMounts() throws CommandResolutionException {
         log.info("Resolving mounts.");
-        final List<CommandMount> commandMounts = commandEntity.getMounts();
-        if (commandMounts == null || commandMounts.isEmpty()) {
+        final List<CommandMountEntity> commandMountEntities = commandEntity.getMounts();
+        if (commandMountEntities == null || commandMountEntities.isEmpty()) {
             log.info("No mounts.");
             return Lists.newArrayList();
         }
 
         final List<ContainerExecutionMount> resolvedMounts = Lists.newArrayList();
-        for (final CommandMount commandMount : commandMounts) {
-            resolvedMounts.add(resolveCommandMount(commandMount));
+        for (final CommandMountEntity commandMountEntity : commandMountEntities) {
+            resolvedMounts.add(resolveCommandMount(commandMountEntity));
         }
 
         log.info("Done resolving mounts.");
@@ -1507,36 +1507,36 @@ public class CommandResolutionHelper {
         return resolvedMounts;
     }
 
-    private ContainerExecutionMount resolveCommandMount(final CommandMount commandMount)
+    private ContainerExecutionMount resolveCommandMount(final CommandMountEntity commandMountEntity)
             throws CommandResolutionException {
         if (log.isInfoEnabled()) {
-            log.info(String.format("Resolving command mount \"%s\".", commandMount.getName()));
+            log.info(String.format("Resolving command mount \"%s\".", commandMountEntity.getName()));
         }
 
-        final ContainerExecutionMount resolvedMount = new ContainerExecutionMount(commandMount);
-        resolvedMount.setContainerPath(resolveTemplate(commandMount.getContainerPath()));
+        final ContainerExecutionMount resolvedMount = new ContainerExecutionMount(commandMountEntity);
+        resolvedMount.setContainerPath(resolveTemplate(commandMountEntity.getContainerPath()));
 
-        final List<CommandWrapperInputEntity> sourceInputs = commandMountsToReceiveFilesFromXnatInputs.get(commandMount.getName());
+        final List<CommandWrapperInputEntity> sourceInputs = commandMountsToReceiveFilesFromXnatInputs.get(commandMountEntity.getName());
         if (sourceInputs == null || sourceInputs.isEmpty()) {
             if (log.isDebugEnabled()) {
-                log.debug(String.format("Command mount \"%s\" has no inputs that provide it files. Assuming it is an output mount.", commandMount.getName()));
+                log.debug(String.format("Command mount \"%s\" has no inputs that provide it files. Assuming it is an output mount.", commandMountEntity.getName()));
             }
             resolvedMount.setWritable(true);
         } else {
             final List<ContainerMountFiles> filesList = Lists.newArrayList();
             for (final CommandWrapperInputEntity sourceInput : sourceInputs) {
                 if (sourceInput == null) {
-                    final String message = String.format("Cannot resolve mount \"%s\". Source input is null.", commandMount.getName());
+                    final String message = String.format("Cannot resolve mount \"%s\". Source input is null.", commandMountEntity.getName());
                     log.error(message);
-                    throw new CommandMountResolutionException(message, commandMount);
+                    throw new CommandMountResolutionException(message, commandMountEntity);
                 } else if (StringUtils.isBlank(sourceInput.getValue())) {
-                    final String message = String.format("Cannot resolve mount \"%s\". Source input \"%s\" has no resolved value.", commandMount.getName(), sourceInput.getName());
+                    final String message = String.format("Cannot resolve mount \"%s\". Source input \"%s\" has no resolved value.", commandMountEntity.getName(), sourceInput.getName());
                     log.error(message);
-                    throw new CommandMountResolutionException(message, commandMount);
+                    throw new CommandMountResolutionException(message, commandMountEntity);
                 }
 
                 if (log.isDebugEnabled()) {
-                    log.debug(String.format("Mount \"%s\" has source input \"%s\" with type \"%s\".", commandMount.getName(), sourceInput.getName(), sourceInput.getType().getName()));
+                    log.debug(String.format("Mount \"%s\" has source input \"%s\" with type \"%s\".", commandMountEntity.getName(), sourceInput.getName(), sourceInput.getType().getName()));
                 }
                 final ContainerMountFiles files = new ContainerMountFiles(sourceInput);
                 switch (sourceInput.getType()) {
@@ -1574,7 +1574,7 @@ public class CommandResolutionHelper {
                                 message += "\ninput: " + sourceInput;
                             }
                             log.error(message);
-                            throw new CommandMountResolutionException(message, commandMount);
+                            throw new CommandMountResolutionException(message, commandMountEntity);
                         }
 
                         final String uri = JsonPath.parse(sourceInput.getJsonRepresentation()).read("uri", String.class);
@@ -1589,11 +1589,11 @@ public class CommandResolutionHelper {
                     default:
                         final String message = String.format("I don't know how to provide files to a mount from an input of type \"%s\".", sourceInput.getType().getName());
                         log.error(message);
-                        throw new CommandMountResolutionException(message, commandMount);
+                        throw new CommandMountResolutionException(message, commandMountEntity);
                 }
 
                 if (log.isDebugEnabled()) {
-                    log.debug(String.format("Done resolving mount \"%s\", source input \"%s\".", commandMount.getName(), sourceInput.getName()));
+                    log.debug(String.format("Done resolving mount \"%s\", source input \"%s\".", commandMountEntity.getName(), sourceInput.getName()));
                 }
                 filesList.add(files);
             }
@@ -1605,7 +1605,7 @@ public class CommandResolutionHelper {
 
 
         if (log.isInfoEnabled()) {
-            log.info(String.format("Done resolving command mount \"%s\".", commandMount.getName()));
+            log.info(String.format("Done resolving command mount \"%s\".", commandMountEntity.getName()));
         }
         return resolvedMount;
     }

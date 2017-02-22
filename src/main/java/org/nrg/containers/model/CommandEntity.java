@@ -44,7 +44,7 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
     private String image;
     @JsonProperty("working-directory") private String workingDirectory;
     @JsonProperty("command-line") private String commandLine;
-    @JsonProperty("mounts") private List<CommandMount> mounts;
+    @JsonProperty("mounts") private List<CommandMountEntity> mounts;
     @JsonProperty("environment-variables") private Map<String, String> environmentVariables;
     private List<CommandInput> inputs;
     private List<CommandOutput> outputs;
@@ -79,7 +79,7 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         commandEntity.setEnvironmentVariables(commandPojo.environmentVariables());
 
         for (final CommandPojo.CommandMountPojo commandMountPojo : commandPojo.mounts()) {
-            commandEntity.addMount(CommandMount.fromPojo(commandMountPojo));
+            commandEntity.addMount(CommandMountEntity.fromPojo(commandMountPojo));
         }
 
         for (final CommandPojo.CommandInputPojo commandInputPojo : commandPojo.inputs()) {
@@ -181,17 +181,17 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
     }
 
     @ElementCollection
-    public List<CommandMount> getMounts() {
+    public List<CommandMountEntity> getMounts() {
         return mounts;
     }
 
-    public void setMounts(final List<CommandMount> mounts) {
+    public void setMounts(final List<CommandMountEntity> mounts) {
         this.mounts = mounts == null ?
-                Lists.<CommandMount>newArrayList() :
+                Lists.<CommandMountEntity>newArrayList() :
                 mounts;
     }
 
-    public void addMount(final CommandMount mount) {
+    public void addMount(final CommandMountEntity mount) {
         if (mount == null) {
             return;
         }
