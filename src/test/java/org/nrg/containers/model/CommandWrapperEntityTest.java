@@ -136,8 +136,8 @@ public class CommandWrapperEntityTest {
         assertNull(derivedInput.getMatcher());
         assertFalse(derivedInput.getRequired());
 
-        final XnatCommandOutput output = mapper.readValue(XNAT_COMMAND_WRAPPER_OUTPUT_HANDLER, XnatCommandOutput.class);
-        assertEquals(XnatCommandOutput.Type.RESOURCE, output.getType());
+        final CommandWrapperOutputEntity output = mapper.readValue(XNAT_COMMAND_WRAPPER_OUTPUT_HANDLER, CommandWrapperOutputEntity.class);
+        assertEquals(CommandWrapperOutputEntity.Type.RESOURCE, output.getType());
         assertEquals(EXTERNAL_INPUT_NAME, output.getXnatInputName());
         assertEquals(COMMAND_OUTPUT_NAME, output.getCommandOutputName());
         assertEquals(OUTPUT_HANDLER_LABEL, output.getLabel());

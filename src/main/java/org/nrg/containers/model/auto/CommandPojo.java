@@ -15,7 +15,7 @@ import org.nrg.containers.model.CommandOutput;
 import org.nrg.containers.model.CommandType;
 import org.nrg.containers.model.DockerCommandEntity;
 import org.nrg.containers.model.CommandWrapperInputEntity;
-import org.nrg.containers.model.XnatCommandOutput;
+import org.nrg.containers.model.CommandWrapperOutputEntity;
 import org.nrg.containers.model.CommandWrapperEntity;
 
 import javax.annotation.Nullable;
@@ -510,10 +510,10 @@ public abstract class CommandPojo {
                     });
             final List<CommandWrapperOutputPojo> outputs = commandWrapperEntity.getOutputHandlers() == null ?
                     Lists.<CommandWrapperOutputPojo>newArrayList() :
-                    Lists.transform(commandWrapperEntity.getOutputHandlers(), new Function<XnatCommandOutput, CommandWrapperOutputPojo>() {
+                    Lists.transform(commandWrapperEntity.getOutputHandlers(), new Function<CommandWrapperOutputEntity, CommandWrapperOutputPojo>() {
                         @Nullable
                         @Override
-                        public CommandWrapperOutputPojo apply(@Nullable final XnatCommandOutput xnatCommandOutput) {
+                        public CommandWrapperOutputPojo apply(@Nullable final CommandWrapperOutputEntity xnatCommandOutput) {
                             return xnatCommandOutput == null ? null : CommandWrapperOutputPojo.create(xnatCommandOutput);
                         }
                     });
@@ -637,18 +637,18 @@ public abstract class CommandPojo {
             return new AutoValue_CommandPojo_CommandWrapperOutputPojo(
                     commandOutputName,
                     xnatInputName,
-                    type == null ? XnatCommandOutput.DEFAULT_TYPE.getName() : type,
+                    type == null ? CommandWrapperOutputEntity.DEFAULT_TYPE.getName() : type,
                     label);
         }
 
-        static CommandWrapperOutputPojo create(final XnatCommandOutput wrapperOutput) {
+        static CommandWrapperOutputPojo create(final CommandWrapperOutputEntity wrapperOutput) {
             return create(wrapperOutput.getCommandOutputName(), wrapperOutput.getXnatInputName(), wrapperOutput.getType().getName(), wrapperOutput.getLabel());
         }
 
         List<String> validate() {
             final List<String> errors = Lists.newArrayList();
 
-            final List<String> types = XnatCommandOutput.Type.names();
+            final List<String> types = CommandWrapperOutputEntity.Type.names();
             if (!types.contains(type())) {
                 errors.add("Unknown type \"" + type() + "\". Known types: " + StringUtils.join(types, ", "));
             }

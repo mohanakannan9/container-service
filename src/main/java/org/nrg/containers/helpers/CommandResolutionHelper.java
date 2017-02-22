@@ -29,7 +29,7 @@ import org.nrg.containers.model.DockerCommandEntity;
 import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.containers.model.CommandWrapperInputEntity;
-import org.nrg.containers.model.XnatCommandOutput;
+import org.nrg.containers.model.CommandWrapperOutputEntity;
 import org.nrg.containers.model.CommandWrapperEntity;
 import org.nrg.containers.model.xnat.Assessor;
 import org.nrg.containers.model.xnat.Project;
@@ -1351,10 +1351,10 @@ public class CommandResolutionHelper {
             return null;
         }
 
-        final Map<String, XnatCommandOutput> xnatCommandOutputsByCommandOutputName = Maps.newHashMap();
+        final Map<String, CommandWrapperOutputEntity> xnatCommandOutputsByCommandOutputName = Maps.newHashMap();
         if (commandWrapperEntity.getOutputHandlers() != null) {
-            for (final XnatCommandOutput xnatCommandOutput : commandWrapperEntity.getOutputHandlers()) {
-                xnatCommandOutputsByCommandOutputName.put(xnatCommandOutput.getCommandOutputName(), xnatCommandOutput);
+            for (final CommandWrapperOutputEntity commandWrapperOutputEntity : commandWrapperEntity.getOutputHandlers()) {
+                xnatCommandOutputsByCommandOutputName.put(commandWrapperOutputEntity.getCommandOutputName(), commandWrapperOutputEntity);
             }
         }
 
@@ -1368,7 +1368,7 @@ public class CommandResolutionHelper {
             }
 
             // TODO fix this in validation
-            final XnatCommandOutput commandOutputHandler = xnatCommandOutputsByCommandOutputName.get(commandOutput.getName());
+            final CommandWrapperOutputEntity commandOutputHandler = xnatCommandOutputsByCommandOutputName.get(commandOutput.getName());
             if (commandOutputHandler == null) {
                 throw new CommandResolutionException(String.format("No XNAT object was configured to handle output \"%s\".", commandOutput.getName()));
             }

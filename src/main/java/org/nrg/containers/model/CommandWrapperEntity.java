@@ -24,7 +24,7 @@ public class CommandWrapperEntity implements Serializable {
     @JsonIgnore private CommandEntity commandEntity;
     @JsonProperty("external-inputs") private List<CommandWrapperInputEntity> externalInputs;
     @JsonProperty("derived-inputs") private List<CommandWrapperInputEntity> derivedInputs;
-    @JsonProperty("output-handlers") private List<XnatCommandOutput> outputHandlers;
+    @JsonProperty("output-handlers") private List<CommandWrapperOutputEntity> outputHandlers;
 
     public static CommandWrapperEntity passthrough(final CommandEntity commandEntity) {
         final CommandWrapperEntity identity = new CommandWrapperEntity();
@@ -52,7 +52,7 @@ public class CommandWrapperEntity implements Serializable {
             commandWrapperEntity.addDerivedInput(CommandWrapperInputEntity.fromPojo(derivedCommandWrapperInputPojo));
         }
         for (final CommandPojo.CommandWrapperOutputPojo commandWrapperOutputPojo : commandWrapperPojo.outputHandlers()) {
-            commandWrapperEntity.addOutputHandler(XnatCommandOutput.fromPojo(commandWrapperOutputPojo));
+            commandWrapperEntity.addOutputHandler(CommandWrapperOutputEntity.fromPojo(commandWrapperOutputPojo));
         }
         return commandWrapperEntity;
     }
@@ -137,17 +137,17 @@ public class CommandWrapperEntity implements Serializable {
     }
 
     @ElementCollection
-    public List<XnatCommandOutput> getOutputHandlers() {
+    public List<CommandWrapperOutputEntity> getOutputHandlers() {
         return outputHandlers;
     }
 
-    public void setOutputHandlers(final List<XnatCommandOutput> outputHandlers) {
+    public void setOutputHandlers(final List<CommandWrapperOutputEntity> outputHandlers) {
         this.outputHandlers = outputHandlers == null ?
-                Lists.<XnatCommandOutput>newArrayList() :
+                Lists.<CommandWrapperOutputEntity>newArrayList() :
                 outputHandlers;
     }
 
-    public void addOutputHandler(final XnatCommandOutput outputHandler) {
+    public void addOutputHandler(final CommandWrapperOutputEntity outputHandler) {
         if (outputHandler == null) {
             return;
         }
