@@ -13,7 +13,7 @@ public class ResolvedDockerCommand extends ResolvedCommand {
 
     public ResolvedDockerCommand() {}
 
-    public ResolvedDockerCommand(final Long xnatCommandWrapperId, final DockerCommand dockerCommand) {
+    public ResolvedDockerCommand(final Long xnatCommandWrapperId, final DockerCommandEntity dockerCommand) {
         super(xnatCommandWrapperId, dockerCommand);
     }
 

@@ -7,7 +7,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.helpers.CommandLabelHelper;
-import org.nrg.containers.model.Command;
+import org.nrg.containers.model.CommandEntity;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -55,8 +55,8 @@ public abstract class DockerImageAndCommandSummary {
         return create(imageId, server, imageNames, commandList);
     }
 
-    public static DockerImageAndCommandSummary create(final String imageId, final String server, final Command command) {
-        return create(imageId, server, CommandPojo.create(command));
+    public static DockerImageAndCommandSummary create(final String imageId, final String server, final CommandEntity commandEntity) {
+        return create(imageId, server, CommandPojo.create(commandEntity));
     }
 
     public static DockerImageAndCommandSummary create(final CommandPojo command) {
@@ -65,8 +65,8 @@ public abstract class DockerImageAndCommandSummary {
         return create("", null, imageNames, commandList);
     }
 
-    public static DockerImageAndCommandSummary create(final Command command) {
-        return create(CommandPojo.create(command));
+    public static DockerImageAndCommandSummary create(final CommandEntity commandEntity) {
+        return create(CommandPojo.create(commandEntity));
     }
 
     public void addOrUpdateCommand(final CommandPojo commandToAddOrUpdate) {
@@ -100,8 +100,8 @@ public abstract class DockerImageAndCommandSummary {
         commands().add(command);
     }
 
-    public void addOrUpdateCommand(final Command commandToAddOrUpdate) {
-        addOrUpdateCommand(CommandPojo.create(commandToAddOrUpdate));
+    public void addOrUpdateCommand(final CommandEntity commandEntityToAddOrUpdate) {
+        addOrUpdateCommand(CommandPojo.create(commandEntityToAddOrUpdate));
     }
 
     public void addImageName(final String imageName) {

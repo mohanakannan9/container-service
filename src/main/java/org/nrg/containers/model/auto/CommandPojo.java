@@ -8,12 +8,12 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.containers.model.Command;
+import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.CommandInput;
 import org.nrg.containers.model.CommandMount;
 import org.nrg.containers.model.CommandOutput;
 import org.nrg.containers.model.CommandType;
-import org.nrg.containers.model.DockerCommand;
+import org.nrg.containers.model.DockerCommandEntity;
 import org.nrg.containers.model.XnatCommandInput;
 import org.nrg.containers.model.XnatCommandOutput;
 import org.nrg.containers.model.XnatCommandWrapper;
@@ -74,7 +74,7 @@ public abstract class CommandPojo {
                 .schemaVersion(schemaVersion)
                 .infoUrl(infoUrl)
                 .image(image)
-                .type(type == null ? Command.DEFAULT_TYPE.getName() : type)
+                .type(type == null ? CommandEntity.DEFAULT_TYPE.getName() : type)
                 .index(index)
                 .hash(hash)
                 .workingDirectory(workingDirectory)
@@ -88,46 +88,46 @@ public abstract class CommandPojo {
                 .build();
     }
 
-    static CommandPojo create(final Command command) {
+    static CommandPojo create(final CommandEntity commandEntity) {
         CommandPojo.Builder builder = builder()
-                .id(command.getId())
-                .name(command.getName())
-                .label(command.getLabel())
-                .description(command.getDescription())
-                .version(command.getVersion())
-                .schemaVersion(command.getSchemaVersion())
-                .infoUrl(command.getInfoUrl())
-                .image(command.getImage())
-                .type(command.getType().getName())
-                .workingDirectory(command.getWorkingDirectory())
-                .commandLine(command.getCommandLine())
-                .environmentVariables(command.getEnvironmentVariables() == null ? Maps.<String, String>newHashMap() : command.getEnvironmentVariables())
-                .mounts(command.getMounts() == null ? Lists.<CommandMountPojo>newArrayList() :
-                        Lists.transform(command.getMounts(), new Function<CommandMount, CommandMountPojo>() {
+                .id(commandEntity.getId())
+                .name(commandEntity.getName())
+                .label(commandEntity.getLabel())
+                .description(commandEntity.getDescription())
+                .version(commandEntity.getVersion())
+                .schemaVersion(commandEntity.getSchemaVersion())
+                .infoUrl(commandEntity.getInfoUrl())
+                .image(commandEntity.getImage())
+                .type(commandEntity.getType().getName())
+                .workingDirectory(commandEntity.getWorkingDirectory())
+                .commandLine(commandEntity.getCommandLine())
+                .environmentVariables(commandEntity.getEnvironmentVariables() == null ? Maps.<String, String>newHashMap() : commandEntity.getEnvironmentVariables())
+                .mounts(commandEntity.getMounts() == null ? Lists.<CommandMountPojo>newArrayList() :
+                        Lists.transform(commandEntity.getMounts(), new Function<CommandMount, CommandMountPojo>() {
                             @Nullable
                             @Override
                             public CommandMountPojo apply(@Nullable final CommandMount mount) {
                                 return mount == null ? null : CommandMountPojo.create(mount);
                             }
                         }))
-                .inputs(command.getInputs() == null ? Lists.<CommandInputPojo>newArrayList() :
-                        Lists.transform(command.getInputs(), new Function<CommandInput, CommandInputPojo>() {
+                .inputs(commandEntity.getInputs() == null ? Lists.<CommandInputPojo>newArrayList() :
+                        Lists.transform(commandEntity.getInputs(), new Function<CommandInput, CommandInputPojo>() {
                             @Nullable
                             @Override
                             public CommandInputPojo apply(@Nullable final CommandInput commandInput) {
                                 return commandInput == null ? null : CommandInputPojo.create(commandInput);
                             }
                         }))
-                .outputs(command.getOutputs() == null ? Lists.<CommandOutputPojo>newArrayList() :
-                        Lists.transform(command.getOutputs(), new Function<CommandOutput, CommandOutputPojo>() {
+                .outputs(commandEntity.getOutputs() == null ? Lists.<CommandOutputPojo>newArrayList() :
+                        Lists.transform(commandEntity.getOutputs(), new Function<CommandOutput, CommandOutputPojo>() {
                             @Nullable
                             @Override
                             public CommandOutputPojo apply(@Nullable final CommandOutput commandOutput) {
                                 return commandOutput == null ? null : CommandOutputPojo.create(commandOutput);
                             }
                         }))
-                .xnatCommandWrappers(command.getXnatCommandWrappers() == null ? Lists.<CommandWrapperPojo>newArrayList() :
-                        Lists.transform(command.getXnatCommandWrappers(), new Function<XnatCommandWrapper, CommandWrapperPojo>() {
+                .xnatCommandWrappers(commandEntity.getXnatCommandWrappers() == null ? Lists.<CommandWrapperPojo>newArrayList() :
+                        Lists.transform(commandEntity.getXnatCommandWrappers(), new Function<XnatCommandWrapper, CommandWrapperPojo>() {
                             @Nullable
                             @Override
                             public CommandWrapperPojo apply(@Nullable final XnatCommandWrapper xnatCommandWrapper) {
@@ -135,11 +135,11 @@ public abstract class CommandPojo {
                             }
                         }));
 
-        switch (command.getType()) {
+        switch (commandEntity.getType()) {
             case DOCKER:
-                builder = builder.index(((DockerCommand) command).getIndex())
-                        .hash(((DockerCommand) command).getHash())
-                        .ports(((DockerCommand) command).getPorts() == null ? Maps.<String, String>newHashMap() : ((DockerCommand) command).getPorts());
+                builder = builder.index(((DockerCommandEntity) commandEntity).getIndex())
+                        .hash(((DockerCommandEntity) commandEntity).getHash())
+                        .ports(((DockerCommandEntity) commandEntity).getPorts() == null ? Maps.<String, String>newHashMap() : ((DockerCommandEntity) commandEntity).getPorts());
                 break;
         }
 
@@ -152,7 +152,7 @@ public abstract class CommandPojo {
         return new AutoValue_CommandPojo.Builder()
                 .id(0L)
                 .name("")
-                .type(Command.DEFAULT_TYPE.getName())
+                .type(CommandEntity.DEFAULT_TYPE.getName())
                 .mounts(Lists.<CommandMountPojo>newArrayList())
                 .environmentVariables(Maps.<String, String>newHashMap())
                 .ports(Maps.<String, String>newHashMap())

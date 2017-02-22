@@ -11,7 +11,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.config.DockerServiceIntegrationTestConfig;
-import org.nrg.containers.model.Command;
+import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.XnatCommandWrapper;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -86,12 +86,12 @@ public class DockerServiceIntegrationTest {
         final DefaultDockerClient client = DefaultDockerClient.fromEnv().build();
         client.build(Paths.get(dir), imageName);
 
-        final List<Command> commands = dockerService.saveFromImageLabels(imageName);
-        assertThat(commands, hasSize(1));
-        final Command command = commands.get(0);
-        assertThat(command.getId(), not(eq(0L)));
+        final List<CommandEntity> commandEntities = dockerService.saveFromImageLabels(imageName);
+        assertThat(commandEntities, hasSize(1));
+        final CommandEntity commandEntity = commandEntities.get(0);
+        assertThat(commandEntity.getId(), not(eq(0L)));
 
-        final List<XnatCommandWrapper> wrappers = command.getXnatCommandWrappers();
+        final List<XnatCommandWrapper> wrappers = commandEntity.getXnatCommandWrappers();
         assertThat(wrappers.size(), greaterThan(0));
         final XnatCommandWrapper wrapper = wrappers.get(0);
         assertThat(wrapper.getId(), not(eq(0L)));

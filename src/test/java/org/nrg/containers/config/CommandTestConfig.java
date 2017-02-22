@@ -6,8 +6,8 @@ import org.mockito.Mockito;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.daos.CommandDao;
-import org.nrg.containers.model.Command;
-import org.nrg.containers.model.DockerCommand;
+import org.nrg.containers.model.CommandEntity;
+import org.nrg.containers.model.DockerCommandEntity;
 import org.nrg.containers.model.XnatCommandWrapper;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerExecutionService;
@@ -123,8 +123,8 @@ public class CommandTestConfig {
         bean.setDataSource(dataSource);
         bean.setHibernateProperties(properties);
         bean.setAnnotatedClasses(
-                Command.class,
-                DockerCommand.class,
+                CommandEntity.class,
+                DockerCommandEntity.class,
                 XnatCommandWrapper.class);
         return bean;
     }

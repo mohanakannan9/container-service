@@ -21,18 +21,18 @@ public class XnatCommandWrapper implements Serializable {
     private long id;
     private String name;
     private String description;
-    @JsonIgnore private Command command;
+    @JsonIgnore private CommandEntity commandEntity;
     @JsonProperty("external-inputs") private List<XnatCommandInput> externalInputs;
     @JsonProperty("derived-inputs") private List<XnatCommandInput> derivedInputs;
     @JsonProperty("output-handlers") private List<XnatCommandOutput> outputHandlers;
 
-    public static XnatCommandWrapper passthrough(final Command command) {
+    public static XnatCommandWrapper passthrough(final CommandEntity commandEntity) {
         final XnatCommandWrapper identity = new XnatCommandWrapper();
-        identity.command = command;
+        identity.commandEntity = commandEntity;
 
         final List<XnatCommandInput> externalInputs = Lists.newArrayList();
-        if (command.getInputs() != null) {
-            for (final CommandInput commandInput : command.getInputs()) {
+        if (commandEntity.getInputs() != null) {
+            for (final CommandInput commandInput : commandEntity.getInputs()) {
                 externalInputs.add(XnatCommandInput.passthrough(commandInput));
             }
         }
@@ -84,12 +84,12 @@ public class XnatCommandWrapper implements Serializable {
     }
 
     @ManyToOne
-    public Command getCommand() {
-        return command;
+    public CommandEntity getCommandEntity() {
+        return commandEntity;
     }
 
-    public void setCommand(final Command command) {
-        this.command = command;
+    public void setCommandEntity(final CommandEntity commandEntity) {
+        this.commandEntity = commandEntity;
     }
 
     @ElementCollection

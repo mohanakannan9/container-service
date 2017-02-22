@@ -29,11 +29,11 @@ import java.util.Objects;
 @Entity
 @JsonTypeInfo(use = Id.NAME, include = As.PROPERTY, property = "type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = DockerCommand.class, name = "docker")
+        @JsonSubTypes.Type(value = DockerCommandEntity.class, name = "docker")
 })
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "type")
-public abstract class Command extends AbstractHibernateEntity {
+public abstract class CommandEntity extends AbstractHibernateEntity {
     public static CommandType DEFAULT_TYPE = CommandType.DOCKER;
     private String name;
     private String label;
@@ -50,50 +50,50 @@ public abstract class Command extends AbstractHibernateEntity {
     private List<CommandOutput> outputs;
     @JsonProperty("xnat") private List<XnatCommandWrapper> xnatCommandWrappers;
 
-    public static Command commandPojoToCommand(final CommandPojo commandPojo) throws CommandValidationException {
+    public static CommandEntity commandPojoToCommand(final CommandPojo commandPojo) throws CommandValidationException {
         final List<String> errors = commandPojo.validate();
         if (!errors.isEmpty()) {
             throw new CommandValidationException(errors);
         }
 
-        final Command command;
+        final CommandEntity commandEntity;
         final String type = commandPojo.type();
         switch (type) {
             case "docker":
-                command = DockerCommand.fromPojo(commandPojo);
+                commandEntity = DockerCommandEntity.fromPojo(commandPojo);
                 break;
             default:
                 // This should have been caught already, but still...
                 throw new CommandValidationException("Cannot instantiate command with type " + type);
         }
 
-        command.setName(commandPojo.name());
-        command.setLabel(commandPojo.label());
-        command.setDescription(commandPojo.description());
-        command.setVersion(commandPojo.version());
-        command.setSchemaVersion(commandPojo.schemaVersion());
-        command.setInfoUrl(commandPojo.infoUrl());
-        command.setImage(commandPojo.image());
-        command.setWorkingDirectory(commandPojo.workingDirectory());
-        command.setCommandLine(commandPojo.commandLine());
-        command.setEnvironmentVariables(commandPojo.environmentVariables());
+        commandEntity.setName(commandPojo.name());
+        commandEntity.setLabel(commandPojo.label());
+        commandEntity.setDescription(commandPojo.description());
+        commandEntity.setVersion(commandPojo.version());
+        commandEntity.setSchemaVersion(commandPojo.schemaVersion());
+        commandEntity.setInfoUrl(commandPojo.infoUrl());
+        commandEntity.setImage(commandPojo.image());
+        commandEntity.setWorkingDirectory(commandPojo.workingDirectory());
+        commandEntity.setCommandLine(commandPojo.commandLine());
+        commandEntity.setEnvironmentVariables(commandPojo.environmentVariables());
 
         for (final CommandPojo.CommandMountPojo commandMountPojo : commandPojo.mounts()) {
-            command.addMount(CommandMount.fromPojo(commandMountPojo));
+            commandEntity.addMount(CommandMount.fromPojo(commandMountPojo));
         }
 
         for (final CommandPojo.CommandInputPojo commandInputPojo : commandPojo.inputs()) {
-            command.addInput(CommandInput.fromPojo(commandInputPojo));
+            commandEntity.addInput(CommandInput.fromPojo(commandInputPojo));
         }
 
         for (final CommandPojo.CommandOutputPojo commandOutputPojo : commandPojo.outputs()) {
-            command.addOutput(CommandOutput.fromPojo(commandOutputPojo));
+            commandEntity.addOutput(CommandOutput.fromPojo(commandOutputPojo));
         }
         for (final CommandPojo.CommandWrapperPojo commandWrapperPojo : commandPojo.xnatCommandWrappers()) {
-            command.addXnatCommandWrapper(XnatCommandWrapper.fromPojo(commandWrapperPojo));
+            commandEntity.addXnatCommandWrapper(XnatCommandWrapper.fromPojo(commandWrapperPojo));
         }
 
-        return command;
+        return commandEntity;
     }
 
     @Transient
@@ -263,7 +263,7 @@ public abstract class Command extends AbstractHibernateEntity {
         this.outputs.add(output);
     }
 
-    @OneToMany(mappedBy = "command", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "commandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<XnatCommandWrapper> getXnatCommandWrappers() {
         return xnatCommandWrappers;
     }
@@ -279,7 +279,7 @@ public abstract class Command extends AbstractHibernateEntity {
         if (xnatCommandWrapper == null) {
             return;
         }
-        xnatCommandWrapper.setCommand(this);
+        xnatCommandWrapper.setCommandEntity(this);
 
         if (this.xnatCommandWrappers == null) {
             this.xnatCommandWrappers = Lists.newArrayList();
@@ -292,7 +292,7 @@ public abstract class Command extends AbstractHibernateEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
-        final Command that = (Command) o;
+        final CommandEntity that = (CommandEntity) o;
         return Objects.equals(this.name, that.name) &&
                 Objects.equals(this.label, that.label) &&
                 Objects.equals(this.description, that.description) &&

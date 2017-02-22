@@ -148,30 +148,30 @@ public class XnatCommandWrapperTest {
 
         final XnatCommandWrapper xnatCommandWrapper = mapper.readValue(XNAT_COMMAND_WRAPPER, XnatCommandWrapper.class);
 
-        final Command command = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, Command.class);
+        final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
 
-        assertThat(command.getXnatCommandWrappers(), hasSize(1));
-        assertTrue(command.getXnatCommandWrappers().contains(xnatCommandWrapper));
+        assertThat(commandEntity.getXnatCommandWrappers(), hasSize(1));
+        assertTrue(commandEntity.getXnatCommandWrappers().contains(xnatCommandWrapper));
     }
 
     @Test
     public void testPersistCommandWithWrapper() throws Exception {
 
-        final Command command = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, Command.class);
+        final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
 
-        commandService.create(command);
+        commandService.create(commandEntity);
         commandService.flush();
 
-        final Command retrievedCommand = commandService.retrieve(command.getId());
+        final CommandEntity retrievedCommandEntity = commandService.retrieve(commandEntity.getId());
 
-        assertEquals(command, retrievedCommand);
+        assertEquals(commandEntity, retrievedCommandEntity);
 
-        final List<XnatCommandWrapper> commandWrappers = retrievedCommand.getXnatCommandWrappers();
+        final List<XnatCommandWrapper> commandWrappers = retrievedCommandEntity.getXnatCommandWrappers();
         assertThat(commandWrappers, hasSize(1));
 
         final XnatCommandWrapper xnatCommandWrapper = commandWrappers.get(0);
         assertThat(xnatCommandWrapper.getId(), not(0L));
-        assertEquals(command, xnatCommandWrapper.getCommand());
+        assertEquals(commandEntity, xnatCommandWrapper.getCommandEntity());
     }
 
     @Test
@@ -180,7 +180,7 @@ public class XnatCommandWrapperTest {
         // Spring didn't tell us why. See CS-70.
         final String dir = Resources.getResource("ecatHeaderDump").getPath().replace("%20", " ");
         final String commandJsonFile = dir + "/command.json";
-        final Command ecatHeaderDump = mapper.readValue(new File(commandJsonFile), Command.class);
+        final CommandEntity ecatHeaderDump = mapper.readValue(new File(commandJsonFile), CommandEntity.class);
         commandService.create(ecatHeaderDump);
     }
 }

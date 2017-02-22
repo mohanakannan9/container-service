@@ -9,10 +9,10 @@ import org.nrg.containers.api.DockerControlApi;
 import org.nrg.containers.daos.CommandDao;
 import org.nrg.containers.daos.ContainerExecutionRepository;
 import org.nrg.containers.events.DockerContainerEventListener;
-import org.nrg.containers.model.Command;
+import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.ContainerExecutionMount;
-import org.nrg.containers.model.DockerCommand;
+import org.nrg.containers.model.DockerCommandEntity;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.XnatCommandWrapper;
 import org.nrg.containers.services.CommandService;
@@ -163,8 +163,8 @@ public class IntegrationTestConfig {
         bean.setDataSource(dataSource);
         bean.setHibernateProperties(properties);
         bean.setAnnotatedClasses(
-                Command.class,
-                DockerCommand.class,
+                CommandEntity.class,
+                DockerCommandEntity.class,
                 XnatCommandWrapper.class,
                 ContainerExecution.class,
                 ContainerExecutionMount.class);

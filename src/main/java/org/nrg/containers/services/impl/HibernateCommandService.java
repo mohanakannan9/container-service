@@ -22,7 +22,7 @@ import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.helpers.CommandResolutionHelper;
-import org.nrg.containers.model.Command;
+import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.ContainerExecutionMount;
 import org.nrg.containers.model.ContainerMountFiles;
@@ -55,7 +55,7 @@ import java.util.UUID;
 
 @Service
 @Transactional
-public class HibernateCommandService extends AbstractHibernateEntityService<Command, CommandDao>
+public class HibernateCommandService extends AbstractHibernateEntityService<CommandEntity, CommandDao>
         implements CommandService {
     private static final Logger log = LoggerFactory.getLogger(HibernateCommandService.class);
 
@@ -107,13 +107,13 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     }
 
     @Override
-    public Command create(final CommandPojo commandPojo) throws CommandValidationException {
+    public CommandEntity create(final CommandPojo commandPojo) throws CommandValidationException {
         final List<String> errors = commandPojo.validate();
         if (errors.isEmpty()) {
-            Command toCreate = null;
+            CommandEntity toCreate = null;
             final List<String> thisCommandErrors = Lists.newArrayList();
             try {
-                toCreate = Command.commandPojoToCommand(commandPojo);
+                toCreate = CommandEntity.commandPojoToCommand(commandPojo);
             } catch (CommandValidationException e) {
                 thisCommandErrors.addAll(e.getErrors());
             }
@@ -134,21 +134,21 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     }
 
     @Override
-    public Command get(final Long id) throws NotFoundException {
-        final Command command = retrieve(id);
-        if (command == null) {
+    public CommandEntity get(final Long id) throws NotFoundException {
+        final CommandEntity commandEntity = retrieve(id);
+        if (commandEntity == null) {
             throw new NotFoundException("Could not find Command with id " + id);
         }
-        return command;
+        return commandEntity;
     }
 
     @Override
-    public List<Command> findByProperties(final Map<String, Object> properties) {
+    public List<CommandEntity> findByProperties(final Map<String, Object> properties) {
         return getDao().findByProperties(properties);
     }
 
     @Override
-    public Command update(final Long id, final Command updated, final Boolean ignoreNull)
+    public CommandEntity update(final Long id, final CommandEntity updated, final Boolean ignoreNull)
             throws NotFoundException {
         // final Command existing = get(id);
         // existing.update(updated, ignoreNull);
@@ -160,25 +160,25 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
     }
 
     @Override
-    public Command create(final Command command) throws NrgRuntimeException {
+    public CommandEntity create(final CommandEntity commandEntity) throws NrgRuntimeException {
         try {
             if (log.isDebugEnabled()) {
-                log.debug("Saving command " + command.getName());
+                log.debug("Saving command " + commandEntity.getName());
             }
-            if (command.getXnatCommandWrappers() != null) {
-                for (final XnatCommandWrapper xnatCommandWrapper : command.getXnatCommandWrappers()) {
-                    xnatCommandWrapper.setCommand(command);
+            if (commandEntity.getXnatCommandWrappers() != null) {
+                for (final XnatCommandWrapper xnatCommandWrapper : commandEntity.getXnatCommandWrappers()) {
+                    xnatCommandWrapper.setCommandEntity(commandEntity);
                 }
             }
-            return super.create(command);
+            return super.create(commandEntity);
         } catch (ConstraintViolationException e) {
             throw new NrgServiceRuntimeException("This command duplicates a command already in the database.", e);
         }
     }
 
     @Override
-    public List<Command> save(final List<CommandPojo> commandPojos) {
-        final List<Command> created = Lists.newArrayList();
+    public List<CommandEntity> save(final List<CommandPojo> commandPojos) {
+        final List<CommandEntity> created = Lists.newArrayList();
         if (!(commandPojos == null || commandPojos.isEmpty())) {
             for (final CommandPojo commandPojo : commandPojos) {
                 try {
@@ -197,8 +197,8 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
                                           final Map<String, String> runtimeInputValues,
                                           final UserI userI)
             throws NotFoundException, CommandResolutionException {
-        final Command command = get(commandId);
-        return resolveCommand(command, runtimeInputValues, userI);
+        final CommandEntity commandEntity = get(commandId);
+        return resolveCommand(commandEntity, runtimeInputValues, userI);
     }
 
     @Override
@@ -210,10 +210,10 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         if (StringUtils.isBlank(xnatCommandWrapperName)) {
             return resolveCommand(commandId, runtimeInputValues, userI);
         }
-        final Command command = get(commandId);
+        final CommandEntity commandEntity = get(commandId);
         XnatCommandWrapper wrapper = null;
-        if (command.getXnatCommandWrappers() != null) {
-            for (final XnatCommandWrapper xnatCommandWrapper : command.getXnatCommandWrappers()) {
+        if (commandEntity.getXnatCommandWrappers() != null) {
+            for (final XnatCommandWrapper xnatCommandWrapper : commandEntity.getXnatCommandWrappers()) {
                 if (xnatCommandWrapperName.equals(xnatCommandWrapper.getName())) {
                     wrapper = xnatCommandWrapper;
                     break;
@@ -224,7 +224,7 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             throw new NotFoundException(String.format("Command %d has no wrapper with name \"%s\".", commandId, xnatCommandWrapperName));
         }
 
-        return resolveCommand(wrapper, command, runtimeInputValues, userI);
+        return resolveCommand(wrapper, commandEntity, runtimeInputValues, userI);
     }
 
     @Override
@@ -236,10 +236,10 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         if (xnatCommandWrapperId == null) {
             return resolveCommand(commandId, runtimeInputValues, userI);
         }
-        final Command command = get(commandId);
+        final CommandEntity commandEntity = get(commandId);
         XnatCommandWrapper wrapper = null;
-        if (command.getXnatCommandWrappers() != null) {
-            for (final XnatCommandWrapper xnatCommandWrapper : command.getXnatCommandWrappers()) {
+        if (commandEntity.getXnatCommandWrappers() != null) {
+            for (final XnatCommandWrapper xnatCommandWrapper : commandEntity.getXnatCommandWrappers()) {
                 if (xnatCommandWrapperId.equals(xnatCommandWrapper.getId())) {
                     wrapper = xnatCommandWrapper;
                     break;
@@ -250,11 +250,11 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
             throw new NotFoundException(String.format("Command %d has no wrapper with id %d.", commandId, xnatCommandWrapperId));
         }
 
-        return resolveCommand(wrapper, command, runtimeInputValues, userI);
+        return resolveCommand(wrapper, commandEntity, runtimeInputValues, userI);
     }
 
     @Override
-    public ResolvedCommand resolveCommand(final Command command,
+    public ResolvedCommand resolveCommand(final CommandEntity commandEntity,
                                           final Map<String, String> runtimeInputValues,
                                           final UserI userI)
             throws NotFoundException, CommandResolutionException {
@@ -267,22 +267,22 @@ public class HibernateCommandService extends AbstractHibernateEntityService<Comm
         //
         // I guess for now I'll do 2.
 
-        if (command.getOutputs() != null && !command.getOutputs().isEmpty()) {
+        if (commandEntity.getOutputs() != null && !commandEntity.getOutputs().isEmpty()) {
             throw new CommandResolutionException("Cannot resolve command without an XNAT wrapper. Command has outputs that will not be handled.");
         }
 
-        final XnatCommandWrapper xnatCommandWrapperToResolve = XnatCommandWrapper.passthrough(command);
+        final XnatCommandWrapper xnatCommandWrapperToResolve = XnatCommandWrapper.passthrough(commandEntity);
 
-        return resolveCommand(xnatCommandWrapperToResolve, command, runtimeInputValues, userI);
+        return resolveCommand(xnatCommandWrapperToResolve, commandEntity, runtimeInputValues, userI);
     }
 
     @Override
     public ResolvedCommand resolveCommand(final XnatCommandWrapper xnatCommandWrapper,
-                                          final Command command,
+                                          final CommandEntity commandEntity,
                                           final Map<String, String> runtimeInputValues,
                                           final UserI userI)
             throws NotFoundException, CommandResolutionException {
-        return CommandResolutionHelper.resolve(xnatCommandWrapper, command, runtimeInputValues, userI, configService);
+        return CommandResolutionHelper.resolve(xnatCommandWrapper, commandEntity, runtimeInputValues, userI, configService);
     }
 
     @Override

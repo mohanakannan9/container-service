@@ -18,14 +18,14 @@ import org.nrg.containers.exceptions.CommandInputResolutionException;
 import org.nrg.containers.exceptions.CommandMountResolutionException;
 import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.XnatCommandInputResolutionException;
-import org.nrg.containers.model.Command;
+import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.CommandInput;
 import org.nrg.containers.model.CommandMount;
 import org.nrg.containers.model.CommandOutput;
 import org.nrg.containers.model.ContainerExecutionMount;
 import org.nrg.containers.model.ContainerExecutionOutput;
 import org.nrg.containers.model.ContainerMountFiles;
-import org.nrg.containers.model.DockerCommand;
+import org.nrg.containers.model.DockerCommandEntity;
 import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.containers.model.XnatCommandInput;
@@ -58,9 +58,9 @@ public class CommandResolutionHelper {
     private static final String JSONPATH_SUBSTRING_REGEX = "\\^(wrapper:)?(.+)\\^";
 
     private final XnatCommandWrapper xnatCommandWrapper;
-    private final Command command;
+    private final CommandEntity commandEntity;
     private final ResolvedCommand resolvedCommand;
-    private Command cachedCommand;
+    private CommandEntity cachedCommandEntity;
     private String commandJson;
     private XnatCommandWrapper cachedCommandWrapper;
     private String commandWrapperJson;
@@ -76,21 +76,21 @@ public class CommandResolutionHelper {
     private final Pattern jsonpathSubstringPattern;
 
     private CommandResolutionHelper(final XnatCommandWrapper xnatCommandWrapper,
-                                    final Command command,
+                                    final CommandEntity commandEntity,
                                     final Map<String, String> inputValues,
                                     final UserI userI,
                                     final ConfigService configService) throws CommandResolutionException {
         this.xnatCommandWrapper = xnatCommandWrapper;
-        this.command = command;
-        switch (command.getType()) {
+        this.commandEntity = commandEntity;
+        switch (commandEntity.getType()) {
             case DOCKER:
-                resolvedCommand = new ResolvedDockerCommand(xnatCommandWrapper.getId(), (DockerCommand) command);
+                resolvedCommand = new ResolvedDockerCommand(xnatCommandWrapper.getId(), (DockerCommandEntity) commandEntity);
                 break;
             default:
                 // If this happens, it is because I added a new CommandType and didn't add a case to this switch statement. Oops.
-                throw new CommandResolutionException(String.format("Unknown command type: \"%s\".", command.getType()));
+                throw new CommandResolutionException(String.format("Unknown command type: \"%s\".", commandEntity.getType()));
         }
-        this.cachedCommand = null;
+        this.cachedCommandEntity = null;
         this.commandJson = null;
         this.cachedCommandWrapper = null;
         this.commandWrapperJson = null;
@@ -110,19 +110,19 @@ public class CommandResolutionHelper {
     }
 
     public static ResolvedCommand resolve(final XnatCommandWrapper xnatCommandWrapper,
-                                          final Command command,
+                                          final CommandEntity commandEntity,
                                           final Map<String, String> inputValues,
                                           final UserI userI,
                                           final ConfigService configService)
             throws CommandResolutionException {
-        final CommandResolutionHelper helper = new CommandResolutionHelper(xnatCommandWrapper, command, inputValues, userI, configService);
+        final CommandResolutionHelper helper = new CommandResolutionHelper(xnatCommandWrapper, commandEntity, inputValues, userI, configService);
         return helper.resolve();
     }
 
     private ResolvedCommand resolve() throws CommandResolutionException {
         log.info("Resolving command.");
         if (log.isDebugEnabled()) {
-            log.debug(command.toString());
+            log.debug(commandEntity.toString());
         }
 
         resolvedCommand.setXnatInputValues(resolveXnatWrapperInputs());
@@ -132,7 +132,7 @@ public class CommandResolutionHelper {
         resolvedCommand.setCommandLine(resolveCommandLine());
         resolvedCommand.setMounts(resolveCommandMounts());
         resolvedCommand.setEnvironmentVariables(resolveEnvironmentVariables());
-        resolvedCommand.setWorkingDirectory(resolveTemplate(command.getWorkingDirectory()));
+        resolvedCommand.setWorkingDirectory(resolveTemplate(commandEntity.getWorkingDirectory()));
 
         switch (resolvedCommand.getType()) {
             case DOCKER:
@@ -1029,13 +1029,13 @@ public class CommandResolutionHelper {
     private Map<String, String> resolveInputs() throws CommandResolutionException {
         log.info("Resolving command inputs.");
 
-        if (command.getInputs() == null || command.getInputs().isEmpty()) {
+        if (commandEntity.getInputs() == null || commandEntity.getInputs().isEmpty()) {
             log.info("No inputs.");
             return null;
         }
 
         final Map<String, String> resolvedInputValuesByName = Maps.newHashMap();
-        for (final CommandInput commandInput : command.getInputs()) {
+        for (final CommandInput commandInput : commandEntity.getInputs()) {
             log.info(String.format("Resolving command input \"%s\".", commandInput.getName()));
 
             // // Check that all prerequisites have already been resolved.
@@ -1164,11 +1164,11 @@ public class CommandResolutionHelper {
     }
 
     private String commandAsJson() throws CommandResolutionException {
-        if (!command.equals(cachedCommand)) {
-            cachedCommand = command;
+        if (!commandEntity.equals(cachedCommandEntity)) {
+            cachedCommandEntity = commandEntity;
 
             try {
-                commandJson = mapper.writeValueAsString(cachedCommand);
+                commandJson = mapper.writeValueAsString(cachedCommandEntity);
             } catch (JsonProcessingException e) {
                 final String message = "Could not serialize command to json.";
                 log.debug(message);
@@ -1347,7 +1347,7 @@ public class CommandResolutionHelper {
 
     private List<ContainerExecutionOutput> resolveOutputs() throws CommandResolutionException {
         log.info("Resolving command outputs.");
-        if (command.getOutputs() == null) {
+        if (commandEntity.getOutputs() == null) {
             return null;
         }
 
@@ -1359,7 +1359,7 @@ public class CommandResolutionHelper {
         }
 
         final List<ContainerExecutionOutput> resolvedOutputs = Lists.newArrayList();
-        for (final CommandOutput commandOutput : command.getOutputs()) {
+        for (final CommandOutput commandOutput : commandEntity.getOutputs()) {
             if (log.isInfoEnabled()) {
                 log.info(String.format("Resolving command output \"%s\"", commandOutput.getName()));
             }
@@ -1405,7 +1405,7 @@ public class CommandResolutionHelper {
     private String resolveCommandLine() throws CommandResolutionException {
         log.info("Resolving command-line string.");
 
-        final String resolvedCommandLine = resolveTemplate(command.getCommandLine(), resolvedInputCommandLineValuesByReplacementKey);
+        final String resolvedCommandLine = resolveTemplate(commandEntity.getCommandLine(), resolvedInputCommandLineValuesByReplacementKey);
 
         log.info("Done resolving command-line string.");
         if (log.isDebugEnabled()) {
@@ -1418,7 +1418,7 @@ public class CommandResolutionHelper {
             throws CommandResolutionException {
         log.info("Resolving environment variables.");
 
-        final Map<String, String> envTemplates = command.getEnvironmentVariables();
+        final Map<String, String> envTemplates = commandEntity.getEnvironmentVariables();
         if (envTemplates == null || envTemplates.isEmpty()) {
             log.info("No environment variables to resolve.");
             return null;
@@ -1439,11 +1439,11 @@ public class CommandResolutionHelper {
 
     private Map<String, String> resolvePorts()
             throws CommandResolutionException {
-        if (!DockerCommand.class.isAssignableFrom(command.getClass())) {
+        if (!DockerCommandEntity.class.isAssignableFrom(commandEntity.getClass())) {
             return null;
         }
         log.info("Resolving ports.");
-        final DockerCommand dockerCommand = (DockerCommand) command;
+        final DockerCommandEntity dockerCommand = (DockerCommandEntity) commandEntity;
 
         final Map<String, String> portTemplates = dockerCommand.getPorts();
         if (portTemplates == null || portTemplates.isEmpty()) {
@@ -1487,7 +1487,7 @@ public class CommandResolutionHelper {
 
     private List<ContainerExecutionMount> resolveCommandMounts() throws CommandResolutionException {
         log.info("Resolving mounts.");
-        final List<CommandMount> commandMounts = command.getMounts();
+        final List<CommandMount> commandMounts = commandEntity.getMounts();
         if (commandMounts == null || commandMounts.isEmpty()) {
             log.info("No mounts.");
             return Lists.newArrayList();

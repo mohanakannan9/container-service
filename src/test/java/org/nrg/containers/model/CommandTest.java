@@ -117,36 +117,36 @@ public class CommandTest {
         final CommandMount input = mapper.readValue(MOUNT_IN, CommandMount.class);
         final CommandMount output = mapper.readValue(MOUNT_OUT, CommandMount.class);
 
-        final Command command = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, Command.class);
+        final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
 
-        assertEquals("abc123", command.getImage());
+        assertEquals("abc123", commandEntity.getImage());
 
-        assertEquals("docker_image_command", command.getName());
-        assertEquals("Docker Image command for the test", command.getDescription());
-        assertEquals("http://abc.xyz", command.getInfoUrl());
-        assertEquals(commandInputList, command.getInputs());
-        assertEquals(Lists.newArrayList(commandOutput), command.getOutputs());
+        assertEquals("docker_image_command", commandEntity.getName());
+        assertEquals("Docker Image command for the test", commandEntity.getDescription());
+        assertEquals("http://abc.xyz", commandEntity.getInfoUrl());
+        assertEquals(commandInputList, commandEntity.getInputs());
+        assertEquals(Lists.newArrayList(commandOutput), commandEntity.getOutputs());
 
         // final CommandRun run = command.getRun();
-        assertEquals("cmd #foo# #my_cool_input#", command.getCommandLine());
-        assertEquals(ImmutableMap.of("foo", "bar"), command.getEnvironmentVariables());
-        assertEquals(Lists.newArrayList(input, output), command.getMounts());
+        assertEquals("cmd #foo# #my_cool_input#", commandEntity.getCommandLine());
+        assertEquals(ImmutableMap.of("foo", "bar"), commandEntity.getEnvironmentVariables());
+        assertEquals(Lists.newArrayList(input, output), commandEntity.getMounts());
 
-        assertThat(command, instanceOf(DockerCommand.class));
-        assertEquals(ImmutableMap.of("22", "2222"), ((DockerCommand)command).getPorts());
+        assertThat(commandEntity, instanceOf(DockerCommandEntity.class));
+        assertEquals(ImmutableMap.of("22", "2222"), ((DockerCommandEntity) commandEntity).getPorts());
     }
 
     @Test
     public void testPersistDockerImageCommand() throws Exception {
 
-        final Command command = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, Command.class);
+        final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
 
-        commandService.create(command);
+        commandService.create(commandEntity);
         // commandService.flush();
         // commandService.refresh(command);
 
-        final Command retrievedCommand = commandService.retrieve(command.getId());
+        final CommandEntity retrievedCommandEntity = commandService.retrieve(commandEntity.getId());
 
-        assertEquals(command, retrievedCommand);
+        assertEquals(commandEntity, retrievedCommandEntity);
     }
 }

@@ -20,7 +20,7 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.nrg.containers.config.IntegrationTestConfig;
-import org.nrg.containers.model.Command;
+import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.ContainerExecutionMount;
 import org.nrg.containers.model.ContainerExecutionOutput;
@@ -131,7 +131,7 @@ public class CommandLaunchIntegrationTest {
         final String fakeResourceDir = dir + "/fakeResource";
         final String commandWrapperName = "recon-all-session";
 
-        final Command fakeReconAll = mapper.readValue(new File(commandJsonFile), Command.class);
+        final CommandEntity fakeReconAll = mapper.readValue(new File(commandJsonFile), CommandEntity.class);
         commandService.create(fakeReconAll);
         commandService.flush();
         XnatCommandWrapper xnatCommandWrapper = null;

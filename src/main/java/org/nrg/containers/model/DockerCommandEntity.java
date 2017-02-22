@@ -3,32 +3,26 @@ package org.nrg.containers.model;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.MoreObjects.ToStringHelper;
 import com.google.common.collect.Maps;
-import org.hibernate.envers.Audited;
 import org.nrg.containers.model.auto.CommandPojo;
 
-import javax.persistence.Column;
-import javax.persistence.DiscriminatorColumn;
-import javax.persistence.DiscriminatorType;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.Transient;
 import java.util.Map;
 import java.util.Objects;
 
 @Entity
 @DiscriminatorValue("docker")
-public class DockerCommand extends Command {
+public class DockerCommandEntity extends CommandEntity {
     public static final CommandType type = CommandType.DOCKER;
 
     private String index;
     private String hash;
     private Map<String, String> ports;
 
-    static DockerCommand fromPojo(final CommandPojo commandPojo) {
-        final DockerCommand command = new DockerCommand();
+    static DockerCommandEntity fromPojo(final CommandPojo commandPojo) {
+        final DockerCommandEntity command = new DockerCommandEntity();
         command.setIndex(commandPojo.index());
         command.setHash(commandPojo.hash());
         command.setPorts(commandPojo.ports());
@@ -75,7 +69,7 @@ public class DockerCommand extends Command {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
-        final DockerCommand that = (DockerCommand) o;
+        final DockerCommandEntity that = (DockerCommandEntity) o;
         return Objects.equals(this.index, that.index) &&
                 Objects.equals(this.hash, that.hash) &&
                 Objects.equals(this.ports, that.ports);

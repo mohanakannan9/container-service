@@ -11,7 +11,7 @@ import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.exceptions.NotUniqueException;
 import org.nrg.containers.exceptions.UnauthorizedException;
-import org.nrg.containers.model.Command;
+import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.auto.DockerImage;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.model.auto.DockerHub;
@@ -281,7 +281,7 @@ public class DockerRestApi extends AbstractXapiRestController {
 //            @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = "/images/save", params = "image", method = POST)
     @ResponseBody
-    public List<Command> saveFromLabels(final @RequestParam("image") String imageId)
+    public List<CommandEntity> saveFromLabels(final @RequestParam("image") String imageId)
             throws NotFoundException, NoServerPrefException, DockerServerException, UnauthorizedException {
         checkCreateOrThrow();
         return dockerService.saveFromImageLabels(imageId);

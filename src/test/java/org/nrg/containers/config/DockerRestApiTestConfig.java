@@ -3,32 +3,23 @@ package org.nrg.containers.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hibernate.SessionFactory;
 import org.mockito.Mockito;
-import org.nrg.config.services.ConfigService;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.api.DockerControlApi;
 import org.nrg.containers.daos.CommandDao;
-import org.nrg.containers.daos.ContainerExecutionRepository;
-import org.nrg.containers.model.Command;
-import org.nrg.containers.model.DockerCommand;
+import org.nrg.containers.model.CommandEntity;
+import org.nrg.containers.model.DockerCommandEntity;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.XnatCommandWrapper;
 import org.nrg.containers.rest.DockerRestApi;
 import org.nrg.containers.services.CommandService;
-import org.nrg.containers.services.ContainerExecutionService;
 import org.nrg.containers.services.DockerHubService;
 import org.nrg.containers.services.DockerService;
 import org.nrg.containers.services.impl.DockerServiceImpl;
-import org.nrg.containers.services.impl.HibernateCommandService;
-import org.nrg.containers.services.impl.HibernateContainerExecutionService;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.services.NrgPreferenceService;
-import org.nrg.transporter.TransportService;
-import org.nrg.transporter.TransportServiceImpl;
-import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
-import org.nrg.xdat.services.AliasTokenService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -123,8 +114,8 @@ public class DockerRestApiTestConfig extends WebSecurityConfigurerAdapter {
         bean.setDataSource(dataSource);
         bean.setHibernateProperties(properties);
         bean.setAnnotatedClasses(
-                Command.class,
-                DockerCommand.class,
+                CommandEntity.class,
+                DockerCommandEntity.class,
                 XnatCommandWrapper.class);
         return bean;
     }
