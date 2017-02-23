@@ -40,8 +40,9 @@ public class DockerHubEntityTestConfig {
     }
 
     @Bean
-    public ContainerConfigService containerConfigService(final ConfigService configService) {
-        return new ContainerConfigServiceImpl(configService);
+    public ContainerConfigService containerConfigService(final ConfigService configService,
+                                                         final ObjectMapper objectMapper) {
+        return new ContainerConfigServiceImpl(configService, objectMapper);
     }
 
     @Bean
