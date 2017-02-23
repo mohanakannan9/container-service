@@ -19,16 +19,23 @@ public class DockerHubEntity extends AbstractHibernateEntity {
     private String email;
 
     public static DockerHubEntity fromPojo(final DockerHub pojo) {
-        final DockerHubEntity dockerHubEntity = new DockerHubEntity();
-        dockerHubEntity.setId(pojo.id());
-        dockerHubEntity.name = pojo.name();
-        dockerHubEntity.url = pojo.url();
-        dockerHubEntity.email = pojo.email();
-        if (StringUtils.isNotBlank(pojo.username()) && StringUtils.isNotBlank(pojo.password())) {
-            final String usernameAndPassword = pojo.username() + ":" + pojo.password();
-            dockerHubEntity.auth = Base64.encodeBase64String(usernameAndPassword.getBytes());
+        return fromPojoWithTemplate(pojo, new DockerHubEntity());
+    }
+
+    public static DockerHubEntity fromPojoWithTemplate(final DockerHub pojo, final DockerHubEntity template) {
+        if (template == null) {
+            return fromPojo(pojo);
         }
-        return dockerHubEntity;
+        template.setId(pojo.id());
+        template.name = pojo.name();
+        template.url = pojo.url();
+        template.email = pojo.email();
+
+        final String usernameAndPassword = pojo.username() + ":" + pojo.password();
+        final String auth = Base64.encodeBase64String(usernameAndPassword.getBytes());
+        template.auth = auth == null ? "" : auth;
+
+        return template;
     }
 
     public DockerHub toPojo(final long defaultId) {

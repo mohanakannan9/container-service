@@ -111,7 +111,7 @@ public class HibernateDockerHubService
 
     @Override
     public void update(final DockerHub dockerHub) {
-        update(fromPojo(dockerHub));
+        update(fromPojoWithTemplate(dockerHub));
     }
 
     @Override
@@ -122,7 +122,7 @@ public class HibernateDockerHubService
 
     @Override
     public void updateAndSetDefault(final DockerHub dockerHub, final String username, final String reason) {
-        updateAndSetDefault(fromPojo(dockerHub), username, reason);
+        updateAndSetDefault(fromPojoWithTemplate(dockerHub), username, reason);
     }
 
     @Override
@@ -179,6 +179,15 @@ public class HibernateDockerHubService
 
     private DockerHubEntity fromPojo(final DockerHub dockerHub) {
         return dockerHub == null ? null : DockerHubEntity.fromPojo(dockerHub);
+    }
+
+
+    private DockerHubEntity fromPojoWithTemplate(final DockerHub dockerHub) {
+        if (dockerHub == null) {
+            return null;
+        }
+
+        return DockerHubEntity.fromPojoWithTemplate(dockerHub, retrieve(dockerHub.id()));
     }
 
     private boolean isDefault(final long id) {
