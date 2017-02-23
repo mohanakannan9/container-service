@@ -31,7 +31,7 @@ public class DockerHubEntity extends AbstractHibernateEntity {
         return dockerHubEntity;
     }
 
-    public DockerHub toPojo() {
+    public DockerHub toPojo(final long defaultId) {
         String username = "";
         String password = "";
         if (StringUtils.isNotBlank(this.auth)) {
@@ -41,7 +41,7 @@ public class DockerHubEntity extends AbstractHibernateEntity {
                 password = auth[1];
             }
         }
-        return DockerHub.create(this.getId(), this.name, this.url, username, password, this.email);
+        return DockerHub.create(this.getId(), this.name, this.url, username, password, this.email, this.getId() == defaultId);
     }
 
     @Column(unique = true)

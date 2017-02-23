@@ -149,13 +149,13 @@ public class DockerRestApi extends AbstractXapiRestController {
     @RequestMapping(value = "/hubs/{id:" + ID_REGEX + "}", method = POST)
     @ResponseBody
     public ResponseEntity updateHub(final @PathVariable long id,
-                               final @RequestBody DockerHub hub,
-                               final @RequestParam(value = "default", defaultValue = "false") boolean setDefault,
-                               final @RequestParam(value = "reason", defaultValue = "User request") String reason)
+                                    final @RequestBody DockerHub hub,
+                                    final @RequestParam(value = "default", defaultValue = "false") boolean setDefault,
+                                    final @RequestParam(value = "reason", defaultValue = "User request") String reason)
             throws NrgServiceRuntimeException, UnauthorizedException {
         final UserI userI = XDAT.getUserDetails();
         checkCreateOrThrow(userI);
-        final DockerHub toUpdate = id == hub.id() ? hub : DockerHub.create(id, hub.name(), hub.url(), hub.username(), hub.password(), hub.email());
+        final DockerHub toUpdate = id == hub.id() ? hub : DockerHub.create(id, hub.name(), hub.url(), hub.username(), hub.password(), hub.email(), setDefault);
 
         if (!setDefault) {
             dockerService.updateHub(toUpdate);

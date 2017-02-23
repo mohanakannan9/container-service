@@ -63,18 +63,18 @@ public class HibernateDockerHubService
 
     @Override
     public DockerHub retrieveHub(final long id) {
-        return toPojo(retrieve(id));
+        return toPojo(retrieve(id), getDefaultHubId());
     }
 
     @Override
     public DockerHub retrieveHub(final String name) throws NotUniqueException {
-        return toPojo(retrieve(name));
+        return toPojo(retrieve(name), getDefaultHubId());
     }
 
     @Override
     public DockerHub getHub(final long id) throws NotFoundException {
         try {
-            return toPojo(get(id));
+            return toPojo(get(id), getDefaultHubId());
         } catch (org.nrg.framework.exceptions.NotFoundException e) {
             // TODO remove this when I toPojo to use the framework "get" - XNAT-4682
             throw new NotFoundException(e);
@@ -83,17 +83,17 @@ public class HibernateDockerHubService
 
     @Override
     public DockerHub getHub(final String name) throws NotFoundException, NotUniqueException {
-        return toPojo(get(name));
+        return toPojo(get(name), getDefaultHubId());
     }
 
     @Override
     public List<DockerHub> getHubs() {
-        return toPojo(getAll());
+        return toPojo(getAll(), getDefaultHubId());
     }
 
     @Override
     public DockerHub create(final DockerHub dockerHub) {
-        return toPojo(create(fromPojo(dockerHub)));
+        return toPojo(create(fromPojo(dockerHub)), getDefaultHubId());
     }
 
     @Override
@@ -105,7 +105,8 @@ public class HibernateDockerHubService
 
     @Override
     public DockerHub createAndSetDefault(final DockerHub dockerHub, final String username, final String reason) {
-        return toPojo(createAndSetDefault(fromPojo(dockerHub), username, reason));
+        final DockerHubEntity created = createAndSetDefault(fromPojo(dockerHub), username, reason);
+        return toPojo(created, created.getId());
     }
 
     @Override
@@ -161,17 +162,17 @@ public class HibernateDockerHubService
         super.delete(entity);
     }
 
-    private DockerHub toPojo(final DockerHubEntity dockerHubEntity) {
-        return dockerHubEntity == null ? null : dockerHubEntity.toPojo();
+    private DockerHub toPojo(final DockerHubEntity dockerHubEntity, final long defaultId) {
+        return dockerHubEntity == null ? null : dockerHubEntity.toPojo(defaultId);
     }
 
-    private List<DockerHub> toPojo(final List<DockerHubEntity> dockerHubEntityList) {
+    private List<DockerHub> toPojo(final List<DockerHubEntity> dockerHubEntityList, final long defaultId) {
         return dockerHubEntityList == null ? null :
                 Lists.transform(dockerHubEntityList, new Function<DockerHubEntity, DockerHub>() {
                     @Nullable
                     @Override
                     public DockerHub apply(@Nullable final DockerHubEntity dockerHubEntity) {
-                        return toPojo(dockerHubEntity);
+                        return toPojo(dockerHubEntity, defaultId);
                     }
                 });
     }
