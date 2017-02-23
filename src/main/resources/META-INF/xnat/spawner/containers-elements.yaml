@@ -119,7 +119,7 @@ installedImagesPanel:
             tag: "div#add-image-template.html-template"
             contents:
                 addImageform:
-                    kind: panel
+                    kind: panel.form
                     name: addImageForm
                     id: add-image-form
                     header: false

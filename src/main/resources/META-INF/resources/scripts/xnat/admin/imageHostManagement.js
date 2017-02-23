@@ -95,7 +95,7 @@ var XNAT = getObject(XNAT || {});
             okClose: false,
             okLabel: 'Save',
             okAction: function(obj){
-                // the form panel is 'imageHostTemplate' in site-admin-element.yaml
+                // the form panel is 'imageHostTemplate' in containers-elements.yaml
                 var $form = obj.$modal.find('form');
                 var $url = $form.find('input[name=url]');
                 var $name = $form.find('input[name=name]');

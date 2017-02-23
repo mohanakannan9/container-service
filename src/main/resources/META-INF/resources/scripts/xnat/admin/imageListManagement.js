@@ -76,7 +76,7 @@ var XNAT = getObject(XNAT || {});
     }
 
     function commandUrl(appended){
-        appended = isDefined(appended) ? '/' + appended : '';
+        appended = isDefined(appended) ? appended : '';
         return rootUrl('/xapi/commands' + appended);
     }
 
@@ -93,16 +93,38 @@ var XNAT = getObject(XNAT || {});
         });
     };
 
-    commandListManager.getCommands = commandListManager.getAll = function(callback){
+    commandListManager.getCommands = commandListManager.getAll = function(imageName,callback){
+        /*
+        if (imageName) {
+            imageName = imageName.split(':')[0]; // remove any tag definition (i.e. ':latest') in the image name
+            imageName = imageName.replace("/","%2F"); // convert slashes in image names to URL-ASCII equivalent
+        }
+        */
         callback = isFunction(callback) ? callback : function(){};
         return XNAT.xhr.get({
-            url: commandUrl(),
+            url: (imageName) ? commandUrl('?image='+imageName) : commandUrl(),
             dataType: 'json',
             success: function(data){
-                commandListManager.commands = data;
-                callback.apply(this,arguments);
+                if (data) {
+                    return data;
+                }
+                callback.apply(this, arguments);
             }
         });
+    };
+
+    commandDefinition.getCommand = function(id,callback){
+        callback = isFunction(callback) ? callback : function(){};
+        return XNAT.xhr.get({
+            url: commandUrl('/'+id),
+            dataType: 'json',
+            success: function(data){
+                if (data) {
+                    return data;
+                }
+                callback.apply(this, arguments);
+            }
+        })
     };
 
     // dialog to add new images
@@ -116,67 +138,79 @@ var XNAT = getObject(XNAT || {});
             height: 420,
             scroll: false,
             padding: '0',
+            beforeShow: function(obj){
+                var $form = obj.$modal.find('form');
+                if (item && isDefined(item.image)) {
+                    $form.setValues(item);
+                }
+            },
             okClose: false,
             okLabel: 'Pull Image',
             okAction: function(obj){
-                // the form panel is 'imageListTemplate' in site-admin-element.yaml
+                // the form panel is 'imageListTemplate' in containers-elements.yaml
                 var $form = obj.$modal.find('form');
                 var $image = $form.find('input[name=image]');
                 var $tag = $form.find('input[name=tag]');
-                $form.submitJSON({
-                    method: 'POST',
-                    url: imageUrl('pull'),
-                    validate: function(){
 
-                        $form.find(':input').removeClass('invalid');
+                // validate form inputs, then pull them into the URI querystring and create an XHR request.
+                $form.find(':input').removeClass('invalid');
 
-                        var errors = 0;
-                        var errorMsg = 'Errors were found with the following fields: <ul>';
+                var errors = 0;
+                var errorMsg = 'Errors were found with the following fields: <ul>';
 
-                        [$image,$tag].forEach(function($el){
-                            var el = $el[0];
-                            if (!el.value) {
-                                errors++;
-                                errorMsg += '<li><b>' + el.title + '</b> is required.</li>';
-                                $el.addClass('invalid');
-                            }
-                        });
-
-                        errorMsg += '</ul>';
-
-                        if (errors > 0) {
-                            xmodal.message('Errors Found', errorMsg, { height: 300 });
-                        }
-
-                        return errors === 0;
-
-                    },
-                    always: function(){
-                        xmodal.loading.open({title: 'Submitting Pull Request',height: '110'});
-                    },
-                    success: function(){
-                        refreshTable();
-                        xmodal.close(obj.$modal);
-                        XNAT.ui.banner.top(2000, 'Pull request complete.', 'success');
+                [$image].forEach(function($el){
+                    var el = $el[0];
+                    if (!el.value) {
+                        errors++;
+                        errorMsg += '<li><b>' + el.title + '</b> is required.</li>';
+                        $el.addClass('invalid');
                     }
                 });
+
+                errorMsg += '</ul>';
+
+                if (errors > 0) {
+                    xmodal.message('Errors Found', errorMsg, { height: 300 });
+                } else {
+                    // stitch together the image and tag definition, if a tag value was specified.
+                    if ($tag.val().length > 0 && $tag.val().indexOf(':') < 0) {
+                        $tag.val(':' + $tag.val());
+                    }
+                    var imageName = $image.val() + $tag.val();
+
+                    xmodal.loading.open({title: 'Submitting Pull Request',height: '110'});
+
+                    XNAT.xhr.post({ url: '/xapi/docker/pull?save-commands=true&image='+imageName })
+                        .success(
+                            function() {
+                                xmodal.closeAll();
+                                refreshTable();
+                                XNAT.ui.banner.top(2000, 'Pull request complete.', 'success');
+                            })
+                        .fail(
+                            function(e) {
+                                xmodal.closeAll();
+                                xmodal.alert({ title: 'Error: Could Not Pull Image', content: 'Error '+ e.status+': '+e.statusText });
+                            }
+                        );
+                }
             }
         });
     };
 
     // create a read-only code editor dialog to view a command definition
-    commandDefinition.dialog = function(data,newCommand){
+    commandDefinition.dialog = function(commandDef,newCommand){
         if (!newCommand) {
             data = data || {};
 
-            var _source = spawn('textarea', JSON.stringify(data, null, 4));
+            var _source = spawn('textarea', JSON.stringify(commandDef, null, 4));
 
             var _editor = XNAT.app.codeEditor.init(_source, {
                 language: 'json'
             });
 
             _editor.openEditor({
-                title: data.name,
+                title: commandDef.name,
                 classes: 'plugin-json',
                 footerContent: '(read-only)',
                 buttons: {
@@ -184,7 +218,7 @@ var XNAT = getObject(XNAT || {});
                     info: {
                         label: 'View Command Info',
                         action: function(){
-                            window.open(data['info-url'],'infoUrl');
+                            window.open(commandDef['info-url'],'infoUrl');
                         }
                     }
                 },
@@ -221,23 +255,7 @@ var XNAT = getObject(XNAT || {});
                                 fail: function(e){
                                     xmodal.alert({ title: 'Error: Could Not Save', content: 'Error '+ e.status+': ' +e.statusText });
                                 }
-                            })
-
-                            /*
-                            jQuery.ajax({
-                                url: commandUrl(),
-                                method: 'POST',
-                                dataType: 'json',
-                                contentType: 'application/json',
-                                data: editorContent
-                            }).success(function(obj){
-                                refreshTable();
-                                xmodal.close(obj.$modal);
-                                XNAT.ui.banner.top(2000, 'Command definition saved.', 'success');
-                            }).fail(function(e){
-                                xmodal.alert({ title: 'Error: Could Not Save', content: 'Error '+ e.status+': ' +e.statusText });
-                            })
-                            */
+                            });
                         }
                     },
                     cancel: {
@@ -253,7 +271,7 @@ var XNAT = getObject(XNAT || {});
 
 
     // create table for listing comands
-    commandListManager.table = function(callback){
+    commandListManager.table = function(imageName,callback){
 
         // initialize the table - we'll add to it below
         var chTable = XNAT.table({
@@ -349,35 +367,30 @@ var XNAT = getObject(XNAT || {});
             }, 'Delete');
         }
 
-        commandListManager.getAll().done(function(data){
-            data = [].concat(data);
-            if (data.length > 0) {
-                data.forEach(function(item){
-                    var xnatContexts = '';
-                    item.xnat = [].concat(item.xnat);
-                    [item.xnat].forEach(function(innerItem,i){
-                        if (xnatContexts.length > 0) xnatContexts += '<br>';
-                        xnatContexts += innerItem[i].description;
-                    });
-                    chTable.tr({ title: item.name, data: { id: item.id, name: item.name, image: item.image}})
+        commandListManager.getAll(imageName).done(function(data) {
+            if (data) {
+                for (var i = 0, j = data.length; i < j; i++) {
+                    var xnatContexts = '', item = data[i];
+                    if (item.xnat) {
+                        for (var k = 0, l = item.xnat.length; k < l; k++) {
+                            if (xnatContexts.length > 0) xnatContexts += '<br>';
+                            xnatContexts += item.xnat[k].description;
+                        }
+                    } else {
+                        xnatContexts = 'N/A';
+                    }
+                    chTable.tr({title: item.name, data: {id: item.id, name: item.name, image: item.image}})
                         .td([viewLink(item, item.name)]).addClass('name')
-                        // .td(item.name).addClass('name')
                         .td(xnatContexts)
                         .td(item.version)
                         .td(item.image)
-                        // .td([enabledCheckbox(item)]).addClass('status')
                         .td([['div.center', [viewCommandButton(item), spacer(10), deleteCommandButton(item)]]]);
-                });
+                }
             } else {
-                chTable.tr({ title: 'no commands found'})
-                    .td('No commands found').attr('colspan:5');
+                // create a handler when no command data is returned.
+                chTable.tr({title: 'No command data found'})
+                    .td({colSpan: '5', html: 'No Commands Found'});
             }
-
-
-            if (isFunction(callback)) {
-                callback(chTable.table);
-            }
-
         });
 
         commandListManager.$table = $(chTable.table);
@@ -429,15 +442,13 @@ var XNAT = getObject(XNAT || {});
         imageListManager.container = $manager;
 
         imageListManager.getAll().done(function(data){
-            data = [].concat(data);
-            [data].forEach(function(item){
-                var imageInfo = item[0];
-//                var imageContainer = "<div><h3>"+ item.tags[0] +"</h3></div>";
+            for (var i=0, j=data.length; i<j; i++) {
+                var imageInfo = data[i];
                 $manager.append(spawn('div.imageContainer',[
                     ['h3.imageTitle',imageInfo.tags[0]],
-                    ['div.imageCommandList',[commandListManager.table()]]
+                    ['div.imageCommandList',[commandListManager.table(imageInfo.tags[0])]]
                 ]));
-            });
+            }
 
             $manager.append(spawn('div',[ newCommand ]));
         });
