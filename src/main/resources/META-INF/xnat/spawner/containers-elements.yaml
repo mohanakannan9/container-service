@@ -102,8 +102,8 @@ imageHostsPanel:
         imageHostTable:
             tag: "div#image-host-manager"
         imageHostScript:
-            tag: script|src="/scripts/xnat/admin/imageHostManagement.js"
-#           tag: script|src="~/scripts/xnat/admin/imageHostManagement.js"
+#            tag: script|src="/scripts/xnat/admin/imageHostManagement.js"
+           tag: script|src="~/scripts/xnat/admin/imageHostManagement.js"
 
 installedImagesPanel:
     kind: panel
@@ -192,10 +192,11 @@ installedImagesPanel:
                                 commandViewerDisplay:
                                     tag: textarea.commandViewer
         imagePanelScript:
-            tag: script|src="/scripts/xnat/admin/imageListManagement.js"
-#            tag: script|src="~/scripts/xnat/admin/imageListManagement.js"
+#           tag: script|src="/scripts/xnat/admin/imageListManagement.js"
+            tag: script|src="~/scripts/xnat/admin/imageListManagement.js"
         panelStyleSheet:
-            tag: link|rel="stylesheet"|type="text/css"|href="/scripts/xnat/admin/imagePanelStyle.css"
+#            tag: link|rel="stylesheet"|type="text/css"|href="/scripts/xnat/admin/imagePanelStyle.css"
+            tag: link|rel="stylesheet"|type="text/css"|href="~/scripts/xnat/admin/imagePanelStyle.css"
 
 
 #################################################

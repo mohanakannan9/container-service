@@ -165,44 +165,90 @@ var XNAT = getObject(XNAT || {});
     };
 
     // create a read-only code editor dialog to view a command definition
-    commandDefinition.dialog = function(data){
-        data = data || {};
+    commandDefinition.dialog = function(data,newCommand){
+        if (!newCommand) {
+            data = data || {};
 
-        var _source = spawn('textarea', JSON.stringify(data, null, 4));
+            var _source = spawn('textarea', JSON.stringify(data, null, 4));
 
-        var _editor = XNAT.app.codeEditor.init(_source, {
-            language: 'json'
-        });
+            var _editor = XNAT.app.codeEditor.init(_source, {
+                language: 'json'
+            });
 
-        _editor.openEditor({
-            title: data.name,
-            classes: 'plugin-json',
-            footerContent: '(read-only)',
-            buttons: {
-                // json: {
-                //     label: 'View JSON',
-                //     link: true,
-                //     action: function(){
-                //         xmodal.iframe({
-                //             title: data.id,
-                //             url: _url,
-                //             width: 720, height: 480,
-                //             buttons: { close: { label: 'Close' } }
-                //         })
-                //     }
-                // },
-                close: { label: 'Close' },
-                info: {
-                    label: 'View Command Info',
-                    action: function(){
-                        window.open(data['info-url'],'infoUrl');
+            _editor.openEditor({
+                title: data.name,
+                classes: 'plugin-json',
+                footerContent: '(read-only)',
+                buttons: {
+                    close: { label: 'Close' },
+                    info: {
+                        label: 'View Command Info',
+                        action: function(){
+                            window.open(data['info-url'],'infoUrl');
+                        }
+                    }
+                },
+                afterShow: function(dialog, obj){
+                    obj.aceEditor.setReadOnly(true);
+                }
+            });
+        } else {
+            var _source = spawn('textarea', null);
+
+            var _editor = XNAT.app.codeEditor.init(_source, {
+                language: 'json'
+            });
+
+            _editor.openEditor({
+                title: 'Add New Command',
+                classes: 'plugin-json',
+                buttons: {
+                    save: {
+                        label: 'Save Command',
+                        action: function(){
+                            var editorContent = _editor.getValue().code;
+                            // editorContent = JSON.stringify(editorContent).replace(/\r?\n|\r/g,' ');
+
+                            XNAT.xhr.postJSON({
+                                url: commandUrl(),
+                                dataType: 'json',
+                                data: editorContent,
+                                success: function(obj){
+                                    refreshTable();
+                                    xmodal.close(obj.$modal);
+                                    XNAT.ui.banner.top(2000, 'Command definition saved.', 'success');
+                                },
+                                fail: function(e){
+                                    xmodal.alert({ title: 'Error: Could Not Save', content: 'Error '+ e.status+': ' +e.statusText });
+                                }
+                            })
+
+                            /*
+                            jQuery.ajax({
+                                url: commandUrl(),
+                                method: 'POST',
+                                dataType: 'json',
+                                contentType: 'application/json',
+                                data: editorContent
+                            }).success(function(obj){
+                                refreshTable();
+                                xmodal.close(obj.$modal);
+                                XNAT.ui.banner.top(2000, 'Command definition saved.', 'success');
+                            }).fail(function(e){
+                                xmodal.alert({ title: 'Error: Could Not Save', content: 'Error '+ e.status+': ' +e.statusText });
+                            })
+                            */
+                        }
+                    },
+                    cancel: {
+                        label: 'Cancel',
+                        action: function(obj){
+                            xmodal.close(obj.$modal);
+                        }
                     }
                 }
-            },
-            afterShow: function(dialog, obj){
-                obj.aceEditor.setReadOnly(true);
-            }
-        });
+            });
+        }
     };
 
 
@@ -235,6 +281,15 @@ var XNAT = getObject(XNAT || {});
                     commandDefinition.dialog(item, false);
                 }
             }, [['b', text]]);
+        }
+
+        function viewCommandButton(item){
+            return spawn('button.btn.sm', {
+                onclick: function(e){
+                    e.preventDefault();
+                    commandDefinition.dialog(item, false);
+                }
+            }, 'View Command');
         }
 
         function enabledCheckbox(item){
@@ -311,7 +366,7 @@ var XNAT = getObject(XNAT || {});
                         .td(item.version)
                         .td(item.image)
                         // .td([enabledCheckbox(item)]).addClass('status')
-                        .td([['div.center', [deleteCommandButton(item)]]]);
+                        .td([['div.center', [viewCommandButton(item), spacer(10), deleteCommandButton(item)]]]);
                 });
             } else {
                 chTable.tr({ title: 'no commands found'})
@@ -346,8 +401,6 @@ var XNAT = getObject(XNAT || {});
             }
         });
 
-
-
         // add the 'add new' button at the bottom
         $manager.append(spawn('div.pull-right', [
             newImage
@@ -366,6 +419,13 @@ var XNAT = getObject(XNAT || {});
     imageListManager.init = function(container){
         var $manager = $$(container||'div#image-list-container');
 
+        var newCommand = spawn('button.new-command.btn.sm', {
+            html: 'Add New Command',
+            onclick: function(){
+                commandDefinition.dialog(null,true); // opens the command code editor dialog with "new command" set to true
+            }
+        });
+
         imageListManager.container = $manager;
 
         imageListManager.getAll().done(function(data){
@@ -378,12 +438,14 @@ var XNAT = getObject(XNAT || {});
                     ['div.imageCommandList',[commandListManager.table()]]
                 ]));
             });
+
+            $manager.append(spawn('div',[ newCommand ]));
         });
     };
 
 
     function refreshTable(){
-        imageListManager.container.remove();
+        imageListManager.container.html('');
         imageListManager.init();
     }
 
