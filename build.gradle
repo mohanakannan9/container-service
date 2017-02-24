@@ -124,7 +124,7 @@ task unitTest( type: Test ) {
 
 task fatJar(type: Jar) {
     zip64 true
-    baseName = project.name + '-all'
+    classifier = "fat"
     from {
         configurations.compileAndInclude.collect { it.isDirectory() ? it : zipTree(it) }
     } {
@@ -156,9 +156,7 @@ publishing {
                 classifier "javadoc"
             }
 
-            artifact fatJar {
-                classifier "all"
-            }
+            artifact fatJar
 
             pom.withXml {
                 def root = asNode()
