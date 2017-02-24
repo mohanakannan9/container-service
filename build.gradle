@@ -185,6 +185,11 @@ publishing {
                 kelsey.appendNode('id', 'kelseym')
                 kelsey.appendNode('name', 'Matt Kelsey')
                 kelsey.appendNode('email', 'kelseym@wustl.edu')
+
+                def will = developers.appendNode('developer')
+                will.appendNode('id', 'hortonw')
+                will.appendNode('name', 'Will Horton')
+                will.appendNode('email', 'hortonw@wustl.edu')
             }
         }
     }
