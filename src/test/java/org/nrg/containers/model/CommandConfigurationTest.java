@@ -2,6 +2,7 @@ package org.nrg.containers.model;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -14,16 +15,26 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.util.Map;
+
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.isNotNull;
+import static org.mockito.Matchers.isNull;
 import static org.mockito.Mockito.when;
 import static org.nrg.containers.services.ContainerConfigService.TOOL_ID;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = CommandConfigurationTestConfig.class)
 public class CommandConfigurationTest {
+
+    private static final long COMMAND_ID = 12L;
+    private static final String WRAPPER_NAME = "what";
+    private static final String PROJECT_NAME = "xyz";
 
     @Autowired private ObjectMapper mapper;
     @Autowired private ContainerConfigService containerConfigService;
@@ -36,26 +47,90 @@ public class CommandConfigurationTest {
 
     @Test
     public void testConfigureCommandForSite() throws Exception {
-        final long commandId = 12L;
-        final String wrapperName = "what";
-        final String username = "flip";
-        final String reason = "knuckles";
-        final Scope scope = Scope.Site;
-        final String project = null;
 
-        final String path = String.format("command-%d-wrapper-%s", commandId, wrapperName);
+        final CommandConfiguration site = CommandConfiguration.create(
+                ImmutableMap.of("foo", CommandConfiguration.CommandInputConfiguration.create("a", null, true)),
+                ImmutableMap.of("bar", CommandConfiguration.CommandOutputConfiguration.create("label")));
+        final String siteJson = mapper.writeValueAsString(site);
 
-        final CommandConfiguration.CommandInputConfiguration foo = CommandConfiguration.CommandInputConfiguration.create("a", null, true);
-        final CommandConfiguration.CommandOutputConfiguration bar = CommandConfiguration.CommandOutputConfiguration.create("label");
-        final CommandConfiguration site = CommandConfiguration.create(ImmutableMap.of("foo", foo), ImmutableMap.of("bar", bar));
-        final String contents = mapper.writeValueAsString(site);
+        final Configuration mockSiteConfiguration = Mockito.mock(Configuration.class);
+        when(mockSiteConfiguration.getContents()).thenReturn(siteJson);
+        when(mockConfigService.getConfig(eq(TOOL_ID), anyString(), eq(Scope.Site), isNull(String.class))).thenReturn(mockSiteConfiguration);
 
-        final Configuration mockConfiguration = Mockito.mock(Configuration.class);
-        when(mockConfiguration.getContents()).thenReturn(contents);
-        when(mockConfigService.getConfig(TOOL_ID, path, scope, project)).thenReturn(mockConfiguration);
-
-        containerConfigService.configureForSite(commandId, wrapperName, site, username, reason);
-        final CommandConfiguration retrieved = containerConfigService.getSiteConfiguration(commandId, wrapperName);
+        final CommandConfiguration retrieved = containerConfigService.getSiteConfiguration(COMMAND_ID, WRAPPER_NAME);
         assertEquals(site, retrieved);
+    }
+
+    @Test
+    public void testConfigureCommandForProject() throws Exception {
+
+        final Map<String, CommandConfiguration.CommandInputConfiguration> siteInputs = Maps.newHashMap();
+        final Map<String, CommandConfiguration.CommandInputConfiguration> projectInputs = Maps.newHashMap();
+        final Map<String, CommandConfiguration.CommandInputConfiguration> expectedInputs = Maps.newHashMap();
+
+        final CommandConfiguration.CommandInputConfiguration allNullInput = CommandConfiguration.CommandInputConfiguration.create(null, null, null);
+        final CommandConfiguration.CommandInputConfiguration allNotNullInput = CommandConfiguration.CommandInputConfiguration.create("who", "cares", true);
+        final CommandConfiguration.CommandInputConfiguration allNotNullInput2 = CommandConfiguration.CommandInputConfiguration.create("fly", "fools", false);
+
+        siteInputs.put("a", allNotNullInput);
+        projectInputs.put("a", allNullInput);
+        expectedInputs.put("a", allNotNullInput);
+
+        siteInputs.put("e", allNullInput);
+        projectInputs.put("e", allNullInput);
+        expectedInputs.put("e", allNullInput);
+
+        siteInputs.put("f", allNotNullInput);
+        projectInputs.put("f", allNotNullInput2);
+        expectedInputs.put("f", allNotNullInput2);
+
+        siteInputs.put("b", allNotNullInput);
+        projectInputs.put("b", CommandConfiguration.CommandInputConfiguration.create("not-null", null, null));
+        expectedInputs.put("b", CommandConfiguration.CommandInputConfiguration.create("not-null", "cares", true));
+
+        siteInputs.put("c", allNotNullInput);
+        projectInputs.put("c", CommandConfiguration.CommandInputConfiguration.create(null, "not-null", null));
+        expectedInputs.put("c", CommandConfiguration.CommandInputConfiguration.create("who", "not-null", true));
+
+        siteInputs.put("d", allNotNullInput);
+        projectInputs.put("d", CommandConfiguration.CommandInputConfiguration.create(null, null, false));
+        expectedInputs.put("d", CommandConfiguration.CommandInputConfiguration.create("who", "cares", false));
+
+        final Map<String, CommandConfiguration.CommandOutputConfiguration> siteOutputs = Maps.newHashMap();
+        final Map<String, CommandConfiguration.CommandOutputConfiguration> projectOutputs = Maps.newHashMap();
+        final Map<String, CommandConfiguration.CommandOutputConfiguration> expectedOutputs = Maps.newHashMap();
+
+        final CommandConfiguration.CommandOutputConfiguration allNull = CommandConfiguration.CommandOutputConfiguration.create(null);
+        final CommandConfiguration.CommandOutputConfiguration nonNull = CommandConfiguration.CommandOutputConfiguration.create("181024y2");
+        final CommandConfiguration.CommandOutputConfiguration nonNull2 = CommandConfiguration.CommandOutputConfiguration.create("2");
+
+        siteOutputs.put("a", nonNull);
+        projectOutputs.put("a", allNull);
+        expectedOutputs.put("a", nonNull);
+
+        siteOutputs.put("b", allNull);
+        projectOutputs.put("b", nonNull);
+        expectedOutputs.put("b", nonNull);
+
+        siteOutputs.put("c", nonNull);
+        projectOutputs.put("c", nonNull2);
+        expectedOutputs.put("c", nonNull2);
+
+        final CommandConfiguration site = CommandConfiguration.create(siteInputs, siteOutputs);
+        final CommandConfiguration project = CommandConfiguration.create(projectInputs, projectOutputs);
+        final CommandConfiguration expected = CommandConfiguration.create(expectedInputs, expectedOutputs);
+
+        final String siteJson = mapper.writeValueAsString(site);
+        final String projectJson = mapper.writeValueAsString(project);
+
+        final Configuration mockSiteConfiguration = Mockito.mock(Configuration.class);
+        when(mockSiteConfiguration.getContents()).thenReturn(siteJson);
+        when(mockConfigService.getConfig(eq(TOOL_ID), anyString(), eq(Scope.Site), isNull(String.class))).thenReturn(mockSiteConfiguration);
+        final Configuration mockProjectConfiguration = Mockito.mock(Configuration.class);
+        when(mockProjectConfiguration.getContents()).thenReturn(projectJson);
+        when(mockConfigService.getConfig(eq(TOOL_ID), anyString(), eq(Scope.Project), isNotNull(String.class))).thenReturn(mockProjectConfiguration);
+
+        final CommandConfiguration retrieved = containerConfigService.getProjectConfiguration(PROJECT_NAME, COMMAND_ID, WRAPPER_NAME);
+        assertEquals(expected, retrieved);
     }
 }
