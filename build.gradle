@@ -56,7 +56,6 @@ dependencies {
     compileAndInclude (group: "org.nrg", name: "transporter", version: "1.0-SNAPSHOT") {
         transitive = false
     }
-    compileAndInclude "io.rest-assured:rest-assured:3.0.1"
     compileAndInclude (group: 'com.spotify', name: 'docker-client', version: '7+') {
         exclude group: "ch.qos.logback"
     }
