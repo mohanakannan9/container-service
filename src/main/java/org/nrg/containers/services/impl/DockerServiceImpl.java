@@ -85,6 +85,11 @@ public class DockerServiceImpl implements DockerService {
     }
 
     @Override
+    public void setDefaultHub(final long id, final String username, final String reason) {
+        dockerHubService.setDefault(id, username, reason);
+    }
+
+    @Override
     public void deleteHub(final long id) throws DockerHubDeleteDefaultException {
         dockerHubService.delete(id);
     }

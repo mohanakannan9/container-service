@@ -23,6 +23,7 @@ public interface DockerService {
     DockerHub createHubAndSetDefault(DockerHub hub, String username, String reason);
     void updateHub(DockerHub hub);
     void updateHubAndSetDefault(DockerHub hub, String username, String reason);
+    void setDefaultHub(long id, String username, String reason);
     void deleteHub(long id) throws DockerHubDeleteDefaultException;
     void deleteHub(String name) throws DockerHubDeleteDefaultException, NotUniqueException;
     String pingHub(Long hubId) throws DockerServerException, NoServerPrefException, NotFoundException;

@@ -24,6 +24,7 @@ public interface DockerHubService extends BaseHibernateService<DockerHubEntity> 
     void update(DockerHub dockerHub);
     void updateAndSetDefault(DockerHubEntity dockerHubEntity, String username, String reason);
     void updateAndSetDefault(DockerHub dockerHub, String username, String reason);
+    void setDefault(long id, String username, String reason);
     void delete(long id) throws DockerHubDeleteDefaultException;
     void delete(String name) throws DockerHubDeleteDefaultException, NotUniqueException;
 

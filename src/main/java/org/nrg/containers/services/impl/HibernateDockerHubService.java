@@ -99,7 +99,7 @@ public class HibernateDockerHubService
     @Override
     public DockerHubEntity createAndSetDefault(final DockerHubEntity dockerHubEntity, final String username, final String reason) {
         final DockerHubEntity created = create(dockerHubEntity);
-        setDefault(created, username, reason);
+        setDefault(created.getId(), username, reason);
         return created;
     }
 
@@ -117,7 +117,7 @@ public class HibernateDockerHubService
     @Override
     public void updateAndSetDefault(final DockerHubEntity dockerHubEntity, final String username, final String reason) {
         update(dockerHubEntity);
-        setDefault(dockerHubEntity, username, reason);
+        setDefault(dockerHubEntity.getId(), username, reason);
     }
 
     @Override
@@ -137,11 +137,12 @@ public class HibernateDockerHubService
 
     @Override
     public void setDefault(final DockerHub dockerHub, final String username, final String reason) {
-        setDefault(fromPojo(dockerHub), username, reason);
+        setDefault(dockerHub.id(), username, reason);
     }
 
-    private void setDefault(final DockerHubEntity dockerHubEntity, final String username, final String reason) {
-        containerConfigService.setDefaultDockerHubId(dockerHubEntity.getId(), username, reason);
+    @Override
+    public void setDefault(final long id, final String username, final String reason) {
+        containerConfigService.setDefaultDockerHubId(id, username, reason);
     }
 
     @Override
