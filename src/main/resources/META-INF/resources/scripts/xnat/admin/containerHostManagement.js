@@ -152,8 +152,8 @@ var XNAT = getObject(XNAT || {});
         // add table header row
         chTable.tr()
             .th({ addClass: 'left', html: '<b>Host</b>' })
-            .th('<b>Cert Path</b>')
-            .th('<b>Enabled</b>')
+            .th('<b>Server Type</b>')
+            .th('<b>Default</b>')
             .th('<b>Actions</b>');
 
         function editLink(item, text){
@@ -163,6 +163,34 @@ var XNAT = getObject(XNAT || {});
                     containerHostManager.dialog(item, false);
                 }
             }, [['b', text]]);
+        }
+
+        function defaultToggle(item){
+            var defaultVal = !!item.default;
+            var rdo = spawn('input.container-host-enabled', {
+                type: 'radio',
+                name: 'defaultHost',
+                checked: defaultVal,
+                value: 'default',
+                data: { id: item.id, name: item.name },
+                onchange: function(){
+                    // save the status when clicked
+                    var radio = this;
+                    xmodal.alert('Cannot set default server yet');
+                    /*
+                    defaultVal = radio.checked;
+                    XNAT.xhr.post({
+                        url: xapiUrl(item.id+'?default=true'),
+                        success: function(){
+                            radio.value = defaultVal;
+                            radio.checked = 'checked';
+                            XNAT.ui.banner.top(1000, '<b>' + item.name + '</b> set as default', 'success');
+                        }
+                    });
+                    */
+                }
+            });
+            return spawn('div.center', [rdo]);
         }
 
         function editButton(item) {
@@ -204,8 +232,8 @@ var XNAT = getObject(XNAT || {});
             data.forEach(function(item){
                 chTable.tr({ title: item.host, data: { id: item.id, host: item.host, certPath: item.certPath}})
                     .td([editLink(item, item.host)]).addClass('host')
-                    .td(item.certPath)
-                    .td([['div.center','enabled']])
+                    .td('Docker')
+                    .td([['div.center', [defaultToggle(item)]]])
                     .td([['div.center', [editButton(item), spacer(10), deleteButton(item)]]]);
             });
 
