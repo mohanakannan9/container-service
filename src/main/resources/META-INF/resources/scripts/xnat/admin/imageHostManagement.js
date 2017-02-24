@@ -100,7 +100,7 @@ var XNAT = getObject(XNAT || {});
                 var $url = $form.find('input[name=url]');
                 var $name = $form.find('input[name=name]');
                 $form.submitJSON({
-                    method: isNew ? 'POST' : 'PUT',
+                    method: 'POST',
                     url: isNew ? xapiUrl() : xapiUrl(item.id),
                     validate: function(){
 
@@ -172,38 +172,8 @@ var XNAT = getObject(XNAT || {});
                 onclick: function(e){
                     e.preventDefault();
                     imageHostManager.dialog(item, false);
-                },
-                disabled: "disabled"
-            }, 'Edit');
-        }
-
-        function defaultCheckbox(item){
-            var defaultVal = !!item.default;
-            var ckbox = spawn('input.image-host-enabled', {
-                type: 'checkbox',
-                checked: enabled,
-                value: enabled,
-                data: { id: item.id, name: item.name },
-                onchange: function(){
-                    // save the status when clicked
-                    var checkbox = this;
-                    defaultVal = checkbox.checked;
-                    XNAT.xhr.put({
-                        url: xapiUrl(item.id),
-                        success: function(){
-                            var status = (defaultVal ? ' enabled' : ' disabled');
-                            checkbox.value = defaultVal;
-                            XNAT.ui.banner.top(1000, '<b>' + item.name + '</b> ' + status, 'success');
-                        }
-                    });
                 }
-            });
-            return spawn('div.center', [
-                spawn('label.switchbox|title=' + item.name, [
-                    ckbox,
-                    ['span.switchbox-outer', [['span.switchbox-inner']]]
-                ])
-            ]);
+            }, 'Edit');
         }
 
         function defaultToggle(item){
@@ -231,6 +201,10 @@ var XNAT = getObject(XNAT || {});
             return spawn('div.center', [rdo]);
         }
 
+        function isDefault(status,valIfTrue) {
+            return (status) ? valIfTrue : false;
+        }
+
         function deleteButton(item){
             return spawn('button.btn.sm.delete', {
                 onclick: function(){
@@ -253,7 +227,8 @@ var XNAT = getObject(XNAT || {});
                         }
                     })
                 },
-                disabled: "disabled"
+                disabled: isDefault(item.default,"disabled"),
+                title: isDefault(item.default,"Cannot delete the default hub")
             }, 'Delete');
         }
 
