@@ -53,9 +53,13 @@ var XNAT = getObject(XNAT || {});
         })
     }
 
-    function xapiUrl(appended){
+    function xapiUrl(isDefault,appended){
         appended = isDefined(appended) ? '/' + appended : '';
-        return rootUrl('/xapi/docker/hubs' + appended);
+        if (isDefault) {
+            return rootUrl('/xapi/docker/hubs' + appended + '?default='+isDefault)
+        } else {
+            return rootUrl('/xapi/docker/hubs' + appended);
+        }
     }
 
     // get the list of hosts
@@ -83,7 +87,7 @@ var XNAT = getObject(XNAT || {});
             title: doWhat + ' Image Hub',
             template: tmpl.clone(),
             width: 400,
-            height: 420,
+            height: 460,
             scroll: false,
             padding: '0',
             beforeShow: function(obj){
@@ -99,9 +103,10 @@ var XNAT = getObject(XNAT || {});
                 var $form = obj.$modal.find('form');
                 var $url = $form.find('input[name=url]');
                 var $name = $form.find('input[name=name]');
+                var isDefault = $form.find('input[name=default]').val();
                 $form.submitJSON({
                     method: 'POST',
-                    url: isNew ? xapiUrl() : xapiUrl(item.id),
+                    url: (isNew) ? xapiUrl(isDefault) : xapiUrl(isDefault,item.id),
                     validate: function(){
 
                         $form.find(':input').removeClass('invalid');
@@ -131,6 +136,10 @@ var XNAT = getObject(XNAT || {});
                         refreshTable();
                         xmodal.close(obj.$modal);
                         XNAT.ui.banner.top(2000, 'Saved.', 'success')
+                    },
+                    fail: function(e){
+                        xmodal.close(obj.$modal);
+                        xmodal.alert({title: 'Error', content: '<p>Could not save changes. Error code: '+e.status+'</p><p>'+e.statusText+'</p>'});
                     }
                 });
             }
@@ -189,11 +198,17 @@ var XNAT = getObject(XNAT || {});
                     var radio = this;
                     defaultVal = radio.checked;
                     XNAT.xhr.post({
-                        url: xapiUrl(item.id+'?default=true'),
+                        url: xapiUrl(true,item.id),
                         success: function(){
                             radio.value = defaultVal;
                             radio.checked = 'checked';
+                            refreshTable();
                             XNAT.ui.banner.top(1000, '<b>' + item.name + '</b> set as default', 'success');
+                        },
+                        fail: function(e){
+                            radio.checked = false;
+                            refreshTable()
+                            xmodal.alert({title: 'Error', content: '<p>Could not set hub as default. Error code: '+e.status+'</p><p>'+ e.statusText +'</p>'})
                         }
                     });
                 }
@@ -217,7 +232,7 @@ var XNAT = getObject(XNAT || {});
                         okAction: function(){
                             console.log('delete id ' + item.id);
                             XNAT.xhr.delete({
-                                url: xapiUrl(item.id),
+                                url: xapiUrl(false,item.id),
                                 success: function(){
                                     console.log('"'+ item.url + '" deleted');
                                     XNAT.ui.banner.top(1000, '<b>"'+ item.url + '"</b> deleted.', 'success');

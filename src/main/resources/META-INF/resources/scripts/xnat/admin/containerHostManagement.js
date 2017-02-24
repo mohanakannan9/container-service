@@ -184,7 +184,13 @@ var XNAT = getObject(XNAT || {});
                         success: function(){
                             radio.value = defaultVal;
                             radio.checked = 'checked';
+                            refreshTable();
                             XNAT.ui.banner.top(1000, '<b>' + item.name + '</b> set as default', 'success');
+                        },
+                            fail: function(e){
+                            radio.checked = false;
+                            refreshTable()
+                            xmodal.alert({title: 'Error', content: '<p>Could not set host as default. Error code: '+e.status+'</p><p>'+ e.statusText +'</p>'})
                         }
                     });
                     */
@@ -232,7 +238,7 @@ var XNAT = getObject(XNAT || {});
             data.forEach(function(item){
                 chTable.tr({ title: item.host, data: { id: item.id, host: item.host, certPath: item.certPath}})
                     .td([editLink(item, item.host)]).addClass('host')
-                    .td('Docker')
+                    .td([['div.center', ['Docker']]])
                     .td([['div.center', [defaultToggle(item)]]])
                     .td([['div.center', [editButton(item), spacer(10), deleteButton(item)]]]);
             });

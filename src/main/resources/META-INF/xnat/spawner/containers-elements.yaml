@@ -78,6 +78,14 @@ imageHostsPanel:
                                     name: url
                                     label: URL
                                     validation: url not-empty
+                                default:
+                                    kind: panel.input.switchbox
+                                    id: default-hub
+                                    name: default
+                                    label: Set As Default?
+                                    checked: false
+                                    onText: Default Hub
+                                    offText: Not Default
                                 divider:
                                     tag: "hr"
                                 subhead:
