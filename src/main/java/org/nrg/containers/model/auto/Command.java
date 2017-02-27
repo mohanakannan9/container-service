@@ -520,6 +520,7 @@ public abstract class Command {
         @JsonProperty("id") public abstract long id();
         @JsonProperty("name") public abstract String name();
         @Nullable @JsonProperty("description") public abstract String description();
+        @JsonProperty("contexts") public abstract Set<String> contexts();
         @JsonProperty("external-inputs") public abstract List<CommandWrapperInput> externalInputs();
         @JsonProperty("derived-inputs") public abstract List<CommandWrapperInput> derivedInputs();
         @JsonProperty("output-handlers") public abstract List<CommandWrapperOutput> outputHandlers();
@@ -528,6 +529,7 @@ public abstract class Command {
         static CommandWrapper create(@JsonProperty("id") final long id,
                                      @JsonProperty("name") final String name,
                                      @JsonProperty("description") final String description,
+                                     @JsonProperty("contexts") final Set<String> contexts,
                                      @JsonProperty("external-inputs") final List<CommandWrapperInput> externalInputs,
                                      @JsonProperty("derived-inputs") final List<CommandWrapperInput> derivedInputs,
                                      @JsonProperty("output-handlers") final List<CommandWrapperOutput> outputHandlers) {
@@ -535,6 +537,7 @@ public abstract class Command {
                     .id(id)
                     .name(name == null ? "" : name)
                     .description(description)
+                    .contexts(contexts == null ? Sets.<String>newHashSet() : contexts)
                     .externalInputs(externalInputs == null ? Lists.<CommandWrapperInput>newArrayList() : externalInputs)
                     .derivedInputs(derivedInputs == null ? Lists.<CommandWrapperInput>newArrayList() : derivedInputs)
                     .outputHandlers(outputHandlers == null ? Lists.<CommandWrapperOutput>newArrayList() : outputHandlers)
@@ -560,6 +563,7 @@ public abstract class Command {
             return new AutoValue_Command_CommandWrapper.Builder()
                     .id(0L)
                     .name("")
+                    .contexts(Sets.<String>newHashSet())
                     .externalInputs(Lists.<CommandWrapperInput>newArrayList())
                     .derivedInputs(Lists.<CommandWrapperInput>newArrayList())
                     .outputHandlers(Lists.<CommandWrapperOutput>newArrayList());
@@ -597,7 +601,7 @@ public abstract class Command {
                         }
                     });
             return create(commandWrapperEntity.getId(), commandWrapperEntity.getName(), commandWrapperEntity.getDescription(),
-                    external, derived, outputs);
+                    commandWrapperEntity.getContexts(), external, derived, outputs);
         }
 
         @Nonnull
@@ -615,6 +619,7 @@ public abstract class Command {
             public abstract Builder id(final long id);
             public abstract Builder name(final String name);
             public abstract Builder description(final String description);
+            public abstract Builder contexts(final Set<String> contexts);
             public abstract Builder externalInputs(final List<CommandWrapperInput> externalInputs);
             public abstract Builder derivedInputs(final List<CommandWrapperInput> derivedInputs);
             public abstract Builder outputHandlers(final List<CommandWrapperOutput> outputHandlers);

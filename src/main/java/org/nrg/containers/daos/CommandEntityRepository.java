@@ -34,6 +34,7 @@ public class CommandEntityRepository extends AbstractHibernateDAO<CommandEntity>
         Hibernate.initialize(commandEntity.getCommandWrapperEntities());
         if (commandEntity.getCommandWrapperEntities() != null) {
             for (final CommandWrapperEntity commandWrapperEntity : commandEntity.getCommandWrapperEntities()) {
+                Hibernate.initialize(commandWrapperEntity.getContexts());
                 Hibernate.initialize(commandWrapperEntity.getExternalInputs());
                 Hibernate.initialize(commandWrapperEntity.getDerivedInputs());
                 Hibernate.initialize(commandWrapperEntity.getOutputHandlers());

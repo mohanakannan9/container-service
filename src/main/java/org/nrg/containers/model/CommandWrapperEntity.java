@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.model.auto.Command;
 
 import javax.persistence.ElementCollection;
@@ -15,6 +17,7 @@ import javax.persistence.ManyToOne;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 @Entity
 public class CommandWrapperEntity implements Serializable {
@@ -22,6 +25,7 @@ public class CommandWrapperEntity implements Serializable {
     private String name;
     private String description;
     @JsonIgnore private CommandEntity commandEntity;
+    private Set<String> contexts;
     @JsonProperty("external-inputs") private List<CommandWrapperInputEntity> externalInputs;
     @JsonProperty("derived-inputs") private List<CommandWrapperInputEntity> derivedInputs;
     @JsonProperty("output-handlers") private List<CommandWrapperOutputEntity> outputHandlers;
@@ -75,6 +79,27 @@ public class CommandWrapperEntity implements Serializable {
 
     public void setCommandEntity(final CommandEntity commandEntity) {
         this.commandEntity = commandEntity;
+    }
+
+    @ElementCollection
+    public Set<String> getContexts() {
+        return contexts;
+    }
+
+    public void setContexts(final Set<String> contexts) {
+        this.contexts = contexts == null ?
+                Sets.<String>newHashSet() :
+                contexts;
+    }
+
+    public void addContext(final String context) {
+        if (StringUtils.isBlank(context)) {
+            return;
+        }
+        if (this.contexts == null) {
+            this.contexts = Sets.newHashSet();
+        }
+        this.contexts.add(context);
     }
 
     @ElementCollection
@@ -151,6 +176,7 @@ public class CommandWrapperEntity implements Serializable {
         return Objects.equals(this.id, that.id) &&
                 Objects.equals(this.name, that.name) &&
                 Objects.equals(this.description, that.description) &&
+                Objects.equals(this.contexts, that.contexts) &&
                 Objects.equals(this.externalInputs, that.externalInputs) &&
                 Objects.equals(this.derivedInputs, that.derivedInputs) &&
                 Objects.equals(this.outputHandlers, that.outputHandlers);
@@ -158,7 +184,7 @@ public class CommandWrapperEntity implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, description, externalInputs, derivedInputs, outputHandlers);
+        return Objects.hash(id, name, description, contexts, externalInputs, derivedInputs, outputHandlers);
     }
 
     @Override
@@ -167,6 +193,7 @@ public class CommandWrapperEntity implements Serializable {
                 .add("id", id)
                 .add("name", name)
                 .add("description", description)
+                .add("contexts", contexts)
                 .add("externalInputs", externalInputs)
                 .add("derivedInputs", derivedInputs)
                 .add("outputHandlers", outputHandlers)
