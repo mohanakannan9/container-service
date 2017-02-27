@@ -46,25 +46,25 @@ public abstract class Command {
     @JsonProperty("xnat") public abstract List<CommandWrapper> xnatCommandWrappers();
 
     @JsonCreator
-    static Command create(@JsonProperty("id") long id,
-                          @JsonProperty("name") String name,
-                          @JsonProperty("label") String label,
-                          @JsonProperty("description") String description,
-                          @JsonProperty("version") String version,
-                          @JsonProperty("schema-version") String schemaVersion,
-                          @JsonProperty("info-url") String infoUrl,
-                          @JsonProperty("image") String image,
-                          @JsonProperty("type") String type,
-                          @JsonProperty("index") String index,
-                          @JsonProperty("hash") String hash,
-                          @JsonProperty("working-directory") String workingDirectory,
-                          @JsonProperty("command-line") String commandLine,
-                          @JsonProperty("mounts") List<CommandMount> mounts,
-                          @JsonProperty("environment-variables") Map<String, String> environmentVariables,
-                          @JsonProperty("ports") Map<String, String> ports,
-                          @JsonProperty("inputs") List<CommandInput> inputs,
-                          @JsonProperty("outputs") List<CommandOutput> outputs,
-                          @JsonProperty("xnat") List<CommandWrapper> xnatCommandWrappers) {
+    static Command create(@JsonProperty("id") final long id,
+                          @JsonProperty("name") final String name,
+                          @JsonProperty("label") final String label,
+                          @JsonProperty("description") final String description,
+                          @JsonProperty("version") final String version,
+                          @JsonProperty("schema-version") final String schemaVersion,
+                          @JsonProperty("info-url") final String infoUrl,
+                          @JsonProperty("image") final String image,
+                          @JsonProperty("type") final String type,
+                          @JsonProperty("index") final String index,
+                          @JsonProperty("hash") final String hash,
+                          @JsonProperty("working-directory") final String workingDirectory,
+                          @JsonProperty("command-line") final String commandLine,
+                          @JsonProperty("mounts") final List<CommandMount> mounts,
+                          @JsonProperty("environment-variables") final Map<String, String> environmentVariables,
+                          @JsonProperty("ports") final Map<String, String> ports,
+                          @JsonProperty("inputs") final List<CommandInput> inputs,
+                          @JsonProperty("outputs") final List<CommandOutput> outputs,
+                          @JsonProperty("xnat") final List<CommandWrapper> xnatCommandWrappers) {
         return builder()
                 .id(id)
                 .name(name == null ? "" : name)
@@ -89,6 +89,9 @@ public abstract class Command {
     }
 
     public static Command create(final CommandEntity commandEntity) {
+        if (commandEntity == null) {
+            return null;
+        }
         Command.Builder builder = builder()
                 .id(commandEntity.getId())
                 .name(commandEntity.getName())
@@ -314,13 +317,6 @@ public abstract class Command {
         return errors;
     }
 
-    public void addCommandWrapper(final CommandWrapper commandWrapper) {
-        if (commandWrapper == null) {
-            return;
-        }
-        this.xnatCommandWrappers().add(commandWrapper);
-    }
-
     @AutoValue.Builder
     public abstract static class Builder {
         public abstract Builder id(final long id);
@@ -353,13 +349,16 @@ public abstract class Command {
         @Nullable @JsonProperty("path") public abstract String path();
 
         @JsonCreator
-        static CommandMount create(@JsonProperty("name") String name,
-                                   @JsonProperty("writable") Boolean writable,
-                                   @JsonProperty("path") String path) {
+        static CommandMount create(@JsonProperty("name") final String name,
+                                   @JsonProperty("writable") final Boolean writable,
+                                   @JsonProperty("path") final String path) {
             return new AutoValue_Command_CommandMount(name, writable == null ? false : writable, path);
         }
 
         static CommandMount create(final CommandMountEntity mount) {
+            if (mount == null) {
+                return null;
+            }
             return CommandMount.create(mount.getName(), mount.isWritable(), mount.getContainerPath());
         }
 
@@ -391,17 +390,17 @@ public abstract class Command {
         @Nullable @JsonProperty("false-value") public abstract String falseValue();
 
         @JsonCreator
-        static CommandInput create(@JsonProperty("name") String name,
-                                   @JsonProperty("description") String description,
-                                   @JsonProperty("type") String type,
-                                   @JsonProperty("required") Boolean required,
-                                   @JsonProperty("matcher") String matcher,
-                                   @JsonProperty("default-value") String defaultValue,
-                                   @JsonProperty("replacement-key") String rawReplacementKey,
-                                   @JsonProperty("command-line-flag") String commandLineFlag,
-                                   @JsonProperty("command-line-separator") String commandLineSeparator,
-                                   @JsonProperty("true-value") String trueValue,
-                                   @JsonProperty("false-value") String falseValue) {
+        static CommandInput create(@JsonProperty("name") final String name,
+                                   @JsonProperty("description") final String description,
+                                   @JsonProperty("type") final String type,
+                                   @JsonProperty("required") final Boolean required,
+                                   @JsonProperty("matcher") final String matcher,
+                                   @JsonProperty("default-value") final String defaultValue,
+                                   @JsonProperty("replacement-key") final String rawReplacementKey,
+                                   @JsonProperty("command-line-flag") final String commandLineFlag,
+                                   @JsonProperty("command-line-separator") final String commandLineSeparator,
+                                   @JsonProperty("true-value") final String trueValue,
+                                   @JsonProperty("false-value") final String falseValue) {
             return builder()
                     .name(name)
                     .description(description)
@@ -418,6 +417,9 @@ public abstract class Command {
         }
 
         public static CommandInput create(final CommandInputEntity commandInputEntity) {
+            if (commandInputEntity == null) {
+                return null;
+            }
             return builder()
                     .name(commandInputEntity.getName())
                     .description(commandInputEntity.getDescription())
@@ -479,16 +481,19 @@ public abstract class Command {
         @Nullable @JsonProperty("glob") public abstract String glob();
 
         @JsonCreator
-        static CommandOutput create(@JsonProperty("name") String name,
-                                    @JsonProperty("description") String description,
-                                    @JsonProperty("required") Boolean required,
-                                    @JsonProperty("mount") String mount,
-                                    @JsonProperty("path") String path,
-                                    @JsonProperty("glob") String glob) {
+        static CommandOutput create(@JsonProperty("name") final String name,
+                                    @JsonProperty("description") final String description,
+                                    @JsonProperty("required") final Boolean required,
+                                    @JsonProperty("mount") final String mount,
+                                    @JsonProperty("path") final String path,
+                                    @JsonProperty("glob") final String glob) {
             return new AutoValue_Command_CommandOutput(name, description, required, mount, path, glob);
         }
 
         static CommandOutput create(final CommandOutputEntity commandOutputEntity) {
+            if (commandOutputEntity == null) {
+                return null;
+            }
             return create(commandOutputEntity.getName(), commandOutputEntity.getDescription(), commandOutputEntity.isRequired(), commandOutputEntity.getMount(),
                     commandOutputEntity.getPath(), commandOutputEntity.getGlob());
         }
@@ -515,12 +520,12 @@ public abstract class Command {
         @JsonProperty("output-handlers") public abstract List<CommandWrapperOutput> outputHandlers();
 
         @JsonCreator
-        static CommandWrapper create(@JsonProperty("id") long id,
-                                     @JsonProperty("name") String name,
-                                     @JsonProperty("description") String description,
-                                     @JsonProperty("external-inputs") List<CommandWrapperInput> externalInputs,
-                                     @JsonProperty("derived-inputs") List<CommandWrapperInput> derivedInputs,
-                                     @JsonProperty("output-handlers") List<CommandWrapperOutput> outputHandlers) {
+        static CommandWrapper create(@JsonProperty("id") final long id,
+                                     @JsonProperty("name") final String name,
+                                     @JsonProperty("description") final String description,
+                                     @JsonProperty("external-inputs") final List<CommandWrapperInput> externalInputs,
+                                     @JsonProperty("derived-inputs") final List<CommandWrapperInput> derivedInputs,
+                                     @JsonProperty("output-handlers") final List<CommandWrapperOutput> outputHandlers) {
             return builder()
                     .id(id)
                     .name(name)
@@ -555,6 +560,9 @@ public abstract class Command {
         }
 
         static CommandWrapper create(final CommandWrapperEntity commandWrapperEntity) {
+            if (commandWrapperEntity == null) {
+                return null;
+            }
             final List<CommandWrapperInput> external = commandWrapperEntity.getExternalInputs() == null ?
                     Lists.<CommandWrapperInput>newArrayList() :
                     Lists.transform(commandWrapperEntity.getExternalInputs(), new Function<CommandWrapperInputEntity, CommandWrapperInput>() {
@@ -624,18 +632,18 @@ public abstract class Command {
         @JsonProperty("required") public abstract boolean required();
 
         @JsonCreator
-        static CommandWrapperInput create(@JsonProperty("name") String name,
-                                          @JsonProperty("description") String description,
-                                          @JsonProperty("type") String type,
-                                          @JsonProperty("derived-from-xnat-input") String derivedFromXnatInput,
-                                          @JsonProperty("derived-from-xnat-object-property") String derivedFromXnatObjectProperty,
-                                          @JsonProperty("matcher") String matcher,
-                                          @JsonProperty("provides-value-for-command-input") String providesValueForCommandInput,
-                                          @JsonProperty("provides-files-for-command-mount") String providesFilesForCommandMount,
-                                          @JsonProperty("default-value") String defaultValue,
-                                          @JsonProperty("user-settable") Boolean userSettable,
-                                          @JsonProperty("replacement-key") String rawReplacementKey,
-                                          @JsonProperty("required") Boolean required) {
+        static CommandWrapperInput create(@JsonProperty("name") final String name,
+                                          @JsonProperty("description") final String description,
+                                          @JsonProperty("type") final String type,
+                                          @JsonProperty("derived-from-xnat-input") final String derivedFromXnatInput,
+                                          @JsonProperty("derived-from-xnat-object-property") final String derivedFromXnatObjectProperty,
+                                          @JsonProperty("matcher") final String matcher,
+                                          @JsonProperty("provides-value-for-command-input") final String providesValueForCommandInput,
+                                          @JsonProperty("provides-files-for-command-mount") final String providesFilesForCommandMount,
+                                          @JsonProperty("default-value") final String defaultValue,
+                                          @JsonProperty("user-settable") final Boolean userSettable,
+                                          @JsonProperty("replacement-key") final String rawReplacementKey,
+                                          @JsonProperty("required") final Boolean required) {
             return builder()
                     .name(name)
                     .description(description)
@@ -653,6 +661,10 @@ public abstract class Command {
         }
 
         static CommandWrapperInput create(final CommandWrapperInputEntity wrapperInput) {
+            if (wrapperInput == null) {
+                return null;
+            }
+
             return builder()
                     .name(wrapperInput.getName())
                     .description(wrapperInput.getDescription())
@@ -746,10 +758,10 @@ public abstract class Command {
         @Nullable @JsonProperty("label") public abstract String label();
 
         @JsonCreator
-        static CommandWrapperOutput create(@JsonProperty("accepts-command-output") String commandOutputName,
-                                           @JsonProperty("as-a-child-of-xnat-input") String xnatInputName,
-                                           @JsonProperty("type") String type,
-                                           @JsonProperty("label") String label) {
+        static CommandWrapperOutput create(@JsonProperty("accepts-command-output") final String commandOutputName,
+                                           @JsonProperty("as-a-child-of-xnat-input") final String xnatInputName,
+                                           @JsonProperty("type") final String type,
+                                           @JsonProperty("label") final String label) {
             return new AutoValue_Command_CommandWrapperOutput(
                     commandOutputName,
                     xnatInputName,
@@ -758,6 +770,9 @@ public abstract class Command {
         }
 
         static CommandWrapperOutput create(final CommandWrapperOutputEntity wrapperOutput) {
+            if (wrapperOutput == null) {
+                return null;
+            }
             return create(wrapperOutput.getCommandOutputName(), wrapperOutput.getXnatInputName(), wrapperOutput.getType().getName(), wrapperOutput.getLabel());
         }
 
