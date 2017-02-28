@@ -1,12 +1,10 @@
 package org.nrg.containers.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.base.MoreObjects;
 import io.swagger.annotations.ApiModelProperty;
-import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.model.auto.Command;
 
 import javax.persistence.Embeddable;
@@ -128,12 +126,6 @@ public class CommandInputEntity implements Serializable {
 
     public void setRawReplacementKey(final String rawReplacementKey) {
         this.rawReplacementKey = rawReplacementKey;
-    }
-
-    @Transient
-    @JsonIgnore
-    public String getReplacementKey() {
-        return StringUtils.isNotBlank(rawReplacementKey) ? rawReplacementKey : "#" + getName() + "#";
     }
 
     @ApiModelProperty(value = "Flag to use for this input when substituting the value on the command line", example = "--input-flag")

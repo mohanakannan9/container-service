@@ -37,6 +37,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.nrg.containers.model.CommandWrapperOutputEntity.Type.ASSESSOR;
+import static org.nrg.containers.model.CommandWrapperOutputEntity.Type.RESOURCE;
+
 public class ContainerFinalizeHelper {
     private static final Logger log = LoggerFactory.getLogger(ContainerFinalizeHelper.class);
 
@@ -237,68 +240,66 @@ public class ContainerFinalizeHelper {
         }
 
         String createdUri = null;
-        switch (output.getType()) {
-            case RESOURCE:
+        final String type = output.getType();
+        if (type.equals(RESOURCE.getName())) {
+            if (log.isDebugEnabled()) {
+                final String template = prefix + "Inserting file resource.\n\tuser: %s\n\tparentUri: %s\n\tlabel: %s\n\ttoUpload: %s";
+                log.debug(String.format(template, userI.getLogin(), parentUri, label, toUpload));
+            }
+
+            try {
+                final XnatResourcecatalog resourcecatalog = catalogService.insertResources(userI, parentUri, toUpload, label, null, null, null);
+                createdUri = UriParserUtils.getArchiveUri(resourcecatalog);
+                if (StringUtils.isBlank(createdUri)) {
+                    createdUri = parentUri + "/resources/" + resourcecatalog.getLabel();
+                }
+            } catch (Exception e) {
+                throw new ContainerException(prefix + "Could not upload files to resource.", e);
+            }
+        } else if (type.equals(ASSESSOR.getName())) {
+            /* TODO Waiting on XNAT-4556
+            final CommandMount mount = getMount(output.getFiles().getMount());
+            final String absoluteFilePath = FilenameUtils.concat(mount.getHostPath(), output.getFiles().getPath());
+            final SAXReader reader = new SAXReader(userI);
+            XFTItem item = null;
+            try {
                 if (log.isDebugEnabled()) {
-                    final String template = prefix + "Inserting file resource.\n\tuser: %s\n\tparentUri: %s\n\tlabel: %s\n\ttoUpload: %s";
-                    log.debug(String.format(template, userI.getLogin(), parentUri, label, toUpload));
+                    log.debug("Reading XML file at " + absoluteFilePath);
                 }
+                item = reader.parse(new File(absoluteFilePath));
 
-                try {
-                    final XnatResourcecatalog resourcecatalog = catalogService.insertResources(userI, parentUri, toUpload, label, null, null, null);
-                    createdUri = UriParserUtils.getArchiveUri(resourcecatalog);
-                    if (StringUtils.isBlank(createdUri)) {
-                        createdUri = parentUri + "/resources/" + resourcecatalog.getLabel();
+            } catch (IOException e) {
+                log.error("An error occurred reading the XML", e);
+            } catch (SAXException e) {
+                log.error("An error occurred parsing the XML", e);
+            }
+
+            if (!reader.assertValid()) {
+                throw new ContainerException("XML file invalid", reader.getErrors().get(0));
+            }
+            if (item == null) {
+                throw new ContainerException("Could not create assessor from XML");
+            }
+
+            try {
+                if (item.instanceOf("xnat:imageAssessorData")) {
+                    final XnatImageassessordata assessor = (XnatImageassessordata) BaseElement.GetGeneratedItem(item);
+                    if(permissionsService.canCreate(userI, assessor)){
+                        throw new ContainerException(String.format("User \"%s\" has insufficient privileges for assessors in project \"%s\".", userI.getLogin(), assessor.getProject()));
                     }
-                } catch (Exception e) {
-                    throw new ContainerException(prefix + "Could not upload files to resource.", e);
-                }
-                break;
-            case ASSESSOR:
-                /* TODO Waiting on XNAT-4556
-                final CommandMount mount = getMount(output.getFiles().getMount());
-                final String absoluteFilePath = FilenameUtils.concat(mount.getHostPath(), output.getFiles().getPath());
-                final SAXReader reader = new SAXReader(userI);
-                XFTItem item = null;
-                try {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Reading XML file at " + absoluteFilePath);
+
+                    if(assessor.getLabel()==null){
+                        assessor.setLabel(assessor.getId());
                     }
-                    item = reader.parse(new File(absoluteFilePath));
 
-                } catch (IOException e) {
-                    log.error("An error occurred reading the XML", e);
-                } catch (SAXException e) {
-                    log.error("An error occurred parsing the XML", e);
+                    // I hate this
                 }
-
-                if (!reader.assertValid()) {
-                    throw new ContainerException("XML file invalid", reader.getErrors().get(0));
-                }
-                if (item == null) {
-                    throw new ContainerException("Could not create assessor from XML");
-                }
-
-                try {
-                    if (item.instanceOf("xnat:imageAssessorData")) {
-                        final XnatImageassessordata assessor = (XnatImageassessordata) BaseElement.GetGeneratedItem(item);
-                        if(permissionsService.canCreate(userI, assessor)){
-                            throw new ContainerException(String.format("User \"%s\" has insufficient privileges for assessors in project \"%s\".", userI.getLogin(), assessor.getProject()));
-                        }
-
-                        if(assessor.getLabel()==null){
-                            assessor.setLabel(assessor.getId());
-                        }
-
-                        // I hate this
-                    }
-                } catch (ElementNotFoundException e) {
-                    throw new ContainerException(e);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                 */
-                break;
+            } catch (ElementNotFoundException e) {
+                throw new ContainerException(e);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+             */
         }
 
 

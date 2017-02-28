@@ -23,7 +23,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
-
 public class XnatModelTest {
     private static final String FILE_JSON = "{\"name\":\"file.txt\", \"type\":\"File\", \"path\":\"/path/to/files/file.txt\", " +
             "\"tags\":[\"squishy\",\"jovial\"], \"format\":\"TEXT\", \"content\":\"TEXT\"}";

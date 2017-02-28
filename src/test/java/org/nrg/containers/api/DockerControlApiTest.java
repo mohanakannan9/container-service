@@ -12,6 +12,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.nrg.containers.config.DockerControlApiTestConfig;
 import org.nrg.containers.events.DockerContainerEvent;
 import org.nrg.containers.exceptions.DockerServerException;
@@ -91,24 +92,10 @@ public class DockerControlApiTest {
         when(mockPrefsService.getPreferenceValue("docker-server", "lastEventCheckTime", EntityId.Default.getScope(), EntityId.Default.getEntityId()))
             .thenReturn(timeZeroString);
         doNothing().when(mockPrefsService)
-            .setPreferenceValue("docker-server", "host", "");
-        doNothing().when(mockPrefsService)
-            .setPreferenceValue("docker-server", "certPath", "");
-        doNothing().when(mockPrefsService)
-            .setPreferenceValue("docker-server", "lastEventCheckTime", "");
-        when(mockPrefsService.hasPreference("docker-server", "host"))
-            .thenReturn(true);
-        when(mockPrefsService.hasPreference("docker-server", "certPath"))
-            .thenReturn(true);
-        when(mockPrefsService.hasPreference("docker-server", "lastEventCheckTime"))
-            .thenReturn(true);
+            .setPreferenceValue(Mockito.eq("docker-server"), Mockito.anyString(), Mockito.anyString());
+        when(mockPrefsService.hasPreference(Mockito.eq("docker-server"), Mockito.anyString())).thenReturn(true);
 
         client = controlApi.getClient();
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        return;
     }
 
     @Test
@@ -180,7 +167,6 @@ public class DockerControlApiTest {
     @Test
     public void testPullImage() throws Exception {
         controlApi.pullImage(BUSYBOX_LATEST);
-
     }
 
     @Test

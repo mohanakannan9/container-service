@@ -12,7 +12,6 @@ import org.nrg.containers.exceptions.ContainerMountResolutionException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
-import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.containers.model.auto.Command;
@@ -72,7 +71,7 @@ public class CommandRestApi extends AbstractXapiRestController {
     @ApiOperation(value = "Get all Commands")
     @ResponseBody
     public List<Command> getCommands() {
-        return commandService.getAllCommands();
+        return commandService.getAll();
     }
 
     @RequestMapping(value = {}, method = GET)
@@ -102,14 +101,14 @@ public class CommandRestApi extends AbstractXapiRestController {
             properties.put("image", image);
         }
 
-        return commandService.findCommandByProperties(properties);
+        return commandService.findByProperties(properties);
     }
 
     @RequestMapping(value = {"/{id}"}, method = GET)
     @ApiOperation(value = "Get a Command by ID")
     @ResponseBody
     public Command retrieveCommand(final @PathVariable Long id) throws NotFoundException {
-        return commandService.getCommand(id);
+        return commandService.get(id);
     }
 
     /*
@@ -203,7 +202,7 @@ public class CommandRestApi extends AbstractXapiRestController {
             }
             return containerExecution;
         } catch (CommandInputResolutionException e) {
-            throw new BadRequestException("Must provide value for variable " + e.getInput().getName() + ".", e);
+            throw new BadRequestException("Must provide value for variable " + e.getInput().name() + ".", e);
         }
     }
 

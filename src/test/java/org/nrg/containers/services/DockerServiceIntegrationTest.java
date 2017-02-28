@@ -11,9 +11,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.config.DockerServiceIntegrationTestConfig;
-import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.DockerServerPrefsBean;
-import org.nrg.containers.model.CommandWrapperEntity;
 import org.nrg.containers.model.auto.Command;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.UserManagementServiceI;
@@ -30,10 +28,7 @@ import java.util.List;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -49,7 +44,7 @@ public class DockerServiceIntegrationTest {
     private final String FAKE_HOST = "mock://url";
 
     @Autowired private ObjectMapper mapper;
-    @Autowired private CommandService commandService;
+    @Autowired private CommandEntityService commandEntityService;
     @Autowired private ContainerControlApi controlApi;
     @Autowired private DockerService dockerService;
     @Autowired private DockerServerPrefsBean mockDockerServerPrefsBean;

@@ -7,7 +7,10 @@ import com.google.common.collect.Lists;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.containers.config.CommandTestConfig;
-import org.nrg.containers.services.CommandService;
+import org.nrg.containers.model.auto.Command;
+import org.nrg.containers.services.CommandEntityService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -19,13 +22,16 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @Transactional
 @ContextConfiguration(classes = CommandTestConfig.class)
 public class CommandTest {
+    private static final Logger log = LoggerFactory.getLogger(CommandTest.class);
     private static final String COOL_INPUT_JSON = "{" +
             "\"name\":\"my_cool_input\", " +
             "\"description\":\"A boolean value\", " +
@@ -69,11 +75,11 @@ public class CommandTest {
             "}";
 
     @Autowired private ObjectMapper mapper;
-    @Autowired private CommandService commandService;
+    @Autowired private CommandEntityService commandEntityService;
 
     @Test
     public void testSpringConfiguration() {
-        assertThat(commandService, not(nullValue()));
+        assertThat(commandEntityService, not(nullValue()));
     }
 
 
@@ -81,30 +87,32 @@ public class CommandTest {
     public void testDeserializeCommandInput() throws Exception {
         final CommandInputEntity commandInputEntity0 =
                 mapper.readValue(COOL_INPUT_JSON, CommandInputEntity.class);
-        final CommandInputEntity fooInput =
+        final Command.CommandInput commandInput0 = Command.CommandInput.create(commandInputEntity0);
+        final CommandInputEntity fooInputEntity =
                 mapper.readValue(FOO_INPUT_JSON, CommandInputEntity.class);
+        final Command.CommandInput fooInput = Command.CommandInput.create(fooInputEntity);
 
-        assertEquals("my_cool_input", commandInputEntity0.getName());
-        assertEquals("A boolean value", commandInputEntity0.getDescription());
-        assertEquals(CommandInputEntity.Type.BOOLEAN, commandInputEntity0.getType());
-        assertEquals(true, commandInputEntity0.isRequired());
-        assertEquals("-b", commandInputEntity0.getTrueValue());
-        assertEquals("", commandInputEntity0.getFalseValue());
-        assertEquals("#my_cool_input#", commandInputEntity0.getReplacementKey());
-        assertEquals("", commandInputEntity0.getCommandLineFlag());
-        assertEquals(" ", commandInputEntity0.getCommandLineSeparator());
-        assertNull(commandInputEntity0.getDefaultValue());
+        assertEquals("my_cool_input", commandInput0.name());
+        assertEquals("A boolean value", commandInput0.description());
+        assertEquals(CommandInputEntity.Type.BOOLEAN.getName(), commandInput0.type());
+        assertTrue(commandInput0.required());
+        assertEquals("-b", commandInput0.trueValue());
+        assertEquals("", commandInput0.falseValue());
+        assertEquals("#my_cool_input#", commandInput0.replacementKey());
+        assertEquals("", commandInput0.commandLineFlag());
+        assertEquals(" ", commandInput0.commandLineSeparator());
+        assertNull(commandInput0.defaultValue());
 
-        assertEquals("foo", fooInput.getName());
-        assertEquals("A foo that bars", fooInput.getDescription());
-        assertEquals(CommandInputEntity.Type.STRING, fooInput.getType());
-        assertEquals(false, fooInput.isRequired());
-        assertNull(fooInput.getTrueValue());
-        assertNull(fooInput.getFalseValue());
-        assertEquals("#foo#", fooInput.getReplacementKey());
-        assertEquals("--flag", fooInput.getCommandLineFlag());
-        assertEquals("=", fooInput.getCommandLineSeparator());
-        assertEquals("bar", fooInput.getDefaultValue());
+        assertEquals("foo", fooInput.name());
+        assertEquals("A foo that bars", fooInput.description());
+        assertEquals(CommandInputEntity.Type.STRING.getName(), fooInput.type());
+        assertFalse(fooInput.required());
+        assertNull(fooInput.trueValue());
+        assertNull(fooInput.falseValue());
+        assertEquals("#foo#", fooInput.replacementKey());
+        assertEquals("--flag", fooInput.commandLineFlag());
+        assertEquals("=", fooInput.commandLineSeparator());
+        assertEquals("bar", fooInput.defaultValue());
     }
 
     @Test
@@ -141,11 +149,11 @@ public class CommandTest {
 
         final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
 
-        commandService.create(commandEntity);
+        commandEntityService.create(commandEntity);
         // commandService.flush();
         // commandService.refresh(command);
 
-        final CommandEntity retrievedCommandEntity = commandService.retrieve(commandEntity.getId());
+        final CommandEntity retrievedCommandEntity = commandEntityService.retrieve(commandEntity.getId());
 
         assertEquals(commandEntity, retrievedCommandEntity);
     }

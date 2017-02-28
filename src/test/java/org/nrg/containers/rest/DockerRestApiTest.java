@@ -2,7 +2,6 @@ package org.nrg.containers.rest;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -11,20 +10,19 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.config.DockerRestApiTestConfig;
-import org.nrg.containers.exceptions.CommandValidationException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.CommandInputEntity;
+import org.nrg.containers.model.CommandWrapperEntity;
 import org.nrg.containers.model.DockerCommandEntity;
-import org.nrg.containers.model.auto.Command;
-import org.nrg.containers.model.auto.Command.CommandWrapper;
-import org.nrg.containers.model.auto.DockerImage;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.model.DockerServerPrefsBean;
-import org.nrg.containers.model.CommandWrapperEntity;
+import org.nrg.containers.model.auto.Command;
+import org.nrg.containers.model.auto.Command.CommandWrapper;
 import org.nrg.containers.model.auto.DockerHub;
+import org.nrg.containers.model.auto.DockerImage;
 import org.nrg.containers.model.auto.DockerImageAndCommandSummary;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.DockerHubService;
@@ -45,7 +43,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 
@@ -57,7 +54,6 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.isIn;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -664,8 +660,6 @@ public class DockerRestApiTest {
                 .xnatCommandWrappers(Lists.newArrayList(wrapper))
                 .build();
 
-        final CommandEntity commandEntityWithImage_entity = CommandEntity.fromPojo(commandWithImage);
-
         // Command refers to image that does not exist on server
         final String commandWithUnknownImage_imageName = "unknown";
         final String commandWithUnknownImage_name = "image-unknown";
@@ -673,7 +667,6 @@ public class DockerRestApiTest {
                 .name(commandWithUnknownImage_name)
                 .image(commandWithUnknownImage_imageName)
                 .build();
-        final CommandEntity commandEntityWithUnknownImage_entity = CommandEntity.fromPojo(unknownCommand);
 
         // Image has command labels, no commands on server
         final String imageWithNonDbCommandLabels_id = "who:cares:not:me";
@@ -690,7 +683,7 @@ public class DockerRestApiTest {
         // Mock out responses
         doReturn(Lists.newArrayList(imageWithSavedCommand, imageWithNonDbCommandLabels)).when(mockContainerControlApi).getAllImages();
         doReturn(null).when(mockContainerControlApi).getImageById(commandWithUnknownImage_imageName);
-        when(mockCommandService.getAll()).thenReturn(Lists.newArrayList(commandEntityWithImage_entity, commandEntityWithUnknownImage_entity));
+        when(mockCommandService.getAll()).thenReturn(Lists.newArrayList(commandWithImage, unknownCommand));
         when(mockDockerServerPrefsBean.getName()).thenReturn(MOCK_CONTAINER_SERVER_NAME);
 
         final List<DockerImageAndCommandSummary> expected = Lists.newArrayList(

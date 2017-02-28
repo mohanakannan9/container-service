@@ -1,17 +1,13 @@
 package org.nrg.containers.config;
 
 import org.mockito.Mockito;
-import org.nrg.config.services.ConfigService;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.rest.CommandRestApi;
 import org.nrg.containers.services.CommandService;
 import org.nrg.framework.services.ContextService;
-import org.nrg.prefs.services.NrgPreferenceService;
-import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
-import org.nrg.xdat.services.AliasTokenService;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,26 +33,6 @@ public class CommandRestApiTestConfig extends WebSecurityConfigurerAdapter {
     @Bean
     public DockerServerPrefsBean dockerServerPrefsBean() {
         return Mockito.mock(DockerServerPrefsBean.class);
-    }
-
-    @Bean
-    public NrgPreferenceService mockNrgPreferenceService() {
-        return Mockito.mock(NrgPreferenceService.class);
-    }
-
-    @Bean
-    public AliasTokenService aliasTokenService() {
-        return Mockito.mock(AliasTokenService.class);
-    }
-
-    @Bean
-    public SiteConfigPreferences siteConfigPreferences() {
-        return Mockito.mock(SiteConfigPreferences.class);
-    }
-
-    @Bean
-    public ConfigService configService() {
-        return Mockito.mock(ConfigService.class);
     }
 
     @Bean

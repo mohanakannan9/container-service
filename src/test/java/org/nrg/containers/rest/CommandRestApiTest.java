@@ -24,7 +24,7 @@ import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.containers.model.ResolvedDockerCommand;
-import org.nrg.containers.services.CommandService;
+import org.nrg.containers.services.CommandEntityService;
 import org.nrg.containers.services.ContainerExecutionService;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -87,7 +87,7 @@ public class CommandRestApiTest {
 
     @Autowired private WebApplicationContext wac;
     @Autowired private ObjectMapper mapper;
-    @Autowired private CommandService commandService;
+    @Autowired private CommandEntityService commandEntityService;
     @Autowired private RoleServiceI mockRoleService;
     @Autowired private ContainerControlApi mockDockerControlApi;
     @Autowired private ContainerExecutionService mockContainerExecutionService;
@@ -163,7 +163,7 @@ public class CommandRestApiTest {
         final String commandJson =
                 "{\"name\": \"one\", \"type\": \"docker\", \"image\":\"" + FAKE_DOCKER_IMAGE + "\"}";
         final CommandEntity commandEntity = mapper.readValue(commandJson, CommandEntity.class);
-        final CommandEntity created = commandService.create(commandEntity);
+        final CommandEntity created = commandEntityService.create(commandEntity);
 
 //        when(commandService.getAll()).thenReturn(Lists.newArrayList(command));
 
@@ -196,7 +196,7 @@ public class CommandRestApiTest {
         final String commandJson =
                 "{\"name\": \"one\", \"type\": \"docker\", \"image\":\"" + FAKE_DOCKER_IMAGE + "\"}";
         final CommandEntity commandEntity = mapper.readValue(commandJson, CommandEntity.class);
-        final CommandEntity created = commandService.create(commandEntity);
+        final CommandEntity created = commandEntityService.create(commandEntity);
 
         final String path = String.format(pathTemplate, created.getId());
 
@@ -244,7 +244,7 @@ public class CommandRestApiTest {
         final Long idResponse = Long.parseLong(response);
         assertNotEquals(Long.valueOf(0L), idResponse);
 
-        final CommandEntity retrieved = commandService.retrieve(idResponse);
+        final CommandEntity retrieved = commandEntityService.retrieve(idResponse);
         assertNotEquals(0L, retrieved.getId());
         assertEquals((Long) retrieved.getId(), idResponse);
         assertEquals("toCreate", retrieved.getName());
@@ -294,7 +294,7 @@ public class CommandRestApiTest {
         final String commandJson =
                 "{\"name\": \"toDelete\", \"type\": \"docker\", \"image\":\"" + FAKE_DOCKER_IMAGE + "\"}";
         final CommandEntity commandEntity = mapper.readValue(commandJson, CommandEntity.class);
-        commandService.create(commandEntity);
+        commandEntityService.create(commandEntity);
         final Long id = commandEntity.getId();
 
         final String path = String.format(pathTemplate, id);
@@ -307,7 +307,7 @@ public class CommandRestApiTest {
         mockMvc.perform(request)
                 .andExpect(status().isNoContent());
 
-        final CommandEntity retrieved = commandService.retrieve(id);
+        final CommandEntity retrieved = commandEntityService.retrieve(id);
         assertNull(retrieved);
     }
 
@@ -326,7 +326,7 @@ public class CommandRestApiTest {
                         "\"image\": \"" + FAKE_DOCKER_IMAGE + "\"," +
                         "\"inputs\": [" + commandInput + "]}";
         final CommandEntity commandEntity = mapper.readValue(commandJson, CommandEntity.class);
-        commandService.create(commandEntity);
+        commandEntityService.create(commandEntity);
         final Long id = commandEntity.getId();
 
         // This ResolvedCommand will be used in an internal method to "launch" a container
@@ -384,7 +384,7 @@ public class CommandRestApiTest {
                 "\"inputs\": [" + commandInput + "]" +
                 "}";
         final CommandEntity commandEntity = mapper.readValue(commandJson, CommandEntity.class);
-        commandService.create(commandEntity);
+        commandEntityService.create(commandEntity);
         final Long id = commandEntity.getId();
 
         // This ResolvedCommand will be used in an internal method to "launch" a container

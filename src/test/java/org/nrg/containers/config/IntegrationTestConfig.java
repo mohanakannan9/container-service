@@ -15,9 +15,11 @@ import org.nrg.containers.model.ContainerExecutionMount;
 import org.nrg.containers.model.DockerCommandEntity;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.CommandWrapperEntity;
+import org.nrg.containers.services.CommandEntityService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerExecutionService;
-import org.nrg.containers.services.impl.HibernateCommandService;
+import org.nrg.containers.services.impl.CommandServiceImpl;
+import org.nrg.containers.services.impl.HibernateCommandEntityService;
 import org.nrg.containers.services.impl.HibernateContainerExecutionService;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.services.NrgEventService;
@@ -65,14 +67,20 @@ public class IntegrationTestConfig {
     }
 
     @Bean
-    public CommandService commandService(final ContainerControlApi controlApi,
+    public CommandService commandService(final CommandEntityService commandEntityService,
+                                         final ContainerControlApi controlApi,
                                          final AliasTokenService aliasTokenService,
                                          final SiteConfigPreferences siteConfigPreferences,
                                          final TransportService transporter,
                                          final ContainerExecutionService containerExecutionService,
                                          final ConfigService configService) {
-        return new HibernateCommandService(controlApi, aliasTokenService, siteConfigPreferences,
+        return new CommandServiceImpl(commandEntityService, controlApi, aliasTokenService, siteConfigPreferences,
                 transporter, containerExecutionService, configService);
+    }
+
+    @Bean
+    public CommandEntityService commandEntityService() {
+        return new HibernateCommandEntityService();
     }
 
     @Bean

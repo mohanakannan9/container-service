@@ -9,9 +9,11 @@ import org.nrg.containers.daos.CommandDao;
 import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.DockerCommandEntity;
 import org.nrg.containers.model.CommandWrapperEntity;
+import org.nrg.containers.services.CommandEntityService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerExecutionService;
-import org.nrg.containers.services.impl.HibernateCommandService;
+import org.nrg.containers.services.impl.CommandServiceImpl;
+import org.nrg.containers.services.impl.HibernateCommandEntityService;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.transporter.TransportService;
 import org.nrg.transporter.TransportServiceImpl;
@@ -29,42 +31,12 @@ import javax.sql.DataSource;
 import java.util.Properties;
 
 @Configuration
-//@EnableTransactionManagement
 @Import(ExecutionHibernateEntityTestConfig.class)
 public class CommandTestConfig {
     @Bean
     public ObjectMapper objectMapper() {
         return new ObjectMapper();
     }
-//    @Bean
-//    public DockerImageService dockerImageService() {
-//        return new HibernateDockerImageService();
-//    }
-//
-//    @Bean
-//    public DockerImageDao dockerImageDao() {
-//        return new DockerImageDao();
-//    }
-
-//    @Bean
-//    public ScriptService scriptService() {
-//        return new HibernateScriptService();
-//    }
-//
-//    @Bean
-//    public ScriptRepository scriptRepository() {
-//        return new ScriptRepository();
-//    }
-
-//    @Bean
-//    public ScriptEnvironmentService scriptEnvironmentService() {
-//        return new HibernateScriptEnvironmentService();
-//    }
-//
-//    @Bean
-//    public ScriptEnvironmentDao scriptEnvironmentDao() {
-//        return new ScriptEnvironmentDao();
-//    }
 
     @Bean
     public AliasTokenService aliasTokenService() {
@@ -82,14 +54,20 @@ public class CommandTestConfig {
     }
 
     @Bean
-    public CommandService commandService(final ContainerControlApi controlApi,
+    public CommandService commandService(final CommandEntityService commandEntityService,
+                                         final ContainerControlApi controlApi,
                                          final AliasTokenService aliasTokenService,
                                          final SiteConfigPreferences siteConfigPreferences,
                                          final TransportService transporter,
                                          final ContainerExecutionService containerExecutionService,
                                          final ConfigService configService) {
-        return new HibernateCommandService(controlApi, aliasTokenService, siteConfigPreferences,
+        return new CommandServiceImpl(commandEntityService, controlApi, aliasTokenService, siteConfigPreferences,
                 transporter, containerExecutionService, configService);
+    }
+
+    @Bean
+    public CommandEntityService commandEntityService() {
+        return new HibernateCommandEntityService();
     }
 
     @Bean

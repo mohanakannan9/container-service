@@ -2,6 +2,7 @@ package org.nrg.containers.model;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Maps;
+import org.nrg.containers.model.auto.Command;
 
 import java.util.Map;
 import java.util.Objects;
@@ -13,7 +14,7 @@ public class ResolvedDockerCommand extends ResolvedCommand {
 
     public ResolvedDockerCommand() {}
 
-    public ResolvedDockerCommand(final Long xnatCommandWrapperId, final DockerCommandEntity dockerCommand) {
+    public ResolvedDockerCommand(final Long xnatCommandWrapperId, final Command dockerCommand) {
         super(xnatCommandWrapperId, dockerCommand);
     }
 

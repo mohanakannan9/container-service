@@ -76,7 +76,7 @@
                     "description": "Input T1 scan",
                     "type": "Scan",
                     "derived-from-xnat-input": "session",
-                    "matcher": "@.scan-type == '^wrapper:$.external-inputs[?(@.name == 'T1-scantype')].value^'"
+                    "matcher": "@.scan-type == '#T1-scantype#'"
                 },
                 {
                     "name": "resource",

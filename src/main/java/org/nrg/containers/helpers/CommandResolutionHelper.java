@@ -18,19 +18,19 @@ import org.nrg.containers.exceptions.CommandInputResolutionException;
 import org.nrg.containers.exceptions.CommandMountResolutionException;
 import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.CommandWrapperInputResolutionException;
-import org.nrg.containers.model.CommandEntity;
-import org.nrg.containers.model.CommandInputEntity;
-import org.nrg.containers.model.CommandMountEntity;
-import org.nrg.containers.model.CommandOutputEntity;
 import org.nrg.containers.model.ContainerExecutionMount;
 import org.nrg.containers.model.ContainerExecutionOutput;
 import org.nrg.containers.model.ContainerMountFiles;
 import org.nrg.containers.model.DockerCommandEntity;
 import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.containers.model.ResolvedDockerCommand;
-import org.nrg.containers.model.CommandWrapperInputEntity;
-import org.nrg.containers.model.CommandWrapperOutputEntity;
-import org.nrg.containers.model.CommandWrapperEntity;
+import org.nrg.containers.model.auto.Command;
+import org.nrg.containers.model.auto.Command.CommandInput;
+import org.nrg.containers.model.auto.Command.CommandMount;
+import org.nrg.containers.model.auto.Command.CommandOutput;
+import org.nrg.containers.model.auto.Command.CommandWrapper;
+import org.nrg.containers.model.auto.Command.CommandWrapperInput;
+import org.nrg.containers.model.auto.Command.CommandWrapperOutput;
 import org.nrg.containers.model.xnat.Assessor;
 import org.nrg.containers.model.xnat.Project;
 import org.nrg.containers.model.xnat.Resource;
@@ -53,20 +53,31 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.nrg.containers.model.CommandType.DOCKER;
+import static org.nrg.containers.model.CommandWrapperInputEntity.Type.ASSESSOR;
+import static org.nrg.containers.model.CommandWrapperInputEntity.Type.BOOLEAN;
+import static org.nrg.containers.model.CommandWrapperInputEntity.Type.CONFIG;
+import static org.nrg.containers.model.CommandWrapperInputEntity.Type.DIRECTORY;
+import static org.nrg.containers.model.CommandWrapperInputEntity.Type.FILE;
+import static org.nrg.containers.model.CommandWrapperInputEntity.Type.FILES;
+import static org.nrg.containers.model.CommandWrapperInputEntity.Type.NUMBER;
+import static org.nrg.containers.model.CommandWrapperInputEntity.Type.PROJECT;
+import static org.nrg.containers.model.CommandWrapperInputEntity.Type.RESOURCE;
+import static org.nrg.containers.model.CommandWrapperInputEntity.Type.SCAN;
+import static org.nrg.containers.model.CommandWrapperInputEntity.Type.SESSION;
+import static org.nrg.containers.model.CommandWrapperInputEntity.Type.STRING;
+import static org.nrg.containers.model.CommandWrapperInputEntity.Type.SUBJECT;
+
 public class CommandResolutionHelper {
     private static final Logger log = LoggerFactory.getLogger(CommandResolutionHelper.class);
     private static final String JSONPATH_SUBSTRING_REGEX = "\\^(wrapper:)?(.+)\\^";
 
-    private final CommandWrapperEntity commandWrapperEntity;
-    private final CommandEntity commandEntity;
+    private final CommandWrapper commandWrapper;
+    private final Command command;
     private final ResolvedCommand resolvedCommand;
-    private CommandEntity cachedCommandEntity;
-    private String commandJson;
-    private CommandWrapperEntity cachedCommandWrapper;
-    private String commandWrapperJson;
-    private final Map<String, CommandWrapperInputEntity> resolvedXnatInputObjects = Maps.newHashMap();
+    private final Map<String, CommandWrapperInput> resolvedXnatInputObjects = Maps.newHashMap();
     private final Map<String, String> resolvedXnatInputValuesByCommandInputName = Maps.newHashMap();
-    private final Map<String, List<CommandWrapperInputEntity>> commandMountsToReceiveFilesFromXnatInputs = Maps.newHashMap();
+    private final Map<String, List<CommandWrapperInput>> commandMountsToReceiveFilesFromXnatInputs = Maps.newHashMap();
     private final Map<String, String> resolvedInputValuesByReplacementKey = Maps.newHashMap();
     private final Map<String, String> resolvedInputCommandLineValuesByReplacementKey = Maps.newHashMap();
     private final UserI userI;
@@ -75,22 +86,29 @@ public class CommandResolutionHelper {
     private final ConfigService configService;
     private final Pattern jsonpathSubstringPattern;
 
-    private CommandResolutionHelper(final CommandWrapperEntity commandWrapperEntity,
-                                    final CommandEntity commandEntity,
+    // Caches
+    private Command cachedCommand;
+    private String commandJson;
+    private CommandWrapper cachedCommandWrapper;
+    private String commandWrapperJson;
+    private Map<CommandInput, String> commandInputValues =  Maps.newHashMap();
+    private Map<CommandWrapperInput, String> commandWrapperInputValues =  Maps.newHashMap();
+    private Map<CommandWrapperInput, String> commandWrapperInputJsonValues =  Maps.newHashMap();
+
+    private CommandResolutionHelper(final CommandWrapper commandWrapper,
+                                    final Command command,
                                     final Map<String, String> inputValues,
                                     final UserI userI,
                                     final ConfigService configService) throws CommandResolutionException {
-        this.commandWrapperEntity = commandWrapperEntity;
-        this.commandEntity = commandEntity;
-        switch (commandEntity.getType()) {
-            case DOCKER:
-                resolvedCommand = new ResolvedDockerCommand(commandWrapperEntity.getId(), (DockerCommandEntity) commandEntity);
-                break;
-            default:
-                // If this happens, it is because I added a new CommandType and didn't add a case to this switch statement. Oops.
-                throw new CommandResolutionException(String.format("Unknown command type: \"%s\".", commandEntity.getType()));
+        this.commandWrapper = commandWrapper;
+        this.command = command;
+        if (command.type().equals(DOCKER.getName())) {
+            resolvedCommand = new ResolvedDockerCommand(commandWrapper.id(), command);
+        } else {
+            // If this happens, it is because I added a new CommandType and didn't add a case to this switch statement. Oops.
+            throw new CommandResolutionException(String.format("Unknown command type: \"%s\".", command.type()));
         }
-        this.cachedCommandEntity = null;
+        this.cachedCommand = null;
         this.commandJson = null;
         this.cachedCommandWrapper = null;
         this.commandWrapperJson = null;
@@ -109,20 +127,20 @@ public class CommandResolutionHelper {
         resolvedCommand.setRawInputValues(this.inputValues);
     }
 
-    public static ResolvedCommand resolve(final CommandWrapperEntity commandWrapperEntity,
-                                          final CommandEntity commandEntity,
+    public static ResolvedCommand resolve(final CommandWrapper commandWrapper,
+                                          final Command command,
                                           final Map<String, String> inputValues,
                                           final UserI userI,
                                           final ConfigService configService)
             throws CommandResolutionException {
-        final CommandResolutionHelper helper = new CommandResolutionHelper(commandWrapperEntity, commandEntity, inputValues, userI, configService);
+        final CommandResolutionHelper helper = new CommandResolutionHelper(commandWrapper, command, inputValues, userI, configService);
         return helper.resolve();
     }
 
     private ResolvedCommand resolve() throws CommandResolutionException {
         log.info("Resolving command.");
         if (log.isDebugEnabled()) {
-            log.debug(commandEntity.toString());
+            log.debug(command.toString());
         }
 
         resolvedCommand.setXnatInputValues(resolveXnatWrapperInputs());
@@ -132,7 +150,7 @@ public class CommandResolutionHelper {
         resolvedCommand.setCommandLine(resolveCommandLine());
         resolvedCommand.setMounts(resolveCommandMounts());
         resolvedCommand.setEnvironmentVariables(resolveEnvironmentVariables());
-        resolvedCommand.setWorkingDirectory(resolveTemplate(commandEntity.getWorkingDirectory()));
+        resolvedCommand.setWorkingDirectory(resolveTemplate(command.workingDirectory()));
 
         switch (resolvedCommand.getType()) {
             case DOCKER:
@@ -152,8 +170,8 @@ public class CommandResolutionHelper {
     private Map<String, String> resolveXnatWrapperInputs() throws CommandResolutionException {
         log.info("Resolving xnat wrapper inputs.");
 
-        final boolean hasExternalInputs = !(commandWrapperEntity.getExternalInputs() == null || commandWrapperEntity.getExternalInputs().isEmpty());
-        final boolean hasDerivedInputs = !(commandWrapperEntity.getDerivedInputs() == null || commandWrapperEntity.getDerivedInputs().isEmpty());
+        final boolean hasExternalInputs = !(commandWrapper.externalInputs() == null || commandWrapper.externalInputs().isEmpty());
+        final boolean hasDerivedInputs = !(commandWrapper.derivedInputs() == null || commandWrapper.derivedInputs().isEmpty());
 
         if (!hasExternalInputs) {
             if (hasDerivedInputs) {
@@ -169,26 +187,26 @@ public class CommandResolutionHelper {
 
         final Map<String, String> resolvedXnatWrapperInputValuesByName = Maps.newHashMap();
         log.info("Resolving external xnat wrapper inputs.");
-        for (final CommandWrapperInputEntity externalInput : commandWrapperEntity.getExternalInputs()) {
-            log.info(String.format("Resolving input \"%s\".", externalInput.getName()));
+        for (final CommandWrapperInput externalInput : commandWrapper.externalInputs()) {
+            log.info(String.format("Resolving input \"%s\".", externalInput.name()));
 
             String resolvedValue = null;
             String jsonRepresentation = null;
 
             // Give the input its default value
             if (log.isDebugEnabled()) {
-                log.debug("Default value: " + externalInput.getDefaultValue());
+                log.debug("Default value: " + externalInput.defaultValue());
             }
-            if (externalInput.getDefaultValue() != null) {
-                resolvedValue = externalInput.getDefaultValue();
+            if (externalInput.defaultValue() != null) {
+                resolvedValue = externalInput.defaultValue();
             }
 
             // If a value was provided at runtime, use that over the default
-            if (inputValues.containsKey(externalInput.getName()) && inputValues.get(externalInput.getName()) != null) {
+            if (inputValues.containsKey(externalInput.name()) && inputValues.get(externalInput.name()) != null) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Runtime value: " + inputValues.get(externalInput.getName()));
+                    log.debug("Runtime value: " + inputValues.get(externalInput.name()));
                 }
-                resolvedValue = inputValues.get(externalInput.getName());
+                resolvedValue = inputValues.get(externalInput.name());
             }
 
             // Check for JSONPath substring in input value
@@ -196,273 +214,266 @@ public class CommandResolutionHelper {
 
             // Resolve the matcher, if one was provided
             if (log.isDebugEnabled()) {
-                log.debug("Matcher: " + externalInput.getMatcher());
+                log.debug("Matcher: " + externalInput.matcher());
             }
-            final String resolvedMatcher = externalInput.getMatcher() != null ? resolveJsonpathSubstring(externalInput.getMatcher()) : null;
+            final String resolvedMatcher = externalInput.matcher() != null ? resolveTemplate(externalInput.matcher()) : null;
 
             if (StringUtils.isNotBlank(resolvedValue)) {
                 // Process the input based on its type
                 if (log.isDebugEnabled()) {
-                    log.debug("Processing input value as a " + externalInput.getType().getName());
+                    log.debug("Processing input value as a " + externalInput.type());
                 }
-                switch (externalInput.getType()) {
-                    case PROJECT:
-                        // We were either given, A. an archive-style URI, or B. the project id
-                        final Project aProject;
+                final String type = externalInput.type();
+                if (type.equals(PROJECT.getName())) {
+
+                    // We were either given, A. an archive-style URI, or B. the project id
+                    final Project aProject;
+                    try {
+                        aProject = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Project.class,
+                                Project.uriToModelObjectFunction(), Project.stringToModelObjectFunction(userI));
+                    } catch (CommandWrapperInputResolutionException e) {
+                        throw new CommandWrapperInputResolutionException(e.getMessage(), externalInput);
+                    }
+
+                    if (aProject != null) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Setting resolvedValue to uri " + aProject.getUri());
+                        }
+                        resolvedValue = aProject.getUri();
                         try {
-                            aProject = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Project.class,
-                                    Project.uriToModelObjectFunction(), Project.stringToModelObjectFunction(userI));
-                        } catch (CommandWrapperInputResolutionException e) {
-                            throw new CommandWrapperInputResolutionException(e.getMessage(), externalInput);
-                        }
-
-                        if (aProject != null) {
+                            jsonRepresentation = mapper.writeValueAsString(aProject);
+                        } catch (JsonProcessingException e) {
+                            String message = "Could not serialize project";
                             if (log.isDebugEnabled()) {
-                                log.debug("Setting resolvedValue to uri " + aProject.getUri());
+                                message += ": " + aProject;
+                            } else {
+                                message += ".";
                             }
-                            resolvedValue = aProject.getUri();
-                            try {
-                                jsonRepresentation = mapper.writeValueAsString(aProject);
-                            } catch (JsonProcessingException e) {
-                                String message = "Could not serialize project";
-                                if (log.isDebugEnabled()) {
-                                    message += ": " + aProject;
-                                } else {
-                                    message += ".";
-                                }
-                                log.error(message, e);
-                            }
+                            log.error(message, e);
                         }
-                        break;
-                    case SUBJECT:
-                        // We were either given, A. an archive-style URI, or B. the subject id
-                        final Subject aSubject;
+                    }
+                } else if (type.equals(SUBJECT.getName())) {
+                    // We were either given, A. an archive-style URI, or B. the subject id
+                    final Subject aSubject;
+                    try {
+                        aSubject = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Subject.class,
+                                Subject.uriToModelObjectFunction(), Subject.stringToModelObjectFunction(userI));
+                    } catch (CommandWrapperInputResolutionException e) {
+                        throw new CommandWrapperInputResolutionException(e.getMessage(), externalInput);
+                    }
+
+                    if (aSubject != null) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Setting resolvedValue to uri " + aSubject.getUri());
+                        }
+                        resolvedValue = aSubject.getUri();
                         try {
-                            aSubject = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Subject.class,
-                                    Subject.uriToModelObjectFunction(), Subject.stringToModelObjectFunction(userI));
-                        } catch (CommandWrapperInputResolutionException e) {
-                            throw new CommandWrapperInputResolutionException(e.getMessage(), externalInput);
-                        }
-
-                        if (aSubject != null) {
+                            jsonRepresentation = mapper.writeValueAsString(aSubject);
+                        } catch (JsonProcessingException e) {
+                            String message = "Could not serialize subject";
                             if (log.isDebugEnabled()) {
-                                log.debug("Setting resolvedValue to uri " + aSubject.getUri());
+                                message += ": " + aSubject;
+                            } else {
+                                message += ".";
                             }
-                            resolvedValue = aSubject.getUri();
-                            try {
-                                jsonRepresentation = mapper.writeValueAsString(aSubject);
-                            } catch (JsonProcessingException e) {
-                                String message = "Could not serialize subject";
-                                if (log.isDebugEnabled()) {
-                                    message += ": " + aSubject;
-                                } else {
-                                    message += ".";
-                                }
-                                log.error(message, e);
-                            }
+                            log.error(message, e);
                         }
-                        break;
-                    case SESSION:
-                        // We were either given, A. an archive-style URI, or B. the session id
-                        final Session aSession;
+                    }
+                } else if (type.equals(SESSION.getName())) {
+                    // We were either given, A. an archive-style URI, or B. the session id
+                    final Session aSession;
+                    try {
+                        aSession = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Session.class,
+                                Session.uriToModelObjectFunction(), Session.stringToModelObjectFunction(userI));
+                    } catch (CommandWrapperInputResolutionException e) {
+                        throw new CommandWrapperInputResolutionException(e.getMessage(), externalInput);
+                    }
+
+                    if (aSession != null) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Setting resolvedValue to uri " + aSession.getUri());
+                        }
+                        resolvedValue = aSession.getUri();
                         try {
-                            aSession = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Session.class,
-                                    Session.uriToModelObjectFunction(), Session.stringToModelObjectFunction(userI));
-                        } catch (CommandWrapperInputResolutionException e) {
-                            throw new CommandWrapperInputResolutionException(e.getMessage(), externalInput);
-                        }
-
-                        if (aSession != null) {
+                            jsonRepresentation = mapper.writeValueAsString(aSession);
+                        } catch (JsonProcessingException e) {
+                            String message = "Could not serialize session";
                             if (log.isDebugEnabled()) {
-                                log.debug("Setting resolvedValue to uri " + aSession.getUri());
+                                message += ": " + aSession;
+                            } else {
+                                message += ".";
                             }
-                            resolvedValue = aSession.getUri();
-                            try {
-                                jsonRepresentation = mapper.writeValueAsString(aSession);
-                            } catch (JsonProcessingException e) {
-                                String message = "Could not serialize session";
-                                if (log.isDebugEnabled()) {
-                                    message += ": " + aSession;
-                                } else {
-                                    message += ".";
-                                }
-                                log.error(message, e);
-                            }
+                            log.error(message, e);
                         }
-                        break;
-                    case SCAN:
-                        // We must have been given the Scan as an archive URI
-                        final Scan aScan;
+                    }
+                } else if (type.equals(SCAN.getName())) {
+                    // We must have been given the Scan as an archive URI
+                    final Scan aScan;
+                    try {
+                        aScan = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Scan.class,
+                                Scan.uriToModelObjectFunction(), Scan.stringToModelObjectFunction(userI));
+                    } catch (CommandWrapperInputResolutionException e) {
+                        log.debug(e.getMessage());
+                        throw new CommandWrapperInputResolutionException(e.getMessage(), externalInput);
+                    }
+
+                    if (aScan != null) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Setting resolvedValue to uri " + aScan.getUri());
+                        }
+                        resolvedValue = aScan.getUri();
                         try {
-                            aScan = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Scan.class,
-                                    Scan.uriToModelObjectFunction(), Scan.stringToModelObjectFunction(userI));
-                        } catch (CommandWrapperInputResolutionException e) {
-                            log.debug(e.getMessage());
-                            throw new CommandWrapperInputResolutionException(e.getMessage(), externalInput);
-                        }
-
-                        if (aScan != null) {
+                            jsonRepresentation = mapper.writeValueAsString(aScan);
+                        } catch (JsonProcessingException e) {
+                            String message = "Could not serialize scan";
                             if (log.isDebugEnabled()) {
-                                log.debug("Setting resolvedValue to uri " + aScan.getUri());
+                                message += ": " + aScan;
+                            } else {
+                                message += ".";
                             }
-                            resolvedValue = aScan.getUri();
-                            try {
-                                jsonRepresentation = mapper.writeValueAsString(aScan);
-                            } catch (JsonProcessingException e) {
-                                String message = "Could not serialize scan";
-                                if (log.isDebugEnabled()) {
-                                    message += ": " + aScan;
-                                } else {
-                                    message += ".";
-                                }
-                                log.error(message, e);
-                            }
+                            log.error(message, e);
                         }
-                        break;
-                    case ASSESSOR:
-                        // We were either given, A. an archive-style URI, or B. the assessor id
-                        final Assessor anAssessor;
+                    }
+                } else if (type.equals(ASSESSOR.getName())) {
+                    // We were either given, A. an archive-style URI, or B. the assessor id
+                    final Assessor anAssessor;
+                    try {
+                        anAssessor = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Assessor.class,
+                                Assessor.uriToModelObjectFunction(), Assessor.stringToModelObjectFunction(userI));
+                    } catch (CommandWrapperInputResolutionException e) {
+                        throw new CommandWrapperInputResolutionException(e.getMessage(), externalInput);
+                    }
+
+                    if (anAssessor != null) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Setting resolvedValue to uri " + anAssessor.getUri());
+                        }
+                        resolvedValue = anAssessor.getUri();
                         try {
-                            anAssessor = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Assessor.class,
-                                    Assessor.uriToModelObjectFunction(), Assessor.stringToModelObjectFunction(userI));
-                        } catch (CommandWrapperInputResolutionException e) {
-                            throw new CommandWrapperInputResolutionException(e.getMessage(), externalInput);
-                        }
-
-                        if (anAssessor != null) {
+                            jsonRepresentation = mapper.writeValueAsString(anAssessor);
+                        } catch (JsonProcessingException e) {
+                            String message = "Could not serialize assessor";
                             if (log.isDebugEnabled()) {
-                                log.debug("Setting resolvedValue to uri " + anAssessor.getUri());
+                                message += ": " + anAssessor;
+                            } else {
+                                message += ".";
                             }
-                            resolvedValue = anAssessor.getUri();
-                            try {
-                                jsonRepresentation = mapper.writeValueAsString(anAssessor);
-                            } catch (JsonProcessingException e) {
-                                String message = "Could not serialize assessor";
-                                if (log.isDebugEnabled()) {
-                                    message += ": " + anAssessor;
-                                } else {
-                                    message += ".";
-                                }
-                                log.error(message, e);
-                            }
+                            log.error(message, e);
                         }
+                    }
+                } else if (type.equals(RESOURCE.getName())) {
+                    // We were either given, A. an archive-style URI, or B. the (globally unique integer) resource id
+                    final Resource aResource;
+                    try {
+                        aResource = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Resource.class,
+                                Resource.uriToModelObjectFunction(), Resource.stringToModelObjectFunction(userI));
+                    } catch (CommandWrapperInputResolutionException e) {
+                        throw new CommandWrapperInputResolutionException(e.getMessage(), externalInput);
+                    }
 
-                        break;
-                    case RESOURCE:
-                        // We were either given, A. an archive-style URI, or B. the (globally unique integer) resource id
-                        final Resource aResource;
+                    if (aResource != null) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Setting resolvedValue to uri " + aResource.getUri());
+                        }
+                        resolvedValue = aResource.getUri();
                         try {
-                            aResource = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Resource.class,
-                                    Resource.uriToModelObjectFunction(), Resource.stringToModelObjectFunction(userI));
-                        } catch (CommandWrapperInputResolutionException e) {
-                            throw new CommandWrapperInputResolutionException(e.getMessage(), externalInput);
-                        }
-
-                        if (aResource != null) {
+                            jsonRepresentation = mapper.writeValueAsString(aResource);
+                        } catch (JsonProcessingException e) {
+                            String message = "Could not serialize resource";
                             if (log.isDebugEnabled()) {
-                                log.debug("Setting resolvedValue to uri " + aResource.getUri());
+                                message += ": " + aResource;
+                            } else {
+                                message += ".";
                             }
-                            resolvedValue = aResource.getUri();
-                            try {
-                                jsonRepresentation = mapper.writeValueAsString(aResource);
-                            } catch (JsonProcessingException e) {
-                                String message = "Could not serialize resource";
-                                if (log.isDebugEnabled()) {
-                                    message += ": " + aResource;
-                                } else {
-                                    message += ".";
-                                }
-                                log.error(message, e);
-                            }
+                            log.error(message, e);
                         }
-                        break;
-                    case CONFIG:
-                        final String[] configProps = resolvedValue != null ? resolvedValue.split("/") : null;
-                        if (configProps == null || configProps.length != 2) {
-                            final String message = "Config inputs must have a value that can be interpreted as a config_toolname/config_filename string. Input value: " + resolvedValue;
-                            log.debug(message);
-                            throw new CommandWrapperInputResolutionException(message, externalInput);
-                        }
+                    }
+                } else if (type.equals(CONFIG.getName())) {
+                    final String[] configProps = resolvedValue != null ? resolvedValue.split("/") : null;
+                    if (configProps == null || configProps.length != 2) {
+                        final String message = "Config inputs must have a value that can be interpreted as a config_toolname/config_filename string. Input value: " + resolvedValue;
+                        log.debug(message);
+                        throw new CommandWrapperInputResolutionException(message, externalInput);
+                    }
 
-                        final Scope configScope;
-                        final String entityId;
-                        // TODO Figure out how to resolve project config inputs vs sitewide
-                        // final CommandInput.Type parentType = parent == null ? CommandInput.Type.STRING : parent.getType();
-                        // switch (parentType) {
-                        //     case PROJECT:
-                        //         configScope = Scope.Project;
-                        //         entityId = JsonPath.parse(parent.getJsonRepresentation()).read("$.id");
-                        //         break;
-                        //     case SUBJECT:
-                        //         // Intentional fallthrough
-                        //     case SESSION:
-                        //         // Intentional fallthrough
-                        //     case SCAN:
-                        //         // Intentional fallthrough
-                        //     case ASSESSOR:
-                        //         // TODO Is there any way to make this work? Can we find the project ID for these other input types?
-                        //         //configScope = Scope.Project;
-                        //         //final List<String> projectIds = JsonPath.parse(parent.getJsonRepresentation()).read("$..projectId");
-                        //         //entityId = (projectIds != null && !projectIds.isEmpty()) ? projectIds.get(0) : "";
-                        //         //if (StringUtils.isBlank(entityId)) {
-                        //         //    throw new CommandInputResolutionException("Could not determine project when resolving config value.", input);
-                        //         //}
-                        //         //break;
-                        //         throw new XnatCommandInputResolutionException("Config inputs may only have parents of type Project.", input);
-                        //     default:
-                        //         configScope = Scope.Site;
-                        //         entityId = null;
-                        // }
-                        //
-                        // if (log.isDebugEnabled()) {
-                        //     log.debug(String.format("Attempting to read config %s/%s from %s.", configProps[0], configProps[1],
-                        //             configScope.equals(Scope.Site) ? "site" : "project " + entityId));
-                        // }
-                        // final String configContents = configService.getConfigContents(configProps[0], configProps[1], configScope, entityId);
-                        // if (configContents == null) {
-                        //     throw new XnatCommandInputResolutionException("Could not read config " + resolvedValue, input);
-                        // }
-                        //
-                        // if (log.isDebugEnabled()) {
-                        //     log.debug("Setting resolvedValue to config contents " + configContents);
-                        // }
-                        // resolvedValue = configContents;
-                        break;
-                    default:
-                        log.debug("Nothing to do for simple types.");
+                    final Scope configScope;
+                    final String entityId;
+                    // TODO Figure out how to resolve project config inputs vs sitewide
+                    // final CommandInput.Type parentType = parent == null ? CommandInput.Type.STRING : parent.getType();
+                    // switch (parentType) {
+                    //     case PROJECT:
+                    //         configScope = Scope.Project;
+                    //         entityId = JsonPath.parse(getJsonValue(parent)).read("$.id");
+                    //         break;
+                    //     case SUBJECT:
+                    //         // Intentional fallthrough
+                    //     case SESSION:
+                    //         // Intentional fallthrough
+                    //     case SCAN:
+                    //         // Intentional fallthrough
+                    //     case ASSESSOR:
+                    //         // TODO Is there any way to make this work? Can we find the project ID for these other input types?
+                    //         //configScope = Scope.Project;
+                    //         //final List<String> projectIds = JsonPath.parse(getJsonValue(parent)).read("$..projectId");
+                    //         //entityId = (projectIds != null && !projectIds.isEmpty()) ? projectIds.get(0) : "";
+                    //         //if (StringUtils.isBlank(entityId)) {
+                    //         //    throw new CommandInputResolutionException("Could not determine project when resolving config value.", input);
+                    //         //}
+                    //         //break;
+                    //         throw new XnatCommandInputResolutionException("Config inputs may only have parents of type Project.", input);
+                    //     default:
+                    //         configScope = Scope.Site;
+                    //         entityId = null;
+                    // }
+                    //
+                    // if (log.isDebugEnabled()) {
+                    //     log.debug(String.format("Attempting to read config %s/%s from %s.", configProps[0], configProps[1],
+                    //             configScope.equals(Scope.Site) ? "site" : "project " + entityId));
+                    // }
+                    // final String configContents = configService.getConfigContents(configProps[0], configProps[1], configScope, entityId);
+                    // if (configContents == null) {
+                    //     throw new XnatCommandInputResolutionException("Could not read config " + resolvedValue, input);
+                    // }
+                    //
+                    // if (log.isDebugEnabled()) {
+                    //     log.debug("Setting resolvedValue to config contents " + configContents);
+                    // }
+                    // resolvedValue = configContents;
+                } else {
+                    log.debug("Nothing to do for simple types.");
                 }
             }
 
             // If resolved value is null, and input is required, that is an error
-            if (resolvedValue == null && externalInput.isRequired()) {
-                final String message = String.format("No value could be resolved for required input \"%s\".", externalInput.getName());
+            if (resolvedValue == null && externalInput.required()) {
+                final String message = String.format("No value could be resolved for required input \"%s\".", externalInput.name());
                 log.debug(message);
                 throw new CommandWrapperInputResolutionException(message, externalInput);
             }
             if (log.isInfoEnabled()) {
-                log.info(String.format("Done resolving input \"%s\". Value: \"%s\".", externalInput.getName(), resolvedValue));
+                log.info(String.format("Done resolving input \"%s\". Value: \"%s\".", externalInput.name(), resolvedValue));
             }
-            externalInput.setValue(resolvedValue);
-            externalInput.setJsonRepresentation(jsonRepresentation != null ? jsonRepresentation : resolvedValue);
+            setValue(externalInput, resolvedValue);;
+            setJsonValue(externalInput, jsonRepresentation != null ? jsonRepresentation : resolvedValue);;
 
-            resolvedXnatInputObjects.put(externalInput.getName(), externalInput);
+            resolvedXnatInputObjects.put(externalInput.name(), externalInput);
 
-            resolvedXnatWrapperInputValuesByName.put(externalInput.getName(), externalInput.getValue());
+            resolvedXnatWrapperInputValuesByName.put(externalInput.name(), getValue(externalInput));
 
             // If this xnat input provides any command input values, set them now
-            final String commandInputName = externalInput.getProvidesValueForCommandInput();
+            final String commandInputName = externalInput.providesValueForCommandInput();
             if (StringUtils.isNotBlank(commandInputName)) {
                 if (log.isDebugEnabled()) {
                     log.debug(String.format("Found value for command input \"%s\": \"%s\".",
-                            commandInputName, externalInput.getValue()));
+                            commandInputName, getValue(externalInput)));
                 }
-                resolvedXnatInputValuesByCommandInputName.put(commandInputName, externalInput.getValue());
+                resolvedXnatInputValuesByCommandInputName.put(commandInputName, getValue(externalInput));
             }
 
             // If this xnat input provides files to a mount, note that now
             addInputToMountsList(externalInput);
 
-            final String replacementKey = externalInput.getReplacementKey();
+            final String replacementKey = externalInput.replacementKey();
             if (StringUtils.isBlank(replacementKey)) {
                 continue;
             }
@@ -474,40 +485,40 @@ public class CommandResolutionHelper {
         if (hasDerivedInputs) {
             log.info("Resolving derived xnat wrapper inputs.");
 
-            for (final CommandWrapperInputEntity derivedInput : commandWrapperEntity.getDerivedInputs()) {
-                log.info(String.format("Resolving input \"%s\".", derivedInput.getName()));
+            for (final CommandWrapperInput derivedInput : commandWrapper.derivedInputs()) {
+                log.info(String.format("Resolving input \"%s\".", derivedInput.name()));
 
-                if (StringUtils.isBlank(derivedInput.getDerivedFromXnatInput())) {
+                if (StringUtils.isBlank(derivedInput.derivedFromXnatInput())) {
                     // TODO this should be caught during validation
                     final String message = String.format(
                             "Input \"%s\" is a derived input, but does not indicate the input from which it is to be derived.",
-                            derivedInput.getName()
+                            derivedInput.name()
                     );
                     log.error(message);
                     throw new CommandWrapperInputResolutionException(message, derivedInput);
                 }
 
-                final String prereq = derivedInput.getDerivedFromXnatInput();
+                final String prereq = derivedInput.derivedFromXnatInput();
                 if (!resolvedXnatInputObjects.containsKey(prereq)) {
                     // TODO this should be caught during validation. If prereq exists, but is in the wrong order, re-order inputs. If not, then error.
                     final String message = String.format(
                             "Input \"%1$s\" is derived from input \"%2$s\" which has not been resolved. Re-order the derived inputs so \"%1$s\" appears after \"%2$s\".",
-                            derivedInput.getName(), prereq
+                            derivedInput.name(), prereq
                     );
                     log.error(message);
                     throw new CommandWrapperInputResolutionException(message, derivedInput);
                 }
-                final CommandWrapperInputEntity parentInput = resolvedXnatInputObjects.get(prereq);
+                final CommandWrapperInput parentInput = resolvedXnatInputObjects.get(prereq);
 
                 String resolvedValue = null;
                 String jsonRepresentation = null;
 
                 // Give the input its default value
                 if (log.isDebugEnabled()) {
-                    log.debug("Default value: " + derivedInput.getDefaultValue());
+                    log.debug("Default value: " + derivedInput.defaultValue());
                 }
-                if (derivedInput.getDefaultValue() != null) {
-                    resolvedValue = derivedInput.getDefaultValue();
+                if (derivedInput.defaultValue() != null) {
+                    resolvedValue = derivedInput.defaultValue();
                 }
 
                 // If a value was provided at runtime, use that over the default
@@ -515,11 +526,11 @@ public class CommandResolutionHelper {
                 //       I feel like it would be more correct in a sense to force them to only get values that they derive from their parent.
                 //       But at the same time, I don't want to remove an escape hatch that I myself may want to use.
                 //       So this stays in for now. - JF
-                if (inputValues.containsKey(derivedInput.getName()) && inputValues.get(derivedInput.getName()) != null) {
+                if (inputValues.containsKey(derivedInput.name()) && inputValues.get(derivedInput.name()) != null) {
                     if (log.isDebugEnabled()) {
-                        log.debug("Runtime value: " + inputValues.get(derivedInput.getName()));
+                        log.debug("Runtime value: " + inputValues.get(derivedInput.name()));
                     }
-                    resolvedValue = inputValues.get(derivedInput.getName());
+                    resolvedValue = inputValues.get(derivedInput.name());
                 }
 
                 // Check for JSONPath substring in input value
@@ -527,476 +538,429 @@ public class CommandResolutionHelper {
 
                 // Resolve the matcher, if one was provided
                 if (log.isDebugEnabled()) {
-                    log.debug("Matcher: " + derivedInput.getMatcher());
+                    log.debug("Matcher: " + derivedInput.matcher());
                 }
-                final String resolvedMatcher = derivedInput.getMatcher() != null ? resolveJsonpathSubstring(derivedInput.getMatcher()) : null;
+                final String resolvedMatcher = derivedInput.matcher() != null ? resolveTemplate(derivedInput.matcher()) : null;
 
                 // Process the input based on its type
+                final String type = derivedInput.type();
                 if (log.isDebugEnabled()) {
-                    log.debug("Processing input value as a " + derivedInput.getType().getName());
+                    log.debug("Processing input value as a " + type);
                 }
-                switch (derivedInput.getType()) {
-                    case STRING:
-                        final String propertyToGet = derivedInput.getDerivedFromXnatObjectProperty();
-                        switch (parentInput.getType()) {
-                            case PROJECT:
-                                // Intentional fallthrough
-                            case SUBJECT:
-                                // Intentional fallthrough
-                            case SESSION:
-                                // Intentional fallthrough
-                            case SCAN:
-                                // Intentional fallthrough
-                            case ASSESSOR:
-                                // Intentional fallthrough
-                            case FILE:
-                                // Intentional fallthrough
-                            case RESOURCE:
+                final String parentType = parentInput.type();
+                final String parentJson = getJsonValue(parentInput);
 
-                                final String jsonPathSearch = "$." + propertyToGet +
-                                        (StringUtils.isNotBlank(resolvedMatcher) ? "[?(" + resolvedMatcher + ")]" : "");
-                                if (log.isInfoEnabled()) {
-                                    log.info(String.format("Attempting to pull value from parent using matcher \"%s\".", jsonPathSearch));
-                                }
+                if (type.equals(STRING.getName())) {
 
-                                final String parentJson = parentInput.getJsonRepresentation();
-                                try {
-                                    resolvedValue = JsonPath.parse(parentJson).read(jsonPathSearch, new TypeRef<String>(){});
-                                } catch (InvalidPathException | InvalidJsonException | MappingException e) {
-                                    String message = String.format("Error attempting to pull value using matcher \"%s\" from parent json", jsonPathSearch);
-                                    if (log.isDebugEnabled()) {
-                                        message += ":\n" + parentJson;
-                                    } else {
-                                        message += ".";
-                                    }
-                                    log.error(message, e);
-                                    throw new CommandWrapperInputResolutionException(message, derivedInput, e);
-                                }
+                    final String propertyToGet = derivedInput.derivedFromXnatObjectProperty();
 
-                                break;
-                            default:
-                                final String message = String.format("An input of type \"%s\" cannot be derived from an input of type \"%s\".",
-                                        derivedInput.getType().getName(),
-                                        parentInput.getType().getName());
-                                log.error(message);
-                                throw new CommandWrapperInputResolutionException(message, derivedInput);
-                        }
-                        break;
-                    case BOOLEAN:
-                        // TODO
-                        break;
-                    case NUMBER:
-                        // TODO
-                        break;
-                    case DIRECTORY:
-                        switch (parentInput.getType()) {
-                            case RESOURCE:
-
-                                final String jsonPathSearch = "$.directory" +
-                                        (StringUtils.isNotBlank(resolvedMatcher) ? "[?(" + resolvedMatcher + ")]" : "");
-                                if (log.isInfoEnabled()) {
-                                    log.info(String.format("Attempting to pull value from parent using matcher \"%s\".", jsonPathSearch));
-                                }
-
-                                final String parentJson = parentInput.getJsonRepresentation();
-                                try {
-                                    resolvedValue = JsonPath.parse(parentJson).read(jsonPathSearch, new TypeRef<String>(){});
-                                } catch (InvalidPathException | InvalidJsonException | MappingException e) {
-                                    String message = String.format("Error attempting to pull value using matcher \"%s\" from parent json", jsonPathSearch);
-                                    if (log.isDebugEnabled()) {
-                                        message += ":\n" + parentJson;
-                                    } else {
-                                        message += ".";
-                                    }
-                                    log.error(message, e);
-                                    throw new CommandWrapperInputResolutionException(message, derivedInput, e);
-                                }
-
-                                break;
-                            case PROJECT:
-                                // TODO
-                            case SESSION:
-                                // TODO
-                            case SCAN:
-                                // TODO
-                            case ASSESSOR:
-                                // TODO
-                            default:
-                                final String message = String.format("An input of type \"%s\" cannot be derived from an input of type \"%s\".",
-                                        derivedInput.getType().getName(),
-                                        parentInput.getType().getName());
-                                log.error(message);
-                                throw new CommandWrapperInputResolutionException(message, derivedInput);
-                        }
-                        break;
-                    case FILES:
-                        List<XnatFile> files;
-                        switch (parentInput.getType()) {
-                            case RESOURCE:
-                                files = matchChildFromParent(parentInput.getJsonRepresentation(),
-                                        resolvedValue, "files", "name", resolvedMatcher, new TypeRef<List<XnatFile>>(){});
-                                break;
-                            default:
-                                final String message = String.format("An input of type \"%s\" cannot be derived from an input of type \"%s\".",
-                                        derivedInput.getType().getName(),
-                                        parentInput.getType().getName());
-                                log.error(message);
-                                throw new CommandWrapperInputResolutionException(message, derivedInput);
-                        }
-
-                        if (files == null) {
-                            final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.getName(), parentInput.getName());
-                            log.error(message);
-                            throw new CommandWrapperInputResolutionException(message, derivedInput);
-                        }
-
-                        if (log.isDebugEnabled()) {
-                            log.debug("Setting resolvedValue to list of file json objects " + files);
+                    if (parentType.equals(PROJECT.getName()) || parentType.equals(SUBJECT.getName()) || parentType.equals(SESSION.getName()) ||
+                            parentType.equals(SCAN.getName()) || parentType.equals(ASSESSOR.getName()) || parentType.equals(FILE.getName()) || parentType.equals(RESOURCE.getName())) {
+                        final String jsonPathSearch = "$." + propertyToGet +
+                                (StringUtils.isNotBlank(resolvedMatcher) ? "[?(" + resolvedMatcher + ")]" : "");
+                        if (log.isInfoEnabled()) {
+                            log.info(String.format("Attempting to pull value from parent using matcher \"%s\".", jsonPathSearch));
                         }
 
                         try {
-                            jsonRepresentation = mapper.writeValueAsString(files);
-                            resolvedValue = jsonRepresentation;
-                        } catch (JsonProcessingException e) {
-                            log.error("Could not serialize file to json.", e);
-                        }
-                        break;
-                    case FILE:
-                        XnatFile file = null;
-                        switch (parentInput.getType()) {
-                            case RESOURCE:
-                                final List<XnatFile> childList = matchChildFromParent(parentInput.getJsonRepresentation(),
-                                        resolvedValue, "files", "name", resolvedMatcher, new TypeRef<List<XnatFile>>(){});
-                                if (childList != null && !childList.isEmpty()) {
-                                    if (log.isDebugEnabled()) {
-                                        log.debug("Selecting first matching result from list.");
-                                    }
-                                    file = childList.get(0);
-                                }
-                                break;
-                            default:
-                                final String message = String.format("An input of type \"%s\" cannot be derived from an input of type \"%s\".",
-                                        derivedInput.getType().getName(),
-                                        parentInput.getType().getName());
-                                log.error(message);
-                                throw new CommandWrapperInputResolutionException(message, derivedInput);
-                        }
-
-                        if (file == null) {
-                            final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.getName(), parentInput.getName());
-                            log.error(message);
-                            throw new CommandWrapperInputResolutionException(message, derivedInput);
-                        }
-
-                        if (log.isDebugEnabled()) {
-                            log.debug("Setting resolvedValue to uri " + file.getUri());
-                        }
-                        resolvedValue = file.getUri();
-                        try {
-                            jsonRepresentation = mapper.writeValueAsString(file);
-                        } catch (JsonProcessingException e) {
-                            log.error("Could not serialize file to json.", e);
-                        }
-                        break;
-                    case PROJECT:
-                        Project project;
-                        try {
-                            switch (parentInput.getType()) {
-                                case SUBJECT:
-                                    final Subject subject = mapper.readValue(parentInput.getJsonRepresentation(), Subject.class);
-                                    project = subject.getProject(userI);
-                                    break;
-                                case SESSION:
-                                    final Session session = mapper.readValue(parentInput.getJsonRepresentation(), Session.class);
-                                    project = session.getProject(userI);
-                                    break;
-                                case SCAN:
-                                    final Scan scan = mapper.readValue(parentInput.getJsonRepresentation(), Scan.class);
-                                    project = scan.getProject(userI);
-                                    break;
-                                case ASSESSOR:
-                                    final Assessor assessor = mapper.readValue(parentInput.getJsonRepresentation(), Assessor.class);
-                                    project = assessor.getProject(userI);
-                                    break;
-                                default:
-                                    final String message = String.format("An input of type \"%s\" cannot be derived from an input of type \"%s\".",
-                                            derivedInput.getType().getName(),
-                                            parentInput.getType().getName());
-                                    log.error(message);
-                                    throw new CommandWrapperInputResolutionException(message, derivedInput);
+                            resolvedValue = JsonPath.parse(parentJson).read(jsonPathSearch, new TypeRef<String>() {
+                            });
+                        } catch (InvalidPathException | InvalidJsonException | MappingException e) {
+                            String message = String.format("Error attempting to pull value using matcher \"%s\" from parent json", jsonPathSearch);
+                            if (log.isDebugEnabled()) {
+                                message += ":\n" + parentJson;
+                            } else {
+                                message += ".";
                             }
+                            log.error(message, e);
+                            throw new CommandWrapperInputResolutionException(message, derivedInput, e);
+                        }
+                    } else {
+                        final String message = String.format("An input of type \"%s\" cannot be derived from an input of type \"%s\".",
+                                derivedInput.type(),
+                                parentInput.type());
+                        log.error(message);
+                        throw new CommandWrapperInputResolutionException(message, derivedInput);
+                    }
+                } else if (type.equals(BOOLEAN.getName())) {
+                    // TODO
+                } else if (type.equals(NUMBER.getName())) {
+                    // TODO
+                } else if (type.equals(DIRECTORY.getName())) {
+                    if (parentType.equals(RESOURCE.getName())) {
+
+                        final String jsonPathSearch = "$.directory" +
+                                (StringUtils.isNotBlank(resolvedMatcher) ? "[?(" + resolvedMatcher + ")]" : "");
+                        if (log.isInfoEnabled()) {
+                            log.info(String.format("Attempting to pull value from parent using matcher \"%s\".", jsonPathSearch));
+                        }
+
+                        try {
+                            resolvedValue = JsonPath.parse(parentJson).read(jsonPathSearch, new TypeRef<String>() {
+                            });
+                        } catch (InvalidPathException | InvalidJsonException | MappingException e) {
+                            String message = String.format("Error attempting to pull value using matcher \"%s\" from parent json", jsonPathSearch);
+                            if (log.isDebugEnabled()) {
+                                message += ":\n" + parentJson;
+                            } else {
+                                message += ".";
+                            }
+                            log.error(message, e);
+                            throw new CommandWrapperInputResolutionException(message, derivedInput, e);
+                        }
+                    // TODO
+                    // } else if (parentType.equals(PROJECT.getName()) || parentType.equals(SUBJECT.getName()) || parentType.equals(SESSION.getName()) ||
+                    //         parentType.equals(SCAN.getName()) || parentType.equals(ASSESSOR.getName())) {
+                    } else {
+                        final String message = String.format("An input of type \"%s\" cannot be derived from an input of type \"%s\".",
+                                derivedInput.type(),
+                                parentInput.type());
+                        log.error(message);
+                        throw new CommandWrapperInputResolutionException(message, derivedInput);
+                    }
+                } else if (type.equals(FILES.getName())) {
+                    List<XnatFile> files;
+
+                    if (parentType.equals(RESOURCE.getName())) {
+                        files = matchChildFromParent(parentJson,
+                                resolvedValue, "files", "name", resolvedMatcher, new TypeRef<List<XnatFile>>() {
+                                });
+                    } else {
+                        final String message = String.format("An input of type \"%s\" cannot be derived from an input of type \"%s\".",
+                                derivedInput.type(),
+                                parentInput.type());
+                        log.error(message);
+                        throw new CommandWrapperInputResolutionException(message, derivedInput);
+                    }
+
+                    if (files == null) {
+                        final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.name(), parentInput.name());
+                        log.error(message);
+                        throw new CommandWrapperInputResolutionException(message, derivedInput);
+                    }
+
+                    if (log.isDebugEnabled()) {
+                        log.debug("Setting resolvedValue to list of file json objects " + files);
+                    }
+
+                    try {
+                        jsonRepresentation = mapper.writeValueAsString(files);
+                        resolvedValue = jsonRepresentation;
+                    } catch (JsonProcessingException e) {
+                        log.error("Could not serialize file to json.", e);
+                    }
+                } else if (type.equals(FILE.getName())) {
+                    XnatFile file = null;
+
+                    if (parentType.equals(RESOURCE.getName())) {
+                        final List<XnatFile> childList = matchChildFromParent(parentJson,
+                                resolvedValue, "files", "name", resolvedMatcher, new TypeRef<List<XnatFile>>() {
+                                });
+                        if (childList != null && !childList.isEmpty()) {
+                            if (log.isDebugEnabled()) {
+                                log.debug("Selecting first matching result from list.");
+                            }
+                            file = childList.get(0);
+                        }
+                    } else {
+                        final String message = String.format("An input of type \"%s\" cannot be derived from an input of type \"%s\".",
+                                derivedInput.type(),
+                                parentInput.type());
+                        log.error(message);
+                        throw new CommandWrapperInputResolutionException(message, derivedInput);
+                    }
+
+                    if (file == null) {
+                        final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.name(), parentInput.name());
+                        log.error(message);
+                        throw new CommandWrapperInputResolutionException(message, derivedInput);
+                    }
+
+                    if (log.isDebugEnabled()) {
+                        log.debug("Setting resolvedValue to uri " + file.getUri());
+                    }
+                    resolvedValue = file.getUri();
+                    try {
+                        jsonRepresentation = mapper.writeValueAsString(file);
+                    } catch (JsonProcessingException e) {
+                        log.error("Could not serialize file to json.", e);
+                    }
+                } else if (type.equals(PROJECT.getName())) {
+                    Project project;
+                    try {
+                        if (parentType.equals(SUBJECT.getName())) {
+                            final Subject subject = mapper.readValue(parentJson, Subject.class);
+                            project = subject.getProject(userI);
+                        } else if (parentType.equals(SESSION.getName())) {
+                            final Session session = mapper.readValue(parentJson, Session.class);
+                            project = session.getProject(userI);
+                        } else if (parentType.equals(SCAN.getName())) {
+                            final Scan scan = mapper.readValue(parentJson, Scan.class);
+                            project = scan.getProject(userI);
+                        } else if (parentType.equals(ASSESSOR.getName())) {
+                            final Assessor assessor = mapper.readValue(parentJson, Assessor.class);
+                            project = assessor.getProject(userI);
+                        } else {
+                            final String message = String.format("An input of type \"%s\" cannot be derived from an input of type \"%s\".",
+                                    derivedInput.type(),
+                                    parentInput.type());
+                            log.error(message);
+                            throw new CommandWrapperInputResolutionException(message, derivedInput);
+                        }
+                    } catch (IOException e) {
+                        final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.name(), parentInput.name());
+                        log.error(message);
+                        throw new CommandWrapperInputResolutionException(message, derivedInput, e);
+                    }
+
+                    if (project == null) {
+                        final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.name(), parentInput.name());
+                        log.error(message);
+                        throw new CommandWrapperInputResolutionException(message, derivedInput);
+                    }
+
+                    if (log.isDebugEnabled()) {
+                        log.debug("Setting resolvedValue to uri " + project.getUri());
+                    }
+                    resolvedValue = project.getUri();
+                    try {
+                        jsonRepresentation = mapper.writeValueAsString(project);
+                    } catch (JsonProcessingException e) {
+                        log.error("Could not serialize project to json.", e);
+                    }
+                } else if (type.equals(SUBJECT.getName())) {
+                    Subject subject = null;
+
+                    if (parentType.equals(PROJECT.getName())) {
+                        final List<Subject> childList = matchChildFromParent(parentJson,
+                                resolvedValue, "subjects", "id", resolvedMatcher, new TypeRef<List<Subject>>() {
+                                });
+                        if (childList != null && !childList.isEmpty()) {
+                            if (log.isDebugEnabled()) {
+                                log.debug("Selecting first matching result from list " + childList);
+                            }
+                            subject = childList.get(0);
+                        }
+                    } else if (parentType.equals(SESSION.getName())) {
+                        try {
+                            final Session session = mapper.readValue(parentJson, Session.class);
+                            subject = session.getSubject(userI);
                         } catch (IOException e) {
-                            final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.getName(), parentInput.getName());
+                            final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.name(), parentInput.name());
+                            log.error(message);
+                            throw new CommandWrapperInputResolutionException(message, derivedInput, e);
+                        }
+                    } else {
+                        final String message = String.format("An input of type \"%s\" cannot be derived from an input of type \"%s\".",
+                                derivedInput.type(),
+                                parentInput.type());
+                        log.error(message);
+                        throw new CommandWrapperInputResolutionException(message, derivedInput);
+                    }
+
+                    if (subject == null) {
+                        final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.name(), parentInput.name());
+                        log.error(message);
+                        throw new CommandWrapperInputResolutionException(message, derivedInput);
+                    }
+
+                    if (log.isDebugEnabled()) {
+                        log.debug("Setting resolvedValue to uri " + subject.getUri());
+                    }
+                    resolvedValue = subject.getUri();
+                    try {
+                        jsonRepresentation = mapper.writeValueAsString(subject);
+                    } catch (JsonProcessingException e) {
+                        log.error("Could not serialize subject to json.", e);
+                    }
+                } else if (type.equals(SESSION.getName())) {
+                    Session session = null;
+
+                    if (parentType.equals(SUBJECT.getName())) {
+                        final List<Session> childList = matchChildFromParent(parentJson,
+                                resolvedValue, "sessions", "id", resolvedMatcher, new TypeRef<List<Session>>() {
+                                });
+                        if (childList != null && !childList.isEmpty()) {
+                            if (log.isDebugEnabled()) {
+                                log.debug("Selecting first matching result from list " + childList);
+                            }
+                            session = childList.get(0);
+                        }
+                    } else if (parentType.equals(SCAN.getName())) {
+                        try {
+                            final Scan scan = mapper.readValue(parentJson, Scan.class);
+                            session = scan.getSession(userI);
+                        } catch (IOException e) {
+                            final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.name(), parentInput.name());
                             log.error(message);
                             throw new CommandWrapperInputResolutionException(message, derivedInput, e);
                         }
 
-                        if (project == null) {
-                            final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.getName(), parentInput.getName());
-                            log.error(message);
-                            throw new CommandWrapperInputResolutionException(message, derivedInput);
-                        }
+                    } else {
+                        final String message = String.format("An input of type \"%s\" cannot be derived from an input of type \"%s\".",
+                                derivedInput.type(),
+                                parentInput.type());
+                        log.error(message);
+                        throw new CommandWrapperInputResolutionException(message, derivedInput);
+                    }
 
-                        if (log.isDebugEnabled()) {
-                            log.debug("Setting resolvedValue to uri " + project.getUri());
-                        }
-                        resolvedValue = project.getUri();
-                        try {
-                            jsonRepresentation = mapper.writeValueAsString(project);
-                        } catch (JsonProcessingException e) {
-                            log.error("Could not serialize project to json.", e);
-                        }
+                    if (session == null) {
+                        final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.name(), parentInput.name());
+                        log.error(message);
+                        throw new CommandWrapperInputResolutionException(message, derivedInput);
+                    }
 
-                        break;
-                    case SUBJECT:
-                        Subject subject = null;
-                        switch (parentInput.getType()) {
-                            case PROJECT:
-                                final List<Subject> childList = matchChildFromParent(parentInput.getJsonRepresentation(),
-                                        resolvedValue, "subjects", "id", resolvedMatcher, new TypeRef<List<Subject>>(){});
-                                if (childList != null && !childList.isEmpty()) {
-                                    if (log.isDebugEnabled()) {
-                                        log.debug("Selecting first matching result from list " + childList);
-                                    }
-                                    subject = childList.get(0);
-                                }
-                                break;
-                            case SESSION:
-                                try {
-                                    final Session session = mapper.readValue(parentInput.getJsonRepresentation(), Session.class);
-                                    subject = session.getSubject(userI);
-                                } catch (IOException e) {
-                                    final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.getName(), parentInput.getName());
-                                    log.error(message);
-                                    throw new CommandWrapperInputResolutionException(message, derivedInput, e);
-                                }
-                                break;
-                            default:
-                                final String message = String.format("An input of type \"%s\" cannot be derived from an input of type \"%s\".",
-                                        derivedInput.getType().getName(),
-                                        parentInput.getType().getName());
-                                log.error(message);
-                                throw new CommandWrapperInputResolutionException(message, derivedInput);
-                        }
+                    if (log.isDebugEnabled()) {
+                        log.debug("Setting resolvedValue to uri " + session.getUri());
+                    }
+                    resolvedValue = session.getUri();
+                    try {
+                        jsonRepresentation = mapper.writeValueAsString(session);
+                    } catch (JsonProcessingException e) {
+                        log.error("Could not serialize session to json.", e);
+                    }
+                } else if (type.equals(SCAN.getName())) {
+                    Scan scan = null;
 
-                        if (subject == null) {
-                            final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.getName(), parentInput.getName());
-                            log.error(message);
-                            throw new CommandWrapperInputResolutionException(message, derivedInput);
+                    if (parentType.equals(SESSION.getName())) {
+                        final List<Scan> childList = matchChildFromParent(parentJson,
+                                resolvedValue, "scans", "id", resolvedMatcher, new TypeRef<List<Scan>>() {
+                                });
+                        if (childList != null && !childList.isEmpty()) {
+                            if (log.isDebugEnabled()) {
+                                log.debug("Selecting first matching result from list.");
+                            }
+                            scan = childList.get(0);
                         }
+                    } else {
+                        final String message = String.format("An input of type \"%s\" cannot be derived from an input of type \"%s\".",
+                                derivedInput.type(),
+                                parentInput.type());
+                        log.error(message);
+                        throw new CommandWrapperInputResolutionException(message, derivedInput);
+                    }
 
-                        if (log.isDebugEnabled()) {
-                            log.debug("Setting resolvedValue to uri " + subject.getUri());
-                        }
-                        resolvedValue = subject.getUri();
-                        try {
-                            jsonRepresentation = mapper.writeValueAsString(subject);
-                        } catch (JsonProcessingException e) {
-                            log.error("Could not serialize subject to json.", e);
-                        }
+                    if (scan == null) {
+                        final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.name(), parentInput.name());
+                        log.error(message);
+                        throw new CommandWrapperInputResolutionException(message, derivedInput);
+                    }
 
-                        break;
-                    case SESSION:
-                        Session session = null;
-                        switch (parentInput.getType()) {
-                            case SUBJECT:
-                                final List<Session> childList = matchChildFromParent(parentInput.getJsonRepresentation(),
-                                        resolvedValue, "sessions", "id", resolvedMatcher, new TypeRef<List<Session>>(){});
-                                if (childList != null && !childList.isEmpty()) {
-                                    if (log.isDebugEnabled()) {
-                                        log.debug("Selecting first matching result from list " + childList);
-                                    }
-                                    session = childList.get(0);
-                                }
-                                break;
-                            case SCAN:
-                                try {
-                                    final Scan scan = mapper.readValue(parentInput.getJsonRepresentation(), Scan.class);
-                                    session = scan.getSession(userI);
-                                } catch (IOException e) {
-                                    final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.getName(), parentInput.getName());
-                                    log.error(message);
-                                    throw new CommandWrapperInputResolutionException(message, derivedInput, e);
-                                }
+                    if (log.isDebugEnabled()) {
+                        log.debug("Setting resolvedValue to uri " + scan.getUri());
+                    }
+                    resolvedValue = scan.getUri();
+                    try {
+                        jsonRepresentation = mapper.writeValueAsString(scan);
+                    } catch (JsonProcessingException e) {
+                        log.error("Could not serialize scan to json.", e);
+                    }
+                } else if (type.equals(ASSESSOR.getName())) {
+                    Assessor assessor = null;
 
-                                break;
-                            default:
-                                final String message = String.format("An input of type \"%s\" cannot be derived from an input of type \"%s\".",
-                                        derivedInput.getType().getName(),
-                                        parentInput.getType().getName());
-                                log.error(message);
-                                throw new CommandWrapperInputResolutionException(message, derivedInput);
+                    if (parentType.equals(SESSION.getName())) {
+                        final List<Assessor> childList = matchChildFromParent(parentJson,
+                                resolvedValue, "assessors", "id", resolvedMatcher, new TypeRef<List<Assessor>>() {
+                                });
+                        if (childList != null && !childList.isEmpty()) {
+                            if (log.isDebugEnabled()) {
+                                log.debug("Selecting first matching result from list " + childList);
+                            }
+                            assessor = childList.get(0);
                         }
+                    } else {
+                        final String message = String.format("An input of type \"%s\" cannot be derived from an input of type \"%s\".",
+                                derivedInput.type(),
+                                parentInput.type());
+                        log.error(message);
+                        throw new CommandWrapperInputResolutionException(message, derivedInput);
+                    }
 
-                        if (session == null) {
-                            final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.getName(), parentInput.getName());
-                            log.error(message);
-                            throw new CommandWrapperInputResolutionException(message, derivedInput);
-                        }
+                    if (assessor == null) {
+                        final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.name(), parentInput.name());
+                        log.error(message);
+                        throw new CommandWrapperInputResolutionException(message, derivedInput);
+                    }
 
-                        if (log.isDebugEnabled()) {
-                            log.debug("Setting resolvedValue to uri " + session.getUri());
-                        }
-                        resolvedValue = session.getUri();
-                        try {
-                            jsonRepresentation = mapper.writeValueAsString(session);
-                        } catch (JsonProcessingException e) {
-                            log.error("Could not serialize session to json.", e);
-                        }
-                        break;
-                    case SCAN:
-                        Scan scan = null;
-                        switch (parentInput.getType()) {
-                            case SESSION:
-                                final List<Scan> childList = matchChildFromParent(parentInput.getJsonRepresentation(),
-                                        resolvedValue, "scans", "id", resolvedMatcher, new TypeRef<List<Scan>>(){});
-                                if (childList != null && !childList.isEmpty()) {
-                                    if (log.isDebugEnabled()) {
-                                        log.debug("Selecting first matching result from list.");
-                                    }
-                                    scan = childList.get(0);
-                                }
-                                break;
-                            default:
-                                final String message = String.format("An input of type \"%s\" cannot be derived from an input of type \"%s\".",
-                                        derivedInput.getType().getName(),
-                                        parentInput.getType().getName());
-                                log.error(message);
-                                throw new CommandWrapperInputResolutionException(message, derivedInput);
-                        }
+                    if (log.isDebugEnabled()) {
+                        log.debug("Setting resolvedValue to uri " + assessor.getUri());
+                    }
+                    resolvedValue = assessor.getUri();
+                    try {
+                        jsonRepresentation = mapper.writeValueAsString(assessor);
+                    } catch (JsonProcessingException e) {
+                        log.error("Could not serialize assessor to json.", e);
+                    }
+                } else if (type.equals(RESOURCE.getName())) {
+                    Resource resource = null;
 
-                        if (scan == null) {
-                            final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.getName(), parentInput.getName());
-                            log.error(message);
-                            throw new CommandWrapperInputResolutionException(message, derivedInput);
-                        }
+                    if (parentType.equals(PROJECT.getName()) || parentType.equals(SUBJECT.getName()) || parentType.equals(SESSION.getName()) ||
+                            parentType.equals(SCAN.getName()) || parentType.equals(ASSESSOR.getName())) {
 
-                        if (log.isDebugEnabled()) {
-                            log.debug("Setting resolvedValue to uri " + scan.getUri());
+                        final List<Resource> childStringList = matchChildFromParent(parentJson,
+                                resolvedValue, "resources", "id", resolvedMatcher, new TypeRef<List<Resource>>() {
+                                });
+                        if (childStringList != null && !childStringList.isEmpty()) {
+                            log.debug("Selecting first matching result from list.");
+                            resource = childStringList.get(0);
                         }
-                        resolvedValue = scan.getUri();
-                        try {
-                            jsonRepresentation = mapper.writeValueAsString(scan);
-                        } catch (JsonProcessingException e) {
-                            log.error("Could not serialize scan to json.", e);
-                        }
-                        break;
-                    case ASSESSOR:
-                        Assessor assessor = null;
-                        switch (parentInput.getType()) {
-                            case SESSION:
-                                final List<Assessor> childList = matchChildFromParent(parentInput.getJsonRepresentation(),
-                                        resolvedValue, "assessors", "id", resolvedMatcher, new TypeRef<List<Assessor>>() {
-                                        });
-                                if (childList != null && !childList.isEmpty()) {
-                                    if (log.isDebugEnabled()) {
-                                        log.debug("Selecting first matching result from list " + childList);
-                                    }
-                                    assessor = childList.get(0);
-                                }
-                                break;
-                            default:
-                                final String message = String.format("An input of type \"%s\" cannot be derived from an input of type \"%s\".",
-                                        derivedInput.getType().getName(),
-                                        parentInput.getType().getName());
-                                log.error(message);
-                                throw new CommandWrapperInputResolutionException(message, derivedInput);
-                        }
+                    } else {
+                        final String message = String.format("An input of type \"%s\" cannot be derived from an input of type \"%s\".",
+                                derivedInput.type(),
+                                parentInput.type());
+                        log.error(message);
+                        throw new CommandWrapperInputResolutionException(message, derivedInput);
+                    }
 
-                        if (assessor == null) {
-                            final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.getName(), parentInput.getName());
-                            log.error(message);
-                            throw new CommandWrapperInputResolutionException(message, derivedInput);
-                        }
+                    if (resource == null) {
+                        final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.name(), parentInput.name());
+                        log.error(message);
+                        throw new CommandWrapperInputResolutionException(message, derivedInput);
+                    }
 
-                        if (log.isDebugEnabled()) {
-                            log.debug("Setting resolvedValue to uri " + assessor.getUri());
-                        }
-                        resolvedValue = assessor.getUri();
-                        try {
-                            jsonRepresentation = mapper.writeValueAsString(assessor);
-                        } catch (JsonProcessingException e) {
-                            log.error("Could not serialize assessor to json.", e);
-                        }
-                        break;
-                    case RESOURCE:
-                        Resource resource = null;
-                        switch (parentInput.getType()) {
-                            case PROJECT:
-                                // Intentional fallthrough
-                            case SUBJECT:
-                                // Intentional fallthrough
-                            case SESSION:
-                                // Intentional fallthrough
-                            case SCAN:
-                                // Intentional fallthrough
-                            case ASSESSOR:
-                                final List<Resource> childStringList = matchChildFromParent(parentInput.getJsonRepresentation(),
-                                        resolvedValue, "resources", "id", resolvedMatcher, new TypeRef<List<Resource>>(){});
-                                if (childStringList != null && !childStringList.isEmpty()) {
-                                    log.debug("Selecting first matching result from list.");
-                                    resource = childStringList.get(0);
-                                }
-                                break;
-                            default:
-                                final String message = String.format("An input of type \"%s\" cannot be derived from an input of type \"%s\".",
-                                        derivedInput.getType().getName(),
-                                        parentInput.getType().getName());
-                                log.error(message);
-                                throw new CommandWrapperInputResolutionException(message, derivedInput);
-                        }
-
-                        if (resource == null) {
-                            final String message = String.format("Could not derive \"%s\" from \"%s\".", derivedInput.getName(), parentInput.getName());
-                            log.error(message);
-                            throw new CommandWrapperInputResolutionException(message, derivedInput);
-                        }
-
-                        if (log.isDebugEnabled()) {
-                            log.debug("Setting resolvedValue to uri " + resource.getUri());
-                        }
-                        resolvedValue = resource.getUri();
-                        try {
-                            jsonRepresentation = mapper.writeValueAsString(resource);
-                        } catch (JsonProcessingException e) {
-                            log.error("Could not serialize resource to json.", e);
-                        }
-                        break;
-                    case CONFIG:
-                        // TODO
-                        break;
+                    if (log.isDebugEnabled()) {
+                        log.debug("Setting resolvedValue to uri " + resource.getUri());
+                    }
+                    resolvedValue = resource.getUri();
+                    try {
+                        jsonRepresentation = mapper.writeValueAsString(resource);
+                    } catch (JsonProcessingException e) {
+                        log.error("Could not serialize resource to json.", e);
+                    }
+                } else if (type.equals(CONFIG.getName())) {
+                    // TODO
                 }
 
                 // If resolved value is null, and input is required, that is an error
-                if (resolvedValue == null && derivedInput.isRequired()) {
-                    final String message = String.format("No value could be resolved for required input \"%s\".", derivedInput.getName());
+                if (resolvedValue == null && derivedInput.required()) {
+                    final String message = String.format("No value could be resolved for required input \"%s\".", derivedInput.name());
                     log.debug(message);
                     throw new CommandWrapperInputResolutionException(message, derivedInput);
                 }
                 if (log.isInfoEnabled()) {
-                    log.info(String.format("Done resolving input \"%s\". Value: \"%s\".", derivedInput.getName(), resolvedValue));
+                    log.info(String.format("Done resolving input \"%s\". Value: \"%s\".", derivedInput.name(), resolvedValue));
                 }
-                derivedInput.setValue(resolvedValue);
-                derivedInput.setJsonRepresentation(jsonRepresentation != null ? jsonRepresentation : resolvedValue);
+                setValue(derivedInput, resolvedValue);;
+                setJsonValue(derivedInput, jsonRepresentation != null ? jsonRepresentation : resolvedValue);;
 
-                resolvedXnatInputObjects.put(derivedInput.getName(), derivedInput);
+                resolvedXnatInputObjects.put(derivedInput.name(), derivedInput);
 
-                resolvedXnatWrapperInputValuesByName.put(derivedInput.getName(), derivedInput.getValue());
+                resolvedXnatWrapperInputValuesByName.put(derivedInput.name(), getValue(derivedInput));
 
                 // If this xnat input provides any command input values, set them now
-                final String commandInputName = derivedInput.getProvidesValueForCommandInput();
+                final String commandInputName = derivedInput.providesValueForCommandInput();
                 if (StringUtils.isNotBlank(commandInputName)) {
                     if (log.isDebugEnabled()) {
                         log.debug(String.format("Found value for command input \"%s\": \"%s\".",
-                                commandInputName, derivedInput.getValue()));
+                                commandInputName, getValue(derivedInput)));
                     }
-                    resolvedXnatInputValuesByCommandInputName.put(commandInputName, derivedInput.getValue());
+                    resolvedXnatInputValuesByCommandInputName.put(commandInputName, getValue(derivedInput));
                 }
 
                 // If this xnat input provides files to a mount, note that now
                 addInputToMountsList(derivedInput);
 
-                final String replacementKey = derivedInput.getReplacementKey();
+                final String replacementKey = derivedInput.replacementKey();
                 if (StringUtils.isBlank(replacementKey)) {
                     continue;
                 }
@@ -1011,12 +975,12 @@ public class CommandResolutionHelper {
         return resolvedXnatWrapperInputValuesByName;
     }
 
-    private void addInputToMountsList(final CommandWrapperInputEntity input) {
+    private void addInputToMountsList(final CommandWrapperInput input) {
         if (input != null) {
             // TODO validate that there is a mount with this name
-            final String mountName = input.getProvidesFilesForCommandMount();
+            final String mountName = input.providesFilesForCommandMount();
             if (StringUtils.isNotBlank(mountName)) {
-                List<CommandWrapperInputEntity> xnatInputs = commandMountsToReceiveFilesFromXnatInputs.get(mountName);
+                List<CommandWrapperInput> xnatInputs = commandMountsToReceiveFilesFromXnatInputs.get(mountName);
                 if (xnatInputs == null) {
                     xnatInputs = Lists.newArrayList();
                 }
@@ -1029,14 +993,14 @@ public class CommandResolutionHelper {
     private Map<String, String> resolveInputs() throws CommandResolutionException {
         log.info("Resolving command inputs.");
 
-        if (commandEntity.getInputs() == null || commandEntity.getInputs().isEmpty()) {
+        if (command.inputs() == null || command.inputs().isEmpty()) {
             log.info("No inputs.");
             return null;
         }
 
         final Map<String, String> resolvedInputValuesByName = Maps.newHashMap();
-        for (final CommandInputEntity commandInputEntity : commandEntity.getInputs()) {
-            log.info(String.format("Resolving command input \"%s\".", commandInputEntity.getName()));
+        for (final CommandInput commandInput : command.inputs()) {
+            log.info(String.format("Resolving command input \"%s\".", commandInput.name()));
 
             // // Check that all prerequisites have already been resolved.
             // // TODO Move this to a command validation function. Command should not be saved unless inputs are in correct order. At this stage, we should be able to safely iterate.
@@ -1083,14 +1047,14 @@ public class CommandResolutionHelper {
 
             // Give the input its default value
             if (log.isDebugEnabled()) {
-                log.debug("Default value: " + commandInputEntity.getDefaultValue());
+                log.debug("Default value: " + commandInput.defaultValue());
             }
-            if (commandInputEntity.getDefaultValue() != null) {
-                 resolvedValue = commandInputEntity.getDefaultValue();
+            if (commandInput.defaultValue() != null) {
+                 resolvedValue = commandInput.defaultValue();
             }
 
             // If the input is supposed to get a value from an XNAT input, use that
-            final String preresolvedValue = resolvedXnatInputValuesByCommandInputName.get(commandInputEntity.getName());
+            final String preresolvedValue = resolvedXnatInputValuesByCommandInputName.get(commandInput.name());
             if (preresolvedValue != null) {
                 if (log.isDebugEnabled()) {
                     log.debug("XNAT Wrapper value: " + preresolvedValue);
@@ -1099,7 +1063,7 @@ public class CommandResolutionHelper {
             }
 
             // If a value was provided at runtime, use that
-            final String runtimeValue = inputValues.get(commandInputEntity.getName());
+            final String runtimeValue = inputValues.get(commandInput.name());
             if (runtimeValue != null) {
                 if (log.isDebugEnabled()) {
                     log.debug("Runtime value: " + runtimeValue);
@@ -1111,64 +1075,61 @@ public class CommandResolutionHelper {
             resolvedValue = resolveJsonpathSubstring(resolvedValue);
 
             if (log.isDebugEnabled()) {
-                log.debug("Matcher: " + commandInputEntity.getMatcher());
+                log.debug("Matcher: " + commandInput.matcher());
             }
-            final String resolvedMatcher = commandInputEntity.getMatcher() != null ? resolveJsonpathSubstring(commandInputEntity.getMatcher()) : null;
+            final String resolvedMatcher = commandInput.matcher() != null ? resolveTemplate(commandInput.matcher()) : null;
 
+            final String type = commandInput.type();
             if (log.isDebugEnabled()) {
-                log.debug("Processing input value as a " + commandInputEntity.getType().getName());
+                log.debug("Processing input value as a " + type);
             }
-            switch (commandInputEntity.getType()) {
-                case BOOLEAN:
-                    // Parse the value as a boolean, and use the trueValue/falseValue
-                    // If those haven't been set, just pass the value through
-                    if (Boolean.parseBoolean(resolvedValue)) {
-                        resolvedValue = commandInputEntity.getTrueValue() != null ? commandInputEntity.getTrueValue() : resolvedValue;
-                    } else {
-                        resolvedValue = commandInputEntity.getFalseValue() != null ? commandInputEntity.getFalseValue() : resolvedValue;
-                    }
-                    break;
-                case NUMBER:
-                    // TODO
-                    break;
-                default:
-                    // TODO anything to do?
+            if (type.equals(BOOLEAN.getName())) {
+                // Parse the value as a boolean, and use the trueValue/falseValue
+                // If those haven't been set, just pass the value through
+                if (Boolean.parseBoolean(resolvedValue)) {
+                    resolvedValue = commandInput.trueValue() != null ? commandInput.trueValue() : resolvedValue;
+                } else {
+                    resolvedValue = commandInput.falseValue() != null ? commandInput.falseValue() : resolvedValue;
+                }
+            } else if (type.equals(NUMBER.getName())) {
+                // TODO
+            } else {
+                // TODO anything to do?
             }
-
 
             // If resolved value is null, and input is required, that is an error
-            if (resolvedValue == null && commandInputEntity.isRequired()) {
-                final String message = String.format("No value could be resolved for required input \"%s\".", commandInputEntity.getName());
+            if (resolvedValue == null && commandInput.required()) {
+                final String message = String.format("No value could be resolved for required input \"%s\".", commandInput.name());
                 log.debug(message);
-                throw new CommandInputResolutionException(message, commandInputEntity);
+                throw new CommandInputResolutionException(message, commandInput);
             }
             if (log.isInfoEnabled()) {
-                log.info(String.format("Done resolving input \"%s\". Value: %s", commandInputEntity.getName(), resolvedValue));
+                log.info(String.format("Done resolving input \"%s\". Value: %s", commandInput.name(), resolvedValue));
             }
-            commandInputEntity.setValue(resolvedValue);
-            // input.setJsonRepresentation(jsonRepresentation != null ? jsonRepresentation : resolvedValue);
+            setValue(commandInput, resolvedValue);;
+            // setJsonValue(input, jsonRepresentation != null ? jsonRepresentation : resolvedValue);;
 
             // resolvedXnatInputObjects.put(input.getName(), input);
-            resolvedInputValuesByName.put(commandInputEntity.getName(), commandInputEntity.getValue());
+            resolvedInputValuesByName.put(commandInput.name(), getValue(commandInput));
 
             // Only substitute the input into the command line if a replacementKey is set
-            final String replacementKey = commandInputEntity.getReplacementKey();
+            final String replacementKey = commandInput.replacementKey();
             if (StringUtils.isBlank(replacementKey)) {
                 continue;
             }
             resolvedInputValuesByReplacementKey.put(replacementKey, resolvedValue);
-            resolvedInputCommandLineValuesByReplacementKey.put(replacementKey, getValueForCommandLine(commandInputEntity, resolvedValue));
+            resolvedInputCommandLineValuesByReplacementKey.put(replacementKey, getValueForCommandLine(commandInput, resolvedValue));
         }
 
         return resolvedInputValuesByName;
     }
 
     private String commandAsJson() throws CommandResolutionException {
-        if (!commandEntity.equals(cachedCommandEntity)) {
-            cachedCommandEntity = commandEntity;
+        if (!command.equals(cachedCommand)) {
+            cachedCommand = command;
 
             try {
-                commandJson = mapper.writeValueAsString(cachedCommandEntity);
+                commandJson = mapper.writeValueAsString(cachedCommand);
             } catch (JsonProcessingException e) {
                 final String message = "Could not serialize command to json.";
                 log.debug(message);
@@ -1180,8 +1141,8 @@ public class CommandResolutionHelper {
     }
 
     private String commandWrapperAsJson() throws CommandResolutionException {
-        if (!commandWrapperEntity.equals(cachedCommandWrapper)) {
-            cachedCommandWrapper = commandWrapperEntity;
+        if (!commandWrapper.equals(cachedCommandWrapper)) {
+            cachedCommandWrapper = commandWrapper;
 
             try {
                 commandWrapperJson = mapper.writeValueAsString(cachedCommandWrapper);
@@ -1235,12 +1196,12 @@ public class CommandResolutionHelper {
         return null;
     }
 
-    private String getValueForCommandLine(final CommandInputEntity input, final String resolvedInputValue) {
-        if (StringUtils.isBlank(input.getCommandLineFlag())) {
+    private String getValueForCommandLine(final CommandInput input, final String resolvedInputValue) {
+        if (StringUtils.isBlank(input.commandLineFlag())) {
             return resolvedInputValue;
         } else {
-            return input.getCommandLineFlag() +
-                    (input.getCommandLineSeparator() == null ? " " : input.getCommandLineSeparator()) +
+            return input.commandLineFlag() +
+                    (input.commandLineSeparator() == null ? " " : input.commandLineSeparator()) +
                     resolvedInputValue;
         }
     }
@@ -1347,39 +1308,39 @@ public class CommandResolutionHelper {
 
     private List<ContainerExecutionOutput> resolveOutputs() throws CommandResolutionException {
         log.info("Resolving command outputs.");
-        if (commandEntity.getOutputs() == null) {
+        if (command.outputs() == null) {
             return null;
         }
 
-        final Map<String, CommandWrapperOutputEntity> xnatCommandOutputsByCommandOutputName = Maps.newHashMap();
-        if (commandWrapperEntity.getOutputHandlers() != null) {
-            for (final CommandWrapperOutputEntity commandWrapperOutputEntity : commandWrapperEntity.getOutputHandlers()) {
-                xnatCommandOutputsByCommandOutputName.put(commandWrapperOutputEntity.getCommandOutputName(), commandWrapperOutputEntity);
+        final Map<String, CommandWrapperOutput> xnatCommandOutputsByCommandOutputName = Maps.newHashMap();
+        if (commandWrapper.outputHandlers() != null) {
+            for (final CommandWrapperOutput commandWrapperOutput : commandWrapper.outputHandlers()) {
+                xnatCommandOutputsByCommandOutputName.put(commandWrapperOutput.commandOutputName(), commandWrapperOutput);
             }
         }
 
         final List<ContainerExecutionOutput> resolvedOutputs = Lists.newArrayList();
-        for (final CommandOutputEntity commandOutputEntity : commandEntity.getOutputs()) {
+        for (final CommandOutput commandOutput : command.outputs()) {
             if (log.isInfoEnabled()) {
-                log.info(String.format("Resolving command output \"%s\"", commandOutputEntity.getName()));
+                log.info(String.format("Resolving command output \"%s\"", commandOutput.name()));
             }
             if (log.isDebugEnabled()) {
-                log.debug(commandOutputEntity.toString());
+                log.debug(commandOutput.toString());
             }
 
             // TODO fix this in validation
-            final CommandWrapperOutputEntity commandOutputHandler = xnatCommandOutputsByCommandOutputName.get(commandOutputEntity.getName());
+            final CommandWrapperOutput commandOutputHandler = xnatCommandOutputsByCommandOutputName.get(commandOutput.name());
             if (commandOutputHandler == null) {
-                throw new CommandResolutionException(String.format("No XNAT object was configured to handle output \"%s\".", commandOutputEntity.getName()));
+                throw new CommandResolutionException(String.format("No XNAT object was configured to handle output \"%s\".", commandOutput.name()));
             }
             if (log.isDebugEnabled()) {
-                log.debug(String.format("Found XNAT Output Handler for Command output \"%s\".", commandOutputEntity.getName()));
+                log.debug(String.format("Found XNAT Output Handler for Command output \"%s\".", commandOutput.name()));
             }
 
-            final ContainerExecutionOutput resolvedOutput = new ContainerExecutionOutput(commandOutputEntity, commandOutputHandler);
+            final ContainerExecutionOutput resolvedOutput = new ContainerExecutionOutput(commandOutput, commandOutputHandler);
 
-            resolvedOutput.setPath(resolveTemplate(commandOutputEntity.getPath()));
-            resolvedOutput.setLabel(resolveTemplate(commandOutputHandler.getLabel()));
+            resolvedOutput.setPath(resolveTemplate(commandOutput.path()));
+            resolvedOutput.setLabel(resolveTemplate(commandOutputHandler.label()));
 
             // TODO Anything else needed to resolve an output?
 
@@ -1405,7 +1366,7 @@ public class CommandResolutionHelper {
     private String resolveCommandLine() throws CommandResolutionException {
         log.info("Resolving command-line string.");
 
-        final String resolvedCommandLine = resolveTemplate(commandEntity.getCommandLine(), resolvedInputCommandLineValuesByReplacementKey);
+        final String resolvedCommandLine = resolveTemplate(command.commandLine(), resolvedInputCommandLineValuesByReplacementKey);
 
         log.info("Done resolving command-line string.");
         if (log.isDebugEnabled()) {
@@ -1418,7 +1379,7 @@ public class CommandResolutionHelper {
             throws CommandResolutionException {
         log.info("Resolving environment variables.");
 
-        final Map<String, String> envTemplates = commandEntity.getEnvironmentVariables();
+        final Map<String, String> envTemplates = command.environmentVariables();
         if (envTemplates == null || envTemplates.isEmpty()) {
             log.info("No environment variables to resolve.");
             return null;
@@ -1439,13 +1400,12 @@ public class CommandResolutionHelper {
 
     private Map<String, String> resolvePorts()
             throws CommandResolutionException {
-        if (!DockerCommandEntity.class.isAssignableFrom(commandEntity.getClass())) {
+        if (!DockerCommandEntity.class.isAssignableFrom(command.getClass())) {
             return null;
         }
         log.info("Resolving ports.");
-        final DockerCommandEntity dockerCommand = (DockerCommandEntity) commandEntity;
 
-        final Map<String, String> portTemplates = dockerCommand.getPorts();
+        final Map<String, String> portTemplates = command.ports();
         if (portTemplates == null || portTemplates.isEmpty()) {
             log.info("No ports to resolve.");
             return null;
@@ -1487,15 +1447,15 @@ public class CommandResolutionHelper {
 
     private List<ContainerExecutionMount> resolveCommandMounts() throws CommandResolutionException {
         log.info("Resolving mounts.");
-        final List<CommandMountEntity> commandMountEntities = commandEntity.getMounts();
-        if (commandMountEntities == null || commandMountEntities.isEmpty()) {
+        final List<CommandMount> commandMounts = command.mounts();
+        if (commandMounts == null || commandMounts.isEmpty()) {
             log.info("No mounts.");
             return Lists.newArrayList();
         }
 
         final List<ContainerExecutionMount> resolvedMounts = Lists.newArrayList();
-        for (final CommandMountEntity commandMountEntity : commandMountEntities) {
-            resolvedMounts.add(resolveCommandMount(commandMountEntity));
+        for (final CommandMount commandMount : commandMounts) {
+            resolvedMounts.add(resolveCommandMount(commandMount));
         }
 
         log.info("Done resolving mounts.");
@@ -1507,93 +1467,83 @@ public class CommandResolutionHelper {
         return resolvedMounts;
     }
 
-    private ContainerExecutionMount resolveCommandMount(final CommandMountEntity commandMountEntity)
+    private ContainerExecutionMount resolveCommandMount(final CommandMount commandMount)
             throws CommandResolutionException {
         if (log.isInfoEnabled()) {
-            log.info(String.format("Resolving command mount \"%s\".", commandMountEntity.getName()));
+            log.info(String.format("Resolving command mount \"%s\".", commandMount.name()));
         }
 
-        final ContainerExecutionMount resolvedMount = new ContainerExecutionMount(commandMountEntity);
-        resolvedMount.setContainerPath(resolveTemplate(commandMountEntity.getContainerPath()));
+        final ContainerExecutionMount resolvedMount = new ContainerExecutionMount(commandMount);
+        resolvedMount.setContainerPath(resolveTemplate(commandMount.path()));
 
-        final List<CommandWrapperInputEntity> sourceInputs = commandMountsToReceiveFilesFromXnatInputs.get(commandMountEntity.getName());
+        final List<CommandWrapperInput> sourceInputs = commandMountsToReceiveFilesFromXnatInputs.get(commandMount.name());
         if (sourceInputs == null || sourceInputs.isEmpty()) {
             if (log.isDebugEnabled()) {
-                log.debug(String.format("Command mount \"%s\" has no inputs that provide it files. Assuming it is an output mount.", commandMountEntity.getName()));
+                log.debug(String.format("Command mount \"%s\" has no inputs that provide it files. Assuming it is an output mount.", commandMount.name()));
             }
             resolvedMount.setWritable(true);
         } else {
             final List<ContainerMountFiles> filesList = Lists.newArrayList();
-            for (final CommandWrapperInputEntity sourceInput : sourceInputs) {
+            for (final CommandWrapperInput sourceInput : sourceInputs) {
                 if (sourceInput == null) {
-                    final String message = String.format("Cannot resolve mount \"%s\". Source input is null.", commandMountEntity.getName());
+                    final String message = String.format("Cannot resolve mount \"%s\". Source input is null.", commandMount.name());
                     log.error(message);
-                    throw new CommandMountResolutionException(message, commandMountEntity);
-                } else if (StringUtils.isBlank(sourceInput.getValue())) {
-                    final String message = String.format("Cannot resolve mount \"%s\". Source input \"%s\" has no resolved value.", commandMountEntity.getName(), sourceInput.getName());
+                    throw new CommandMountResolutionException(message, commandMount);
+                } else if (StringUtils.isBlank(getValue(sourceInput))) {
+                    final String message = String.format("Cannot resolve mount \"%s\". Source input \"%s\" has no resolved value.", commandMount.name(), sourceInput.name());
                     log.error(message);
-                    throw new CommandMountResolutionException(message, commandMountEntity);
+                    throw new CommandMountResolutionException(message, commandMount);
                 }
 
                 if (log.isDebugEnabled()) {
-                    log.debug(String.format("Mount \"%s\" has source input \"%s\" with type \"%s\".", commandMountEntity.getName(), sourceInput.getName(), sourceInput.getType().getName()));
+                    log.debug(String.format("Mount \"%s\" has source input \"%s\" with type \"%s\".", commandMount.name(), sourceInput.name(), sourceInput.type()));
                 }
                 final ContainerMountFiles files = new ContainerMountFiles(sourceInput);
-                switch (sourceInput.getType()) {
-                    case DIRECTORY:
-                        // TODO
-                        break;
-                    case FILES:
-                        // TODO
-                        break;
-                    case FILE:
-                        // TODO
-                        break;
-                    case PROJECT:
-                        // Intentional fallthrough
-                    case SESSION:
-                        // Intentional fallthrough
-                    case SCAN:
-                        // Intentional fallthrough
-                    case ASSESSOR:
-                        // Intentional fallthrough
-                    case RESOURCE:
+
+                final String type = sourceInput.type();
+                if (type.equals(DIRECTORY.getName())) {
+                    // TODO
+                } else if (type.equals(FILES.getName())) {
+                    // TODO
+                } else if (type.equals(FILE.getName())) {
+                    // TODO
+                } else if (type.equals(PROJECT.getName()) || type.equals(SESSION.getName()) || type.equals(SCAN.getName())
+                            || type.equals(ASSESSOR.getName()) || type.equals(RESOURCE.getName())) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Looking for directory on source input.");
+                    }
+
+                    final String directory = JsonPath.parse(getJsonValue(sourceInput)).read("directory", String.class);
+                    if (StringUtils.isNotBlank(directory)) {
                         if (log.isDebugEnabled()) {
-                            log.debug("Looking for directory on source input.");
+                            log.debug("Setting directory " + directory);
                         }
-
-                        final String directory = JsonPath.parse(sourceInput.getJsonRepresentation()).read("directory", String.class);
-                        if (StringUtils.isNotBlank(directory)) {
-                            if (log.isDebugEnabled()) {
-                                log.debug("Setting directory " + directory);
-                            }
-                            files.setRootDirectory(directory);
-                        } else {
-                            String message = "Source input has no directory.";
-                            if (log.isDebugEnabled()) {
-                                message += "\ninput: " + sourceInput;
-                            }
-                            log.error(message);
-                            throw new CommandMountResolutionException(message, commandMountEntity);
+                        files.setRootDirectory(directory);
+                    } else {
+                        String message = "Source input has no directory.";
+                        if (log.isDebugEnabled()) {
+                            message += "\ninput: " + sourceInput;
                         }
-
-                        final String uri = JsonPath.parse(sourceInput.getJsonRepresentation()).read("uri", String.class);
-                        if (StringUtils.isNotBlank(uri)) {
-                            files.setFromUri(uri);
-                        } else {
-                            // throw new CommandMountResolutionException(String.format("Source input \"%s\" has no uri.", sourceInput.getName()), commandMount);
-                            // I don't need to throw an exception here, right? This should be fine, right?
-                        }
-
-                        break;
-                    default:
-                        final String message = String.format("I don't know how to provide files to a mount from an input of type \"%s\".", sourceInput.getType().getName());
                         log.error(message);
-                        throw new CommandMountResolutionException(message, commandMountEntity);
+                        throw new CommandMountResolutionException(message, commandMount);
+                    }
+
+                    final String uri = JsonPath.parse(getJsonValue(sourceInput)).read("uri", String.class);
+                    if (StringUtils.isNotBlank(uri)) {
+                        files.setFromUri(uri);
+                    } else {
+                        // throw new CommandMountResolutionException(String.format("Source input \"%s\" has no uri.", sourceInput.getName()), commandMount);
+                        // I don't need to throw an exception here, right? This should be fine, right?
+                    }
+
+                } else {
+                    final String message = String.format("I don't know how to provide files to a mount from an input of type \"%s\".", sourceInput.type());
+                    log.error(message);
+                    throw new CommandMountResolutionException(message, commandMount);
                 }
 
                 if (log.isDebugEnabled()) {
-                    log.debug(String.format("Done resolving mount \"%s\", source input \"%s\".", commandMountEntity.getName(), sourceInput.getName()));
+                    log.debug(String.format("Done resolving mount \"%s\", source input \"%s\".", commandMount.name(), sourceInput.name()));
                 }
                 filesList.add(files);
             }
@@ -1605,7 +1555,7 @@ public class CommandResolutionHelper {
 
 
         if (log.isInfoEnabled()) {
-            log.info(String.format("Done resolving command mount \"%s\".", commandMountEntity.getName()));
+            log.info(String.format("Done resolving command mount \"%s\".", commandMount.name()));
         }
         return resolvedMount;
     }
@@ -1707,5 +1657,33 @@ public class CommandResolutionHelper {
             log.debug("No jsonpath substring found.");
         }
         return stringThatMayContainJsonpathSubstring;
+    }
+
+    private String getValue(final CommandWrapperInput commandWrapperInput) {
+        return commandWrapperInputValues.get(commandWrapperInput);
+    }
+
+    private String setValue(final CommandWrapperInput commandWrapperInput,
+                            final String value) {
+        return commandWrapperInputValues.put(commandWrapperInput, value);
+    }
+
+
+    private String getValue(final CommandInput commandInput) {
+        return commandInputValues.get(commandInput);
+    }
+
+    private String setValue(final CommandInput commandInput,
+                            final String value) {
+        return commandInputValues.put(commandInput, value);
+    }
+
+    private String getJsonValue(final CommandWrapperInput commandWrapperInput) {
+        return commandWrapperInputJsonValues.get(commandWrapperInput);
+    }
+
+    private String setJsonValue(final CommandWrapperInput commandWrapperInput,
+                                final String jsonValue) {
+        return commandWrapperInputJsonValues.put(commandWrapperInput, jsonValue);
     }
 }

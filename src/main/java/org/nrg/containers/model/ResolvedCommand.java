@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import org.nrg.containers.model.auto.Command;
 
 import java.io.Serializable;
 import java.util.List;
@@ -34,10 +35,10 @@ public abstract class ResolvedCommand implements Serializable {
 
     public ResolvedCommand() {}
 
-    public ResolvedCommand(final Long xnatCommandWrapperId, final CommandEntity commandEntity) {
+    public ResolvedCommand(final Long xnatCommandWrapperId, final Command command) {
         this.xnatCommandWrapperId = xnatCommandWrapperId;
-        this.commandId = commandEntity.getId();
-        this.image = commandEntity.getImage();
+        this.commandId = command.id();
+        this.image = command.image();
     }
 
     public abstract CommandType getType();

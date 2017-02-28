@@ -18,10 +18,10 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.config.IntegrationTestConfig;
-import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.containers.model.ResolvedDockerCommand;
-import org.nrg.containers.model.CommandWrapperEntity;
+import org.nrg.containers.model.auto.Command;
+import org.nrg.containers.model.auto.Command.CommandWrapper;
 import org.nrg.containers.model.xnat.Project;
 import org.nrg.containers.model.xnat.Resource;
 import org.nrg.containers.model.xnat.Scan;
@@ -54,9 +54,9 @@ public class CommandResolutionTest {
     private final String BUSYBOX_LATEST = "busybox:latest";
 
     private UserI mockUser;
-    private CommandEntity dummyCommandEntity;
+    private Command dummyCommand;
     private String resourceDir;
-    private Map<String, CommandWrapperEntity> xnatCommandWrappers;
+    private Map<String, CommandWrapper> xnatCommandWrappers;
 
     @Autowired private ObjectMapper mapper;
     @Autowired private CommandService commandService;
@@ -93,12 +93,12 @@ public class CommandResolutionTest {
 
         resourceDir = Resources.getResource("commandResolutionTest").getPath().replace("%20", " ");
         final String commandJsonFile = resourceDir + "/command.json";
-        dummyCommandEntity = mapper.readValue(new File(commandJsonFile), CommandEntity.class);
-        commandService.create(dummyCommandEntity);
+        dummyCommand = mapper.readValue(new File(commandJsonFile), Command.class);
+        commandService.create(dummyCommand);
 
         xnatCommandWrappers = Maps.newHashMap();
-        for (final CommandWrapperEntity commandWrapperEntity : dummyCommandEntity.getCommandWrapperEntities()) {
-            xnatCommandWrappers.put(commandWrapperEntity.getName(), commandWrapperEntity);
+        for (final CommandWrapper commandWrapperEntity : dummyCommand.xnatCommandWrappers()) {
+            xnatCommandWrappers.put(commandWrapperEntity.name(), commandWrapperEntity);
         }
     }
 
@@ -116,14 +116,14 @@ public class CommandResolutionTest {
         final Map<String, String> runtimeValues = Maps.newHashMap();
         runtimeValues.put("session", sessionRuntimeJson);
 
-        final CommandWrapperEntity commandWrapperEntity = xnatCommandWrappers.get(commandWrapperName);
-        assertNotNull(commandWrapperEntity);
+        final CommandWrapper commandWrapper = xnatCommandWrappers.get(commandWrapperName);
+        assertNotNull(commandWrapper);
 
-        final ResolvedCommand resolvedCommand = commandService.resolveCommand(commandWrapperEntity, dummyCommandEntity, runtimeValues, mockUser);
-        assertEquals((Long) dummyCommandEntity.getId(), resolvedCommand.getCommandId());
-        assertEquals((Long) commandWrapperEntity.getId(), resolvedCommand.getXnatCommandWrapperId());
-        assertEquals(dummyCommandEntity.getImage(), resolvedCommand.getImage());
-        assertEquals(dummyCommandEntity.getCommandLine(), resolvedCommand.getCommandLine());
+        final ResolvedCommand resolvedCommand = commandService.resolveCommand(commandWrapper, dummyCommand, runtimeValues, mockUser);
+        assertEquals((Long) dummyCommand.id(), resolvedCommand.getCommandId());
+        assertEquals((Long) commandWrapper.id(), resolvedCommand.getXnatCommandWrapperId());
+        assertEquals(dummyCommand.image(), resolvedCommand.getImage());
+        assertEquals(dummyCommand.commandLine(), resolvedCommand.getCommandLine());
         assertTrue(resolvedCommand.getEnvironmentVariables().isEmpty());
         assertTrue(resolvedCommand.getMounts().isEmpty());
         assertThat(resolvedCommand, instanceOf(ResolvedDockerCommand.class));
@@ -167,14 +167,14 @@ public class CommandResolutionTest {
         final Map<String, String> runtimeValues = Maps.newHashMap();
         runtimeValues.put("a scan", scanRuntimeJson);
 
-        final CommandWrapperEntity commandWrapperEntity = xnatCommandWrappers.get(commandWrapperName);
-        assertNotNull(commandWrapperEntity);
+        final CommandWrapper commandWrapper = xnatCommandWrappers.get(commandWrapperName);
+        assertNotNull(commandWrapper);
 
-        final ResolvedCommand resolvedCommand = commandService.resolveCommand(commandWrapperEntity, dummyCommandEntity, runtimeValues, mockUser);
-        assertEquals((Long) dummyCommandEntity.getId(), resolvedCommand.getCommandId());
-        assertEquals((Long) commandWrapperEntity.getId(), resolvedCommand.getXnatCommandWrapperId());
-        assertEquals(dummyCommandEntity.getImage(), resolvedCommand.getImage());
-        assertEquals(dummyCommandEntity.getCommandLine(), resolvedCommand.getCommandLine());
+        final ResolvedCommand resolvedCommand = commandService.resolveCommand(commandWrapper, dummyCommand, runtimeValues, mockUser);
+        assertEquals((Long) dummyCommand.id(), resolvedCommand.getCommandId());
+        assertEquals((Long) commandWrapper.id(), resolvedCommand.getXnatCommandWrapperId());
+        assertEquals(dummyCommand.image(), resolvedCommand.getImage());
+        assertEquals(dummyCommand.commandLine(), resolvedCommand.getCommandLine());
         assertTrue(resolvedCommand.getEnvironmentVariables().isEmpty());
         assertTrue(resolvedCommand.getMounts().isEmpty());
         assertThat(resolvedCommand, instanceOf(ResolvedDockerCommand.class));
@@ -214,14 +214,14 @@ public class CommandResolutionTest {
         final Map<String, String> runtimeValues = Maps.newHashMap();
         runtimeValues.put("project", projectRuntimeJson);
 
-        final CommandWrapperEntity commandWrapperEntity = xnatCommandWrappers.get(commandWrapperName);
-        assertNotNull(commandWrapperEntity);
+        final CommandWrapper commandWrapper = xnatCommandWrappers.get(commandWrapperName);
+        assertNotNull(commandWrapper);
 
-        final ResolvedCommand resolvedCommand = commandService.resolveCommand(commandWrapperEntity, dummyCommandEntity, runtimeValues, mockUser);
-        assertEquals((Long) dummyCommandEntity.getId(), resolvedCommand.getCommandId());
-        assertEquals((Long) commandWrapperEntity.getId(), resolvedCommand.getXnatCommandWrapperId());
-        assertEquals(dummyCommandEntity.getImage(), resolvedCommand.getImage());
-        assertEquals(dummyCommandEntity.getCommandLine(), resolvedCommand.getCommandLine());
+        final ResolvedCommand resolvedCommand = commandService.resolveCommand(commandWrapper, dummyCommand, runtimeValues, mockUser);
+        assertEquals((Long) dummyCommand.id(), resolvedCommand.getCommandId());
+        assertEquals((Long) commandWrapper.id(), resolvedCommand.getXnatCommandWrapperId());
+        assertEquals(dummyCommand.image(), resolvedCommand.getImage());
+        assertEquals(dummyCommand.commandLine(), resolvedCommand.getCommandLine());
         assertTrue(resolvedCommand.getEnvironmentVariables().isEmpty());
         assertTrue(resolvedCommand.getMounts().isEmpty());
         assertThat(resolvedCommand, instanceOf(ResolvedDockerCommand.class));
@@ -258,14 +258,14 @@ public class CommandResolutionTest {
         final Map<String, String> runtimeValues = Maps.newHashMap();
         runtimeValues.put("project", projectRuntimeJson);
 
-        final CommandWrapperEntity commandWrapperEntity = xnatCommandWrappers.get(commandWrapperName);
-        assertNotNull(commandWrapperEntity);
+        final CommandWrapper commandWrapper = xnatCommandWrappers.get(commandWrapperName);
+        assertNotNull(commandWrapper);
 
-        final ResolvedCommand resolvedCommand = commandService.resolveCommand(commandWrapperEntity, dummyCommandEntity, runtimeValues, mockUser);
-        assertEquals((Long) dummyCommandEntity.getId(), resolvedCommand.getCommandId());
-        assertEquals((Long) commandWrapperEntity.getId(), resolvedCommand.getXnatCommandWrapperId());
-        assertEquals(dummyCommandEntity.getImage(), resolvedCommand.getImage());
-        assertEquals(dummyCommandEntity.getCommandLine(), resolvedCommand.getCommandLine());
+        final ResolvedCommand resolvedCommand = commandService.resolveCommand(commandWrapper, dummyCommand, runtimeValues, mockUser);
+        assertEquals((Long) dummyCommand.id(), resolvedCommand.getCommandId());
+        assertEquals((Long) commandWrapper.id(), resolvedCommand.getXnatCommandWrapperId());
+        assertEquals(dummyCommand.image(), resolvedCommand.getImage());
+        assertEquals(dummyCommand.commandLine(), resolvedCommand.getCommandLine());
         assertTrue(resolvedCommand.getEnvironmentVariables().isEmpty());
         assertTrue(resolvedCommand.getMounts().isEmpty());
         assertThat(resolvedCommand, instanceOf(ResolvedDockerCommand.class));
@@ -303,14 +303,14 @@ public class CommandResolutionTest {
         final Map<String, String> runtimeValues = Maps.newHashMap();
         runtimeValues.put("session", sessionRuntimeJson);
 
-        final CommandWrapperEntity commandWrapperEntity = xnatCommandWrappers.get(commandWrapperName);
-        assertNotNull(commandWrapperEntity);
+        final CommandWrapper commandWrapper = xnatCommandWrappers.get(commandWrapperName);
+        assertNotNull(commandWrapper);
 
-        final ResolvedCommand resolvedCommand = commandService.resolveCommand(commandWrapperEntity, dummyCommandEntity, runtimeValues, mockUser);
-        assertEquals((Long) dummyCommandEntity.getId(), resolvedCommand.getCommandId());
-        assertEquals((Long) commandWrapperEntity.getId(), resolvedCommand.getXnatCommandWrapperId());
-        assertEquals(dummyCommandEntity.getImage(), resolvedCommand.getImage());
-        assertEquals(dummyCommandEntity.getCommandLine(), resolvedCommand.getCommandLine());
+        final ResolvedCommand resolvedCommand = commandService.resolveCommand(commandWrapper, dummyCommand, runtimeValues, mockUser);
+        assertEquals((Long) dummyCommand.id(), resolvedCommand.getCommandId());
+        assertEquals((Long) commandWrapper.id(), resolvedCommand.getXnatCommandWrapperId());
+        assertEquals(dummyCommand.image(), resolvedCommand.getImage());
+        assertEquals(dummyCommand.commandLine(), resolvedCommand.getCommandLine());
         assertTrue(resolvedCommand.getEnvironmentVariables().isEmpty());
         assertTrue(resolvedCommand.getMounts().isEmpty());
         assertThat(resolvedCommand, instanceOf(ResolvedDockerCommand.class));

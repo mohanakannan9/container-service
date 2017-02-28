@@ -1,21 +1,21 @@
 package org.nrg.containers.exceptions;
 
-import org.nrg.containers.model.CommandWrapperInputEntity;
+import org.nrg.containers.model.auto.Command.CommandWrapperInput;
 
 public class CommandWrapperInputResolutionException extends CommandResolutionException {
-    private final CommandWrapperInputEntity input;
+    private final CommandWrapperInput input;
 
-    public CommandWrapperInputResolutionException(final String message, final CommandWrapperInputEntity input) {
+    public CommandWrapperInputResolutionException(final String message, final CommandWrapperInput input) {
         super(message);
         this.input = input;
     }
 
-    public CommandWrapperInputResolutionException(final String message, final CommandWrapperInputEntity input, final Throwable cause) {
+    public CommandWrapperInputResolutionException(final String message, final CommandWrapperInput input, final Throwable cause) {
         super(message, cause);
         this.input = input;
     }
 
-    public CommandWrapperInputEntity getInput() {
+    public CommandWrapperInput getInput() {
         return input;
     }
 }

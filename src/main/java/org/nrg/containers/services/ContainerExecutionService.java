@@ -9,8 +9,6 @@ import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
 import org.nrg.xft.security.UserI;
 
-import java.util.Map;
-
 public interface ContainerExecutionService extends BaseHibernateService<ContainerExecution> {
     void processEvent(final DockerContainerEvent event);
     void finalize(final Long containerExecutionId, final UserI userI);

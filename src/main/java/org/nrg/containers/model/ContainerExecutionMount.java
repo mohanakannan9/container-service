@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import io.swagger.annotations.ApiModelProperty;
+import org.nrg.containers.model.auto.Command;
+import org.nrg.containers.model.auto.Command.CommandMount;
 
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
@@ -28,9 +30,9 @@ public class ContainerExecutionMount implements Serializable {
 
     public ContainerExecutionMount() {}
 
-    public ContainerExecutionMount(final CommandMountEntity commandMountEntity) {
-        this.name = commandMountEntity.getName();
-        this.writable = commandMountEntity.getWritable();
+    public ContainerExecutionMount(final CommandMount commandMount) {
+        this.name = commandMount.name();
+        this.writable = commandMount.writable();
         this.xnatHostPath = null;        // Intentionally blank. Will be set later.
         this.containerHostPath = null;   // Intentionally blank. Will be set later.
         this.containerPath = null;       // Intentionally blank. Will be set later.

@@ -5,7 +5,7 @@ import com.google.common.io.Resources;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.containers.config.CommandTestConfig;
-import org.nrg.containers.services.CommandService;
+import org.nrg.containers.services.CommandEntityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -107,11 +107,11 @@ public class CommandWrapperEntityTest {
 
 
     @Autowired private ObjectMapper mapper;
-    @Autowired private CommandService commandService;
+    @Autowired private CommandEntityService commandEntityService;
 
     @Test
     public void testSpringConfiguration() {
-        assertThat(commandService, not(nullValue()));
+        assertThat(commandEntityService, not(nullValue()));
     }
 
     @Test
@@ -159,10 +159,10 @@ public class CommandWrapperEntityTest {
 
         final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
 
-        commandService.create(commandEntity);
-        commandService.flush();
+        commandEntityService.create(commandEntity);
+        commandEntityService.flush();
 
-        final CommandEntity retrievedCommandEntity = commandService.retrieve(commandEntity.getId());
+        final CommandEntity retrievedCommandEntity = commandEntityService.retrieve(commandEntity.getId());
 
         assertEquals(commandEntity, retrievedCommandEntity);
 
@@ -181,6 +181,6 @@ public class CommandWrapperEntityTest {
         final String dir = Resources.getResource("ecatHeaderDump").getPath().replace("%20", " ");
         final String commandJsonFile = dir + "/command.json";
         final CommandEntity ecatHeaderDump = mapper.readValue(new File(commandJsonFile), CommandEntity.class);
-        commandService.create(ecatHeaderDump);
+        commandEntityService.create(ecatHeaderDump);
     }
 }

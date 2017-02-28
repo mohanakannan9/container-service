@@ -2,9 +2,12 @@ package org.nrg.containers.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
+import org.nrg.containers.model.auto.Command;
 
 import javax.persistence.Embeddable;
 import java.util.Objects;
+
+import static org.nrg.containers.model.auto.Command.*;
 
 @Embeddable
 public class ContainerMountFiles {
@@ -15,8 +18,8 @@ public class ContainerMountFiles {
 
     public ContainerMountFiles() {}
 
-    public ContainerMountFiles(final CommandWrapperInputEntity commandWrapperInputEntity) {
-        this.fromXnatInput = commandWrapperInputEntity.getName();
+    public ContainerMountFiles(final CommandWrapperInput commandWrapperInput) {
+        this.fromXnatInput = commandWrapperInput.name();
     }
 
     public String getFromXnatInput() {

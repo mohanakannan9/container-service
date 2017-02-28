@@ -349,14 +349,14 @@ public abstract class Command {
     @AutoValue
     public static abstract class CommandMount {
         @Nullable @JsonProperty("name") public abstract String name();
-        @Nullable @JsonProperty("writable") public abstract Boolean writable();
+        @JsonProperty("writable") public abstract boolean writable();
         @Nullable @JsonProperty("path") public abstract String path();
 
         @JsonCreator
         static CommandMount create(@JsonProperty("name") String name,
                                    @JsonProperty("writable") Boolean writable,
                                    @JsonProperty("path") String path) {
-            return new AutoValue_Command_CommandMount(name, writable, path);
+            return new AutoValue_Command_CommandMount(name, writable == null ? false : writable, path);
         }
 
         static CommandMount create(final CommandMountEntity mount) {
@@ -381,7 +381,7 @@ public abstract class Command {
         @Nullable @JsonProperty("name") public abstract String name();
         @Nullable @JsonProperty("description") public abstract String description();
         @JsonProperty("type") public abstract String type();
-        @Nullable @JsonProperty("required") public abstract Boolean required();
+        @JsonProperty("required") public abstract boolean required();
         @Nullable @JsonProperty("matcher") public abstract String matcher();
         @Nullable @JsonProperty("default-value") public abstract String defaultValue();
         @Nullable @JsonProperty("replacement-key") public abstract String rawReplacementKey();
@@ -389,7 +389,6 @@ public abstract class Command {
         @Nullable @JsonProperty("command-line-separator") public abstract String commandLineSeparator();
         @Nullable @JsonProperty("true-value") public abstract String trueValue();
         @Nullable @JsonProperty("false-value") public abstract String falseValue();
-        @Nullable @JsonProperty("value") public abstract String value();
 
         @JsonCreator
         static CommandInput create(@JsonProperty("name") String name,
@@ -402,15 +401,42 @@ public abstract class Command {
                                    @JsonProperty("command-line-flag") String commandLineFlag,
                                    @JsonProperty("command-line-separator") String commandLineSeparator,
                                    @JsonProperty("true-value") String trueValue,
-                                   @JsonProperty("false-value") String falseValue,
-                                   @JsonProperty("value") String value) {
-            return new AutoValue_Command_CommandInput(name, description, type == null ? CommandInputEntity.DEFAULT_TYPE.getName() : type, required, matcher, defaultValue, rawReplacementKey, commandLineFlag, commandLineSeparator, trueValue, falseValue, value);
+                                   @JsonProperty("false-value") String falseValue) {
+            return builder()
+                    .name(name)
+                    .description(description)
+                    .type(type == null ? CommandInputEntity.DEFAULT_TYPE.getName() : type)
+                    .required(required == null ? false : required)
+                    .matcher(matcher)
+                    .defaultValue(defaultValue)
+                    .rawReplacementKey(rawReplacementKey)
+                    .commandLineFlag(commandLineFlag)
+                    .commandLineSeparator(commandLineSeparator)
+                    .trueValue(trueValue)
+                    .falseValue(falseValue)
+                    .build();
         }
 
-        static CommandInput create(final CommandInputEntity commandInputEntity) {
-            return create(commandInputEntity.getName(), commandInputEntity.getDescription(), commandInputEntity.getType().getName(), commandInputEntity.isRequired(), commandInputEntity.getMatcher(),
-                    commandInputEntity.getDefaultValue(), commandInputEntity.getRawReplacementKey(), commandInputEntity.getCommandLineFlag(), commandInputEntity.getCommandLineSeparator(),
-                    commandInputEntity.getTrueValue(), commandInputEntity.getFalseValue(), commandInputEntity.getValue());
+        public static CommandInput create(final CommandInputEntity commandInputEntity) {
+            return builder()
+                    .name(commandInputEntity.getName())
+                    .description(commandInputEntity.getDescription())
+                    .type(commandInputEntity.getType().getName())
+                    .required(commandInputEntity.isRequired())
+                    .matcher(commandInputEntity.getMatcher())
+                    .defaultValue(commandInputEntity.getDefaultValue())
+                    .rawReplacementKey(commandInputEntity.getRawReplacementKey())
+                    .commandLineFlag(commandInputEntity.getCommandLineFlag())
+                    .commandLineSeparator(commandInputEntity.getCommandLineSeparator())
+                    .trueValue(commandInputEntity.getTrueValue())
+                    .falseValue(commandInputEntity.getFalseValue())
+                    .build();
+        }
+
+        public static Builder builder() {
+            return new AutoValue_Command_CommandInput.Builder()
+                    .type(CommandInputEntity.DEFAULT_TYPE.getName())
+                    .required(false);
         }
 
         List<String> validate() {
@@ -420,7 +446,29 @@ public abstract class Command {
             }
             return errors;
         }
+
+        public String replacementKey() {
+            return StringUtils.isNotBlank(rawReplacementKey()) ? rawReplacementKey() : "#" + name() + "#";
+        }
+
+        @AutoValue.Builder
+        public abstract static class Builder {
+            public abstract Builder name(final String name);
+            public abstract Builder description(final String description);
+            public abstract Builder type(final String type);
+            public abstract Builder required(final boolean required);
+            public abstract Builder matcher(final String matcher);
+            public abstract Builder defaultValue(final String defaultValue);
+            public abstract Builder rawReplacementKey(final String rawReplacementKey);
+            public abstract Builder commandLineFlag(final String commandLineFlag);
+            public abstract Builder commandLineSeparator(final String commandLineSeparator);
+            public abstract Builder trueValue(final String trueValue);
+            public abstract Builder falseValue(final String falseValue);
+
+            public abstract CommandInput build();
+        }
     }
+
     @AutoValue
     public static abstract class CommandOutput {
         @Nullable @JsonProperty("name") public abstract String name();
@@ -480,6 +528,21 @@ public abstract class Command {
                     .externalInputs(externalInputs == null ? Lists.<CommandWrapperInput>newArrayList() : externalInputs)
                     .derivedInputs(derivedInputs == null ? Lists.<CommandWrapperInput>newArrayList() : derivedInputs)
                     .outputHandlers(outputHandlers == null ? Lists.<CommandWrapperOutput>newArrayList() : outputHandlers)
+                    .build();
+        }
+
+        public static CommandWrapper passthrough(final Command command) {
+            if (command == null) {
+                return null;
+            }
+            return builder()
+                    .externalInputs(Lists.transform(command.inputs(), new Function<CommandInput, CommandWrapperInput>() {
+                        @Nullable
+                        @Override
+                        public CommandWrapperInput apply(@Nullable final CommandInput commandInput) {
+                            return CommandWrapperInput.passthrough(commandInput);
+                        }
+                    }))
                     .build();
         }
 
@@ -559,7 +622,6 @@ public abstract class Command {
         @Nullable @JsonProperty("user-settable") public abstract Boolean userSettable();
         @Nullable @JsonProperty("replacement-key") public abstract String rawReplacementKey();
         @JsonProperty("required") public abstract boolean required();
-        @Nullable @JsonProperty("value") public abstract String value();
 
         @JsonCreator
         static CommandWrapperInput create(@JsonProperty("name") String name,
@@ -573,29 +635,59 @@ public abstract class Command {
                                           @JsonProperty("default-value") String defaultValue,
                                           @JsonProperty("user-settable") Boolean userSettable,
                                           @JsonProperty("replacement-key") String rawReplacementKey,
-                                          @JsonProperty("required") Boolean required,
-                                          @JsonProperty("value") String value) {
-            return new AutoValue_Command_CommandWrapperInput(
-                    name,
-                    description,
-                    type == null ? CommandWrapperInputEntity.DEFAULT_TYPE.getName() : type,
-                    derivedFromXnatInput,
-                    derivedFromXnatObjectProperty,
-                    matcher,
-                    providesValueForCommandInput,
-                    providesFilesForCommandMount,
-                    defaultValue,
-                    userSettable,
-                    rawReplacementKey,
-                    required == null ? Boolean.FALSE : required,
-                    value);
+                                          @JsonProperty("required") Boolean required) {
+            return builder()
+                    .name(name)
+                    .description(description)
+                    .type(type == null ? CommandWrapperInputEntity.DEFAULT_TYPE.getName() : type)
+                    .derivedFromXnatInput(derivedFromXnatInput)
+                    .derivedFromXnatObjectProperty(derivedFromXnatObjectProperty)
+                    .matcher(matcher)
+                    .providesValueForCommandInput(providesValueForCommandInput)
+                    .providesFilesForCommandMount(providesFilesForCommandMount)
+                    .defaultValue(defaultValue)
+                    .userSettable(userSettable)
+                    .rawReplacementKey(rawReplacementKey)
+                    .required(required == null ? Boolean.FALSE : required)
+                    .build();
         }
 
         static CommandWrapperInput create(final CommandWrapperInputEntity wrapperInput) {
-            return create(wrapperInput.getName(), wrapperInput.getDescription(), wrapperInput.getType().getName(), wrapperInput.getDerivedFromXnatInput(),
-                    wrapperInput.getDerivedFromXnatObjectProperty(), wrapperInput.getMatcher(), wrapperInput.getProvidesValueForCommandInput(),
-                    wrapperInput.getProvidesFilesForCommandMount(), wrapperInput.getDefaultValue(), wrapperInput.getUserSettable(), wrapperInput.getRawReplacementKey(),
-                    wrapperInput.isRequired() == null ? false : wrapperInput.isRequired(), wrapperInput.getValue());
+            return builder()
+                    .name(wrapperInput.getName())
+                    .description(wrapperInput.getDescription())
+                    .type(wrapperInput.getType().getName())
+                    .derivedFromXnatInput(wrapperInput.getDerivedFromXnatInput())
+                    .derivedFromXnatObjectProperty(wrapperInput.getDerivedFromXnatObjectProperty())
+                    .matcher(wrapperInput.getMatcher())
+                    .providesValueForCommandInput(wrapperInput.getProvidesValueForCommandInput())
+                    .providesFilesForCommandMount(wrapperInput.getProvidesFilesForCommandMount())
+                    .defaultValue(wrapperInput.getDefaultValue())
+                    .userSettable(wrapperInput.getUserSettable())
+                    .rawReplacementKey(wrapperInput.getRawReplacementKey())
+                    .required(wrapperInput.isRequired() == null ? false : wrapperInput.isRequired())
+                    .build();
+        }
+
+        static CommandWrapperInput passthrough(final CommandInput commandInput) {
+            if (commandInput == null) {
+                return null;
+            }
+            return builder()
+                    .name(commandInput.name())
+                    .type(commandInput.type())
+                    .matcher(commandInput.matcher())
+                    .providesValueForCommandInput(commandInput.name())
+                    .defaultValue(commandInput.defaultValue())
+                    .userSettable(true)
+                    .required(commandInput.required())
+                    .build();
+        }
+
+        public static Builder builder() {
+            return new AutoValue_Command_CommandWrapperInput.Builder()
+                    .type(CommandWrapperInputEntity.DEFAULT_TYPE.getName())
+                    .required(false);
         }
 
         List<String> validateExternal() {
@@ -621,6 +713,28 @@ public abstract class Command {
             }
 
             return errors;
+        }
+
+        public String replacementKey() {
+            return StringUtils.isNotBlank(rawReplacementKey()) ? rawReplacementKey() : "#" + name() + "#";
+        }
+
+        @AutoValue.Builder
+        public abstract static class Builder {
+            public abstract Builder name(final String name);
+            public abstract Builder description(final String description);
+            public abstract Builder type(final String type);
+            public abstract Builder derivedFromXnatInput(final String derivedFromXnatInput);
+            public abstract Builder derivedFromXnatObjectProperty(final String derivedFromXnatObjectProperty);
+            public abstract Builder matcher(final String matcher);
+            public abstract Builder providesValueForCommandInput(final String providesValueForCommandInput);
+            public abstract Builder providesFilesForCommandMount(final String providesFilesForCommandMount);
+            public abstract Builder defaultValue(final String defaultValue);
+            public abstract Builder userSettable(final Boolean userSettable);
+            public abstract Builder rawReplacementKey(final String rawReplacementKey);
+            public abstract Builder required(final boolean required);
+
+            public abstract CommandWrapperInput build();
         }
     }
 

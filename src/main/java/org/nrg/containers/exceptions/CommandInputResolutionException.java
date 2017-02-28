@@ -1,21 +1,21 @@
 package org.nrg.containers.exceptions;
 
-import org.nrg.containers.model.CommandInputEntity;
+import org.nrg.containers.model.auto.Command.CommandInput;
 
 public class CommandInputResolutionException extends CommandResolutionException {
-    private final CommandInputEntity input;
+    private final CommandInput input;
 
-    public CommandInputResolutionException(final String message, final CommandInputEntity input) {
+    public CommandInputResolutionException(final String message, final CommandInput input) {
         super(message);
         this.input = input;
     }
 
-    public CommandInputResolutionException(final String message, final CommandInputEntity input, final Throwable cause) {
+    public CommandInputResolutionException(final String message, final CommandInput input, final Throwable cause) {
         super(message, cause);
         this.input = input;
     }
 
-    public CommandInputEntity getInput() {
+    public CommandInput getInput() {
         return input;
     }
 }

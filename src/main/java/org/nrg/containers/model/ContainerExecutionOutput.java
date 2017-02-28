@@ -1,6 +1,9 @@
 package org.nrg.containers.model;
 
 import com.google.common.base.MoreObjects;
+import org.nrg.containers.model.auto.Command;
+import org.nrg.containers.model.auto.Command.CommandOutput;
+import org.nrg.containers.model.auto.Command.CommandWrapperOutput;
 
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
@@ -11,7 +14,7 @@ import java.util.Objects;
 @Embeddable
 public class ContainerExecutionOutput implements Serializable {
     private String name;
-    private CommandWrapperOutputEntity.Type type;
+    private String type;
     private Boolean required;
     private String mount;
     private String path;
@@ -22,15 +25,15 @@ public class ContainerExecutionOutput implements Serializable {
 
     public ContainerExecutionOutput() {}
 
-    public ContainerExecutionOutput(final CommandOutputEntity commandOutputEntity, final CommandWrapperOutputEntity commandOutputHandler) {
-        this.name = commandOutputEntity.getName();
-        this.required = commandOutputEntity.getRequired();
-        this.mount = commandOutputEntity.getMount();
-        this.path = commandOutputEntity.getPath();
-        this.glob = commandOutputEntity.getGlob();
-        this.label = commandOutputHandler.getLabel();
-        this.type = commandOutputHandler.getType();
-        this.handledByXnatCommandInput = commandOutputHandler.getXnatInputName();
+    public ContainerExecutionOutput(final CommandOutput commandOutput, final CommandWrapperOutput commandOutputHandler) {
+        this.name = commandOutput.name();
+        this.required = commandOutput.required();
+        this.mount = commandOutput.mount();
+        this.path = commandOutput.path();
+        this.glob = commandOutput.glob();
+        this.label = commandOutputHandler.label();
+        this.type = commandOutputHandler.type();
+        this.handledByXnatCommandInput = commandOutputHandler.xnatInputName();
     }
 
     public String getName() {
@@ -41,11 +44,11 @@ public class ContainerExecutionOutput implements Serializable {
         this.name = name;
     }
 
-    public CommandWrapperOutputEntity.Type getType() {
+    public String getType() {
         return type;
     }
 
-    public void setType(final CommandWrapperOutputEntity.Type type) {
+    public void setType(final String type) {
         this.type = type;
     }
 

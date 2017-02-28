@@ -26,21 +26,6 @@ public class CommandWrapperEntity implements Serializable {
     @JsonProperty("derived-inputs") private List<CommandWrapperInputEntity> derivedInputs;
     @JsonProperty("output-handlers") private List<CommandWrapperOutputEntity> outputHandlers;
 
-    public static CommandWrapperEntity passthrough(final CommandEntity commandEntity) {
-        final CommandWrapperEntity identity = new CommandWrapperEntity();
-        identity.commandEntity = commandEntity;
-
-        final List<CommandWrapperInputEntity> externalInputs = Lists.newArrayList();
-        if (commandEntity.getInputs() != null) {
-            for (final CommandInputEntity commandInputEntity : commandEntity.getInputs()) {
-                externalInputs.add(CommandWrapperInputEntity.passthrough(commandInputEntity));
-            }
-        }
-        identity.setExternalInputs(externalInputs);
-
-        return identity;
-    }
-
     public static CommandWrapperEntity fromPojo(final Command.CommandWrapper commandWrapper) {
         final CommandWrapperEntity commandWrapperEntity = new CommandWrapperEntity();
         commandWrapperEntity.name = commandWrapper.name();
