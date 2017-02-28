@@ -3,6 +3,13 @@ package org.nrg.containers.services.impl;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.Option;
+import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
+import com.jayway.jsonpath.spi.json.JsonProvider;
+import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
+import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.services.ConfigService;
@@ -32,6 +39,7 @@ import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -40,10 +48,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
-public class CommandServiceImpl implements CommandService {
+public class CommandServiceImpl implements CommandService, InitializingBean {
     private static final Logger log = LoggerFactory.getLogger(CommandServiceImpl.class);
 
     private final CommandEntityService commandEntityService;
@@ -69,6 +78,31 @@ public class CommandServiceImpl implements CommandService {
         this.transporter = transporter;
         this.containerExecutionService = containerExecutionService;
         this.configService = configService;
+    }
+
+    @Override
+    public void afterPropertiesSet() {
+        // Set the default JayWay JSONPath configuration
+        Configuration.setDefaults(new Configuration.Defaults() {
+
+            private final JsonProvider jsonProvider = new JacksonJsonProvider();
+            private final MappingProvider mappingProvider = new JacksonMappingProvider();
+
+            @Override
+            public JsonProvider jsonProvider() {
+                return jsonProvider;
+            }
+
+            @Override
+            public MappingProvider mappingProvider() {
+                return mappingProvider;
+            }
+
+            @Override
+            public Set<Option> options() {
+                return Sets.newHashSet(Option.DEFAULT_PATH_LEAF_TO_NULL);
+            }
+        });
     }
 
     @Override

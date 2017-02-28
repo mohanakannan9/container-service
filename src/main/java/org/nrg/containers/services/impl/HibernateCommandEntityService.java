@@ -1,12 +1,5 @@
 package org.nrg.containers.services.impl;
 
-import com.google.common.collect.Sets;
-import com.jayway.jsonpath.Configuration;
-import com.jayway.jsonpath.Option;
-import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
-import com.jayway.jsonpath.spi.json.JsonProvider;
-import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
-import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import org.hibernate.exception.ConstraintViolationException;
 import org.nrg.containers.daos.CommandDao;
 import org.nrg.containers.model.CommandEntity;
@@ -23,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @Service
 @Transactional
@@ -31,30 +23,6 @@ public class HibernateCommandEntityService extends AbstractHibernateEntityServic
         implements CommandEntityService {
     private static final Logger log = LoggerFactory.getLogger(HibernateCommandEntityService.class);
 
-    @Override
-    public void afterPropertiesSet() {
-        // Set the default JayWay JSONPath configuration
-        Configuration.setDefaults(new Configuration.Defaults() {
-
-            private final JsonProvider jsonProvider = new JacksonJsonProvider();
-            private final MappingProvider mappingProvider = new JacksonMappingProvider();
-
-            @Override
-            public JsonProvider jsonProvider() {
-                return jsonProvider;
-            }
-
-            @Override
-            public MappingProvider mappingProvider() {
-                return mappingProvider;
-            }
-
-            @Override
-            public Set<Option> options() {
-                return Sets.newHashSet(Option.DEFAULT_PATH_LEAF_TO_NULL);
-            }
-        });
-    }
 
     @Override
     public List<CommandEntity> findByProperties(final Map<String, Object> properties) {
