@@ -11,8 +11,9 @@ import org.nrg.containers.model.CommandWrapperEntity;
 import org.nrg.containers.services.CommandEntityService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerExecutionService;
+import org.nrg.containers.services.ContainerLaunchService;
 import org.nrg.containers.services.impl.CommandServiceImpl;
-import org.nrg.prefs.services.NrgPreferenceService;
+import org.nrg.containers.services.impl.ContainerLaunchServiceImpl;
 import org.nrg.transporter.TransportService;
 import org.nrg.transporter.TransportServiceImpl;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -37,15 +38,15 @@ public class CommandTestConfig {
     }
 
     @Bean
-    public CommandService commandService(final CommandEntityService commandEntityService,
-                                         final ContainerControlApi controlApi,
-                                         final AliasTokenService aliasTokenService,
-                                         final SiteConfigPreferences siteConfigPreferences,
-                                         final TransportService transporter,
-                                         final ContainerExecutionService containerExecutionService,
-                                         final ConfigService configService) {
-        return new CommandServiceImpl(commandEntityService, controlApi, aliasTokenService, siteConfigPreferences,
-                transporter, containerExecutionService, configService);
+    public ContainerLaunchService containerLaunchService(final CommandService commandService,
+                                                         final ContainerControlApi controlApi,
+                                                         final AliasTokenService aliasTokenService,
+                                                         final SiteConfigPreferences siteConfigPreferences,
+                                                         final TransportService transporter,
+                                                         final ContainerExecutionService containerExecutionService,
+                                                         final ConfigService configService) {
+        return new ContainerLaunchServiceImpl(commandService, controlApi, aliasTokenService,
+                siteConfigPreferences, transporter, containerExecutionService, configService);
     }
 
     @Bean

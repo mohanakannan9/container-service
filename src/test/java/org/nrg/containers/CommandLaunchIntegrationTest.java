@@ -30,6 +30,7 @@ import org.nrg.containers.model.xnat.Resource;
 import org.nrg.containers.model.xnat.Scan;
 import org.nrg.containers.model.xnat.Session;
 import org.nrg.containers.services.CommandService;
+import org.nrg.containers.services.ContainerLaunchService;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.UserManagementServiceI;
@@ -67,6 +68,7 @@ public class CommandLaunchIntegrationTest {
 
     @Autowired private ObjectMapper mapper;
     @Autowired private CommandService commandService;
+    @Autowired private ContainerLaunchService containerLaunchService;
     @Autowired private AliasTokenService mockAliasTokenService;
     @Autowired private DockerServerPrefsBean mockDockerServerPrefsBean;
     @Autowired private SiteConfigPreferences mockSiteConfigPreferences;
@@ -154,7 +156,7 @@ public class CommandLaunchIntegrationTest {
         runtimeValues.put("session", sessionJson);
         runtimeValues.put("T1-scantype", t1Scantype);
 
-        final ContainerExecution execution = commandService.resolveAndLaunchCommand(commandWrapper.id(), fakeReconAllCreated.id(), runtimeValues, mockUser);
+        final ContainerExecution execution = containerLaunchService.resolveAndLaunchCommand(commandWrapper.id(), fakeReconAllCreated.id(), runtimeValues, mockUser);
         Thread.sleep(1000); // Wait for container to finish
 
         // Raw inputs
