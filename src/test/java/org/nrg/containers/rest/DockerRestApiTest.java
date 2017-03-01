@@ -466,7 +466,6 @@ public class DockerRestApiTest {
     }
 
     @Test
-    @Transactional
     public void testSaveFromLabels() throws Exception {
         final String path = "/docker/images/save";
 
@@ -517,7 +516,6 @@ public class DockerRestApiTest {
     }
 
     @Test
-    @Transactional
     public void testSaveFromLabels2() throws Exception {
         final String path = "/docker/images/save";
 

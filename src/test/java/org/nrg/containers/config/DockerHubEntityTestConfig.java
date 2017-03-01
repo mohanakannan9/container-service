@@ -22,7 +22,7 @@ import javax.sql.DataSource;
 import java.util.Properties;
 
 @Configuration
-@Import(ExecutionHibernateEntityTestConfig.class)
+@Import(HibernateConfig.class)
 public class DockerHubEntityTestConfig {
     @Bean
     public ObjectMapper objectMapper() {
