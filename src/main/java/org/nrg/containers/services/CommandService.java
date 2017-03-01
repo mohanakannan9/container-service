@@ -25,7 +25,7 @@ public interface CommandService {
     Command get(long id) throws NotFoundException;
     List<Command> findByProperties(Map<String, Object> properties);
 
-    Command update(long id, Command updates, Boolean ignoreNull) throws NotFoundException, CommandValidationException;
+    void update(Command updates) throws NotFoundException, CommandValidationException;
 
     void delete(long id);
 

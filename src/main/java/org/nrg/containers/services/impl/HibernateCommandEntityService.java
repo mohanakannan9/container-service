@@ -62,12 +62,6 @@ public class HibernateCommandEntityService extends AbstractHibernateEntityServic
     }
 
     @Override
-    public CommandEntity update(final long id, final CommandEntity updates, final Boolean ignoreNull) throws NotFoundException {
-        // TODO
-        return null;
-    }
-
-    @Override
     public CommandEntity create(final CommandEntity commandEntity) throws NrgRuntimeException {
         try {
             if (log.isDebugEnabled()) {

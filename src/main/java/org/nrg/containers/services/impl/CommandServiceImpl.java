@@ -73,12 +73,7 @@ public class CommandServiceImpl implements CommandService {
 
     @Override
     public Command create(final Command command) throws CommandValidationException {
-        return toPojo(commandEntityService.create(fromPojo(command)));
-    }
-
-    @Override
-    public Command update(final long id, final Command updates, final Boolean ignoreNull) throws NotFoundException, CommandValidationException {
-        return toPojo(commandEntityService.update(id, fromPojo(updates), ignoreNull));
+        return toPojo(commandEntityService.create(fromPojo(command, null)));
     }
 
     @Override
@@ -106,6 +101,11 @@ public class CommandServiceImpl implements CommandService {
         return toPojo(commandEntityService.findByProperties(properties));
     }
 
+    @Override
+    public void update(final Command updates) throws NotFoundException, CommandValidationException {
+        commandEntityService.update(fromPojo(updates));
+    }
+
     private Command toPojo(final CommandEntity commandEntity) {
         return commandEntity == null ? null : Command.create(commandEntity);
     }
@@ -121,8 +121,19 @@ public class CommandServiceImpl implements CommandService {
                 });
     }
 
-    private CommandEntity fromPojo(final Command command) throws CommandValidationException {
-        return command == null ? null : CommandEntity.fromPojo(command);
+    private CommandEntity fromPojo(final Command command) throws CommandValidationException, NotFoundException {
+        if (command == null) {
+            return null;
+        }
+        final CommandEntity template = commandEntityService.get(command.id());
+        return CommandEntity.fromPojo(command, template);
+    }
+
+    private CommandEntity fromPojo(final Command command, final CommandEntity template) throws CommandValidationException {
+        if (command == null) {
+            return null;
+        }
+        return CommandEntity.fromPojo(command, template);
     }
 
 

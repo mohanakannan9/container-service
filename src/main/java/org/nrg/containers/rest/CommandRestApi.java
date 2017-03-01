@@ -136,11 +136,11 @@ public class CommandRestApi extends AbstractXapiRestController {
     @RequestMapping(value = {"/{id}"}, method = POST)
     @ApiOperation(value = "Update a Command")
     @ResponseBody
-    public Command updateCommand(final @RequestBody Command command,
-                                 final @PathVariable Long id,
-                                 final @RequestParam(value = "ignore-null", defaultValue = "true")
-                                             Boolean ignoreNull) throws NotFoundException, CommandValidationException {
-        return commandService.update(id, command, ignoreNull);
+    public ResponseEntity updateCommand(final @RequestBody Command command,
+                                        final @PathVariable long id)
+            throws NotFoundException, CommandValidationException {
+        commandService.update(command.id() == id ? command : command.toBuilder().id(id).build());
+        return ResponseEntity.ok().build();
     }
 
     /*

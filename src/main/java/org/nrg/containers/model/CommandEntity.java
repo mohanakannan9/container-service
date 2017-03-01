@@ -50,7 +50,8 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
     private List<CommandOutputEntity> outputs;
     @JsonProperty("xnat") private List<CommandWrapperEntity> commandWrapperEntities;
 
-    public static CommandEntity fromPojo(final Command command) throws CommandValidationException {
+    public static CommandEntity fromPojo(final Command command, final CommandEntity template)
+            throws CommandValidationException {
         final List<String> errors = command.validate();
         if (!errors.isEmpty()) {
             throw new CommandValidationException(errors);
@@ -91,6 +92,12 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         }
         for (final Command.CommandWrapper commandWrapper : command.xnatCommandWrappers()) {
             commandEntity.addXnatCommandWrapper(CommandWrapperEntity.fromPojo(commandWrapper));
+        }
+
+        if (template != null) {
+            commandEntity.setEnabled(template.isEnabled());
+            commandEntity.setDisabled(template.getDisabled());
+            commandEntity.setCreated(template.getCreated());
         }
 
         return commandEntity;

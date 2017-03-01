@@ -10,6 +10,4 @@ import java.util.Map;
 public interface CommandEntityService extends BaseHibernateService<CommandEntity> {
 
     List<CommandEntity> findByProperties(Map<String, Object> properties);
-
-    CommandEntity update(long id, CommandEntity updates, Boolean ignoreNull) throws NotFoundException;
 }

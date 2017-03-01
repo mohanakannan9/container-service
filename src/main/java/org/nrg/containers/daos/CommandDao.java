@@ -3,6 +3,7 @@ package org.nrg.containers.daos;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Hibernate;
+import org.hibernate.NonUniqueObjectException;
 import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.CommandWrapperEntity;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
@@ -76,5 +77,14 @@ public class CommandDao extends AbstractHibernateDAO<CommandEntity> {
             initialize(commandEntity);
         }
         return commandEntityList;
+    }
+
+    @Override
+    public void update(final CommandEntity commandEntity) {
+        try {
+            getSession().update(commandEntity);
+        } catch (NonUniqueObjectException e) {
+            getSession().merge(commandEntity);
+        }
     }
 }
