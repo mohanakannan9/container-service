@@ -466,13 +466,42 @@ var XNAT = getObject(XNAT || {});
             }
         });
 
+        function deleteImageButton(image) {
+            return spawn('button.btn.sm',{
+                html: 'Delete Image',
+                onclick: function(){
+                    xmodal.confirm({
+                        height: 220,
+                        scroll: false,
+                        content: "" +
+                        "<p>Are you sure you'd like to delete the "+image.tags[0]+" image?</p>" +
+                        "<p><strong>This action cannot be undone.</strong></p>",
+                        okAction: function(){
+                            console.log('delete image id', image['image-id']);
+                            XNAT.xhr.delete({
+                                url: imageUrl(image['image-id']),
+                                success: function(){
+                                    console.log(image.tags[0] + ' image deleted');
+                                    XNAT.ui.banner.top(1000, '<b>' + image.tags[0] + ' image deleted.', 'success');
+                                    refreshTable();
+                                },
+                                fail: function(e){
+                                    xmodal.alert({ title: 'API Error', content: 'Error ' + e.status + ': ' + e.statusText });
+                                }
+                            })
+                        }
+                    })
+                }
+            });
+        }
+
         imageListManager.container = $manager;
 
         imageListManager.getAll().done(function(data){
             for (var i=0, j=data.length; i<j; i++) {
                 var imageInfo = data[i];
                 $manager.append(spawn('div.imageContainer',[
-                    ['h3.imageTitle',imageInfo.tags[0]],
+                    ['h3.imageTitle',[imageInfo.tags[0], ['span.pull-right',[ deleteImageButton(imageInfo) ]]]],
                     ['div.imageCommandList',[commandListManager.table(imageInfo.tags[0])]]
                 ]));
             }
