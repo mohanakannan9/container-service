@@ -126,11 +126,6 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     }
 
     @Override
-    public void delete(final long id) {
-        commandEntityService.delete(id);
-    }
-
-    @Override
     public List<Command> findByProperties(final Map<String, Object> properties) {
         return toPojo(commandEntityService.findByProperties(properties));
     }
@@ -138,6 +133,11 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     @Override
     public void update(final Command updates) throws NotFoundException, CommandValidationException {
         commandEntityService.update(fromPojo(updates));
+    }
+
+    @Override
+    public void delete(final long id) {
+        commandEntityService.delete(id);
     }
 
     private Command toPojo(final CommandEntity commandEntity) {
@@ -169,7 +169,6 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
         }
         return CommandEntity.fromPojo(command, template);
     }
-
 
     @Override
     public List<Command> save(final List<Command> commands) {
