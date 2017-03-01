@@ -14,6 +14,8 @@ import org.nrg.containers.exceptions.CommandValidationException;
 import org.nrg.containers.model.auto.Command;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.persistence.CascadeType;
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.ElementCollection;
@@ -50,7 +52,8 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
     private List<CommandOutputEntity> outputs;
     @JsonProperty("xnat") private List<CommandWrapperEntity> commandWrapperEntities;
 
-    public static CommandEntity fromPojo(final Command command, final CommandEntity template)
+    @Nonnull
+    public static CommandEntity fromPojo(@Nonnull final Command command, @Nullable final CommandEntity template)
             throws CommandValidationException {
         final List<String> errors = command.validate();
         if (!errors.isEmpty()) {

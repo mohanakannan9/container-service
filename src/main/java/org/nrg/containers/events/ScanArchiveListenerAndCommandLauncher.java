@@ -10,7 +10,7 @@ import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.CommandEventMapping;
 import org.nrg.containers.model.xnat.Scan;
 import org.nrg.containers.services.CommandEventMappingService;
-import org.nrg.containers.services.CommandService;
+import org.nrg.containers.services.ContainerLaunchService;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,17 +31,17 @@ public class ScanArchiveListenerAndCommandLauncher implements Consumer<Event<Sca
     private static final String EVENT_ID = "ScanArchived";
 
     private ObjectMapper mapper;
-    private CommandService commandService;
+    private ContainerLaunchService containerLaunchService;
     private CommandEventMappingService commandEventMappingService;
 
     @Autowired
     public ScanArchiveListenerAndCommandLauncher(final EventBus eventBus,
                                                  final ObjectMapper mapper,
-                                                 final CommandService commandService,
+                                                 final ContainerLaunchService containerLaunchService,
                                                  final CommandEventMappingService commandEventMappingService) {
         eventBus.on(type(ScanArchiveEventToLaunchCommands.class), this);
         this.mapper = mapper;
-        this.commandService = commandService;
+        this.containerLaunchService = containerLaunchService;
         this.commandEventMappingService = commandEventMappingService;
     }
 
@@ -84,7 +84,7 @@ public class ScanArchiveListenerAndCommandLauncher implements Consumer<Event<Sca
                             }
                         }
                     }
-                    commandService.resolveAndLaunchCommand(xnatCommandWrapperName, commandId, runtimeValues, scanArchiveEventToLaunchCommands.getUser());
+                    containerLaunchService.resolveAndLaunchCommand(xnatCommandWrapperName, commandId, runtimeValues, scanArchiveEventToLaunchCommands.getUser());
                 } catch (NotFoundException | CommandResolutionException | NoServerPrefException | DockerServerException e) {
                     log.error("Error launching command " + commandId, e);
                 }

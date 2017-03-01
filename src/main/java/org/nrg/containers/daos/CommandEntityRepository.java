@@ -11,12 +11,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 
 @Repository
-public class CommandDao extends AbstractHibernateDAO<CommandEntity> {
-    private static final Logger log = LoggerFactory.getLogger(CommandDao.class);
+public class CommandEntityRepository extends AbstractHibernateDAO<CommandEntity> {
+    private static final Logger log = LoggerFactory.getLogger(CommandEntityRepository.class);
 
     @Override
     public void initialize(final CommandEntity commandEntity) {
@@ -38,6 +40,7 @@ public class CommandDao extends AbstractHibernateDAO<CommandEntity> {
         }
     }
 
+    @Nullable
     public CommandEntity retrieve(final String name, final String dockerImageId) {
         if (StringUtils.isBlank(name) || StringUtils.isBlank(dockerImageId)) {
             return null;
@@ -68,7 +71,8 @@ public class CommandDao extends AbstractHibernateDAO<CommandEntity> {
     }
 
     @Override
-    public List<CommandEntity> findByProperties(final Map<String, Object> properties) {
+    @Nullable
+    public List<CommandEntity> findByProperties(@Nonnull final Map<String, Object> properties) {
         final List<CommandEntity> commandEntityList = super.findByProperties(properties);
         if (commandEntityList == null) {
             return null;
@@ -80,7 +84,7 @@ public class CommandDao extends AbstractHibernateDAO<CommandEntity> {
     }
 
     @Override
-    public void update(final CommandEntity commandEntity) {
+    public void update(@Nonnull final CommandEntity commandEntity) {
         try {
             getSession().update(commandEntity);
         } catch (NonUniqueObjectException e) {

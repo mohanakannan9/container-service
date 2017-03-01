@@ -15,6 +15,7 @@ import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.containers.model.auto.Command;
 import org.nrg.containers.services.CommandService;
+import org.nrg.containers.services.ContainerLaunchService;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.exceptions.NrgRuntimeException;
@@ -55,13 +56,16 @@ public class CommandRestApi extends AbstractXapiRestController {
     private static final String FORM = MediaType.APPLICATION_FORM_URLENCODED_VALUE;
 
     private CommandService commandService;
+    private ContainerLaunchService containerLaunchService;
 
     @Autowired
     public CommandRestApi(final CommandService commandService,
+                          final ContainerLaunchService containerLaunchService,
                           final UserManagementServiceI userManagementService,
                           final RoleHolder roleHolder) {
         super(userManagementService, roleHolder);
         this.commandService = commandService;
+        this.containerLaunchService = containerLaunchService;
     }
 
     /*
@@ -162,7 +166,7 @@ public class CommandRestApi extends AbstractXapiRestController {
     public String launchCommand(final @RequestBody ResolvedDockerCommand resolvedDockerCommand)
             throws NoServerPrefException, DockerServerException, ContainerMountResolutionException {
         final UserI userI = XDAT.getUserDetails();
-        final ContainerExecution executed = commandService.launchResolvedDockerCommand(resolvedDockerCommand, userI);
+        final ContainerExecution executed = containerLaunchService.launchResolvedDockerCommand(resolvedDockerCommand, userI);
         return executed.getContainerId();
     }
 
@@ -192,7 +196,7 @@ public class CommandRestApi extends AbstractXapiRestController {
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, BadRequestException {
         final UserI userI = XDAT.getUserDetails();
         try {
-            final ContainerExecution containerExecution = commandService.resolveAndLaunchCommand(id, allRequestParams, userI);
+            final ContainerExecution containerExecution = containerLaunchService.resolveAndLaunchCommand(id, allRequestParams, userI);
             if (log.isInfoEnabled()) {
                 log.info(String.format("Launched command id %d. Produced container %d.", id,
                         containerExecution != null ? containerExecution.getId() : null));

@@ -6,7 +6,6 @@ import org.mockito.Mockito;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.api.DockerControlApi;
-import org.nrg.containers.daos.CommandDao;
 import org.nrg.containers.daos.ContainerExecutionRepository;
 import org.nrg.containers.events.DockerContainerEventListener;
 import org.nrg.containers.model.CommandEntity;
@@ -15,15 +14,12 @@ import org.nrg.containers.model.ContainerExecutionMount;
 import org.nrg.containers.model.DockerCommandEntity;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.CommandWrapperEntity;
-import org.nrg.containers.services.CommandEntityService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerExecutionService;
-import org.nrg.containers.services.impl.CommandServiceImpl;
-import org.nrg.containers.services.impl.HibernateCommandEntityService;
+import org.nrg.containers.services.ContainerLaunchService;
+import org.nrg.containers.services.impl.ContainerLaunchServiceImpl;
 import org.nrg.containers.services.impl.HibernateContainerExecutionService;
-import org.nrg.framework.services.ContextService;
 import org.nrg.framework.services.NrgEventService;
-import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.transporter.TransportService;
 import org.nrg.transporter.TransportServiceImpl;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -31,7 +27,6 @@ import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xnat.services.archive.CatalogService;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -47,13 +42,16 @@ import java.util.Properties;
 
 @Configuration
 @EnableTransactionManagement
-@Import({ExecutionHibernateEntityTestConfig.class, RestApiTestConfig.class})
+@Import({CommandConfig.class, HibernateConfig.class, RestApiTestConfig.class})
 public class IntegrationTestConfig {
     @Bean
     public ObjectMapper objectMapper() {
         return new ObjectMapper();
     }
 
+    /*
+    Control API and dependencies + Events
+     */
     @Bean
     public DockerControlApi dockerControlApi(final DockerServerPrefsBean containerServerPref,
                                              final ObjectMapper objectMapper,
@@ -64,33 +62,6 @@ public class IntegrationTestConfig {
     @Bean
     public DockerServerPrefsBean mockDockerServerPrefsBean() {
         return Mockito.mock(DockerServerPrefsBean.class);
-    }
-
-    @Bean
-    public CommandService commandService(final CommandEntityService commandEntityService,
-                                         final ContainerControlApi controlApi,
-                                         final AliasTokenService aliasTokenService,
-                                         final SiteConfigPreferences siteConfigPreferences,
-                                         final TransportService transporter,
-                                         final ContainerExecutionService containerExecutionService,
-                                         final ConfigService configService) {
-        return new CommandServiceImpl(commandEntityService, controlApi, aliasTokenService, siteConfigPreferences,
-                transporter, containerExecutionService, configService);
-    }
-
-    @Bean
-    public CommandEntityService commandEntityService() {
-        return new HibernateCommandEntityService();
-    }
-
-    @Bean
-    public CommandDao commandDao() {
-        return new CommandDao();
-    }
-
-    @Bean
-    public TransportService transportService() {
-        return new TransportServiceImpl();
     }
 
     @Bean
@@ -109,8 +80,28 @@ public class IntegrationTestConfig {
     }
 
     @Bean
-    public NrgPreferenceService mockNrgPreferenceService() {
-        return Mockito.mock(NrgPreferenceService.class);
+    public DockerContainerEventListener containerEventListener(final EventBus eventBus) {
+        return new DockerContainerEventListener(eventBus);
+    }
+
+    /*
+    Container launch Service and dependencies
+     */
+    @Bean
+    public ContainerLaunchService containerLaunchService(final CommandService commandService,
+                                                         final ContainerControlApi controlApi,
+                                                         final AliasTokenService aliasTokenService,
+                                                         final SiteConfigPreferences siteConfigPreferences,
+                                                         final TransportService transporter,
+                                                         final ContainerExecutionService containerExecutionService,
+                                                         final ConfigService configService) {
+        return new ContainerLaunchServiceImpl(commandService, controlApi, aliasTokenService,
+                siteConfigPreferences, transporter, containerExecutionService, configService);
+    }
+
+    @Bean
+    public TransportService transportService() {
+        return new TransportServiceImpl();
     }
 
     @Bean
@@ -128,28 +119,9 @@ public class IntegrationTestConfig {
         return Mockito.mock(ConfigService.class);
     }
 
-    @Bean
-    public ContextService contextService(final ApplicationContext applicationContext) {
-        final ContextService contextService = new ContextService();
-        contextService.setApplicationContext(applicationContext);
-        return contextService;
-    }
-
-    @Bean
-    public DockerContainerEventListener containerEventListener(final EventBus eventBus) {
-        return new DockerContainerEventListener(eventBus);
-    }
-
-    @Bean
-    public PermissionsServiceI permissionsService() {
-        return Mockito.mock(PermissionsServiceI.class);
-    }
-
-    @Bean
-    public CatalogService catalogService() {
-        return Mockito.mock(CatalogService.class);
-    }
-
+    /*
+    Container execution service and dependencies
+     */
     @Bean
     public ContainerExecutionService containerExecutionService(final ContainerControlApi containerControlApi,
                                                                final SiteConfigPreferences siteConfigPreferences,
@@ -165,6 +137,19 @@ public class IntegrationTestConfig {
         return new ContainerExecutionRepository();
     }
 
+    @Bean
+    public PermissionsServiceI permissionsService() {
+        return Mockito.mock(PermissionsServiceI.class);
+    }
+
+    @Bean
+    public CatalogService catalogService() {
+        return Mockito.mock(CatalogService.class);
+    }
+
+    /*
+    Session factory
+     */
     @Bean
     public LocalSessionFactoryBean sessionFactory(final DataSource dataSource, @Qualifier("hibernateProperties") final Properties properties) {
         final LocalSessionFactoryBean bean = new LocalSessionFactoryBean();

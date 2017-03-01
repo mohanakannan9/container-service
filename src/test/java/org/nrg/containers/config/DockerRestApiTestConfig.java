@@ -5,7 +5,7 @@ import org.hibernate.SessionFactory;
 import org.mockito.Mockito;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.api.DockerControlApi;
-import org.nrg.containers.daos.CommandDao;
+import org.nrg.containers.daos.CommandEntityRepository;
 import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.DockerCommandEntity;
 import org.nrg.containers.model.DockerServerPrefsBean;
@@ -40,7 +40,7 @@ import java.util.Properties;
 @Configuration
 @EnableWebMvc
 @EnableWebSecurity
-@Import({ExecutionHibernateEntityTestConfig.class, RestApiTestConfig.class})
+@Import(RestApiTestConfig.class)
 public class DockerRestApiTestConfig extends WebSecurityConfigurerAdapter {
     @Bean
     public ObjectMapper objectMapper() {
@@ -92,11 +92,6 @@ public class DockerRestApiTestConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public CommandDao commandDao() {
-        return new CommandDao();
-    }
-
-    @Bean
     public NrgEventService mockNrgEventService() {
         return Mockito.mock(NrgEventService.class);
     }
@@ -106,23 +101,6 @@ public class DockerRestApiTestConfig extends WebSecurityConfigurerAdapter {
         final ContextService contextService = new ContextService();
         contextService.setApplicationContext(applicationContext);
         return contextService;
-    }
-
-    @Bean
-    public LocalSessionFactoryBean sessionFactory(final DataSource dataSource, @Qualifier("hibernateProperties") final Properties properties) {
-        final LocalSessionFactoryBean bean = new LocalSessionFactoryBean();
-        bean.setDataSource(dataSource);
-        bean.setHibernateProperties(properties);
-        bean.setAnnotatedClasses(
-                CommandEntity.class,
-                DockerCommandEntity.class,
-                CommandWrapperEntity.class);
-        return bean;
-    }
-
-    @Bean
-    public ResourceTransactionManager transactionManager(final SessionFactory sessionFactory) throws Exception {
-        return new HibernateTransactionManager(sessionFactory);
     }
 
     @Override

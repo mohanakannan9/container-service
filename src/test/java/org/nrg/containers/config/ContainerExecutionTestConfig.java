@@ -14,7 +14,6 @@ import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.transporter.TransportService;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.PermissionsServiceI;
-import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xnat.services.archive.CatalogService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -30,7 +29,7 @@ import java.util.Properties;
 
 @Configuration
 //@EnableTransactionManagement
-@Import(ExecutionHibernateEntityTestConfig.class)
+@Import(HibernateConfig.class)
 public class ContainerExecutionTestConfig {
     @Bean
     public ObjectMapper objectMapper() {

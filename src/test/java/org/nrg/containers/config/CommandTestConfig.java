@@ -5,16 +5,15 @@ import org.hibernate.SessionFactory;
 import org.mockito.Mockito;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.api.ContainerControlApi;
-import org.nrg.containers.daos.CommandDao;
 import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.DockerCommandEntity;
 import org.nrg.containers.model.CommandWrapperEntity;
 import org.nrg.containers.services.CommandEntityService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerExecutionService;
+import org.nrg.containers.services.ContainerLaunchService;
 import org.nrg.containers.services.impl.CommandServiceImpl;
-import org.nrg.containers.services.impl.HibernateCommandEntityService;
-import org.nrg.prefs.services.NrgPreferenceService;
+import org.nrg.containers.services.impl.ContainerLaunchServiceImpl;
 import org.nrg.transporter.TransportService;
 import org.nrg.transporter.TransportServiceImpl;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -31,11 +30,28 @@ import javax.sql.DataSource;
 import java.util.Properties;
 
 @Configuration
-@Import(ExecutionHibernateEntityTestConfig.class)
+@Import({CommandConfig.class, HibernateConfig.class})
 public class CommandTestConfig {
     @Bean
     public ObjectMapper objectMapper() {
         return new ObjectMapper();
+    }
+
+    @Bean
+    public ContainerLaunchService containerLaunchService(final CommandService commandService,
+                                                         final ContainerControlApi controlApi,
+                                                         final AliasTokenService aliasTokenService,
+                                                         final SiteConfigPreferences siteConfigPreferences,
+                                                         final TransportService transporter,
+                                                         final ContainerExecutionService containerExecutionService,
+                                                         final ConfigService configService) {
+        return new ContainerLaunchServiceImpl(commandService, controlApi, aliasTokenService,
+                siteConfigPreferences, transporter, containerExecutionService, configService);
+    }
+
+    @Bean
+    public ContainerControlApi controlApi() {
+        return Mockito.mock(ContainerControlApi.class);
     }
 
     @Bean
@@ -49,50 +65,18 @@ public class CommandTestConfig {
     }
 
     @Bean
-    public NrgPreferenceService nrgPreferenceService() {
-        return Mockito.mock(NrgPreferenceService.class);
-    }
-
-    @Bean
-    public CommandService commandService(final CommandEntityService commandEntityService,
-                                         final ContainerControlApi controlApi,
-                                         final AliasTokenService aliasTokenService,
-                                         final SiteConfigPreferences siteConfigPreferences,
-                                         final TransportService transporter,
-                                         final ContainerExecutionService containerExecutionService,
-                                         final ConfigService configService) {
-        return new CommandServiceImpl(commandEntityService, controlApi, aliasTokenService, siteConfigPreferences,
-                transporter, containerExecutionService, configService);
-    }
-
-    @Bean
-    public CommandEntityService commandEntityService() {
-        return new HibernateCommandEntityService();
-    }
-
-    @Bean
-    public CommandDao commandDao() {
-        return new CommandDao();
-    }
-
-    @Bean
-    public ContainerControlApi controlApi() {
-        return Mockito.mock(ContainerControlApi.class);
-    }
-
-    @Bean
     public TransportService transportService() {
         return new TransportServiceImpl();
     }
 
     @Bean
-    public ConfigService configService() {
-        return Mockito.mock(ConfigService.class);
+    public ContainerExecutionService mockContainerExecutionService() {
+        return Mockito.mock(ContainerExecutionService.class);
     }
 
     @Bean
-    public ContainerExecutionService mockContainerExecutionService() {
-        return Mockito.mock(ContainerExecutionService.class);
+    public ConfigService configService() {
+        return Mockito.mock(ConfigService.class);
     }
 
     @Bean

@@ -1,18 +1,11 @@
 package org.nrg.containers.services.impl;
 
-import com.google.common.collect.Sets;
-import com.jayway.jsonpath.Configuration;
-import com.jayway.jsonpath.Option;
-import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
-import com.jayway.jsonpath.spi.json.JsonProvider;
-import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
-import com.jayway.jsonpath.spi.mapper.MappingProvider;
+import com.google.common.collect.Lists;
 import org.hibernate.exception.ConstraintViolationException;
-import org.nrg.containers.daos.CommandDao;
+import org.nrg.containers.daos.CommandEntityRepository;
 import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.CommandWrapperEntity;
 import org.nrg.containers.services.CommandEntityService;
-import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
@@ -21,48 +14,26 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @Service
 @Transactional
-public class HibernateCommandEntityService extends AbstractHibernateEntityService<CommandEntity, CommandDao>
+public class HibernateCommandEntityService extends AbstractHibernateEntityService<CommandEntity, CommandEntityRepository>
         implements CommandEntityService {
     private static final Logger log = LoggerFactory.getLogger(HibernateCommandEntityService.class);
 
     @Override
-    public void afterPropertiesSet() {
-        // Set the default JayWay JSONPath configuration
-        Configuration.setDefaults(new Configuration.Defaults() {
-
-            private final JsonProvider jsonProvider = new JacksonJsonProvider();
-            private final MappingProvider mappingProvider = new JacksonMappingProvider();
-
-            @Override
-            public JsonProvider jsonProvider() {
-                return jsonProvider;
-            }
-
-            @Override
-            public MappingProvider mappingProvider() {
-                return mappingProvider;
-            }
-
-            @Override
-            public Set<Option> options() {
-                return Sets.newHashSet(Option.DEFAULT_PATH_LEAF_TO_NULL);
-            }
-        });
+    @Nonnull
+    public List<CommandEntity> getAll() {
+        final List<CommandEntity> commandEntities = super.getAll();
+        return commandEntities == null ? Lists.<CommandEntity>newArrayList() : commandEntities;
     }
 
     @Override
-    public List<CommandEntity> findByProperties(final Map<String, Object> properties) {
-        return getDao().findByProperties(properties);
-    }
-
-    @Override
-    public CommandEntity create(final CommandEntity commandEntity) throws NrgRuntimeException {
+    @Nonnull
+    public CommandEntity create(@Nonnull final CommandEntity commandEntity) throws NrgRuntimeException {
         try {
             if (log.isDebugEnabled()) {
                 log.debug("Saving command " + commandEntity.getName());
@@ -76,5 +47,12 @@ public class HibernateCommandEntityService extends AbstractHibernateEntityServic
         } catch (ConstraintViolationException e) {
             throw new NrgServiceRuntimeException("This command duplicates a command already in the database.", e);
         }
+    }
+
+    @Override
+    @Nonnull
+    public List<CommandEntity> findByProperties(@Nonnull final Map<String, Object> properties) {
+        final List<CommandEntity> commandEntities = getDao().findByProperties(properties);
+        return commandEntities == null ? Lists.<CommandEntity>newArrayList() : commandEntities;
     }
 }
