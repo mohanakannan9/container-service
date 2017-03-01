@@ -2,7 +2,7 @@ package org.nrg.containers.services.impl;
 
 import com.google.common.collect.Lists;
 import org.hibernate.exception.ConstraintViolationException;
-import org.nrg.containers.daos.CommandDao;
+import org.nrg.containers.daos.CommandEntityRepository;
 import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.CommandWrapperEntity;
 import org.nrg.containers.services.CommandEntityService;
@@ -20,7 +20,7 @@ import java.util.Map;
 
 @Service
 @Transactional
-public class HibernateCommandEntityService extends AbstractHibernateEntityService<CommandEntity, CommandDao>
+public class HibernateCommandEntityService extends AbstractHibernateEntityService<CommandEntity, CommandEntityRepository>
         implements CommandEntityService {
     private static final Logger log = LoggerFactory.getLogger(HibernateCommandEntityService.class);
 

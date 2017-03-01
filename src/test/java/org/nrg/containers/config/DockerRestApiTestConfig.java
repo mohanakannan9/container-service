@@ -5,7 +5,7 @@ import org.hibernate.SessionFactory;
 import org.mockito.Mockito;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.api.DockerControlApi;
-import org.nrg.containers.daos.CommandDao;
+import org.nrg.containers.daos.CommandEntityRepository;
 import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.DockerCommandEntity;
 import org.nrg.containers.model.DockerServerPrefsBean;
@@ -92,8 +92,8 @@ public class DockerRestApiTestConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public CommandDao commandDao() {
-        return new CommandDao();
+    public CommandEntityRepository commandDao() {
+        return new CommandEntityRepository();
     }
 
     @Bean

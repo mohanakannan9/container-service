@@ -5,7 +5,7 @@ import org.hibernate.SessionFactory;
 import org.mockito.Mockito;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.api.ContainerControlApi;
-import org.nrg.containers.daos.CommandDao;
+import org.nrg.containers.daos.CommandEntityRepository;
 import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.DockerCommandEntity;
 import org.nrg.containers.model.CommandWrapperEntity;
@@ -71,8 +71,8 @@ public class CommandTestConfig {
     }
 
     @Bean
-    public CommandDao commandDao() {
-        return new CommandDao();
+    public CommandEntityRepository commandEntityRepository() {
+        return new CommandEntityRepository();
     }
 
     @Bean

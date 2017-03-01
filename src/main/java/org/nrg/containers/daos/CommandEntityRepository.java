@@ -17,8 +17,8 @@ import java.util.List;
 import java.util.Map;
 
 @Repository
-public class CommandDao extends AbstractHibernateDAO<CommandEntity> {
-    private static final Logger log = LoggerFactory.getLogger(CommandDao.class);
+public class CommandEntityRepository extends AbstractHibernateDAO<CommandEntity> {
+    private static final Logger log = LoggerFactory.getLogger(CommandEntityRepository.class);
 
     @Override
     public void initialize(final CommandEntity commandEntity) {
