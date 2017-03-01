@@ -111,6 +111,11 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     }
 
     @Override
+    public List<Command> getAll() {
+        return toPojo(commandEntityService.getAll());
+    }
+
+    @Override
     public Command retrieve(final long id) {
         return toPojo(commandEntityService.retrieve(id));
     }
@@ -123,11 +128,6 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     @Override
     public void delete(final long id) {
         commandEntityService.delete(id);
-    }
-
-    @Override
-    public List<Command> getAll() {
-        return toPojo(commandEntityService.getAll());
     }
 
     @Override
