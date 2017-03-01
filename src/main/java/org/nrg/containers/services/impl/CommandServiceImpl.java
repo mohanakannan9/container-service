@@ -43,6 +43,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -106,32 +107,40 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     }
 
     @Override
-    public Command create(final Command command) throws CommandValidationException {
+    @Nonnull
+    public Command create(@Nonnull final Command command) throws CommandValidationException {
         return toPojo(commandEntityService.create(fromPojo(command, null)));
     }
 
     @Override
+    @Nonnull
     public List<Command> getAll() {
         return toPojo(commandEntityService.getAll());
     }
 
     @Override
+    @Nullable
     public Command retrieve(final long id) {
         return toPojo(commandEntityService.retrieve(id));
     }
 
     @Override
+    @Nonnull
     public Command get(final long id) throws NotFoundException {
         return toPojo(commandEntityService.get(id));
     }
 
     @Override
+    @Nonnull
     public List<Command> findByProperties(final Map<String, Object> properties) {
         return toPojo(commandEntityService.findByProperties(properties));
     }
 
     @Override
     public void update(final Command updates) throws NotFoundException, CommandValidationException {
+        if (updates == null) {
+            return;
+        }
         commandEntityService.update(fromPojo(updates));
     }
 
@@ -140,37 +149,38 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
         commandEntityService.delete(id);
     }
 
-    private Command toPojo(final CommandEntity commandEntity) {
-        return commandEntity == null ? null : Command.create(commandEntity);
+    @Nonnull
+    private Command toPojo(@Nonnull final CommandEntity commandEntity) {
+        return Command.create(commandEntity);
     }
 
+    @Nonnull
     private List<Command> toPojo(final List<CommandEntity> commandEntityList) {
-        return commandEntityList == null ? null :
-                Lists.transform(commandEntityList, new Function<CommandEntity, Command>() {
+        if (commandEntityList == null) {
+            return Lists.newArrayList();
+        }
+        return Lists.transform(commandEntityList, new Function<CommandEntity, Command>() {
                     @Nullable
                     @Override
                     public Command apply(@Nullable final CommandEntity commandEntity) {
-                        return toPojo(commandEntity);
+                        return commandEntity == null ? null : toPojo(commandEntity);
                     }
                 });
     }
 
-    private CommandEntity fromPojo(final Command command) throws CommandValidationException, NotFoundException {
-        if (command == null) {
-            return null;
-        }
+    @Nonnull
+    private CommandEntity fromPojo(@Nonnull final Command command) throws CommandValidationException, NotFoundException {
         final CommandEntity template = commandEntityService.get(command.id());
-        return CommandEntity.fromPojo(command, template);
+        return fromPojo(command, template);
     }
 
-    private CommandEntity fromPojo(final Command command, final CommandEntity template) throws CommandValidationException {
-        if (command == null) {
-            return null;
-        }
+    @Nonnull
+    private CommandEntity fromPojo(@Nonnull final Command command, @Nullable final CommandEntity template) throws CommandValidationException {
         return CommandEntity.fromPojo(command, template);
     }
 
     @Override
+    @Nonnull
     public List<Command> save(final List<Command> commands) {
         final List<Command> created = Lists.newArrayList();
         if (!(commands == null || commands.isEmpty())) {
