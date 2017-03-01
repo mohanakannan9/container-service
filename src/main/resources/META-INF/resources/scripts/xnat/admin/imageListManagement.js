@@ -32,6 +32,7 @@ var XNAT = getObject(XNAT || {});
         addImage,
         commandListManager,
         commandDefinition,
+        imageHubs,
         undefined,
         rootUrl = XNAT.url.rootUrl;
     
@@ -52,6 +53,9 @@ var XNAT = getObject(XNAT || {});
     
     XNAT.admin.commandDefinition = commandDefinition = 
         getObject(XNAT.admin.commandDefinition || {});
+
+    XNAT.admin.imageHubs = imageHubs =
+        getObject(XNAT.admin.imageHubs || {});
 
     imageListManager.samples = [
         {
@@ -88,6 +92,19 @@ var XNAT = getObject(XNAT || {});
             dataType: 'json',
             success: function(data){
                 imageListManager.hosts = data;
+                callback.apply(this, arguments);
+            }
+        });
+    };
+
+    // get the list of image hubs
+    imageHubs.getHubs = imageHubs.getAll = function(callback){
+        callback = isFunction(callback)? callback : function(){};
+        return XNAT.xhr.get({
+            url: '/xapi/docker/hubs',
+            dataType: 'json',
+            success: function(data){
+                imageHubs.hubs = data;
                 callback.apply(this, arguments);
             }
         });
@@ -143,6 +160,16 @@ var XNAT = getObject(XNAT || {});
                 if (item && isDefined(item.image)) {
                     $form.setValues(item);
                 }
+                var $hubSelect = $form.find('#hub-id');
+                // get list of image hubs and select the default hub
+                imageHubs.getAll().done(function(hubs){
+                    hubs.forEach(function(item){
+                        var option = '<option value="'+item.id+'"';
+                        if (item.default) option += ' selected';
+                        option += '>'+item.name+'</option>';
+                        $hubSelect.append(option);
+                    });
+                });
             },
             okClose: false,
             okLabel: 'Pull Image',
@@ -201,7 +228,7 @@ var XNAT = getObject(XNAT || {});
     // create a read-only code editor dialog to view a command definition
     commandDefinition.dialog = function(commandDef,newCommand){
         if (!newCommand) {
-            data = data || {};
+            commandDef = commandDef || {};
 
             var _source = spawn('textarea', JSON.stringify(commandDef, null, 4));
 
