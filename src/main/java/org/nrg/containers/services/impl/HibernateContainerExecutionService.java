@@ -8,7 +8,7 @@ import org.nrg.containers.daos.ContainerExecutionRepository;
 import org.nrg.containers.events.DockerContainerEvent;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.exceptions.NotFoundException;
+import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.containers.helpers.ContainerFinalizeHelper;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.ContainerExecutionHistory;
@@ -30,11 +30,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.Nonnull;
 import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
+@Transactional
 public class HibernateContainerExecutionService
         extends AbstractHibernateEntityService<ContainerExecution, ContainerExecutionRepository>
         implements ContainerExecutionService {
@@ -96,7 +98,6 @@ public class HibernateContainerExecutionService
     }
 
     @Override
-    @Transactional
     public void processEvent(final DockerContainerEvent event) {
         if (log.isDebugEnabled()) {
             log.debug("Processing docker container event: " + event);
@@ -128,7 +129,6 @@ public class HibernateContainerExecutionService
     }
 
     @Override
-    @Transactional
     public void finalize(final Long containerExecutionId, final UserI userI) {
         final ContainerExecution containerExecution = retrieve(containerExecutionId);
         String exitCode = "x";
@@ -142,7 +142,6 @@ public class HibernateContainerExecutionService
     }
 
     @Override
-    @Transactional
     public void finalize(final ContainerExecution containerExecution, final UserI userI,  final String exitCode) {
         if (log.isInfoEnabled()) {
             log.info(String.format("Finalizing ContainerExecution %s for container %s", containerExecution.getId(), containerExecution.getContainerId()));
@@ -160,7 +159,7 @@ public class HibernateContainerExecutionService
     }
 
     @Override
-    @Transactional
+    @Nonnull
     public ContainerExecution save(final ResolvedCommand resolvedCommand,
                                    final String containerId,
                                    final UserI userI) {
@@ -169,11 +168,11 @@ public class HibernateContainerExecutionService
     }
 
     @Override
-    @Transactional
+    @Nonnull
     public String kill(final Long containerExecutionId, final UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException {
         // TODO check user permissions. How?
-        final ContainerExecution containerExecution = retrieve(containerExecutionId);
+        final ContainerExecution containerExecution = get(containerExecutionId);
         final String containerId = containerExecution.getContainerId();
         containerControlApi.killContainer(containerId);
         return containerId;

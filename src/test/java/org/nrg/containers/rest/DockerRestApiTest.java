@@ -12,7 +12,6 @@ import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.config.DockerRestApiTestConfig;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.CommandInputEntity;
 import org.nrg.containers.model.CommandWrapperEntity;
@@ -97,8 +96,6 @@ public class DockerRestApiTest {
             new InvalidPreferenceName("*invalid name*");
     private final DockerServerException DOCKER_SERVER_EXCEPTION =
             new DockerServerException("Your server dun goofed.");
-    private final NotFoundException NOT_FOUND_EXCEPTION =
-            new NotFoundException("I should think of a message");
 
     @Autowired private WebApplicationContext wac;
     @Autowired private ObjectMapper mapper;

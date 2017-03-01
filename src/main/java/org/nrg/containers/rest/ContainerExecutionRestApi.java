@@ -2,11 +2,10 @@ package org.nrg.containers.rest;
 
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.services.ContainerExecutionService;
 import org.nrg.framework.annotations.XapiRestController;
-import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.rest.AbstractXapiRestController;
 import org.nrg.xdat.security.services.RoleHolder;

@@ -12,7 +12,6 @@ import org.nrg.containers.exceptions.CommandValidationException;
 import org.nrg.containers.exceptions.ContainerMountResolutionException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.helpers.CommandResolutionHelper;
 import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.ContainerExecution;
@@ -25,6 +24,7 @@ import org.nrg.containers.model.auto.Command.CommandWrapper;
 import org.nrg.containers.services.CommandEntityService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerExecutionService;
+import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.transporter.TransportService;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -88,11 +88,7 @@ public class CommandServiceImpl implements CommandService {
 
     @Override
     public Command get(final long id) throws NotFoundException {
-        try {
-            return toPojo(commandEntityService.get(id));
-        } catch (org.nrg.framework.exceptions.NotFoundException e) {
-            throw new NotFoundException(e);
-        }
+        return toPojo(commandEntityService.get(id));
     }
 
     @Override

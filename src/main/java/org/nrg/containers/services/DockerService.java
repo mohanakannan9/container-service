@@ -2,15 +2,14 @@ package org.nrg.containers.services;
 
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.exceptions.NotUniqueException;
-import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.auto.Command;
 import org.nrg.containers.model.auto.DockerHub;
 import org.nrg.containers.model.auto.DockerImage;
 import org.nrg.containers.model.auto.DockerImageAndCommandSummary;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.services.DockerHubService.DockerHubDeleteDefaultException;
+import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 
 import java.util.List;

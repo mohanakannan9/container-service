@@ -1,7 +1,7 @@
 package org.nrg.containers.services;
 
-import org.nrg.containers.exceptions.NotFoundException;
 import org.nrg.containers.model.CommandEntity;
+import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
 
 import java.util.List;
