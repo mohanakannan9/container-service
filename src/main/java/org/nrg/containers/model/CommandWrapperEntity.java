@@ -8,12 +8,15 @@ import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.model.auto.Command;
 import org.hibernate.envers.Audited;
+
+import javax.persistence.CascadeType;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
@@ -147,7 +150,7 @@ public class CommandWrapperEntity implements Serializable {
         this.derivedInputs.add(derivedInput);
     }
 
-    @ElementCollection
+    @OneToMany(mappedBy = "commandWrapperEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<CommandWrapperOutputEntity> getOutputHandlers() {
         return outputHandlers;
     }
@@ -156,12 +159,17 @@ public class CommandWrapperEntity implements Serializable {
         this.outputHandlers = outputHandlers == null ?
                 Lists.<CommandWrapperOutputEntity>newArrayList() :
                 outputHandlers;
+
+        for (final CommandWrapperOutputEntity commandWrapperOutputEntity : this.outputHandlers) {
+            commandWrapperOutputEntity.setCommandWrapperEntity(this);
+        }
     }
 
     public void addOutputHandler(final CommandWrapperOutputEntity outputHandler) {
         if (outputHandler == null) {
             return;
         }
+        outputHandler.setCommandWrapperEntity(this);
 
         if (this.outputHandlers == null) {
             this.outputHandlers = Lists.newArrayList();

@@ -6,6 +6,7 @@ import org.mockito.Mockito;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.model.CommandEntity;
+import org.nrg.containers.model.CommandWrapperOutputEntity;
 import org.nrg.containers.model.DockerCommandEntity;
 import org.nrg.containers.model.CommandWrapperEntity;
 import org.nrg.containers.services.CommandEntityService;
@@ -87,7 +88,8 @@ public class CommandTestConfig {
         bean.setAnnotatedClasses(
                 CommandEntity.class,
                 DockerCommandEntity.class,
-                CommandWrapperEntity.class);
+                CommandWrapperEntity.class,
+                CommandWrapperOutputEntity.class);
         return bean;
     }
 

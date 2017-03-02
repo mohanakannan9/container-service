@@ -24,6 +24,7 @@ import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.containers.model.ResolvedDockerCommand;
+import org.nrg.containers.model.auto.Command;
 import org.nrg.containers.services.CommandEntityService;
 import org.nrg.containers.services.ContainerExecutionService;
 import org.nrg.xdat.entities.AliasToken;
@@ -454,7 +455,7 @@ public class CommandRestApiTest {
 
         final String dir = Resources.getResource("ecatHeaderDump").getPath().replace("%20", " ");
         final String commandJsonFile = dir + "/command.json";
-        final CommandEntity ecatHeaderDump = mapper.readValue(new File(commandJsonFile), CommandEntity.class);
+        final Command ecatHeaderDump = mapper.readValue(new File(commandJsonFile), Command.class);
         final String commandJson = mapper.writeValueAsString(ecatHeaderDump);
 
         final MockHttpServletRequestBuilder request =
