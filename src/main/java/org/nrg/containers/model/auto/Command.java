@@ -346,7 +346,7 @@ public abstract class Command {
 
     @AutoValue
     public static abstract class CommandMount {
-        @Nullable @JsonProperty("name") public abstract String name();
+        @JsonProperty("name") public abstract String name();
         @JsonProperty("writable") public abstract boolean writable();
         @Nullable @JsonProperty("path") public abstract String path();
 
@@ -354,7 +354,7 @@ public abstract class Command {
         static CommandMount create(@JsonProperty("name") final String name,
                                    @JsonProperty("writable") final Boolean writable,
                                    @JsonProperty("path") final String path) {
-            return new AutoValue_Command_CommandMount(name, writable == null ? false : writable, path);
+            return new AutoValue_Command_CommandMount(name == null ? "" : name, writable == null ? false : writable, path);
         }
 
         static CommandMount create(final CommandMountEntity mount) {
@@ -379,7 +379,7 @@ public abstract class Command {
 
     @AutoValue
     public static abstract class CommandInput {
-        @Nullable @JsonProperty("name") public abstract String name();
+        @JsonProperty("name") public abstract String name();
         @Nullable @JsonProperty("description") public abstract String description();
         @JsonProperty("type") public abstract String type();
         @JsonProperty("required") public abstract boolean required();
@@ -404,7 +404,7 @@ public abstract class Command {
                                    @JsonProperty("true-value") final String trueValue,
                                    @JsonProperty("false-value") final String falseValue) {
             return builder()
-                    .name(name)
+                    .name(name == null ? "" : name)
                     .description(description)
                     .type(type == null ? CommandInputEntity.DEFAULT_TYPE.getName() : type)
                     .required(required == null ? false : required)
@@ -439,6 +439,7 @@ public abstract class Command {
 
         public static Builder builder() {
             return new AutoValue_Command_CommandInput.Builder()
+                    .name("")
                     .type(CommandInputEntity.DEFAULT_TYPE.getName())
                     .required(false);
         }
@@ -476,7 +477,7 @@ public abstract class Command {
 
     @AutoValue
     public static abstract class CommandOutput {
-        @Nullable @JsonProperty("name") public abstract String name();
+        @JsonProperty("name") public abstract String name();
         @Nullable @JsonProperty("description") public abstract String description();
         @Nullable @JsonProperty("required") public abstract Boolean required();
         @Nullable @JsonProperty("mount") public abstract String mount();
@@ -490,7 +491,7 @@ public abstract class Command {
                                     @JsonProperty("mount") final String mount,
                                     @JsonProperty("path") final String path,
                                     @JsonProperty("glob") final String glob) {
-            return new AutoValue_Command_CommandOutput(name, description, required, mount, path, glob);
+            return new AutoValue_Command_CommandOutput(name == null ? "" : name, description, required, mount, path, glob);
         }
 
         static CommandOutput create(final CommandOutputEntity commandOutputEntity) {
@@ -517,7 +518,7 @@ public abstract class Command {
     @AutoValue
     public static abstract class CommandWrapper {
         @JsonProperty("id") public abstract long id();
-        @Nullable @JsonProperty("name") public abstract String name();
+        @JsonProperty("name") public abstract String name();
         @Nullable @JsonProperty("description") public abstract String description();
         @JsonProperty("external-inputs") public abstract List<CommandWrapperInput> externalInputs();
         @JsonProperty("derived-inputs") public abstract List<CommandWrapperInput> derivedInputs();
@@ -532,7 +533,7 @@ public abstract class Command {
                                      @JsonProperty("output-handlers") final List<CommandWrapperOutput> outputHandlers) {
             return builder()
                     .id(id)
-                    .name(name)
+                    .name(name == null ? "" : name)
                     .description(description)
                     .externalInputs(externalInputs == null ? Lists.<CommandWrapperInput>newArrayList() : externalInputs)
                     .derivedInputs(derivedInputs == null ? Lists.<CommandWrapperInput>newArrayList() : derivedInputs)
@@ -558,6 +559,7 @@ public abstract class Command {
         public static Builder builder() {
             return new AutoValue_Command_CommandWrapper.Builder()
                     .id(0L)
+                    .name("")
                     .externalInputs(Lists.<CommandWrapperInput>newArrayList())
                     .derivedInputs(Lists.<CommandWrapperInput>newArrayList())
                     .outputHandlers(Lists.<CommandWrapperOutput>newArrayList());
@@ -623,7 +625,7 @@ public abstract class Command {
 
     @AutoValue
     public static abstract class CommandWrapperInput {
-        @Nullable @JsonProperty("name") public abstract String name();
+        @JsonProperty("name") public abstract String name();
         @Nullable @JsonProperty("description") public abstract String description();
         @JsonProperty("type") public abstract String type();
         @Nullable @JsonProperty("derived-from-xnat-input") public abstract String derivedFromXnatInput();
@@ -650,7 +652,7 @@ public abstract class Command {
                                           @JsonProperty("replacement-key") final String rawReplacementKey,
                                           @JsonProperty("required") final Boolean required) {
             return builder()
-                    .name(name)
+                    .name(name == null ? "" : name)
                     .description(description)
                     .type(type == null ? CommandWrapperInputEntity.DEFAULT_TYPE.getName() : type)
                     .derivedFromXnatInput(derivedFromXnatInput)
@@ -703,6 +705,7 @@ public abstract class Command {
 
         public static Builder builder() {
             return new AutoValue_Command_CommandWrapperInput.Builder()
+                    .name("")
                     .type(CommandWrapperInputEntity.DEFAULT_TYPE.getName())
                     .required(false);
         }
@@ -759,8 +762,8 @@ public abstract class Command {
 
     @AutoValue
     public static abstract class CommandWrapperOutput {
-        @Nullable @JsonProperty("accepts-command-output") public abstract String commandOutputName();
-        @Nullable @JsonProperty("as-a-child-of-xnat-input") public abstract String xnatInputName();
+        @JsonProperty("accepts-command-output") public abstract String commandOutputName();
+        @JsonProperty("as-a-child-of-xnat-input") public abstract String xnatInputName();
         @JsonProperty("type") public abstract String type();
         @Nullable @JsonProperty("label") public abstract String label();
 
@@ -770,8 +773,8 @@ public abstract class Command {
                                            @JsonProperty("type") final String type,
                                            @JsonProperty("label") final String label) {
             return new AutoValue_Command_CommandWrapperOutput(
-                    commandOutputName,
-                    xnatInputName,
+                    commandOutputName == null ? "" : commandOutputName,
+                    xnatInputName == null ? "" : xnatInputName,
                     type == null ? CommandWrapperOutputEntity.DEFAULT_TYPE.getName() : type,
                     label);
         }
