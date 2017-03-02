@@ -15,17 +15,17 @@ import org.nrg.xft.security.UserI;
 import java.util.Map;
 
 public interface ContainerLaunchService {
-    ResolvedCommand resolveCommand(final Long commandId,
+    ResolvedCommand resolveCommand(final long commandId,
                                    final Map<String, String> variableRuntimeValues,
                                    final UserI userI)
             throws NotFoundException, CommandResolutionException;
     ResolvedCommand resolveCommand(final String xnatCommandWrapperName,
-                                   final Long commandId,
+                                   final long commandId,
                                    final Map<String, String> variableRuntimeValues,
                                    final UserI userI)
             throws NotFoundException, CommandResolutionException;
-    ResolvedCommand resolveCommand(final Long xnatCommandWrapperId,
-                                   final Long commandId,
+    ResolvedCommand resolveCommand(final long xnatCommandWrapperId,
+                                   final long commandId,
                                    final Map<String, String> variableRuntimeValues,
                                    final UserI userI)
             throws NotFoundException, CommandResolutionException;
@@ -39,15 +39,15 @@ public interface ContainerLaunchService {
                                    final UserI userI)
             throws NotFoundException, CommandResolutionException;
 
-    ContainerExecution resolveAndLaunchCommand(final Long commandId,
+    ContainerExecution resolveAndLaunchCommand(final long commandId,
                                                final Map<String, String> variableRuntimeValues, final UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException;
     ContainerExecution resolveAndLaunchCommand(final String xnatCommandWrapperName,
-                                               final Long commandId,
+                                               final long commandId,
                                                final Map<String, String> variableRuntimeValues, final UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException;
-    ContainerExecution resolveAndLaunchCommand(final Long xnatCommandWrapperId,
-                                               final Long commandId,
+    ContainerExecution resolveAndLaunchCommand(final long xnatCommandWrapperId,
+                                               final long commandId,
                                                final Map<String, String> variableRuntimeValues, final UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException;
     ContainerExecution launchResolvedDockerCommand(final ResolvedDockerCommand resolvedCommand, final UserI userI)
