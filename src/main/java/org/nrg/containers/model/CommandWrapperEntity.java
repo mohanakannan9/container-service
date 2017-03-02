@@ -106,7 +106,7 @@ public class CommandWrapperEntity implements Serializable {
         this.contexts.add(context);
     }
 
-    @ElementCollection
+    @OneToMany(mappedBy = "commandWrapperEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<CommandWrapperInputEntity> getExternalInputs() {
         return externalInputs;
     }
@@ -115,12 +115,16 @@ public class CommandWrapperEntity implements Serializable {
         this.externalInputs = externalInputs == null ?
                 Lists.<CommandWrapperInputEntity>newArrayList() :
                 externalInputs;
+        for (final CommandWrapperInputEntity externalInput : this.externalInputs) {
+            externalInput.setCommandWrapperEntity(this);
+        }
     }
 
     public void addExternalInput(final CommandWrapperInputEntity externalInput) {
         if (externalInput == null) {
             return;
         }
+        externalInput.setCommandWrapperEntity(this);
 
         if (this.externalInputs == null) {
             this.externalInputs = Lists.newArrayList();
@@ -128,7 +132,7 @@ public class CommandWrapperEntity implements Serializable {
         this.externalInputs.add(externalInput);
     }
 
-    @ElementCollection
+    @OneToMany(mappedBy = "commandWrapperEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<CommandWrapperInputEntity> getDerivedInputs() {
         return derivedInputs;
     }
@@ -137,12 +141,17 @@ public class CommandWrapperEntity implements Serializable {
         this.derivedInputs = derivedInputs == null ?
                 Lists.<CommandWrapperInputEntity>newArrayList() :
                 derivedInputs;
+
+        for (final CommandWrapperInputEntity derivedInput : this.derivedInputs) {
+            derivedInput.setCommandWrapperEntity(this);
+        }
     }
 
     public void addDerivedInput(final CommandWrapperInputEntity derivedInput) {
         if (derivedInput == null) {
             return;
         }
+        derivedInput.setCommandWrapperEntity(this);
 
         if (this.derivedInputs == null) {
             this.derivedInputs = Lists.newArrayList();
