@@ -9,6 +9,7 @@ import org.nrg.containers.config.DockerHubEntityTestConfig;
 import org.nrg.containers.model.auto.DockerHub;
 import org.nrg.containers.services.DockerHubService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.transaction.TestTransaction;
@@ -68,6 +69,7 @@ public class DockerHubEntityTest {
     }
 
     @Test
+    @DirtiesContext
     public void testUpdateDockerHubEntity() throws Exception {
         final String hubToCreateJson = "{" +
                 "\"id\": 0" +
@@ -105,6 +107,7 @@ public class DockerHubEntityTest {
     }
 
     @Test
+    @DirtiesContext
     public void testUpdateDockerHubPojo() throws Exception {
         final String hubToCreateJson = "{" +
                 "\"id\": 0" +

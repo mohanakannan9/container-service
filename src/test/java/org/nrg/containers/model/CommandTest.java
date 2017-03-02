@@ -12,8 +12,10 @@ import org.nrg.containers.services.CommandEntityService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.transaction.TestTransaction;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -145,13 +147,16 @@ public class CommandTest {
     }
 
     @Test
+    @DirtiesContext
     public void testPersistDockerImageCommand() throws Exception {
 
         final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
 
         commandEntityService.create(commandEntity);
-        // commandService.flush();
-        // commandService.refresh(command);
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
 
         final CommandEntity retrievedCommandEntity = commandEntityService.retrieve(commandEntity.getId());
 
