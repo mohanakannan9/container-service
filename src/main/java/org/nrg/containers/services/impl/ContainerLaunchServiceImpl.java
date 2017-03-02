@@ -70,7 +70,7 @@ public class ContainerLaunchServiceImpl implements ContainerLaunchService {
 
     @Override
     @Nonnull
-    public ResolvedCommand resolveCommand(final Long commandId,
+    public ResolvedCommand resolveCommand(final long commandId,
                                           final Map<String, String> runtimeInputValues,
                                           final UserI userI)
             throws NotFoundException, CommandResolutionException {
@@ -82,7 +82,7 @@ public class ContainerLaunchServiceImpl implements ContainerLaunchService {
     @Override
     @Nonnull
     public ResolvedCommand resolveCommand(final String xnatCommandWrapperName,
-                                          final Long commandId,
+                                          final long commandId,
                                           final Map<String, String> runtimeInputValues,
                                           final UserI userI)
             throws NotFoundException, CommandResolutionException {
@@ -109,20 +109,16 @@ public class ContainerLaunchServiceImpl implements ContainerLaunchService {
 
     @Override
     @Nonnull
-    public ResolvedCommand resolveCommand(final Long xnatCommandWrapperId,
-                                          final Long commandId,
+    public ResolvedCommand resolveCommand(final long xnatCommandWrapperId,
+                                          final long commandId,
                                           final Map<String, String> runtimeInputValues,
                                           final UserI userI)
             throws NotFoundException, CommandResolutionException {
-        if (xnatCommandWrapperId == null) {
-            return resolveCommand(commandId, runtimeInputValues, userI);
-        }
-
         final Command command = commandService.get(commandId);
         CommandWrapper wrapper = null;
 
         for (final CommandWrapper commandWrapper : command.xnatCommandWrappers()) {
-            if (xnatCommandWrapperId.equals(commandWrapper.id())) {
+            if (xnatCommandWrapperId == commandWrapper.id()) {
                 wrapper = commandWrapper;
                 break;
             }
@@ -170,7 +166,7 @@ public class ContainerLaunchServiceImpl implements ContainerLaunchService {
     }
 
     @Override
-    public ContainerExecution resolveAndLaunchCommand(final Long commandId,
+    public ContainerExecution resolveAndLaunchCommand(final long commandId,
                                                       final Map<String, String> runtimeValues,
                                                       final UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException {
@@ -185,7 +181,7 @@ public class ContainerLaunchServiceImpl implements ContainerLaunchService {
 
     @Override
     public ContainerExecution resolveAndLaunchCommand(final String xnatCommandWrapperName,
-                                                      final Long commandId,
+                                                      final long commandId,
                                                       final Map<String, String> runtimeValues,
                                                       final UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException {
@@ -199,8 +195,8 @@ public class ContainerLaunchServiceImpl implements ContainerLaunchService {
     }
 
     @Override
-    public ContainerExecution resolveAndLaunchCommand(final Long xnatCommandWrapperId,
-                                                      final Long commandId,
+    public ContainerExecution resolveAndLaunchCommand(final long xnatCommandWrapperId,
+                                                      final long commandId,
                                                       final Map<String, String> runtimeValues,
                                                       final UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException {

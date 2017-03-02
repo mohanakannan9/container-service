@@ -111,7 +111,7 @@ public class CommandRestApi extends AbstractXapiRestController {
     @RequestMapping(value = {"/{id}"}, method = GET)
     @ApiOperation(value = "Get a Command by ID")
     @ResponseBody
-    public Command retrieveCommand(final @PathVariable Long id) throws NotFoundException {
+    public Command retrieveCommand(final @PathVariable long id) throws NotFoundException {
         return commandService.get(id);
     }
 
@@ -152,7 +152,7 @@ public class CommandRestApi extends AbstractXapiRestController {
      */
     @RequestMapping(value = {"/{id}"}, method = DELETE)
     @ApiOperation(value = "Delete a Command", code = 204)
-    public ResponseEntity<String> deleteCommand(final @PathVariable Long id) {
+    public ResponseEntity<String> deleteCommand(final @PathVariable long id) {
         commandService.delete(id);
         return new ResponseEntity<>("", HttpStatus.NO_CONTENT);
     }
@@ -173,7 +173,7 @@ public class CommandRestApi extends AbstractXapiRestController {
     @RequestMapping(value = {"/{id}/launch"}, method = POST)
     @ApiIgnore // Swagger UI does not correctly show this API endpoint
     @ResponseBody
-    public String launchCommandWQueryParams(final @PathVariable Long id,
+    public String launchCommandWQueryParams(final @PathVariable long id,
                                             final @RequestParam Map<String, String> allRequestParams)
             throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException {
         log.info("Launch requested for command id " + String.valueOf(id));
@@ -184,7 +184,7 @@ public class CommandRestApi extends AbstractXapiRestController {
     @RequestMapping(value = {"/{id}/launch"}, method = POST, consumes = {JSON})
     @ApiOperation(value = "Resolve a command from the variable values in the request body, and launch it")
     @ResponseBody
-    public String launchCommandWJsonBody(final @PathVariable Long id,
+    public String launchCommandWJsonBody(final @PathVariable long id,
                                          final @RequestBody Map<String, String> allRequestParams)
             throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException {
         log.info("Launch requested for command id " + String.valueOf(id));
@@ -192,7 +192,7 @@ public class CommandRestApi extends AbstractXapiRestController {
         return executed.getContainerId();
     }
 
-    private ContainerExecution launchCommand(final @PathVariable Long id, final @RequestParam Map<String, String> allRequestParams)
+    private ContainerExecution launchCommand(final @PathVariable long id, final @RequestParam Map<String, String> allRequestParams)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, BadRequestException {
         final UserI userI = XDAT.getUserDetails();
         try {
