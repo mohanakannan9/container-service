@@ -7,6 +7,7 @@ import org.nrg.config.services.ConfigService;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.CommandInputEntity;
+import org.nrg.containers.model.CommandMountEntity;
 import org.nrg.containers.model.CommandWrapperInputEntity;
 import org.nrg.containers.model.CommandWrapperOutputEntity;
 import org.nrg.containers.model.DockerCommandEntity;
@@ -91,6 +92,7 @@ public class CommandTestConfig {
                 CommandEntity.class,
                 DockerCommandEntity.class,
                 CommandInputEntity.class,
+                CommandMountEntity.class,
                 CommandWrapperEntity.class,
                 CommandWrapperInputEntity.class,
                 CommandWrapperOutputEntity.class);

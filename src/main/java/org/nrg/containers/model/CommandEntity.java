@@ -192,7 +192,7 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         this.commandLine = commandLine;
     }
 
-    @ElementCollection
+    @OneToMany(mappedBy = "commandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<CommandMountEntity> getMounts() {
         return mounts;
     }
@@ -201,12 +201,16 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         this.mounts = mounts == null ?
                 Lists.<CommandMountEntity>newArrayList() :
                 mounts;
+        for (final CommandMountEntity mount : this.mounts) {
+            mount.setCommandEntity(this);
+        }
     }
 
     public void addMount(final CommandMountEntity mount) {
         if (mount == null) {
             return;
         }
+        mount.setCommandEntity(this);
 
         if (this.mounts == null) {
             this.mounts = Lists.newArrayList();
