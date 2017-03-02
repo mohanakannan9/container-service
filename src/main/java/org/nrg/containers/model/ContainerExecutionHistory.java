@@ -1,12 +1,20 @@
 package org.nrg.containers.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
+import org.hibernate.envers.Audited;
 
-import javax.persistence.Embeddable;
-import java.util.Date;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.ManyToOne;
 
-@Embeddable
+@Entity
+@Audited
 public class ContainerExecutionHistory {
+    private long id;
+    @JsonIgnore private ContainerExecution containerExecution;
     private String status;
     private String timeNano;
 
@@ -15,6 +23,25 @@ public class ContainerExecutionHistory {
     public ContainerExecutionHistory(final String status, final Long timeNano) {
         this.status = status;
         this.timeNano = String.valueOf(timeNano);
+    }
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    public long getId() {
+        return id;
+    }
+
+    public void setId(final long id) {
+        this.id = id;
+    }
+
+    @ManyToOne
+    public ContainerExecution getContainerExecution() {
+        return containerExecution;
+    }
+
+    public void setContainerExecution(final ContainerExecution containerExecution) {
+        this.containerExecution = containerExecution;
     }
 
     public String getStatus() {
@@ -36,6 +63,7 @@ public class ContainerExecutionHistory {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("id", id)
                 .add("status", status)
                 .add("timeNano", timeNano)
                 .toString();

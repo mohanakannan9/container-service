@@ -1,16 +1,24 @@
 package org.nrg.containers.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
-import org.nrg.containers.model.auto.Command;
+import org.hibernate.envers.Audited;
 
-import javax.persistence.Embeddable;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.ManyToOne;
 import java.util.Objects;
 
-import static org.nrg.containers.model.auto.Command.*;
+import static org.nrg.containers.model.auto.Command.CommandWrapperInput;
 
-@Embeddable
+@Entity
+@Audited
 public class ContainerMountFiles {
+    private long id;
+    @JsonIgnore private ContainerExecutionMount containerExecutionMount;
     @JsonProperty("from-xnat-input") private String fromXnatInput;
     @JsonProperty("from-uri") private String fromUri;
     @JsonProperty("root-directory") private String rootDirectory;
@@ -20,6 +28,25 @@ public class ContainerMountFiles {
 
     public ContainerMountFiles(final CommandWrapperInput commandWrapperInput) {
         this.fromXnatInput = commandWrapperInput.name();
+    }
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    public long getId() {
+        return id;
+    }
+
+    public void setId(final long id) {
+        this.id = id;
+    }
+
+    @ManyToOne
+    public ContainerExecutionMount getContainerExecutionMount() {
+        return containerExecutionMount;
+    }
+
+    public void setContainerExecutionMount(final ContainerExecutionMount containerExecutionMount) {
+        this.containerExecutionMount = containerExecutionMount;
     }
 
     public String getFromXnatInput() {
@@ -59,7 +86,8 @@ public class ContainerMountFiles {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final ContainerMountFiles that = (ContainerMountFiles) o;
-        return Objects.equals(this.fromXnatInput, that.fromXnatInput) &&
+        return Objects.equals(this.id, that.id) &&
+                Objects.equals(this.fromXnatInput, that.fromXnatInput) &&
                 Objects.equals(this.fromUri, that.fromUri) &&
                 Objects.equals(this.rootDirectory, that.rootDirectory) &&
                 Objects.equals(this.path, that.path);
@@ -67,12 +95,13 @@ public class ContainerMountFiles {
 
     @Override
     public int hashCode() {
-        return Objects.hash(fromXnatInput, fromUri, rootDirectory, path);
+        return Objects.hash(id, fromXnatInput, fromUri, rootDirectory, path);
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("id", id)
                 .add("fromXnatInput", fromXnatInput)
                 .add("fromUri", fromUri)
                 .add("rootDirectory", rootDirectory)

@@ -15,7 +15,10 @@ import org.nrg.containers.model.CommandOutputEntity;
 import org.nrg.containers.model.CommandWrapperInputEntity;
 import org.nrg.containers.model.CommandWrapperOutputEntity;
 import org.nrg.containers.model.ContainerExecution;
+import org.nrg.containers.model.ContainerExecutionHistory;
 import org.nrg.containers.model.ContainerExecutionMount;
+import org.nrg.containers.model.ContainerExecutionOutput;
+import org.nrg.containers.model.ContainerMountFiles;
 import org.nrg.containers.model.DockerCommandEntity;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.CommandWrapperEntity;
@@ -170,7 +173,10 @@ public class IntegrationTestConfig {
                 CommandWrapperInputEntity.class,
                 CommandWrapperOutputEntity.class,
                 ContainerExecution.class,
-                ContainerExecutionMount.class);
+                ContainerExecutionHistory.class,
+                ContainerExecutionOutput.class,
+                ContainerExecutionMount.class,
+                ContainerMountFiles.class);
 
         return bean;
     }

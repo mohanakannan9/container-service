@@ -80,22 +80,7 @@ public class HibernateContainerExecutionService
         this.mapper = mapper;
     }
 
-    @Override
-    public void initialize(final ContainerExecution entity) {
-        if (entity == null) {
-            return;
-        }
-        Hibernate.initialize(entity);
-        Hibernate.initialize(entity.getEnvironmentVariables());
-        Hibernate.initialize(entity.getHistory());
-        Hibernate.initialize(entity.getMounts());
-        Hibernate.initialize(entity.getCommandLine());
-        Hibernate.initialize(entity.getRawInputValues());
-        Hibernate.initialize(entity.getXnatInputValues());
-        Hibernate.initialize(entity.getCommandInputValues());
-        Hibernate.initialize(entity.getOutputs());
-        Hibernate.initialize(entity.getLogPaths());
-    }
+
 
     @Override
     public void processEvent(final DockerContainerEvent event) {

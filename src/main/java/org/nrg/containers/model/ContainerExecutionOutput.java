@@ -1,18 +1,28 @@
 package org.nrg.containers.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
+import org.hibernate.envers.Audited;
 import org.nrg.containers.model.auto.Command;
 import org.nrg.containers.model.auto.Command.CommandOutput;
 import org.nrg.containers.model.auto.Command.CommandWrapperOutput;
 
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.ManyToOne;
 import javax.persistence.Transient;
 import java.io.Serializable;
 import java.util.Objects;
 
-@Embeddable
+@Entity
+@Audited
 public class ContainerExecutionOutput implements Serializable {
+    private long id;
+    @JsonIgnore private ContainerExecution containerExecution;
     private String name;
     private String type;
     private Boolean required;
@@ -34,6 +44,25 @@ public class ContainerExecutionOutput implements Serializable {
         this.label = commandOutputHandler.label();
         this.type = commandOutputHandler.type();
         this.handledByXnatCommandInput = commandOutputHandler.xnatInputName();
+    }
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    public long getId() {
+        return id;
+    }
+
+    public void setId(final long id) {
+        this.id = id;
+    }
+
+    @ManyToOne
+    public ContainerExecution getContainerExecution() {
+        return containerExecution;
+    }
+
+    public void setContainerExecution(final ContainerExecution containerExecution) {
+        this.containerExecution = containerExecution;
     }
 
     public String getName() {
@@ -119,7 +148,8 @@ public class ContainerExecutionOutput implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final ContainerExecutionOutput that = (ContainerExecutionOutput) o;
-        return Objects.equals(this.name, that.name) &&
+        return Objects.equals(this.id, that.id) &&
+                Objects.equals(this.name, that.name) &&
                 Objects.equals(this.type, that.type) &&
                 Objects.equals(this.required, that.required) &&
                 Objects.equals(this.mount, that.mount) &&
@@ -132,12 +162,13 @@ public class ContainerExecutionOutput implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, type, required, mount, path, glob, label, handledByXnatCommandInput, created);
+        return Objects.hash(id, name, type, required, mount, path, glob, label, handledByXnatCommandInput, created);
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("id", id)
                 .add("name", name)
                 .add("type", type)
                 .add("required", required)
@@ -145,7 +176,7 @@ public class ContainerExecutionOutput implements Serializable {
                 .add("path", path)
                 .add("glob", glob)
                 .add("label", label)
-                .add("handledByxnatInput", handledByXnatCommandInput)
+                .add("handledByXnatInput", handledByXnatCommandInput)
                 .add("created", created)
                 .toString();
     }

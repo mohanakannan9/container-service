@@ -1,9 +1,11 @@
 package org.nrg.containers.daos;
 
 import org.apache.commons.lang3.StringUtils;
+import org.hibernate.Hibernate;
 import org.nrg.containers.events.DockerContainerEvent;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.ContainerExecutionHistory;
+import org.nrg.containers.model.ContainerExecutionMount;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +17,28 @@ import java.util.Map;
 @Repository
 public class ContainerExecutionRepository extends AbstractHibernateDAO<ContainerExecution> {
     private static final Logger log = LoggerFactory.getLogger(ContainerExecutionRepository.class);
+
+    @Override
+    public void initialize(final ContainerExecution entity) {
+        if (entity == null) {
+            return;
+        }
+        Hibernate.initialize(entity);
+        Hibernate.initialize(entity.getEnvironmentVariables());
+        Hibernate.initialize(entity.getHistory());
+        Hibernate.initialize(entity.getMounts());
+        if (entity.getMounts() != null) {
+            for (final ContainerExecutionMount mount : entity.getMounts()) {
+                Hibernate.initialize(mount.getInputFiles());
+            }
+        }
+        Hibernate.initialize(entity.getCommandLine());
+        Hibernate.initialize(entity.getRawInputValues());
+        Hibernate.initialize(entity.getXnatInputValues());
+        Hibernate.initialize(entity.getCommandInputValues());
+        Hibernate.initialize(entity.getOutputs());
+        Hibernate.initialize(entity.getLogPaths());
+    }
 
     public ContainerExecution didRecordEvent(final DockerContainerEvent event) {
 
@@ -44,7 +68,7 @@ public class ContainerExecutionRepository extends AbstractHibernateDAO<Container
             final List<ContainerExecutionHistory> historyList = execution.getHistory();
             if (historyList != null && !historyList.isEmpty()) {
                 for (final ContainerExecutionHistory history : historyList) {
-                    if (history.equals(newHistory)) {
+                    if (history.getTimeNano() != null && history.getTimeNano().equals(newHistory.getTimeNano())) {
                         if (log.isDebugEnabled()) {
                             log.debug("Event has already been recorded in the history.");
                         }
