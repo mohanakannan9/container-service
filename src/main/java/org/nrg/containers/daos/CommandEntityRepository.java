@@ -6,6 +6,7 @@ import org.hibernate.Hibernate;
 import org.hibernate.NonUniqueObjectException;
 import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.CommandWrapperEntity;
+import org.nrg.containers.model.DockerCommandEntity;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +38,12 @@ public class CommandEntityRepository extends AbstractHibernateDAO<CommandEntity>
                 Hibernate.initialize(commandWrapperEntity.getDerivedInputs());
                 Hibernate.initialize(commandWrapperEntity.getOutputHandlers());
             }
+        }
+
+        switch (commandEntity.getType()) {
+            case DOCKER:
+                Hibernate.initialize(((DockerCommandEntity) commandEntity).getPorts());
+                break;
         }
     }
 
