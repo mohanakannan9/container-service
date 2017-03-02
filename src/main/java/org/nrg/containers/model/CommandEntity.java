@@ -260,7 +260,7 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         this.inputs.add(input);
     }
 
-    @ElementCollection
+    @OneToMany(mappedBy = "commandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     @ApiModelProperty("A list of outputs.")
     public List<CommandOutputEntity> getOutputs() {
         return outputs;
@@ -270,12 +270,16 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         this.outputs = outputs == null ?
                 Lists.<CommandOutputEntity>newArrayList() :
                 outputs;
+        for (final CommandOutputEntity output : this.outputs) {
+            output.setCommandEntity(this);
+        }
     }
 
     public void addOutput(final CommandOutputEntity output) {
         if (output == null) {
             return;
         }
+        output.setCommandEntity(this);
 
         if (this.outputs == null) {
             this.outputs = Lists.newArrayList();

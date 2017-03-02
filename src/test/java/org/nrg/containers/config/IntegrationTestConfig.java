@@ -11,6 +11,7 @@ import org.nrg.containers.events.DockerContainerEventListener;
 import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.CommandInputEntity;
 import org.nrg.containers.model.CommandMountEntity;
+import org.nrg.containers.model.CommandOutputEntity;
 import org.nrg.containers.model.CommandWrapperInputEntity;
 import org.nrg.containers.model.CommandWrapperOutputEntity;
 import org.nrg.containers.model.ContainerExecution;
@@ -163,6 +164,7 @@ public class IntegrationTestConfig {
                 CommandEntity.class,
                 DockerCommandEntity.class,
                 CommandInputEntity.class,
+                CommandOutputEntity.class,
                 CommandMountEntity.class,
                 CommandWrapperEntity.class,
                 CommandWrapperInputEntity.class,
