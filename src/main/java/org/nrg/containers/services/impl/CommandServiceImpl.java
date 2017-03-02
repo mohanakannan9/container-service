@@ -106,6 +106,23 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
         commandEntityService.delete(id);
     }
 
+    @Override
+    @Nonnull
+    public List<Command> save(final List<Command> commands) {
+        final List<Command> created = Lists.newArrayList();
+        if (!(commands == null || commands.isEmpty())) {
+            for (final Command command : commands) {
+                try {
+                    created.add(create(command));
+                } catch (CommandValidationException e) {
+                    // TODO: should I "update" instead of erroring out if command already exists?
+                    log.error("Could not save command " + command.name(), e);
+                }
+            }
+        }
+        return created;
+    }
+
     @Nonnull
     private Command toPojo(@Nonnull final CommandEntity commandEntity) {
         return Command.create(commandEntity);
@@ -134,23 +151,6 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     @Nonnull
     private CommandEntity fromPojo(@Nonnull final Command command, @Nullable final CommandEntity template) throws CommandValidationException {
         return CommandEntity.fromPojo(command, template);
-    }
-
-    @Override
-    @Nonnull
-    public List<Command> save(final List<Command> commands) {
-        final List<Command> created = Lists.newArrayList();
-        if (!(commands == null || commands.isEmpty())) {
-            for (final Command command : commands) {
-                try {
-                    created.add(create(command));
-                } catch (CommandValidationException e) {
-                    // TODO: should I "update" instead of erroring out if command already exists?
-                    log.error("Could not save command " + command.name(), e);
-                }
-            }
-        }
-        return created;
     }
 
 }
