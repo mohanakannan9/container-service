@@ -18,6 +18,7 @@ import org.nrg.containers.model.CommandWrapperInputEntity;
 import org.nrg.containers.model.CommandWrapperOutputEntity;
 import org.nrg.containers.model.CommandWrapperEntity;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
@@ -166,6 +167,7 @@ public abstract class Command {
                 .xnatCommandWrappers(Lists.<CommandWrapper>newArrayList());
     }
 
+    @Nonnull
     public List<String> validate() {
         final List<String> errors = Lists.newArrayList();
         final List<String> commandTypeNames = CommandType.names();
@@ -441,6 +443,7 @@ public abstract class Command {
                     .required(false);
         }
 
+        @Nonnull
         List<String> validate() {
             final List<String> errors = Lists.newArrayList();
             if (StringUtils.isBlank(name())) {
@@ -498,6 +501,7 @@ public abstract class Command {
                     commandOutputEntity.getPath(), commandOutputEntity.getGlob());
         }
 
+        @Nonnull
         List<String> validate() {
             final List<String> errors = Lists.newArrayList();
             if (StringUtils.isBlank(name())) {
@@ -594,6 +598,7 @@ public abstract class Command {
                     external, derived, outputs);
         }
 
+        @Nonnull
         List<String> validate() {
             final List<String> errors = Lists.newArrayList();
             if (StringUtils.isBlank(name())) {
@@ -702,6 +707,7 @@ public abstract class Command {
                     .required(false);
         }
 
+        @Nonnull
         List<String> validateExternal() {
             final List<String> errors = Lists.newArrayList();
             if (StringUtils.isBlank(name())) {
@@ -716,6 +722,7 @@ public abstract class Command {
             return errors;
         }
 
+        @Nonnull
         List<String> validateDerived() {
             // Derived inputs have all the same constraints as external inputs, plus more
             final List<String> errors = validateExternal();
@@ -776,6 +783,7 @@ public abstract class Command {
             return create(wrapperOutput.getCommandOutputName(), wrapperOutput.getXnatInputName(), wrapperOutput.getType().getName(), wrapperOutput.getLabel());
         }
 
+        @Nonnull
         List<String> validate() {
             final List<String> errors = Lists.newArrayList();
 
