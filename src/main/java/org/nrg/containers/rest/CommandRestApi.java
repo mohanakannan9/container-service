@@ -53,9 +53,13 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 @Api("Command API for XNAT Container service")
 public class CommandRestApi extends AbstractXapiRestController {
     private static final Logger log = LoggerFactory.getLogger(CommandRestApi.class);
+
     private static final String JSON = MediaType.APPLICATION_JSON_UTF8_VALUE;
     private static final String TEXT = MediaType.TEXT_PLAIN_VALUE;
     private static final String FORM = MediaType.APPLICATION_FORM_URLENCODED_VALUE;
+
+    private static final String ID_REGEX = "\\d+";
+    private static final String NAME_REGEX = "\\d*[^\\d]+\\d*";
 
     private CommandService commandService;
     private ContainerLaunchService containerLaunchService;
@@ -224,7 +228,7 @@ public class CommandRestApi extends AbstractXapiRestController {
         return executed.getContainerId();
     }
 
-    private ContainerExecution launchCommand(final @PathVariable long id, final @RequestParam Map<String, String> allRequestParams)
+    private ContainerExecution launchCommand(final long id, final Map<String, String> allRequestParams)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, BadRequestException {
         final UserI userI = XDAT.getUserDetails();
         try {
@@ -232,6 +236,100 @@ public class CommandRestApi extends AbstractXapiRestController {
             if (log.isInfoEnabled()) {
                 log.info(String.format("Launched command id %d. Produced container %d.", id,
                         containerExecution != null ? containerExecution.getId() : null));
+                if (log.isDebugEnabled()) {
+                    log.debug(containerExecution != null ? containerExecution.toString() : "Container execution object is null.");
+                }
+            }
+            return containerExecution;
+        } catch (CommandInputResolutionException e) {
+            throw new BadRequestException("Must provide value for variable " + e.getInput().name() + ".", e);
+        }
+    }
+
+    /*
+    LAUNCH COMMAND + WRAPPER BY ID
+     */
+    @RequestMapping(value = {"/{commandId}/wrappers/{wrapperId:" + ID_REGEX + "}/launch"}, method = POST)
+    @ApiIgnore // Swagger UI does not correctly show this API endpoint
+    @ResponseBody
+    public String launchCommandWQueryParams(final @PathVariable long commandId,
+                                            final @PathVariable long wrapperId,
+                                            final @RequestParam Map<String, String> allRequestParams)
+            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException {
+        log.info("Launch requested for command {}, wrapper {}", commandId, wrapperId);
+        final ContainerExecution executed = launchCommandAndWrapper(commandId, wrapperId, allRequestParams);
+        return executed.getContainerId();
+    }
+
+    @RequestMapping(value = {"/{commandId}/wrappers/{wrapperId:" + ID_REGEX + "}/launch"}, method = POST, consumes = {JSON})
+    @ApiOperation(value = "Resolve a command from the variable values in the request body, and launch it")
+    @ResponseBody
+    public String launchCommandWJsonBody(final @PathVariable long commandId,
+                                         final @PathVariable long wrapperId,
+                                         final @RequestBody Map<String, String> allRequestParams)
+            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException {
+        log.info("Launch requested for command {}, wrapper {}", commandId, wrapperId);
+        final ContainerExecution executed = launchCommandAndWrapper(commandId, wrapperId, allRequestParams);
+        return executed.getContainerId();
+    }
+
+    private ContainerExecution launchCommandAndWrapper(final long commandId,
+                                                       final long wrapperId,
+                                                       final Map<String, String> allRequestParams)
+            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, BadRequestException {
+        final UserI userI = XDAT.getUserDetails();
+        try {
+            final ContainerExecution containerExecution = containerLaunchService.resolveAndLaunchCommand(wrapperId, commandId, allRequestParams, userI);
+            if (log.isInfoEnabled()) {
+                log.info("Launched command {}, wrapper {}. Produced container {}.", commandId, wrapperId,
+                        containerExecution != null ? containerExecution.getId() : null);
+                if (log.isDebugEnabled()) {
+                    log.debug(containerExecution != null ? containerExecution.toString() : "Container execution object is null.");
+                }
+            }
+            return containerExecution;
+        } catch (CommandInputResolutionException e) {
+            throw new BadRequestException("Must provide value for variable " + e.getInput().name() + ".", e);
+        }
+    }
+
+    /*
+    LAUNCH COMMAND + WRAPPER BY NAME
+     */
+    @RequestMapping(value = {"/{commandId}/wrappers/{wrapperName:" + NAME_REGEX + "}/launch"}, method = POST)
+    @ApiIgnore // Swagger UI does not correctly show this API endpoint
+    @ResponseBody
+    public String launchCommandWQueryParams(final @PathVariable long commandId,
+                                            final @PathVariable String wrapperName,
+                                            final @RequestParam Map<String, String> allRequestParams)
+            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException {
+        log.info("Launch requested for command {}, wrapper {}", commandId, wrapperName);
+        final ContainerExecution executed = launchCommandAndWrapper(commandId, wrapperName, allRequestParams);
+        return executed.getContainerId();
+    }
+
+    @RequestMapping(value = {"/{commandId}/wrappers/{wrapperName:" + NAME_REGEX + "}/launch"}, method = POST, consumes = {JSON})
+    @ApiOperation(value = "Resolve a command from the variable values in the request body, and launch it")
+    @ResponseBody
+    public String launchCommandWJsonBody(final @PathVariable long commandId,
+                                         final @PathVariable String wrapperName,
+                                         final @RequestBody Map<String, String> allRequestParams)
+            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException {
+        log.info("Launch requested for command {}, wrapper {}", commandId, wrapperName);
+        final ContainerExecution executed = launchCommandAndWrapper(commandId, wrapperName, allRequestParams);
+        return executed.getContainerId();
+    }
+
+    private ContainerExecution launchCommandAndWrapper(final long commandId,
+                                                       final String wrapperName,
+                                                       final Map<String, String> allRequestParams)
+            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, BadRequestException {
+        final UserI userI = XDAT.getUserDetails();
+        try {
+            final ContainerExecution containerExecution = containerLaunchService.resolveAndLaunchCommand(wrapperName, commandId, allRequestParams, userI);
+            if (log.isInfoEnabled()) {
+                log.info("Launched command {}, wrapper {}. Produced container {}.", commandId, wrapperName,
+                        containerExecution != null ? containerExecution.getId() : null);
                 if (log.isDebugEnabled()) {
                     log.debug(containerExecution != null ? containerExecution.toString() : "Container execution object is null.");
                 }
