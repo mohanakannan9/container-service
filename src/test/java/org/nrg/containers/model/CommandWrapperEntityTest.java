@@ -181,6 +181,26 @@ public class CommandWrapperEntityTest {
     }
 
     @Test
+    public void testDeleteCommandWithWrapper() throws Exception {
+
+        final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
+
+        final CommandEntity created = commandEntityService.create(commandEntity);
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        commandEntityService.delete(created);
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        assertNull(commandEntityService.retrieve(created.getId()));
+    }
+
+    @Test
     public void testCreateEcatHeaderDump() throws Exception {
         // A User was attempting to create the command in this resource.
         // Spring didn't tell us why. See CS-70.
