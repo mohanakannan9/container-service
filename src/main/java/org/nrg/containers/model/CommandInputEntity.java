@@ -1,22 +1,32 @@
 package org.nrg.containers.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.base.MoreObjects;
 import io.swagger.annotations.ApiModelProperty;
+import org.hibernate.envers.Audited;
 import org.nrg.containers.model.auto.Command;
 
-import javax.persistence.Embeddable;
+import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.ManyToOne;
 import javax.persistence.Transient;
 import java.io.Serializable;
 import java.util.Objects;
 
-@Embeddable
+@Entity
+@Audited
 public class CommandInputEntity implements Serializable {
     public static Type DEFAULT_TYPE = Type.STRING;
+
+    private long id;
+    @JsonIgnore private CommandEntity commandEntity;
     private String name;
     private String description;
     private Type type = DEFAULT_TYPE;
@@ -58,6 +68,25 @@ public class CommandInputEntity implements Serializable {
         }
 
         return commandInputEntity;
+    }
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    public long getId() {
+        return id;
+    }
+
+    public void setId(final long id) {
+        this.id = id;
+    }
+
+    @ManyToOne
+    public CommandEntity getCommandEntity() {
+        return commandEntity;
+    }
+
+    public void setCommandEntity(final CommandEntity commandEntity) {
+        this.commandEntity = commandEntity;
     }
 
     @ApiModelProperty(value = "Name of the command input", required = true)
@@ -178,7 +207,8 @@ public class CommandInputEntity implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final CommandInputEntity that = (CommandInputEntity) o;
-        return Objects.equals(this.name, that.name) &&
+        return Objects.equals(this.id, that.id) &&
+                Objects.equals(this.name, that.name) &&
                 Objects.equals(this.description, that.description) &&
                 Objects.equals(this.type, that.type) &&
                 Objects.equals(this.required, that.required) &&
@@ -194,13 +224,14 @@ public class CommandInputEntity implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, description, type, required, matcher,
+        return Objects.hash(id, name, description, type, required, matcher,
                 defaultValue, rawReplacementKey, commandLineFlag, commandLineSeparator, trueValue, falseValue, value);
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("id", id)
                 .add("name", name)
                 .add("description", description)
                 .add("type", type)

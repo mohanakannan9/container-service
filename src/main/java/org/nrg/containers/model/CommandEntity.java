@@ -227,7 +227,7 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
                 environmentVariables;
     }
 
-    @ElementCollection
+    @OneToMany(mappedBy = "commandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     @ApiModelProperty("A list of inputs. " +
             "When the Command is launched, these inputs receive values; " +
             "those values will be used to fill in any template strings in the Command's run-template, mounts, or environment variables.")
@@ -239,12 +239,16 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         this.inputs = inputs == null ?
                 Lists.<CommandInputEntity>newArrayList() :
                 inputs;
+        for (final CommandInputEntity input : this.inputs) {
+            input.setCommandEntity(this);
+        }
     }
 
     public void addInput(final CommandInputEntity input) {
         if (input == null) {
             return;
         }
+        input.setCommandEntity(this);
 
         if (this.inputs == null) {
             this.inputs = Lists.newArrayList();
