@@ -35,6 +35,7 @@ import static org.hamcrest.Matchers.isIn;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
@@ -172,6 +173,9 @@ public class DockerControlApiTest {
         final String privateImageName = "xnattest/private";
         exception.expect(imageNotFoundException(privateImageName));
         controlApi.pullImage(privateImageName, DOCKER_HUB);
+
+        final DockerImage test = controlApi.pullImage(privateImageName, DOCKER_HUB, "xnattest", "windmill susanna portico");
+        assertNotNull(test);
     }
 
     @Test
