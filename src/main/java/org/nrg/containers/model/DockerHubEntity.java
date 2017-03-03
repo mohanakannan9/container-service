@@ -15,8 +15,6 @@ public class DockerHubEntity extends AbstractHibernateEntity {
 
     private String name;
     private String url;
-    private String auth;
-    private String email;
 
     public static DockerHubEntity fromPojo(final DockerHub pojo) {
         return fromPojoWithTemplate(pojo, new DockerHubEntity());
@@ -29,26 +27,11 @@ public class DockerHubEntity extends AbstractHibernateEntity {
         template.setId(pojo.id());
         template.name = pojo.name();
         template.url = pojo.url();
-        template.email = pojo.email();
-
-        final String usernameAndPassword = pojo.username() + ":" + pojo.password();
-        final String auth = Base64.encodeBase64String(usernameAndPassword.getBytes());
-        template.auth = auth == null ? "" : auth;
-
         return template;
     }
 
     public DockerHub toPojo(final long defaultId) {
-        String username = "";
-        String password = "";
-        if (StringUtils.isNotBlank(this.auth)) {
-            final String[] auth = new String(Base64.decodeBase64(this.auth)).split(":");
-            if (auth.length == 2) {
-                username = auth[0];
-                password = auth[1];
-            }
-        }
-        return DockerHub.create(this.getId(), this.name, this.url, username, password, this.email, this.getId() == defaultId);
+        return DockerHub.create(this.getId(), this.name, this.url, this.getId() == defaultId);
     }
 
     @Column(unique = true)
@@ -68,22 +51,6 @@ public class DockerHubEntity extends AbstractHibernateEntity {
         this.url = url;
     }
 
-    public String getAuth() {
-        return auth;
-    }
-
-    public void setAuth(final String auth) {
-        this.auth = auth;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(final String email) {
-        this.email = email;
-    }
-
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
@@ -91,14 +58,12 @@ public class DockerHubEntity extends AbstractHibernateEntity {
         if (!super.equals(o)) return false;
         final DockerHubEntity that = (DockerHubEntity) o;
         return Objects.equals(this.name, that.name) &&
-                Objects.equals(this.url, that.url) &&
-                Objects.equals(this.auth, that.auth) &&
-                Objects.equals(this.email, that.email);
+                Objects.equals(this.url, that.url);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), name, url, auth, email);
+        return Objects.hash(name, url);
     }
 
     @Override
@@ -106,7 +71,6 @@ public class DockerHubEntity extends AbstractHibernateEntity {
         return MoreObjects.toStringHelper(this)
                 .add("name", name)
                 .add("url", url)
-                // .add("email", email)
                 .toString();
     }
 }

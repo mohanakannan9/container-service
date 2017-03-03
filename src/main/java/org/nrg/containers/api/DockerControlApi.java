@@ -1,6 +1,7 @@
 package org.nrg.containers.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -47,6 +48,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.nio.file.Paths;
 import java.util.Date;
 import java.util.List;
@@ -74,6 +77,8 @@ public class DockerControlApi implements ContainerControlApi {
         this.eventService = eventService;
     }
 
+    @Override
+    @Nonnull
     public DockerServer getServer() throws NoServerPrefException {
         if (containerServerPref == null || containerServerPref.getHost() == null) {
             throw new NoServerPrefException("No container server URI defined in preferences.");
@@ -81,16 +86,21 @@ public class DockerControlApi implements ContainerControlApi {
         return containerServerPref.toDto();
     }
 
+    @Override
     public void setServer(final String host) throws InvalidPreferenceName {
         setServer(host, null);
     }
 
+    @Override
+    @Nonnull
     public DockerServer setServer(final String host, final String certPath) throws InvalidPreferenceName {
         containerServerPref.setHost(host);
         containerServerPref.setCertPath(certPath);
         return containerServerPref.toDto();
     }
 
+    @Override
+    @Nonnull
     public DockerServer setServer(final DockerServer serverBean) throws InvalidPreferenceName {
         containerServerPref.setFromDto(serverBean);
         return serverBean;
@@ -119,23 +129,33 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     @Override
-    public String pingHub(final DockerHub hub) throws DockerServerException, NoServerPrefException {
+    @Nonnull
+    public String pingHub(final @Nonnull DockerHub hub) throws DockerServerException, NoServerPrefException {
+        return pingHub(hub, null, null);
+    }
+
+    @Override
+    @Nonnull
+    public String pingHub(final @Nonnull DockerHub hub, final @Nullable String username, final @Nullable String password)
+            throws DockerServerException, NoServerPrefException {
         try (final DockerClient client = getClient()) {
-            client.auth(registryAuth(hub));
-        }
-        catch (Exception e) {
+            client.auth(registryAuth(hub, username, password));
+        } catch (Exception e) {
             log.error(e.getMessage());
             throw new DockerServerException(e);
         }
         return "OK";
     }
 
-    private RegistryAuth registryAuth(final DockerHub hub) {
+    @Nullable
+    private RegistryAuth registryAuth(final @Nullable DockerHub hub, final @Nullable String username, final @Nullable String password) {
+        if (hub == null) {
+            return null;
+        }
         return RegistryAuth.builder()
-                .email(hub.email())
-                .username(hub.username())
-                .password(hub.password())
                 .serverAddress(hub.url())
+                .username(username == null ? "" : username)
+                .password(password == null ? "" : password)
                 .build();
     }
 
@@ -145,6 +165,7 @@ public class DockerControlApi implements ContainerControlApi {
      * @return Image objects stored on docker server
      **/
     @Override
+    @Nonnull
     public List<DockerImage> getAllImages() throws NoServerPrefException, DockerServerException {
         return getImages(null);
     }
@@ -155,7 +176,8 @@ public class DockerControlApi implements ContainerControlApi {
      * @param params Map of query parameters (name = value)
      * @return Image objects stored on docker server meeting the query parameters
      **/
-    public List<DockerImage> getImages(final Map<String, String> params)
+    @Nonnull
+    private List<DockerImage> getImages(final Map<String, String> params)
             throws NoServerPrefException, DockerServerException {
         return DockerImageToNrgImage(_getImages(params));
     }
@@ -190,18 +212,26 @@ public class DockerControlApi implements ContainerControlApi {
      * @return Image stored on docker server with the given name
      **/
     @Override
+    @Nonnull
     public DockerImage getImageById(final String imageId)
         throws NotFoundException, DockerServerException, NoServerPrefException {
-        final DockerImage image = DockerImageToNrgImage(_getImageById(imageId));
+        try (final DockerClient client = getClient()) {
+            return getImageById(imageId, client);
+        }
+    }
+
+    private DockerImage getImageById(final String imageId, final DockerClient client)
+            throws NoServerPrefException, DockerServerException, NotFoundException {
+        final DockerImage image = DockerImageToNrgImage(_getImageById(imageId, client));
         if (image != null) {
             return image;
         }
         throw new NotFoundException(String.format("Could not find image %s", imageId));
     }
 
-    private com.spotify.docker.client.messages.ImageInfo _getImageById(final String imageId)
+    private com.spotify.docker.client.messages.ImageInfo _getImageById(final String imageId, final DockerClient client)
         throws DockerServerException, NoServerPrefException {
-        try (final DockerClient client = getClient()) {
+        try {
             return client.inspectImage(imageId);
         } catch (DockerException | InterruptedException e) {
             throw new DockerServerException(e);
@@ -379,80 +409,44 @@ public class DockerControlApi implements ContainerControlApi {
         }
     }
 
-    /**
-     * Pull image from default hub onto docker server
-     *
-     **/
     @Override
-    public void pullImage(String name) throws NoServerPrefException, DockerServerException {
-        try (final DockerClient client = getClient()) {
-            client.pull(name);
-        } catch (DockerException | InterruptedException e) {
-            log.error(e.getMessage());
-            throw new DockerServerException(e);
-        }
-    }
-
-    /**
-     * Pull image from specified hub onto docker server
-     *
-     **/
-    @Override
-    public void pullImage(final String name, final DockerHub hub) throws NoServerPrefException, DockerServerException {
-        if (hub == null) {
-            pullImage(name);
-        } else {
-            try (final DockerClient client = getClient()) {
-                client.pull(name, registryAuth(hub));
-            } catch (DockerException | InterruptedException e) {
-                log.error(e.getMessage());
-                throw new DockerServerException(e);
-            }
-        }
+    @Nullable
+    public DockerImage pullImage(final String name) throws NoServerPrefException, DockerServerException {
+        return pullImage(name, null);
     }
 
     @Override
-    public DockerImage pullAndReturnImage(final String name) throws NoServerPrefException, DockerServerException {
-        try (final DockerClient client = getClient()) {
-            final LoadProgressHandler handler = new LoadProgressHandler();
-            client.pull(name, handler);
-            try {
-                return getImageById(name);
-            } catch (NotFoundException e) {
-                final String m = String.format("Image \"%s\" was not found", name);
-                log.error(m);
-                // throw new DockerServerException(m);
-            }
-        } catch (DockerException | InterruptedException e) {
-            log.error(e.getMessage());
-            throw new DockerServerException(e);
-        }
-        return null;
-    }
-
-    @Override
-    public DockerImage pullAndReturnImage(final String name, final DockerHub hub)
+    @Nullable
+    public DockerImage pullImage(final String name, final @Nullable DockerHub hub)
             throws NoServerPrefException, DockerServerException {
-        if (hub == null) {
-            return pullAndReturnImage(name);
-        } else {
-            try (final DockerClient client = getClient()) {
-                final LoadProgressHandler handler = new LoadProgressHandler();
-                client.pull(name, registryAuth(hub), handler);
-                // final String imageId = handler.getImageId();
-                try {
-                    return getImageById(name);
-                } catch (NotFoundException e) {
-                    final String m = String.format("Image \"%s\" was not found", name);
-                    log.error(m);
-                    // throw new DockerServerException(m);
-                }
-            } catch (DockerException | InterruptedException e) {
-                log.error(e.getMessage());
-                throw new DockerServerException(e);
-            }
+        return pullImage(name, hub, null, null);
+    }
+
+    @Override
+    @Nullable
+    public DockerImage pullImage(final String name, final @Nullable DockerHub hub, final @Nullable String username, final @Nullable String password) throws NoServerPrefException, DockerServerException {
+        try (final DockerClient client = getClient()) {
+            _pullImage(name, registryAuth(hub, username, password), client);
+            return getImageById(name, client);
+        } catch (NotFoundException e) {
+            final String m = String.format("Image \"%s\" was not found", name);
+            log.error(m);
+            // throw new DockerServerException(m);
         }
         return null;
+    }
+
+    private void _pullImage(final @Nonnull String name, final @Nullable RegistryAuth registryAuth, final @Nonnull DockerClient client) throws DockerServerException {
+        try {
+            if (registryAuth == null) {
+                client.pull(name);
+            } else {
+                client.pull(name, registryAuth);
+            }
+        }  catch (DockerException | InterruptedException e) {
+            log.error(e.getMessage());
+            throw new DockerServerException(e);
+        }
     }
 
     @Override
@@ -562,21 +556,14 @@ public class DockerControlApi implements ContainerControlApi {
         }
     }
 
-    /**
-     * Create a client connection to a Docker server using default image repository configuration
-     *
-     * @return DockerClient object using default authConfig
-     **/
-    public DockerClient getClient() throws NoServerPrefException {
+    @VisibleForTesting
+    @Nonnull
+    DockerClient getClient() throws NoServerPrefException {
         return getClient(getServer());
     }
 
-    /**
-         * Create a client connection to a Docker server using default image repository configuration
-         *
-         * @return DockerClient object using default authConfig
-         **/
-    public DockerClient getClient(final DockerServer server) {
+    @Nonnull
+    private DockerClient getClient(final @Nonnull DockerServer server) {
 
         DefaultDockerClient.Builder clientBuilder =
             DefaultDockerClient.builder()
@@ -593,11 +580,6 @@ public class DockerControlApi implements ContainerControlApi {
         }
 
         return clientBuilder.build();
-    }
-
-    public DockerClient getClientFromEnv() throws DockerCertificateException {
-
-        return DefaultDockerClient.fromEnv().build();
     }
 
     @Override
@@ -812,41 +794,4 @@ public class DockerControlApi implements ContainerControlApi {
                 }
             };
 
-    private static class LoadProgressHandler implements ProgressHandler {
-
-        // The length of the image hash
-        private static final int EXPECTED_CHARACTER_NUM1 = 64;
-        // The length of the image digest
-        private static final int EXPECTED_CHARACTER_NUM2 = 71;
-
-        private final ProgressHandler delegate;
-
-        private String imageId;
-
-        private LoadProgressHandler() {
-            this.delegate = new LoggingPullHandler("image stream");
-        }
-
-        private LoadProgressHandler(ProgressHandler delegate) {
-            this.delegate = delegate;
-        }
-
-        private String getImageId() {
-            Preconditions.checkState(imageId != null,
-                    "Could not acquire image ID or digest following load");
-            return imageId;
-        }
-
-        @Override
-        public void progress(ProgressMessage message) throws DockerException {
-            delegate.progress(message);
-            final String status = message.status();
-            if (status != null &&
-                    (status.length() == EXPECTED_CHARACTER_NUM1 ||
-                            status.length() == EXPECTED_CHARACTER_NUM2)) {
-                imageId = message.status();
-            }
-        }
-
-    }
 }

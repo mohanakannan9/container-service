@@ -99,21 +99,38 @@ public class DockerServiceImpl implements DockerService {
     }
 
     @Override
-    public String pingHub(final Long hubId) throws DockerServerException, NoServerPrefException, NotFoundException {
+    public String pingHub(final long hubId) throws DockerServerException, NoServerPrefException, NotFoundException {
         final DockerHub hub = dockerHubService.getHub(hubId);
         return pingHub(hub);
+    }
+
+    @Override
+    public String pingHub(final long hubId, final String username, final String password)
+            throws DockerServerException, NoServerPrefException, NotFoundException {
+        final DockerHub hub = dockerHubService.getHub(hubId);
+        return pingHub(hub, username, password);
     }
 
     @Override
     public String pingHub(final String hubName)
             throws DockerServerException, NoServerPrefException, NotUniqueException, NotFoundException {
         final DockerHub hub = dockerHubService.getHub(hubName);
-
         return pingHub(hub);
     }
 
+    @Override
+    public String pingHub(final String hubName, final String username, final String password)
+            throws DockerServerException, NoServerPrefException, NotUniqueException, NotFoundException {
+        final DockerHub hub = dockerHubService.getHub(hubName);
+        return pingHub(hub, username, password);
+    }
+
     private String pingHub(final DockerHub hub) throws DockerServerException, NoServerPrefException {
-        return controlApi.pingHub(hub);
+        return pingHub(hub, null, null);
+    }
+
+    private String pingHub(final DockerHub hub, final String username, final String password) throws DockerServerException, NoServerPrefException {
+        return controlApi.pingHub(hub, username, password);
     }
 
     @Override
@@ -123,21 +140,40 @@ public class DockerServiceImpl implements DockerService {
     }
 
     @Override
+    public DockerImage pullFromHub(final long hubId, final String imageName, final boolean saveCommands, final String username, final String password)
+            throws DockerServerException, NoServerPrefException, NotFoundException {
+        return pullFromHub(dockerHubService.getHub(hubId), imageName, saveCommands, username, password);
+    }
+
+    @Override
     public DockerImage pullFromHub(final String hubName, final String imageName, final boolean saveCommands)
             throws DockerServerException, NoServerPrefException, NotFoundException, NotUniqueException {
         return pullFromHub(dockerHubService.getHub(hubName), imageName, saveCommands);
     }
 
     @Override
+    public DockerImage pullFromHub(final String hubName, final String imageName, final boolean saveCommands, final String username, final String password)
+            throws DockerServerException, NoServerPrefException, NotFoundException, NotUniqueException {
+        return pullFromHub(dockerHubService.getHub(hubName), imageName, saveCommands, username, password);
+    }
+
+    @Override
     public DockerImage pullFromHub(final String imageName, final boolean saveCommands)
             throws DockerServerException, NoServerPrefException, NotFoundException {
-
         return pullFromHub(dockerHubService.getDefault(), imageName, saveCommands);
     }
 
     private DockerImage pullFromHub(final DockerHub hub, final String imageName, final boolean saveCommands)
             throws NoServerPrefException, DockerServerException {
-        final DockerImage dockerImage = controlApi.pullAndReturnImage(imageName, hub);
+        return pullFromHub(hub, imageName, saveCommands, null, null);
+    }
+    private DockerImage pullFromHub(final DockerHub hub,
+                                    final String imageName,
+                                    final boolean saveCommands,
+                                    final String username,
+                                    final String password)
+            throws NoServerPrefException, DockerServerException {
+        final DockerImage dockerImage = controlApi.pullImage(imageName, hub, username, password);
         if (saveCommands) {
             saveFromImageLabels(imageName, dockerImage);
         }

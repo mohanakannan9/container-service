@@ -6,7 +6,8 @@ import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.After;
+import org.hamcrest.CustomTypeSafeMatcher;
+import org.hamcrest.Matcher;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -34,6 +35,7 @@ import static org.hamcrest.Matchers.isIn;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
@@ -52,15 +54,12 @@ public class DockerControlApiTest {
     // private static final String KELSEYM_PYDICOM = "kelseym/pydicom:latest";
     private static final String BUSYBOX_ID = "sha256:47bcc53f74dc94b1920f0b34f6036096526296767650f223433fe65c35f149eb";
     private static final String BUSYBOX_NAME = "busybox:1.24.2-uclibc";
+    private static final DockerHub DOCKER_HUB = DockerHub.DEFAULT;
 
-    @Autowired
-    private DockerControlApi controlApi;
+    @Autowired private DockerControlApi controlApi;
+    @Autowired private NrgPreferenceService mockPrefsService;
 
-    @Autowired
-    private NrgPreferenceService mockPrefsService;
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
+    @Rule public ExpectedException exception = ExpectedException.none();
 
     @Before
     public void setup() throws Exception {
@@ -161,12 +160,22 @@ public class DockerControlApiTest {
 
     @Test
     public void testPingHub() throws Exception {
-        assertEquals("OK", controlApi.pingHub(DockerHub.DEFAULT));
+        assertEquals("OK", controlApi.pingHub(DOCKER_HUB));
     }
 
     @Test
     public void testPullImage() throws Exception {
-        controlApi.pullImage(BUSYBOX_LATEST);
+        controlApi.pullImage(BUSYBOX_LATEST, DOCKER_HUB);
+    }
+
+    @Test
+    public void testPullPrivateImage() throws Exception {
+        final String privateImageName = "xnattest/private";
+        exception.expect(imageNotFoundException(privateImageName));
+        controlApi.pullImage(privateImageName, DOCKER_HUB);
+
+        final DockerImage test = controlApi.pullImage(privateImageName, DOCKER_HUB, "xnattest", "windmill susanna portico");
+        assertNotNull(test);
     }
 
     @Test
@@ -209,6 +218,16 @@ public class DockerControlApiTest {
         // TODO assert more things about the events
     }
 
+    private Matcher<DockerServerException> imageNotFoundException(final String name) {
+        final String exceptionMessage = "Image not found: " + name;
+        final String description = "for image name " + name;
+        return new CustomTypeSafeMatcher<DockerServerException>(description) {
+            @Override
+            protected boolean matchesSafely(final DockerServerException ex) {
+                return ex.getMessage().contains(exceptionMessage);
+            }
+        };
+    }
 }
 
 

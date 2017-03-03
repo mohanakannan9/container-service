@@ -25,14 +25,15 @@ public interface ContainerControlApi {
     boolean canConnect();
 
     String pingHub(DockerHub hub) throws DockerServerException, NoServerPrefException;
+    String pingHub(DockerHub hub, String username, String password) throws DockerServerException, NoServerPrefException;
 
     List<DockerImage> getAllImages() throws NoServerPrefException, DockerServerException;
     DockerImage getImageById(final String imageId) throws NotFoundException, DockerServerException, NoServerPrefException;
     void deleteImageById(String id, Boolean force) throws NoServerPrefException, DockerServerException;
-    void pullImage(String name) throws NoServerPrefException, DockerServerException;
-    void pullImage(String name, DockerHub hub) throws NoServerPrefException, DockerServerException;
-    DockerImage pullAndReturnImage(String name) throws NoServerPrefException, DockerServerException;
-    DockerImage pullAndReturnImage(String name, DockerHub hub) throws NoServerPrefException, DockerServerException;
+
+    DockerImage pullImage(String name) throws NoServerPrefException, DockerServerException;
+    DockerImage pullImage(String name, DockerHub hub) throws NoServerPrefException, DockerServerException;
+    DockerImage pullImage(String name, DockerHub hub, String username, String password) throws NoServerPrefException, DockerServerException;
 
     String launchImage(final ResolvedDockerCommand dockerCommand) throws NoServerPrefException, DockerServerException;
 //    String launchImage(final String imageName, final List<String> runCommand, final List <String> volumes) throws NoServerPrefException, DockerServerException;
