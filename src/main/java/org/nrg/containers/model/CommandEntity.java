@@ -301,28 +301,14 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
         final CommandEntity that = (CommandEntity) o;
         return Objects.equals(this.name, that.name) &&
-                Objects.equals(this.label, that.label) &&
-                Objects.equals(this.description, that.description) &&
-                Objects.equals(this.version, that.version) &&
-                Objects.equals(this.schemaVersion, that.schemaVersion) &&
-                Objects.equals(this.infoUrl, that.infoUrl) &&
-                Objects.equals(this.image, that.image) &&
-                Objects.equals(this.workingDirectory, that.workingDirectory) &&
-                Objects.equals(this.commandLine, that.commandLine) &&
-                Objects.equals(this.mounts, that.mounts) &&
-                Objects.equals(this.environmentVariables, that.environmentVariables) &&
-                Objects.equals(this.inputs, that.inputs) &&
-                Objects.equals(this.outputs, that.outputs) &&
-                Objects.equals(this.commandWrapperEntities, that.commandWrapperEntities);
+                Objects.equals(this.version, that.version);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), name, label, description, version, schemaVersion, infoUrl, image,
-                workingDirectory, commandLine, mounts, environmentVariables, inputs, outputs, commandWrapperEntities);
+        return Objects.hash(name, version);
     }
 
     @Override

@@ -7,8 +7,10 @@ import org.junit.runner.RunWith;
 import org.nrg.containers.config.CommandTestConfig;
 import org.nrg.containers.services.CommandEntityService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.transaction.TestTransaction;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
@@ -155,12 +157,16 @@ public class CommandWrapperEntityTest {
     }
 
     @Test
+    @DirtiesContext
     public void testPersistCommandWithWrapper() throws Exception {
 
         final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
 
         commandEntityService.create(commandEntity);
-        commandEntityService.flush();
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
 
         final CommandEntity retrievedCommandEntity = commandEntityService.retrieve(commandEntity.getId());
 

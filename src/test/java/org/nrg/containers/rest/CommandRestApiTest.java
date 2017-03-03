@@ -36,8 +36,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.transaction.TestTransaction;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -157,6 +159,7 @@ public class CommandRestApiTest {
     }
 
     @Test
+    @DirtiesContext
     public void testGetAll() throws Exception {
         final String path = "/commands";
 
@@ -165,7 +168,9 @@ public class CommandRestApiTest {
         final CommandEntity commandEntity = mapper.readValue(commandJson, CommandEntity.class);
         final CommandEntity created = commandEntityService.create(commandEntity);
 
-//        when(commandService.getAll()).thenReturn(Lists.newArrayList(command));
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
 
         final MockHttpServletRequestBuilder request = get(path)
                 .with(authentication(authentication))
@@ -190,6 +195,7 @@ public class CommandRestApiTest {
     }
 
     @Test
+    @DirtiesContext
     public void testGet() throws Exception {
         final String pathTemplate = "/commands/%d";
 
@@ -197,6 +203,9 @@ public class CommandRestApiTest {
                 "{\"name\": \"one\", \"type\": \"docker\", \"image\":\"" + FAKE_DOCKER_IMAGE + "\"}";
         final CommandEntity commandEntity = mapper.readValue(commandJson, CommandEntity.class);
         final CommandEntity created = commandEntityService.create(commandEntity);
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
 
         final String path = String.format(pathTemplate, created.getId());
 
@@ -221,6 +230,7 @@ public class CommandRestApiTest {
     }
 
     @Test
+    @DirtiesContext
     public void testCreate() throws Exception {
         final String path = "/commands";
 
@@ -240,6 +250,10 @@ public class CommandRestApiTest {
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
 
         final Long idResponse = Long.parseLong(response);
         assertNotEquals(Long.valueOf(0L), idResponse);
@@ -288,6 +302,7 @@ public class CommandRestApiTest {
     }
 
     @Test
+    @DirtiesContext
     public void testDelete() throws Exception {
         final String pathTemplate = "/commands/%d";
 
@@ -295,6 +310,9 @@ public class CommandRestApiTest {
                 "{\"name\": \"toDelete\", \"type\": \"docker\", \"image\":\"" + FAKE_DOCKER_IMAGE + "\"}";
         final CommandEntity commandEntity = mapper.readValue(commandJson, CommandEntity.class);
         commandEntityService.create(commandEntity);
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
         final Long id = commandEntity.getId();
 
         final String path = String.format(pathTemplate, id);
