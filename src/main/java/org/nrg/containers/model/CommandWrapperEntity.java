@@ -191,13 +191,8 @@ public class CommandWrapperEntity implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final CommandWrapperEntity that = (CommandWrapperEntity) o;
-        return Objects.equals(this.id, that.id) &&
-                Objects.equals(this.name, that.name) &&
-                Objects.equals(this.description, that.description) &&
-                Objects.equals(this.contexts, that.contexts) &&
-                Objects.equals(this.externalInputs, that.externalInputs) &&
-                Objects.equals(this.derivedInputs, that.derivedInputs) &&
-                Objects.equals(this.outputHandlers, that.outputHandlers);
+        return Objects.equals(this.commandEntity, that.commandEntity) &&
+                Objects.equals(this.name, that.name);
     }
 
     @Override
