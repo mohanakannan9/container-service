@@ -25,11 +25,18 @@ public interface DockerService {
     void setDefaultHub(long id, String username, String reason);
     void deleteHub(long id) throws DockerHubDeleteDefaultException;
     void deleteHub(String name) throws DockerHubDeleteDefaultException, NotUniqueException;
-    String pingHub(Long hubId) throws DockerServerException, NoServerPrefException, NotFoundException;
+    String pingHub(long hubId) throws DockerServerException, NoServerPrefException, NotFoundException;
+    String pingHub(long hubId, String username, String password) throws DockerServerException, NoServerPrefException, NotFoundException;
     String pingHub(String hubName) throws DockerServerException, NoServerPrefException, NotUniqueException, NotFoundException;
+    String pingHub(String hubName, String username, String password)
+            throws DockerServerException, NoServerPrefException, NotUniqueException, NotFoundException;
     DockerImage pullFromHub(long hubId, String imageName, boolean saveCommands)
             throws DockerServerException, NoServerPrefException, NotFoundException;
+    DockerImage pullFromHub(long hubId, String imageName, boolean saveCommands, String username, String password)
+            throws DockerServerException, NoServerPrefException, NotFoundException;
     DockerImage pullFromHub(String hubName, String imageName, boolean saveCommands)
+            throws DockerServerException, NoServerPrefException, NotFoundException, NotUniqueException;
+    DockerImage pullFromHub(String hubName, String imageName, boolean saveCommands, String username, String password)
             throws DockerServerException, NoServerPrefException, NotFoundException, NotUniqueException;
     DockerImage pullFromHub(String imageName, boolean saveCommands)
             throws DockerServerException, NoServerPrefException, NotFoundException;

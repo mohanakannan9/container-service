@@ -189,38 +189,44 @@ public class DockerRestApi extends AbstractXapiRestController {
 
     @RequestMapping(value = "/hubs/{id:" + ID_REGEX + "}/ping", method = GET)
     @ResponseBody
-    public String pingHub(final @PathVariable Long id)
+    public String pingHub(final @PathVariable long id,
+                          final @RequestParam(value = "username", required = false) String username,
+                          final @RequestParam(value = "password", required = false) String password)
             throws NoServerPrefException, DockerServerException, NotFoundException, UnauthorizedException {
         checkGetOrThrow();
-        return dockerService.pingHub(id);
+        return dockerService.pingHub(id, username, password);
     }
 
     @RequestMapping(value = "/hubs/{name:" + NAME_REGEX + "}/ping", method = GET)
     @ResponseBody
-    public String pingHub(final @PathVariable String name)
+    public String pingHub(final @PathVariable String name,
+                          final @RequestParam(value = "username", required = false) String username,
+                          final @RequestParam(value = "password", required = false) String password)
             throws NoServerPrefException, DockerServerException, NotFoundException, NotUniqueException, UnauthorizedException {
         checkGetOrThrow();
-        return dockerService.pingHub(name);
+        return dockerService.pingHub(name, username, password);
     }
 
     @RequestMapping(value = "/hubs/{id:" + ID_REGEX + "}/pull", params = {"image"}, method = POST)
     public void pullImageFromHub(final @PathVariable long id,
                                  final @RequestParam(value = "image") String image,
-                                 final @RequestParam(value = "save-commands", defaultValue = "true")
-                                             Boolean saveCommands)
+                                 final @RequestParam(value = "save-commands", defaultValue = "true") Boolean saveCommands,
+                                 final @RequestParam(value = "username", required = false) String username,
+                                 final @RequestParam(value = "password", required = false) String password)
             throws DockerServerException, NotFoundException, NoServerPrefException, UnauthorizedException {
         checkCreateOrThrow();
-        dockerService.pullFromHub(id, image, saveCommands);
+        dockerService.pullFromHub(id, image, saveCommands, username, password);
     }
 
     @RequestMapping(value = "/hubs/{name:" + NAME_REGEX + "}/pull", params = {"image"}, method = POST)
     public void pullImageFromHub(final @PathVariable String name,
                                  final @RequestParam(value = "image") String image,
-                                 final @RequestParam(value = "save-commands", defaultValue = "true")
-                                             Boolean saveCommands)
+                                 final @RequestParam(value = "save-commands", defaultValue = "true") Boolean saveCommands,
+                                 final @RequestParam(value = "username", required = false) String username,
+                                 final @RequestParam(value = "password", required = false) String password)
             throws DockerServerException, NotFoundException, NoServerPrefException, UnauthorizedException, NotUniqueException {
         checkCreateOrThrow();
-        dockerService.pullFromHub(name, image, saveCommands);
+        dockerService.pullFromHub(name, image, saveCommands, username, password);
     }
 
     @RequestMapping(value = "/pull", params = {"image"}, method = POST)

@@ -8,6 +8,7 @@ import com.google.common.collect.Maps;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.config.DockerRestApiTestConfig;
 import org.nrg.containers.exceptions.DockerServerException;
@@ -54,6 +55,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.isIn;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.anyListOf;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -445,7 +447,7 @@ public class DockerRestApiTest {
 
         when(mockDockerHubService.getHub(defaultHubName)).thenReturn(defaultHub);
         when(mockDockerHubService.getHub(defaultHubId)).thenReturn(defaultHub);
-        doReturn("OK").when(mockContainerControlApi).pingHub(defaultHub);
+        doReturn("OK").when(mockContainerControlApi).pingHub(Mockito.eq(defaultHub), anyString(), anyString());
 
         mockMvc.perform(get(pathById)
                         .with(authentication(NONADMIN_AUTH))

@@ -1,6 +1,7 @@
 package org.nrg.containers.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -48,6 +49,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.nio.file.Paths;
 import java.util.Date;
 import java.util.List;
@@ -75,6 +77,8 @@ public class DockerControlApi implements ContainerControlApi {
         this.eventService = eventService;
     }
 
+    @Override
+    @Nonnull
     public DockerServer getServer() throws NoServerPrefException {
         if (containerServerPref == null || containerServerPref.getHost() == null) {
             throw new NoServerPrefException("No container server URI defined in preferences.");
@@ -82,16 +86,21 @@ public class DockerControlApi implements ContainerControlApi {
         return containerServerPref.toDto();
     }
 
+    @Override
     public void setServer(final String host) throws InvalidPreferenceName {
         setServer(host, null);
     }
 
+    @Override
+    @Nonnull
     public DockerServer setServer(final String host, final String certPath) throws InvalidPreferenceName {
         containerServerPref.setHost(host);
         containerServerPref.setCertPath(certPath);
         return containerServerPref.toDto();
     }
 
+    @Override
+    @Nonnull
     public DockerServer setServer(final DockerServer serverBean) throws InvalidPreferenceName {
         containerServerPref.setFromDto(serverBean);
         return serverBean;
@@ -120,20 +129,33 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     @Override
-    public String pingHub(final DockerHub hub) throws DockerServerException, NoServerPrefException {
+    @Nonnull
+    public String pingHub(final @Nonnull DockerHub hub) throws DockerServerException, NoServerPrefException {
+        return pingHub(hub, null, null);
+    }
+
+    @Override
+    @Nonnull
+    public String pingHub(final @Nonnull DockerHub hub, final @Nullable String username, final @Nullable String password)
+            throws DockerServerException, NoServerPrefException {
         try (final DockerClient client = getClient()) {
-            client.auth(registryAuth(hub));
-        }
-        catch (Exception e) {
+            client.auth(registryAuth(hub, username, password));
+        } catch (Exception e) {
             log.error(e.getMessage());
             throw new DockerServerException(e);
         }
         return "OK";
     }
 
-    private RegistryAuth registryAuth(final DockerHub hub) {
+    @Nullable
+    private RegistryAuth registryAuth(final @Nullable DockerHub hub, final @Nullable String username, final @Nullable String password) {
+        if (hub == null) {
+            return null;
+        }
         return RegistryAuth.builder()
                 .serverAddress(hub.url())
+                .username(username == null ? "" : username)
+                .password(password == null ? "" : password)
                 .build();
     }
 
@@ -143,6 +165,7 @@ public class DockerControlApi implements ContainerControlApi {
      * @return Image objects stored on docker server
      **/
     @Override
+    @Nonnull
     public List<DockerImage> getAllImages() throws NoServerPrefException, DockerServerException {
         return getImages(null);
     }
@@ -153,7 +176,8 @@ public class DockerControlApi implements ContainerControlApi {
      * @param params Map of query parameters (name = value)
      * @return Image objects stored on docker server meeting the query parameters
      **/
-    public List<DockerImage> getImages(final Map<String, String> params)
+    @Nonnull
+    private List<DockerImage> getImages(final Map<String, String> params)
             throws NoServerPrefException, DockerServerException {
         return DockerImageToNrgImage(_getImages(params));
     }
@@ -386,15 +410,23 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     @Override
+    @Nullable
     public DockerImage pullImage(final String name) throws NoServerPrefException, DockerServerException {
         return pullImage(name, null);
     }
 
     @Override
-    public DockerImage pullImage(final String name, final DockerHub hub)
+    @Nullable
+    public DockerImage pullImage(final String name, final @Nullable DockerHub hub)
             throws NoServerPrefException, DockerServerException {
+        return pullImage(name, hub, null, null);
+    }
+
+    @Override
+    @Nullable
+    public DockerImage pullImage(final String name, final @Nullable DockerHub hub, final @Nullable String username, final @Nullable String password) throws NoServerPrefException, DockerServerException {
         try (final DockerClient client = getClient()) {
-            pullImage(name, hub, client);
+            _pullImage(name, registryAuth(hub, username, password), client);
             return getImageById(name, client);
         } catch (NotFoundException e) {
             final String m = String.format("Image \"%s\" was not found", name);
@@ -404,12 +436,12 @@ public class DockerControlApi implements ContainerControlApi {
         return null;
     }
 
-    private void pullImage(final String name, final DockerHub dockerHub, final DockerClient client) throws DockerServerException {
+    private void _pullImage(final @Nonnull String name, final @Nullable RegistryAuth registryAuth, final @Nonnull DockerClient client) throws DockerServerException {
         try {
-            if (dockerHub != null) {
-                client.pull(name, registryAuth(dockerHub));
-            } else {
+            if (registryAuth == null) {
                 client.pull(name);
+            } else {
+                client.pull(name, registryAuth);
             }
         }  catch (DockerException | InterruptedException e) {
             log.error(e.getMessage());
@@ -524,21 +556,14 @@ public class DockerControlApi implements ContainerControlApi {
         }
     }
 
-    /**
-     * Create a client connection to a Docker server using default image repository configuration
-     *
-     * @return DockerClient object using default authConfig
-     **/
-    public DockerClient getClient() throws NoServerPrefException {
+    @VisibleForTesting
+    @Nonnull
+    DockerClient getClient() throws NoServerPrefException {
         return getClient(getServer());
     }
 
-    /**
-         * Create a client connection to a Docker server using default image repository configuration
-         *
-         * @return DockerClient object using default authConfig
-         **/
-    public DockerClient getClient(final DockerServer server) {
+    @Nonnull
+    private DockerClient getClient(final @Nonnull DockerServer server) {
 
         DefaultDockerClient.Builder clientBuilder =
             DefaultDockerClient.builder()
@@ -555,11 +580,6 @@ public class DockerControlApi implements ContainerControlApi {
         }
 
         return clientBuilder.build();
-    }
-
-    public DockerClient getClientFromEnv() throws DockerCertificateException {
-
-        return DefaultDockerClient.fromEnv().build();
     }
 
     @Override
