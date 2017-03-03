@@ -213,6 +213,16 @@ public class DockerRestApi extends AbstractXapiRestController {
         dockerService.pullFromHub(id, image, saveCommands);
     }
 
+    @RequestMapping(value = "/hubs/{name:" + NAME_REGEX + "}/pull", params = {"image"}, method = POST)
+    public void pullImageFromHub(final @PathVariable String name,
+                                 final @RequestParam(value = "image") String image,
+                                 final @RequestParam(value = "save-commands", defaultValue = "true")
+                                             Boolean saveCommands)
+            throws DockerServerException, NotFoundException, NoServerPrefException, UnauthorizedException, NotUniqueException {
+        checkCreateOrThrow();
+        dockerService.pullFromHub(name, image, saveCommands);
+    }
+
     @RequestMapping(value = "/pull", params = {"image"}, method = POST)
     public void pullImageFromDefaultHub(final @RequestParam(value = "image") String image,
                                         final @RequestParam(value = "save-commands", defaultValue = "true")
