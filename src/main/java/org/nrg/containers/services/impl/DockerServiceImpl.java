@@ -137,7 +137,7 @@ public class DockerServiceImpl implements DockerService {
 
     private DockerImage pullFromHub(final DockerHub hub, final String imageName, final boolean saveCommands)
             throws NoServerPrefException, DockerServerException {
-        final DockerImage dockerImage = controlApi.pullAndReturnImage(imageName, hub);
+        final DockerImage dockerImage = controlApi.pullImage(imageName, hub);
         if (saveCommands) {
             saveFromImageLabels(imageName, dockerImage);
         }

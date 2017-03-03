@@ -156,7 +156,7 @@ public class DockerRestApi extends AbstractXapiRestController {
         final UserI userI = XDAT.getUserDetails();
         checkCreateOrThrow(userI);
         if (hub != null) {
-            final DockerHub toUpdate = id == hub.id() ? hub : DockerHub.create(id, hub.name(), hub.url(), hub.username(), hub.password(), hub.email(), setDefault);
+            final DockerHub toUpdate = id == hub.id() ? hub : DockerHub.create(id, hub.name(), hub.url(), setDefault);
 
             if (!setDefault) {
                 dockerService.updateHub(toUpdate);

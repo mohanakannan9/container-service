@@ -280,7 +280,7 @@ public class DockerRestApiTest {
                         .with(testSecurityContext());
 
         final DockerHub dockerHub = DockerHub.DEFAULT;
-        final DockerHub privateHub = DockerHub.create(10L, "my hub", "http://localhost", "me", "still me", "me@me.me", false);
+        final DockerHub privateHub = DockerHub.create(10L, "my hub", "http://localhost", false);
         final List<DockerHub> hubs = Lists.newArrayList(dockerHub, privateHub);
         final String obscuredHubJson = mapper.writeValueAsString(hubs);
 
@@ -301,7 +301,7 @@ public class DockerRestApiTest {
         final String pathTemplate = "/docker/hubs/%d";
 
         final long privateHubId = 10L;
-        final DockerHub privateHubExpected = DockerHub.create(privateHubId, "my hub", "http://localhost", "me", "still me", "me@me.me", false);
+        final DockerHub privateHubExpected = DockerHub.create(privateHubId, "my hub", "http://localhost", false);
         final String privateHubObscuredJson = mapper.writeValueAsString(privateHubExpected);
         final DockerHub defaultHubExpected = DockerHub.DEFAULT;
         final String defaultHubObscuredJson = mapper.writeValueAsString(defaultHubExpected);
@@ -346,7 +346,7 @@ public class DockerRestApiTest {
         final String pathTemplate = "/docker/hubs/%s";
 
         final String privateHubName = "my hub";
-        final DockerHub privateHubExpected = DockerHub.create(10L, privateHubName, "http://localhost", "me", "still me", "me@me.me", false);
+        final DockerHub privateHubExpected = DockerHub.create(10L, privateHubName, "http://localhost", false);
         final String privateHubObscuredJson = mapper.writeValueAsString(privateHubExpected);
         final DockerHub defaultHubExpected = DockerHub.DEFAULT;
         final String defaultHubObscuredJson = mapper.writeValueAsString(defaultHubExpected);
@@ -396,14 +396,11 @@ public class DockerRestApiTest {
                 "\"id\": 0" +
                 ", \"name\": \"a hub name\"" +
                 ", \"url\": \"http://localhost\"" +
-                ", \"username\": \"me\"" +
-                ", \"password\": \"Still me\"" +
-                ", \"email\": \"me@me.me\"" +
                 ", \"default\": false" +
                 "}";
         final DockerHub hubToCreate = mapper.readValue(hubToCreateJson, DockerHub.class);
 
-        final DockerHub created = DockerHub.create(10L, "a hub name", "http://localhost", "me", "still me", "me@me.me", false);
+        final DockerHub created = DockerHub.create(10L, "a hub name", "http://localhost", false);
         final String createdObscuredJson = mapper.writeValueAsString(created);
 
         when(mockDockerHubService.create(hubToCreate)).thenReturn(created);

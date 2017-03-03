@@ -43,9 +43,6 @@ public class DockerHubEntityTest {
                 "\"id\": 0" +
                 ", \"name\": \"a hub name\"" +
                 ", \"url\": \"http://localhost\"" +
-                ", \"username\": \"me\"" +
-                ", \"password\": \"Still me\"" +
-                ", \"email\": \"me@me.me\"" +
                 ", \"default\": false" +
                 "}";
         final DockerHub hubToCreate = mapper.readValue(hubToCreateJson, DockerHub.class);
@@ -53,19 +50,16 @@ public class DockerHubEntityTest {
         assertNotEquals(0L, created.id());
         assertEquals(hubToCreate.name(), created.name());
         assertEquals(hubToCreate.url(), created.url());
-        assertEquals(hubToCreate.username(), created.username());
-        assertEquals(hubToCreate.password(), created.password());
-        assertEquals(hubToCreate.email(), created.email());
         assertEquals(hubToCreate.isDefault(), created.isDefault());
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
 
         final DockerHubEntity createdEntity = dockerHubService.retrieve(created.id());
         assertEquals(created.id(), createdEntity.getId());
         assertEquals(created.name(), createdEntity.getName());
         assertEquals(created.url(), createdEntity.getUrl());
-        assertEquals(created.email(), createdEntity.getEmail());
-
-        final String createdUsernameAndPassword = created.username() + ":" + created.password();
-        assertEquals(Base64.encodeBase64String(createdUsernameAndPassword.getBytes()), createdEntity.getAuth());
     }
 
     @Test
@@ -75,35 +69,29 @@ public class DockerHubEntityTest {
                 "\"id\": 0" +
                 ", \"name\": \"a hub entity name\"" +
                 ", \"url\": \"http://localhost\"" +
-                ", \"username\": \"me\"" +
-                ", \"password\": \"Still me\"" +
-                ", \"email\": \"me@me.me\"" +
                 ", \"default\": false" +
                 "}";
         final DockerHub hubToCreate = mapper.readValue(hubToCreateJson, DockerHub.class);
         final DockerHubEntity hubEntityToCreate = DockerHubEntity.fromPojo(hubToCreate);
         final DockerHubEntity created = dockerHubService.create(hubEntityToCreate);
 
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
         final String hubToUpdateJson = "{" +
                 "\"id\": " + created.getId() +
                 ", \"name\": \"some other hub entity name\"" +
                 ", \"url\": \"http://localhost\"" +
-                ", \"username\": \"me\"" +
-                ", \"password\": \"Still me\"" +
-                ", \"email\": \"me@me.me\"" +
                 ", \"default\": false" +
                 "}";
         final DockerHub hubToUpdate = mapper.readValue(hubToUpdateJson, DockerHub.class);
         final DockerHubEntity hubEntityToUpdate = DockerHubEntity.fromPojo(hubToUpdate);
 
-        TestTransaction.flagForCommit();
-        TestTransaction.end();
-        TestTransaction.start();
-
         dockerHubService.update(hubEntityToUpdate);
 
-        final DockerHubEntity updated = dockerHubService.retrieve(created.getId());
-        assertEquals(hubEntityToUpdate, updated);
+        final DockerHubEntity retrieved = dockerHubService.retrieve(created.getId());
+        assertEquals(hubEntityToUpdate, retrieved);
     }
 
     @Test
@@ -113,29 +101,22 @@ public class DockerHubEntityTest {
                 "\"id\": 0" +
                 ", \"name\": \"a hub pojo name\"" +
                 ", \"url\": \"http://localhost\"" +
-                ", \"username\": \"me\"" +
-                ", \"password\": \"Still me\"" +
-                ", \"email\": \"me@me.me\"" +
                 ", \"default\": false" +
                 "}";
         final DockerHub hubToCreate = mapper.readValue(hubToCreateJson, DockerHub.class);
         final DockerHub created = dockerHubService.create(hubToCreate);
 
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
         final String hubToUpdateJson = "{" +
                 "\"id\": " + created.id() +
                 ", \"name\": \"some other hub pojo name\"" +
                 ", \"url\": \"http://localhost\"" +
-                ", \"username\": \"me\"" +
-                ", \"password\": \"Still me\"" +
-                ", \"email\": \"me@me.me\"" +
                 ", \"default\": false" +
                 "}";
         final DockerHub hubToUpdate = mapper.readValue(hubToUpdateJson, DockerHub.class);
-
-
-        TestTransaction.flagForCommit();
-        TestTransaction.end();
-        TestTransaction.start();
 
         dockerHubService.update(hubToUpdate);
 
