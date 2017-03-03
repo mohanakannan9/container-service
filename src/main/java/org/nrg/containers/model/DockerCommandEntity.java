@@ -3,6 +3,7 @@ package org.nrg.containers.model;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.MoreObjects.ToStringHelper;
 import com.google.common.collect.Maps;
+import org.hibernate.envers.Audited;
 import org.nrg.containers.model.auto.Command;
 
 import javax.persistence.DiscriminatorValue;
@@ -14,6 +15,7 @@ import java.util.Objects;
 
 @Entity
 @DiscriminatorValue("docker")
+@Audited
 public class DockerCommandEntity extends CommandEntity {
     public static final CommandType type = CommandType.DOCKER;
 

@@ -1,15 +1,25 @@
 package org.nrg.containers.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
+import org.hibernate.envers.Audited;
 import org.nrg.containers.model.auto.Command;
 
-import javax.persistence.Embeddable;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.ManyToOne;
 import javax.persistence.Transient;
 import java.io.Serializable;
 import java.util.Objects;
 
-@Embeddable
+@Entity
+@Audited
 public class CommandOutputEntity implements Serializable {
+
+    private long id;
+    @JsonIgnore private CommandEntity commandEntity;
     private String name;
     private String description;
     private Boolean required;
@@ -26,6 +36,25 @@ public class CommandOutputEntity implements Serializable {
         commandOutputEntity.path = commandOutput.path();
         commandOutputEntity.glob = commandOutput.glob();
         return commandOutputEntity;
+    }
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    public long getId() {
+        return id;
+    }
+
+    public void setId(final long id) {
+        this.id = id;
+    }
+
+    @ManyToOne
+    public CommandEntity getCommandEntity() {
+        return commandEntity;
+    }
+
+    public void setCommandEntity(final CommandEntity commandEntity) {
+        this.commandEntity = commandEntity;
     }
 
     public String getName() {
@@ -86,7 +115,8 @@ public class CommandOutputEntity implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final CommandOutputEntity that = (CommandOutputEntity) o;
-        return Objects.equals(this.name, that.name) &&
+        return Objects.equals(this.id, that.id) &&
+                Objects.equals(this.name, that.name) &&
                 Objects.equals(this.description, that.description) &&
                 Objects.equals(this.required, that.required) &&
                 Objects.equals(this.mount, that.mount) &&
@@ -96,13 +126,14 @@ public class CommandOutputEntity implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, description, required, mount, path, glob);
+        return Objects.hash(id, name, description, required, mount, path, glob);
 
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("id", id)
                 .add("name", name)
                 .add("description", description)
                 .add("required", required)

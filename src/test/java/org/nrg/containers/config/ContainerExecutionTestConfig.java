@@ -6,7 +6,10 @@ import org.mockito.Mockito;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.daos.ContainerExecutionRepository;
 import org.nrg.containers.model.ContainerExecution;
+import org.nrg.containers.model.ContainerExecutionHistory;
 import org.nrg.containers.model.ContainerExecutionMount;
+import org.nrg.containers.model.ContainerExecutionOutput;
+import org.nrg.containers.model.ContainerMountFiles;
 import org.nrg.containers.services.ContainerExecutionService;
 import org.nrg.containers.services.impl.HibernateContainerExecutionService;
 import org.nrg.framework.services.NrgEventService;
@@ -98,7 +101,10 @@ public class ContainerExecutionTestConfig {
         bean.setHibernateProperties(properties);
         bean.setAnnotatedClasses(
                 ContainerExecution.class,
-                ContainerExecutionMount.class);
+                ContainerExecutionHistory.class,
+                ContainerExecutionOutput.class,
+                ContainerExecutionMount.class,
+                ContainerMountFiles.class);
         return bean;
     }
 

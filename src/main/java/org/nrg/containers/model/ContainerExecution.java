@@ -6,6 +6,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
+import org.hibernate.envers.Audited;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.CascadeType;
@@ -21,6 +22,7 @@ import java.util.Objects;
 import java.util.Set;
 
 @Entity
+@Audited
 public class ContainerExecution extends AbstractHibernateEntity {
     @JsonProperty("command-id") private Long commandId;
     @JsonProperty("xnat-command-wrapper-id") private Long xnatCommandWrapperId;
@@ -110,13 +112,18 @@ public class ContainerExecution extends AbstractHibernateEntity {
         this.environmentVariables = environmentVariables;
     }
 
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
+    @OneToMany(mappedBy = "containerExecution", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     public List<ContainerExecutionMount> getMounts() {
         return mounts;
     }
 
     public void setMounts(final List<ContainerExecutionMount> mounts) {
-        this.mounts = mounts;
+        this.mounts = mounts == null ?
+                Lists.<ContainerExecutionMount>newArrayList() :
+                mounts;
+        for (final ContainerExecutionMount mount : this.mounts) {
+            mount.setContainerExecution(this);
+        }
     }
 
     public String getContainerId() {
@@ -171,26 +178,40 @@ public class ContainerExecution extends AbstractHibernateEntity {
                 commandInputValues;
     }
 
-    @ElementCollection
+    @OneToMany(mappedBy = "containerExecution", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     public List<ContainerExecutionOutput> getOutputs() {
         return outputs;
     }
 
     public void setOutputs(final List<ContainerExecutionOutput> outputs) {
-        this.outputs = outputs;
+        this.outputs = outputs == null ?
+                Lists.<ContainerExecutionOutput>newArrayList() :
+                outputs;
+        for (final ContainerExecutionOutput output : this.outputs) {
+            output.setContainerExecution(this);
+        }
     }
 
-    @ElementCollection
+    @OneToMany(mappedBy = "containerExecution", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     public List<ContainerExecutionHistory> getHistory() {
         return history;
     }
 
     public void setHistory(final List<ContainerExecutionHistory> history) {
-        this.history = history;
+        this.history = history == null ?
+                Lists.<ContainerExecutionHistory>newArrayList() :
+                history;
+        for (final ContainerExecutionHistory historyItem : this.history) {
+            historyItem.setContainerExecution(this);
+        }
     }
 
     @Transient
     public void addToHistory(final ContainerExecutionHistory historyItem) {
+        if (historyItem == null) {
+            return;
+        }
+        historyItem.setContainerExecution(this);
         if (this.history == null) {
             this.history = Lists.newArrayList();
         }

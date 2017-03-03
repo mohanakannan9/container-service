@@ -12,6 +12,7 @@ import com.google.common.collect.Maps;
 import io.swagger.annotations.ApiModelProperty;
 import org.nrg.containers.exceptions.CommandValidationException;
 import org.nrg.containers.model.auto.Command;
+import org.hibernate.envers.Audited;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.annotation.Nonnull;
@@ -35,6 +36,7 @@ import java.util.Objects;
 })
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "type")
+@Audited
 public abstract class CommandEntity extends AbstractHibernateEntity {
     public static CommandType DEFAULT_TYPE = CommandType.DOCKER;
     private String name;
@@ -190,7 +192,7 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         this.commandLine = commandLine;
     }
 
-    @ElementCollection
+    @OneToMany(mappedBy = "commandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<CommandMountEntity> getMounts() {
         return mounts;
     }
@@ -199,12 +201,16 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         this.mounts = mounts == null ?
                 Lists.<CommandMountEntity>newArrayList() :
                 mounts;
+        for (final CommandMountEntity mount : this.mounts) {
+            mount.setCommandEntity(this);
+        }
     }
 
     public void addMount(final CommandMountEntity mount) {
         if (mount == null) {
             return;
         }
+        mount.setCommandEntity(this);
 
         if (this.mounts == null) {
             this.mounts = Lists.newArrayList();
@@ -225,7 +231,7 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
                 environmentVariables;
     }
 
-    @ElementCollection
+    @OneToMany(mappedBy = "commandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     @ApiModelProperty("A list of inputs. " +
             "When the Command is launched, these inputs receive values; " +
             "those values will be used to fill in any template strings in the Command's run-template, mounts, or environment variables.")
@@ -237,12 +243,16 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         this.inputs = inputs == null ?
                 Lists.<CommandInputEntity>newArrayList() :
                 inputs;
+        for (final CommandInputEntity input : this.inputs) {
+            input.setCommandEntity(this);
+        }
     }
 
     public void addInput(final CommandInputEntity input) {
         if (input == null) {
             return;
         }
+        input.setCommandEntity(this);
 
         if (this.inputs == null) {
             this.inputs = Lists.newArrayList();
@@ -250,7 +260,7 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         this.inputs.add(input);
     }
 
-    @ElementCollection
+    @OneToMany(mappedBy = "commandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     @ApiModelProperty("A list of outputs.")
     public List<CommandOutputEntity> getOutputs() {
         return outputs;
@@ -260,12 +270,16 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         this.outputs = outputs == null ?
                 Lists.<CommandOutputEntity>newArrayList() :
                 outputs;
+        for (final CommandOutputEntity output : this.outputs) {
+            output.setCommandEntity(this);
+        }
     }
 
     public void addOutput(final CommandOutputEntity output) {
         if (output == null) {
             return;
         }
+        output.setCommandEntity(this);
 
         if (this.outputs == null) {
             this.outputs = Lists.newArrayList();

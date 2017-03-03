@@ -9,18 +9,27 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.StringUtils;
+import org.hibernate.envers.Audited;
 import org.nrg.containers.model.auto.Command;
 
 import javax.annotation.Nullable;
-import javax.persistence.Embeddable;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.ManyToOne;
 import javax.persistence.Transient;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-@Embeddable
+@Entity
+@Audited
 public class CommandWrapperInputEntity {
     public static final Type DEFAULT_TYPE = Type.STRING;
+
+    private long id;
+    @JsonIgnore private CommandWrapperEntity commandWrapperEntity;
     private String name;
     private String description;
     private Type type;
@@ -93,6 +102,25 @@ public class CommandWrapperInputEntity {
                 commandWrapperInputEntity.type = DEFAULT_TYPE;
         }
         return commandWrapperInputEntity;
+    }
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    public long getId() {
+        return id;
+    }
+
+    public void setId(final long id) {
+        this.id = id;
+    }
+
+    @ManyToOne
+    public CommandWrapperEntity getCommandWrapperEntity() {
+        return commandWrapperEntity;
+    }
+
+    public void setCommandWrapperEntity(final CommandWrapperEntity commandWrapperEntity) {
+        this.commandWrapperEntity = commandWrapperEntity;
     }
 
     public String getName() {
@@ -225,7 +253,8 @@ public class CommandWrapperInputEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final CommandWrapperInputEntity that = (CommandWrapperInputEntity) o;
-        return Objects.equals(this.name, that.name) &&
+        return Objects.equals(this.id, that.id) &&
+                Objects.equals(this.name, that.name) &&
                 Objects.equals(this.description, that.description) &&
                 type == that.type &&
                 Objects.equals(this.derivedFromXnatInput, that.derivedFromXnatInput) &&
@@ -241,13 +270,14 @@ public class CommandWrapperInputEntity {
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, description, type, derivedFromXnatInput, derivedFromXnatObjectProperty, matcher,
+        return Objects.hash(id, name, description, type, derivedFromXnatInput, derivedFromXnatObjectProperty, matcher,
                 providesValueForCommandInput, providesFilesForCommandMount, defaultValue, userSettable, rawReplacementKey, required);
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("id", id)
                 .add("name", name)
                 .add("description", description)
                 .add("type", type)

@@ -162,4 +162,24 @@ public class CommandTest {
 
         assertEquals(commandEntity, retrievedCommandEntity);
     }
+
+    @Test
+    public void testDeleteDockerImageCommand() throws Exception {
+
+        final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
+
+        final CommandEntity created = commandEntityService.create(commandEntity);
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        commandEntityService.delete(created);
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        assertNull(commandEntityService.retrieve(created.getId()));
+    }
 }

@@ -5,22 +5,29 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import io.swagger.annotations.ApiModelProperty;
+import org.hibernate.envers.Audited;
 import org.nrg.containers.model.auto.Command;
 import org.nrg.containers.model.auto.Command.CommandMount;
 
+import javax.persistence.CascadeType;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.Transient;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 
 @Entity
+@Audited
 public class ContainerExecutionMount implements Serializable {
     private long id;
+    @JsonIgnore private ContainerExecution containerExecution;
     @JsonProperty(required = true) private String name;
     @JsonProperty("writable") private boolean writable;
     @JsonProperty("xnat-host-path") private String xnatHostPath;
@@ -47,6 +54,15 @@ public class ContainerExecutionMount implements Serializable {
 
     public void setId(final long id) {
         this.id = id;
+    }
+
+    @ManyToOne
+    public ContainerExecution getContainerExecution() {
+        return containerExecution;
+    }
+
+    public void setContainerExecution(final ContainerExecution containerExecution) {
+        this.containerExecution = containerExecution;
     }
 
     public String getName() {
@@ -95,7 +111,7 @@ public class ContainerExecutionMount implements Serializable {
         return writable;
     }
 
-    @ElementCollection
+    @OneToMany(mappedBy = "containerExecutionMount", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     public List<ContainerMountFiles> getInputFiles() {
         return inputFiles;
     }
@@ -104,6 +120,9 @@ public class ContainerExecutionMount implements Serializable {
         this.inputFiles = inputFiles == null ?
                 Lists.<ContainerMountFiles>newArrayList() :
                 inputFiles;
+        for (final ContainerMountFiles files : this.inputFiles) {
+            files.setContainerExecutionMount(this);
+        }
     }
 
     @Transient
@@ -134,6 +153,7 @@ public class ContainerExecutionMount implements Serializable {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("id", id)
                 .add("name", name)
                 .add("writable", writable)
                 .add("xnatHostPath", xnatHostPath)

@@ -7,19 +7,23 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.model.auto.Command;
+import org.hibernate.envers.Audited;
 
+import javax.persistence.CascadeType;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
 @Entity
+@Audited
 public class CommandWrapperEntity implements Serializable {
     private long id;
     private String name;
@@ -102,7 +106,7 @@ public class CommandWrapperEntity implements Serializable {
         this.contexts.add(context);
     }
 
-    @ElementCollection
+    @OneToMany(mappedBy = "commandWrapperEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<CommandWrapperInputEntity> getExternalInputs() {
         return externalInputs;
     }
@@ -111,12 +115,16 @@ public class CommandWrapperEntity implements Serializable {
         this.externalInputs = externalInputs == null ?
                 Lists.<CommandWrapperInputEntity>newArrayList() :
                 externalInputs;
+        for (final CommandWrapperInputEntity externalInput : this.externalInputs) {
+            externalInput.setCommandWrapperEntity(this);
+        }
     }
 
     public void addExternalInput(final CommandWrapperInputEntity externalInput) {
         if (externalInput == null) {
             return;
         }
+        externalInput.setCommandWrapperEntity(this);
 
         if (this.externalInputs == null) {
             this.externalInputs = Lists.newArrayList();
@@ -124,7 +132,7 @@ public class CommandWrapperEntity implements Serializable {
         this.externalInputs.add(externalInput);
     }
 
-    @ElementCollection
+    @OneToMany(mappedBy = "commandWrapperEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<CommandWrapperInputEntity> getDerivedInputs() {
         return derivedInputs;
     }
@@ -133,12 +141,17 @@ public class CommandWrapperEntity implements Serializable {
         this.derivedInputs = derivedInputs == null ?
                 Lists.<CommandWrapperInputEntity>newArrayList() :
                 derivedInputs;
+
+        for (final CommandWrapperInputEntity derivedInput : this.derivedInputs) {
+            derivedInput.setCommandWrapperEntity(this);
+        }
     }
 
     public void addDerivedInput(final CommandWrapperInputEntity derivedInput) {
         if (derivedInput == null) {
             return;
         }
+        derivedInput.setCommandWrapperEntity(this);
 
         if (this.derivedInputs == null) {
             this.derivedInputs = Lists.newArrayList();
@@ -146,7 +159,7 @@ public class CommandWrapperEntity implements Serializable {
         this.derivedInputs.add(derivedInput);
     }
 
-    @ElementCollection
+    @OneToMany(mappedBy = "commandWrapperEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<CommandWrapperOutputEntity> getOutputHandlers() {
         return outputHandlers;
     }
@@ -155,12 +168,17 @@ public class CommandWrapperEntity implements Serializable {
         this.outputHandlers = outputHandlers == null ?
                 Lists.<CommandWrapperOutputEntity>newArrayList() :
                 outputHandlers;
+
+        for (final CommandWrapperOutputEntity commandWrapperOutputEntity : this.outputHandlers) {
+            commandWrapperOutputEntity.setCommandWrapperEntity(this);
+        }
     }
 
     public void addOutputHandler(final CommandWrapperOutputEntity outputHandler) {
         if (outputHandler == null) {
             return;
         }
+        outputHandler.setCommandWrapperEntity(this);
 
         if (this.outputHandlers == null) {
             this.outputHandlers = Lists.newArrayList();
@@ -173,13 +191,8 @@ public class CommandWrapperEntity implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final CommandWrapperEntity that = (CommandWrapperEntity) o;
-        return Objects.equals(this.id, that.id) &&
-                Objects.equals(this.name, that.name) &&
-                Objects.equals(this.description, that.description) &&
-                Objects.equals(this.contexts, that.contexts) &&
-                Objects.equals(this.externalInputs, that.externalInputs) &&
-                Objects.equals(this.derivedInputs, that.derivedInputs) &&
-                Objects.equals(this.outputHandlers, that.outputHandlers);
+        return Objects.equals(this.commandEntity, that.commandEntity) &&
+                Objects.equals(this.name, that.name);
     }
 
     @Override
