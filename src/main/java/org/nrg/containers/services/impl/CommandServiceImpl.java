@@ -111,20 +111,6 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
 
     @Override
     @Nonnull
-    public CommandWrapper addWrapper(final long commandId, final @Nonnull CommandWrapper wrapperToAdd) throws CommandValidationException, NotFoundException {
-        final CommandEntity commandEntity = commandEntityService.get(commandId);
-        final Command command = toPojo(commandEntity);
-        command.addWrapper(wrapperToAdd);
-        final List<String> errors = command.validate();
-        if (!errors.isEmpty()) {
-            throw new CommandValidationException(errors);
-        }
-
-        return toPojo(commandEntityService.addWrapper(commandEntity, fromPojo(wrapperToAdd)));
-    }
-
-    @Override
-    @Nonnull
     public List<Command> save(final List<Command> commands) {
         final List<Command> created = Lists.newArrayList();
         if (!(commands == null || commands.isEmpty())) {
@@ -138,6 +124,20 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
             }
         }
         return created;
+    }
+
+    @Override
+    @Nonnull
+    public CommandWrapper addWrapper(final long commandId, final @Nonnull CommandWrapper wrapperToAdd) throws CommandValidationException, NotFoundException {
+        final CommandEntity commandEntity = commandEntityService.get(commandId);
+        final Command command = toPojo(commandEntity);
+        command.addWrapper(wrapperToAdd);
+        final List<String> errors = command.validate();
+        if (!errors.isEmpty()) {
+            throw new CommandValidationException(errors);
+        }
+
+        return toPojo(commandEntityService.addWrapper(commandEntity, fromPojo(wrapperToAdd)));
     }
 
     @Nonnull
