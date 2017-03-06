@@ -605,6 +605,16 @@ public abstract class Command {
                     .outputHandlers(Lists.<CommandWrapperOutput>newArrayList());
         }
 
+        public Builder toBuilder() {
+            return builder()
+                    .id(this.id())
+                    .name(this.name())
+                    .contexts(this.contexts())
+                    .externalInputs(this.externalInputs())
+                    .derivedInputs(this.derivedInputs())
+                    .outputHandlers(this.outputHandlers());
+        }
+
         public static CommandWrapper create(final CommandWrapperEntity commandWrapperEntity) {
             if (commandWrapperEntity == null) {
                 return null;

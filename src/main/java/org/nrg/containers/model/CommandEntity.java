@@ -55,13 +55,7 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
     @JsonProperty("xnat") private List<CommandWrapperEntity> commandWrapperEntities;
 
     @Nonnull
-    public static CommandEntity fromPojo(@Nonnull final Command command, @Nullable final CommandEntity template)
-            throws CommandValidationException {
-        final List<String> errors = command.validate();
-        if (!errors.isEmpty()) {
-            throw new CommandValidationException(errors);
-        }
-
+    public static CommandEntity fromPojo(@Nonnull final Command command, @Nullable final CommandEntity template) {
         final CommandEntity commandEntity;
         if (template != null) {
             commandEntity = template;
@@ -72,7 +66,7 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
                     break;
                 default:
                     // This should have been caught already, but still...
-                    throw new CommandValidationException("Cannot instantiate command with type " + command.type());
+                    throw new RuntimeException("Cannot instantiate command with type " + command.type());
             }
         }
 
