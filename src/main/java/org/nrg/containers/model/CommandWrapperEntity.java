@@ -30,8 +30,8 @@ public class CommandWrapperEntity implements Serializable {
     private String description;
     @JsonIgnore private CommandEntity commandEntity;
     private Set<String> contexts;
-    @JsonProperty("external-inputs") private List<CommandWrapperInputEntity> externalInputs;
-    @JsonProperty("derived-inputs") private List<CommandWrapperInputEntity> derivedInputs;
+    @JsonProperty("external-inputs") private List<CommandWrapperExternalInputEntity> externalInputs;
+    @JsonProperty("derived-inputs") private List<CommandWrapperDerivedInputEntity> derivedInputs;
     @JsonProperty("output-handlers") private List<CommandWrapperOutputEntity> outputHandlers;
 
     public static CommandWrapperEntity fromPojo(final Command.CommandWrapper commandWrapper) {
@@ -39,10 +39,10 @@ public class CommandWrapperEntity implements Serializable {
         commandWrapperEntity.name = commandWrapper.name();
         commandWrapperEntity.description = commandWrapper.description();
         for (final Command.CommandWrapperInput externalCommandWrapperInput : commandWrapper.externalInputs()) {
-            commandWrapperEntity.addExternalInput(CommandWrapperInputEntity.fromPojo(externalCommandWrapperInput));
+            commandWrapperEntity.addExternalInput(CommandWrapperExternalInputEntity.fromPojo(externalCommandWrapperInput));
         }
-        for (final Command.CommandWrapperInput derivedCommandWrapperInput : commandWrapper.derivedInputs()) {
-            commandWrapperEntity.addDerivedInput(CommandWrapperInputEntity.fromPojo(derivedCommandWrapperInput));
+        for (final Command.CommandWrapperDerivedInput derivedCommandWrapperInput : commandWrapper.derivedInputs()) {
+            commandWrapperEntity.addDerivedInput(CommandWrapperDerivedInputEntity.fromPojo(derivedCommandWrapperInput));
         }
         for (final Command.CommandWrapperOutput commandWrapperOutput : commandWrapper.outputHandlers()) {
             commandWrapperEntity.addOutputHandler(CommandWrapperOutputEntity.fromPojo(commandWrapperOutput));
@@ -107,20 +107,20 @@ public class CommandWrapperEntity implements Serializable {
     }
 
     @OneToMany(mappedBy = "commandWrapperEntity", cascade = CascadeType.ALL, orphanRemoval = true)
-    public List<CommandWrapperInputEntity> getExternalInputs() {
+    public List<CommandWrapperExternalInputEntity> getExternalInputs() {
         return externalInputs;
     }
 
-    public void setExternalInputs(final List<CommandWrapperInputEntity> externalInputs) {
+    public void setExternalInputs(final List<CommandWrapperExternalInputEntity> externalInputs) {
         this.externalInputs = externalInputs == null ?
-                Lists.<CommandWrapperInputEntity>newArrayList() :
+                Lists.<CommandWrapperExternalInputEntity>newArrayList() :
                 externalInputs;
-        for (final CommandWrapperInputEntity externalInput : this.externalInputs) {
+        for (final CommandWrapperExternalInputEntity externalInput : this.externalInputs) {
             externalInput.setCommandWrapperEntity(this);
         }
     }
 
-    public void addExternalInput(final CommandWrapperInputEntity externalInput) {
+    public void addExternalInput(final CommandWrapperExternalInputEntity externalInput) {
         if (externalInput == null) {
             return;
         }
@@ -133,21 +133,21 @@ public class CommandWrapperEntity implements Serializable {
     }
 
     @OneToMany(mappedBy = "commandWrapperEntity", cascade = CascadeType.ALL, orphanRemoval = true)
-    public List<CommandWrapperInputEntity> getDerivedInputs() {
+    public List<CommandWrapperDerivedInputEntity> getDerivedInputs() {
         return derivedInputs;
     }
 
-    public void setDerivedInputs(final List<CommandWrapperInputEntity> derivedInputs) {
+    public void setDerivedInputs(final List<CommandWrapperDerivedInputEntity> derivedInputs) {
         this.derivedInputs = derivedInputs == null ?
-                Lists.<CommandWrapperInputEntity>newArrayList() :
+                Lists.<CommandWrapperDerivedInputEntity>newArrayList() :
                 derivedInputs;
 
-        for (final CommandWrapperInputEntity derivedInput : this.derivedInputs) {
+        for (final CommandWrapperDerivedInputEntity derivedInput : this.derivedInputs) {
             derivedInput.setCommandWrapperEntity(this);
         }
     }
 
-    public void addDerivedInput(final CommandWrapperInputEntity derivedInput) {
+    public void addDerivedInput(final CommandWrapperDerivedInputEntity derivedInput) {
         if (derivedInput == null) {
             return;
         }

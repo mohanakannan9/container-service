@@ -14,8 +14,10 @@ import org.nrg.containers.model.CommandInputEntity;
 import org.nrg.containers.model.CommandMountEntity;
 import org.nrg.containers.model.CommandOutputEntity;
 import org.nrg.containers.model.CommandType;
+import org.nrg.containers.model.CommandWrapperDerivedInputEntity;
+import org.nrg.containers.model.CommandWrapperExternalInputEntity;
+import org.nrg.containers.model.CommandWrapperInputType;
 import org.nrg.containers.model.DockerCommandEntity;
-import org.nrg.containers.model.CommandWrapperInputEntity;
 import org.nrg.containers.model.CommandWrapperOutputEntity;
 import org.nrg.containers.model.CommandWrapperEntity;
 
@@ -260,7 +262,7 @@ public abstract class Command {
 
             final Set<String> wrapperInputNames = Sets.newHashSet();
             for (final CommandWrapperInput external : commandWrapper.externalInputs()) {
-                final List<String> inputErrors = external.validateExternal();
+                final List<String> inputErrors = external.validate();
 
                 if (wrapperInputNames.contains(external.name())) {
                     errors.add(wrapperName + "external input name \"" + external.name() + "\" is not unique.");
@@ -274,8 +276,8 @@ public abstract class Command {
                 }
             }
 
-            for (final CommandWrapperInput derived : commandWrapper.derivedInputs()) {
-                final List<String> inputErrors = derived.validateDerived();
+            for (final CommandWrapperDerivedInput derived : commandWrapper.derivedInputs()) {
+                final List<String> inputErrors = derived.validate();
 
                 if (wrapperInputNames.contains(derived.name())) {
                     errors.add(wrapperName + "derived input name \"" + derived.name() + "\" is not unique.");
@@ -555,8 +557,8 @@ public abstract class Command {
         @JsonProperty("name") public abstract String name();
         @Nullable @JsonProperty("description") public abstract String description();
         @JsonProperty("contexts") public abstract Set<String> contexts();
-        @JsonProperty("external-inputs") public abstract List<CommandWrapperInput> externalInputs();
-        @JsonProperty("derived-inputs") public abstract List<CommandWrapperInput> derivedInputs();
+        @JsonProperty("external-inputs") public abstract List<CommandWrapperExternalInput> externalInputs();
+        @JsonProperty("derived-inputs") public abstract List<CommandWrapperDerivedInput> derivedInputs();
         @JsonProperty("output-handlers") public abstract List<CommandWrapperOutput> outputHandlers();
 
         @JsonCreator
@@ -564,16 +566,16 @@ public abstract class Command {
                                      @JsonProperty("name") final String name,
                                      @JsonProperty("description") final String description,
                                      @JsonProperty("contexts") final Set<String> contexts,
-                                     @JsonProperty("external-inputs") final List<CommandWrapperInput> externalInputs,
-                                     @JsonProperty("derived-inputs") final List<CommandWrapperInput> derivedInputs,
+                                     @JsonProperty("external-inputs") final List<CommandWrapperExternalInput> externalInputs,
+                                     @JsonProperty("derived-inputs") final List<CommandWrapperDerivedInput> derivedInputs,
                                      @JsonProperty("output-handlers") final List<CommandWrapperOutput> outputHandlers) {
             return builder()
                     .id(id)
                     .name(name == null ? "" : name)
                     .description(description)
                     .contexts(contexts == null ? Sets.<String>newHashSet() : contexts)
-                    .externalInputs(externalInputs == null ? Lists.<CommandWrapperInput>newArrayList() : externalInputs)
-                    .derivedInputs(derivedInputs == null ? Lists.<CommandWrapperInput>newArrayList() : derivedInputs)
+                    .externalInputs(externalInputs == null ? Lists.<CommandWrapperExternalInput>newArrayList() : externalInputs)
+                    .derivedInputs(derivedInputs == null ? Lists.<CommandWrapperDerivedInput>newArrayList() : derivedInputs)
                     .outputHandlers(outputHandlers == null ? Lists.<CommandWrapperOutput>newArrayList() : outputHandlers)
                     .build();
         }
@@ -583,11 +585,11 @@ public abstract class Command {
                 return null;
             }
             return builder()
-                    .externalInputs(Lists.transform(command.inputs(), new Function<CommandInput, CommandWrapperInput>() {
+                    .externalInputs(Lists.transform(command.inputs(), new Function<CommandInput, CommandWrapperExternalInput>() {
                         @Nullable
                         @Override
-                        public CommandWrapperInput apply(@Nullable final CommandInput commandInput) {
-                            return CommandWrapperInput.passthrough(commandInput);
+                        public CommandWrapperExternalInput apply(@Nullable final CommandInput commandInput) {
+                            return CommandWrapperExternalInput.passthrough(commandInput);
                         }
                     }))
                     .build();
@@ -598,8 +600,8 @@ public abstract class Command {
                     .id(0L)
                     .name("")
                     .contexts(Sets.<String>newHashSet())
-                    .externalInputs(Lists.<CommandWrapperInput>newArrayList())
-                    .derivedInputs(Lists.<CommandWrapperInput>newArrayList())
+                    .externalInputs(Lists.<CommandWrapperExternalInput>newArrayList())
+                    .derivedInputs(Lists.<CommandWrapperDerivedInput>newArrayList())
                     .outputHandlers(Lists.<CommandWrapperOutput>newArrayList());
         }
 
@@ -610,22 +612,22 @@ public abstract class Command {
             final Set<String> contexts = commandWrapperEntity.getContexts() == null ?
                     Sets.<String>newHashSet() :
                     Sets.newHashSet(commandWrapperEntity.getContexts());
-            final List<CommandWrapperInput> external = commandWrapperEntity.getExternalInputs() == null ?
-                    Lists.<CommandWrapperInput>newArrayList() :
-                    Lists.newArrayList(Lists.transform(commandWrapperEntity.getExternalInputs(), new Function<CommandWrapperInputEntity, CommandWrapperInput>() {
+            final List<CommandWrapperExternalInput> external = commandWrapperEntity.getExternalInputs() == null ?
+                    Lists.<CommandWrapperExternalInput>newArrayList() :
+                    Lists.newArrayList(Lists.transform(commandWrapperEntity.getExternalInputs(), new Function<CommandWrapperExternalInputEntity, CommandWrapperExternalInput>() {
                         @Nullable
                         @Override
-                        public CommandWrapperInput apply(@Nullable final CommandWrapperInputEntity xnatCommandInput) {
-                            return xnatCommandInput == null ? null : CommandWrapperInput.create(xnatCommandInput);
+                        public CommandWrapperExternalInput apply(@Nullable final CommandWrapperExternalInputEntity xnatCommandInput) {
+                            return xnatCommandInput == null ? null : CommandWrapperExternalInput.create(xnatCommandInput);
                         }
                     }));
-            final List<CommandWrapperInput> derived = commandWrapperEntity.getDerivedInputs() == null ?
-                    Lists.<CommandWrapperInput>newArrayList() :
-                    Lists.newArrayList(Lists.transform(commandWrapperEntity.getDerivedInputs(), new Function<CommandWrapperInputEntity, CommandWrapperInput>() {
+            final List<CommandWrapperDerivedInput> derived = commandWrapperEntity.getDerivedInputs() == null ?
+                    Lists.<CommandWrapperDerivedInput>newArrayList() :
+                    Lists.newArrayList(Lists.transform(commandWrapperEntity.getDerivedInputs(), new Function<CommandWrapperDerivedInputEntity, CommandWrapperDerivedInput>() {
                         @Nullable
                         @Override
-                        public CommandWrapperInput apply(@Nullable final CommandWrapperInputEntity xnatCommandInput) {
-                            return xnatCommandInput == null ? null : CommandWrapperInput.create(xnatCommandInput);
+                        public CommandWrapperDerivedInput apply(@Nullable final CommandWrapperDerivedInputEntity xnatCommandInput) {
+                            return xnatCommandInput == null ? null : CommandWrapperDerivedInput.create(xnatCommandInput);
                         }
                     }));
             final List<CommandWrapperOutput> outputs = commandWrapperEntity.getOutputHandlers() == null ?
@@ -657,22 +659,19 @@ public abstract class Command {
             public abstract Builder name(final String name);
             public abstract Builder description(final String description);
             public abstract Builder contexts(final Set<String> contexts);
-            public abstract Builder externalInputs(final List<CommandWrapperInput> externalInputs);
-            public abstract Builder derivedInputs(final List<CommandWrapperInput> derivedInputs);
+            public abstract Builder externalInputs(final List<CommandWrapperExternalInput> externalInputs);
+            public abstract Builder derivedInputs(final List<CommandWrapperDerivedInput> derivedInputs);
             public abstract Builder outputHandlers(final List<CommandWrapperOutput> outputHandlers);
 
             public abstract CommandWrapper build();
         }
     }
 
-    @AutoValue
     public static abstract class CommandWrapperInput {
         @JsonIgnore public abstract long id();
         @JsonProperty("name") public abstract String name();
         @Nullable @JsonProperty("description") public abstract String description();
         @JsonProperty("type") public abstract String type();
-        @Nullable @JsonProperty("derived-from-xnat-input") public abstract String derivedFromXnatInput();
-        @Nullable @JsonProperty("derived-from-xnat-object-property") public abstract String derivedFromXnatObjectProperty();
         @Nullable @JsonProperty("matcher") public abstract String matcher();
         @Nullable @JsonProperty("provides-value-for-command-input") public abstract String providesValueForCommandInput();
         @Nullable @JsonProperty("provides-files-for-command-mount") public abstract String providesFilesForCommandMount();
@@ -681,8 +680,123 @@ public abstract class Command {
         @Nullable @JsonProperty("replacement-key") public abstract String rawReplacementKey();
         @JsonProperty("required") public abstract boolean required();
 
+        @Nonnull
+        List<String> validate() {
+            final List<String> errors = Lists.newArrayList();
+            if (StringUtils.isBlank(name())) {
+                errors.add("Name cannot be blank.");
+            }
+
+            final List<String> types = CommandWrapperInputType.names();
+            if (!types.contains(type())) {
+                errors.add("Unknown type \"" + type() + "\". Known types: " + StringUtils.join(types, ", "));
+            }
+
+            return errors;
+        }
+
+        public String replacementKey() {
+            return StringUtils.isNotBlank(rawReplacementKey()) ? rawReplacementKey() : "#" + name() + "#";
+        }
+
+
+    }
+
+    @AutoValue
+    public static abstract class CommandWrapperExternalInput extends CommandWrapperInput {
         @JsonCreator
-        static CommandWrapperInput create(@JsonProperty("name") final String name,
+        static CommandWrapperExternalInput create(@JsonProperty("name") final String name,
+                                          @JsonProperty("description") final String description,
+                                          @JsonProperty("type") final String type,
+                                          @JsonProperty("matcher") final String matcher,
+                                          @JsonProperty("provides-value-for-command-input") final String providesValueForCommandInput,
+                                          @JsonProperty("provides-files-for-command-mount") final String providesFilesForCommandMount,
+                                          @JsonProperty("default-value") final String defaultValue,
+                                          @JsonProperty("user-settable") final Boolean userSettable,
+                                          @JsonProperty("replacement-key") final String rawReplacementKey,
+                                          @JsonProperty("required") final Boolean required) {
+            return builder()
+                    .name(name == null ? "" : name)
+                    .description(description)
+                    .type(type == null ? CommandWrapperExternalInputEntity.DEFAULT_TYPE.getName() : type)
+                    .matcher(matcher)
+                    .providesValueForCommandInput(providesValueForCommandInput)
+                    .providesFilesForCommandMount(providesFilesForCommandMount)
+                    .defaultValue(defaultValue)
+                    .userSettable(userSettable)
+                    .rawReplacementKey(rawReplacementKey)
+                    .required(required == null ? Boolean.FALSE : required)
+                    .build();
+        }
+
+        static CommandWrapperExternalInput create(final CommandWrapperExternalInputEntity wrapperInput) {
+            if (wrapperInput == null) {
+                return null;
+            }
+
+            return builder()
+                    .id(wrapperInput.getId())
+                    .name(wrapperInput.getName())
+                    .description(wrapperInput.getDescription())
+                    .type(wrapperInput.getType().getName())
+                    .matcher(wrapperInput.getMatcher())
+                    .providesValueForCommandInput(wrapperInput.getProvidesValueForCommandInput())
+                    .providesFilesForCommandMount(wrapperInput.getProvidesFilesForCommandMount())
+                    .defaultValue(wrapperInput.getDefaultValue())
+                    .userSettable(wrapperInput.getUserSettable())
+                    .rawReplacementKey(wrapperInput.getRawReplacementKey())
+                    .required(wrapperInput.isRequired() == null ? false : wrapperInput.isRequired())
+                    .build();
+        }
+
+        static CommandWrapperExternalInput passthrough(final CommandInput commandInput) {
+            if (commandInput == null) {
+                return null;
+            }
+            return builder()
+                    .name(commandInput.name())
+                    .type(commandInput.type())
+                    .matcher(commandInput.matcher())
+                    .providesValueForCommandInput(commandInput.name())
+                    .defaultValue(commandInput.defaultValue())
+                    .userSettable(true)
+                    .required(commandInput.required())
+                    .build();
+        }
+
+        public static Builder builder() {
+            return new AutoValue_Command_CommandWrapperExternalInput.Builder()
+                    .id(0L)
+                    .name("")
+                    .type(CommandWrapperExternalInputEntity.DEFAULT_TYPE.getName())
+                    .required(false);
+        }
+
+        @AutoValue.Builder
+        public abstract static class Builder {
+            public abstract Builder id(final long id);
+            public abstract Builder name(final String name);
+            public abstract Builder description(final String description);
+            public abstract Builder type(final String type);
+            public abstract Builder matcher(final String matcher);
+            public abstract Builder providesValueForCommandInput(final String providesValueForCommandInput);
+            public abstract Builder providesFilesForCommandMount(final String providesFilesForCommandMount);
+            public abstract Builder defaultValue(final String defaultValue);
+            public abstract Builder userSettable(final Boolean userSettable);
+            public abstract Builder rawReplacementKey(final String rawReplacementKey);
+            public abstract Builder required(final boolean required);
+
+            public abstract CommandWrapperExternalInput build();
+        }
+    }
+
+    @AutoValue
+    public static abstract class CommandWrapperDerivedInput extends CommandWrapperInput {
+        @Nullable @JsonProperty("derived-from-xnat-input") public abstract String derivedFromXnatInput();
+        @Nullable @JsonProperty("derived-from-xnat-object-property") public abstract String derivedFromXnatObjectProperty();
+
+        @JsonCreator
+        static CommandWrapperDerivedInput create(@JsonProperty("name") final String name,
                                           @JsonProperty("description") final String description,
                                           @JsonProperty("type") final String type,
                                           @JsonProperty("derived-from-xnat-input") final String derivedFromXnatInput,
@@ -697,7 +811,7 @@ public abstract class Command {
             return builder()
                     .name(name == null ? "" : name)
                     .description(description)
-                    .type(type == null ? CommandWrapperInputEntity.DEFAULT_TYPE.getName() : type)
+                    .type(type == null ? CommandWrapperDerivedInputEntity.DEFAULT_TYPE.getName() : type)
                     .derivedFromXnatInput(derivedFromXnatInput)
                     .derivedFromXnatObjectProperty(derivedFromXnatObjectProperty)
                     .matcher(matcher)
@@ -710,7 +824,7 @@ public abstract class Command {
                     .build();
         }
 
-        static CommandWrapperInput create(final CommandWrapperInputEntity wrapperInput) {
+        static CommandWrapperDerivedInput create(final CommandWrapperDerivedInputEntity wrapperInput) {
             if (wrapperInput == null) {
                 return null;
             }
@@ -732,48 +846,18 @@ public abstract class Command {
                     .build();
         }
 
-        static CommandWrapperInput passthrough(final CommandInput commandInput) {
-            if (commandInput == null) {
-                return null;
-            }
-            return builder()
-                    .name(commandInput.name())
-                    .type(commandInput.type())
-                    .matcher(commandInput.matcher())
-                    .providesValueForCommandInput(commandInput.name())
-                    .defaultValue(commandInput.defaultValue())
-                    .userSettable(true)
-                    .required(commandInput.required())
-                    .build();
-        }
-
         public static Builder builder() {
-            return new AutoValue_Command_CommandWrapperInput.Builder()
+            return new AutoValue_Command_CommandWrapperDerivedInput.Builder()
                     .id(0L)
                     .name("")
-                    .type(CommandWrapperInputEntity.DEFAULT_TYPE.getName())
+                    .type(CommandWrapperDerivedInputEntity.DEFAULT_TYPE.getName())
                     .required(false);
         }
 
         @Nonnull
-        List<String> validateExternal() {
-            final List<String> errors = Lists.newArrayList();
-            if (StringUtils.isBlank(name())) {
-                errors.add("Name cannot be blank.");
-            }
-
-            final List<String> types = CommandWrapperInputEntity.Type.names();
-            if (!types.contains(type())) {
-                errors.add("Unknown type \"" + type() + "\". Known types: " + StringUtils.join(types, ", "));
-            }
-
-            return errors;
-        }
-
-        @Nonnull
-        List<String> validateDerived() {
+        List<String> validate() {
             // Derived inputs have all the same constraints as external inputs, plus more
-            final List<String> errors = validateExternal();
+            final List<String> errors = super.validate();
 
             if (StringUtils.isBlank(derivedFromXnatInput())) {
                 errors.add("\"Derived from\" cannot be blank.");
@@ -792,8 +876,6 @@ public abstract class Command {
             public abstract Builder name(final String name);
             public abstract Builder description(final String description);
             public abstract Builder type(final String type);
-            public abstract Builder derivedFromXnatInput(final String derivedFromXnatInput);
-            public abstract Builder derivedFromXnatObjectProperty(final String derivedFromXnatObjectProperty);
             public abstract Builder matcher(final String matcher);
             public abstract Builder providesValueForCommandInput(final String providesValueForCommandInput);
             public abstract Builder providesFilesForCommandMount(final String providesFilesForCommandMount);
@@ -801,8 +883,10 @@ public abstract class Command {
             public abstract Builder userSettable(final Boolean userSettable);
             public abstract Builder rawReplacementKey(final String rawReplacementKey);
             public abstract Builder required(final boolean required);
+            public abstract Builder derivedFromXnatInput(final String derivedFromXnatInput);
+            public abstract Builder derivedFromXnatObjectProperty(final String derivedFromXnatObjectProperty);
 
-            public abstract CommandWrapperInput build();
+            public abstract CommandWrapperDerivedInput build();
         }
     }
 

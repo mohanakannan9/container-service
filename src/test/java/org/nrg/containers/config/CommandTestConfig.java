@@ -9,15 +9,14 @@ import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.CommandInputEntity;
 import org.nrg.containers.model.CommandMountEntity;
 import org.nrg.containers.model.CommandOutputEntity;
-import org.nrg.containers.model.CommandWrapperInputEntity;
+import org.nrg.containers.model.CommandWrapperDerivedInputEntity;
+import org.nrg.containers.model.CommandWrapperExternalInputEntity;
 import org.nrg.containers.model.CommandWrapperOutputEntity;
 import org.nrg.containers.model.DockerCommandEntity;
 import org.nrg.containers.model.CommandWrapperEntity;
-import org.nrg.containers.services.CommandEntityService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerExecutionService;
 import org.nrg.containers.services.ContainerLaunchService;
-import org.nrg.containers.services.impl.CommandServiceImpl;
 import org.nrg.containers.services.impl.ContainerLaunchServiceImpl;
 import org.nrg.transporter.TransportService;
 import org.nrg.transporter.TransportServiceImpl;
@@ -96,7 +95,8 @@ public class CommandTestConfig {
                 CommandOutputEntity.class,
                 CommandMountEntity.class,
                 CommandWrapperEntity.class,
-                CommandWrapperInputEntity.class,
+                CommandWrapperExternalInputEntity.class,
+                CommandWrapperDerivedInputEntity.class,
                 CommandWrapperOutputEntity.class);
         return bean;
     }

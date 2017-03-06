@@ -1,40 +1,32 @@
 package org.nrg.containers.model;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonValue;
-import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
-import com.google.common.collect.Lists;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.envers.Audited;
 import org.nrg.containers.model.auto.Command;
 
-import javax.annotation.Nullable;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.Transient;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 
 @Entity
 @Audited
-public class CommandWrapperInputEntity {
-    public static final Type DEFAULT_TYPE = Type.STRING;
+public class CommandWrapperDerivedInputEntity {
+    public static final CommandWrapperInputType DEFAULT_TYPE = CommandWrapperInputType.STRING;
 
     private long id;
-    @JsonIgnore private CommandWrapperEntity commandWrapperEntity;
+    @JsonIgnore
+    private CommandWrapperEntity commandWrapperEntity;
     private String name;
     private String description;
-    private Type type;
-    @JsonProperty("derived-from-xnat-input") private String derivedFromXnatInput;
-    @JsonProperty("derived-from-xnat-object-property") private String derivedFromXnatObjectProperty;
+    private CommandWrapperInputType type;
     private String matcher;
     @JsonProperty("provides-value-for-command-input") private String providesValueForCommandInput;
     @JsonProperty("provides-files-for-command-mount") private String providesFilesForCommandMount;
@@ -43,15 +35,18 @@ public class CommandWrapperInputEntity {
     @JsonProperty("replacement-key") private String rawReplacementKey;
     private boolean required = false;
     private String value;
-    private String jsonRepresentation;
 
-    public static CommandWrapperInputEntity fromPojo(final Command.CommandWrapperInput commandWrapperInput) {
-        final CommandWrapperInputEntity commandWrapperInputEntity = new CommandWrapperInputEntity();
+    @JsonProperty("derived-from-xnat-input") private String derivedFromXnatInput;
+    @JsonProperty("derived-from-xnat-object-property") private String derivedFromXnatObjectProperty;
+
+    public static CommandWrapperDerivedInputEntity fromPojo(final Command.CommandWrapperDerivedInput commandWrapperInput) {
+        final CommandWrapperDerivedInputEntity commandWrapperInputEntity = new CommandWrapperDerivedInputEntity();
+        commandWrapperInputEntity.derivedFromXnatInput = commandWrapperInput.derivedFromXnatInput();
+        commandWrapperInputEntity.derivedFromXnatObjectProperty = commandWrapperInput.derivedFromXnatObjectProperty();
         commandWrapperInputEntity.id = commandWrapperInput.id();
         commandWrapperInputEntity.name = commandWrapperInput.name();
         commandWrapperInputEntity.description = commandWrapperInput.description();
-        commandWrapperInputEntity.derivedFromXnatInput = commandWrapperInput.derivedFromXnatInput();
-        commandWrapperInputEntity.derivedFromXnatObjectProperty = commandWrapperInput.derivedFromXnatObjectProperty();
+
         commandWrapperInputEntity.matcher = commandWrapperInput.matcher();
         commandWrapperInputEntity.providesValueForCommandInput = commandWrapperInput.providesValueForCommandInput();
         commandWrapperInputEntity.providesFilesForCommandMount = commandWrapperInput.providesFilesForCommandMount();
@@ -61,50 +56,49 @@ public class CommandWrapperInputEntity {
         commandWrapperInputEntity.required = commandWrapperInput.required();
         switch (commandWrapperInput.type()) {
             case "string":
-                commandWrapperInputEntity.type = Type.STRING;
+                commandWrapperInputEntity.type = CommandWrapperInputType.STRING;
                 break;
             case "boolean":
-                commandWrapperInputEntity.type = Type.BOOLEAN;
+                commandWrapperInputEntity.type = CommandWrapperInputType.BOOLEAN;
                 break;
             case "number":
-                commandWrapperInputEntity.type = Type.NUMBER;
+                commandWrapperInputEntity.type = CommandWrapperInputType.NUMBER;
                 break;
             case "Directory":
-                commandWrapperInputEntity.type = Type.DIRECTORY;
+                commandWrapperInputEntity.type = CommandWrapperInputType.DIRECTORY;
                 break;
             case "File[]":
-                commandWrapperInputEntity.type = Type.FILES;
+                commandWrapperInputEntity.type = CommandWrapperInputType.FILES;
                 break;
             case "File":
-                commandWrapperInputEntity.type = Type.FILE;
+                commandWrapperInputEntity.type = CommandWrapperInputType.FILE;
                 break;
             case "Project":
-                commandWrapperInputEntity.type = Type.PROJECT;
+                commandWrapperInputEntity.type = CommandWrapperInputType.PROJECT;
                 break;
             case "Subject":
-                commandWrapperInputEntity.type = Type.SUBJECT;
+                commandWrapperInputEntity.type = CommandWrapperInputType.SUBJECT;
                 break;
             case "Session":
-                commandWrapperInputEntity.type = Type.SESSION;
+                commandWrapperInputEntity.type = CommandWrapperInputType.SESSION;
                 break;
             case "Scan":
-                commandWrapperInputEntity.type = Type.SCAN;
+                commandWrapperInputEntity.type = CommandWrapperInputType.SCAN;
                 break;
             case "Assessor":
-                commandWrapperInputEntity.type = Type.ASSESSOR;
+                commandWrapperInputEntity.type = CommandWrapperInputType.ASSESSOR;
                 break;
             case "Resource":
-                commandWrapperInputEntity.type = Type.RESOURCE;
+                commandWrapperInputEntity.type = CommandWrapperInputType.RESOURCE;
                 break;
             case "Config":
-                commandWrapperInputEntity.type = Type.CONFIG;
+                commandWrapperInputEntity.type = CommandWrapperInputType.CONFIG;
                 break;
             default:
                 commandWrapperInputEntity.type = DEFAULT_TYPE;
         }
         return commandWrapperInputEntity;
     }
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     public long getId() {
@@ -124,6 +118,23 @@ public class CommandWrapperInputEntity {
         this.commandWrapperEntity = commandWrapperEntity;
     }
 
+    public String getDerivedFromXnatInput() {
+        return derivedFromXnatInput;
+    }
+
+    public void setDerivedFromXnatInput(final String derivedFromXnatInput) {
+        this.derivedFromXnatInput = derivedFromXnatInput;
+    }
+
+    public String getDerivedFromXnatObjectProperty() {
+        return derivedFromXnatObjectProperty;
+    }
+
+    public void setDerivedFromXnatObjectProperty(final String derivedFromXnatObjectProperty) {
+        this.derivedFromXnatObjectProperty = derivedFromXnatObjectProperty;
+    }
+
+
     public String getName() {
         return name;
     }
@@ -140,28 +151,12 @@ public class CommandWrapperInputEntity {
         this.description = description;
     }
 
-    public Type getType() {
+    public CommandWrapperInputType getType() {
         return type;
     }
 
-    public void setType(final Type type) {
+    public void setType(final CommandWrapperInputType type) {
         this.type = type;
-    }
-
-    public String getDerivedFromXnatInput() {
-        return derivedFromXnatInput;
-    }
-
-    public void setDerivedFromXnatInput(final String derivedFromXnatInput) {
-        this.derivedFromXnatInput = derivedFromXnatInput;
-    }
-
-    public String getDerivedFromXnatObjectProperty() {
-        return derivedFromXnatObjectProperty;
-    }
-
-    public void setDerivedFromXnatObjectProperty(final String derivedFromXnatObjectProperty) {
-        this.derivedFromXnatObjectProperty = derivedFromXnatObjectProperty;
     }
 
     public String getMatcher() {
@@ -240,39 +235,19 @@ public class CommandWrapperInputEntity {
         this.value = value;
     }
 
-    @Transient
-    public String getJsonRepresentation() {
-        return jsonRepresentation;
-    }
-
-    public void setJsonRepresentation(final String jsonRepresentation) {
-        this.jsonRepresentation = jsonRepresentation;
-    }
 
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final CommandWrapperInputEntity that = (CommandWrapperInputEntity) o;
+        final CommandWrapperDerivedInputEntity that = (CommandWrapperDerivedInputEntity) o;
         return Objects.equals(this.id, that.id) &&
-                Objects.equals(this.name, that.name) &&
-                Objects.equals(this.description, that.description) &&
-                type == that.type &&
-                Objects.equals(this.derivedFromXnatInput, that.derivedFromXnatInput) &&
-                Objects.equals(this.derivedFromXnatObjectProperty, that.derivedFromXnatObjectProperty) &&
-                Objects.equals(this.matcher, that.matcher) &&
-                Objects.equals(this.providesValueForCommandInput, that.providesValueForCommandInput) &&
-                Objects.equals(this.providesFilesForCommandMount, that.providesFilesForCommandMount) &&
-                Objects.equals(this.defaultValue, that.defaultValue) &&
-                Objects.equals(this.userSettable, that.userSettable) &&
-                Objects.equals(this.rawReplacementKey, that.rawReplacementKey) &&
-                Objects.equals(this.required, that.required);
+                Objects.equals(this.name, that.name);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, description, type, derivedFromXnatInput, derivedFromXnatObjectProperty, matcher,
-                providesValueForCommandInput, providesFilesForCommandMount, defaultValue, userSettable, rawReplacementKey, required);
+        return Objects.hash(id, name);
     }
 
     @Override
@@ -292,45 +267,6 @@ public class CommandWrapperInputEntity {
                 .add("rawReplacementKey", rawReplacementKey)
                 .add("required", required)
                 .add("value", value)
-                .add("jsonRepresentation", jsonRepresentation)
                 .toString();
-    }
-
-    public enum Type {
-        STRING("string"),
-        BOOLEAN("boolean"),
-        NUMBER("number"),
-        DIRECTORY("Directory"),
-        FILES("File[]"),
-        FILE("File"),
-        PROJECT("Project"),
-        SUBJECT("Subject"),
-        SESSION("Session"),
-        SCAN("Scan"),
-        ASSESSOR("Assessor"),
-        RESOURCE("Resource"),
-        CONFIG("Config");
-
-        private final String name;
-
-        @JsonCreator
-        Type(final String name) {
-            this.name = name;
-        }
-
-        @JsonValue
-        public String getName() {
-            return name;
-        }
-
-        public static List<String> names() {
-            return Lists.transform(Arrays.asList(Type.values()), new Function<Type, String>() {
-                @Nullable
-                @Override
-                public String apply(@Nullable final Type type) {
-                    return type != null ? type.getName() : "";
-                }
-            });
-        }
     }
 }

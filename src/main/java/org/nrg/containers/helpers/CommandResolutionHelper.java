@@ -29,6 +29,7 @@ import org.nrg.containers.model.auto.Command.CommandInput;
 import org.nrg.containers.model.auto.Command.CommandMount;
 import org.nrg.containers.model.auto.Command.CommandOutput;
 import org.nrg.containers.model.auto.Command.CommandWrapper;
+import org.nrg.containers.model.auto.Command.CommandWrapperDerivedInput;
 import org.nrg.containers.model.auto.Command.CommandWrapperInput;
 import org.nrg.containers.model.auto.Command.CommandWrapperOutput;
 import org.nrg.containers.model.xnat.Assessor;
@@ -54,19 +55,19 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.nrg.containers.model.CommandType.DOCKER;
-import static org.nrg.containers.model.CommandWrapperInputEntity.Type.ASSESSOR;
-import static org.nrg.containers.model.CommandWrapperInputEntity.Type.BOOLEAN;
-import static org.nrg.containers.model.CommandWrapperInputEntity.Type.CONFIG;
-import static org.nrg.containers.model.CommandWrapperInputEntity.Type.DIRECTORY;
-import static org.nrg.containers.model.CommandWrapperInputEntity.Type.FILE;
-import static org.nrg.containers.model.CommandWrapperInputEntity.Type.FILES;
-import static org.nrg.containers.model.CommandWrapperInputEntity.Type.NUMBER;
-import static org.nrg.containers.model.CommandWrapperInputEntity.Type.PROJECT;
-import static org.nrg.containers.model.CommandWrapperInputEntity.Type.RESOURCE;
-import static org.nrg.containers.model.CommandWrapperInputEntity.Type.SCAN;
-import static org.nrg.containers.model.CommandWrapperInputEntity.Type.SESSION;
-import static org.nrg.containers.model.CommandWrapperInputEntity.Type.STRING;
-import static org.nrg.containers.model.CommandWrapperInputEntity.Type.SUBJECT;
+import static org.nrg.containers.model.CommandWrapperInputType.ASSESSOR;
+import static org.nrg.containers.model.CommandWrapperInputType.BOOLEAN;
+import static org.nrg.containers.model.CommandWrapperInputType.CONFIG;
+import static org.nrg.containers.model.CommandWrapperInputType.DIRECTORY;
+import static org.nrg.containers.model.CommandWrapperInputType.FILE;
+import static org.nrg.containers.model.CommandWrapperInputType.FILES;
+import static org.nrg.containers.model.CommandWrapperInputType.NUMBER;
+import static org.nrg.containers.model.CommandWrapperInputType.PROJECT;
+import static org.nrg.containers.model.CommandWrapperInputType.RESOURCE;
+import static org.nrg.containers.model.CommandWrapperInputType.SCAN;
+import static org.nrg.containers.model.CommandWrapperInputType.SESSION;
+import static org.nrg.containers.model.CommandWrapperInputType.STRING;
+import static org.nrg.containers.model.CommandWrapperInputType.SUBJECT;
 
 public class CommandResolutionHelper {
     private static final Logger log = LoggerFactory.getLogger(CommandResolutionHelper.class);
@@ -485,7 +486,8 @@ public class CommandResolutionHelper {
         if (hasDerivedInputs) {
             log.info("Resolving derived xnat wrapper inputs.");
 
-            for (final CommandWrapperInput derivedInput : commandWrapper.derivedInputs()) {
+            for (final CommandWrapperInput derivedInputNeedsToBeCast : commandWrapper.derivedInputs()) {
+                final CommandWrapperDerivedInput derivedInput = (CommandWrapperDerivedInput) derivedInputNeedsToBeCast;
                 log.info(String.format("Resolving input \"%s\".", derivedInput.name()));
 
                 if (StringUtils.isBlank(derivedInput.derivedFromXnatInput())) {
