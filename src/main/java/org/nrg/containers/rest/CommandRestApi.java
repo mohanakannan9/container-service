@@ -14,6 +14,7 @@ import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.containers.model.auto.Command;
+import org.nrg.containers.model.auto.Command.CommandWrapper;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerLaunchService;
 import org.nrg.framework.annotations.XapiRestController;
@@ -69,7 +70,7 @@ public class CommandRestApi extends AbstractXapiRestController {
     }
 
     /*
-    GET COMMANDS
+    COMMAND CRUD
      */
     @RequestMapping(value = {}, params = {"!name", "!version", "!image"}, method = GET)
     @ApiOperation(value = "Get all Commands")
@@ -115,9 +116,6 @@ public class CommandRestApi extends AbstractXapiRestController {
         return commandService.get(id);
     }
 
-    /*
-    CREATE COMMANDS
-     */
     @RequestMapping(value = {}, method = POST, produces = JSON)
     @ApiOperation(value = "Create a Command", code = 201)
     public ResponseEntity<Long> createCommand(final @RequestBody Command command)
@@ -134,9 +132,6 @@ public class CommandRestApi extends AbstractXapiRestController {
         }
     }
 
-    /*
-    UPDATE COMMANDS
-     */
     @RequestMapping(value = {"/{id}"}, method = POST)
     @ApiOperation(value = "Update a Command")
     @ResponseBody
@@ -147,14 +142,29 @@ public class CommandRestApi extends AbstractXapiRestController {
         return ResponseEntity.ok().build();
     }
 
-    /*
-    DELETE COMMANDS
-     */
     @RequestMapping(value = {"/{id}"}, method = DELETE)
     @ApiOperation(value = "Delete a Command", code = 204)
     public ResponseEntity<String> deleteCommand(final @PathVariable long id) {
         commandService.delete(id);
         return new ResponseEntity<>("", HttpStatus.NO_CONTENT);
+    }
+
+    /*
+    WRAPPER CUD
+     */
+    @RequestMapping(value = {"/{id}/wrappers"}, method = POST, produces = JSON)
+    @ApiOperation(value = "Create a Command Wrapper", code = 201)
+    public ResponseEntity<Long> createWrapper(final @RequestBody CommandWrapper commandWrapper,
+                                              final @PathVariable long id)
+            throws BadRequestException, CommandValidationException, NotFoundException {
+        if (commandWrapper == null) {
+            throw new BadRequestException("The body of the request must be a CommandWrapper.");
+        }
+        final CommandWrapper created = commandService.addWrapper(id, commandWrapper);
+        if (created == null) {
+            return new ResponseEntity<>(0L, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return new ResponseEntity<>(created.id(), HttpStatus.CREATED);
     }
 
     /*

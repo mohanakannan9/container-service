@@ -19,6 +19,7 @@ import org.mockito.Mockito;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.config.CommandRestApiTestConfig;
 import org.nrg.containers.model.CommandEntity;
+import org.nrg.containers.model.CommandWrapperEntity;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.model.DockerServerPrefsBean;
@@ -56,6 +57,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
@@ -328,6 +330,75 @@ public class CommandRestApiTest {
 
         final CommandEntity retrieved = commandEntityService.retrieve(id);
         assertNull(retrieved);
+    }
+
+    @Test
+    @DirtiesContext
+    public void testAddWrapper() throws Exception {
+        final String pathTemplate = "/commands/%d/wrappers";
+
+        final String commandWrapperJson = "{\"name\": \"empty wrapper\"}";
+
+        final String commandJson =
+                "{\"name\": \"toCreate\", \"type\": \"docker\", \"image\":\"" + FAKE_DOCKER_IMAGE + "\"}";
+        final CommandEntity commandEntity = mapper.readValue(commandJson, CommandEntity.class);
+        commandEntityService.create(commandEntity);
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+        final Long id = commandEntity.getId();
+        final String path = String.format(pathTemplate, id);
+
+        final MockHttpServletRequestBuilder request =
+                post(path).content(commandWrapperJson).contentType(JSON)
+                        .with(authentication(authentication))
+                        .with(csrf())
+                        .with(testSecurityContext());
+
+        final String response =
+                mockMvc.perform(request)
+                        .andExpect(status().isCreated())
+                        .andExpect(content().contentType(JSON))
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        final Long idResponse = Long.parseLong(response);
+        assertNotEquals(Long.valueOf(0L), idResponse);
+
+        CommandWrapperEntity retrieved = null;
+        commandEntityService.refresh(commandEntity);
+        for (final CommandWrapperEntity wrapper : commandEntity.getCommandWrapperEntities()) {
+            if (wrapper.getId() == idResponse) {
+                retrieved = wrapper;
+                break;
+            }
+        }
+        assertNotNull(retrieved);
+        assertNotEquals(0L, retrieved.getId());
+        assertEquals((Long) retrieved.getId(), idResponse);
+        assertEquals("empty wrapper", retrieved.getName());
+
+        // Errors
+
+        // Blank command
+        final String blankWrapper = "{}";
+        final MockHttpServletRequestBuilder blankCommandRequest =
+                post(path).content(blankWrapper).contentType(JSON)
+                        .with(authentication(authentication))
+                        .with(csrf())
+                        .with(testSecurityContext());
+        final String blankCommandResponse =
+                mockMvc.perform(blankCommandRequest)
+                        .andExpect(status().isBadRequest())
+                        .andReturn()
+                        .getResponse()
+                        .getContentAsString();
+        assertEquals("Invalid command:\n\tName cannot be blank.", blankCommandResponse);
     }
 
     @Test

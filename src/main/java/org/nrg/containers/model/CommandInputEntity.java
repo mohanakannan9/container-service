@@ -42,6 +42,7 @@ public class CommandInputEntity implements Serializable {
 
     public static CommandInputEntity fromPojo(final Command.CommandInput commandInput) {
         final CommandInputEntity commandInputEntity = new CommandInputEntity();
+        commandInputEntity.id = commandInput.id();
         commandInputEntity.name = commandInput.name();
         commandInputEntity.description = commandInput.description();
         commandInputEntity.required = commandInput.required();

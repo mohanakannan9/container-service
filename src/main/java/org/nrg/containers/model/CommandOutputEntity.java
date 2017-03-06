@@ -29,6 +29,7 @@ public class CommandOutputEntity implements Serializable {
 
     public static CommandOutputEntity fromPojo(final Command.CommandOutput commandOutput) {
         final CommandOutputEntity commandOutputEntity = new CommandOutputEntity();
+        commandOutputEntity.id = commandOutput.id();
         commandOutputEntity.name = commandOutput.name();
         commandOutputEntity.description = commandOutput.description();
         commandOutputEntity.required = commandOutput.required();

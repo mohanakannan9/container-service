@@ -55,4 +55,10 @@ public class HibernateCommandEntityService extends AbstractHibernateEntityServic
         final List<CommandEntity> commandEntities = getDao().findByProperties(properties);
         return commandEntities == null ? Lists.<CommandEntity>newArrayList() : commandEntities;
     }
+
+    @Override
+    public CommandWrapperEntity addWrapper(final @Nonnull CommandEntity commandEntity, final @Nonnull CommandWrapperEntity wrapperToAdd) {
+        getDao().addWrapper(commandEntity, wrapperToAdd);
+        return wrapperToAdd;
+    }
 }

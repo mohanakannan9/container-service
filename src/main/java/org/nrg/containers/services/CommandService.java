@@ -2,6 +2,7 @@ package org.nrg.containers.services;
 
 import org.nrg.containers.exceptions.CommandValidationException;
 import org.nrg.containers.model.auto.Command;
+import org.nrg.containers.model.auto.Command.CommandWrapper;
 import org.nrg.framework.exceptions.NotFoundException;
 
 import java.util.List;
@@ -13,7 +14,9 @@ public interface CommandService {
     Command retrieve(long id);
     Command get(long id) throws NotFoundException;
     List<Command> findByProperties(Map<String, Object> properties);
-    void update(Command updates) throws NotFoundException, CommandValidationException;
+    Command update(Command updates) throws NotFoundException, CommandValidationException;
     void delete(long id);
     List<Command> save(final List<Command> commands);
+
+    CommandWrapper addWrapper(long commandId, CommandWrapper commandWrapper) throws CommandValidationException, NotFoundException;
 }

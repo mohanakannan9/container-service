@@ -40,7 +40,6 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.util.List;
@@ -613,7 +612,7 @@ public class DockerRestApiTest {
         fakeCommand.setHash(fakeImageId);
         fakeCommand.setName(fakeCommandName);
         fakeCommand.setImage(fakeImageName);
-        fakeCommand.addXnatCommandWrapper(fakeWrapper);
+        fakeCommand.addWrapper(fakeWrapper);
 
         final String unknownImageName = "unknown";
         final String unknownCommandName = "image-unknown";

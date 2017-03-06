@@ -75,6 +75,7 @@ public class CommandMountEntity implements Serializable {
 
     static CommandMountEntity fromPojo(final Command.CommandMount commandMount) {
         final CommandMountEntity commandMountEntity = new CommandMountEntity();
+        commandMountEntity.id = commandMount.id();
         commandMountEntity.name = commandMount.name();
         commandMountEntity.writable = commandMount.writable();
         commandMountEntity.containerPath = commandMount.path();

@@ -11,7 +11,9 @@ import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import org.nrg.containers.exceptions.CommandValidationException;
 import org.nrg.containers.model.CommandEntity;
+import org.nrg.containers.model.CommandWrapperEntity;
 import org.nrg.containers.model.auto.Command;
+import org.nrg.containers.model.auto.Command.CommandWrapper;
 import org.nrg.containers.services.CommandEntityService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.framework.exceptions.NotFoundException;
@@ -94,16 +96,31 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     }
 
     @Override
-    public void update(final Command updates) throws NotFoundException, CommandValidationException {
-        if (updates == null) {
-            return;
-        }
-        commandEntityService.update(fromPojo(updates));
+    @Nonnull
+    public Command update(final @Nonnull Command toUpdate) throws NotFoundException, CommandValidationException {
+        final CommandEntity updatableEntity = fromPojo(toUpdate);
+        commandEntityService.update(updatableEntity);
+        commandEntityService.refresh(updatableEntity);
+        return toPojo(updatableEntity);
     }
 
     @Override
     public void delete(final long id) {
         commandEntityService.delete(id);
+    }
+
+    @Override
+    @Nonnull
+    public CommandWrapper addWrapper(final long commandId, final @Nonnull CommandWrapper wrapperToAdd) throws CommandValidationException, NotFoundException {
+        final CommandEntity commandEntity = commandEntityService.get(commandId);
+        final Command command = toPojo(commandEntity);
+        command.addWrapper(wrapperToAdd);
+        final List<String> errors = command.validate();
+        if (!errors.isEmpty()) {
+            throw new CommandValidationException(errors);
+        }
+
+        return toPojo(commandEntityService.addWrapper(commandEntity, fromPojo(wrapperToAdd)));
     }
 
     @Override
@@ -130,16 +147,17 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
 
     @Nonnull
     private List<Command> toPojo(final List<CommandEntity> commandEntityList) {
-        if (commandEntityList == null) {
-            return Lists.newArrayList();
+        final List<Command> returnList = Lists.newArrayList();
+        if (commandEntityList != null) {
+            returnList.addAll(Lists.transform(commandEntityList, new Function<CommandEntity, Command>() {
+                @Nullable
+                @Override
+                public Command apply(@Nullable final CommandEntity commandEntity) {
+                    return commandEntity == null ? null : toPojo(commandEntity);
+                }
+            }));
         }
-        return Lists.transform(commandEntityList, new Function<CommandEntity, Command>() {
-                    @Nullable
-                    @Override
-                    public Command apply(@Nullable final CommandEntity commandEntity) {
-                        return commandEntity == null ? null : toPojo(commandEntity);
-                    }
-                });
+        return returnList;
     }
 
     @Nonnull
@@ -153,4 +171,13 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
         return CommandEntity.fromPojo(command, template);
     }
 
+    @Nonnull
+    private CommandWrapperEntity fromPojo(@Nonnull final CommandWrapper commandWrapper) throws CommandValidationException, NotFoundException {
+        return CommandWrapperEntity.fromPojo(commandWrapper);
+    }
+
+    @Nonnull
+    private CommandWrapper toPojo(@Nonnull final CommandWrapperEntity commandWrapperEntity) throws CommandValidationException {
+        return CommandWrapper.create(commandWrapperEntity);
+    }
 }

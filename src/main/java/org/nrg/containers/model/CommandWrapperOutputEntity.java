@@ -34,6 +34,7 @@ public class CommandWrapperOutputEntity {
 
     public static CommandWrapperOutputEntity fromPojo(final Command.CommandWrapperOutput commandWrapperOutput) {
         final CommandWrapperOutputEntity commandWrapperOutputEntity = new CommandWrapperOutputEntity();
+        commandWrapperOutputEntity.id = commandWrapperOutput.id();
         commandWrapperOutputEntity.commandOutputName = commandWrapperOutput.commandOutputName();
         commandWrapperOutputEntity.xnatInputName = commandWrapperOutput.xnatInputName();
         commandWrapperOutputEntity.label = commandWrapperOutput.label();

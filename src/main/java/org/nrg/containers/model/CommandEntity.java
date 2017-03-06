@@ -63,14 +63,17 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         }
 
         final CommandEntity commandEntity;
-        final String type = command.type();
-        switch (type) {
-            case "docker":
-                commandEntity = DockerCommandEntity.fromPojo(command);
-                break;
-            default:
-                // This should have been caught already, but still...
-                throw new CommandValidationException("Cannot instantiate command with type " + type);
+        if (template != null) {
+            commandEntity = template;
+        } else {
+            switch (command.type()) {
+                case "docker":
+                    commandEntity = DockerCommandEntity.fromPojo(command);
+                    break;
+                default:
+                    // This should have been caught already, but still...
+                    throw new CommandValidationException("Cannot instantiate command with type " + command.type());
+            }
         }
 
         commandEntity.setName(command.name());
@@ -96,13 +99,7 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
             commandEntity.addOutput(CommandOutputEntity.fromPojo(commandOutput));
         }
         for (final Command.CommandWrapper commandWrapper : command.xnatCommandWrappers()) {
-            commandEntity.addXnatCommandWrapper(CommandWrapperEntity.fromPojo(commandWrapper));
-        }
-
-        if (template != null) {
-            commandEntity.setEnabled(template.isEnabled());
-            commandEntity.setDisabled(template.getDisabled());
-            commandEntity.setCreated(template.getCreated());
+            commandEntity.addWrapper(CommandWrapperEntity.fromPojo(commandWrapper));
         }
 
         return commandEntity;
@@ -299,7 +296,7 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
     }
 
     @Transient
-    public void addXnatCommandWrapper(final CommandWrapperEntity commandWrapperEntity) {
+    public void addWrapper(final CommandWrapperEntity commandWrapperEntity) {
         if (commandWrapperEntity == null) {
             return;
         }

@@ -99,4 +99,11 @@ public class CommandEntityRepository extends AbstractHibernateDAO<CommandEntity>
             getSession().merge(commandEntity);
         }
     }
+
+    public void addWrapper(final @Nonnull CommandEntity commandEntity,
+                           final @Nonnull CommandWrapperEntity commandWrapperEntity) {
+        commandEntity.addWrapper(commandWrapperEntity);
+        getSession().persist(commandWrapperEntity);
+        update(commandEntity);
+    }
 }

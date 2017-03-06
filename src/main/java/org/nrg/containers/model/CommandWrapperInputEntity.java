@@ -47,6 +47,7 @@ public class CommandWrapperInputEntity {
 
     public static CommandWrapperInputEntity fromPojo(final Command.CommandWrapperInput commandWrapperInput) {
         final CommandWrapperInputEntity commandWrapperInputEntity = new CommandWrapperInputEntity();
+        commandWrapperInputEntity.id = commandWrapperInput.id();
         commandWrapperInputEntity.name = commandWrapperInput.name();
         commandWrapperInputEntity.description = commandWrapperInput.description();
         commandWrapperInputEntity.derivedFromXnatInput = commandWrapperInput.derivedFromXnatInput();
