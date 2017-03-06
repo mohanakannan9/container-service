@@ -199,6 +199,64 @@ public class CommandWrapperEntityTest {
     }
 
     @Test
+    public void testRetrieveCommandWrapper() throws Exception {
+
+        final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
+
+        final CommandEntity created = commandEntityService.create(commandEntity);
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        final CommandWrapperEntity createdWrapper = created.getCommandWrapperEntities().get(0);
+        final long commandId = created.getId();
+        final long wrapperId = createdWrapper.getId();
+        assertEquals(createdWrapper, commandEntityService.retrieve(commandId, wrapperId));
+    }
+
+    @Test
+    public void testUpdateCommandWrapper() throws Exception {
+
+        final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
+
+        final CommandEntity created = commandEntityService.create(commandEntity);
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        final CommandWrapperEntity createdWrapper = created.getCommandWrapperEntities().get(0);
+
+        final String newDescription = "This is probably a new description, right?";
+        createdWrapper.setDescription(newDescription);
+        final CommandWrapperEntity updated = commandEntityService.update(createdWrapper);
+        assertEquals(newDescription, updated.getDescription());
+    }
+
+    @Test
+    public void testDeleteCommandWrapper() throws Exception {
+
+        final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
+
+        final CommandEntity created = commandEntityService.create(commandEntity);
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        final long commandId = created.getId();
+        final long wrapperId = created.getCommandWrapperEntities().get(0).getId();
+        commandEntityService.delete(commandId, wrapperId);
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        assertNull(commandEntityService.retrieve(commandId, wrapperId));
+    }
+
+    @Test
     public void testCreateEcatHeaderDump() throws Exception {
         // A User was attempting to create the command in this resource.
         // Spring didn't tell us why. See CS-70.
