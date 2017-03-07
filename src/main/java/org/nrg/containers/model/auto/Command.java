@@ -9,6 +9,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.ecs.xhtml.input;
 import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.CommandInputEntity;
 import org.nrg.containers.model.CommandMountEntity;
@@ -198,9 +199,18 @@ public abstract class Command {
             errors.add(commandName + "image name cannot be blank.");
         }
 
+        final Function<String, String> addCommandNameToError = new Function<String, String>() {
+            @Nullable
+            @Override
+            public String apply(@Nullable final String input) {
+                return commandName + input;
+            }
+        };
+
         final Set<String> mountNames = Sets.newHashSet();
         for (final CommandMount mount : mounts()) {
-            final List<String> mountErrors = mount.validate();
+            final List<String> mountErrors = Lists.newArrayList();
+            mountErrors.addAll(Lists.transform(mount.validate(), addCommandNameToError));
 
             if (mountNames.contains(mount.name())) {
                 errors.add(commandName + "mount name \"" + mount.name() + "\" is not unique.");
@@ -216,7 +226,8 @@ public abstract class Command {
 
         final Set<String> inputNames = Sets.newHashSet();
         for (final CommandInput input : inputs()) {
-            final List<String> inputErrors = input.validate();
+            final List<String> inputErrors = Lists.newArrayList();
+            inputErrors.addAll(Lists.transform(input.validate(), addCommandNameToError));
 
             if (inputNames.contains(input.name())) {
                 errors.add(commandName + "input name \"" + input.name() + "\" is not unique.");
@@ -231,7 +242,8 @@ public abstract class Command {
 
         final Set<String> outputNames = Sets.newHashSet();
         for (final CommandOutput output : outputs()) {
-            final List<String> outputErrors = output.validate();
+            final List<String> outputErrors = Lists.newArrayList();
+            outputErrors.addAll(Lists.transform(output.validate(), addCommandNameToError));
 
             if (outputNames.contains(output.name())) {
                 errors.add(commandName + "output name \"" + output.name() + "\" is not unique.");
@@ -251,7 +263,8 @@ public abstract class Command {
 
         final Set<String> wrapperNames = Sets.newHashSet();
         for (final CommandWrapper commandWrapper : xnatCommandWrappers()) {
-            final List<String> wrapperErrors = commandWrapper.validate();
+            final List<String> wrapperErrors = Lists.newArrayList();
+            wrapperErrors.addAll(Lists.transform(commandWrapper.validate(), addCommandNameToError));
 
             if (wrapperNames.contains(commandWrapper.name())) {
                 errors.add(commandName + "wrapper name \"" + commandWrapper.name() + "\" is not unique.");
@@ -259,10 +272,18 @@ public abstract class Command {
                 wrapperNames.add(commandWrapper.name());
             }
             final String wrapperName = commandName + "wrapper \"" + commandWrapper.name() + "\" - ";
+            final Function<String, String> addWrapperNameToError = new Function<String, String>() {
+                @Nullable
+                @Override
+                public String apply(@Nullable final String input) {
+                    return wrapperName + input;
+                }
+            };
 
             final Set<String> wrapperInputNames = Sets.newHashSet();
             for (final CommandWrapperInput external : commandWrapper.externalInputs()) {
-                final List<String> inputErrors = external.validate();
+                final List<String> inputErrors = Lists.newArrayList();
+                inputErrors.addAll(Lists.transform(external.validate(), addWrapperNameToError));
 
                 if (wrapperInputNames.contains(external.name())) {
                     errors.add(wrapperName + "external input name \"" + external.name() + "\" is not unique.");
@@ -277,7 +298,8 @@ public abstract class Command {
             }
 
             for (final CommandWrapperDerivedInput derived : commandWrapper.derivedInputs()) {
-                final List<String> inputErrors = derived.validate();
+                final List<String> inputErrors = Lists.newArrayList();
+                inputErrors.addAll(Lists.transform(derived.validate(), addWrapperNameToError));
 
                 if (wrapperInputNames.contains(derived.name())) {
                     errors.add(wrapperName + "derived input name \"" + derived.name() + "\" is not unique.");
@@ -296,7 +318,8 @@ public abstract class Command {
 
             final Set<String> handledOutputs = Sets.newHashSet();
             for (final CommandWrapperOutput output : commandWrapper.outputHandlers()) {
-                final List<String> outputErrors = output.validate();
+                final List<String> outputErrors = Lists.newArrayList();
+                outputErrors.addAll(Lists.transform(output.validate(), addWrapperNameToError));
 
                 if (!outputNames.contains(output.commandOutputName())) {
                     errors.add(wrapperName + "output handler refers to unknown command output \"" + output.commandOutputName() + "\". Known outputs: " + knownOutputs + ".");
@@ -391,7 +414,7 @@ public abstract class Command {
                 errors.add("Mount name cannot be blank.");
             }
             if (StringUtils.isBlank(path())) {
-                errors.add("Mount path cannot be blank.");
+                errors.add("Mount \"" + name() + "\" path cannot be blank.");
             }
 
             return errors;
@@ -472,7 +495,7 @@ public abstract class Command {
         List<String> validate() {
             final List<String> errors = Lists.newArrayList();
             if (StringUtils.isBlank(name())) {
-                errors.add("Name cannot be blank");
+                errors.add("Command input name cannot be blank");
             }
             return errors;
         }
@@ -542,10 +565,10 @@ public abstract class Command {
         List<String> validate() {
             final List<String> errors = Lists.newArrayList();
             if (StringUtils.isBlank(name())) {
-                errors.add("Name cannot be blank.");
+                errors.add("Output name cannot be blank.");
             }
             if (StringUtils.isBlank(mount())) {
-                errors.add("Mount cannot be blank.");
+                errors.add("Output \"" + name() + "\" - mount cannot be blank.");
             }
             return errors;
         }
@@ -657,7 +680,7 @@ public abstract class Command {
         List<String> validate() {
             final List<String> errors = Lists.newArrayList();
             if (StringUtils.isBlank(name())) {
-                errors.add("Name cannot be blank.");
+                errors.add("Command wrapper name cannot be blank.");
             }
 
             return errors;
@@ -694,12 +717,12 @@ public abstract class Command {
         List<String> validate() {
             final List<String> errors = Lists.newArrayList();
             if (StringUtils.isBlank(name())) {
-                errors.add("Name cannot be blank.");
+                errors.add("Command wrapper input name cannot be blank.");
             }
 
             final List<String> types = CommandWrapperInputType.names();
             if (!types.contains(type())) {
-                errors.add("Unknown type \"" + type() + "\". Known types: " + StringUtils.join(types, ", "));
+                errors.add("Command wrapper input \"" + name() + "\" - Unknown type \"" + type() + "\". Known types: " + StringUtils.join(types, ", "));
             }
 
             return errors;
@@ -870,7 +893,7 @@ public abstract class Command {
             final List<String> errors = super.validate();
 
             if (StringUtils.isBlank(derivedFromXnatInput())) {
-                errors.add("\"Derived from\" cannot be blank.");
+                errors.add("Command wrapper input \"" + name() + "\" - \"derived-from-xnat-input\" cannot be blank.");
             }
 
             return errors;
@@ -945,16 +968,15 @@ public abstract class Command {
         List<String> validate() {
             final List<String> errors = Lists.newArrayList();
 
-            final List<String> types = CommandWrapperOutputEntity.Type.names();
-            if (!types.contains(type())) {
-                errors.add("Unknown type \"" + type() + "\". Known types: " + StringUtils.join(types, ", "));
-            }
-
             if (StringUtils.isBlank(commandOutputName())) {
-                errors.add("Command output name cannot be blank.");
+                errors.add("Command wrapper output - command output name cannot be blank.");
             }
             if (StringUtils.isBlank(xnatInputName())) {
-                errors.add("Xnat input name cannot be blank.");
+                errors.add("Command wrapper output - xnat input name cannot be blank.");
+            }
+            final List<String> types = CommandWrapperOutputEntity.Type.names();
+            if (!types.contains(type())) {
+                errors.add("Command wrapper output - Unknown type \"" + type() + "\". Known types: " + StringUtils.join(types, ", "));
             }
 
             return errors;

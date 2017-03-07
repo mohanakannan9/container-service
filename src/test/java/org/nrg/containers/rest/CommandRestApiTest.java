@@ -394,7 +394,7 @@ public class CommandRestApiTest {
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
-        assertEquals("Invalid command:\n\tName cannot be blank.", blankCommandResponse);
+        assertEquals("Invalid command:\n\tCommand \"toCreate\" - Command wrapper name cannot be blank.", blankCommandResponse);
     }
 
     @Test
