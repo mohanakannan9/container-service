@@ -2,6 +2,7 @@ package org.nrg.containers.daos;
 
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
+import org.hibernate.Criteria;
 import org.hibernate.Hibernate;
 import org.hibernate.NonUniqueObjectException;
 import org.nrg.containers.model.CommandEntity;
@@ -105,5 +106,29 @@ public class CommandEntityRepository extends AbstractHibernateDAO<CommandEntity>
         commandEntity.addWrapper(commandWrapperEntity);
         getSession().persist(commandWrapperEntity);
         update(commandEntity);
+    }
+
+    public CommandWrapperEntity retrieve(long commandId, long wrapperId) {
+        return (CommandWrapperEntity) getSession().createQuery("from CommandWrapperEntity as wrapper where wrapper.id = :wrapperId and wrapper.commandEntity.id = :commandId")
+                .setLong("wrapperId", wrapperId)
+                .setLong("commandId", commandId)
+                .uniqueResult();
+    }
+
+    public void update(final CommandWrapperEntity toUpdate) {
+        try {
+            getSession().update(toUpdate);
+        } catch (NonUniqueObjectException ignored) {
+            getSession().merge(toUpdate);
+        }
+    }
+
+    public void refresh(final CommandWrapperEntity wrapper) {
+        getSession().refresh(wrapper);
+    }
+
+    public void delete(final @Nonnull CommandWrapperEntity commandWrapperEntity) {
+        commandWrapperEntity.getCommandEntity().getCommandWrapperEntities().remove(commandWrapperEntity);
+        getSession().delete(commandWrapperEntity);
     }
 }

@@ -6,9 +6,10 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.containers.model.auto.Command;
 import org.hibernate.envers.Audited;
+import org.nrg.containers.model.auto.Command;
 
+import javax.annotation.Nonnull;
 import javax.persistence.CascadeType;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
@@ -34,20 +35,27 @@ public class CommandWrapperEntity implements Serializable {
     @JsonProperty("derived-inputs") private List<CommandWrapperDerivedInputEntity> derivedInputs;
     @JsonProperty("output-handlers") private List<CommandWrapperOutputEntity> outputHandlers;
 
-    public static CommandWrapperEntity fromPojo(final Command.CommandWrapper commandWrapper) {
-        final CommandWrapperEntity commandWrapperEntity = new CommandWrapperEntity();
-        commandWrapperEntity.name = commandWrapper.name();
-        commandWrapperEntity.description = commandWrapper.description();
+    @Nonnull
+    public static CommandWrapperEntity fromPojo(final @Nonnull Command.CommandWrapper commandWrapper) {
+        return new CommandWrapperEntity().update(commandWrapper);
+    }
+
+    @Nonnull
+    public CommandWrapperEntity update(final @Nonnull Command.CommandWrapper commandWrapper) {
+        this.setId(commandWrapper.id());
+        this.name = commandWrapper.name();
+        this.description = commandWrapper.description();
+        this.setContexts(commandWrapper.contexts());
         for (final Command.CommandWrapperInput externalCommandWrapperInput : commandWrapper.externalInputs()) {
-            commandWrapperEntity.addExternalInput(CommandWrapperExternalInputEntity.fromPojo(externalCommandWrapperInput));
+            this.addExternalInput(CommandWrapperExternalInputEntity.fromPojo(externalCommandWrapperInput));
         }
         for (final Command.CommandWrapperDerivedInput derivedCommandWrapperInput : commandWrapper.derivedInputs()) {
-            commandWrapperEntity.addDerivedInput(CommandWrapperDerivedInputEntity.fromPojo(derivedCommandWrapperInput));
+            this.addDerivedInput(CommandWrapperDerivedInputEntity.fromPojo(derivedCommandWrapperInput));
         }
         for (final Command.CommandWrapperOutput commandWrapperOutput : commandWrapper.outputHandlers()) {
-            commandWrapperEntity.addOutputHandler(CommandWrapperOutputEntity.fromPojo(commandWrapperOutput));
+            this.addOutputHandler(CommandWrapperOutputEntity.fromPojo(commandWrapperOutput));
         }
-        return commandWrapperEntity;
+        return this;
     }
 
     @Id
@@ -129,7 +137,9 @@ public class CommandWrapperEntity implements Serializable {
         if (this.externalInputs == null) {
             this.externalInputs = Lists.newArrayList();
         }
-        this.externalInputs.add(externalInput);
+        if (!this.externalInputs.contains(externalInput)) {
+            this.externalInputs.add(externalInput);
+        }
     }
 
     @OneToMany(mappedBy = "commandWrapperEntity", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -156,7 +166,9 @@ public class CommandWrapperEntity implements Serializable {
         if (this.derivedInputs == null) {
             this.derivedInputs = Lists.newArrayList();
         }
-        this.derivedInputs.add(derivedInput);
+        if (!this.derivedInputs.contains(derivedInput)) {
+            this.derivedInputs.add(derivedInput);
+        }
     }
 
     @OneToMany(mappedBy = "commandWrapperEntity", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -183,7 +195,9 @@ public class CommandWrapperEntity implements Serializable {
         if (this.outputHandlers == null) {
             this.outputHandlers = Lists.newArrayList();
         }
-        this.outputHandlers.add(outputHandler);
+        if (!this.outputHandlers.contains(outputHandler)) {
+            this.outputHandlers.add(outputHandler);
+        }
     }
 
     @Override
@@ -197,7 +211,7 @@ public class CommandWrapperEntity implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, description, contexts, externalInputs, derivedInputs, outputHandlers);
+        return Objects.hash(commandEntity, name);
     }
 
     @Override

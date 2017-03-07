@@ -241,13 +241,13 @@ public class CommandWrapperDerivedInputEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final CommandWrapperDerivedInputEntity that = (CommandWrapperDerivedInputEntity) o;
-        return Objects.equals(this.id, that.id) &&
+        return Objects.equals(this.commandWrapperEntity, that.commandWrapperEntity) &&
                 Objects.equals(this.name, that.name);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name);
+        return Objects.hash(commandWrapperEntity, name);
     }
 
     @Override

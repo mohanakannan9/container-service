@@ -11,6 +11,7 @@ import org.nrg.containers.exceptions.CommandValidationException;
 import org.nrg.containers.exceptions.ContainerMountResolutionException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.model.CommandWrapperEntity;
 import org.nrg.containers.model.ContainerExecution;
 import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.containers.model.auto.Command;
@@ -144,7 +145,7 @@ public class CommandRestApi extends AbstractXapiRestController {
 
     @RequestMapping(value = {"/{id}"}, method = DELETE)
     @ApiOperation(value = "Delete a Command", code = 204)
-    public ResponseEntity<String> deleteCommand(final @PathVariable long id) {
+    public ResponseEntity<String> delete(final @PathVariable long id) {
         commandService.delete(id);
         return new ResponseEntity<>("", HttpStatus.NO_CONTENT);
     }
@@ -165,6 +166,27 @@ public class CommandRestApi extends AbstractXapiRestController {
             return new ResponseEntity<>(0L, HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return new ResponseEntity<>(created.id(), HttpStatus.CREATED);
+    }
+
+    @RequestMapping(value = {"/{commandId}/wrappers/{wrapperId}"}, method = POST)
+    @ApiOperation(value = "Update a Command")
+    @ResponseBody
+    public ResponseEntity updateWrapper(final @RequestBody CommandWrapper commandWrapper,
+                                        final @PathVariable long commandId,
+                                        final @PathVariable long wrapperId)
+            throws NotFoundException, CommandValidationException {
+        commandService.update(commandId,
+                commandWrapper.id() == wrapperId ? commandWrapper : commandWrapper.toBuilder().id(wrapperId).build());
+        return ResponseEntity.ok().build();
+    }
+
+    @RequestMapping(value = {"/{commandId}/wrappers/{wrapperId}"}, method = DELETE)
+    @ApiOperation(value = "Delete a Command", code = 204)
+    public ResponseEntity<String> delete(final @PathVariable long commandId,
+                                         final @PathVariable long wrapperId)
+            throws NotFoundException {
+        commandService.delete(commandId, wrapperId);
+        return new ResponseEntity<>("", HttpStatus.NO_CONTENT);
     }
 
     /*

@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -67,8 +68,13 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
 
     @Override
     @Nonnull
+    @Transactional
     public Command create(@Nonnull final Command command) throws CommandValidationException {
-        return toPojo(commandEntityService.create(fromPojo(command, null)));
+        final List<String> errors = command.validate();
+        if (!errors.isEmpty()) {
+            throw new CommandValidationException(errors);
+        }
+        return toPojo(commandEntityService.create(fromPojo(command)));
     }
 
     @Override
@@ -97,7 +103,12 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
 
     @Override
     @Nonnull
+    @Transactional
     public Command update(final @Nonnull Command toUpdate) throws NotFoundException, CommandValidationException {
+        final List<String> errors = toUpdate.validate();
+        if (!errors.isEmpty()) {
+            throw new CommandValidationException(errors);
+        }
         final CommandEntity updatableEntity = fromPojo(toUpdate);
         commandEntityService.update(updatableEntity);
         commandEntityService.refresh(updatableEntity);
@@ -111,20 +122,7 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
 
     @Override
     @Nonnull
-    public CommandWrapper addWrapper(final long commandId, final @Nonnull CommandWrapper wrapperToAdd) throws CommandValidationException, NotFoundException {
-        final CommandEntity commandEntity = commandEntityService.get(commandId);
-        final Command command = toPojo(commandEntity);
-        command.addWrapper(wrapperToAdd);
-        final List<String> errors = command.validate();
-        if (!errors.isEmpty()) {
-            throw new CommandValidationException(errors);
-        }
-
-        return toPojo(commandEntityService.addWrapper(commandEntity, fromPojo(wrapperToAdd)));
-    }
-
-    @Override
-    @Nonnull
+    @Transactional
     public List<Command> save(final List<Command> commands) {
         final List<Command> created = Lists.newArrayList();
         if (!(commands == null || commands.isEmpty())) {
@@ -138,6 +136,59 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
             }
         }
         return created;
+    }
+
+    @Override
+    @Nonnull
+    @Transactional
+    public CommandWrapper addWrapper(final long commandId, final @Nonnull CommandWrapper wrapperToAdd) throws CommandValidationException, NotFoundException {
+        return addWrapper(get(commandId), wrapperToAdd);
+    }
+
+    @Override
+    @Nonnull
+    @Transactional
+    public CommandWrapper addWrapper(final @Nonnull Command command, final @Nonnull CommandWrapper wrapperToAdd) throws CommandValidationException, NotFoundException {
+        final CommandWrapper created = toPojo(commandEntityService.addWrapper(fromPojo(command), fromPojo(wrapperToAdd)));
+
+        final List<String> errors = get(command.id()).validate();
+        if (!errors.isEmpty()) {
+            throw new CommandValidationException(errors);
+        }
+        return created;
+    }
+
+    @Override
+    @Nullable
+    public CommandWrapper retrieve(final long commandId, final long wrapperId) {
+        return toPojo(commandEntityService.retrieve(commandId, wrapperId));
+    }
+
+    @Override
+    @Nonnull
+    public CommandWrapper get(final long commandId, final long wrapperId) throws NotFoundException {
+        return toPojo(commandEntityService.get(commandId, wrapperId));
+    }
+
+    @Override
+    @Nonnull
+    @Transactional
+    public CommandWrapper update(final long commandId, final @Nonnull CommandWrapper toUpdate) throws CommandValidationException, NotFoundException {
+        final CommandEntity commandEntity = commandEntityService.get(commandId);
+        final CommandWrapperEntity template = commandEntityService.get(commandEntity, toUpdate.id());
+        final CommandWrapper updated = toPojo(commandEntityService.update(template.update(toUpdate)));
+
+        final List<String> errors = toPojo(commandEntity).validate();
+        if (!errors.isEmpty()) {
+            throw new CommandValidationException(errors);
+        }
+        return updated;
+    }
+
+    @Override
+    @Transactional
+    public void delete(final long commandId, final long wrapperId) {
+        commandEntityService.delete(commandId, wrapperId);
     }
 
     @Nonnull
@@ -161,23 +212,18 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     }
 
     @Nonnull
-    private CommandEntity fromPojo(@Nonnull final Command command) throws CommandValidationException, NotFoundException {
-        final CommandEntity template = commandEntityService.get(command.id());
-        return fromPojo(command, template);
+    private CommandEntity fromPojo(@Nonnull final Command command) {
+        final CommandEntity template = commandEntityService.retrieve(command.id());
+        return template == null ? CommandEntity.fromPojo(command) : template.update(command);
     }
 
     @Nonnull
-    private CommandEntity fromPojo(@Nonnull final Command command, @Nullable final CommandEntity template) throws CommandValidationException {
-        return CommandEntity.fromPojo(command, template);
-    }
-
-    @Nonnull
-    private CommandWrapperEntity fromPojo(@Nonnull final CommandWrapper commandWrapper) throws CommandValidationException, NotFoundException {
+    private CommandWrapperEntity fromPojo(@Nonnull final CommandWrapper commandWrapper) {
         return CommandWrapperEntity.fromPojo(commandWrapper);
     }
 
     @Nonnull
-    private CommandWrapper toPojo(@Nonnull final CommandWrapperEntity commandWrapperEntity) throws CommandValidationException {
+    private CommandWrapper toPojo(@Nonnull final CommandWrapperEntity commandWrapperEntity) {
         return CommandWrapper.create(commandWrapperEntity);
     }
 }

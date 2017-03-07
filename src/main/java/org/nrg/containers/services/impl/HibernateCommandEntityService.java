@@ -6,6 +6,7 @@ import org.nrg.containers.daos.CommandEntityRepository;
 import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.CommandWrapperEntity;
 import org.nrg.containers.services.CommandEntityService;
+import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 
@@ -60,5 +62,56 @@ public class HibernateCommandEntityService extends AbstractHibernateEntityServic
     public CommandWrapperEntity addWrapper(final @Nonnull CommandEntity commandEntity, final @Nonnull CommandWrapperEntity wrapperToAdd) {
         getDao().addWrapper(commandEntity, wrapperToAdd);
         return wrapperToAdd;
+    }
+
+    @Override
+    @Nullable
+    public CommandWrapperEntity retrieve(final long commandId, final long wrapperId) {
+        return getDao().retrieve(commandId, wrapperId);
+    }
+
+    @Override
+    @Nullable
+    public CommandWrapperEntity retrieve(final @Nonnull CommandEntity commandEntity, final long wrapperId) {
+        for (final CommandWrapperEntity commandWrapperEntity : commandEntity.getCommandWrapperEntities()) {
+            if (commandWrapperEntity.getId() == wrapperId) {
+                return commandWrapperEntity;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    @Nonnull
+    public CommandWrapperEntity get(final long commandId, final long wrapperId) throws NotFoundException {
+        final CommandWrapperEntity commandWrapperEntity = retrieve(commandId, wrapperId);
+        if (commandWrapperEntity == null) {
+            throw new NotFoundException(String.format("No command wrapper for command id %d, wrapper id %d", commandId, wrapperId));
+        }
+        return commandWrapperEntity;
+    }
+
+    @Override
+    @Nonnull
+    public CommandWrapperEntity get(final @Nonnull CommandEntity commandEntity, final long wrapperId) throws NotFoundException {
+        final CommandWrapperEntity commandWrapperEntity = retrieve(commandEntity, wrapperId);
+        if (commandWrapperEntity == null) {
+            throw new NotFoundException(String.format("No command wrapper for command id %d, wrapper id %d", commandEntity.getId(), wrapperId));
+        }
+        return commandWrapperEntity;
+    }
+
+    @Override
+    public CommandWrapperEntity update(final CommandWrapperEntity updates) throws NotFoundException {
+        getDao().update(updates);
+        return updates;
+    }
+
+    @Override
+    public void delete(final long commandId, final long wrapperId) {
+        final CommandWrapperEntity commandWrapperEntity = retrieve(commandId, wrapperId);
+        if (commandWrapperEntity != null) {
+            getDao().delete(commandWrapperEntity);
+        }
     }
 }

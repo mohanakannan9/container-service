@@ -10,9 +10,8 @@ import com.google.common.base.MoreObjects.ToStringHelper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.swagger.annotations.ApiModelProperty;
-import org.nrg.containers.exceptions.CommandValidationException;
-import org.nrg.containers.model.auto.Command;
 import org.hibernate.envers.Audited;
+import org.nrg.containers.model.auto.Command;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.annotation.Nonnull;
@@ -55,54 +54,49 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
     @JsonProperty("xnat") private List<CommandWrapperEntity> commandWrapperEntities;
 
     @Nonnull
-    public static CommandEntity fromPojo(@Nonnull final Command command, @Nullable final CommandEntity template)
-            throws CommandValidationException {
-        final List<String> errors = command.validate();
-        if (!errors.isEmpty()) {
-            throw new CommandValidationException(errors);
-        }
-
+    public static CommandEntity fromPojo(@Nonnull final Command command) {
         final CommandEntity commandEntity;
-        if (template != null) {
-            commandEntity = template;
-        } else {
-            switch (command.type()) {
-                case "docker":
-                    commandEntity = DockerCommandEntity.fromPojo(command);
-                    break;
-                default:
-                    // This should have been caught already, but still...
-                    throw new CommandValidationException("Cannot instantiate command with type " + command.type());
-            }
+        switch (command.type()) {
+            case "docker":
+                commandEntity = DockerCommandEntity.fromPojo(command);
+                break;
+            default:
+                // This should have been caught already, but still...
+                throw new RuntimeException("Cannot instantiate command with type " + command.type());
         }
+        return commandEntity.update(command);
+    }
 
-        commandEntity.setName(command.name());
-        commandEntity.setLabel(command.label());
-        commandEntity.setDescription(command.description());
-        commandEntity.setVersion(command.version());
-        commandEntity.setSchemaVersion(command.schemaVersion());
-        commandEntity.setInfoUrl(command.infoUrl());
-        commandEntity.setImage(command.image());
-        commandEntity.setWorkingDirectory(command.workingDirectory());
-        commandEntity.setCommandLine(command.commandLine());
-        commandEntity.setEnvironmentVariables(command.environmentVariables());
+
+    @Nonnull
+    public CommandEntity update(@Nonnull final Command command) {
+        this.setName(command.name());
+        this.setLabel(command.label());
+        this.setDescription(command.description());
+        this.setVersion(command.version());
+        this.setSchemaVersion(command.schemaVersion());
+        this.setInfoUrl(command.infoUrl());
+        this.setImage(command.image());
+        this.setWorkingDirectory(command.workingDirectory());
+        this.setCommandLine(command.commandLine());
+        this.setEnvironmentVariables(command.environmentVariables());
 
         for (final Command.CommandMount commandMount : command.mounts()) {
-            commandEntity.addMount(CommandMountEntity.fromPojo(commandMount));
+            this.addMount(CommandMountEntity.fromPojo(commandMount));
         }
 
         for (final Command.CommandInput commandInput : command.inputs()) {
-            commandEntity.addInput(CommandInputEntity.fromPojo(commandInput));
+            this.addInput(CommandInputEntity.fromPojo(commandInput));
         }
 
         for (final Command.CommandOutput commandOutput : command.outputs()) {
-            commandEntity.addOutput(CommandOutputEntity.fromPojo(commandOutput));
+            this.addOutput(CommandOutputEntity.fromPojo(commandOutput));
         }
         for (final Command.CommandWrapper commandWrapper : command.xnatCommandWrappers()) {
-            commandEntity.addWrapper(CommandWrapperEntity.fromPojo(commandWrapper));
+            this.addWrapper(CommandWrapperEntity.fromPojo(commandWrapper));
         }
 
-        return commandEntity;
+        return this;
     }
 
     @Transient
@@ -212,7 +206,9 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         if (this.mounts == null) {
             this.mounts = Lists.newArrayList();
         }
-        this.mounts.add(mount);
+        if (!this.mounts.contains(mount)) {
+            this.mounts.add(mount);
+        }
     }
 
     @ElementCollection
@@ -254,7 +250,9 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         if (this.inputs == null) {
             this.inputs = Lists.newArrayList();
         }
-        this.inputs.add(input);
+        if (!this.inputs.contains(input)) {
+            this.inputs.add(input);
+        }
     }
 
     @OneToMany(mappedBy = "commandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -281,7 +279,9 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         if (this.outputs == null) {
             this.outputs = Lists.newArrayList();
         }
-        this.outputs.add(output);
+        if (!this.outputs.contains(output)) {
+            this.outputs.add(output);
+        }
     }
 
     @OneToMany(mappedBy = "commandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -305,7 +305,9 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         if (this.commandWrapperEntities == null) {
             this.commandWrapperEntities = Lists.newArrayList();
         }
-        this.commandWrapperEntities.add(commandWrapperEntity);
+        if (!this.commandWrapperEntities.contains(commandWrapperEntity)) {
+            this.commandWrapperEntities.add(commandWrapperEntity);
+        }
     }
 
     @Override

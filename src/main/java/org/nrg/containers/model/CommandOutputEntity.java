@@ -116,18 +116,13 @@ public class CommandOutputEntity implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final CommandOutputEntity that = (CommandOutputEntity) o;
-        return Objects.equals(this.id, that.id) &&
-                Objects.equals(this.name, that.name) &&
-                Objects.equals(this.description, that.description) &&
-                Objects.equals(this.required, that.required) &&
-                Objects.equals(this.mount, that.mount) &&
-                Objects.equals(this.path, that.path) &&
-                Objects.equals(this.glob, that.glob);
+        return Objects.equals(this.commandEntity, that.commandEntity) &&
+                Objects.equals(this.name, that.name);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, description, required, mount, path, glob);
+        return Objects.hash(commandEntity, name);
 
     }
 

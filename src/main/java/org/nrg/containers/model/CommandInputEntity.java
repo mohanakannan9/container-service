@@ -208,25 +208,13 @@ public class CommandInputEntity implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final CommandInputEntity that = (CommandInputEntity) o;
-        return Objects.equals(this.id, that.id) &&
-                Objects.equals(this.name, that.name) &&
-                Objects.equals(this.description, that.description) &&
-                Objects.equals(this.type, that.type) &&
-                Objects.equals(this.required, that.required) &&
-                Objects.equals(this.matcher, that.matcher) &&
-                Objects.equals(this.defaultValue, that.defaultValue) &&
-                Objects.equals(this.rawReplacementKey, that.rawReplacementKey) &&
-                Objects.equals(this.commandLineFlag, that.commandLineFlag) &&
-                Objects.equals(this.commandLineSeparator, that.commandLineSeparator) &&
-                Objects.equals(this.trueValue, that.trueValue) &&
-                Objects.equals(this.falseValue, that.falseValue) &&
-                Objects.equals(this.value, that.value);
+        return Objects.equals(this.commandEntity, that.commandEntity) &&
+                Objects.equals(this.name, that.name);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, description, type, required, matcher,
-                defaultValue, rawReplacementKey, commandLineFlag, commandLineSeparator, trueValue, falseValue, value);
+        return Objects.hash(commandEntity, name);
     }
 
     @Override
