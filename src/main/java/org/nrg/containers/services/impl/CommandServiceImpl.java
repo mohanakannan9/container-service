@@ -25,7 +25,6 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -73,7 +72,7 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
         if (!errors.isEmpty()) {
             throw new CommandValidationException(errors);
         }
-        return toPojo(commandEntityService.create(fromPojo(command, null)));
+        return toPojo(commandEntityService.create(fromPojo(command)));
     }
 
     @Override
@@ -211,14 +210,9 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     }
 
     @Nonnull
-    private CommandEntity fromPojo(@Nonnull final Command command) throws NotFoundException {
-        final CommandEntity template = commandEntityService.get(command.id());
-        return fromPojo(command, template);
-    }
-
-    @Nonnull
-    private CommandEntity fromPojo(@Nonnull final Command command, @Nullable final CommandEntity template) {
-        return CommandEntity.fromPojo(command, template);
+    private CommandEntity fromPojo(@Nonnull final Command command) {
+        final CommandEntity template = commandEntityService.retrieve(command.id());
+        return template == null ? CommandEntity.fromPojo(command) : template.update(command);
     }
 
     @Nonnull
