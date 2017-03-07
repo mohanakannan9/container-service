@@ -716,15 +716,15 @@ public abstract class Command {
     public static abstract class CommandWrapperExternalInput extends CommandWrapperInput {
         @JsonCreator
         static CommandWrapperExternalInput create(@JsonProperty("name") final String name,
-                                          @JsonProperty("description") final String description,
-                                          @JsonProperty("type") final String type,
-                                          @JsonProperty("matcher") final String matcher,
-                                          @JsonProperty("provides-value-for-command-input") final String providesValueForCommandInput,
-                                          @JsonProperty("provides-files-for-command-mount") final String providesFilesForCommandMount,
-                                          @JsonProperty("default-value") final String defaultValue,
-                                          @JsonProperty("user-settable") final Boolean userSettable,
-                                          @JsonProperty("replacement-key") final String rawReplacementKey,
-                                          @JsonProperty("required") final Boolean required) {
+                                                  @JsonProperty("description") final String description,
+                                                  @JsonProperty("type") final String type,
+                                                  @JsonProperty("matcher") final String matcher,
+                                                  @JsonProperty("provides-value-for-command-input") final String providesValueForCommandInput,
+                                                  @JsonProperty("provides-files-for-command-mount") final String providesFilesForCommandMount,
+                                                  @JsonProperty("default-value") final String defaultValue,
+                                                  @JsonProperty("user-settable") final Boolean userSettable,
+                                                  @JsonProperty("replacement-key") final String rawReplacementKey,
+                                                  @JsonProperty("required") final Boolean required) {
             return builder()
                     .name(name == null ? "" : name)
                     .description(description)
@@ -807,17 +807,17 @@ public abstract class Command {
 
         @JsonCreator
         static CommandWrapperDerivedInput create(@JsonProperty("name") final String name,
-                                          @JsonProperty("description") final String description,
-                                          @JsonProperty("type") final String type,
-                                          @JsonProperty("derived-from-xnat-input") final String derivedFromXnatInput,
-                                          @JsonProperty("derived-from-xnat-object-property") final String derivedFromXnatObjectProperty,
-                                          @JsonProperty("matcher") final String matcher,
-                                          @JsonProperty("provides-value-for-command-input") final String providesValueForCommandInput,
-                                          @JsonProperty("provides-files-for-command-mount") final String providesFilesForCommandMount,
-                                          @JsonProperty("default-value") final String defaultValue,
-                                          @JsonProperty("user-settable") final Boolean userSettable,
-                                          @JsonProperty("replacement-key") final String rawReplacementKey,
-                                          @JsonProperty("required") final Boolean required) {
+                                                 @JsonProperty("description") final String description,
+                                                 @JsonProperty("type") final String type,
+                                                 @JsonProperty("derived-from-xnat-input") final String derivedFromXnatInput,
+                                                 @JsonProperty("derived-from-xnat-object-property") final String derivedFromXnatObjectProperty,
+                                                 @JsonProperty("matcher") final String matcher,
+                                                 @JsonProperty("provides-value-for-command-input") final String providesValueForCommandInput,
+                                                 @JsonProperty("provides-files-for-command-mount") final String providesFilesForCommandMount,
+                                                 @JsonProperty("default-value") final String defaultValue,
+                                                 @JsonProperty("user-settable") final Boolean userSettable,
+                                                 @JsonProperty("replacement-key") final String rawReplacementKey,
+                                                 @JsonProperty("required") final Boolean required) {
             return builder()
                     .name(name == null ? "" : name)
                     .description(description)
