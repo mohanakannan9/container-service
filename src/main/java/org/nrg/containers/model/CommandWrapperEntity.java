@@ -6,9 +6,11 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.containers.model.auto.Command;
 import org.hibernate.envers.Audited;
+import org.nrg.containers.model.auto.Command;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.persistence.CascadeType;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
@@ -34,22 +36,27 @@ public class CommandWrapperEntity implements Serializable {
     @JsonProperty("derived-inputs") private List<CommandWrapperDerivedInputEntity> derivedInputs;
     @JsonProperty("output-handlers") private List<CommandWrapperOutputEntity> outputHandlers;
 
-    public static CommandWrapperEntity fromPojo(final Command.CommandWrapper commandWrapper) {
-        final CommandWrapperEntity commandWrapperEntity = new CommandWrapperEntity();
-        commandWrapperEntity.setId(commandWrapper.id());
-        commandWrapperEntity.name = commandWrapper.name();
-        commandWrapperEntity.description = commandWrapper.description();
-        commandWrapperEntity.setContexts(commandWrapper.contexts());
+    @Nonnull
+    public static CommandWrapperEntity fromPojo(final @Nonnull Command.CommandWrapper commandWrapper) {
+        return new CommandWrapperEntity().update(commandWrapper);
+    }
+
+    @Nonnull
+    public CommandWrapperEntity update(final @Nonnull Command.CommandWrapper commandWrapper) {
+        this.setId(commandWrapper.id());
+        this.name = commandWrapper.name();
+        this.description = commandWrapper.description();
+        this.setContexts(commandWrapper.contexts());
         for (final Command.CommandWrapperInput externalCommandWrapperInput : commandWrapper.externalInputs()) {
-            commandWrapperEntity.addExternalInput(CommandWrapperExternalInputEntity.fromPojo(externalCommandWrapperInput));
+            this.addExternalInput(CommandWrapperExternalInputEntity.fromPojo(externalCommandWrapperInput));
         }
         for (final Command.CommandWrapperDerivedInput derivedCommandWrapperInput : commandWrapper.derivedInputs()) {
-            commandWrapperEntity.addDerivedInput(CommandWrapperDerivedInputEntity.fromPojo(derivedCommandWrapperInput));
+            this.addDerivedInput(CommandWrapperDerivedInputEntity.fromPojo(derivedCommandWrapperInput));
         }
         for (final Command.CommandWrapperOutput commandWrapperOutput : commandWrapper.outputHandlers()) {
-            commandWrapperEntity.addOutputHandler(CommandWrapperOutputEntity.fromPojo(commandWrapperOutput));
+            this.addOutputHandler(CommandWrapperOutputEntity.fromPojo(commandWrapperOutput));
         }
-        return commandWrapperEntity;
+        return this;
     }
 
     @Id
