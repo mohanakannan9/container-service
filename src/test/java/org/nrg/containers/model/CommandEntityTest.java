@@ -309,6 +309,32 @@ public class CommandEntityTest {
 
     @Test
     @DirtiesContext
+    public void testAddCommandWrapper() throws Exception {
+
+        final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
+        final CommandWrapperEntity toAdd = commandEntity.getCommandWrapperEntities().get(0);
+        commandEntity.setCommandWrapperEntities(null);
+
+        final CommandEntity created = commandEntityService.create(commandEntity);
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        final CommandWrapperEntity added = commandEntityService.addWrapper(created, toAdd);
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        final CommandEntity retrieved = commandEntityService.get(commandEntity.getId());
+        assertEquals(added, retrieved.getCommandWrapperEntities().get(0));
+
+        assertThat(Command.create(retrieved).validate(), is(Matchers.<String>emptyIterable()));
+    }
+
+    @Test
+    @DirtiesContext
     public void testUpdateCommandWrapper() throws Exception {
 
         final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
