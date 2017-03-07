@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -67,6 +68,7 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
 
     @Override
     @Nonnull
+    @Transactional
     public Command create(@Nonnull final Command command) throws CommandValidationException {
         final List<String> errors = command.validate();
         if (!errors.isEmpty()) {
@@ -101,6 +103,7 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
 
     @Override
     @Nonnull
+    @Transactional
     public Command update(final @Nonnull Command toUpdate) throws NotFoundException, CommandValidationException {
         final List<String> errors = toUpdate.validate();
         if (!errors.isEmpty()) {
@@ -116,8 +119,10 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     public void delete(final long id) {
         commandEntityService.delete(id);
     }
+
     @Override
     @Nonnull
+    @Transactional
     public List<Command> save(final List<Command> commands) {
         final List<Command> created = Lists.newArrayList();
         if (!(commands == null || commands.isEmpty())) {
@@ -135,12 +140,14 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
 
     @Override
     @Nonnull
+    @Transactional
     public CommandWrapper addWrapper(final long commandId, final @Nonnull CommandWrapper wrapperToAdd) throws CommandValidationException, NotFoundException {
         return addWrapper(get(commandId), wrapperToAdd);
     }
 
     @Override
     @Nonnull
+    @Transactional
     public CommandWrapper addWrapper(final @Nonnull Command command, final @Nonnull CommandWrapper wrapperToAdd) throws CommandValidationException, NotFoundException {
         final CommandWrapper created = toPojo(commandEntityService.addWrapper(fromPojo(command), fromPojo(wrapperToAdd)));
 
@@ -165,6 +172,7 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
 
     @Override
     @Nonnull
+    @Transactional
     public CommandWrapper update(final long commandId, final @Nonnull CommandWrapper toUpdate) throws CommandValidationException, NotFoundException {
         final CommandEntity commandEntity = commandEntityService.get(commandId);
         final CommandWrapperEntity template = commandEntityService.get(commandEntity, toUpdate.id());
@@ -178,6 +186,7 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     }
 
     @Override
+    @Transactional
     public void delete(final long commandId, final long wrapperId) {
         commandEntityService.delete(commandId, wrapperId);
     }
