@@ -44,12 +44,12 @@ public class HibernateContainerExecutionService
     private static final Pattern exitCodePattern = Pattern.compile("kill|die|oom\\((\\d+|x)\\)");
     private final String UTF8 = StandardCharsets.UTF_8.name();
 
-    private ContainerControlApi containerControlApi;
-    private SiteConfigPreferences siteConfigPreferences;
-    private TransportService transportService;
+    private final ContainerControlApi containerControlApi;
+    private final SiteConfigPreferences siteConfigPreferences;
+    private final TransportService transportService;
     private PermissionsServiceI permissionsService;
-    private CatalogService catalogService;
-    private ObjectMapper mapper;
+    private final CatalogService catalogService;
+    private final ObjectMapper mapper;
 
     @VisibleForTesting
     public HibernateContainerExecutionService(final ContainerControlApi containerControlApi,

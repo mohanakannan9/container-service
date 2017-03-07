@@ -68,7 +68,7 @@ public class ContainerExecutionRepository extends AbstractHibernateDAO<Container
             final List<ContainerExecutionHistory> historyList = execution.getHistory();
             if (historyList != null && !historyList.isEmpty()) {
                 for (final ContainerExecutionHistory history : historyList) {
-                    if (history.getTimeNano() != null && history.getTimeNano().equals(newHistory.getTimeNano())) {
+                    if (history.getTimeNano() == newHistory.getTimeNano()) {
                         if (log.isDebugEnabled()) {
                             log.debug("Event has already been recorded in the history.");
                         }

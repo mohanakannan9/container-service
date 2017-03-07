@@ -136,18 +136,13 @@ public class ContainerExecutionMount implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final ContainerExecutionMount that = (ContainerExecutionMount) o;
-        return Objects.equals(this.id, that.id) &&
-                Objects.equals(this.name, that.name) &&
-                Objects.equals(this.writable, that.writable) &&
-                Objects.equals(this.xnatHostPath, that.xnatHostPath) &&
-                Objects.equals(this.containerHostPath, that.containerHostPath) &&
-                Objects.equals(this.containerPath, that.containerPath) &&
-                Objects.equals(this.inputFiles, that.inputFiles);
+        return Objects.equals(this.containerExecution, that.containerExecution) &&
+                Objects.equals(this.name, that.name);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, writable, xnatHostPath, containerHostPath, containerPath, inputFiles);
+        return Objects.hash(containerExecution, name);
     }
 
     @Override

@@ -9,6 +9,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
+import java.util.Objects;
 
 @Entity
 @Audited
@@ -16,13 +17,13 @@ public class ContainerExecutionHistory {
     private long id;
     @JsonIgnore private ContainerExecution containerExecution;
     private String status;
-    private String timeNano;
+    private long timeNano;
 
     public ContainerExecutionHistory() {}
 
     public ContainerExecutionHistory(final String status, final Long timeNano) {
         this.status = status;
-        this.timeNano = String.valueOf(timeNano);
+        this.timeNano = timeNano;
     }
 
     @Id
@@ -52,12 +53,27 @@ public class ContainerExecutionHistory {
         this.status = status;
     }
 
-    public String getTimeNano() {
+    public long getTimeNano() {
         return timeNano;
     }
 
-    public void setTimeNano(final String timeNano) {
+    public void setTimeNano(final long timeNano) {
         this.timeNano = timeNano;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final ContainerExecutionHistory that = (ContainerExecutionHistory) o;
+        return Objects.equals(this.containerExecution, that.containerExecution) &&
+                Objects.equals(this.status, that.status) &&
+                Objects.equals(this.timeNano, that.timeNano);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(containerExecution, status, timeNano);
     }
 
     @Override

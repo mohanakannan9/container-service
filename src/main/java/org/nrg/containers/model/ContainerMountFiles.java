@@ -86,7 +86,7 @@ public class ContainerMountFiles {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final ContainerMountFiles that = (ContainerMountFiles) o;
-        return Objects.equals(this.id, that.id) &&
+        return Objects.equals(this.containerExecutionMount, that.containerExecutionMount) &&
                 Objects.equals(this.fromXnatInput, that.fromXnatInput) &&
                 Objects.equals(this.fromUri, that.fromUri) &&
                 Objects.equals(this.rootDirectory, that.rootDirectory) &&
@@ -95,7 +95,7 @@ public class ContainerMountFiles {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, fromXnatInput, fromUri, rootDirectory, path);
+        return Objects.hash(containerExecutionMount, fromXnatInput, fromUri, rootDirectory, path);
     }
 
     @Override

@@ -22,9 +22,9 @@ import java.util.Objects;
 public abstract class ResolvedCommand implements Serializable {
 
     @JsonProperty("raw-input-values") private Map<String, String> rawInputValues;
-    @JsonProperty("xnat-command-wrapper-id") private Long xnatCommandWrapperId;
+    @JsonProperty("xnat-command-wrapper-id") private long xnatCommandWrapperId;
     @JsonProperty("xnat-input-values") private Map<String, String> xnatInputValues;
-    @JsonProperty("command-id") private Long commandId;
+    @JsonProperty("command-id") private long commandId;
     @JsonProperty("command-input-values") private Map<String, String> commandInputValues;
     @JsonProperty("image") private String image;
     @JsonProperty("command-line") private String commandLine;
@@ -35,7 +35,7 @@ public abstract class ResolvedCommand implements Serializable {
 
     public ResolvedCommand() {}
 
-    public ResolvedCommand(final Long xnatCommandWrapperId, final Command command) {
+    public ResolvedCommand(final long xnatCommandWrapperId, final Command command) {
         this.xnatCommandWrapperId = xnatCommandWrapperId;
         this.commandId = command.id();
         this.image = command.image();
@@ -57,7 +57,7 @@ public abstract class ResolvedCommand implements Serializable {
         return xnatCommandWrapperId;
     }
 
-    public void setXnatCommandWrapperId(final Long xnatCommandWrapperId) {
+    public void setXnatCommandWrapperId(final long xnatCommandWrapperId) {
         this.xnatCommandWrapperId = xnatCommandWrapperId;
     }
 
@@ -73,7 +73,7 @@ public abstract class ResolvedCommand implements Serializable {
         return commandId;
     }
 
-    public void setCommandId(final Long commandId) {
+    public void setCommandId(final long commandId) {
         this.commandId = commandId;
     }
 

@@ -24,8 +24,8 @@ import java.util.Set;
 @Entity
 @Audited
 public class ContainerExecution extends AbstractHibernateEntity {
-    @JsonProperty("command-id") private Long commandId;
-    @JsonProperty("xnat-command-wrapper-id") private Long xnatCommandWrapperId;
+    @JsonProperty("command-id") private long commandId;
+    @JsonProperty("xnat-command-wrapper-id") private long xnatCommandWrapperId;
     @JsonProperty("docker-image") private String dockerImage;
     @JsonProperty("command-line") private String commandLine;
     @JsonProperty("env") private Map<String, String> environmentVariables = Maps.newHashMap();
@@ -51,39 +51,27 @@ public class ContainerExecution extends AbstractHibernateEntity {
         this.xnatCommandWrapperId = resolvedCommand.getXnatCommandWrapperId();
         this.dockerImage = resolvedCommand.getImage();
         this.commandLine = resolvedCommand.getCommandLine();
-        this.environmentVariables = resolvedCommand.getEnvironmentVariables() == null ?
-                Maps.<String, String>newHashMap() :
-                Maps.newHashMap(resolvedCommand.getEnvironmentVariables());
-        this.mounts = resolvedCommand.getMounts() == null ?
-                Lists.<ContainerExecutionMount>newArrayList() :
-                Lists.newArrayList(resolvedCommand.getMounts());
-        this.rawInputValues = resolvedCommand.getRawInputValues() == null ?
-                Maps.<String, String>newHashMap() :
-                resolvedCommand.getRawInputValues();
-        this.xnatInputValues = resolvedCommand.getXnatInputValues() == null ?
-                Maps.<String, String>newHashMap() :
-                resolvedCommand.getXnatInputValues();
-        this.commandInputValues = resolvedCommand.getCommandInputValues() == null ?
-                Maps.<String, String>newHashMap() :
-                resolvedCommand.getCommandInputValues();
-        this.outputs = resolvedCommand.getOutputs() == null ?
-                Lists.<ContainerExecutionOutput>newArrayList() :
-                Lists.newArrayList(resolvedCommand.getOutputs());
+        setEnvironmentVariables(resolvedCommand.getEnvironmentVariables());
+        setMounts(resolvedCommand.getMounts());
+        setRawInputValues(resolvedCommand.getRawInputValues());
+        setXnatInputValues(resolvedCommand.getXnatInputValues());
+        setCommandInputValues(resolvedCommand.getCommandInputValues());
+        setOutputs(resolvedCommand.getOutputs());
     }
 
-    public Long getCommandId() {
+    public long getCommandId() {
         return commandId;
     }
 
-    public void setCommandId(final Long commandId) {
+    public void setCommandId(final long commandId) {
         this.commandId = commandId;
     }
 
-    public Long getXnatCommandWrapperId() {
+    public long getXnatCommandWrapperId() {
         return xnatCommandWrapperId;
     }
 
-    public void setXnatCommandWrapperId(final Long xnatCommandWrapperId) {
+    public void setXnatCommandWrapperId(final long xnatCommandWrapperId) {
         this.xnatCommandWrapperId = xnatCommandWrapperId;
     }
 
@@ -109,7 +97,9 @@ public class ContainerExecution extends AbstractHibernateEntity {
     }
 
     public void setEnvironmentVariables(final Map<String, String> environmentVariables) {
-        this.environmentVariables = environmentVariables;
+        this.environmentVariables = environmentVariables == null ?
+                Maps.<String, String>newHashMap() :
+                environmentVariables;
     }
 
     @OneToMany(mappedBy = "containerExecution", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
@@ -254,40 +244,26 @@ public class ContainerExecution extends AbstractHibernateEntity {
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
         final ContainerExecution that = (ContainerExecution) o;
-        return Objects.equals(this.commandId, that.commandId) &&
-                Objects.equals(this.xnatCommandWrapperId, that.xnatCommandWrapperId) &&
-                Objects.equals(this.dockerImage, that.dockerImage) &&
-                Objects.equals(this.commandLine, that.commandLine) &&
-                Objects.equals(this.environmentVariables, that.environmentVariables) &&
-                Objects.equals(this.mounts, that.mounts) &&
-                Objects.equals(this.containerId, that.containerId) &&
-                Objects.equals(this.userId, that.userId) &&
-                Objects.equals(this.rawInputValues, that.rawInputValues) &&
-                Objects.equals(this.xnatInputValues, that.xnatInputValues) &&
-                Objects.equals(this.commandInputValues, that.commandInputValues) &&
-                Objects.equals(this.outputs, that.outputs) &&
-                Objects.equals(this.history, that.history) &&
-                Objects.equals(this.logPaths, that.logPaths);
+        return Objects.equals(this.getId(), that.getId()) &&
+                Objects.equals(this.containerId, that.containerId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.getId(), commandId, xnatCommandWrapperId, dockerImage, commandLine, environmentVariables,
-                mounts, containerId, userId, rawInputValues, xnatInputValues, commandInputValues, outputs, history, logPaths);
+        return Objects.hash(super.getId(), containerId);
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("containerId", containerId)
                 .add("commandId", commandId)
                 .add("xnatCommandWrapperId", xnatCommandWrapperId)
                 .add("dockerImage", dockerImage)
                 .add("commandLine", commandLine)
                 .add("environmentVariables", environmentVariables)
                 .add("mounts", mounts)
-                .add("containerId", containerId)
                 .add("userId", userId)
                 .add("rawInputValues", rawInputValues)
                 .add("xnatInputValues", xnatInputValues)
