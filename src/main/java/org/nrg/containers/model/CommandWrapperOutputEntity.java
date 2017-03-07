@@ -109,16 +109,14 @@ public class CommandWrapperOutputEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final CommandWrapperOutputEntity that = (CommandWrapperOutputEntity) o;
-        return Objects.equals(this.id, that.id) &&
+        return Objects.equals(this.commandWrapperEntity, that.commandWrapperEntity) &&
                 Objects.equals(this.commandOutputName, that.commandOutputName) &&
-                Objects.equals(this.type, that.type) &&
-                Objects.equals(this.xnatInputName, that.xnatInputName) &&
-                Objects.equals(this.label, that.label);
+                Objects.equals(this.xnatInputName, that.xnatInputName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, commandOutputName, type, xnatInputName, label);
+        return Objects.hash(commandWrapperEntity, commandOutputName, xnatInputName);
     }
 
     @Override

@@ -166,6 +166,12 @@ public class CommandEntityTest {
         final CommandMountEntity output = mapper.readValue(MOUNT_OUT, CommandMountEntity.class);
 
         final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
+        for (final CommandInputEntity commandInputEntity : commandInputEntityList) {
+            commandInputEntity.setCommandEntity(commandEntity);
+        }
+        commandOutputEntity.setCommandEntity(commandEntity);
+        input.setCommandEntity(commandEntity);
+        output.setCommandEntity(commandEntity);
 
         assertEquals("abc123", commandEntity.getImage());
 

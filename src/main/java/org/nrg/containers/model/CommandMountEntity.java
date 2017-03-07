@@ -93,15 +93,13 @@ public class CommandMountEntity implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final CommandMountEntity that = (CommandMountEntity) o;
-        return Objects.equals(this.id, that.id) &&
-                Objects.equals(this.name, that.name) &&
-                Objects.equals(this.writable, that.writable) &&
-                Objects.equals(this.containerPath, that.containerPath);
+        return Objects.equals(this.commandEntity, that.commandEntity) &&
+                Objects.equals(this.name, that.name);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, writable, containerPath);
+        return Objects.hash(commandEntity, name);
     }
 
     @Override

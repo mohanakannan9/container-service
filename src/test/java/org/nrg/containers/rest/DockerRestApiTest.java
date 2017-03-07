@@ -509,7 +509,9 @@ public class DockerRestApiTest {
         assertEquals(expected.image(), response.getImage()); // Did not set image ID on "expected"
 
         for (final Command.CommandInput commandInput : expected.inputs()) {
-            assertThat(CommandInputEntity.fromPojo(commandInput), isIn(response.getInputs()));
+            final CommandInputEntity commandInputEntity = CommandInputEntity.fromPojo(commandInput);
+            commandInputEntity.setCommandEntity(response);
+            assertThat(commandInputEntity, isIn(response.getInputs()));
         }
     }
 
@@ -565,9 +567,10 @@ public class DockerRestApiTest {
         assertEquals(expected.commandLine(), response.getCommandLine());
         assertEquals(expected.image(), response.getImage()); // Did not set image ID on "expected"
         for (final Command.CommandInput commandInput : expected.inputs()) {
-            assertThat(CommandInputEntity.fromPojo(commandInput), isIn(response.getInputs()));
+            final CommandInputEntity commandInputEntity = CommandInputEntity.fromPojo(commandInput);
+            commandInputEntity.setCommandEntity(response);
+            assertThat(commandInputEntity, isIn(response.getInputs()));
         }
-
     }
 
     @Test
