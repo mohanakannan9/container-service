@@ -179,6 +179,7 @@ public class CommandWrapperEntityTest {
     }
 
     @Test
+    @DirtiesContext
     public void testDeleteCommandWithWrapper() throws Exception {
 
         final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
@@ -199,6 +200,7 @@ public class CommandWrapperEntityTest {
     }
 
     @Test
+    @DirtiesContext
     public void testRetrieveCommandWrapper() throws Exception {
 
         final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
@@ -216,6 +218,7 @@ public class CommandWrapperEntityTest {
     }
 
     @Test
+    @DirtiesContext
     public void testUpdateCommandWrapper() throws Exception {
 
         final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
@@ -231,10 +234,15 @@ public class CommandWrapperEntityTest {
         final String newDescription = "This is probably a new description, right?";
         createdWrapper.setDescription(newDescription);
         final CommandWrapperEntity updated = commandEntityService.update(createdWrapper);
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
         assertEquals(newDescription, updated.getDescription());
     }
 
     @Test
+    @DirtiesContext
     public void testDeleteCommandWrapper() throws Exception {
 
         final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
