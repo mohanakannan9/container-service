@@ -10,7 +10,6 @@ import org.hibernate.envers.Audited;
 import org.nrg.containers.model.auto.Command;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.persistence.CascadeType;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
