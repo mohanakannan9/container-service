@@ -129,7 +129,9 @@ public class CommandWrapperEntity implements Serializable {
         if (this.externalInputs == null) {
             this.externalInputs = Lists.newArrayList();
         }
-        this.externalInputs.add(externalInput);
+        if (!this.externalInputs.contains(externalInput)) {
+            this.externalInputs.add(externalInput);
+        }
     }
 
     @OneToMany(mappedBy = "commandWrapperEntity", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -156,7 +158,9 @@ public class CommandWrapperEntity implements Serializable {
         if (this.derivedInputs == null) {
             this.derivedInputs = Lists.newArrayList();
         }
-        this.derivedInputs.add(derivedInput);
+        if (!this.derivedInputs.contains(derivedInput)) {
+            this.derivedInputs.add(derivedInput);
+        }
     }
 
     @OneToMany(mappedBy = "commandWrapperEntity", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -183,7 +187,9 @@ public class CommandWrapperEntity implements Serializable {
         if (this.outputHandlers == null) {
             this.outputHandlers = Lists.newArrayList();
         }
-        this.outputHandlers.add(outputHandler);
+        if (!this.outputHandlers.contains(outputHandler)) {
+            this.outputHandlers.add(outputHandler);
+        }
     }
 
     @Override

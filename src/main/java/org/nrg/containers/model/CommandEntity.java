@@ -10,9 +10,8 @@ import com.google.common.base.MoreObjects.ToStringHelper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.swagger.annotations.ApiModelProperty;
-import org.nrg.containers.exceptions.CommandValidationException;
-import org.nrg.containers.model.auto.Command;
 import org.hibernate.envers.Audited;
+import org.nrg.containers.model.auto.Command;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.annotation.Nonnull;
@@ -206,7 +205,9 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         if (this.mounts == null) {
             this.mounts = Lists.newArrayList();
         }
-        this.mounts.add(mount);
+        if (!this.mounts.contains(mount)) {
+            this.mounts.add(mount);
+        }
     }
 
     @ElementCollection
@@ -248,7 +249,9 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         if (this.inputs == null) {
             this.inputs = Lists.newArrayList();
         }
-        this.inputs.add(input);
+        if (!this.inputs.contains(input)) {
+            this.inputs.add(input);
+        }
     }
 
     @OneToMany(mappedBy = "commandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -275,7 +278,9 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         if (this.outputs == null) {
             this.outputs = Lists.newArrayList();
         }
-        this.outputs.add(output);
+        if (!this.outputs.contains(output)) {
+            this.outputs.add(output);
+        }
     }
 
     @OneToMany(mappedBy = "commandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -299,7 +304,9 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         if (this.commandWrapperEntities == null) {
             this.commandWrapperEntities = Lists.newArrayList();
         }
-        this.commandWrapperEntities.add(commandWrapperEntity);
+        if (!this.commandWrapperEntities.contains(commandWrapperEntity)) {
+            this.commandWrapperEntities.add(commandWrapperEntity);
+        }
     }
 
     @Override
