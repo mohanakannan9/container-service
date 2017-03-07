@@ -36,8 +36,10 @@ public class CommandWrapperEntity implements Serializable {
 
     public static CommandWrapperEntity fromPojo(final Command.CommandWrapper commandWrapper) {
         final CommandWrapperEntity commandWrapperEntity = new CommandWrapperEntity();
+        commandWrapperEntity.setId(commandWrapper.id());
         commandWrapperEntity.name = commandWrapper.name();
         commandWrapperEntity.description = commandWrapper.description();
+        commandWrapperEntity.setContexts(commandWrapper.contexts());
         for (final Command.CommandWrapperInput externalCommandWrapperInput : commandWrapper.externalInputs()) {
             commandWrapperEntity.addExternalInput(CommandWrapperExternalInputEntity.fromPojo(externalCommandWrapperInput));
         }
@@ -203,7 +205,7 @@ public class CommandWrapperEntity implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, description, contexts, externalInputs, derivedInputs, outputHandlers);
+        return Objects.hash(commandEntity, name);
     }
 
     @Override
