@@ -399,6 +399,77 @@ public class CommandRestApiTest {
 
     @Test
     @DirtiesContext
+    public void testUpdateWrapper() throws Exception {
+        final String pathTemplate = "/commands/%d/wrappers/%d";
+
+        final String commandJson =
+                "{\"name\": \"toCreate\", \"type\": \"docker\", \"image\":\"" + FAKE_DOCKER_IMAGE + "\"," +
+                        "\"xnat\":[{\"name\": \"a name\"," +
+                        "\"description\": \"ORIGINAL\"}]}";
+        final Command command = commandService.create(mapper.readValue(commandJson, Command.class));
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        final CommandWrapper created = command.xnatCommandWrappers().get(0);
+        final long commandId = command.id();
+        final long wrapperId = created.id();
+        final String path = String.format(pathTemplate, commandId, wrapperId);
+
+        final String newDescription = "UPDATED";
+        final CommandWrapper updates = created.toBuilder().description(newDescription).build();
+
+        final MockHttpServletRequestBuilder request =
+                post(path).content(mapper.writeValueAsString(updates))
+                        .contentType(JSON)
+                        .with(authentication(authentication))
+                        .with(csrf())
+                        .with(testSecurityContext());
+
+        mockMvc.perform(request)
+                .andExpect(status().isOk());
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        assertEquals(updates, commandService.retrieve(commandId, wrapperId));
+    }
+
+    @Test
+    @DirtiesContext
+    public void testDeleteWrapper() throws Exception {
+        final String pathTemplate = "/commands/%d/wrappers/%d";
+
+        final String commandJson =
+                "{\"name\": \"toCreate\", \"type\": \"docker\", \"image\":\"" + FAKE_DOCKER_IMAGE + "\"," +
+                        "\"xnat\":[{\"name\": \"a name\"}]}";
+        final Command command = commandService.create(mapper.readValue(commandJson, Command.class));
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        final CommandWrapper created = command.xnatCommandWrappers().get(0);
+        final long commandId = command.id();
+        final long wrapperId = created.id();
+        final String path = String.format(pathTemplate, commandId, wrapperId);
+
+        final MockHttpServletRequestBuilder request =
+                delete(path)
+                        .with(authentication(authentication))
+                        .with(csrf())
+                        .with(testSecurityContext());
+
+        mockMvc.perform(request)
+                .andExpect(status().isNoContent());
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        assertNull(commandService.retrieve(commandId, wrapperId));
+    }
+
+    @Test
+    @DirtiesContext
     public void testLaunchWithQueryParams() throws Exception {
         final String pathTemplate = "/commands/%d/launch";
 

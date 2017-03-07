@@ -116,7 +116,15 @@ public class CommandEntityRepository extends AbstractHibernateDAO<CommandEntity>
     }
 
     public void update(final CommandWrapperEntity toUpdate) {
-        getSession().update(toUpdate);
+        try {
+            getSession().update(toUpdate);
+        } catch (NonUniqueObjectException ignored) {
+            getSession().merge(toUpdate);
+        }
+    }
+
+    public void refresh(final CommandWrapperEntity wrapper) {
+        getSession().refresh(wrapper);
     }
 
     public void delete(final @Nonnull CommandWrapperEntity commandWrapperEntity) {

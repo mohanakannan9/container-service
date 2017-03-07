@@ -19,6 +19,7 @@ public interface CommandService {
     List<Command> save(final List<Command> commands);
 
     CommandWrapper addWrapper(long commandId, CommandWrapper commandWrapper) throws CommandValidationException, NotFoundException;
+    CommandWrapper addWrapper(Command command, CommandWrapper commandWrapper) throws CommandValidationException, NotFoundException;
     CommandWrapper retrieve(long commandId, long wrapperId);
     CommandWrapper get(long commandId, long wrapperId) throws NotFoundException;
     CommandWrapper update(long commandId, CommandWrapper updates) throws CommandValidationException, NotFoundException;

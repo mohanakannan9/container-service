@@ -136,15 +136,19 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     @Override
     @Nonnull
     public CommandWrapper addWrapper(final long commandId, final @Nonnull CommandWrapper wrapperToAdd) throws CommandValidationException, NotFoundException {
-        final CommandEntity commandEntity = commandEntityService.get(commandId);
-        final Command command = toPojo(commandEntity);
-        command.addWrapper(wrapperToAdd);
-        final List<String> errors = command.validate();
+        return addWrapper(get(commandId), wrapperToAdd);
+    }
+
+    @Override
+    @Nonnull
+    public CommandWrapper addWrapper(final @Nonnull Command command, final @Nonnull CommandWrapper wrapperToAdd) throws CommandValidationException, NotFoundException {
+        final CommandWrapper created = toPojo(commandEntityService.addWrapper(fromPojo(command), fromPojo(wrapperToAdd)));
+
+        final List<String> errors = get(command.id()).validate();
         if (!errors.isEmpty()) {
             throw new CommandValidationException(errors);
         }
-
-        return toPojo(commandEntityService.addWrapper(commandEntity, fromPojo(wrapperToAdd)));
+        return created;
     }
 
     @Override
@@ -162,26 +166,15 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     @Override
     @Nonnull
     public CommandWrapper update(final long commandId, final @Nonnull CommandWrapper toUpdate) throws CommandValidationException, NotFoundException {
-        // Have to get the updates into the command wrapper pojo before updating db so we can validate
-        final Command command = get(commandId);
-        final List<CommandWrapper> wrappers = command.xnatCommandWrappers();
-        final int numWrappers = wrappers.size();
-        for (int i = 0; i < numWrappers; i++) {
-            final CommandWrapper wrapper = wrappers.get(i);
-            if (wrapper.id() == toUpdate.id()) {
-                wrappers.remove(i);
-                wrappers.add(i, toUpdate);
-                break;
-            }
-        }
-        final List<String> errors = command.validate();
+        final CommandEntity commandEntity = commandEntityService.get(commandId);
+        final CommandWrapperEntity template = commandEntityService.get(commandEntity, toUpdate.id());
+        final CommandWrapper updated = toPojo(commandEntityService.update(template.update(toUpdate)));
+
+        final List<String> errors = toPojo(commandEntity).validate();
         if (!errors.isEmpty()) {
             throw new CommandValidationException(errors);
         }
-        
-        final CommandWrapperEntity updatableEntity = fromPojo(toUpdate);
-        commandEntityService.update(updatableEntity);
-        return toPojo(updatableEntity);
+        return updated;
     }
 
     @Override
