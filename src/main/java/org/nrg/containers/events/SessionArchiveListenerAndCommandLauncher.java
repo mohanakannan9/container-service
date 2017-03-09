@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.exceptions.CommandResolutionException;
+import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.CommandEventMapping;
@@ -93,7 +94,7 @@ public class SessionArchiveListenerAndCommandLauncher implements Consumer<Event<
                         }
                     }
                     containerService.resolveAndLaunchCommand(xnatCommandWrapperName, commandId, runtimeValues, sessionArchivedEvent.getUser());
-                } catch (NotFoundException | CommandResolutionException | NoServerPrefException | DockerServerException e) {
+                } catch (NotFoundException | CommandResolutionException | NoServerPrefException | DockerServerException | ContainerException e) {
                     log.error("Error launching command " + commandId, e);
                 }
             }

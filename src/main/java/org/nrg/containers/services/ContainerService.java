@@ -2,6 +2,7 @@ package org.nrg.containers.services;
 
 import org.nrg.containers.events.DockerContainerEvent;
 import org.nrg.containers.exceptions.CommandResolutionException;
+import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.ContainerMountResolutionException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
@@ -42,17 +43,17 @@ public interface ContainerService {
 
     ContainerEntity resolveAndLaunchCommand(final long commandId,
                                             final Map<String, String> variableRuntimeValues, final UserI userI)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException;
+            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException;
     ContainerEntity resolveAndLaunchCommand(final String xnatCommandWrapperName,
                                             final long commandId,
                                             final Map<String, String> variableRuntimeValues, final UserI userI)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException;
+            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException;
     ContainerEntity resolveAndLaunchCommand(final long xnatCommandWrapperId,
                                             final long commandId,
                                             final Map<String, String> variableRuntimeValues, final UserI userI)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException;
+            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException;
     ContainerEntity launchResolvedDockerCommand(final ResolvedDockerCommand resolvedCommand, final UserI userI)
-            throws NoServerPrefException, DockerServerException, ContainerMountResolutionException;
+            throws NoServerPrefException, DockerServerException, ContainerMountResolutionException, ContainerException;
 
     void processEvent(final DockerContainerEvent event);
 

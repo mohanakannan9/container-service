@@ -9,6 +9,7 @@ import org.nrg.config.services.ConfigService;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.events.DockerContainerEvent;
 import org.nrg.containers.exceptions.CommandResolutionException;
+import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.ContainerMountResolutionException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
@@ -213,7 +214,7 @@ public class ContainerServiceImpl implements ContainerService {
     public ContainerEntity resolveAndLaunchCommand(final long commandId,
                                                    final Map<String, String> runtimeValues,
                                                    final UserI userI)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException {
+            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException {
         final ResolvedCommand resolvedCommand = resolveCommand(commandId, runtimeValues, userI);
         switch (resolvedCommand.getType()) {
             case DOCKER:
@@ -228,7 +229,7 @@ public class ContainerServiceImpl implements ContainerService {
                                                    final long commandId,
                                                    final Map<String, String> runtimeValues,
                                                    final UserI userI)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException {
+            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException {
         final ResolvedCommand resolvedCommand = resolveCommand(xnatCommandWrapperName, commandId, runtimeValues, userI);
         switch (resolvedCommand.getType()) {
             case DOCKER:
@@ -243,7 +244,7 @@ public class ContainerServiceImpl implements ContainerService {
                                                    final long commandId,
                                                    final Map<String, String> runtimeValues,
                                                    final UserI userI)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException {
+            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException {
         final ResolvedCommand resolvedCommand = resolveCommand(xnatCommandWrapperId, commandId, runtimeValues, userI);
         switch (resolvedCommand.getType()) {
             case DOCKER:
@@ -257,7 +258,7 @@ public class ContainerServiceImpl implements ContainerService {
     @Nonnull
     public ContainerEntity launchResolvedDockerCommand(final ResolvedDockerCommand resolvedDockerCommand,
                                                        final UserI userI)
-            throws NoServerPrefException, DockerServerException, ContainerMountResolutionException {
+            throws NoServerPrefException, DockerServerException, ContainerMountResolutionException, ContainerException {
         log.info("Preparing to launch resolved command.");
         final ResolvedDockerCommand preparedToLaunch = prepareToLaunch(resolvedDockerCommand, userI);
 
@@ -269,7 +270,13 @@ public class ContainerServiceImpl implements ContainerService {
         containerEntityService.addContainerHistory(containerEntity, new ContainerEntityHistory("created"));
 
         log.info("Starting container.");
-        containerControlApi.startContainer(containerId);
+        try {
+            containerControlApi.startContainer(containerId);
+        } catch (DockerServerException e) {
+            containerEntityService.addContainerHistory(containerEntity, new ContainerEntityHistory("failed to start"));
+            handleFailure(containerEntity);
+            throw new ContainerException("Failed to start");
+        }
 
         return containerEntity;
     }
@@ -474,15 +481,6 @@ public class ContainerServiceImpl implements ContainerService {
         }
     }
 
-    private PermissionsServiceI getPermissionsService() {
-        // We need this layer of indirection, rather than wiring in the PermissionsServiceI implementation,
-        // because we need to wait until after XFT/XDAT is fully initialized before getting this. See XNAT-4647.
-        if (permissionsService == null) {
-            permissionsService = Permissions.getPermissionsService();
-        }
-        return permissionsService;
-    }
-
     @Override
     @Nonnull
     public String kill(final Long containerExecutionId, final UserI userI)
@@ -492,5 +490,18 @@ public class ContainerServiceImpl implements ContainerService {
         final String containerId = containerEntity.getContainerId();
         containerControlApi.killContainer(containerId);
         return containerId;
+    }
+
+    private void handleFailure(final ContainerEntity containerEntity) {
+        // TODO handle failure
+    }
+
+    private PermissionsServiceI getPermissionsService() {
+        // We need this layer of indirection, rather than wiring in the PermissionsServiceI implementation,
+        // because we need to wait until after XFT/XDAT is fully initialized before getting this. See XNAT-4647.
+        if (permissionsService == null) {
+            permissionsService = Permissions.getPermissionsService();
+        }
+        return permissionsService;
     }
 }
