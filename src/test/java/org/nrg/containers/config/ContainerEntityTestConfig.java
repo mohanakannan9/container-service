@@ -7,6 +7,7 @@ import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.daos.ContainerEntityRepository;
 import org.nrg.containers.model.ContainerEntity;
 import org.nrg.containers.model.ContainerEntityHistory;
+import org.nrg.containers.model.ContainerEntityInput;
 import org.nrg.containers.model.ContainerEntityMount;
 import org.nrg.containers.model.ContainerEntityOutput;
 import org.nrg.containers.model.ContainerMountFiles;
@@ -97,6 +98,7 @@ public class ContainerEntityTestConfig {
         bean.setAnnotatedClasses(
                 ContainerEntity.class,
                 ContainerEntityHistory.class,
+                ContainerEntityInput.class,
                 ContainerEntityOutput.class,
                 ContainerEntityMount.class,
                 ContainerMountFiles.class);

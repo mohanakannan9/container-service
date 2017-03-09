@@ -160,7 +160,7 @@ public class CommandLaunchIntegrationTest {
         Thread.sleep(1000); // Wait for container to finish
 
         // Raw inputs
-        assertEquals(runtimeValues, execution.getRawInputValues());
+        assertEquals(runtimeValues, execution.getRawInputs());
 
         // xnat wrapper inputs
         final Map<String, String> expectedXnatInputValues = Maps.newHashMap();
@@ -169,13 +169,13 @@ public class CommandLaunchIntegrationTest {
         expectedXnatInputValues.put("label", session.getLabel());
         expectedXnatInputValues.put("T1", session.getScans().get(0).getUri());
         expectedXnatInputValues.put("resource", session.getScans().get(0).getResources().get(0).getUri());
-        assertEquals(expectedXnatInputValues, execution.getXnatInputValues());
+        assertEquals(expectedXnatInputValues, execution.getWrapperInputs());
 
         // command inputs
         final Map<String, String> expectedCommandInputValues = Maps.newHashMap();
         expectedCommandInputValues.put("subject-id", session.getLabel());
         expectedCommandInputValues.put("other-recon-all-args", "-all");
-        assertEquals(expectedCommandInputValues, execution.getCommandInputValues());
+        assertEquals(expectedCommandInputValues, execution.getCommandInputs());
 
         // Outputs
         // assertTrue(resolvedCommand.getOutputs().isEmpty());

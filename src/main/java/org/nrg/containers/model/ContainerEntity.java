@@ -10,7 +10,6 @@ import org.hibernate.envers.Audited;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.CascadeType;
-import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.OneToMany;
@@ -31,9 +30,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
     @JsonProperty("mounts") private List<ContainerEntityMount> mounts = Lists.newArrayList();
     @JsonProperty("container-id") private String containerId;
     @JsonProperty("user-id") private String userId;
-    @JsonProperty("raw-input-values") private Map<String, String> rawInputValues;
-    @JsonProperty("xnat-input-values") private Map<String, String> xnatInputValues;
-    @JsonProperty("command-input-values") private Map<String, String> commandInputValues;
+    private Set<ContainerEntityInput> inputs;
     private List<ContainerEntityOutput> outputs;
     private List<ContainerEntityHistory> history = Lists.newArrayList();
     @JsonProperty("log-paths") private Set<String> logPaths;
@@ -52,9 +49,9 @@ public class ContainerEntity extends AbstractHibernateEntity {
         this.commandLine = resolvedCommand.getCommandLine();
         setEnvironmentVariables(resolvedCommand.getEnvironmentVariables());
         setMounts(resolvedCommand.getMounts());
-        setRawInputValues(resolvedCommand.getRawInputValues());
-        setXnatInputValues(resolvedCommand.getXnatInputValues());
-        setCommandInputValues(resolvedCommand.getCommandInputValues());
+        addRawInputs(resolvedCommand.getRawInputValues());
+        addWrapperInputs(resolvedCommand.getXnatInputValues());
+        addCommandInputs(resolvedCommand.getCommandInputValues());
         setOutputs(resolvedCommand.getOutputs());
         setLogPaths(null);
     }
@@ -132,40 +129,90 @@ public class ContainerEntity extends AbstractHibernateEntity {
         this.userId = user;
     }
 
-    @ElementCollection
-    @Column(columnDefinition = "TEXT")
-    public Map<String, String> getRawInputValues() {
-        return rawInputValues;
+    @OneToMany(mappedBy = "containerEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+    public Set<ContainerEntityInput> getInputs() {
+        return inputs;
     }
 
-    public void setRawInputValues(final Map<String, String> rawInputValues) {
-        this.rawInputValues = rawInputValues == null ?
-                Maps.<String, String>newHashMap() :
-                rawInputValues;
+    public void setInputs(final Set<ContainerEntityInput> inputs) {
+        this.inputs = inputs == null ?
+                Sets.<ContainerEntityInput>newHashSet() :
+                inputs;
+        for (final ContainerEntityInput input : this.inputs) {
+            addInput(input);
+        }
     }
 
-    @ElementCollection
-    @Column(columnDefinition = "TEXT")
-    public Map<String, String> getXnatInputValues() {
-        return xnatInputValues;
+    public void addInput(final ContainerEntityInput input) {
+        if (input == null) {
+            return;
+        }
+        input.setContainerEntity(this);
+
+        if (this.inputs == null) {
+            this.inputs = Sets.newHashSet();
+        }
+        this.inputs.add(input);
     }
 
-    public void setXnatInputValues(final Map<String, String> xnatInputValues) {
-        this.xnatInputValues = xnatInputValues == null ?
-                Maps.<String, String>newHashMap() :
-                xnatInputValues;
+    @Transient
+    public Map<String, String> getRawInputs() {
+        return getInputs(ContainerEntityInput.Type.RAW);
     }
 
-    @ElementCollection
-    @Column(columnDefinition = "TEXT")
-    public Map<String, String> getCommandInputValues() {
-        return commandInputValues;
+    public void addRawInputs(final Map<String, String> rawInputValues) {
+        addInputs(ContainerEntityInput.Type.RAW, rawInputValues);
     }
 
-    public void setCommandInputValues(final Map<String, String> commandInputValues) {
-        this.commandInputValues = commandInputValues == null ?
-                Maps.<String, String>newHashMap() :
-                commandInputValues;
+    @Transient
+    public Map<String, String> getWrapperInputs() {
+        return getInputs(ContainerEntityInput.Type.WRAPPER);
+    }
+
+    public void addWrapperInputs(final Map<String, String> xnatInputValues) {
+        addInputs(ContainerEntityInput.Type.WRAPPER, xnatInputValues);
+    }
+
+    @Transient
+    public Map<String, String> getCommandInputs() {
+        return getInputs(ContainerEntityInput.Type.COMMAND);
+    }
+
+    public void addCommandInputs(final Map<String, String> commandInputValues) {
+        addInputs(ContainerEntityInput.Type.COMMAND, commandInputValues);
+    }
+
+    private Map<String, String> getInputs(final ContainerEntityInput.Type type) {
+        if (this.inputs == null) {
+            return null;
+        }
+        final Map<String, String> inputs = Maps.newHashMap();
+        for (final ContainerEntityInput input : this.inputs) {
+            if (input.getType() == type) {
+                inputs.put(input.getName(), input.getValue());
+            }
+        }
+        return inputs;
+    }
+
+    private void addInputs(final ContainerEntityInput.Type type,
+                           final Map<String, String> inputs) {
+        if (inputs == null) {
+            return;
+        }
+        for (final Map.Entry<String, String> inputEntry : inputs.entrySet()) {
+            switch (type) {
+                case RAW:
+                    addInput(ContainerEntityInput.raw(inputEntry.getKey(), inputEntry.getValue()));
+                    break;
+                case WRAPPER:
+                    addInput(ContainerEntityInput.wrapper(inputEntry.getKey(), inputEntry.getValue()));
+                    break;
+                case COMMAND:
+                    addInput(ContainerEntityInput.command(inputEntry.getKey(), inputEntry.getValue()));
+                    break;
+            }
+        }
     }
 
     @OneToMany(mappedBy = "containerEntity", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -271,9 +318,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
                 .add("environmentVariables", environmentVariables)
                 .add("mounts", mounts)
                 .add("userId", userId)
-                .add("rawInputValues", rawInputValues)
-                .add("xnatInputValues", xnatInputValues)
-                .add("commandInputValues", commandInputValues)
+                .add("inputs", inputs)
                 .add("outputs", outputs)
                 .add("history", history)
                 .add("logPaths", logPaths)

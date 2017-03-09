@@ -229,7 +229,7 @@ public class ContainerFinalizeHelper {
 
         final String label = StringUtils.isNotBlank(output.getLabel()) ? output.getLabel() : mountName;
 
-        String parentUri = getInputValue(output.getHandledByXnatCommandInput());
+        String parentUri = getWrapperInputValue(output.getHandledByXnatCommandInput());
         if (parentUri == null) {
             throw new ContainerException(String.format(prefix + "Cannot upload output \"%s\". Could not instantiate object from input \"%s\".", output.getName(), output.getHandledByXnatCommandInput()));
         }
@@ -338,20 +338,20 @@ public class ContainerFinalizeHelper {
         throw new ContainerException(String.format(prefix + "Mount \"%s\" does not exist.", mountName));
     }
 
-    private String getInputValue(final String inputName) {
+    private String getWrapperInputValue(final String inputName) {
         if (log.isDebugEnabled()) {
             log.debug(String.format(prefix + "Getting URI for input \"%s\".", inputName));
         }
 
-        final Map<String, String> inputValues = containerEntity.getXnatInputValues();
-        if (!inputValues.containsKey(inputName)) {
+        final Map<String, String> wrapperInputs = containerEntity.getWrapperInputs();
+        if (!wrapperInputs.containsKey(inputName)) {
             if (log.isDebugEnabled()) {
-                log.debug(String.format(prefix + "No input found with name \"%s\". Input name set: %s", inputName, inputValues.keySet()));
+                log.debug(String.format(prefix + "No input found with name \"%s\". Input name set: %s", inputName, wrapperInputs.keySet()));
             }
             return null;
         }
 
-        return inputValues.get(inputName);
+        return wrapperInputs.get(inputName);
     }
 
     private List<File> matchGlob(final String rootPath, final String glob) {

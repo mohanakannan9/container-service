@@ -28,9 +28,7 @@ public class ContainerEntityRepository extends AbstractHibernateDAO<ContainerEnt
             }
         }
         Hibernate.initialize(entity.getCommandLine());
-        Hibernate.initialize(entity.getRawInputValues());
-        Hibernate.initialize(entity.getXnatInputValues());
-        Hibernate.initialize(entity.getCommandInputValues());
+        Hibernate.initialize(entity.getInputs());
         Hibernate.initialize(entity.getOutputs());
         Hibernate.initialize(entity.getLogPaths());
     }

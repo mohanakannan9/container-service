@@ -17,6 +17,7 @@ import org.nrg.containers.model.CommandWrapperExternalInputEntity;
 import org.nrg.containers.model.CommandWrapperOutputEntity;
 import org.nrg.containers.model.ContainerEntity;
 import org.nrg.containers.model.ContainerEntityHistory;
+import org.nrg.containers.model.ContainerEntityInput;
 import org.nrg.containers.model.ContainerEntityMount;
 import org.nrg.containers.model.ContainerEntityOutput;
 import org.nrg.containers.model.ContainerMountFiles;
@@ -174,6 +175,7 @@ public class IntegrationTestConfig {
                 CommandWrapperOutputEntity.class,
                 ContainerEntity.class,
                 ContainerEntityHistory.class,
+                ContainerEntityInput.class,
                 ContainerEntityOutput.class,
                 ContainerEntityMount.class,
                 ContainerMountFiles.class);
