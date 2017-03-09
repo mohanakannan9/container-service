@@ -160,8 +160,8 @@ var XNAT = getObject(XNAT || {});
         xmodal.open({
             title: 'Pull New Image',
             template: tmpl.clone(),
-            width: 400,
-            height: 420,
+            width: 450,
+            height: 400,
             scroll: false,
             padding: '0',
             beforeShow: function(obj){
@@ -293,7 +293,7 @@ var XNAT = getObject(XNAT || {});
                                     XNAT.ui.banner.top(2000, 'Command definition saved.', 'success');
                                 },
                                 fail: function(e){
-                                    xmodal.alert({ title: 'Error: Could Not Save', content: 'Error '+ e.status+': ' +e.statusText });
+                                    xmodal.alert({ title: 'Error: Could Not Save', content: 'Error '+ e.status+': ' +e.responseText });
                                 }
                             });
                         }
@@ -326,10 +326,9 @@ var XNAT = getObject(XNAT || {});
         // add table header row
         chTable.tr()
             .th({ addClass: 'left', html: '<b>Command</b>' })
-            .th('<b>XNAT Contexts</b>')
+            .th('<b>XNAT Actions (Contexts)</b>')
             .th('<b>Version</b>')
             .th('<b>Image</b>')
-            // .th('<b>Enabled</b>')
             .th('<b>Actions</b>');
 
         function viewLink(item, text){
@@ -394,7 +393,7 @@ var XNAT = getObject(XNAT || {});
                         okAction: function(){
                             console.log('delete id ' + item.id);
                             XNAT.xhr.delete({
-                                url: commandUrl(item.id),
+                                url: commandUrl('/'+item.id),
                                 success: function(){
                                     console.log('"'+ item.name + '" command deleted');
                                     XNAT.ui.banner.top(1000, '<b>"'+ item.name + '"</b> deleted.', 'success');
@@ -410,18 +409,26 @@ var XNAT = getObject(XNAT || {});
         commandListManager.getAll(imageName).done(function(data) {
             if (data) {
                 for (var i = 0, j = data.length; i < j; i++) {
-                    var xnatContexts = '', item = data[i];
+                    var xnatActions = '', item = data[i];
                     if (item.xnat) {
                         for (var k = 0, l = item.xnat.length; k < l; k++) {
-                            if (xnatContexts.length > 0) xnatContexts += '<br>';
-                            xnatContexts += item.xnat[k].description;
+                            if (xnatActions.length > 0) xnatActions += '<br>';
+                            xnatActions += item.xnat[k].description;
+                            if (item.xnat[k].contexts.length > 0) {
+                                var contexts = item.xnat[k].contexts;
+                                xnatActions += "<ul>";
+                                contexts.forEach(function(item){
+                                    xnatActions +="<li>"+item+"</li>";
+                                });
+                                xnatActions += "</ul>";
+                            }
                         }
                     } else {
-                        xnatContexts = 'N/A';
+                        xnatActions = 'N/A';
                     }
                     chTable.tr({title: item.name, data: {id: item.id, name: item.name, image: item.image}})
                         .td([viewLink(item, item.name)]).addClass('name')
-                        .td(xnatContexts)
+                        .td(xnatActions)
                         .td(item.version)
                         .td(item.image)
                         .td([['div.center', [viewCommandButton(item), spacer(10), deleteCommandButton(item)]]]);
@@ -441,6 +448,7 @@ var XNAT = getObject(XNAT || {});
     imageFilterManager.init = function(container){
 
         var $manager = $$(container||'div#image-filter-bar');
+        var $footer = $('#image-filter-bar').parents('.panel').find('.panel-footer');
 
         imageFilterManager.container = $manager;
 
@@ -454,11 +462,11 @@ var XNAT = getObject(XNAT || {});
             }
         });
 
-        // add the 'add new' button at the bottom
-        $manager.append(spawn('div.pull-right', [
+        // add the 'add new' button to the panel footer
+        $footer.append(spawn('div.pull-right', [
             newImage
         ]));
-        $manager.append(spawn('div.clear.clearfix'));
+        $footer.append(spawn('div.clear.clearFix'));
 
         return {
             element: $manager[0],
@@ -499,7 +507,7 @@ var XNAT = getObject(XNAT || {});
                                     refreshTable();
                                 },
                                 fail: function(e){
-                                    xmodal.alert({ title: 'API Error', content: 'Error ' + e.status + ': ' + e.statusText });
+                                    xmodal.alert({ title: 'API Error', content: 'Error ' + e.status + ': ' + e.responseText });
                                 }
                             })
                         }
@@ -511,15 +519,19 @@ var XNAT = getObject(XNAT || {});
         imageListManager.container = $manager;
 
         imageListManager.getAll().done(function(data){
-            for (var i=0, j=data.length; i<j; i++) {
-                var imageInfo = data[i];
-                $manager.append(spawn('div.imageContainer',[
-                    ['h3.imageTitle',[imageInfo.tags[0], ['span.pull-right',[ deleteImageButton(imageInfo) ]]]],
-                    ['div.imageCommandList',[commandListManager.table(imageInfo.tags[0])]]
-                ]));
+            if (data.length > 0) {
+                for (var i=0, j=data.length; i<j; i++) {
+                    var imageInfo = data[i];
+                    $manager.append(spawn('div.imageContainer',[
+                        ['h3.imageTitle',[imageInfo.tags[0], ['span.pull-right',[ deleteImageButton(imageInfo) ]]]],
+                        ['div.imageCommandList',[commandListManager.table(imageInfo.tags[0])]],
+                        ['div',[ newCommand ]]
+                    ]));
+                }
+            } else {
+                $manager.append(spawn('p',['There are no images installed in this XNAT.']));
             }
 
-            $manager.append(spawn('div',[ newCommand ]));
         });
     };
 
