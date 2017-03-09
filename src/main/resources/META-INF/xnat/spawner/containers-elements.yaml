@@ -7,7 +7,6 @@ dockerSetupPanel:
     kind: panel
     name: dockerSetupPanel
     label: Docker Server Setup
-    footer: true
     contents:
         containerHostTemplate:
             tag: "div#container-host-editor-template.html-template"
