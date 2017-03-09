@@ -10,18 +10,20 @@ import org.nrg.containers.model.CommandInputEntity;
 import org.nrg.containers.model.CommandMountEntity;
 import org.nrg.containers.model.CommandOutputEntity;
 import org.nrg.containers.model.CommandWrapperDerivedInputEntity;
+import org.nrg.containers.model.CommandWrapperEntity;
 import org.nrg.containers.model.CommandWrapperExternalInputEntity;
 import org.nrg.containers.model.CommandWrapperOutputEntity;
 import org.nrg.containers.model.DockerCommandEntity;
-import org.nrg.containers.model.CommandWrapperEntity;
 import org.nrg.containers.services.CommandService;
-import org.nrg.containers.services.ContainerExecutionService;
-import org.nrg.containers.services.ContainerLaunchService;
-import org.nrg.containers.services.impl.ContainerLaunchServiceImpl;
+import org.nrg.containers.services.ContainerEntityService;
+import org.nrg.containers.services.ContainerService;
+import org.nrg.containers.services.impl.ContainerServiceImpl;
 import org.nrg.transporter.TransportService;
 import org.nrg.transporter.TransportServiceImpl;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xdat.services.AliasTokenService;
+import org.nrg.xnat.services.archive.CatalogService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -42,15 +44,18 @@ public class CommandTestConfig {
     }
 
     @Bean
-    public ContainerLaunchService containerLaunchService(final CommandService commandService,
-                                                         final ContainerControlApi controlApi,
-                                                         final AliasTokenService aliasTokenService,
-                                                         final SiteConfigPreferences siteConfigPreferences,
-                                                         final TransportService transporter,
-                                                         final ContainerExecutionService containerExecutionService,
-                                                         final ConfigService configService) {
-        return new ContainerLaunchServiceImpl(commandService, controlApi, aliasTokenService,
-                siteConfigPreferences, transporter, containerExecutionService, configService);
+    public ContainerService containerService(final CommandService commandService,
+                                             final ContainerControlApi containerControlApi,
+                                             final ContainerEntityService containerEntityService,
+                                             final AliasTokenService aliasTokenService,
+                                             final SiteConfigPreferences siteConfigPreferences,
+                                             final TransportService transportService,
+                                             final PermissionsServiceI permissionsService,
+                                             final CatalogService catalogService,
+                                             final ObjectMapper mapper,
+                                             final ConfigService configService) {
+        return new ContainerServiceImpl(commandService, containerControlApi, containerEntityService, aliasTokenService, siteConfigPreferences,
+                transportService, permissionsService, catalogService, mapper, configService);
     }
 
     @Bean
@@ -74,8 +79,18 @@ public class CommandTestConfig {
     }
 
     @Bean
-    public ContainerExecutionService mockContainerExecutionService() {
-        return Mockito.mock(ContainerExecutionService.class);
+    public ContainerEntityService mockContainerEntityService() {
+        return Mockito.mock(ContainerEntityService.class);
+    }
+
+    @Bean
+    public PermissionsServiceI permissionsService() {
+        return Mockito.mock(PermissionsServiceI.class);
+    }
+
+    @Bean
+    public CatalogService catalogService() {
+        return Mockito.mock(CatalogService.class);
     }
 
     @Bean

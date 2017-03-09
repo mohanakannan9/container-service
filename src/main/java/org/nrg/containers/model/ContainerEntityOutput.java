@@ -3,12 +3,10 @@ package org.nrg.containers.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
 import org.hibernate.envers.Audited;
-import org.nrg.containers.model.auto.Command;
 import org.nrg.containers.model.auto.Command.CommandOutput;
 import org.nrg.containers.model.auto.Command.CommandWrapperOutput;
 
 import javax.persistence.Column;
-import javax.persistence.Embeddable;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -20,9 +18,9 @@ import java.util.Objects;
 
 @Entity
 @Audited
-public class ContainerExecutionOutput implements Serializable {
+public class ContainerEntityOutput implements Serializable {
     private long id;
-    @JsonIgnore private ContainerExecution containerExecution;
+    @JsonIgnore private ContainerEntity containerEntity;
     private String name;
     private String type;
     private Boolean required;
@@ -33,9 +31,9 @@ public class ContainerExecutionOutput implements Serializable {
     private String created;
     private String handledByXnatCommandInput;
 
-    public ContainerExecutionOutput() {}
+    public ContainerEntityOutput() {}
 
-    public ContainerExecutionOutput(final CommandOutput commandOutput, final CommandWrapperOutput commandOutputHandler) {
+    public ContainerEntityOutput(final CommandOutput commandOutput, final CommandWrapperOutput commandOutputHandler) {
         this.name = commandOutput.name();
         this.required = commandOutput.required();
         this.mount = commandOutput.mount();
@@ -57,12 +55,12 @@ public class ContainerExecutionOutput implements Serializable {
     }
 
     @ManyToOne
-    public ContainerExecution getContainerExecution() {
-        return containerExecution;
+    public ContainerEntity getContainerEntity() {
+        return containerEntity;
     }
 
-    public void setContainerExecution(final ContainerExecution containerExecution) {
-        this.containerExecution = containerExecution;
+    public void setContainerEntity(final ContainerEntity containerEntity) {
+        this.containerEntity = containerEntity;
     }
 
     public String getName() {
@@ -147,7 +145,7 @@ public class ContainerExecutionOutput implements Serializable {
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final ContainerExecutionOutput that = (ContainerExecutionOutput) o;
+        final ContainerEntityOutput that = (ContainerEntityOutput) o;
         return Objects.equals(this.id, that.id) &&
                 Objects.equals(this.name, that.name) &&
                 Objects.equals(this.type, that.type) &&

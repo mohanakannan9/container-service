@@ -11,7 +11,7 @@ import org.nrg.containers.model.CommandEventMapping;
 import org.nrg.containers.model.xnat.Scan;
 import org.nrg.containers.model.xnat.Session;
 import org.nrg.containers.services.CommandEventMappingService;
-import org.nrg.containers.services.ContainerLaunchService;
+import org.nrg.containers.services.ContainerService;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.services.NrgEventService;
 import org.slf4j.Logger;
@@ -34,19 +34,19 @@ public class SessionArchiveListenerAndCommandLauncher implements Consumer<Event<
     private static final String EVENT_ID = "SessionArchived";
 
     private ObjectMapper mapper;
-    private ContainerLaunchService containerLaunchService;
+    private ContainerService containerService;
     private CommandEventMappingService commandEventMappingService;
     private NrgEventService eventService;
 
     @Autowired
     public SessionArchiveListenerAndCommandLauncher(final EventBus eventBus,
                                                     final ObjectMapper mapper,
-                                                    final ContainerLaunchService containerLaunchService,
+                                                    final ContainerService containerService,
                                                     final CommandEventMappingService commandEventMappingService,
                                                     final NrgEventService eventService) {
         eventBus.on(type(SessionArchiveEvent.class), this);
         this.mapper = mapper;
-        this.containerLaunchService = containerLaunchService;
+        this.containerService = containerService;
         this.commandEventMappingService = commandEventMappingService;
         this.eventService = eventService;
     }
@@ -92,7 +92,7 @@ public class SessionArchiveListenerAndCommandLauncher implements Consumer<Event<
                             log.debug(paramEntry.getKey() + ": " + paramEntry.getValue());
                         }
                     }
-                    containerLaunchService.resolveAndLaunchCommand(xnatCommandWrapperName, commandId, runtimeValues, sessionArchivedEvent.getUser());
+                    containerService.resolveAndLaunchCommand(xnatCommandWrapperName, commandId, runtimeValues, sessionArchivedEvent.getUser());
                 } catch (NotFoundException | CommandResolutionException | NoServerPrefException | DockerServerException e) {
                     log.error("Error launching command " + commandId, e);
                 }

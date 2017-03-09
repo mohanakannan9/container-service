@@ -13,15 +13,15 @@ import java.util.Objects;
 
 @Entity
 @Audited
-public class ContainerExecutionHistory {
+public class ContainerEntityHistory {
     private long id;
-    @JsonIgnore private ContainerExecution containerExecution;
+    @JsonIgnore private ContainerEntity containerEntity;
     private String status;
     private long timeNano;
 
-    public ContainerExecutionHistory() {}
+    public ContainerEntityHistory() {}
 
-    public ContainerExecutionHistory(final String status, final Long timeNano) {
+    public ContainerEntityHistory(final String status, final Long timeNano) {
         this.status = status;
         this.timeNano = timeNano;
     }
@@ -37,12 +37,12 @@ public class ContainerExecutionHistory {
     }
 
     @ManyToOne
-    public ContainerExecution getContainerExecution() {
-        return containerExecution;
+    public ContainerEntity getContainerEntity() {
+        return containerEntity;
     }
 
-    public void setContainerExecution(final ContainerExecution containerExecution) {
-        this.containerExecution = containerExecution;
+    public void setContainerEntity(final ContainerEntity containerEntity) {
+        this.containerEntity = containerEntity;
     }
 
     public String getStatus() {
@@ -65,15 +65,15 @@ public class ContainerExecutionHistory {
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final ContainerExecutionHistory that = (ContainerExecutionHistory) o;
-        return Objects.equals(this.containerExecution, that.containerExecution) &&
+        final ContainerEntityHistory that = (ContainerEntityHistory) o;
+        return Objects.equals(this.containerEntity, that.containerEntity) &&
                 Objects.equals(this.status, that.status) &&
                 Objects.equals(this.timeNano, that.timeNano);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(containerExecution, status, timeNano);
+        return Objects.hash(containerEntity, status, timeNano);
     }
 
     @Override

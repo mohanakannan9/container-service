@@ -13,7 +13,6 @@ import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.OneToMany;
 import javax.persistence.Transient;
 import java.util.List;
@@ -23,27 +22,27 @@ import java.util.Set;
 
 @Entity
 @Audited
-public class ContainerExecution extends AbstractHibernateEntity {
+public class ContainerEntity extends AbstractHibernateEntity {
     @JsonProperty("command-id") private long commandId;
     @JsonProperty("xnat-command-wrapper-id") private long xnatCommandWrapperId;
     @JsonProperty("docker-image") private String dockerImage;
     @JsonProperty("command-line") private String commandLine;
     @JsonProperty("env") private Map<String, String> environmentVariables = Maps.newHashMap();
-    @JsonProperty("mounts") private List<ContainerExecutionMount> mounts = Lists.newArrayList();
+    @JsonProperty("mounts") private List<ContainerEntityMount> mounts = Lists.newArrayList();
     @JsonProperty("container-id") private String containerId;
     @JsonProperty("user-id") private String userId;
     @JsonProperty("raw-input-values") private Map<String, String> rawInputValues;
     @JsonProperty("xnat-input-values") private Map<String, String> xnatInputValues;
     @JsonProperty("command-input-values") private Map<String, String> commandInputValues;
-    private List<ContainerExecutionOutput> outputs;
-    private List<ContainerExecutionHistory> history = Lists.newArrayList();
+    private List<ContainerEntityOutput> outputs;
+    private List<ContainerEntityHistory> history = Lists.newArrayList();
     @JsonProperty("log-paths") private Set<String> logPaths;
 
-    public ContainerExecution() {}
+    public ContainerEntity() {}
 
-    public ContainerExecution(final ResolvedCommand resolvedCommand,
-                              final String containerId,
-                              final String userId) {
+    public ContainerEntity(final ResolvedCommand resolvedCommand,
+                           final String containerId,
+                           final String userId) {
         this.containerId = containerId;
         this.userId = userId;
 
@@ -103,17 +102,17 @@ public class ContainerExecution extends AbstractHibernateEntity {
                 environmentVariables;
     }
 
-    @OneToMany(mappedBy = "containerExecution", cascade = CascadeType.ALL, orphanRemoval = true)
-    public List<ContainerExecutionMount> getMounts() {
+    @OneToMany(mappedBy = "containerEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+    public List<ContainerEntityMount> getMounts() {
         return mounts;
     }
 
-    public void setMounts(final List<ContainerExecutionMount> mounts) {
+    public void setMounts(final List<ContainerEntityMount> mounts) {
         this.mounts = mounts == null ?
-                Lists.<ContainerExecutionMount>newArrayList() :
+                Lists.<ContainerEntityMount>newArrayList() :
                 mounts;
-        for (final ContainerExecutionMount mount : this.mounts) {
-            mount.setContainerExecution(this);
+        for (final ContainerEntityMount mount : this.mounts) {
+            mount.setContainerEntity(this);
         }
     }
 
@@ -169,40 +168,40 @@ public class ContainerExecution extends AbstractHibernateEntity {
                 commandInputValues;
     }
 
-    @OneToMany(mappedBy = "containerExecution", cascade = CascadeType.ALL, orphanRemoval = true)
-    public List<ContainerExecutionOutput> getOutputs() {
+    @OneToMany(mappedBy = "containerEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+    public List<ContainerEntityOutput> getOutputs() {
         return outputs;
     }
 
-    public void setOutputs(final List<ContainerExecutionOutput> outputs) {
+    public void setOutputs(final List<ContainerEntityOutput> outputs) {
         this.outputs = outputs == null ?
-                Lists.<ContainerExecutionOutput>newArrayList() :
+                Lists.<ContainerEntityOutput>newArrayList() :
                 outputs;
-        for (final ContainerExecutionOutput output : this.outputs) {
-            output.setContainerExecution(this);
+        for (final ContainerEntityOutput output : this.outputs) {
+            output.setContainerEntity(this);
         }
     }
 
-    @OneToMany(mappedBy = "containerExecution", cascade = CascadeType.ALL, orphanRemoval = true)
-    public List<ContainerExecutionHistory> getHistory() {
+    @OneToMany(mappedBy = "containerEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+    public List<ContainerEntityHistory> getHistory() {
         return history;
     }
 
-    public void setHistory(final List<ContainerExecutionHistory> history) {
+    public void setHistory(final List<ContainerEntityHistory> history) {
         this.history = history == null ?
-                Lists.<ContainerExecutionHistory>newArrayList() :
+                Lists.<ContainerEntityHistory>newArrayList() :
                 history;
-        for (final ContainerExecutionHistory historyItem : this.history) {
+        for (final ContainerEntityHistory historyItem : this.history) {
             addToHistory(historyItem);
         }
     }
 
     @Transient
-    public void addToHistory(final ContainerExecutionHistory historyItem) {
+    public void addToHistory(final ContainerEntityHistory historyItem) {
         if (historyItem == null) {
             return;
         }
-        historyItem.setContainerExecution(this);
+        historyItem.setContainerEntity(this);
         if (this.history == null) {
             this.history = Lists.newArrayList();
         }
@@ -245,7 +244,7 @@ public class ContainerExecution extends AbstractHibernateEntity {
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final ContainerExecution that = (ContainerExecution) o;
+        final ContainerEntity that = (ContainerEntity) o;
         return Objects.equals(this.getId(), that.getId()) &&
                 Objects.equals(this.containerId, that.containerId);
     }

@@ -3,7 +3,6 @@ package org.nrg.containers.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.spotify.docker.client.DefaultDockerClient;
@@ -12,8 +11,6 @@ import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.DockerClient.LogsParam;
 import com.spotify.docker.client.EventStream;
 import com.spotify.docker.client.LogStream;
-import com.spotify.docker.client.LoggingPullHandler;
-import com.spotify.docker.client.ProgressHandler;
 import com.spotify.docker.client.exceptions.ContainerNotFoundException;
 import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.exceptions.DockerException;
@@ -25,7 +22,6 @@ import com.spotify.docker.client.messages.HostConfig;
 import com.spotify.docker.client.messages.Image;
 import com.spotify.docker.client.messages.ImageInfo;
 import com.spotify.docker.client.messages.PortBinding;
-import com.spotify.docker.client.messages.ProgressMessage;
 import com.spotify.docker.client.messages.RegistryAuth;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.events.DockerContainerEvent;
@@ -33,13 +29,13 @@ import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.helpers.CommandLabelHelper;
 import org.nrg.containers.model.Container;
-import org.nrg.containers.model.ContainerExecutionMount;
-import org.nrg.containers.model.auto.DockerImage;
+import org.nrg.containers.model.ContainerEntityMount;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.containers.model.auto.Command;
 import org.nrg.containers.model.auto.DockerHub;
+import org.nrg.containers.model.auto.DockerImage;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
@@ -249,7 +245,7 @@ public class DockerControlApi implements ContainerControlApi {
             throws NoServerPrefException, DockerServerException {
 
         final List<String> bindMounts = Lists.newArrayList();
-        for (final ContainerExecutionMount mount : resolvedDockerCommand.getMounts()) {
+        for (final ContainerEntityMount mount : resolvedDockerCommand.getMounts()) {
             bindMounts.add(mount.toBindMountString());
         }
         final List<String> environmentVariables = Lists.newArrayList();

@@ -3,10 +3,9 @@ package org.nrg.containers.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.mockito.Mockito;
 import org.nrg.containers.api.DockerControlApi;
-import org.nrg.containers.daos.ContainerExecutionRepository;
+import org.nrg.containers.daos.ContainerEntityRepository;
 import org.nrg.containers.model.DockerServerPrefsBean;
-import org.nrg.containers.services.ContainerExecutionService;
-import org.nrg.containers.services.impl.HibernateContainerExecutionService;
+import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.springframework.context.annotation.Bean;
@@ -32,13 +31,13 @@ public class DockerControlApiTestConfig {
     }
 
     @Bean
-    public ContainerExecutionService mockContainerExecutionService() {
-        return Mockito.mock(HibernateContainerExecutionService.class);
+    public ContainerEntityService mockContainerEntityService() {
+        return Mockito.mock(ContainerEntityService.class);
     }
 
     @Bean
-    public ContainerExecutionRepository mockContainerExecutionRepository() {
-        return Mockito.mock(ContainerExecutionRepository.class);
+    public ContainerEntityRepository mockContainerExecutionRepository() {
+        return Mockito.mock(ContainerEntityRepository.class);
     }
 
     @Bean

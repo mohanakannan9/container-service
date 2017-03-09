@@ -10,7 +10,6 @@ import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
 import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -19,18 +18,15 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.config.CommandRestApiTestConfig;
-import org.nrg.containers.model.CommandEntity;
-import org.nrg.containers.model.CommandWrapperEntity;
-import org.nrg.containers.model.ContainerExecution;
+import org.nrg.containers.model.ContainerEntity;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.containers.model.auto.Command;
 import org.nrg.containers.model.auto.Command.CommandWrapper;
-import org.nrg.containers.services.CommandEntityService;
 import org.nrg.containers.services.CommandService;
-import org.nrg.containers.services.ContainerExecutionService;
+import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.RoleServiceI;
@@ -99,7 +95,7 @@ public class CommandRestApiTest {
     @Autowired private CommandService commandService;
     @Autowired private RoleServiceI mockRoleService;
     @Autowired private ContainerControlApi mockDockerControlApi;
-    @Autowired private ContainerExecutionService mockContainerExecutionService;
+    @Autowired private ContainerEntityService mockContainerEntityService;
     @Autowired private AliasTokenService mockAliasTokenService;
     @Autowired private DockerServerPrefsBean mockDockerServerPrefsBean;
     @Autowired private SiteConfigPreferences mockSiteConfigPreferences;
@@ -505,12 +501,12 @@ public class CommandRestApiTest {
                         "\"ports\": {}" +
                         "}";
         final ResolvedDockerCommand preparedResolvedCommand = mapper.readValue(preparedResolvedCommandJson, ResolvedDockerCommand.class);
-        final ContainerExecution containerExecution = new ContainerExecution(preparedResolvedCommand, fakeContainerId, FAKE_USERNAME);
+        final ContainerEntity containerEntity = new ContainerEntity(preparedResolvedCommand, fakeContainerId, FAKE_USERNAME);
 
         // We have to match any resolved command because spring will add a csrf token to the inputs. I don't know how to get that token in advance.
         when(mockDockerControlApi.launchImage(any(ResolvedDockerCommand.class))).thenReturn(fakeContainerId);
-        when(mockContainerExecutionService.save(any(ResolvedCommand.class), eq(fakeContainerId), eq(mockAdmin)))
-                .thenReturn(containerExecution);
+        when(mockContainerEntityService.save(any(ResolvedCommand.class), eq(fakeContainerId), eq(mockAdmin)))
+                .thenReturn(containerEntity);
 
         final String path = String.format(pathTemplate, id);
         final MockHttpServletRequestBuilder request =
@@ -567,12 +563,12 @@ public class CommandRestApiTest {
                 "\"ports\": {}" +
                 "}";
         final ResolvedDockerCommand preparedResolvedCommand = mapper.readValue(preparedResolvedCommandJson, ResolvedDockerCommand.class);
-        final ContainerExecution containerExecution = new ContainerExecution(preparedResolvedCommand, fakeContainerId, FAKE_USERNAME);
+        final ContainerEntity containerEntity = new ContainerEntity(preparedResolvedCommand, fakeContainerId, FAKE_USERNAME);
 
         // We have to match any resolved command because spring will add a csrf token to the inputs. I don't know how to get that token in advance.
         when(mockDockerControlApi.launchImage(any(ResolvedDockerCommand.class))).thenReturn(fakeContainerId);
-        when(mockContainerExecutionService.save(any(ResolvedCommand.class), eq(fakeContainerId), eq(mockAdmin)))
-                .thenReturn(containerExecution);
+        when(mockContainerEntityService.save(any(ResolvedCommand.class), eq(fakeContainerId), eq(mockAdmin)))
+                .thenReturn(containerEntity);
 
         final String path = String.format(pathTemplate, id);
         final MockHttpServletRequestBuilder request =

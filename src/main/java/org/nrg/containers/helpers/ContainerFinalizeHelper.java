@@ -10,10 +10,9 @@ import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.model.ContainerExecution;
-import org.nrg.containers.model.ContainerExecutionMount;
-import org.nrg.containers.model.ContainerExecutionOutput;
-import org.nrg.containers.model.xnat.XnatModelObject;
+import org.nrg.containers.model.ContainerEntity;
+import org.nrg.containers.model.ContainerEntityMount;
+import org.nrg.containers.model.ContainerEntityOutput;
 import org.nrg.transporter.TransportService;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -27,7 +26,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
@@ -50,16 +48,16 @@ public class ContainerFinalizeHelper {
     private CatalogService catalogService;
     private ObjectMapper mapper;
 
-    private ContainerExecution containerExecution;
+    private ContainerEntity containerEntity;
     private UserI userI;
     private String exitCode;
 
-    private Map<String, ContainerExecutionMount> untransportedMounts;
-    private Map<String, ContainerExecutionMount> transportedMounts;
+    private Map<String, ContainerEntityMount> untransportedMounts;
+    private Map<String, ContainerEntityMount> transportedMounts;
 
     private String prefix;
 
-    private ContainerFinalizeHelper(final ContainerExecution containerExecution,
+    private ContainerFinalizeHelper(final ContainerEntity containerEntity,
                                     final UserI userI,
                                     final String exitCode,
                                     final ContainerControlApi containerControlApi,
@@ -75,17 +73,17 @@ public class ContainerFinalizeHelper {
         this.catalogService = catalogService;
         this.mapper = mapper;
 
-        this.containerExecution = containerExecution;
+        this.containerEntity = containerEntity;
         this.userI = userI;
         this.exitCode = exitCode;
 
         untransportedMounts = Maps.newHashMap();
         transportedMounts = Maps.newHashMap();
 
-        prefix = "Container " + containerExecution.getId() + ": ";
+        prefix = "Container " + containerEntity.getId() + ": ";
     }
 
-    public static void finalizeContainer(final ContainerExecution containerExecution,
+    public static void finalizeContainer(final ContainerEntity containerEntity,
                                          final UserI userI,
                                          final String exitCode,
                                          final ContainerControlApi containerControlApi,
@@ -95,18 +93,18 @@ public class ContainerFinalizeHelper {
                                          final CatalogService catalogService,
                                          final ObjectMapper mapper) {
         final ContainerFinalizeHelper helper =
-                new ContainerFinalizeHelper(containerExecution, userI, exitCode, containerControlApi, siteConfigPreferences, transportService, permissionsService, catalogService, mapper);
+                new ContainerFinalizeHelper(containerEntity, userI, exitCode, containerControlApi, siteConfigPreferences, transportService, permissionsService, catalogService, mapper);
         helper.finalizeContainer();
     }
 
     private void finalizeContainer() {
-        containerExecution.addLogPaths(uploadLogs());
+        containerEntity.addLogPaths(uploadLogs());
 
         // TODO Add some stuff with status code. "x" means "don't know", "0" success, greater than 0 failure.
 
-        if (containerExecution.getOutputs() != null) {
-            if (containerExecution.getMounts() != null) {
-                for (final ContainerExecutionMount mountOut : containerExecution.getMounts()) {
+        if (containerEntity.getOutputs() != null) {
+            if (containerEntity.getMounts() != null) {
+                for (final ContainerEntityMount mountOut : containerEntity.getMounts()) {
                     untransportedMounts.put(mountOut.getName(), mountOut);
                 }
             }
@@ -125,12 +123,12 @@ public class ContainerFinalizeHelper {
         String stdoutLogStr = "";
         String stderrLogStr = "";
         try {
-            stdoutLogStr = containerControlApi.getContainerStdoutLog(containerExecution.getContainerId());
+            stdoutLogStr = containerControlApi.getContainerStdoutLog(containerEntity.getContainerId());
         } catch (DockerServerException | NoServerPrefException e) {
             log.error(prefix + "Could not get logs.", e);
         }
         try {
-            stderrLogStr = containerControlApi.getContainerStderrLog(containerExecution.getContainerId());
+            stderrLogStr = containerControlApi.getContainerStderrLog(containerEntity.getContainerId());
         } catch (DockerServerException | NoServerPrefException e) {
             log.error(prefix + "Could not get logs.", e);
         }
@@ -178,7 +176,7 @@ public class ContainerFinalizeHelper {
         log.info(prefix + "Uploading outputs.");
 
         final List<Exception> failedRequiredOutputs = Lists.newArrayList();
-        for (final ContainerExecutionOutput output: containerExecution.getOutputs()) {
+        for (final ContainerEntityOutput output: containerEntity.getOutputs()) {
             try {
                 output.setCreated(uploadOutput(output));
             } catch (ContainerException | RuntimeException e) {
@@ -193,7 +191,7 @@ public class ContainerFinalizeHelper {
         return failedRequiredOutputs;
     }
 
-    private String uploadOutput(final ContainerExecutionOutput output) throws ContainerException {
+    private String uploadOutput(final ContainerEntityOutput output) throws ContainerException {
         if (log.isInfoEnabled()) {
             log.info(String.format(prefix + "Uploading output \"%s\".", output.getName()));
         }
@@ -202,7 +200,7 @@ public class ContainerFinalizeHelper {
         }
 
         final String mountName = output.getMount();
-        final ContainerExecutionMount mount = getMount(mountName);
+        final ContainerEntityMount mount = getMount(mountName);
         if (mount == null) {
             throw new ContainerException(String.format(prefix + "Mount \"%s\" does not exist.", mountName));
         }
@@ -307,7 +305,7 @@ public class ContainerFinalizeHelper {
         return createdUri;
     }
 
-    private ContainerExecutionMount getMount(final String mountName) throws ContainerException {
+    private ContainerEntityMount getMount(final String mountName) throws ContainerException {
         // If mount has been transported, we're done
         if (transportedMounts.containsKey(mountName)) {
             return transportedMounts.get(mountName);
@@ -318,7 +316,7 @@ public class ContainerFinalizeHelper {
             if (log.isDebugEnabled()) {
                 log.debug(String.format(prefix + "Transporting mount \"%s\".", mountName));
             }
-            final ContainerExecutionMount mountToTransport = untransportedMounts.get(mountName);
+            final ContainerEntityMount mountToTransport = untransportedMounts.get(mountName);
 
             if (StringUtils.isBlank(mountToTransport.getXnatHostPath())) {
                 final Path pathOnExecutionMachine = Paths.get(mountToTransport.getContainerHostPath());
@@ -345,7 +343,7 @@ public class ContainerFinalizeHelper {
             log.debug(String.format(prefix + "Getting URI for input \"%s\".", inputName));
         }
 
-        final Map<String, String> inputValues = containerExecution.getXnatInputValues();
+        final Map<String, String> inputValues = containerEntity.getXnatInputValues();
         if (!inputValues.containsKey(inputName)) {
             if (log.isDebugEnabled()) {
                 log.debug(String.format(prefix + "No input found with name \"%s\". Input name set: %s", inputName, inputValues.keySet()));

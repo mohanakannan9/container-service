@@ -6,7 +6,7 @@ import org.mockito.Mockito;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.api.DockerControlApi;
-import org.nrg.containers.daos.ContainerExecutionRepository;
+import org.nrg.containers.daos.ContainerEntityRepository;
 import org.nrg.containers.events.DockerContainerEventListener;
 import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.CommandInputEntity;
@@ -15,19 +15,19 @@ import org.nrg.containers.model.CommandOutputEntity;
 import org.nrg.containers.model.CommandWrapperDerivedInputEntity;
 import org.nrg.containers.model.CommandWrapperExternalInputEntity;
 import org.nrg.containers.model.CommandWrapperOutputEntity;
-import org.nrg.containers.model.ContainerExecution;
-import org.nrg.containers.model.ContainerExecutionHistory;
-import org.nrg.containers.model.ContainerExecutionMount;
-import org.nrg.containers.model.ContainerExecutionOutput;
+import org.nrg.containers.model.ContainerEntity;
+import org.nrg.containers.model.ContainerEntityHistory;
+import org.nrg.containers.model.ContainerEntityMount;
+import org.nrg.containers.model.ContainerEntityOutput;
 import org.nrg.containers.model.ContainerMountFiles;
 import org.nrg.containers.model.DockerCommandEntity;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.CommandWrapperEntity;
 import org.nrg.containers.services.CommandService;
-import org.nrg.containers.services.ContainerExecutionService;
-import org.nrg.containers.services.ContainerLaunchService;
-import org.nrg.containers.services.impl.ContainerLaunchServiceImpl;
-import org.nrg.containers.services.impl.HibernateContainerExecutionService;
+import org.nrg.containers.services.ContainerEntityService;
+import org.nrg.containers.services.ContainerService;
+import org.nrg.containers.services.impl.ContainerServiceImpl;
+import org.nrg.containers.services.impl.HibernateContainerEntityService;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.transporter.TransportService;
 import org.nrg.transporter.TransportServiceImpl;
@@ -97,15 +97,18 @@ public class IntegrationTestConfig {
     Container launch Service and dependencies
      */
     @Bean
-    public ContainerLaunchService containerLaunchService(final CommandService commandService,
-                                                         final ContainerControlApi controlApi,
-                                                         final AliasTokenService aliasTokenService,
-                                                         final SiteConfigPreferences siteConfigPreferences,
-                                                         final TransportService transporter,
-                                                         final ContainerExecutionService containerExecutionService,
-                                                         final ConfigService configService) {
-        return new ContainerLaunchServiceImpl(commandService, controlApi, aliasTokenService,
-                siteConfigPreferences, transporter, containerExecutionService, configService);
+    public ContainerService containerService(final CommandService commandService,
+                                             final ContainerControlApi containerControlApi,
+                                             final ContainerEntityService containerEntityService,
+                                             final AliasTokenService aliasTokenService,
+                                             final SiteConfigPreferences siteConfigPreferences,
+                                             final TransportService transportService,
+                                             final PermissionsServiceI permissionsService,
+                                             final CatalogService catalogService,
+                                             final ObjectMapper mapper,
+                                             final ConfigService configService) {
+        return new ContainerServiceImpl(commandService, containerControlApi, containerEntityService, aliasTokenService, siteConfigPreferences,
+                transportService, permissionsService, catalogService, mapper, configService);
     }
 
     @Bean
@@ -128,24 +131,6 @@ public class IntegrationTestConfig {
         return Mockito.mock(ConfigService.class);
     }
 
-    /*
-    Container execution service and dependencies
-     */
-    @Bean
-    public ContainerExecutionService containerExecutionService(final ContainerControlApi containerControlApi,
-                                                               final SiteConfigPreferences siteConfigPreferences,
-                                                               final TransportService transportService,
-                                                               final PermissionsServiceI permissionsService,
-                                                               final CatalogService catalogService,
-                                                               final ObjectMapper mapper) {
-        return new HibernateContainerExecutionService(containerControlApi, siteConfigPreferences, transportService, permissionsService, catalogService, mapper);
-    }
-
-    @Bean
-    public ContainerExecutionRepository containerExecutionRepository() {
-        return new ContainerExecutionRepository();
-    }
-
     @Bean
     public PermissionsServiceI permissionsService() {
         return Mockito.mock(PermissionsServiceI.class);
@@ -154,6 +139,19 @@ public class IntegrationTestConfig {
     @Bean
     public CatalogService catalogService() {
         return Mockito.mock(CatalogService.class);
+    }
+
+    /*
+    Container entity service and dependencies
+     */
+    @Bean
+    public ContainerEntityService containerEntityService() {
+        return new HibernateContainerEntityService();
+    }
+
+    @Bean
+    public ContainerEntityRepository containerEntityRepository() {
+        return new ContainerEntityRepository();
     }
 
     /*
@@ -174,10 +172,10 @@ public class IntegrationTestConfig {
                 CommandWrapperExternalInputEntity.class,
                 CommandWrapperDerivedInputEntity.class,
                 CommandWrapperOutputEntity.class,
-                ContainerExecution.class,
-                ContainerExecutionHistory.class,
-                ContainerExecutionOutput.class,
-                ContainerExecutionMount.class,
+                ContainerEntity.class,
+                ContainerEntityHistory.class,
+                ContainerEntityOutput.class,
+                ContainerEntityMount.class,
                 ContainerMountFiles.class);
 
         return bean;

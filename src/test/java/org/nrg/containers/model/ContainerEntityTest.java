@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.nrg.containers.config.ContainerExecutionTestConfig;
-import org.nrg.containers.services.ContainerExecutionService;
+import org.nrg.containers.config.ContainerEntityTestConfig;
+import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
@@ -23,15 +23,15 @@ import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @Transactional
-@ContextConfiguration(classes = ContainerExecutionTestConfig.class)
-public class ContainerExecutionTest {
+@ContextConfiguration(classes = ContainerEntityTestConfig.class)
+public class ContainerEntityTest {
 
     @Autowired private ObjectMapper mapper;
-    @Autowired private ContainerExecutionService containerExecutionService;
+    @Autowired private ContainerEntityService containerEntityService;
 
     @Test
     public void testSpringConfiguration() {
-        assertThat(containerExecutionService, not(nullValue()));
+        assertThat(containerEntityService, not(nullValue()));
     }
 
     @Test
@@ -42,14 +42,14 @@ public class ContainerExecutionTest {
         final UserI mockAdmin = Mockito.mock(UserI.class);
         when(mockAdmin.getLogin()).thenReturn("admin");
 
-        final ContainerExecution created = containerExecutionService.save(resolvedCommand, containerId, mockAdmin);
+        final ContainerEntity created = containerEntityService.save(resolvedCommand, containerId, mockAdmin);
         assertNotEquals(0L, created);
 
         TestTransaction.flagForCommit();
         TestTransaction.end();
         TestTransaction.start();
 
-        final ContainerExecution retrieved = containerExecutionService.get(created.getId());
+        final ContainerEntity retrieved = containerEntityService.get(created.getId());
         assertEquals(created, retrieved);
     }
 }

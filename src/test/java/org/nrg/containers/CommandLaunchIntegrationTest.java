@@ -20,9 +20,9 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.nrg.containers.config.IntegrationTestConfig;
-import org.nrg.containers.model.ContainerExecution;
-import org.nrg.containers.model.ContainerExecutionMount;
-import org.nrg.containers.model.ContainerExecutionOutput;
+import org.nrg.containers.model.ContainerEntity;
+import org.nrg.containers.model.ContainerEntityMount;
+import org.nrg.containers.model.ContainerEntityOutput;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.auto.Command;
 import org.nrg.containers.model.auto.Command.CommandWrapper;
@@ -30,7 +30,7 @@ import org.nrg.containers.model.xnat.Resource;
 import org.nrg.containers.model.xnat.Scan;
 import org.nrg.containers.model.xnat.Session;
 import org.nrg.containers.services.CommandService;
-import org.nrg.containers.services.ContainerLaunchService;
+import org.nrg.containers.services.ContainerService;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.UserManagementServiceI;
@@ -68,7 +68,7 @@ public class CommandLaunchIntegrationTest {
 
     @Autowired private ObjectMapper mapper;
     @Autowired private CommandService commandService;
-    @Autowired private ContainerLaunchService containerLaunchService;
+    @Autowired private ContainerService containerService;
     @Autowired private AliasTokenService mockAliasTokenService;
     @Autowired private DockerServerPrefsBean mockDockerServerPrefsBean;
     @Autowired private SiteConfigPreferences mockSiteConfigPreferences;
@@ -156,7 +156,7 @@ public class CommandLaunchIntegrationTest {
         runtimeValues.put("session", sessionJson);
         runtimeValues.put("T1-scantype", t1Scantype);
 
-        final ContainerExecution execution = containerLaunchService.resolveAndLaunchCommand(commandWrapper.id(), fakeReconAllCreated.id(), runtimeValues, mockUser);
+        final ContainerEntity execution = containerService.resolveAndLaunchCommand(commandWrapper.id(), fakeReconAllCreated.id(), runtimeValues, mockUser);
         Thread.sleep(1000); // Wait for container to finish
 
         // Raw inputs
@@ -180,10 +180,10 @@ public class CommandLaunchIntegrationTest {
         // Outputs
         // assertTrue(resolvedCommand.getOutputs().isEmpty());
 
-        final List<String> outputNames = Lists.transform(execution.getOutputs(), new Function<ContainerExecutionOutput, String>() {
+        final List<String> outputNames = Lists.transform(execution.getOutputs(), new Function<ContainerEntityOutput, String>() {
             @Nullable
             @Override
-            public String apply(@Nullable final ContainerExecutionOutput output) {
+            public String apply(@Nullable final ContainerEntityOutput output) {
                 return output == null ? "" : output.getName();
             }
         });
@@ -197,12 +197,12 @@ public class CommandLaunchIntegrationTest {
         assertEquals(expectedEnvironmentVariables, execution.getEnvironmentVariables());
 
 
-        final List<ContainerExecutionMount> mounts = execution.getMounts();
+        final List<ContainerEntityMount> mounts = execution.getMounts();
         assertThat(mounts, hasSize(2));
 
-        ContainerExecutionMount inputMount = null;
-        ContainerExecutionMount outputMount = null;
-        for (final ContainerExecutionMount mount : mounts) {
+        ContainerEntityMount inputMount = null;
+        ContainerEntityMount outputMount = null;
+        for (final ContainerEntityMount mount : mounts) {
             if (mount.getName().equals("input")) {
                 inputMount = mount;
             } else if (mount.getName().equals("output")) {
