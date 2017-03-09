@@ -2,6 +2,7 @@ package org.nrg.containers.services.impl;
 
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.daos.ContainerEntityRepository;
+import org.nrg.containers.events.ContainerEvent;
 import org.nrg.containers.model.ContainerEntity;
 import org.nrg.containers.model.ContainerEntityHistory;
 import org.nrg.containers.model.ResolvedCommand;
@@ -55,43 +56,34 @@ public class HibernateContainerEntityService
 
     @Override
     @Nullable
-    public ContainerEntity addContainerEvent(final String containerId,
-                                  final String status,
-                                  final long time) {
-        final ContainerEntity containerEntity = retrieve(containerId);
+    public ContainerEntity addContainerEventToHistory(final ContainerEvent containerEvent) {
+        final ContainerEntity containerEntity = retrieve(containerEvent.getContainerId());
         if (containerEntity == null) {
             if (log.isDebugEnabled()) {
                 log.debug("This event is not about a container we are interested in.");
             }
             return null;
         }
-        addContainerEvent(containerEntity, status, time);
+        log.info("Adding new history item to container entity " + containerEntity.getId() + " from event.");
+        addContainerHistoryItem(containerEntity, ContainerEntityHistory.fromContainerEvent(containerEvent));
         return containerEntity;
     }
 
     @Override
-    public void addContainerEvent(final ContainerEntity containerEntity,
-                                  final String status,
-                                  final long timestamp) {
-        if (getDao().eventHasBeenRecorded(containerEntity.getContainerId(), status, timestamp)) {
+    @Nullable
+    public ContainerEntityHistory addContainerHistoryItem(final ContainerEntity containerEntity,
+                                                          final ContainerEntityHistory history) {
+        if (containerEntity.isItemInHistory(history)) {
             if (log.isDebugEnabled()) {
-                log.debug("Event has already been recorded in the history.");
+                log.debug("History item has already been recorded.");
             }
-            return;
+            return null;
         }
 
-        addContainerHistory(containerEntity, new ContainerEntityHistory(status, timestamp));
-
-    }
-
-    @Override
-    public void addContainerHistory(final ContainerEntity containerEntity,
-                                    final ContainerEntityHistory history) {
         if (log.isDebugEnabled()) {
-            log.debug("Adding history entry: " + history);
+            log.debug("Adding history item: " + history);
         }
-        containerEntity.addToHistory(history);
-        getDao().persistEvent(history);
-        update(containerEntity);
+        getDao().addHistoryItem(containerEntity, history);
+        return history;
     }
 }

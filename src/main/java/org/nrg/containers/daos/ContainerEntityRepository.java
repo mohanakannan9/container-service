@@ -40,19 +40,10 @@ public class ContainerEntityRepository extends AbstractHibernateDAO<ContainerEnt
         return findByUniqueProperty("containerId", containerId);
     }
 
-    public boolean eventHasBeenRecorded(final String containerId,
-                                        final String status,
-                                        final long timestamp) {
-        return getSession().createQuery("select 1 from ContainerEntityEvent as event join event.containerEntity as entity " +
-                "where event.status = :status and event.externalTimestamp = :time and entity.containerId = :containerId")
-                .setLong("time", timestamp)
-                .setString("status", status)
-                .setString("containerId", containerId)
-                .uniqueResult() != null;
-
-    }
-
-    public void persistEvent(final ContainerEntityHistory containerEntityHistory) {
+    public void addHistoryItem(final @Nonnull ContainerEntity containerEntity,
+                               final @Nonnull ContainerEntityHistory containerEntityHistory) {
+        containerEntity.addToHistory(containerEntityHistory);
         getSession().persist(containerEntityHistory);
+        update(containerEntity);
     }
 }

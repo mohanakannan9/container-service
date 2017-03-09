@@ -1,7 +1,8 @@
 package org.nrg.containers.events;
 
-import org.nrg.framework.event.EventI;
+import java.util.Map;
 
-public interface DockerEvent extends EventI {
-
+public interface DockerEvent extends ContainerEvent {
+    long getTimeNano();
+    Map<String, String> getAttributes();
 }

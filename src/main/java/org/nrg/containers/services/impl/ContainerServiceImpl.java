@@ -267,13 +267,13 @@ public class ContainerServiceImpl implements ContainerService {
 
         log.info("Recording container launch.");
         final ContainerEntity containerEntity = containerEntityService.save(preparedToLaunch, containerId, userI);
-        containerEntityService.addContainerHistory(containerEntity, new ContainerEntityHistory("created"));
+        containerEntityService.addContainerHistoryItem(containerEntity, ContainerEntityHistory.fromUserAction("Created", userI.getLogin()));
 
         log.info("Starting container.");
         try {
             containerControlApi.startContainer(containerId);
         } catch (DockerServerException e) {
-            containerEntityService.addContainerHistory(containerEntity, new ContainerEntityHistory("failed to start"));
+            containerEntityService.addContainerHistoryItem(containerEntity, ContainerEntityHistory.fromSystem("Did not start"));
             handleFailure(containerEntity);
             throw new ContainerException("Failed to start");
         }
@@ -424,7 +424,7 @@ public class ContainerServiceImpl implements ContainerService {
         if (log.isDebugEnabled()) {
             log.debug("Processing docker container event: " + event);
         }
-        final ContainerEntity execution = containerEntityService.addContainerEvent(event.getContainerId(), event.getStatus(), event.getTimeNano());
+        final ContainerEntity execution = containerEntityService.addContainerEventToHistory(event);
 
 
         // execution will be null if either we aren't tracking the container
@@ -487,6 +487,9 @@ public class ContainerServiceImpl implements ContainerService {
             throws NoServerPrefException, DockerServerException, NotFoundException {
         // TODO check user permissions. How?
         final ContainerEntity containerEntity = containerEntityService.get(containerExecutionId);
+
+        containerEntityService.addContainerHistoryItem(containerEntity, ContainerEntityHistory.fromUserAction("Killed", userI.getLogin()));
+
         final String containerId = containerEntity.getContainerId();
         containerControlApi.killContainer(containerId);
         return containerId;

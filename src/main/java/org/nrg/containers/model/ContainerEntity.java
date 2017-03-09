@@ -208,6 +208,12 @@ public class ContainerEntity extends AbstractHibernateEntity {
         this.history.add(historyItem);
     }
 
+    @Transient
+    public boolean isItemInHistory(final ContainerEntityHistory historyItem) {
+        return this.history != null && this.history.contains(historyItem);
+
+    }
+
     @ElementCollection
     public Set<String> getLogPaths() {
         return logPaths;

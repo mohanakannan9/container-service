@@ -3,6 +3,8 @@ package org.nrg.containers.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
 import org.hibernate.envers.Audited;
+import org.nrg.containers.events.ContainerEvent;
+import org.nrg.containers.events.DockerContainerEvent;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -18,21 +20,43 @@ public class ContainerEntityHistory {
     private long id;
     @JsonIgnore private ContainerEntity containerEntity;
     private String status;
+    private String entityType;
+    private String entityId;
     private Date timeRecorded;
     private long externalTimestamp;
 
     public ContainerEntityHistory() {}
 
-    public ContainerEntityHistory(final String status, final long externalTimestamp) {
-        this.status = status;
-        this.timeRecorded = new Date();
-        this.externalTimestamp = externalTimestamp;
+    public static ContainerEntityHistory fromContainerEvent(final ContainerEvent containerEvent) {
+        final ContainerEntityHistory history = new ContainerEntityHistory();
+        history.status = containerEvent.getStatus();
+        history.entityType = "event";
+        history.entityId = null;
+        history.timeRecorded = new Date();
+        if (containerEvent instanceof DockerContainerEvent) {
+            history.externalTimestamp = ((DockerContainerEvent)containerEvent).getTimeNano();
+        }
+        return history;
     }
 
-    public ContainerEntityHistory(final String status) {
-        this.status = status;
-        this.timeRecorded = new Date();
-        this.externalTimestamp = 0L;
+    public static ContainerEntityHistory fromSystem(final String status) {
+        final ContainerEntityHistory history = new ContainerEntityHistory();
+        history.status = status;
+        history.externalTimestamp = 0L;
+        history.entityType = "system";
+        history.entityId = null;
+        history.timeRecorded = new Date();
+        return history;
+    }
+
+    public static ContainerEntityHistory fromUserAction(final String status, final String username) {
+        final ContainerEntityHistory history = new ContainerEntityHistory();
+        history.status = status;
+        history.externalTimestamp = 0L;
+        history.entityType = "user";
+        history.entityId = username;
+        history.timeRecorded = new Date();
+        return history;
     }
 
     @Id
@@ -60,6 +84,22 @@ public class ContainerEntityHistory {
 
     public void setStatus(final String status) {
         this.status = status;
+    }
+
+    public String getEntityType() {
+        return entityType;
+    }
+
+    public void setEntityType(final String entityType) {
+        this.entityType = entityType;
+    }
+
+    public String getEntityId() {
+        return entityId;
+    }
+
+    public void setEntityId(final String entityId) {
+        this.entityId = entityId;
     }
 
     public Date getTimeRecorded() {
@@ -98,6 +138,8 @@ public class ContainerEntityHistory {
         return MoreObjects.toStringHelper(this)
                 .add("id", id)
                 .add("status", status)
+                .add("entityType", entityType)
+                .add("entityId", entityId)
                 .add("timeRecorded", timeRecorded)
                 .add("externalTimestamp", externalTimestamp)
                 .toString();

@@ -1,5 +1,7 @@
 package org.nrg.containers.services;
 
+import org.nrg.containers.events.ContainerEvent;
+import org.nrg.containers.events.DockerContainerEvent;
 import org.nrg.containers.model.ContainerEntity;
 import org.nrg.containers.model.ContainerEntityHistory;
 import org.nrg.containers.model.ResolvedCommand;
@@ -15,12 +17,7 @@ public interface ContainerEntityService extends BaseHibernateService<ContainerEn
     ContainerEntity retrieve(final String containerId);
     ContainerEntity get(final String containerId) throws NotFoundException;
 
-    ContainerEntity addContainerEvent(final String containerId,
-                                      final String status,
-                                      final long time);
-    void addContainerEvent(final ContainerEntity containerEntity,
-                           final String status,
-                           final long time);
-    void addContainerHistory(final ContainerEntity containerEntity,
-                             final ContainerEntityHistory history);
+    ContainerEntity addContainerEventToHistory(final ContainerEvent containerEvent);
+    ContainerEntityHistory addContainerHistoryItem(final ContainerEntity containerEntity,
+                                                   final ContainerEntityHistory history);
 }
