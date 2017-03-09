@@ -32,11 +32,7 @@ public class HibernateContainerEntityService
                                 final UserI userI) {
         final ContainerEntity createdContainer = new ContainerEntity(resolvedCommand, containerId, userI.getLogin());
         log.debug("Creating ContainerEntity for container with id " + containerId);
-        final ContainerEntity created = create(createdContainer);
-        if (log.isDebugEnabled()) {
-            log.debug("Done. " + created);
-        }
-        return created;
+        return create(createdContainer);
     }
 
     @Override
