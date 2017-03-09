@@ -142,7 +142,6 @@ installedImagesPanel:
                                     label: Select Image Hub
                                     element:
                                         title: Select Image Hub
-                                        disabled: disabled
                                 imageName:
                                     kind: panel.input.text
                                     name: image

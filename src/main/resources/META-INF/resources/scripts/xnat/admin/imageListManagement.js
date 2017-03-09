@@ -84,6 +84,14 @@ var XNAT = getObject(XNAT || {});
         return rootUrl('/xapi/commands' + appended);
     }
 
+    function imagePullUrl(appended,hubId){
+        if (isDefined(hubId)) {
+            return rootUrl('/xapi/docker/hubs/'+ hubId +'pull?' + appended);
+        } else {
+            return rootUrl('/xapi/docker/pull?' + appended);
+        }
+    }
+
     // get the list of images
     imageListManager.getImages = imageListManager.getAll = function(callback){
         callback = isFunction(callback) ? callback : function(){};
@@ -147,6 +155,7 @@ var XNAT = getObject(XNAT || {});
     // dialog to add new images
     addImage.dialog = function(item){
         var tmpl = $('#add-image-template');
+        var pullUrl;
         item = item || {};
         xmodal.open({
             title: 'Pull New Image',
@@ -163,12 +172,16 @@ var XNAT = getObject(XNAT || {});
                 var $hubSelect = $form.find('#hub-id');
                 // get list of image hubs and select the default hub
                 imageHubs.getAll().done(function(hubs){
-                    hubs.forEach(function(item){
-                        var option = '<option value="'+item.id+'"';
-                        if (item.default) option += ' selected';
-                        option += '>'+item.name+'</option>';
-                        $hubSelect.append(option);
-                    });
+                    if (hubs.length > 1) {
+                        hubs.forEach(function(item){
+                            var option = '<option value="'+item.id+'"';
+                            if (item.default) option += ' selected';
+                            option += '>'+item.name+'</option>';
+                            $hubSelect.prop('disabled',false).append(option);
+                        });
+                    } else {
+                        $hubSelect
+                    }
                 });
             },
             okClose: false,
