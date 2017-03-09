@@ -356,7 +356,7 @@ public class DockerControlApi implements ContainerControlApi {
 
         if (log.isDebugEnabled()) {
             final String message = String.format(
-                    "Starting container:" +
+                    "Creating container:" +
                             "\n\tserver %s" +
                             "\n\timage %s" +
                             "\n\tcommand \"%s\"" +
@@ -378,15 +378,12 @@ public class DockerControlApi implements ContainerControlApi {
         try (final DockerClient client = getClient(server)) {
             final ContainerCreation container = client.createContainer(containerConfig);
 
-            log.info("Starting container: id " + container.id());
-
             final List<String> warnings = container.warnings();
             if (warnings != null) {
                 for (String warning : warnings) {
                     log.warn(warning);
                 }
             }
-            // client.startContainer(container.id());
 
             return container.id();
         } catch (DockerException | InterruptedException e) {
@@ -403,6 +400,7 @@ public class DockerControlApi implements ContainerControlApi {
     private void startContainer(final String containerId,
                                 final DockerServer server) throws DockerServerException {
         try (final DockerClient client = getClient(server)) {
+            log.info("Starting container: id " + containerId);
             client.startContainer(containerId);
         } catch (DockerException | InterruptedException e) {
             log.error(e.getMessage());
