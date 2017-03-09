@@ -57,6 +57,7 @@ public class ContainerExecution extends AbstractHibernateEntity {
         setXnatInputValues(resolvedCommand.getXnatInputValues());
         setCommandInputValues(resolvedCommand.getCommandInputValues());
         setOutputs(resolvedCommand.getOutputs());
+        setLogPaths(null);
     }
 
     public long getCommandId() {
@@ -102,7 +103,7 @@ public class ContainerExecution extends AbstractHibernateEntity {
                 environmentVariables;
     }
 
-    @OneToMany(mappedBy = "containerExecution", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
+    @OneToMany(mappedBy = "containerExecution", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<ContainerExecutionMount> getMounts() {
         return mounts;
     }
@@ -168,7 +169,7 @@ public class ContainerExecution extends AbstractHibernateEntity {
                 commandInputValues;
     }
 
-    @OneToMany(mappedBy = "containerExecution", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
+    @OneToMany(mappedBy = "containerExecution", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<ContainerExecutionOutput> getOutputs() {
         return outputs;
     }
@@ -182,7 +183,7 @@ public class ContainerExecution extends AbstractHibernateEntity {
         }
     }
 
-    @OneToMany(mappedBy = "containerExecution", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
+    @OneToMany(mappedBy = "containerExecution", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<ContainerExecutionHistory> getHistory() {
         return history;
     }
@@ -192,7 +193,7 @@ public class ContainerExecution extends AbstractHibernateEntity {
                 Lists.<ContainerExecutionHistory>newArrayList() :
                 history;
         for (final ContainerExecutionHistory historyItem : this.history) {
-            historyItem.setContainerExecution(this);
+            addToHistory(historyItem);
         }
     }
 
