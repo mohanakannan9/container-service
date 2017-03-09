@@ -42,10 +42,10 @@ public class ContainerEntityRepository extends AbstractHibernateDAO<ContainerEnt
 
     public boolean eventHasBeenRecorded(final String containerId,
                                         final String status,
-                                        final long time) {
+                                        final long timestamp) {
         return getSession().createQuery("select 1 from ContainerEntityEvent as event join event.containerEntity as entity " +
-                "where event.status = :status and event.time = :time and entity.containerId = :containerId")
-                .setLong("time", time)
+                "where event.status = :status and event.externalTimestamp = :time and entity.containerId = :containerId")
+                .setLong("time", timestamp)
                 .setString("status", status)
                 .setString("containerId", containerId)
                 .uniqueResult() != null;

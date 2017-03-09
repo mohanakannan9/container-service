@@ -261,11 +261,17 @@ public class ContainerServiceImpl implements ContainerService {
         log.info("Preparing to launch resolved command.");
         final ResolvedDockerCommand preparedToLaunch = prepareToLaunch(resolvedDockerCommand, userI);
 
-        log.info("Launching resolved command.");
-        final String containerId = containerControlApi.launchImage(preparedToLaunch);
+        log.info("Creating container from resolved command.");
+        final String containerId = containerControlApi.createContainer(preparedToLaunch);
 
-        log.info("Recording command launch.");
-        return containerEntityService.save(preparedToLaunch, containerId, userI);
+        log.info("Recording container launch.");
+        final ContainerEntity containerEntity = containerEntityService.save(preparedToLaunch, containerId, userI);
+        containerEntityService.addContainerHistory(containerEntity, new ContainerEntityHistory("created"));
+
+        log.info("Starting container.");
+        containerControlApi.startContainer(containerId);
+
+        return containerEntity;
     }
 
     @Nonnull

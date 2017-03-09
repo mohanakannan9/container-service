@@ -1,6 +1,7 @@
 package org.nrg.containers.services;
 
 import org.nrg.containers.model.ContainerEntity;
+import org.nrg.containers.model.ContainerEntityHistory;
 import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
@@ -20,4 +21,6 @@ public interface ContainerEntityService extends BaseHibernateService<ContainerEn
     void addContainerEvent(final ContainerEntity containerEntity,
                            final String status,
                            final long time);
+    void addContainerHistory(final ContainerEntity containerEntity,
+                             final ContainerEntityHistory history);
 }

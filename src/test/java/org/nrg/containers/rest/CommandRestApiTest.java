@@ -61,6 +61,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -504,7 +505,8 @@ public class CommandRestApiTest {
         final ContainerEntity containerEntity = new ContainerEntity(preparedResolvedCommand, fakeContainerId, FAKE_USERNAME);
 
         // We have to match any resolved command because spring will add a csrf token to the inputs. I don't know how to get that token in advance.
-        when(mockDockerControlApi.launchImage(any(ResolvedDockerCommand.class))).thenReturn(fakeContainerId);
+        when(mockDockerControlApi.createContainer(any(ResolvedDockerCommand.class))).thenReturn(fakeContainerId);
+        doNothing().when(mockDockerControlApi).startContainer(fakeContainerId);
         when(mockContainerEntityService.save(any(ResolvedCommand.class), eq(fakeContainerId), eq(mockAdmin)))
                 .thenReturn(containerEntity);
 
@@ -566,7 +568,8 @@ public class CommandRestApiTest {
         final ContainerEntity containerEntity = new ContainerEntity(preparedResolvedCommand, fakeContainerId, FAKE_USERNAME);
 
         // We have to match any resolved command because spring will add a csrf token to the inputs. I don't know how to get that token in advance.
-        when(mockDockerControlApi.launchImage(any(ResolvedDockerCommand.class))).thenReturn(fakeContainerId);
+        when(mockDockerControlApi.createContainer(any(ResolvedDockerCommand.class))).thenReturn(fakeContainerId);
+        doNothing().when(mockDockerControlApi).startContainer(fakeContainerId);
         when(mockContainerEntityService.save(any(ResolvedCommand.class), eq(fakeContainerId), eq(mockAdmin)))
                 .thenReturn(containerEntity);
 

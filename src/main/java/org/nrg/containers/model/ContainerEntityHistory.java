@@ -9,6 +9,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
+import java.util.Date;
 import java.util.Objects;
 
 @Entity
@@ -17,13 +18,21 @@ public class ContainerEntityHistory {
     private long id;
     @JsonIgnore private ContainerEntity containerEntity;
     private String status;
-    private long timeNano;
+    private Date timeRecorded;
+    private long externalTimestamp;
 
     public ContainerEntityHistory() {}
 
-    public ContainerEntityHistory(final String status, final Long timeNano) {
+    public ContainerEntityHistory(final String status, final long externalTimestamp) {
         this.status = status;
-        this.timeNano = timeNano;
+        this.timeRecorded = new Date();
+        this.externalTimestamp = externalTimestamp;
+    }
+
+    public ContainerEntityHistory(final String status) {
+        this.status = status;
+        this.timeRecorded = new Date();
+        this.externalTimestamp = 0L;
     }
 
     @Id
@@ -53,12 +62,20 @@ public class ContainerEntityHistory {
         this.status = status;
     }
 
-    public long getTimeNano() {
-        return timeNano;
+    public Date getTimeRecorded() {
+        return timeRecorded;
     }
 
-    public void setTimeNano(final long timeNano) {
-        this.timeNano = timeNano;
+    public void setTimeRecorded(final Date timeRecorded) {
+        this.timeRecorded = timeRecorded;
+    }
+
+    public long getExternalTimestamp() {
+        return externalTimestamp;
+    }
+
+    public void setExternalTimestamp(final long externalTimestamp) {
+        this.externalTimestamp = externalTimestamp;
     }
 
     @Override
@@ -68,12 +85,12 @@ public class ContainerEntityHistory {
         final ContainerEntityHistory that = (ContainerEntityHistory) o;
         return Objects.equals(this.containerEntity, that.containerEntity) &&
                 Objects.equals(this.status, that.status) &&
-                Objects.equals(this.timeNano, that.timeNano);
+                Objects.equals(this.externalTimestamp, that.externalTimestamp);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(containerEntity, status, timeNano);
+        return Objects.hash(containerEntity, status, externalTimestamp);
     }
 
     @Override
@@ -81,7 +98,8 @@ public class ContainerEntityHistory {
         return MoreObjects.toStringHelper(this)
                 .add("id", id)
                 .add("status", status)
-                .add("timeNano", timeNano)
+                .add("timeRecorded", timeRecorded)
+                .add("externalTimestamp", externalTimestamp)
                 .toString();
     }
 }

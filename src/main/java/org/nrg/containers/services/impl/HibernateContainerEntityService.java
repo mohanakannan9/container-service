@@ -29,8 +29,8 @@ public class HibernateContainerEntityService
     public ContainerEntity save(final ResolvedCommand resolvedCommand,
                                 final String containerId,
                                 final UserI userI) {
-        final ContainerEntity execution = new ContainerEntity(resolvedCommand, containerId, userI.getLogin());
-        return create(execution);
+        final ContainerEntity createdContainer = new ContainerEntity(resolvedCommand, containerId, userI.getLogin());
+        return create(createdContainer);
     }
 
     @Override
@@ -68,25 +68,29 @@ public class HibernateContainerEntityService
         return containerEntity;
     }
 
+    @Override
     public void addContainerEvent(final ContainerEntity containerEntity,
                                   final String status,
-                                  final long time) {
-        if (getDao().eventHasBeenRecorded(containerEntity.getContainerId(), status, time)) {
+                                  final long timestamp) {
+        if (getDao().eventHasBeenRecorded(containerEntity.getContainerId(), status, timestamp)) {
             if (log.isDebugEnabled()) {
                 log.debug("Event has already been recorded in the history.");
             }
             return;
         }
 
-        final ContainerEntityHistory newHistory =
-                new ContainerEntityHistory(status, time);
+        addContainerHistory(containerEntity, new ContainerEntityHistory(status, timestamp));
 
+    }
 
+    @Override
+    public void addContainerHistory(final ContainerEntity containerEntity,
+                                    final ContainerEntityHistory history) {
         if (log.isDebugEnabled()) {
-            log.debug("Adding history entry: " + newHistory);
+            log.debug("Adding history entry: " + history);
         }
-        containerEntity.addToHistory(newHistory);
-        getDao().persistEvent(newHistory);
+        containerEntity.addToHistory(history);
+        getDao().persistEvent(history);
         update(containerEntity);
     }
 }
