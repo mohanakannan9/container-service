@@ -1,6 +1,7 @@
 package org.nrg.containers.model;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -38,6 +39,11 @@ public class ContainerEntityTest {
     @DirtiesContext
     public void testSave() throws Exception {
         final ResolvedCommand resolvedCommand = new ResolvedDockerCommand();
+        resolvedCommand.setCommandId(1L);
+        resolvedCommand.setXnatCommandWrapperId(1L);
+        resolvedCommand.setImage("xnat/dcm2niix:1.0");
+        resolvedCommand.setCommandInputValues(ImmutableMap.of("foo", "bar"));
+
         final String containerId = "abc123";
         final UserI mockAdmin = Mockito.mock(UserI.class);
         when(mockAdmin.getLogin()).thenReturn("admin");
