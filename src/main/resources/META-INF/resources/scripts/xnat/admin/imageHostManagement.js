@@ -86,8 +86,8 @@ var XNAT = getObject(XNAT || {});
         xmodal.open({
             title: doWhat + ' Image Hub',
             template: tmpl.clone(),
-            width: 400,
-            height: 460,
+            width: 450,
+            height: 300,
             scroll: false,
             padding: '0',
             beforeShow: function(obj){
