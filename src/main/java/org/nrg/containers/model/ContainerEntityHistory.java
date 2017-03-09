@@ -23,7 +23,7 @@ public class ContainerEntityHistory {
     private String entityType;
     private String entityId;
     private Date timeRecorded;
-    private long externalTimestamp;
+    private String externalTimestamp;
 
     public ContainerEntityHistory() {}
 
@@ -34,7 +34,7 @@ public class ContainerEntityHistory {
         history.entityId = null;
         history.timeRecorded = new Date();
         if (containerEvent instanceof DockerContainerEvent) {
-            history.externalTimestamp = ((DockerContainerEvent)containerEvent).getTimeNano();
+            history.externalTimestamp = String.valueOf(((DockerContainerEvent)containerEvent).getTimeNano());
         }
         return history;
     }
@@ -42,7 +42,7 @@ public class ContainerEntityHistory {
     public static ContainerEntityHistory fromSystem(final String status) {
         final ContainerEntityHistory history = new ContainerEntityHistory();
         history.status = status;
-        history.externalTimestamp = 0L;
+        history.externalTimestamp = null;
         history.entityType = "system";
         history.entityId = null;
         history.timeRecorded = new Date();
@@ -52,7 +52,7 @@ public class ContainerEntityHistory {
     public static ContainerEntityHistory fromUserAction(final String status, final String username) {
         final ContainerEntityHistory history = new ContainerEntityHistory();
         history.status = status;
-        history.externalTimestamp = 0L;
+        history.externalTimestamp = null;
         history.entityType = "user";
         history.entityId = username;
         history.timeRecorded = new Date();
@@ -110,11 +110,11 @@ public class ContainerEntityHistory {
         this.timeRecorded = timeRecorded;
     }
 
-    public long getExternalTimestamp() {
+    public String getExternalTimestamp() {
         return externalTimestamp;
     }
 
-    public void setExternalTimestamp(final long externalTimestamp) {
+    public void setExternalTimestamp(final String externalTimestamp) {
         this.externalTimestamp = externalTimestamp;
     }
 
