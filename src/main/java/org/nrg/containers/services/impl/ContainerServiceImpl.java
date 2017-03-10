@@ -43,6 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Nonnull;
 import java.nio.file.Path;
@@ -421,6 +422,7 @@ public class ContainerServiceImpl implements ContainerService {
 
 
     @Override
+    @Transactional
     public void processEvent(final ContainerEvent event) {
         if (log.isDebugEnabled()) {
             log.debug("Processing container event");
@@ -454,6 +456,7 @@ public class ContainerServiceImpl implements ContainerService {
     }
 
     @Override
+    @Transactional
     public void finalize(final Long containerExecutionId, final UserI userI) {
         final ContainerEntity containerEntity = containerEntityService.retrieve(containerExecutionId);
         String exitCode = "x";
@@ -467,6 +470,7 @@ public class ContainerServiceImpl implements ContainerService {
     }
 
     @Override
+    @Transactional
     public void finalize(final ContainerEntity containerEntity, final UserI userI, final String exitCode) {
         if (log.isInfoEnabled()) {
             log.info(String.format("Finalizing ContainerExecution %s for container %s", containerEntity.getId(), containerEntity.getContainerId()));
@@ -485,6 +489,7 @@ public class ContainerServiceImpl implements ContainerService {
 
     @Override
     @Nonnull
+    @Transactional
     public String kill(final Long containerExecutionId, final UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException {
         // TODO check user permissions. How?
