@@ -4,7 +4,7 @@ import org.mockito.Mockito;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.rest.CommandRestApi;
 import org.nrg.containers.services.CommandService;
-import org.nrg.containers.services.ContainerLaunchService;
+import org.nrg.containers.services.ContainerService;
 import org.nrg.framework.services.ContextService;
 import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xdat.security.services.RoleHolder;
@@ -26,10 +26,10 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 public class CommandRestApiTestConfig extends WebSecurityConfigurerAdapter {
     @Bean
     public CommandRestApi commandRestApi(final CommandService commandService,
-                                         final ContainerLaunchService containerLaunchService,
+                                         final ContainerService containerService,
                                          final UserManagementServiceI userManagementServiceI,
                                          final RoleHolder roleHolder) {
-        return new CommandRestApi(commandService, containerLaunchService, userManagementServiceI, roleHolder);
+        return new CommandRestApi(commandService, containerService, userManagementServiceI, roleHolder);
     }
 
     @Bean

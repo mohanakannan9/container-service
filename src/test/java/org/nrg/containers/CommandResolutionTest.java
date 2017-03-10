@@ -27,7 +27,7 @@ import org.nrg.containers.model.xnat.Resource;
 import org.nrg.containers.model.xnat.Scan;
 import org.nrg.containers.model.xnat.Session;
 import org.nrg.containers.services.CommandService;
-import org.nrg.containers.services.ContainerLaunchService;
+import org.nrg.containers.services.ContainerService;
 import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,7 +61,7 @@ public class CommandResolutionTest {
 
     @Autowired private ObjectMapper mapper;
     @Autowired private CommandService commandService;
-    @Autowired private ContainerLaunchService containerLaunchService;
+    @Autowired private ContainerService containerService;
     @Autowired private ConfigService mockConfigService;
 
     @Rule
@@ -121,7 +121,7 @@ public class CommandResolutionTest {
         final CommandWrapper commandWrapper = xnatCommandWrappers.get(commandWrapperName);
         assertNotNull(commandWrapper);
 
-        final ResolvedCommand resolvedCommand = containerLaunchService.resolveCommand(commandWrapper, dummyCommand, runtimeValues, mockUser);
+        final ResolvedCommand resolvedCommand = containerService.resolveCommand(commandWrapper, dummyCommand, runtimeValues, mockUser);
         assertEquals((Long) dummyCommand.id(), resolvedCommand.getCommandId());
         assertEquals((Long) commandWrapper.id(), resolvedCommand.getXnatCommandWrapperId());
         assertEquals(dummyCommand.image(), resolvedCommand.getImage());
@@ -172,7 +172,7 @@ public class CommandResolutionTest {
         final CommandWrapper commandWrapper = xnatCommandWrappers.get(commandWrapperName);
         assertNotNull(commandWrapper);
 
-        final ResolvedCommand resolvedCommand = containerLaunchService.resolveCommand(commandWrapper, dummyCommand, runtimeValues, mockUser);
+        final ResolvedCommand resolvedCommand = containerService.resolveCommand(commandWrapper, dummyCommand, runtimeValues, mockUser);
         assertEquals((Long) dummyCommand.id(), resolvedCommand.getCommandId());
         assertEquals((Long) commandWrapper.id(), resolvedCommand.getXnatCommandWrapperId());
         assertEquals(dummyCommand.image(), resolvedCommand.getImage());
@@ -219,7 +219,7 @@ public class CommandResolutionTest {
         final CommandWrapper commandWrapper = xnatCommandWrappers.get(commandWrapperName);
         assertNotNull(commandWrapper);
 
-        final ResolvedCommand resolvedCommand = containerLaunchService.resolveCommand(commandWrapper, dummyCommand, runtimeValues, mockUser);
+        final ResolvedCommand resolvedCommand = containerService.resolveCommand(commandWrapper, dummyCommand, runtimeValues, mockUser);
         assertEquals((Long) dummyCommand.id(), resolvedCommand.getCommandId());
         assertEquals((Long) commandWrapper.id(), resolvedCommand.getXnatCommandWrapperId());
         assertEquals(dummyCommand.image(), resolvedCommand.getImage());
@@ -263,7 +263,7 @@ public class CommandResolutionTest {
         final CommandWrapper commandWrapper = xnatCommandWrappers.get(commandWrapperName);
         assertNotNull(commandWrapper);
 
-        final ResolvedCommand resolvedCommand = containerLaunchService.resolveCommand(commandWrapper, dummyCommand, runtimeValues, mockUser);
+        final ResolvedCommand resolvedCommand = containerService.resolveCommand(commandWrapper, dummyCommand, runtimeValues, mockUser);
         assertEquals((Long) dummyCommand.id(), resolvedCommand.getCommandId());
         assertEquals((Long) commandWrapper.id(), resolvedCommand.getXnatCommandWrapperId());
         assertEquals(dummyCommand.image(), resolvedCommand.getImage());
@@ -308,7 +308,7 @@ public class CommandResolutionTest {
         final CommandWrapper commandWrapper = xnatCommandWrappers.get(commandWrapperName);
         assertNotNull(commandWrapper);
 
-        final ResolvedCommand resolvedCommand = containerLaunchService.resolveCommand(commandWrapper, dummyCommand, runtimeValues, mockUser);
+        final ResolvedCommand resolvedCommand = containerService.resolveCommand(commandWrapper, dummyCommand, runtimeValues, mockUser);
         assertEquals((Long) dummyCommand.id(), resolvedCommand.getCommandId());
         assertEquals((Long) commandWrapper.id(), resolvedCommand.getXnatCommandWrapperId());
         assertEquals(dummyCommand.image(), resolvedCommand.getImage());

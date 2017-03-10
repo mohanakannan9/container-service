@@ -3,7 +3,6 @@ package org.nrg.containers.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.spotify.docker.client.DefaultDockerClient;
@@ -12,8 +11,6 @@ import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.DockerClient.LogsParam;
 import com.spotify.docker.client.EventStream;
 import com.spotify.docker.client.LogStream;
-import com.spotify.docker.client.LoggingPullHandler;
-import com.spotify.docker.client.ProgressHandler;
 import com.spotify.docker.client.exceptions.ContainerNotFoundException;
 import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.exceptions.DockerException;
@@ -25,7 +22,6 @@ import com.spotify.docker.client.messages.HostConfig;
 import com.spotify.docker.client.messages.Image;
 import com.spotify.docker.client.messages.ImageInfo;
 import com.spotify.docker.client.messages.PortBinding;
-import com.spotify.docker.client.messages.ProgressMessage;
 import com.spotify.docker.client.messages.RegistryAuth;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.events.DockerContainerEvent;
@@ -33,13 +29,13 @@ import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.helpers.CommandLabelHelper;
 import org.nrg.containers.model.Container;
-import org.nrg.containers.model.ContainerExecutionMount;
-import org.nrg.containers.model.auto.DockerImage;
+import org.nrg.containers.model.ContainerEntityMount;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.containers.model.auto.Command;
 import org.nrg.containers.model.auto.DockerHub;
+import org.nrg.containers.model.auto.DockerImage;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
@@ -245,11 +241,11 @@ public class DockerControlApi implements ContainerControlApi {
      * @return ID of created Container
      **/
     @Override
-    public String launchImage(final ResolvedDockerCommand resolvedDockerCommand)
+    public String createContainer(final ResolvedDockerCommand resolvedDockerCommand)
             throws NoServerPrefException, DockerServerException {
 
         final List<String> bindMounts = Lists.newArrayList();
-        for (final ContainerExecutionMount mount : resolvedDockerCommand.getMounts()) {
+        for (final ContainerEntityMount mount : resolvedDockerCommand.getMounts()) {
             bindMounts.add(mount.toBindMountString());
         }
         final List<String> environmentVariables = Lists.newArrayList();
@@ -257,7 +253,7 @@ public class DockerControlApi implements ContainerControlApi {
             environmentVariables.add(StringUtils.join(new String[] {env.getKey(), env.getValue()}, "="));
         }
 
-        return launchImage(getServer(),
+        return createContainer(getServer(),
                 resolvedDockerCommand.getImage(),
                 resolvedDockerCommand.getCommandLine(),
                 bindMounts,
@@ -269,36 +265,36 @@ public class DockerControlApi implements ContainerControlApi {
         );
     }
 
-//    /**
-//     * Launch image on Docker server
-//     *
-//     * @param imageName name of image to launch
-//     * @param runCommand Command string to execute
-//     * @param volumes Volume mounts, in the form "/path/on/server:/path/in/container"
-//     * @return ID of created Container
-//     **/
-//    @Override
-//    public String launchImage(final String imageName, final List<String> runCommand, final List<String> volumes)
-//            throws NoServerPrefException, DockerServerException {
-//        return launchImage(getServer(), imageName, runCommand, volumes);
-//    }
+    //    /**
+    //     * Launch image on Docker server
+    //     *
+    //     * @param imageName name of image to launch
+    //     * @param runCommand Command string to execute
+    //     * @param volumes Volume mounts, in the form "/path/on/server:/path/in/container"
+    //     * @return ID of created Container
+    //     **/
+    //    @Override
+    //    public String createContainer(final String imageName, final List<String> runCommand, final List<String> volumes)
+    //            throws NoServerPrefException, DockerServerException {
+    //        return createContainer(getServer(), imageName, runCommand, volumes);
+    //    }
 
-//    /**
-//     * Launch image on Docker server
-//     *
-//     * @param server DockerServer on which to launch
-//     * @param imageName name of image to launch
-//     * @param runCommand Command string list to execute
-//     * @param volumes Volume mounts, in the form "/path/on/server:/path/in/container"
-//     * @return ID of created Container
-//     **/
-//    @Override
-//    public String launchImage(final DockerServer server,
-//                              final String imageName,
-//                              final List<String> runCommand,
-//                              final List<String> volumes) throws DockerServerException {
-//        return launchImage(server, imageName, runCommand, volumes, null);
-//    }
+    //    /**
+    //     * Launch image on Docker server
+    //     *
+    //     * @param server DockerServer on which to launch
+    //     * @param imageName name of image to launch
+    //     * @param runCommand Command string list to execute
+    //     * @param volumes Volume mounts, in the form "/path/on/server:/path/in/container"
+    //     * @return ID of created Container
+    //     **/
+    //    @Override
+    //    public String createContainer(final DockerServer server,
+    //                              final String imageName,
+    //                              final List<String> runCommand,
+    //                              final List<String> volumes) throws DockerServerException {
+    //        return createContainer(server, imageName, runCommand, volumes, null);
+    //    }
     /**
      * Launch image on Docker server
      *
@@ -308,13 +304,13 @@ public class DockerControlApi implements ContainerControlApi {
      * @param volumes Volume mounts, in the form "/path/on/server:/path/in/container"
      * @return ID of created Container
      **/
-    private String launchImage(final DockerServer server,
-                               final String imageName,
-                               final String runCommand,
-                               final List<String> volumes,
-                               final List<String> environmentVariables,
-                               final Map<String, String> ports,
-                               final String workingDirectory)
+    private String createContainer(final DockerServer server,
+                                   final String imageName,
+                                   final String runCommand,
+                                   final List<String> volumes,
+                                   final List<String> environmentVariables,
+                                   final Map<String, String> ports,
+                                   final String workingDirectory)
             throws DockerServerException {
 
         final Map<String, List<PortBinding>> portBindings = Maps.newHashMap();
@@ -360,7 +356,7 @@ public class DockerControlApi implements ContainerControlApi {
 
         if (log.isDebugEnabled()) {
             final String message = String.format(
-                    "Starting container:" +
+                    "Creating container:" +
                             "\n\tserver %s" +
                             "\n\timage %s" +
                             "\n\tcommand \"%s\"" +
@@ -382,21 +378,33 @@ public class DockerControlApi implements ContainerControlApi {
         try (final DockerClient client = getClient(server)) {
             final ContainerCreation container = client.createContainer(containerConfig);
 
-            log.info("Starting container: id " + container.id());
-
             final List<String> warnings = container.warnings();
             if (warnings != null) {
                 for (String warning : warnings) {
                     log.warn(warning);
                 }
             }
-            client.startContainer(container.id());
 
             return container.id();
         } catch (DockerException | InterruptedException e) {
             log.error(e.getMessage());
+            throw new DockerServerException("Could not create container from image " + imageName, e);
+        }
+    }
+
+    @Override
+    public void startContainer(final String containerId) throws DockerServerException, NoServerPrefException {
+        startContainer(containerId, getServer());
+    }
+
+    private void startContainer(final String containerId,
+                                final DockerServer server) throws DockerServerException {
+        try (final DockerClient client = getClient(server)) {
+            log.info("Starting container: id " + containerId);
+            client.startContainer(containerId);
+        } catch (DockerException | InterruptedException e) {
             log.error(e.getMessage());
-            throw new DockerServerException("Could not start container from image " + imageName, e);
+            throw new DockerServerException("Could not start container " + containerId, e);
         }
     }
 

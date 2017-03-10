@@ -6,17 +6,17 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Objects;
 
-public class DockerContainerEvent implements DockerEvent {
+public class DockerContainerEvent implements ContainerEvent {
     private String status;
     private String containerId;
     private Date time;
-    private Long timeNano;
+    private long timeNano;
     private Map<String, String> attributes;
 
     public DockerContainerEvent(final String status,
                                 final String containerId,
                                 final Date time,
-                                final Long timeNano,
+                                final long timeNano,
                                 final Map<String, String> attributes) {
         this.status = status;
         this.containerId = containerId;
@@ -37,7 +37,7 @@ public class DockerContainerEvent implements DockerEvent {
         return time == null ? null : new Date(time.getTime());
     }
 
-    public Long getTimeNano() {
+    public long getTimeNano() {
         return timeNano;
     }
 

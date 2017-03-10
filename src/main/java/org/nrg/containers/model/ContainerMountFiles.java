@@ -18,7 +18,7 @@ import static org.nrg.containers.model.auto.Command.CommandWrapperInput;
 @Audited
 public class ContainerMountFiles {
     private long id;
-    @JsonIgnore private ContainerExecutionMount containerExecutionMount;
+    @JsonIgnore private ContainerEntityMount containerEntityMount;
     @JsonProperty("from-xnat-input") private String fromXnatInput;
     @JsonProperty("from-uri") private String fromUri;
     @JsonProperty("root-directory") private String rootDirectory;
@@ -41,12 +41,12 @@ public class ContainerMountFiles {
     }
 
     @ManyToOne
-    public ContainerExecutionMount getContainerExecutionMount() {
-        return containerExecutionMount;
+    public ContainerEntityMount getContainerEntityMount() {
+        return containerEntityMount;
     }
 
-    public void setContainerExecutionMount(final ContainerExecutionMount containerExecutionMount) {
-        this.containerExecutionMount = containerExecutionMount;
+    public void setContainerEntityMount(final ContainerEntityMount containerEntityMount) {
+        this.containerEntityMount = containerEntityMount;
     }
 
     public String getFromXnatInput() {
@@ -86,7 +86,7 @@ public class ContainerMountFiles {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final ContainerMountFiles that = (ContainerMountFiles) o;
-        return Objects.equals(this.id, that.id) &&
+        return Objects.equals(this.containerEntityMount, that.containerEntityMount) &&
                 Objects.equals(this.fromXnatInput, that.fromXnatInput) &&
                 Objects.equals(this.fromUri, that.fromUri) &&
                 Objects.equals(this.rootDirectory, that.rootDirectory) &&
@@ -95,7 +95,7 @@ public class ContainerMountFiles {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, fromXnatInput, fromUri, rootDirectory, path);
+        return Objects.hash(containerEntityMount, fromXnatInput, fromUri, rootDirectory, path);
     }
 
     @Override

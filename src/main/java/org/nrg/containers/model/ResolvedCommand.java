@@ -22,20 +22,20 @@ import java.util.Objects;
 public abstract class ResolvedCommand implements Serializable {
 
     @JsonProperty("raw-input-values") private Map<String, String> rawInputValues;
-    @JsonProperty("xnat-command-wrapper-id") private Long xnatCommandWrapperId;
+    @JsonProperty("xnat-command-wrapper-id") private long xnatCommandWrapperId;
     @JsonProperty("xnat-input-values") private Map<String, String> xnatInputValues;
-    @JsonProperty("command-id") private Long commandId;
+    @JsonProperty("command-id") private long commandId;
     @JsonProperty("command-input-values") private Map<String, String> commandInputValues;
     @JsonProperty("image") private String image;
     @JsonProperty("command-line") private String commandLine;
     @JsonProperty("env") private Map<String, String> environmentVariables;
-    @JsonProperty("mounts") private List<ContainerExecutionMount> mounts;
-    private List<ContainerExecutionOutput> outputs;
+    @JsonProperty("mounts") private List<ContainerEntityMount> mounts;
+    private List<ContainerEntityOutput> outputs;
     @JsonProperty("working-directory") private String workingDirectory;
 
     public ResolvedCommand() {}
 
-    public ResolvedCommand(final Long xnatCommandWrapperId, final Command command) {
+    public ResolvedCommand(final long xnatCommandWrapperId, final Command command) {
         this.xnatCommandWrapperId = xnatCommandWrapperId;
         this.commandId = command.id();
         this.image = command.image();
@@ -57,7 +57,7 @@ public abstract class ResolvedCommand implements Serializable {
         return xnatCommandWrapperId;
     }
 
-    public void setXnatCommandWrapperId(final Long xnatCommandWrapperId) {
+    public void setXnatCommandWrapperId(final long xnatCommandWrapperId) {
         this.xnatCommandWrapperId = xnatCommandWrapperId;
     }
 
@@ -73,7 +73,7 @@ public abstract class ResolvedCommand implements Serializable {
         return commandId;
     }
 
-    public void setCommandId(final Long commandId) {
+    public void setCommandId(final long commandId) {
         this.commandId = commandId;
     }
 
@@ -112,13 +112,13 @@ public abstract class ResolvedCommand implements Serializable {
         }
     }
 
-    public List<ContainerExecutionMount> getMounts() {
+    public List<ContainerEntityMount> getMounts() {
         return mounts;
     }
 
-    public void setMounts(final List<ContainerExecutionMount> mounts) {
+    public void setMounts(final List<ContainerEntityMount> mounts) {
         this.mounts = mounts == null ?
-                Lists.<ContainerExecutionMount>newArrayList() :
+                Lists.<ContainerEntityMount>newArrayList() :
                 mounts;
     }
 
@@ -132,17 +132,17 @@ public abstract class ResolvedCommand implements Serializable {
                 Maps.newHashMap(commandInputValues);
     }
 
-    public List<ContainerExecutionOutput> getOutputs() {
+    public List<ContainerEntityOutput> getOutputs() {
         return outputs;
     }
 
-    public void setOutputs(final List<ContainerExecutionOutput> outputs) {
+    public void setOutputs(final List<ContainerEntityOutput> outputs) {
         this.outputs = outputs == null ?
-                Lists.<ContainerExecutionOutput>newArrayList() :
+                Lists.<ContainerEntityOutput>newArrayList() :
                 Lists.newArrayList(outputs);
     }
 
-    public void addOutput(final ContainerExecutionOutput output) {
+    public void addOutput(final ContainerEntityOutput output) {
         if (this.outputs == null) {
             this.outputs = Lists.newArrayList();
         }

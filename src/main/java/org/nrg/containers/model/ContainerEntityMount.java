@@ -6,11 +6,9 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.envers.Audited;
-import org.nrg.containers.model.auto.Command;
 import org.nrg.containers.model.auto.Command.CommandMount;
 
 import javax.persistence.CascadeType;
-import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -25,9 +23,9 @@ import java.util.Objects;
 
 @Entity
 @Audited
-public class ContainerExecutionMount implements Serializable {
+public class ContainerEntityMount implements Serializable {
     private long id;
-    @JsonIgnore private ContainerExecution containerExecution;
+    @JsonIgnore private ContainerEntity containerEntity;
     @JsonProperty(required = true) private String name;
     @JsonProperty("writable") private boolean writable;
     @JsonProperty("xnat-host-path") private String xnatHostPath;
@@ -35,9 +33,9 @@ public class ContainerExecutionMount implements Serializable {
     @JsonProperty("container-path") private String containerPath;
     @JsonProperty("input-files") private List<ContainerMountFiles> inputFiles;
 
-    public ContainerExecutionMount() {}
+    public ContainerEntityMount() {}
 
-    public ContainerExecutionMount(final CommandMount commandMount) {
+    public ContainerEntityMount(final CommandMount commandMount) {
         this.name = commandMount.name();
         this.writable = commandMount.writable();
         this.xnatHostPath = null;        // Intentionally blank. Will be set later.
@@ -57,12 +55,12 @@ public class ContainerExecutionMount implements Serializable {
     }
 
     @ManyToOne
-    public ContainerExecution getContainerExecution() {
-        return containerExecution;
+    public ContainerEntity getContainerEntity() {
+        return containerEntity;
     }
 
-    public void setContainerExecution(final ContainerExecution containerExecution) {
-        this.containerExecution = containerExecution;
+    public void setContainerEntity(final ContainerEntity containerEntity) {
+        this.containerEntity = containerEntity;
     }
 
     public String getName() {
@@ -111,7 +109,7 @@ public class ContainerExecutionMount implements Serializable {
         return writable;
     }
 
-    @OneToMany(mappedBy = "containerExecutionMount", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
+    @OneToMany(mappedBy = "containerEntityMount", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     public List<ContainerMountFiles> getInputFiles() {
         return inputFiles;
     }
@@ -121,7 +119,7 @@ public class ContainerExecutionMount implements Serializable {
                 Lists.<ContainerMountFiles>newArrayList() :
                 inputFiles;
         for (final ContainerMountFiles files : this.inputFiles) {
-            files.setContainerExecutionMount(this);
+            files.setContainerEntityMount(this);
         }
     }
 
@@ -135,19 +133,14 @@ public class ContainerExecutionMount implements Serializable {
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final ContainerExecutionMount that = (ContainerExecutionMount) o;
-        return Objects.equals(this.id, that.id) &&
-                Objects.equals(this.name, that.name) &&
-                Objects.equals(this.writable, that.writable) &&
-                Objects.equals(this.xnatHostPath, that.xnatHostPath) &&
-                Objects.equals(this.containerHostPath, that.containerHostPath) &&
-                Objects.equals(this.containerPath, that.containerPath) &&
-                Objects.equals(this.inputFiles, that.inputFiles);
+        final ContainerEntityMount that = (ContainerEntityMount) o;
+        return Objects.equals(this.containerEntity, that.containerEntity) &&
+                Objects.equals(this.name, that.name);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, writable, xnatHostPath, containerHostPath, containerPath, inputFiles);
+        return Objects.hash(containerEntity, name);
     }
 
     @Override

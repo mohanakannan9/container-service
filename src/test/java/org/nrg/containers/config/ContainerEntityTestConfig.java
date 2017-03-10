@@ -4,14 +4,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hibernate.SessionFactory;
 import org.mockito.Mockito;
 import org.nrg.containers.api.ContainerControlApi;
-import org.nrg.containers.daos.ContainerExecutionRepository;
-import org.nrg.containers.model.ContainerExecution;
-import org.nrg.containers.model.ContainerExecutionHistory;
-import org.nrg.containers.model.ContainerExecutionMount;
-import org.nrg.containers.model.ContainerExecutionOutput;
+import org.nrg.containers.daos.ContainerEntityRepository;
+import org.nrg.containers.model.ContainerEntity;
+import org.nrg.containers.model.ContainerEntityHistory;
+import org.nrg.containers.model.ContainerEntityInput;
+import org.nrg.containers.model.ContainerEntityMount;
+import org.nrg.containers.model.ContainerEntityOutput;
 import org.nrg.containers.model.ContainerMountFiles;
-import org.nrg.containers.services.ContainerExecutionService;
-import org.nrg.containers.services.impl.HibernateContainerExecutionService;
+import org.nrg.containers.services.ContainerEntityService;
+import org.nrg.containers.services.impl.HibernateContainerEntityService;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.transporter.TransportService;
@@ -33,7 +34,7 @@ import java.util.Properties;
 @Configuration
 //@EnableTransactionManagement
 @Import(HibernateConfig.class)
-public class ContainerExecutionTestConfig {
+public class ContainerEntityTestConfig {
     @Bean
     public ObjectMapper objectMapper() {
         return new ObjectMapper();
@@ -80,18 +81,13 @@ public class ContainerExecutionTestConfig {
     }
 
     @Bean
-    public ContainerExecutionService containerExecutionService(final ContainerControlApi containerControlApi,
-                                                               final SiteConfigPreferences siteConfigPreferences,
-                                                               final TransportService transportService,
-                                                               final PermissionsServiceI permissionsService,
-                                                               final CatalogService catalogService,
-                                                               final ObjectMapper mapper) {
-        return new HibernateContainerExecutionService(containerControlApi, siteConfigPreferences, transportService, permissionsService, catalogService, mapper);
+    public ContainerEntityService containerEntityService() {
+        return new HibernateContainerEntityService();
     }
 
     @Bean
-    public ContainerExecutionRepository containerExecutionRepository() {
-        return new ContainerExecutionRepository();
+    public ContainerEntityRepository containerEntityRepository() {
+        return new ContainerEntityRepository();
     }
 
     @Bean
@@ -100,10 +96,11 @@ public class ContainerExecutionTestConfig {
         bean.setDataSource(dataSource);
         bean.setHibernateProperties(properties);
         bean.setAnnotatedClasses(
-                ContainerExecution.class,
-                ContainerExecutionHistory.class,
-                ContainerExecutionOutput.class,
-                ContainerExecutionMount.class,
+                ContainerEntity.class,
+                ContainerEntityHistory.class,
+                ContainerEntityInput.class,
+                ContainerEntityOutput.class,
+                ContainerEntityMount.class,
                 ContainerMountFiles.class);
         return bean;
     }

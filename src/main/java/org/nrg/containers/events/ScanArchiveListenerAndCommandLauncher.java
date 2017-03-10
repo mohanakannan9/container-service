@@ -5,12 +5,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.exceptions.CommandResolutionException;
+import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.CommandEventMapping;
 import org.nrg.containers.model.xnat.Scan;
 import org.nrg.containers.services.CommandEventMappingService;
-import org.nrg.containers.services.ContainerLaunchService;
+import org.nrg.containers.services.ContainerService;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,17 +32,17 @@ public class ScanArchiveListenerAndCommandLauncher implements Consumer<Event<Sca
     private static final String EVENT_ID = "ScanArchived";
 
     private ObjectMapper mapper;
-    private ContainerLaunchService containerLaunchService;
+    private ContainerService containerService;
     private CommandEventMappingService commandEventMappingService;
 
     @Autowired
     public ScanArchiveListenerAndCommandLauncher(final EventBus eventBus,
                                                  final ObjectMapper mapper,
-                                                 final ContainerLaunchService containerLaunchService,
+                                                 final ContainerService containerService,
                                                  final CommandEventMappingService commandEventMappingService) {
         eventBus.on(type(ScanArchiveEventToLaunchCommands.class), this);
         this.mapper = mapper;
-        this.containerLaunchService = containerLaunchService;
+        this.containerService = containerService;
         this.commandEventMappingService = commandEventMappingService;
     }
 
@@ -84,8 +85,8 @@ public class ScanArchiveListenerAndCommandLauncher implements Consumer<Event<Sca
                             }
                         }
                     }
-                    containerLaunchService.resolveAndLaunchCommand(xnatCommandWrapperName, commandId, runtimeValues, scanArchiveEventToLaunchCommands.getUser());
-                } catch (NotFoundException | CommandResolutionException | NoServerPrefException | DockerServerException e) {
+                    containerService.resolveAndLaunchCommand(xnatCommandWrapperName, commandId, runtimeValues, scanArchiveEventToLaunchCommands.getUser());
+                } catch (NotFoundException | CommandResolutionException | NoServerPrefException | DockerServerException | ContainerException e) {
                     log.error("Error launching command " + commandId, e);
                 }
             }

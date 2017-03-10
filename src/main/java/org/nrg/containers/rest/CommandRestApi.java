@@ -8,16 +8,16 @@ import org.nrg.containers.exceptions.BadRequestException;
 import org.nrg.containers.exceptions.CommandInputResolutionException;
 import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.CommandValidationException;
+import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.ContainerMountResolutionException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.model.CommandWrapperEntity;
-import org.nrg.containers.model.ContainerExecution;
+import org.nrg.containers.model.ContainerEntity;
 import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.containers.model.auto.Command;
 import org.nrg.containers.model.auto.Command.CommandWrapper;
 import org.nrg.containers.services.CommandService;
-import org.nrg.containers.services.ContainerLaunchService;
+import org.nrg.containers.services.ContainerService;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.exceptions.NrgRuntimeException;
@@ -62,16 +62,16 @@ public class CommandRestApi extends AbstractXapiRestController {
     private static final String NAME_REGEX = "\\d*[^\\d]+\\d*";
 
     private CommandService commandService;
-    private ContainerLaunchService containerLaunchService;
+    private ContainerService containerService;
 
     @Autowired
     public CommandRestApi(final CommandService commandService,
-                          final ContainerLaunchService containerLaunchService,
+                          final ContainerService containerService,
                           final UserManagementServiceI userManagementService,
                           final RoleHolder roleHolder) {
         super(userManagementService, roleHolder);
         this.commandService = commandService;
-        this.containerLaunchService = containerLaunchService;
+        this.containerService = containerService;
     }
 
     /*
@@ -200,9 +200,9 @@ public class CommandRestApi extends AbstractXapiRestController {
     @ApiOperation(value = "Launch a container from a resolved command")
     @ResponseBody
     public String launchCommand(final @RequestBody ResolvedDockerCommand resolvedDockerCommand)
-            throws NoServerPrefException, DockerServerException, ContainerMountResolutionException {
+            throws NoServerPrefException, DockerServerException, ContainerMountResolutionException, ContainerException {
         final UserI userI = XDAT.getUserDetails();
-        final ContainerExecution executed = containerLaunchService.launchResolvedDockerCommand(resolvedDockerCommand, userI);
+        final ContainerEntity executed = containerService.launchResolvedDockerCommand(resolvedDockerCommand, userI);
         return executed.getContainerId();
     }
 
@@ -211,9 +211,9 @@ public class CommandRestApi extends AbstractXapiRestController {
     @ResponseBody
     public String launchCommandWQueryParams(final @PathVariable long id,
                                             final @RequestParam Map<String, String> allRequestParams)
-            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException {
+            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException, ContainerException {
         log.info("Launch requested for command id " + String.valueOf(id));
-        final ContainerExecution executed = launchCommand(id, allRequestParams);
+        final ContainerEntity executed = launchCommand(id, allRequestParams);
         return executed.getContainerId();
     }
 
@@ -222,25 +222,25 @@ public class CommandRestApi extends AbstractXapiRestController {
     @ResponseBody
     public String launchCommandWJsonBody(final @PathVariable long id,
                                          final @RequestBody Map<String, String> allRequestParams)
-            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException {
+            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException, ContainerException {
         log.info("Launch requested for command id " + String.valueOf(id));
-        final ContainerExecution executed = launchCommand(id, allRequestParams);
+        final ContainerEntity executed = launchCommand(id, allRequestParams);
         return executed.getContainerId();
     }
 
-    private ContainerExecution launchCommand(final long id, final Map<String, String> allRequestParams)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, BadRequestException {
+    private ContainerEntity launchCommand(final long id, final Map<String, String> allRequestParams)
+            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, BadRequestException, ContainerException {
         final UserI userI = XDAT.getUserDetails();
         try {
-            final ContainerExecution containerExecution = containerLaunchService.resolveAndLaunchCommand(id, allRequestParams, userI);
+            final ContainerEntity containerEntity = containerService.resolveAndLaunchCommand(id, allRequestParams, userI);
             if (log.isInfoEnabled()) {
                 log.info(String.format("Launched command id %d. Produced container %d.", id,
-                        containerExecution != null ? containerExecution.getId() : null));
+                        containerEntity != null ? containerEntity.getId() : null));
                 if (log.isDebugEnabled()) {
-                    log.debug(containerExecution != null ? containerExecution.toString() : "Container execution object is null.");
+                    log.debug(containerEntity != null ? containerEntity.toString() : "Container execution object is null.");
                 }
             }
-            return containerExecution;
+            return containerEntity;
         } catch (CommandInputResolutionException e) {
             throw new BadRequestException("Must provide value for variable " + e.getInput().name() + ".", e);
         }
@@ -255,9 +255,9 @@ public class CommandRestApi extends AbstractXapiRestController {
     public String launchCommandWQueryParams(final @PathVariable long commandId,
                                             final @PathVariable long wrapperId,
                                             final @RequestParam Map<String, String> allRequestParams)
-            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException {
+            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException, ContainerException {
         log.info("Launch requested for command {}, wrapper {}", commandId, wrapperId);
-        final ContainerExecution executed = launchCommandAndWrapper(commandId, wrapperId, allRequestParams);
+        final ContainerEntity executed = launchCommandAndWrapper(commandId, wrapperId, allRequestParams);
         return executed.getContainerId();
     }
 
@@ -267,27 +267,27 @@ public class CommandRestApi extends AbstractXapiRestController {
     public String launchCommandWJsonBody(final @PathVariable long commandId,
                                          final @PathVariable long wrapperId,
                                          final @RequestBody Map<String, String> allRequestParams)
-            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException {
+            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException, ContainerException {
         log.info("Launch requested for command {}, wrapper {}", commandId, wrapperId);
-        final ContainerExecution executed = launchCommandAndWrapper(commandId, wrapperId, allRequestParams);
+        final ContainerEntity executed = launchCommandAndWrapper(commandId, wrapperId, allRequestParams);
         return executed.getContainerId();
     }
 
-    private ContainerExecution launchCommandAndWrapper(final long commandId,
-                                                       final long wrapperId,
-                                                       final Map<String, String> allRequestParams)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, BadRequestException {
+    private ContainerEntity launchCommandAndWrapper(final long commandId,
+                                                    final long wrapperId,
+                                                    final Map<String, String> allRequestParams)
+            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, BadRequestException, ContainerException {
         final UserI userI = XDAT.getUserDetails();
         try {
-            final ContainerExecution containerExecution = containerLaunchService.resolveAndLaunchCommand(wrapperId, commandId, allRequestParams, userI);
+            final ContainerEntity containerEntity = containerService.resolveAndLaunchCommand(wrapperId, commandId, allRequestParams, userI);
             if (log.isInfoEnabled()) {
                 log.info("Launched command {}, wrapper {}. Produced container {}.", commandId, wrapperId,
-                        containerExecution != null ? containerExecution.getId() : null);
+                        containerEntity != null ? containerEntity.getId() : null);
                 if (log.isDebugEnabled()) {
-                    log.debug(containerExecution != null ? containerExecution.toString() : "Container execution object is null.");
+                    log.debug(containerEntity != null ? containerEntity.toString() : "Container execution object is null.");
                 }
             }
-            return containerExecution;
+            return containerEntity;
         } catch (CommandInputResolutionException e) {
             throw new BadRequestException("Must provide value for variable " + e.getInput().name() + ".", e);
         }
@@ -302,9 +302,9 @@ public class CommandRestApi extends AbstractXapiRestController {
     public String launchCommandWQueryParams(final @PathVariable long commandId,
                                             final @PathVariable String wrapperName,
                                             final @RequestParam Map<String, String> allRequestParams)
-            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException {
+            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException, ContainerException {
         log.info("Launch requested for command {}, wrapper {}", commandId, wrapperName);
-        final ContainerExecution executed = launchCommandAndWrapper(commandId, wrapperName, allRequestParams);
+        final ContainerEntity executed = launchCommandAndWrapper(commandId, wrapperName, allRequestParams);
         return executed.getContainerId();
     }
 
@@ -314,27 +314,27 @@ public class CommandRestApi extends AbstractXapiRestController {
     public String launchCommandWJsonBody(final @PathVariable long commandId,
                                          final @PathVariable String wrapperName,
                                          final @RequestBody Map<String, String> allRequestParams)
-            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException {
+            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException, ContainerException {
         log.info("Launch requested for command {}, wrapper {}", commandId, wrapperName);
-        final ContainerExecution executed = launchCommandAndWrapper(commandId, wrapperName, allRequestParams);
+        final ContainerEntity executed = launchCommandAndWrapper(commandId, wrapperName, allRequestParams);
         return executed.getContainerId();
     }
 
-    private ContainerExecution launchCommandAndWrapper(final long commandId,
-                                                       final String wrapperName,
-                                                       final Map<String, String> allRequestParams)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, BadRequestException {
+    private ContainerEntity launchCommandAndWrapper(final long commandId,
+                                                    final String wrapperName,
+                                                    final Map<String, String> allRequestParams)
+            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, BadRequestException, ContainerException {
         final UserI userI = XDAT.getUserDetails();
         try {
-            final ContainerExecution containerExecution = containerLaunchService.resolveAndLaunchCommand(wrapperName, commandId, allRequestParams, userI);
+            final ContainerEntity containerEntity = containerService.resolveAndLaunchCommand(wrapperName, commandId, allRequestParams, userI);
             if (log.isInfoEnabled()) {
                 log.info("Launched command {}, wrapper {}. Produced container {}.", commandId, wrapperName,
-                        containerExecution != null ? containerExecution.getId() : null);
+                        containerEntity != null ? containerEntity.getId() : null);
                 if (log.isDebugEnabled()) {
-                    log.debug(containerExecution != null ? containerExecution.toString() : "Container execution object is null.");
+                    log.debug(containerEntity != null ? containerEntity.toString() : "Container execution object is null.");
                 }
             }
-            return containerExecution;
+            return containerEntity;
         } catch (CommandInputResolutionException e) {
             throw new BadRequestException("Must provide value for variable " + e.getInput().name() + ".", e);
         }
@@ -363,6 +363,14 @@ public class CommandRestApi extends AbstractXapiRestController {
     @ExceptionHandler(value = {DockerServerException.class})
     public String handleDockerServerError(final Exception e) {
         final String message = "The Docker server returned an error:\n" + e.getMessage();
+        log.debug(message);
+        return message;
+    }
+
+    @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
+    @ExceptionHandler(value = {ContainerException.class})
+    public String handleContainerException(final Exception e) {
+        final String message = "There was a problem with the container:\n" + e.getMessage();
         log.debug(message);
         return message;
     }

@@ -18,8 +18,8 @@ import org.nrg.containers.exceptions.CommandInputResolutionException;
 import org.nrg.containers.exceptions.CommandMountResolutionException;
 import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.CommandWrapperInputResolutionException;
-import org.nrg.containers.model.ContainerExecutionMount;
-import org.nrg.containers.model.ContainerExecutionOutput;
+import org.nrg.containers.model.ContainerEntityMount;
+import org.nrg.containers.model.ContainerEntityOutput;
 import org.nrg.containers.model.ContainerMountFiles;
 import org.nrg.containers.model.DockerCommandEntity;
 import org.nrg.containers.model.ResolvedCommand;
@@ -1308,7 +1308,7 @@ public class CommandResolutionHelper {
         return aMatch;
     }
 
-    private List<ContainerExecutionOutput> resolveOutputs() throws CommandResolutionException {
+    private List<ContainerEntityOutput> resolveOutputs() throws CommandResolutionException {
         log.info("Resolving command outputs.");
         if (command.outputs() == null) {
             return null;
@@ -1321,7 +1321,7 @@ public class CommandResolutionHelper {
             }
         }
 
-        final List<ContainerExecutionOutput> resolvedOutputs = Lists.newArrayList();
+        final List<ContainerEntityOutput> resolvedOutputs = Lists.newArrayList();
         for (final CommandOutput commandOutput : command.outputs()) {
             if (log.isInfoEnabled()) {
                 log.info(String.format("Resolving command output \"%s\"", commandOutput.name()));
@@ -1339,7 +1339,7 @@ public class CommandResolutionHelper {
                 log.debug(String.format("Found XNAT Output Handler for Command output \"%s\".", commandOutput.name()));
             }
 
-            final ContainerExecutionOutput resolvedOutput = new ContainerExecutionOutput(commandOutput, commandOutputHandler);
+            final ContainerEntityOutput resolvedOutput = new ContainerEntityOutput(commandOutput, commandOutputHandler);
 
             resolvedOutput.setPath(resolveTemplate(commandOutput.path()));
             resolvedOutput.setLabel(resolveTemplate(commandOutputHandler.label()));
@@ -1447,7 +1447,7 @@ public class CommandResolutionHelper {
         return resolvedMap;
     }
 
-    private List<ContainerExecutionMount> resolveCommandMounts() throws CommandResolutionException {
+    private List<ContainerEntityMount> resolveCommandMounts() throws CommandResolutionException {
         log.info("Resolving mounts.");
         final List<CommandMount> commandMounts = command.mounts();
         if (commandMounts == null || commandMounts.isEmpty()) {
@@ -1455,27 +1455,27 @@ public class CommandResolutionHelper {
             return Lists.newArrayList();
         }
 
-        final List<ContainerExecutionMount> resolvedMounts = Lists.newArrayList();
+        final List<ContainerEntityMount> resolvedMounts = Lists.newArrayList();
         for (final CommandMount commandMount : commandMounts) {
             resolvedMounts.add(resolveCommandMount(commandMount));
         }
 
         log.info("Done resolving mounts.");
         if (log.isDebugEnabled()) {
-            for (final ContainerExecutionMount mount : resolvedMounts) {
+            for (final ContainerEntityMount mount : resolvedMounts) {
                 log.debug(mount.toString());
             }
         }
         return resolvedMounts;
     }
 
-    private ContainerExecutionMount resolveCommandMount(final CommandMount commandMount)
+    private ContainerEntityMount resolveCommandMount(final CommandMount commandMount)
             throws CommandResolutionException {
         if (log.isInfoEnabled()) {
             log.info(String.format("Resolving command mount \"%s\".", commandMount.name()));
         }
 
-        final ContainerExecutionMount resolvedMount = new ContainerExecutionMount(commandMount);
+        final ContainerEntityMount resolvedMount = new ContainerEntityMount(commandMount);
         resolvedMount.setContainerPath(resolveTemplate(commandMount.path()));
 
         final List<CommandWrapperInput> sourceInputs = commandMountsToReceiveFilesFromXnatInputs.get(commandMount.name());
