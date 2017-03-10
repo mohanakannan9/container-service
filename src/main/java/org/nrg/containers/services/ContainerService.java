@@ -1,5 +1,6 @@
 package org.nrg.containers.services;
 
+import org.nrg.containers.events.ContainerEvent;
 import org.nrg.containers.events.DockerContainerEvent;
 import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.ContainerException;
@@ -55,7 +56,7 @@ public interface ContainerService {
     ContainerEntity launchResolvedDockerCommand(final ResolvedDockerCommand resolvedCommand, final UserI userI)
             throws NoServerPrefException, DockerServerException, ContainerMountResolutionException, ContainerException;
 
-    void processEvent(final DockerContainerEvent event);
+    void processEvent(final ContainerEvent event);
 
     void finalize(final Long containerExecutionId, final UserI userI);
     void finalize(final ContainerEntity containerEntity, final UserI userI, final String exitCode);

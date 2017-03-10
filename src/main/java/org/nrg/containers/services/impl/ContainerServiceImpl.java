@@ -7,6 +7,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.api.ContainerControlApi;
+import org.nrg.containers.events.ContainerEvent;
 import org.nrg.containers.events.DockerContainerEvent;
 import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.ContainerException;
@@ -420,9 +421,9 @@ public class ContainerServiceImpl implements ContainerService {
 
 
     @Override
-    public void processEvent(final DockerContainerEvent event) {
+    public void processEvent(final ContainerEvent event) {
         if (log.isDebugEnabled()) {
-            log.debug("Processing docker container event: " + event);
+            log.debug("Processing container event");
         }
         final ContainerEntity execution = containerEntityService.addContainerEventToHistory(event);
 
@@ -434,6 +435,7 @@ public class ContainerServiceImpl implements ContainerService {
             final Matcher exitCodeMatcher =
                     exitCodePattern.matcher(event.getStatus());
             if (exitCodeMatcher.matches()) {
+                log.debug("Container is dead. Finalizing.");
                 final String exitCode = exitCodeMatcher.group(1);
                 final String userLogin = execution.getUserId();
                 try {
