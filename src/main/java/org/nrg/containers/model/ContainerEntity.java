@@ -139,7 +139,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
                 Sets.<ContainerEntityInput>newHashSet() :
                 inputs;
         for (final ContainerEntityInput input : this.inputs) {
-            addInput(input);
+            input.setContainerEntity(this);
         }
     }
 
@@ -239,7 +239,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
                 Lists.<ContainerEntityHistory>newArrayList() :
                 history;
         for (final ContainerEntityHistory historyItem : this.history) {
-            addToHistory(historyItem);
+            historyItem.setContainerEntity(this);
         }
     }
 
@@ -298,13 +298,12 @@ public class ContainerEntity extends AbstractHibernateEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final ContainerEntity that = (ContainerEntity) o;
-        return Objects.equals(this.getId(), that.getId()) &&
-                Objects.equals(this.containerId, that.containerId);
+        return Objects.equals(this.containerId, that.containerId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.getId(), containerId);
+        return Objects.hash(containerId);
     }
 
     @Override
