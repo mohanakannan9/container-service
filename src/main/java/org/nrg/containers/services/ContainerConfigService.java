@@ -14,8 +14,8 @@ public interface ContainerConfigService {
     CommandConfiguration getSiteConfiguration(long commandId, String wrapperName);
     CommandConfiguration getProjectConfiguration(String project, long commandId, String wrapperName);
 
-    void deleteSiteConfiguration(long commandId, String wrapperName) throws CommandConfigurationException;
-    void deleteProjectConfiguration(String project, long commandId, String wrapperName) throws CommandConfigurationException;
+    void deleteSiteConfiguration(long commandId, String wrapperName, final String username) throws CommandConfigurationException;
+    void deleteProjectConfiguration(String project, long commandId, String wrapperName, final String username) throws CommandConfigurationException;
     void deleteAllConfiguration(long commandId, String wrapperName);
     void deleteAllConfiguration(long commandId);
 

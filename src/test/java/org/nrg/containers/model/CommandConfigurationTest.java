@@ -52,7 +52,7 @@ public class CommandConfigurationTest {
         final CommandConfiguration site = CommandConfiguration.create(
                 ImmutableMap.of("foo", CommandInputConfiguration.builder().defaultValue("a").userSettable(true).build()),
                 ImmutableMap.of("bar", CommandConfiguration.CommandOutputConfiguration.create("label")));
-        final String siteJson = mapper.writeValueAsString(site);
+        final String siteJson = mapper.writeValueAsString(CommandConfigurationInternalRepresentation.create(true, site));
 
         final Configuration mockSiteConfiguration = Mockito.mock(Configuration.class);
         when(mockSiteConfiguration.getContents()).thenReturn(siteJson);
@@ -122,8 +122,8 @@ public class CommandConfigurationTest {
         final CommandConfiguration project = CommandConfiguration.create(projectInputs, projectOutputs);
         final CommandConfiguration expected = CommandConfiguration.create(expectedInputs, expectedOutputs);
 
-        final String siteJson = mapper.writeValueAsString(site);
-        final String projectJson = mapper.writeValueAsString(project);
+        final String siteJson = mapper.writeValueAsString(CommandConfigurationInternalRepresentation.create(true, site));
+        final String projectJson = mapper.writeValueAsString(CommandConfigurationInternalRepresentation.create(true, project));
 
         final Configuration mockSiteConfiguration = Mockito.mock(Configuration.class);
         when(mockSiteConfiguration.getContents()).thenReturn(siteJson);
