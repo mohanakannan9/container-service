@@ -68,12 +68,19 @@ public abstract class CommandConfiguration {
         @Nullable @JsonProperty("default-value") public abstract String defaultValue();
         @Nullable @JsonProperty("matcher") public abstract String matcher();
         @Nullable @JsonProperty("user-settable") public abstract Boolean userSettable();
+        @Nullable @JsonProperty("advanced") public abstract Boolean advanced();
 
         @JsonCreator
         static CommandInputConfiguration create(@JsonProperty("default-value") final String defaultValue,
                                                 @JsonProperty("matcher") final String matcher,
-                                                @JsonProperty("user-settable") final Boolean userSettable) {
-            return new AutoValue_CommandConfiguration_CommandInputConfiguration(defaultValue, matcher, userSettable);
+                                                @JsonProperty("user-settable") final Boolean userSettable,
+                                                @JsonProperty("advanced") final Boolean advanced) {
+            return builder()
+                    .defaultValue(defaultValue)
+                    .matcher(matcher)
+                    .userSettable(userSettable)
+                    .advanced(advanced)
+                    .build();
         }
 
         CommandInputConfiguration merge(final CommandInputConfiguration that) {
@@ -82,7 +89,22 @@ public abstract class CommandConfiguration {
             }
             return create(that.defaultValue() == null ? this.defaultValue() : that.defaultValue(),
                     that.matcher() == null ? this.matcher() : that.matcher(),
-                    that.userSettable() == null ? this.userSettable() : that.userSettable());
+                    that.userSettable() == null ? this.userSettable() : that.userSettable(),
+                    that.advanced() == null ? this.advanced() : that.advanced());
+        }
+
+        public static Builder builder() {
+            return new AutoValue_CommandConfiguration_CommandInputConfiguration.Builder();
+        }
+
+        @AutoValue.Builder
+        public abstract static class Builder {
+            public abstract Builder defaultValue(final String defaultValue);
+            public abstract Builder matcher(final String matcher);
+            public abstract Builder userSettable(final Boolean userSettable);
+            public abstract Builder advanced(final Boolean advanced);
+
+            public abstract CommandInputConfiguration build();
         }
     }
 

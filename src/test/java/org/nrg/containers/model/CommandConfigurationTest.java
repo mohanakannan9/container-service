@@ -9,6 +9,7 @@ import org.mockito.Mockito;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.config.CommandConfigurationTestConfig;
+import org.nrg.containers.model.CommandConfiguration.CommandInputConfiguration;
 import org.nrg.containers.services.ContainerConfigService;
 import org.nrg.framework.constants.Scope;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,7 +50,7 @@ public class CommandConfigurationTest {
     public void testConfigureCommandForSite() throws Exception {
 
         final CommandConfiguration site = CommandConfiguration.create(
-                ImmutableMap.of("foo", CommandConfiguration.CommandInputConfiguration.create("a", null, true)),
+                ImmutableMap.of("foo", CommandInputConfiguration.builder().defaultValue("a").userSettable(true).build()),
                 ImmutableMap.of("bar", CommandConfiguration.CommandOutputConfiguration.create("label")));
         final String siteJson = mapper.writeValueAsString(site);
 
@@ -64,13 +65,14 @@ public class CommandConfigurationTest {
     @Test
     public void testConfigureCommandForProject() throws Exception {
 
-        final Map<String, CommandConfiguration.CommandInputConfiguration> siteInputs = Maps.newHashMap();
-        final Map<String, CommandConfiguration.CommandInputConfiguration> projectInputs = Maps.newHashMap();
-        final Map<String, CommandConfiguration.CommandInputConfiguration> expectedInputs = Maps.newHashMap();
+        final Map<String, CommandInputConfiguration> siteInputs = Maps.newHashMap();
+        final Map<String, CommandInputConfiguration> projectInputs = Maps.newHashMap();
+        final Map<String, CommandInputConfiguration> expectedInputs = Maps.newHashMap();
 
-        final CommandConfiguration.CommandInputConfiguration allNullInput = CommandConfiguration.CommandInputConfiguration.create(null, null, null);
-        final CommandConfiguration.CommandInputConfiguration allNotNullInput = CommandConfiguration.CommandInputConfiguration.create("who", "cares", true);
-        final CommandConfiguration.CommandInputConfiguration allNotNullInput2 = CommandConfiguration.CommandInputConfiguration.create("fly", "fools", false);
+        final CommandInputConfiguration allNullInput = CommandInputConfiguration.builder().build();
+
+        final CommandInputConfiguration allNotNullInput = allNotNullInputBuilder().build();
+        final CommandInputConfiguration allNotNullInput2 = CommandInputConfiguration.create("fly", "fools", false, false);
 
         siteInputs.put("a", allNotNullInput);
         projectInputs.put("a", allNullInput);
@@ -85,16 +87,16 @@ public class CommandConfigurationTest {
         expectedInputs.put("f", allNotNullInput2);
 
         siteInputs.put("b", allNotNullInput);
-        projectInputs.put("b", CommandConfiguration.CommandInputConfiguration.create("not-null", null, null));
-        expectedInputs.put("b", CommandConfiguration.CommandInputConfiguration.create("not-null", "cares", true));
+        projectInputs.put("b", CommandInputConfiguration.builder().defaultValue("not-null").build());
+        expectedInputs.put("b", allNotNullInputBuilder().defaultValue("not-null").build());
 
         siteInputs.put("c", allNotNullInput);
-        projectInputs.put("c", CommandConfiguration.CommandInputConfiguration.create(null, "not-null", null));
-        expectedInputs.put("c", CommandConfiguration.CommandInputConfiguration.create("who", "not-null", true));
+        projectInputs.put("c", CommandInputConfiguration.builder().matcher("not-null").build());
+        expectedInputs.put("c", allNotNullInputBuilder().matcher("not-null").build());
 
         siteInputs.put("d", allNotNullInput);
-        projectInputs.put("d", CommandConfiguration.CommandInputConfiguration.create(null, null, false));
-        expectedInputs.put("d", CommandConfiguration.CommandInputConfiguration.create("who", "cares", false));
+        projectInputs.put("d", CommandInputConfiguration.builder().userSettable(false).build());
+        expectedInputs.put("d", allNotNullInputBuilder().userSettable(false).build());
 
         final Map<String, CommandConfiguration.CommandOutputConfiguration> siteOutputs = Maps.newHashMap();
         final Map<String, CommandConfiguration.CommandOutputConfiguration> projectOutputs = Maps.newHashMap();
@@ -132,5 +134,13 @@ public class CommandConfigurationTest {
 
         final CommandConfiguration retrieved = containerConfigService.getProjectConfiguration(PROJECT_NAME, COMMAND_ID, WRAPPER_NAME);
         assertEquals(expected, retrieved);
+    }
+
+    private CommandInputConfiguration.Builder allNotNullInputBuilder() {
+        return CommandInputConfiguration.builder()
+                .defaultValue("who")
+                .matcher("cares")
+                .advanced(true)
+                .userSettable(true);
     }
 }
