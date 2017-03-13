@@ -19,6 +19,13 @@ public interface ContainerConfigService {
     void deleteAllConfiguration(long commandId, String wrapperName);
     void deleteAllConfiguration(long commandId);
 
+    void setAllDisabledForSite(String username, String reason);
+    void setAllDisabledForSite(Boolean allDisabled, String username, String reason);
+    Boolean getAllDisabledForSite();
+    void setAllDisabledForProject(String project, String username, String reason);
+    void setAllDisabledForProject(Boolean allDisabled, String project, String username, String reason);
+    Boolean getAllDisabledForProject(String project);
+
     class CommandConfigurationException extends Exception {
         public CommandConfigurationException(final String message, final Throwable e) {
             super(message, e);

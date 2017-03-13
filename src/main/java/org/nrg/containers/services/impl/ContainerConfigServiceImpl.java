@@ -105,6 +105,39 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
         // TODO
     }
 
+    @Override
+    public void setAllDisabledForSite(final String username, final String reason) {
+        setAllDisabledForSite(true, username, reason);
+    }
+
+    @Override
+    public void setAllDisabledForSite(final Boolean allDisabled, final String username, final String reason) {
+        // TODO CS-135 master site disable switch
+    }
+
+    @Override
+    @Nullable
+    public Boolean getAllDisabledForSite() {
+        // TODO CS-135 master site disable switch
+        return false;
+    }
+
+    @Override
+    public void setAllDisabledForProject(final String project, final String username, final String reason) {
+        setAllDisabledForProject(true, project, username, reason);
+    }
+
+    @Override
+    public void setAllDisabledForProject(final Boolean allDisabled, final String project, final String username, final String reason) {
+        // TODO CS-136 project disable switch
+    }
+
+    @Override
+    public Boolean getAllDisabledForProject(final String project) {
+        // TODO CS-136 project disable switch
+        return false;
+    }
+
     private void setCommandConfiguration(final Scope scope, final String project, final long commandId, final String wrapperName, final CommandConfiguration commandConfiguration, final String username, final String reason) throws CommandConfigurationException{
         if (scope.equals(Scope.Project) && StringUtils.isBlank(project)) {
             // TODO error: project can't be blank
