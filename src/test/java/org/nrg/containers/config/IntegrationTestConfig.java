@@ -54,11 +54,6 @@ import java.util.Properties;
 @EnableTransactionManagement
 @Import({CommandConfig.class, HibernateConfig.class, RestApiTestConfig.class})
 public class IntegrationTestConfig {
-    @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
-    }
-
     /*
     Control API and dependencies + Events
      */

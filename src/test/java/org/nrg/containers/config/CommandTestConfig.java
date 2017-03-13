@@ -94,11 +94,6 @@ public class CommandTestConfig {
     }
 
     @Bean
-    public ConfigService configService() {
-        return Mockito.mock(ConfigService.class);
-    }
-
-    @Bean
     public LocalSessionFactoryBean sessionFactory(final DataSource dataSource, @Qualifier("hibernateProperties") final Properties properties) {
         final LocalSessionFactoryBean bean = new LocalSessionFactoryBean();
         bean.setDataSource(dataSource);

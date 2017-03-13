@@ -16,6 +16,7 @@ import org.nrg.containers.model.auto.Command;
 import org.nrg.containers.model.auto.Command.CommandWrapper;
 import org.nrg.containers.services.CommandEntityService;
 import org.nrg.containers.services.CommandService;
+import org.nrg.containers.services.ContainerConfigService;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,10 +36,13 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     private static final Logger log = LoggerFactory.getLogger(CommandServiceImpl.class);
 
     private final CommandEntityService commandEntityService;
+    private final ContainerConfigService containerConfigService;
 
     @Autowired
-    public CommandServiceImpl(final CommandEntityService commandEntityService) {
+    public CommandServiceImpl(final CommandEntityService commandEntityService,
+                              final ContainerConfigService containerConfigService) {
         this.commandEntityService = commandEntityService;
+        this.containerConfigService = containerConfigService;
     }
 
     @Override
@@ -117,7 +121,16 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
 
     @Override
     public void delete(final long id) {
-        commandEntityService.delete(id);
+        final Command command = retrieve(id);
+        if (command != null) {
+            for (final CommandWrapper commandWrapper : command.xnatCommandWrappers()) {
+                containerConfigService.deleteAllConfiguration(id, commandWrapper.name());
+            }
+
+            commandEntityService.delete(id);
+        }
+
+        containerConfigService.deleteAllConfiguration(id);
     }
 
     @Override
