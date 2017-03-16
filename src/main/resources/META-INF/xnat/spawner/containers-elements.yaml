@@ -214,3 +214,32 @@ siteSettings:
             active: false
             contents:
                 ${installedImagesPanel}
+
+#######################################################
+####  Root Project Settings Spawner Config Object  ####
+#######################################################
+
+projectSettings:
+    kind: tabs
+    name: projectSettingsPage
+    label: Project Settings for Container Service
+    meta:
+        tabGroups:
+            containerServiceProjectTabGroup: Container Service
+    contains: tabs
+    tabs:
+        commandConfigurationTab:
+            kind: tab
+            name: commandProjectConfig
+            label: Configure Commands
+            group: containerServiceProjectTabGroup
+            active: true
+            contents:
+                commandProjectConfigPanel:
+                    kind: panel
+                    name: commandProjectConfigPanel
+                    label: Configure Commands for Project
+                    contents:
+                        hello:
+                            tag: "p"
+                            contents: Hello there!
