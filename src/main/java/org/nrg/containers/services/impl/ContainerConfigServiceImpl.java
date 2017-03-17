@@ -62,13 +62,13 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
     }
 
     @Override
-    public void configureForProject(final String project, final long commandId, final String wrapperName, final CommandConfiguration commandConfiguration, final String username, final String reason) throws CommandConfigurationException {
-        setCommandConfiguration(Scope.Project, project, commandId, wrapperName, commandConfiguration, username, reason);
+    public void configureForProject(final CommandConfiguration commandConfiguration, final String project, final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
+        setCommandConfiguration(commandConfiguration, Scope.Project, project, commandId, wrapperName, username, reason);
     }
 
     @Override
-    public void configureForSite(final long commandId, final String wrapperName, final CommandConfiguration commandConfiguration, final String username, final String reason) throws CommandConfigurationException {
-        setCommandConfiguration(Scope.Site, null, commandId, wrapperName, commandConfiguration, username, reason);
+    public void configureForSite(final CommandConfiguration commandConfiguration, final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
+        setCommandConfiguration(commandConfiguration, Scope.Site, null, commandId, wrapperName, username, reason);
     }
 
     @Override
@@ -138,7 +138,14 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
         return false;
     }
 
-    private void setCommandConfiguration(final Scope scope, final String project, final long commandId, final String wrapperName, final CommandConfiguration commandConfiguration, final String username, final String reason) throws CommandConfigurationException{
+    private void setCommandConfiguration(final CommandConfiguration commandConfiguration, final Scope scope, final String project, final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
+        final CommandConfigurationInternalRepresentation commandConfigurationInternalRepresentation = getCommandConfigurationInternalRepresentation(scope, project, commandId, wrapperName);
+        setCommandConfigurationInternalRepresentation(CommandConfigurationInternalRepresentation.create(commandConfigurationInternalRepresentation == null ? null : commandConfigurationInternalRepresentation.enabled(), commandConfiguration), scope, project, commandId, wrapperName,
+                username, reason);
+    }
+
+    private void setCommandConfigurationInternalRepresentation(final CommandConfigurationInternalRepresentation commandConfigurationInternalRepresentation,
+                                                               final Scope scope, final String project, final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
         if (scope.equals(Scope.Project) && StringUtils.isBlank(project)) {
             // TODO error: project can't be blank
         }
@@ -147,24 +154,22 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
             // TODO error
         }
 
-        if (commandConfiguration == null) {
-            // TODO is this an error? Or should we deleteCommandConfiguration the configuration?
-        }
-
         String contents = "";
         try {
-            contents = mapper.writeValueAsString(CommandConfigurationInternalRepresentation.create(true, commandConfiguration));
+            contents = mapper.writeValueAsString(commandConfigurationInternalRepresentation);
         } catch (JsonProcessingException e) {
-            // TODO handle this
-            e.printStackTrace();
+            final String message = String.format("Could not save configuration for command id %d, wrapper name \"%s\".", commandId, wrapperName);
+            log.error(message);
+            throw new CommandConfigurationException(message, e);
         }
 
         final String path = String.format(COMMAND_CONFIG_PATH_TEMPLATE, commandId, wrapperName != null ? wrapperName : "");
         try {
             configService.replaceConfig(username, reason, TOOL_ID, path, contents, scope, project);
         } catch (ConfigServiceException e) {
-            log.error("Could not save configuration for command id {}, wrapper name \"{}\".", commandId, wrapperName);
-            throw new CommandConfigurationException(String.format("Could not save configuration for command id %d, wrapper name \"%s\".", commandId, wrapperName), e);
+            final String message = String.format("Could not save configuration for command id %d, wrapper name \"%s\".", commandId, wrapperName);
+            log.error(message);
+            throw new CommandConfigurationException(message, e);
         }
     }
 
@@ -232,6 +237,8 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
             configService.delete(configService.getConfig(TOOL_ID, path, scope, project));
             return;
         }
-        setCommandConfiguration(scope, project, commandId, wrapperName, null, username, "Deleting command configuration");
+
+        setCommandConfigurationInternalRepresentation(CommandConfigurationInternalRepresentation.create(commandConfigurationInternalRepresentation.enabled(), null),
+                scope, project, commandId, wrapperName, username, "Deleting command configuration");
     }
 }

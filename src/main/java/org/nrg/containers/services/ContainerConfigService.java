@@ -8,8 +8,8 @@ public interface ContainerConfigService {
     long getDefaultDockerHubId();
     void setDefaultDockerHubId(long hubId, String username, String reason);
 
-    void configureForSite(long commandId, String wrapperName, CommandConfiguration commandConfiguration, String username, String reason) throws CommandConfigurationException;
-    void configureForProject(String project, long commandId, String wrapperName, CommandConfiguration commandConfiguration, String username, String reason) throws CommandConfigurationException;
+    void configureForSite(CommandConfiguration commandConfiguration, long commandId, String wrapperName, String username, String reason) throws CommandConfigurationException;
+    void configureForProject(CommandConfiguration commandConfiguration, String project, long commandId, String wrapperName, String username, String reason) throws CommandConfigurationException;
 
     CommandConfiguration getSiteConfiguration(long commandId, String wrapperName);
     CommandConfiguration getProjectConfiguration(String project, long commandId, String wrapperName);
