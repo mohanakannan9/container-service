@@ -8,8 +8,8 @@ public interface ContainerConfigService {
     long getDefaultDockerHubId();
     void setDefaultDockerHubId(long hubId, String username, String reason);
 
-    void configureForSite(CommandConfiguration commandConfiguration, long commandId, String wrapperName, String username, String reason) throws CommandConfigurationException;
-    void configureForProject(CommandConfiguration commandConfiguration, String project, long commandId, String wrapperName, String username, String reason) throws CommandConfigurationException;
+    void configureForSite(CommandConfiguration commandConfiguration, long commandId, String wrapperName, boolean enable, String username, String reason) throws CommandConfigurationException;
+    void configureForProject(CommandConfiguration commandConfiguration, String project, long commandId, String wrapperName, boolean enable, String username, String reason) throws CommandConfigurationException;
 
     CommandConfiguration getSiteConfiguration(long commandId, String wrapperName);
     CommandConfiguration getProjectConfiguration(String project, long commandId, String wrapperName);
@@ -25,6 +25,13 @@ public interface ContainerConfigService {
     void setAllDisabledForProject(String project, String username, String reason);
     void setAllDisabledForProject(Boolean allDisabled, String project, String username, String reason);
     Boolean getAllDisabledForProject(String project);
+
+    void enableForSite(long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException;
+    void disableForSite(long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException;
+    Boolean isEnabledForSite(long commandId, String wrapperName);
+    void enableForProject(String project, long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException;
+    void disableForProject(String project, long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException;
+    Boolean isEnabledForProject(String project, long commandId, String wrapperName);
 
     class CommandConfigurationException extends Exception {
         public CommandConfigurationException(final String message, final Throwable e) {

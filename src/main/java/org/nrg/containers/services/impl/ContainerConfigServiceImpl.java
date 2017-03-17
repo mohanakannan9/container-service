@@ -62,13 +62,13 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
     }
 
     @Override
-    public void configureForProject(final CommandConfiguration commandConfiguration, final String project, final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
-        setCommandConfiguration(commandConfiguration, Scope.Project, project, commandId, wrapperName, username, reason);
+    public void configureForProject(final CommandConfiguration commandConfiguration, final String project, final long commandId, final String wrapperName, final boolean enable, final String username, final String reason) throws CommandConfigurationException {
+        setCommandConfiguration(commandConfiguration, Scope.Project, project, commandId, wrapperName, enable, username, reason);
     }
 
     @Override
-    public void configureForSite(final CommandConfiguration commandConfiguration, final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
-        setCommandConfiguration(commandConfiguration, Scope.Site, null, commandId, wrapperName, username, reason);
+    public void configureForSite(final CommandConfiguration commandConfiguration, final long commandId, final String wrapperName, final boolean enable, final String username, final String reason) throws CommandConfigurationException {
+        setCommandConfiguration(commandConfiguration, Scope.Site, null, commandId, wrapperName, enable, username, reason);
     }
 
     @Override
@@ -138,10 +138,53 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
         return false;
     }
 
-    private void setCommandConfiguration(final CommandConfiguration commandConfiguration, final Scope scope, final String project, final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
-        final CommandConfigurationInternalRepresentation commandConfigurationInternalRepresentation = getCommandConfigurationInternalRepresentation(scope, project, commandId, wrapperName);
-        setCommandConfigurationInternalRepresentation(CommandConfigurationInternalRepresentation.create(commandConfigurationInternalRepresentation == null ? null : commandConfigurationInternalRepresentation.enabled(), commandConfiguration), scope, project, commandId, wrapperName,
-                username, reason);
+    @Override
+    public void enableForSite(final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
+        setCommandEnabled(true, Scope.Site, null, commandId, wrapperName, username, reason);
+    }
+
+    @Override
+    public void disableForSite(final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
+        setCommandEnabled(false, Scope.Site, null, commandId, wrapperName, username, reason);
+    }
+
+    @Override
+    @Nullable
+    public Boolean isEnabledForSite(final long commandId, final String wrapperName) {
+        return getCommandIsEnabled(Scope.Site, null, commandId, wrapperName);
+    }
+
+    @Override
+    public void enableForProject(final String project, final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
+        setCommandEnabled(true, Scope.Project, project, commandId, wrapperName, username, reason);
+    }
+
+    @Override
+    public void disableForProject(final String project, final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
+        setCommandEnabled(false, Scope.Project, project, commandId, wrapperName, username, reason);
+    }
+
+    @Override
+    @Nullable
+    public Boolean isEnabledForProject(final String project, final long commandId, final String wrapperName) {
+        return getCommandIsEnabled(Scope.Project, project, commandId, wrapperName);
+    }
+
+    private void setCommandConfiguration(final CommandConfiguration commandConfiguration, final Scope scope, final String project, final long commandId, final String wrapperName, final boolean enable, final String username, final String reason) throws CommandConfigurationException {
+        final CommandConfigurationInternalRepresentation alreadyExists = getCommandConfigurationInternalRepresentation(scope, project, commandId, wrapperName);
+        // If the "enable" param is true, we enable the configuration.
+        // Otherwise, we leave it alone if the configuration already exists, or set it to null.
+        // We will never set "enabled=false" here.
+        final Boolean enabledStatusToSet = enable ? Boolean.TRUE : (alreadyExists == null ? null : alreadyExists.enabled());
+        setCommandConfigurationInternalRepresentation(
+                CommandConfigurationInternalRepresentation.create(enabledStatusToSet, commandConfiguration),
+                scope, project, commandId, wrapperName, username, reason);
+    }
+
+    private void setCommandEnabled(final Boolean enabled, final Scope scope, final String project, final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
+        final CommandConfigurationInternalRepresentation alreadyExists = getCommandConfigurationInternalRepresentation(scope, project, commandId, wrapperName);
+        setCommandConfigurationInternalRepresentation(CommandConfigurationInternalRepresentation.create(enabled, alreadyExists == null ? null : alreadyExists.configuration()),
+                scope, project, commandId, wrapperName, username, reason);
     }
 
     private void setCommandConfigurationInternalRepresentation(final CommandConfigurationInternalRepresentation commandConfigurationInternalRepresentation,
