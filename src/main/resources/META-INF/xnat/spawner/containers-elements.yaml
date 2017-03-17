@@ -44,7 +44,6 @@ imageHostsPanel:
     kind: panel
     name: imageHosts
     label: Image Hosts
-    footer: false
     contents:
         imageHostTemplate:
             tag: "div#image-host-editor-template.html-template"
@@ -95,7 +94,6 @@ installedImagesPanel:
     kind: panel
     name: installedImagesPanel
     label: Installed Container Images and Commands
-    footer: false
     contents:
         imageFilterBar:
             tag: "div#image-filter-bar"

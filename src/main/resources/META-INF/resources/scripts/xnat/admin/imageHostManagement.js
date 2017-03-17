@@ -276,6 +276,7 @@ var XNAT = getObject(XNAT || {});
     imageHostManager.init = function(container){
 
         var $manager = $$(container||'div#image-host-manager');
+        var $footer = $('#image-host-manager').parents('.panel').find('.panel-footer');
 
         imageHostManager.container = $manager;
 
@@ -288,14 +289,12 @@ var XNAT = getObject(XNAT || {});
                 imageHostManager.dialog(null, true);
             }
         });
-
-
-
-        // add the 'add new' button at the bottom
-        $manager.append(spawn('div', [
-            newReceiver,
-            ['div.clear.clearfix']
+        
+        // add the 'add new' button to the panel footer
+        $footer.append(spawn('div.pull-right', [
+            newReceiver
         ]));
+        $footer.append(spawn('div.clear.clearFix'));
 
         return {
             element: $manager[0],
