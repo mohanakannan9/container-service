@@ -87,10 +87,8 @@ public class CommandRestApi extends AbstractXapiRestController {
     @ApiOperation(value = "Get Commands by criteria")
     @ResponseBody
     public List<Command> getCommands(final @RequestParam(required = false) String name,
-                                           final @RequestParam(required = false) String version,
-                                           final @RequestParam(required = false) String image) throws BadRequestException {
-
-
+                                     final @RequestParam(required = false) String version,
+                                     final @RequestParam(required = false) String image) throws BadRequestException {
         if (StringUtils.isBlank(name) && StringUtils.isBlank(version) && StringUtils.isBlank(image)) {
             return getCommands();
         }
@@ -139,8 +137,8 @@ public class CommandRestApi extends AbstractXapiRestController {
     @RequestMapping(value = {"/commands/{id}"}, method = POST)
     @ApiOperation(value = "Update a Command")
     @ResponseBody
-    public ResponseEntity updateCommand(final @RequestBody Command command,
-                                        final @PathVariable long id)
+    public ResponseEntity<Void> updateCommand(final @RequestBody Command command,
+                                              final @PathVariable long id)
             throws NotFoundException, CommandValidationException {
         commandService.update(command.id() == id ? command : command.toBuilder().id(id).build());
         return ResponseEntity.ok().build();
@@ -148,9 +146,9 @@ public class CommandRestApi extends AbstractXapiRestController {
 
     @RequestMapping(value = {"/commands/{id}"}, method = DELETE)
     @ApiOperation(value = "Delete a Command", code = 204)
-    public ResponseEntity<String> delete(final @PathVariable long id) {
+    public ResponseEntity<Void> delete(final @PathVariable long id) {
         commandService.delete(id);
-        return new ResponseEntity<>("", HttpStatus.NO_CONTENT);
+        return ResponseEntity.noContent().build();
     }
 
     /*
@@ -174,9 +172,9 @@ public class CommandRestApi extends AbstractXapiRestController {
     @RequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperId}"}, method = POST)
     @ApiOperation(value = "Update a Command")
     @ResponseBody
-    public ResponseEntity updateWrapper(final @RequestBody CommandWrapper commandWrapper,
-                                        final @PathVariable long commandId,
-                                        final @PathVariable long wrapperId)
+    public ResponseEntity<Void> updateWrapper(final @RequestBody CommandWrapper commandWrapper,
+                                              final @PathVariable long commandId,
+                                              final @PathVariable long wrapperId)
             throws NotFoundException, CommandValidationException {
         commandService.update(commandId,
                 commandWrapper.id() == wrapperId ? commandWrapper : commandWrapper.toBuilder().id(wrapperId).build());
@@ -185,11 +183,11 @@ public class CommandRestApi extends AbstractXapiRestController {
 
     @RequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperId}"}, method = DELETE)
     @ApiOperation(value = "Delete a Command", code = 204)
-    public ResponseEntity<String> delete(final @PathVariable long commandId,
-                                         final @PathVariable long wrapperId)
+    public ResponseEntity<Void> delete(final @PathVariable long commandId,
+                                       final @PathVariable long wrapperId)
             throws NotFoundException {
         commandService.delete(commandId, wrapperId);
-        return new ResponseEntity<>("", HttpStatus.NO_CONTENT);
+        return ResponseEntity.noContent().build();
     }
 
     /*
