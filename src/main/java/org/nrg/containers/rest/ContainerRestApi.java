@@ -63,9 +63,9 @@ public class ContainerRestApi extends AbstractXapiRestController {
     }
 
     @RequestMapping(value = "/{id}", method = DELETE)
-    public ResponseEntity<String> delete(final @PathVariable Long id) {
+    public ResponseEntity<Void> delete(final @PathVariable Long id) {
         containerEntityService.delete(id);
-        return new ResponseEntity<>("", HttpStatus.NO_CONTENT);
+        return ResponseEntity.noContent().build();
     }
 
     @RequestMapping(value = "/{id}/finalize", method = POST, produces = JSON)

@@ -49,7 +49,6 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 @XapiRestController
-@RequestMapping("/commands")
 @Api("Command API for XNAT Container service")
 public class CommandRestApi extends AbstractXapiRestController {
     private static final Logger log = LoggerFactory.getLogger(CommandRestApi.class);
@@ -77,21 +76,19 @@ public class CommandRestApi extends AbstractXapiRestController {
     /*
     COMMAND CRUD
      */
-    @RequestMapping(value = {}, params = {"!name", "!version", "!image"}, method = GET)
+    @RequestMapping(value = {"/commands"}, params = {"!name", "!version", "!image"}, method = GET)
     @ApiOperation(value = "Get all Commands")
     @ResponseBody
     public List<Command> getCommands() {
         return commandService.getAll();
     }
 
-    @RequestMapping(value = {}, method = GET)
+    @RequestMapping(value = {"/commands"}, method = GET)
     @ApiOperation(value = "Get Commands by criteria")
     @ResponseBody
     public List<Command> getCommands(final @RequestParam(required = false) String name,
-                                           final @RequestParam(required = false) String version,
-                                           final @RequestParam(required = false) String image) throws BadRequestException {
-
-
+                                     final @RequestParam(required = false) String version,
+                                     final @RequestParam(required = false) String image) throws BadRequestException {
         if (StringUtils.isBlank(name) && StringUtils.isBlank(version) && StringUtils.isBlank(image)) {
             return getCommands();
         }
@@ -114,14 +111,14 @@ public class CommandRestApi extends AbstractXapiRestController {
         return commandService.findByProperties(properties);
     }
 
-    @RequestMapping(value = {"/{id}"}, method = GET)
+    @RequestMapping(value = {"/commands/{id}"}, method = GET)
     @ApiOperation(value = "Get a Command by ID")
     @ResponseBody
     public Command retrieveCommand(final @PathVariable long id) throws NotFoundException {
         return commandService.get(id);
     }
 
-    @RequestMapping(value = {}, method = POST, produces = JSON)
+    @RequestMapping(value = {"/commands"}, method = POST, produces = JSON)
     @ApiOperation(value = "Create a Command", code = 201)
     public ResponseEntity<Long> createCommand(final @RequestBody Command command)
             throws BadRequestException, CommandValidationException {
@@ -137,27 +134,27 @@ public class CommandRestApi extends AbstractXapiRestController {
         }
     }
 
-    @RequestMapping(value = {"/{id}"}, method = POST)
+    @RequestMapping(value = {"/commands/{id}"}, method = POST)
     @ApiOperation(value = "Update a Command")
     @ResponseBody
-    public ResponseEntity updateCommand(final @RequestBody Command command,
-                                        final @PathVariable long id)
+    public ResponseEntity<Void> updateCommand(final @RequestBody Command command,
+                                              final @PathVariable long id)
             throws NotFoundException, CommandValidationException {
         commandService.update(command.id() == id ? command : command.toBuilder().id(id).build());
         return ResponseEntity.ok().build();
     }
 
-    @RequestMapping(value = {"/{id}"}, method = DELETE)
+    @RequestMapping(value = {"/commands/{id}"}, method = DELETE)
     @ApiOperation(value = "Delete a Command", code = 204)
-    public ResponseEntity<String> delete(final @PathVariable long id) {
+    public ResponseEntity<Void> delete(final @PathVariable long id) {
         commandService.delete(id);
-        return new ResponseEntity<>("", HttpStatus.NO_CONTENT);
+        return ResponseEntity.noContent().build();
     }
 
     /*
     WRAPPER CUD
      */
-    @RequestMapping(value = {"/{id}/wrappers"}, method = POST, produces = JSON)
+    @RequestMapping(value = {"/commands/{id}/wrappers"}, method = POST, produces = JSON)
     @ApiOperation(value = "Create a Command Wrapper", code = 201)
     public ResponseEntity<Long> createWrapper(final @RequestBody CommandWrapper commandWrapper,
                                               final @PathVariable long id)
@@ -172,31 +169,31 @@ public class CommandRestApi extends AbstractXapiRestController {
         return new ResponseEntity<>(created.id(), HttpStatus.CREATED);
     }
 
-    @RequestMapping(value = {"/{commandId}/wrappers/{wrapperId}"}, method = POST)
+    @RequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperId}"}, method = POST)
     @ApiOperation(value = "Update a Command")
     @ResponseBody
-    public ResponseEntity updateWrapper(final @RequestBody CommandWrapper commandWrapper,
-                                        final @PathVariable long commandId,
-                                        final @PathVariable long wrapperId)
+    public ResponseEntity<Void> updateWrapper(final @RequestBody CommandWrapper commandWrapper,
+                                              final @PathVariable long commandId,
+                                              final @PathVariable long wrapperId)
             throws NotFoundException, CommandValidationException {
         commandService.update(commandId,
                 commandWrapper.id() == wrapperId ? commandWrapper : commandWrapper.toBuilder().id(wrapperId).build());
         return ResponseEntity.ok().build();
     }
 
-    @RequestMapping(value = {"/{commandId}/wrappers/{wrapperId}"}, method = DELETE)
+    @RequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperId}"}, method = DELETE)
     @ApiOperation(value = "Delete a Command", code = 204)
-    public ResponseEntity<String> delete(final @PathVariable long commandId,
-                                         final @PathVariable long wrapperId)
+    public ResponseEntity<Void> delete(final @PathVariable long commandId,
+                                       final @PathVariable long wrapperId)
             throws NotFoundException {
         commandService.delete(commandId, wrapperId);
-        return new ResponseEntity<>("", HttpStatus.NO_CONTENT);
+        return ResponseEntity.noContent().build();
     }
 
     /*
     LAUNCH COMMANDS
      */
-    @RequestMapping(value = {"/launch"}, method = POST)
+    @RequestMapping(value = {"/commands/launch"}, method = POST)
     @ApiOperation(value = "Launch a container from a resolved command")
     @ResponseBody
     public String launchCommand(final @RequestBody ResolvedDockerCommand resolvedDockerCommand)
@@ -206,7 +203,7 @@ public class CommandRestApi extends AbstractXapiRestController {
         return executed.getContainerId();
     }
 
-    @RequestMapping(value = {"/{id}/launch"}, method = POST)
+    @RequestMapping(value = {"/commands/{id}/launch"}, method = POST)
     @ApiIgnore // Swagger UI does not correctly show this API endpoint
     @ResponseBody
     public String launchCommandWQueryParams(final @PathVariable long id,
@@ -217,7 +214,7 @@ public class CommandRestApi extends AbstractXapiRestController {
         return executed.getContainerId();
     }
 
-    @RequestMapping(value = {"/{id}/launch"}, method = POST, consumes = {JSON})
+    @RequestMapping(value = {"/commands/{id}/launch"}, method = POST, consumes = {JSON})
     @ApiOperation(value = "Resolve a command from the variable values in the request body, and launch it")
     @ResponseBody
     public String launchCommandWJsonBody(final @PathVariable long id,
@@ -249,7 +246,7 @@ public class CommandRestApi extends AbstractXapiRestController {
     /*
     LAUNCH COMMAND + WRAPPER BY ID
      */
-    @RequestMapping(value = {"/{commandId}/wrappers/{wrapperId:" + ID_REGEX + "}/launch"}, method = POST)
+    @RequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperId:" + ID_REGEX + "}/launch"}, method = POST)
     @ApiIgnore // Swagger UI does not correctly show this API endpoint
     @ResponseBody
     public String launchCommandWQueryParams(final @PathVariable long commandId,
@@ -261,7 +258,7 @@ public class CommandRestApi extends AbstractXapiRestController {
         return executed.getContainerId();
     }
 
-    @RequestMapping(value = {"/{commandId}/wrappers/{wrapperId:" + ID_REGEX + "}/launch"}, method = POST, consumes = {JSON})
+    @RequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperId:" + ID_REGEX + "}/launch"}, method = POST, consumes = {JSON})
     @ApiOperation(value = "Resolve a command from the variable values in the request body, and launch it")
     @ResponseBody
     public String launchCommandWJsonBody(final @PathVariable long commandId,
@@ -296,7 +293,7 @@ public class CommandRestApi extends AbstractXapiRestController {
     /*
     LAUNCH COMMAND + WRAPPER BY NAME
      */
-    @RequestMapping(value = {"/{commandId}/wrappers/{wrapperName:" + NAME_REGEX + "}/launch"}, method = POST)
+    @RequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName:" + NAME_REGEX + "}/launch"}, method = POST)
     @ApiIgnore // Swagger UI does not correctly show this API endpoint
     @ResponseBody
     public String launchCommandWQueryParams(final @PathVariable long commandId,
@@ -308,7 +305,7 @@ public class CommandRestApi extends AbstractXapiRestController {
         return executed.getContainerId();
     }
 
-    @RequestMapping(value = {"/{commandId}/wrappers/{wrapperName:" + NAME_REGEX + "}/launch"}, method = POST, consumes = {JSON})
+    @RequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName:" + NAME_REGEX + "}/launch"}, method = POST, consumes = {JSON})
     @ApiOperation(value = "Resolve a command from the variable values in the request body, and launch it")
     @ResponseBody
     public String launchCommandWJsonBody(final @PathVariable long commandId,

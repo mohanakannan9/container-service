@@ -148,10 +148,10 @@ public class DockerRestApi extends AbstractXapiRestController {
 
     @RequestMapping(value = "/hubs/{id:" + ID_REGEX + "}", method = POST)
     @ResponseBody
-    public ResponseEntity updateHub(final @PathVariable long id,
-                                    final @RequestBody(required = false) DockerHub hub,
-                                    final @RequestParam(value = "default", defaultValue = "false") boolean setDefault,
-                                    final @RequestParam(value = "reason", defaultValue = "User request") String reason)
+    public ResponseEntity<Void> updateHub(final @PathVariable long id,
+                                          final @RequestBody(required = false) DockerHub hub,
+                                          final @RequestParam(value = "default", defaultValue = "false") boolean setDefault,
+                                          final @RequestParam(value = "reason", defaultValue = "User request") String reason)
             throws NrgServiceRuntimeException, UnauthorizedException {
         final UserI userI = XDAT.getUserDetails();
         checkCreateOrThrow(userI);
@@ -166,25 +166,25 @@ public class DockerRestApi extends AbstractXapiRestController {
         } else {
             dockerService.setDefaultHub(id, userI.getUsername(), reason);
         }
-        return new ResponseEntity(HttpStatus.OK);
+        return ResponseEntity.ok().build();
     }
 
     @RequestMapping(value = "/hubs/{id:" + ID_REGEX + "}", method = DELETE)
     @ResponseBody
-    public ResponseEntity<String> deleteHub(final @PathVariable long id)
+    public ResponseEntity<Void> deleteHub(final @PathVariable long id)
             throws DockerHubDeleteDefaultException, UnauthorizedException {
         checkDeleteOrThrow();
         dockerService.deleteHub(id);
-        return new ResponseEntity<>("", HttpStatus.NO_CONTENT);
+        return ResponseEntity.noContent().build();
     }
 
     @RequestMapping(value = "/hubs/{name:" + NAME_REGEX + "}", method = DELETE)
     @ResponseBody
-    public ResponseEntity<String> deleteHub(final @PathVariable String name)
+    public ResponseEntity<Void> deleteHub(final @PathVariable String name)
             throws DockerHubDeleteDefaultException, NotUniqueException, UnauthorizedException {
         checkDeleteOrThrow();
         dockerService.deleteHub(name);
-        return new ResponseEntity<>("", HttpStatus.NO_CONTENT);
+        return ResponseEntity.noContent().build();
     }
 
     @RequestMapping(value = "/hubs/{id:" + ID_REGEX + "}/ping", method = GET)
@@ -284,11 +284,12 @@ public class DockerRestApi extends AbstractXapiRestController {
             @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = "/images/{id}", method = DELETE)
     @ResponseBody
-    public void deleteImage(final @PathVariable("id") String id,
-                            final @RequestParam(value = "force", defaultValue = "false") Boolean force)
+    public ResponseEntity<Void> deleteImage(final @PathVariable("id") String id,
+                                            final @RequestParam(value = "force", defaultValue = "false") Boolean force)
             throws NotFoundException, NoServerPrefException, DockerServerException, UnauthorizedException {
         checkDeleteOrThrow();
         dockerService.removeImage(id, force);
+        return ResponseEntity.noContent().build();
     }
 
     @ApiOperation(value = "Save Commands from labels",
