@@ -1,0 +1,68 @@
+package org.nrg.containers.config;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.mockito.Mockito;
+import org.nrg.config.services.ConfigService;
+import org.nrg.containers.rest.CommandConfigurationRestApi;
+import org.nrg.containers.services.ContainerConfigService;
+import org.nrg.containers.services.impl.ContainerConfigServiceImpl;
+import org.nrg.framework.services.ContextService;
+import org.nrg.xdat.security.services.PermissionsServiceI;
+import org.nrg.xdat.security.services.RoleHolder;
+import org.nrg.xdat.security.services.UserManagementServiceI;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.authentication.TestingAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+
+@Configuration
+@EnableWebMvc
+@EnableWebSecurity
+@Import({RestApiTestConfig.class})
+public class CommandConfigurationRestApiTestConfig extends WebSecurityConfigurerAdapter {
+    @Bean
+    public CommandConfigurationRestApi commandConfigurationRestApi(final ContainerConfigService containerConfigService,
+                                                                   final UserManagementServiceI userManagementServiceI,
+                                                                   final RoleHolder roleHolder) {
+        return new CommandConfigurationRestApi(containerConfigService, userManagementServiceI, roleHolder);
+    }
+
+    @Bean
+    public ContainerConfigService containerConfigService(final ConfigService configService,
+                                                         final ObjectMapper objectMapper) {
+        return new ContainerConfigServiceImpl(configService, objectMapper);
+    }
+
+    @Bean
+    public ConfigService configService() {
+        return Mockito.mock(ConfigService.class);
+    }
+
+    @Bean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper();
+    }
+
+    @Bean
+    public ContextService contextService(final ApplicationContext applicationContext) {
+        final ContextService contextService = new ContextService();
+        contextService.setApplicationContext(applicationContext);
+        return contextService;
+    }
+
+    @Bean
+    public PermissionsServiceI permissionsService() {
+        return Mockito.mock(PermissionsServiceI.class);
+    }
+
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.authenticationProvider(new TestingAuthenticationProvider());
+    }
+
+}
