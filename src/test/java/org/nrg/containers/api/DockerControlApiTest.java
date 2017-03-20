@@ -5,6 +5,8 @@ import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
+import com.spotify.docker.client.messages.HostConfig;
+import com.spotify.docker.client.messages.Info;
 import org.apache.commons.lang3.StringUtils;
 import org.hamcrest.CustomTypeSafeMatcher;
 import org.hamcrest.Matcher;
@@ -193,6 +195,28 @@ public class DockerControlApiTest {
 
     @Test(timeout = 10000)
     public void testEventPolling() throws Exception {
+        final Info dockerInfo = client.info();
+        if (dockerInfo.kernelVersion().contains("moby")) {
+            // If we are running docker in the moby VM, then it isn't running natively
+            //   on the host machine. Sometimes the clocks on the host and VM can get out
+            //   out sync, and this test will fail. This especially happens on laptops that
+            //   have docker running and go to sleep.
+            // We can run this container command:
+            //     docker run --rm --privileged alpine hwclock -s
+            // to sync up the clocks. It requires 'privileged' mode, which may cause problems
+            // running in a CI environment.
+            final ContainerConfig containerConfig = ContainerConfig.builder()
+                    .image("alpine")
+                    .cmd(new String[]{"hwclock", "-s"})
+                    .hostConfig(HostConfig.builder()
+                            .privileged(true)
+                            .autoRemove(true)
+                            .build())
+                    .build();
+            final ContainerCreation containerCreation = client.createContainer(containerConfig);
+            client.startContainer(containerCreation.id());
+        }
+
         final Date start = new Date();
         Thread.sleep(1000); // Wait to ensure we get some events
 
