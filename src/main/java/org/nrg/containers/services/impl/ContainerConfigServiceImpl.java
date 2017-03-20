@@ -24,6 +24,7 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
 
     public static final String DEFAULT_DOCKER_HUB_PATH = "default-docker-hub-id";
     public static final String COMMAND_CONFIG_PATH_TEMPLATE = "command-%d-wrapper-%s";
+    public static final String ALL_DISABLED_PATH = "disable-all-commands";
 
     private final ConfigService configService;
     private final ObjectMapper mapper;
@@ -106,36 +107,46 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
     }
 
     @Override
-    public void setAllDisabledForSite(final String username, final String reason) {
+    public void setAllDisabledForSite(final String username, final String reason) throws ConfigServiceException {
         setAllDisabledForSite(true, username, reason);
     }
 
     @Override
-    public void setAllDisabledForSite(final Boolean allDisabled, final String username, final String reason) {
-        // TODO CS-135 master site disable switch
+    public void setAllDisabledForSite(final Boolean allDisabled, final String username, final String reason) throws ConfigServiceException {
+        configService.replaceConfig(username, reason,
+                TOOL_ID, ALL_DISABLED_PATH,
+                String.valueOf(allDisabled),
+                Scope.Site, null);
     }
 
     @Override
     @Nullable
     public Boolean getAllDisabledForSite() {
-        // TODO CS-135 master site disable switch
-        return false;
+        return parseAllDisabledConfig(configService.getConfig(TOOL_ID, ALL_DISABLED_PATH, Scope.Site, null));
     }
 
     @Override
-    public void setAllDisabledForProject(final String project, final String username, final String reason) {
+    public void setAllDisabledForProject(final String project, final String username, final String reason) throws ConfigServiceException {
         setAllDisabledForProject(true, project, username, reason);
     }
 
     @Override
-    public void setAllDisabledForProject(final Boolean allDisabled, final String project, final String username, final String reason) {
-        // TODO CS-136 project disable switch
+    public void setAllDisabledForProject(final Boolean allDisabled, final String project, final String username, final String reason) throws ConfigServiceException {
+        configService.replaceConfig(username, reason,
+                TOOL_ID, ALL_DISABLED_PATH,
+                String.valueOf(allDisabled),
+                Scope.Project, project);
     }
 
     @Override
+    @Nullable
     public Boolean getAllDisabledForProject(final String project) {
-        // TODO CS-136 project disable switch
-        return false;
+        return parseAllDisabledConfig(configService.getConfig(TOOL_ID, ALL_DISABLED_PATH, Scope.Project, project));
+    }
+
+    @Nullable
+    private Boolean parseAllDisabledConfig(final @Nullable Configuration allDisabledConfig) {
+        return Boolean.parseBoolean(allDisabledConfig == null ? null : allDisabledConfig.getContents());
     }
 
     @Override

@@ -1,5 +1,6 @@
 package org.nrg.containers.services;
 
+import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.containers.model.CommandConfiguration;
 
 public interface ContainerConfigService {
@@ -19,11 +20,11 @@ public interface ContainerConfigService {
     void deleteAllConfiguration(long commandId, String wrapperName);
     void deleteAllConfiguration(long commandId);
 
-    void setAllDisabledForSite(String username, String reason);
-    void setAllDisabledForSite(Boolean allDisabled, String username, String reason);
+    void setAllDisabledForSite(String username, String reason) throws ConfigServiceException;
+    void setAllDisabledForSite(Boolean allDisabled, String username, String reason) throws ConfigServiceException;
     Boolean getAllDisabledForSite();
-    void setAllDisabledForProject(String project, String username, String reason);
-    void setAllDisabledForProject(Boolean allDisabled, String project, String username, String reason);
+    void setAllDisabledForProject(String project, String username, String reason) throws ConfigServiceException;
+    void setAllDisabledForProject(Boolean allDisabled, String project, String username, String reason) throws ConfigServiceException;
     Boolean getAllDisabledForProject(String project);
 
     void enableForSite(long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException;
