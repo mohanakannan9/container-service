@@ -89,12 +89,14 @@
             ],
             "output-handlers": [
                 {
+                    "name": "data-output",
                     "accepts-command-output": "data",
                     "as-a-child-of-xnat-input": "session",
                     "type": "Resource",
                     "label": "DATA"
                 },
                 {
+                    "name": "text-file-output",
                     "accepts-command-output": "text-file",
                     "as-a-child-of-xnat-input": "session",
                     "type": "Resource",
