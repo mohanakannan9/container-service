@@ -925,18 +925,21 @@ public abstract class Command {
     @AutoValue
     public static abstract class CommandWrapperOutput {
         @JsonIgnore public abstract long id();
+        @JsonProperty("name") public abstract String name();
         @JsonProperty("accepts-command-output") public abstract String commandOutputName();
         @JsonProperty("as-a-child-of-xnat-input") public abstract String xnatInputName();
         @JsonProperty("type") public abstract String type();
         @Nullable @JsonProperty("label") public abstract String label();
 
         @JsonCreator
-        static CommandWrapperOutput create(@JsonProperty("accepts-command-output") final String commandOutputName,
+        static CommandWrapperOutput create(@JsonProperty("name") final String name,
+                                           @JsonProperty("accepts-command-output") final String commandOutputName,
                                            @JsonProperty("as-a-child-of-xnat-input") final String xnatInputName,
                                            @JsonProperty("type") final String type,
                                            @JsonProperty("label") final String label) {
             return create(
                     0L,
+                    name == null ? "" : name,
                     commandOutputName == null ? "" : commandOutputName,
                     xnatInputName == null ? "" : xnatInputName,
                     type == null ? CommandWrapperOutputEntity.DEFAULT_TYPE.getName() : type,
@@ -944,12 +947,14 @@ public abstract class Command {
         }
 
         static CommandWrapperOutput create(final long id,
+                                           final String name,
                                            final String commandOutputName,
                                            final String xnatInputName,
                                            final String type,
                                            final String label) {
             return new AutoValue_Command_CommandWrapperOutput(
-                    0L,
+                    id,
+                    name == null ? "" : name,
                     commandOutputName == null ? "" : commandOutputName,
                     xnatInputName == null ? "" : xnatInputName,
                     type == null ? CommandWrapperOutputEntity.DEFAULT_TYPE.getName() : type,
@@ -960,7 +965,7 @@ public abstract class Command {
             if (wrapperOutput == null) {
                 return null;
             }
-            return create(wrapperOutput.getId(), wrapperOutput.getCommandOutputName(), wrapperOutput.getXnatInputName(), wrapperOutput.getType().getName(), wrapperOutput.getLabel());
+            return create(wrapperOutput.getId(), wrapperOutput.getName(), wrapperOutput.getCommandOutputName(), wrapperOutput.getXnatInputName(), wrapperOutput.getType().getName(), wrapperOutput.getLabel());
         }
 
         @Nonnull
