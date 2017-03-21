@@ -27,6 +27,7 @@ public class CommandWrapperOutputEntity {
 
     private long id;
     @JsonIgnore private CommandWrapperEntity commandWrapperEntity;
+    private String name;
     @JsonProperty("accepts-command-output") private String commandOutputName;
     @JsonProperty("as-a-child-of-xnat-input") private String xnatInputName;
     private Type type;
@@ -35,6 +36,7 @@ public class CommandWrapperOutputEntity {
     public static CommandWrapperOutputEntity fromPojo(final Command.CommandWrapperOutput commandWrapperOutput) {
         final CommandWrapperOutputEntity commandWrapperOutputEntity = new CommandWrapperOutputEntity();
         commandWrapperOutputEntity.id = commandWrapperOutput.id();
+        commandWrapperOutputEntity.name = commandWrapperOutput.name();
         commandWrapperOutputEntity.commandOutputName = commandWrapperOutput.commandOutputName();
         commandWrapperOutputEntity.xnatInputName = commandWrapperOutput.xnatInputName();
         commandWrapperOutputEntity.label = commandWrapperOutput.label();
@@ -70,6 +72,14 @@ public class CommandWrapperOutputEntity {
 
     public void setCommandWrapperEntity(final CommandWrapperEntity commandWrapperEntity) {
         this.commandWrapperEntity = commandWrapperEntity;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(final String name) {
+        this.name = name;
     }
 
     public Type getType() {
@@ -110,19 +120,19 @@ public class CommandWrapperOutputEntity {
         if (o == null || getClass() != o.getClass()) return false;
         final CommandWrapperOutputEntity that = (CommandWrapperOutputEntity) o;
         return Objects.equals(this.commandWrapperEntity, that.commandWrapperEntity) &&
-                Objects.equals(this.commandOutputName, that.commandOutputName) &&
-                Objects.equals(this.xnatInputName, that.xnatInputName);
+                Objects.equals(this.name, that.name);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(commandWrapperEntity, commandOutputName, xnatInputName);
+        return Objects.hash(commandWrapperEntity, name);
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("id", id)
+                .add("name", name)
                 .add("commandOutputName", commandOutputName)
                 .add("xnatInputName", xnatInputName)
                 .add("type", type)

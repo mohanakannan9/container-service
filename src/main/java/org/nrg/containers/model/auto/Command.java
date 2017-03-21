@@ -300,14 +300,19 @@ public abstract class Command {
                 final List<String> inputErrors = Lists.newArrayList();
                 inputErrors.addAll(Lists.transform(derived.validate(), addWrapperNameToError));
 
+
                 if (wrapperInputNames.contains(derived.name())) {
                     errors.add(wrapperName + "derived input name \"" + derived.name() + "\" is not unique.");
-                } else if (!wrapperInputNames.contains(derived.derivedFromXnatInput())) {
-                    errors.add(wrapperName + "derived input \"" + derived.name() + "\" is derived from an unknown XNAT input \"" + derived.derivedFromXnatInput() + "\". Known inputs: " + StringUtils.join(wrapperInputNames, ", "));
                 } else {
                     wrapperInputNames.add(derived.name());
                 }
 
+                if (derived.name().equals(derived.derivedFromXnatInput())) {
+                    errors.add(wrapperName + "derived input \"" + derived.name() + "\" is derived from itself.");
+                }
+                if (!wrapperInputNames.contains(derived.derivedFromXnatInput())) {
+                    errors.add(wrapperName + "derived input \"" + derived.name() + "\" is derived from an unknown XNAT input \"" + derived.derivedFromXnatInput() + "\". Known inputs: " + StringUtils.join(wrapperInputNames, ", "));
+                }
 
                 if (!inputErrors.isEmpty()) {
                     errors.addAll(inputErrors);
@@ -315,10 +320,15 @@ public abstract class Command {
             }
             final String knownWrapperInputs = StringUtils.join(wrapperInputNames, ", ");
 
+            final Set<String> wrapperOutputNames = Sets.newHashSet();
             final Set<String> handledOutputs = Sets.newHashSet();
             for (final CommandWrapperOutput output : commandWrapper.outputHandlers()) {
                 final List<String> outputErrors = Lists.newArrayList();
                 outputErrors.addAll(Lists.transform(output.validate(), addWrapperNameToError));
+
+                if (wrapperOutputNames.contains(output.name())) {
+                    errors.add(wrapperName + "output handler name \"" + output.name() + "\" is not unique.");
+                }
 
                 if (!outputNames.contains(output.commandOutputName())) {
                     errors.add(wrapperName + "output handler refers to unknown command output \"" + output.commandOutputName() + "\". Known outputs: " + knownOutputs + ".");
@@ -925,18 +935,21 @@ public abstract class Command {
     @AutoValue
     public static abstract class CommandWrapperOutput {
         @JsonIgnore public abstract long id();
+        @JsonProperty("name") public abstract String name();
         @JsonProperty("accepts-command-output") public abstract String commandOutputName();
         @JsonProperty("as-a-child-of-xnat-input") public abstract String xnatInputName();
         @JsonProperty("type") public abstract String type();
         @Nullable @JsonProperty("label") public abstract String label();
 
         @JsonCreator
-        static CommandWrapperOutput create(@JsonProperty("accepts-command-output") final String commandOutputName,
+        static CommandWrapperOutput create(@JsonProperty("name") final String name,
+                                           @JsonProperty("accepts-command-output") final String commandOutputName,
                                            @JsonProperty("as-a-child-of-xnat-input") final String xnatInputName,
                                            @JsonProperty("type") final String type,
                                            @JsonProperty("label") final String label) {
             return create(
                     0L,
+                    name == null ? "" : name,
                     commandOutputName == null ? "" : commandOutputName,
                     xnatInputName == null ? "" : xnatInputName,
                     type == null ? CommandWrapperOutputEntity.DEFAULT_TYPE.getName() : type,
@@ -944,12 +957,14 @@ public abstract class Command {
         }
 
         static CommandWrapperOutput create(final long id,
+                                           final String name,
                                            final String commandOutputName,
                                            final String xnatInputName,
                                            final String type,
                                            final String label) {
             return new AutoValue_Command_CommandWrapperOutput(
-                    0L,
+                    id,
+                    name == null ? "" : name,
                     commandOutputName == null ? "" : commandOutputName,
                     xnatInputName == null ? "" : xnatInputName,
                     type == null ? CommandWrapperOutputEntity.DEFAULT_TYPE.getName() : type,
@@ -960,22 +975,26 @@ public abstract class Command {
             if (wrapperOutput == null) {
                 return null;
             }
-            return create(wrapperOutput.getId(), wrapperOutput.getCommandOutputName(), wrapperOutput.getXnatInputName(), wrapperOutput.getType().getName(), wrapperOutput.getLabel());
+            return create(wrapperOutput.getId(), wrapperOutput.getName(), wrapperOutput.getCommandOutputName(), wrapperOutput.getXnatInputName(), wrapperOutput.getType().getName(), wrapperOutput.getLabel());
         }
 
         @Nonnull
         List<String> validate() {
             final List<String> errors = Lists.newArrayList();
 
+            if (StringUtils.isBlank(name())) {
+                errors.add("Command wrapper output - name cannot be blank.");
+            }
+
             if (StringUtils.isBlank(commandOutputName())) {
-                errors.add("Command wrapper output - command output name cannot be blank.");
+                errors.add("Command wrapper output \"" + name() + "\" - command output name cannot be blank.");
             }
             if (StringUtils.isBlank(xnatInputName())) {
-                errors.add("Command wrapper output - xnat input name cannot be blank.");
+                errors.add("Command wrapper output \"" + name() + "\" - xnat input name cannot be blank.");
             }
             final List<String> types = CommandWrapperOutputEntity.Type.names();
             if (!types.contains(type())) {
-                errors.add("Command wrapper output - Unknown type \"" + type() + "\". Known types: " + StringUtils.join(types, ", "));
+                errors.add("Command wrapper output \"" + name() + "\" - Unknown type \"" + type() + "\". Known types: " + StringUtils.join(types, ", "));
             }
 
             return errors;

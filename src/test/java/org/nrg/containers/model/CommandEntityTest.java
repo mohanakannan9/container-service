@@ -82,11 +82,13 @@ public class CommandEntityTest {
             "}";
 
     private static final String OUTPUT_HANDLER_LABEL = "a_label";
+    private static final String OUTPUT_HANDLER_NAME = "output-handler-name";
     private static final String XNAT_COMMAND_WRAPPER_OUTPUT_HANDLER = "{" +
             "\"type\": \"Resource\"" +
             ", \"accepts-command-output\": \"" + COMMAND_OUTPUT_NAME + "\"" +
             ", \"as-a-child-of-xnat-input\": \"" + EXTERNAL_INPUT_NAME + "\"" +
             ", \"label\": \"" + OUTPUT_HANDLER_LABEL + "\"" +
+            ", \"name\": \"" + OUTPUT_HANDLER_NAME + "\"" +
             "}";
 
     private static final String XNAT_COMMAND_WRAPPER_NAME = "wrappername";
@@ -234,6 +236,7 @@ public class CommandEntityTest {
         assertEquals(EXTERNAL_INPUT_NAME, output.getXnatInputName());
         assertEquals(COMMAND_OUTPUT_NAME, output.getCommandOutputName());
         assertEquals(OUTPUT_HANDLER_LABEL, output.getLabel());
+        assertEquals(OUTPUT_HANDLER_NAME, output.getName());
     }
 
     @Test
