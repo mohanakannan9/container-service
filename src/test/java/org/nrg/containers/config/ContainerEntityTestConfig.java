@@ -1,6 +1,5 @@
 package org.nrg.containers.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hibernate.SessionFactory;
 import org.mockito.Mockito;
 import org.nrg.containers.api.ContainerControlApi;
@@ -33,13 +32,8 @@ import java.util.Properties;
 
 @Configuration
 //@EnableTransactionManagement
-@Import(HibernateConfig.class)
+@Import({HibernateConfig.class, ObjectMapperConfig.class})
 public class ContainerEntityTestConfig {
-    @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
-    }
-
     @Bean
     public EventBus eventBus() {
         return Mockito.mock(EventBus.class);

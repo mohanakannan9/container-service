@@ -57,6 +57,7 @@ public class DockerRestApi extends AbstractXapiRestController {
 
     private static final String JSON = MediaType.APPLICATION_JSON_UTF8_VALUE;
     private static final String TEXT = MediaType.TEXT_PLAIN_VALUE;
+    private static final String ALL = MediaType.ALL_VALUE;
 
     private DockerService dockerService;
     private ObjectMapper mapper;

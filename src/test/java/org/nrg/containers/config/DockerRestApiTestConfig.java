@@ -43,11 +43,6 @@ import java.util.Properties;
 @Import(RestApiTestConfig.class)
 public class DockerRestApiTestConfig extends WebSecurityConfigurerAdapter {
     @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
-    }
-
-    @Bean
     public DockerRestApi dockerRestApi(final DockerService dockerService,
                                        final ObjectMapper objectMapper,
                                        final UserManagementServiceI userManagementService,

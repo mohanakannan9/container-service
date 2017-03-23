@@ -34,7 +34,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.io.File;
-import java.util.Map;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -100,20 +99,15 @@ public class CommandConfigurationRestApiTest {
         when(mockUserManagementServiceI.getUser(FAKE_USERNAME)).thenReturn(mockAdmin);
 
         // Create a command configuration
-        final Map<String, CommandInputConfiguration> inputs =
-                ImmutableMap.of(
-                        "input", CommandInputConfiguration.builder()
-                                .defaultValue("whatever")
-                                .matcher("anything")
-                                .userSettable(true)
-                                .advanced(false)
-                                .build()
-                );
-        final Map<String, CommandOutputConfiguration> outputs =
-                ImmutableMap.of(
-                        "output", CommandOutputConfiguration.create(null)
-                );
-        commandConfiguration = CommandConfiguration.create(inputs, outputs);
+        commandConfiguration = CommandConfiguration.builder()
+                .addInput("input", CommandInputConfiguration.builder()
+                        .defaultValue("whatever")
+                        .matcher("anything")
+                        .userSettable(true)
+                        .advanced(false)
+                        .build())
+                .addOutput("output", CommandOutputConfiguration.create(null))
+                .build();
         commandConfigurationJson = mapper.writeValueAsString(commandConfiguration);
 
         commandConfigurationInternalRepresentation = CommandConfigurationInternalRepresentation.create(true, commandConfiguration);
