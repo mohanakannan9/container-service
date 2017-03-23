@@ -4,7 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.mockito.Mockito;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.rest.CommandConfigurationRestApi;
+import org.nrg.containers.services.CommandEntityService;
+import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerConfigService;
+import org.nrg.containers.services.impl.CommandServiceImpl;
 import org.nrg.containers.services.impl.ContainerConfigServiceImpl;
 import org.nrg.framework.services.ContextService;
 import org.nrg.xdat.security.services.PermissionsServiceI;
@@ -26,10 +29,21 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 @Import({RestApiTestConfig.class})
 public class CommandConfigurationRestApiTestConfig extends WebSecurityConfigurerAdapter {
     @Bean
-    public CommandConfigurationRestApi commandConfigurationRestApi(final ContainerConfigService containerConfigService,
+    public CommandConfigurationRestApi commandConfigurationRestApi(final CommandService commandService,
                                                                    final UserManagementServiceI userManagementServiceI,
                                                                    final RoleHolder roleHolder) {
-        return new CommandConfigurationRestApi(containerConfigService, userManagementServiceI, roleHolder);
+        return new CommandConfigurationRestApi(commandService, userManagementServiceI, roleHolder);
+    }
+
+    @Bean
+    public CommandService mockCommandService(final CommandEntityService commandEntityService,
+                                             final ContainerConfigService containerConfigService) {
+        return new CommandServiceImpl(commandEntityService, containerConfigService);
+    }
+
+    @Bean
+    public CommandEntityService mockCommandEntityService() {
+        return Mockito.mock(CommandEntityService.class);
     }
 
     @Bean

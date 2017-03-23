@@ -9,7 +9,7 @@ import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.CommandConfiguration;
-import org.nrg.containers.services.ContainerConfigService;
+import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerConfigService.CommandConfigurationException;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NotFoundException;
@@ -48,14 +48,14 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     private static final String ID_REGEX = "\\d+";
     private static final String NAME_REGEX = "\\d*[^\\d]+\\d*";
 
-    private ContainerConfigService containerConfigService;
+    private CommandService commandService;
 
     @Autowired
-    public CommandConfigurationRestApi(final ContainerConfigService containerConfigService,
+    public CommandConfigurationRestApi(final CommandService commandService,
                                        final UserManagementServiceI userManagementService,
                                        final RoleHolder roleHolder) {
         super(userManagementService, roleHolder);
-        this.containerConfigService = containerConfigService;
+        this.commandService = commandService;
     }
 
     // Configure for site + command wrapper
@@ -68,7 +68,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
             throws CommandConfigurationException {
         final UserI userI = XDAT.getUserDetails();
         // TODO Check: can user create?
-        containerConfigService.configureForSite(commandConfiguration, commandId, wrapperName, enable, userI.getLogin(), reason);
+        commandService.configureForSite(commandConfiguration, commandId, wrapperName, enable, userI.getLogin(), reason);
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
@@ -76,10 +76,10 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     @RequestMapping(value = {"/commands/{commandId:" + ID_REGEX + "}/wrappers/{wrapperName:" + NAME_REGEX + "}/config"}, method = GET)
     @ResponseBody
     public CommandConfiguration getConfiguration(final @PathVariable long commandId,
-                                                 final @PathVariable String wrapperName) {
+                                                 final @PathVariable String wrapperName) throws NotFoundException {
         // TODO Check: can user read?
         // final UserI userI = XDAT.getUserDetails();
-        return containerConfigService.getSiteConfiguration(commandId, wrapperName);
+        return commandService.getSiteConfiguration(commandId, wrapperName);
     }
 
     // Delete configuration for site + command wrapper
@@ -89,7 +89,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
             throws CommandConfigurationException {
         // TODO Check: can user delete?
         final UserI userI = XDAT.getUserDetails();
-        containerConfigService.deleteSiteConfiguration(commandId, wrapperName, userI.getLogin());
+        commandService.deleteSiteConfiguration(commandId, wrapperName, userI.getLogin());
         return ResponseEntity.noContent().build();
     }
 
@@ -104,7 +104,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
             throws CommandConfigurationException {
         final UserI userI = XDAT.getUserDetails();
         // TODO Check: can user create?
-        containerConfigService.configureForProject(commandConfiguration, project, commandId, wrapperName, enable, userI.getLogin(), reason);
+        commandService.configureForProject(commandConfiguration, project, commandId, wrapperName, enable, userI.getLogin(), reason);
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
@@ -113,10 +113,10 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     @ResponseBody
     public CommandConfiguration getConfiguration(final @PathVariable String project,
                                                  final @PathVariable long commandId,
-                                                 final @PathVariable String wrapperName) {
+                                                 final @PathVariable String wrapperName) throws NotFoundException {
         // TODO Check: can user read?
         // final UserI userI = XDAT.getUserDetails();
-        return containerConfigService.getProjectConfiguration(project, commandId, wrapperName);
+        return commandService.getProjectConfiguration(project, commandId, wrapperName);
     }
 
     // Delete configuration for project + command wrapper
@@ -127,7 +127,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
             throws CommandConfigurationException {
         // TODO Check: can user delete?
         final UserI userI = XDAT.getUserDetails();
-        containerConfigService.deleteProjectConfiguration(project, commandId, wrapperName, userI.getLogin());
+        commandService.deleteProjectConfiguration(project, commandId, wrapperName, userI.getLogin());
         return ResponseEntity.noContent().build();
     }
 

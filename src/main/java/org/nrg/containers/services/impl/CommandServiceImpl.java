@@ -9,7 +9,9 @@ import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
 import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
+import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.containers.exceptions.CommandValidationException;
+import org.nrg.containers.model.CommandConfiguration;
 import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.CommandWrapperEntity;
 import org.nrg.containers.model.auto.Command;
@@ -17,6 +19,8 @@ import org.nrg.containers.model.auto.Command.CommandWrapper;
 import org.nrg.containers.services.CommandEntityService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerConfigService;
+import org.nrg.containers.services.ContainerConfigService.CommandConfigurationException;
+import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -202,6 +206,119 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     @Transactional
     public void delete(final long commandId, final long wrapperId) {
         commandEntityService.delete(commandId, wrapperId);
+    }
+
+    @Override
+    public void configureForSite(final CommandConfiguration commandConfiguration, final long commandId, final String wrapperName, final boolean enable, final String username, final String reason)
+            throws CommandConfigurationException {
+        containerConfigService.configureForSite(commandConfiguration, commandId, wrapperName, enable, username, reason);
+    }
+
+    @Override
+    public void configureForProject(final CommandConfiguration commandConfiguration, final String project, final long commandId, final String wrapperName, final boolean enable, final String username, final String reason) throws CommandConfigurationException {
+        containerConfigService.configureForProject(commandConfiguration, project, commandId, wrapperName, enable, username, reason);
+    }
+
+    @Override
+    @Nullable
+    public CommandConfiguration getSiteConfiguration(final long commandId, final String wrapperName) throws NotFoundException {
+        final CommandConfiguration commandConfiguration = containerConfigService.getSiteConfiguration(commandId, wrapperName);
+        if (commandConfiguration == null) {
+            return CommandConfiguration.create(get(commandId), wrapperName);
+        } else {
+            return commandConfiguration;
+        }
+    }
+
+    @Override
+    @Nullable
+    public CommandConfiguration getProjectConfiguration(final String project, final long commandId, final String wrapperName) throws NotFoundException {
+        final CommandConfiguration commandConfiguration = containerConfigService.getProjectConfiguration(project, commandId, wrapperName);
+        if (commandConfiguration == null) {
+            return CommandConfiguration.create(get(commandId), wrapperName);
+        } else {
+            return commandConfiguration;
+        }
+    }
+
+    @Override
+    public void deleteSiteConfiguration(final long commandId, final String wrapperName, final String username) throws CommandConfigurationException {
+        containerConfigService.deleteSiteConfiguration(commandId, wrapperName, username);
+    }
+
+    @Override
+    public void deleteProjectConfiguration(final String project, final long commandId, final String wrapperName, final String username) throws CommandConfigurationException {
+        containerConfigService.deleteProjectConfiguration(project, commandId, wrapperName, username);
+    }
+
+    @Override
+    public void deleteAllConfiguration(final long commandId, final String wrapperName) {
+        containerConfigService.deleteAllConfiguration(commandId, wrapperName);
+    }
+
+    @Override
+    public void deleteAllConfiguration(final long commandId) {
+        containerConfigService.deleteAllConfiguration(commandId);
+    }
+
+    @Override
+    public void setAllDisabledForSite(final String username, final String reason) throws ConfigServiceException {
+        containerConfigService.setAllDisabledForSite(username, reason);
+    }
+
+    @Override
+    public void setAllDisabledForSite(final Boolean allDisabled, final String username, final String reason) throws ConfigServiceException {
+        containerConfigService.setAllDisabledForSite(allDisabled, username, reason);
+    }
+
+    @Override
+    public Boolean getAllDisabledForSite() {
+        return containerConfigService.getAllDisabledForSite();
+    }
+
+    @Override
+    public void setAllDisabledForProject(final String project, final String username, final String reason) throws ConfigServiceException {
+        containerConfigService.setAllDisabledForProject(project, username, reason);
+    }
+
+    @Override
+    public void setAllDisabledForProject(final Boolean allDisabled, final String project, final String username, final String reason) throws ConfigServiceException {
+        containerConfigService.setAllDisabledForProject(allDisabled, project, username, reason);
+    }
+
+    @Override
+    public Boolean getAllDisabledForProject(final String project) {
+        return containerConfigService.getAllDisabledForProject(project);
+    }
+
+    @Override
+    public void enableForSite(final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
+        containerConfigService.enableForSite(commandId, wrapperName, username, reason);
+    }
+
+    @Override
+    public void disableForSite(final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
+        containerConfigService.disableForSite(commandId, wrapperName, username, reason);
+    }
+
+    @Override
+    public Boolean isEnabledForSite(final long commandId, final String wrapperName) {
+        return containerConfigService.isEnabledForSite(commandId, wrapperName);
+    }
+
+    @Override
+    public void enableForProject(final String project, final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
+        containerConfigService.enableForProject(project, commandId, wrapperName, username, reason);
+    }
+
+    @Override
+    public void disableForProject(final String project, final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
+        containerConfigService.disableForProject(project, commandId, wrapperName, username, reason);
+    }
+
+    @Override
+    public Boolean isEnabledForProject(final String project, final long commandId, final String wrapperName) {
+        return containerConfigService.isEnabledForProject(project, commandId, wrapperName);
     }
 
     @Nonnull
