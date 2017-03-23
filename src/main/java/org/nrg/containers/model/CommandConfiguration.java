@@ -28,6 +28,41 @@ public abstract class CommandConfiguration {
                 .build();
     }
 
+    public static CommandConfiguration create(final @Nonnull Command command,
+                                              final String wrapperName) {
+        Builder builder = builder();
+        final Set<String> handledCommandInputs = Sets.newHashSet();
+
+        Command.CommandWrapper commandWrapper = null;
+        for (final Command.CommandWrapper commandWrapperLoop : command.xnatCommandWrappers()) {
+            if (commandWrapperLoop.name().equals(wrapperName)) {
+                commandWrapper = commandWrapperLoop;
+                break;
+            }
+        }
+        if (commandWrapper != null) {
+            for (final Command.CommandWrapperExternalInput externalInput : commandWrapper.externalInputs()) {
+                builder = builder.addInput(externalInput.name(), CommandInputConfiguration.create(externalInput));
+                handledCommandInputs.add(externalInput.providesValueForCommandInput());
+            }
+            for (final Command.CommandWrapperDerivedInput derivedInput : commandWrapper.derivedInputs()) {
+                builder = builder.addInput(derivedInput.name(), CommandInputConfiguration.create(derivedInput));
+                handledCommandInputs.add(derivedInput.providesValueForCommandInput());
+            }
+            for (final Command.CommandWrapperOutput wrapperOutput : commandWrapper.outputHandlers()) {
+                builder = builder.addOutput(wrapperOutput.name(), CommandOutputConfiguration.create(wrapperOutput));
+            }
+        }
+
+        for (final Command.CommandInput commandInput : command.inputs()) {
+            if (!handledCommandInputs.contains(commandInput.name())) {
+                builder = builder.addInput(commandInput.name(), CommandInputConfiguration.create(commandInput));
+            }
+        }
+
+        return builder.build();
+    }
+
     public CommandConfiguration merge(final CommandConfiguration that) {
         if (that == null) {
             return this;
@@ -124,6 +159,14 @@ public abstract class CommandConfiguration {
                     .build();
         }
 
+        static CommandInputConfiguration create(final Command.CommandInput commandInput) {
+            return create(commandInput.defaultValue(), commandInput.matcher(), true, false);
+        }
+
+        static CommandInputConfiguration create(final Command.CommandWrapperInput commandWrapperInput) {
+            return create(commandWrapperInput.defaultValue(), commandWrapperInput.matcher(), true, false);
+        }
+
         CommandInputConfiguration merge(final CommandInputConfiguration that) {
             if (that == null) {
                 return this;
@@ -156,6 +199,10 @@ public abstract class CommandConfiguration {
         @JsonCreator
         public static CommandOutputConfiguration create(@JsonProperty("label") final String label) {
             return new AutoValue_CommandConfiguration_CommandOutputConfiguration(label);
+        }
+
+        static CommandOutputConfiguration create(final Command.CommandWrapperOutput commandWrapperOutput) {
+            return create(commandWrapperOutput.label());
         }
 
         CommandOutputConfiguration merge(final CommandOutputConfiguration that) {

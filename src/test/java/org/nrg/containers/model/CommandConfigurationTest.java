@@ -103,7 +103,7 @@ public class CommandConfigurationTest {
         final Map<String, CommandConfiguration.CommandOutputConfiguration> projectOutputs = Maps.newHashMap();
         final Map<String, CommandConfiguration.CommandOutputConfiguration> expectedOutputs = Maps.newHashMap();
 
-        final CommandConfiguration.CommandOutputConfiguration allNull = CommandConfiguration.CommandOutputConfiguration.create(null);
+        final CommandConfiguration.CommandOutputConfiguration allNull = CommandConfiguration.CommandOutputConfiguration.create((String)null);
         final CommandConfiguration.CommandOutputConfiguration nonNull = CommandConfiguration.CommandOutputConfiguration.create("181024y2");
         final CommandConfiguration.CommandOutputConfiguration nonNull2 = CommandConfiguration.CommandOutputConfiguration.create("2");
 
