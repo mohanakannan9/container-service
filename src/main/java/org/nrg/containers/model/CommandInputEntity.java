@@ -1,6 +1,7 @@
 package org.nrg.containers.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
@@ -119,11 +120,13 @@ public class CommandInputEntity implements Serializable {
     }
 
     @ApiModelProperty("Whether the argument is required. If true, and no value is given as a default or at command launch time, an error is thrown.")
+    @JsonGetter
     public Boolean getRequired() {
         return required;
     }
 
     @Transient
+    @JsonIgnore
     public boolean isRequired() {
         return required != null && required;
     }

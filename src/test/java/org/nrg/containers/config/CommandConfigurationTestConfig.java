@@ -7,14 +7,11 @@ import org.nrg.containers.services.ContainerConfigService;
 import org.nrg.containers.services.impl.ContainerConfigServiceImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 
 @Configuration
+@Import({ObjectMapperConfig.class})
 public class CommandConfigurationTestConfig {
-    @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
-    }
-
     @Bean
     public ConfigService configService() {
         return Mockito.mock(ConfigService.class);

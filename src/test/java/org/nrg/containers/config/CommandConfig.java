@@ -12,14 +12,11 @@ import org.nrg.containers.services.impl.ContainerConfigServiceImpl;
 import org.nrg.containers.services.impl.HibernateCommandEntityService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 
 @Configuration
+@Import({ObjectMapperConfig.class})
 public class CommandConfig {
-    @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
-    }
-
     @Bean
     public CommandService commandService(final CommandEntityService commandEntityService,
                                          final ContainerConfigService containerConfigService) {

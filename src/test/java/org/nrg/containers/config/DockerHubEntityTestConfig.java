@@ -22,13 +22,8 @@ import javax.sql.DataSource;
 import java.util.Properties;
 
 @Configuration
-@Import(HibernateConfig.class)
+@Import({HibernateConfig.class, ObjectMapperConfig.class})
 public class DockerHubEntityTestConfig {
-    @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
-    }
-
     @Bean
     public DockerHubService dockerHubService(final ContainerConfigService containerConfigService) {
         return new HibernateDockerHubService(containerConfigService);

@@ -10,8 +10,10 @@ import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 
 @Configuration
+@Import({ObjectMapperConfig.class})
 public class DockerControlApiTestConfig {
     @Bean
     public DockerControlApi dockerControlApi(final DockerServerPrefsBean containerServerPref,
@@ -43,10 +45,5 @@ public class DockerControlApiTestConfig {
     @Bean
     public NrgEventService mockNrgEventService() {
         return Mockito.mock(NrgEventService.class);
-    }
-
-    @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
     }
 }

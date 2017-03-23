@@ -44,11 +44,6 @@ public class CommandConfigurationRestApiTestConfig extends WebSecurityConfigurer
     }
 
     @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
-    }
-
-    @Bean
     public ContextService contextService(final ApplicationContext applicationContext) {
         final ContextService contextService = new ContextService();
         contextService.setApplicationContext(applicationContext);

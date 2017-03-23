@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.util.Collections;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.not;
@@ -48,10 +49,10 @@ public class CommandConfigurationTest {
 
     @Test
     public void testConfigureCommandForSite() throws Exception {
-
-        final CommandConfiguration site = CommandConfiguration.create(
-                ImmutableMap.of("foo", CommandInputConfiguration.builder().defaultValue("a").userSettable(true).build()),
-                ImmutableMap.of("bar", CommandConfiguration.CommandOutputConfiguration.create("label")));
+        final CommandConfiguration site = CommandConfiguration.builder()
+                .addInput("foo", CommandInputConfiguration.builder().defaultValue("a").userSettable(true).build())
+                .addOutput("bar", CommandConfiguration.CommandOutputConfiguration.create("label"))
+                .build();
         final String siteJson = mapper.writeValueAsString(CommandConfigurationInternalRepresentation.create(true, site));
 
         final Configuration mockSiteConfiguration = Mockito.mock(Configuration.class);

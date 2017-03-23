@@ -3,21 +3,29 @@ package org.nrg.containers.model;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import org.nrg.containers.model.auto.Command;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 @AutoValue
 public abstract class CommandConfiguration {
-    @JsonProperty("inputs") abstract Map<String, CommandInputConfiguration> inputs();
-    @JsonProperty("outputs") abstract Map<String, CommandOutputConfiguration> outputs();
+    @JsonProperty("inputs") abstract ImmutableMap<String, CommandInputConfiguration> inputs();
+    @JsonProperty("outputs") abstract ImmutableMap<String, CommandOutputConfiguration> outputs();
 
     @JsonCreator
     public static CommandConfiguration create(@JsonProperty("inputs") final Map<String, CommandInputConfiguration> inputs,
-                                       @JsonProperty("outputs") final Map<String, CommandOutputConfiguration> outputs) {
-        return new AutoValue_CommandConfiguration(inputs == null ? Maps.<String, CommandInputConfiguration>newHashMap() : inputs,
-                outputs == null ? Maps.<String, CommandOutputConfiguration>newHashMap() : outputs);
+                                              @JsonProperty("outputs") final Map<String, CommandOutputConfiguration> outputs) {
+        return builder()
+                .inputs(inputs == null ? Collections.<String, CommandInputConfiguration>emptyMap() : inputs)
+                .outputs(outputs == null ? Collections.<String, CommandOutputConfiguration>emptyMap() : outputs)
+                .build();
     }
 
     public CommandConfiguration merge(final CommandConfiguration that) {
@@ -25,18 +33,51 @@ public abstract class CommandConfiguration {
             return this;
         }
 
+        final Map<String, CommandInputConfiguration> mergedInputs = Maps.newHashMap(this.inputs());
         for (final Map.Entry<String, CommandInputConfiguration> otherInput : that.inputs().entrySet()) {
             final CommandInputConfiguration thisInputValue = this.inputs().get(otherInput.getKey());
-            this.inputs().put(otherInput.getKey(),
+            mergedInputs.put(otherInput.getKey(),
                     thisInputValue == null ? otherInput.getValue() : thisInputValue.merge(otherInput.getValue()));
         }
+
+        final Map<String, CommandOutputConfiguration> mergedOutputs = Maps.newHashMap(this.outputs());
         for (final Map.Entry<String, CommandOutputConfiguration> otherOutput : that.outputs().entrySet()) {
             final CommandOutputConfiguration thisOutputValue = this.outputs().get(otherOutput.getKey());
-            this.outputs().put(otherOutput.getKey(),
+            mergedOutputs.put(otherOutput.getKey(),
                     thisOutputValue == null ? otherOutput.getValue() : thisOutputValue.merge(otherOutput.getValue()));
         }
 
-        return this;
+        return builder()
+                .inputs(mergedInputs)
+                .outputs(mergedOutputs)
+                .build();
+    }
+
+    public static Builder builder() {
+        return new AutoValue_CommandConfiguration.Builder();
+    }
+
+    @AutoValue.Builder
+    public abstract static class Builder {
+        public abstract Builder inputs(final Map<String, CommandInputConfiguration> inputs);
+
+        abstract ImmutableMap.Builder<String, CommandInputConfiguration> inputsBuilder();
+
+        public Builder addInput(final String inputName, final CommandInputConfiguration commandInputConfiguration) {
+            inputsBuilder().put(inputName, commandInputConfiguration);
+            return this;
+        }
+
+        public abstract Builder outputs(final Map<String, CommandOutputConfiguration> outputs);
+
+        abstract ImmutableMap.Builder<String, CommandOutputConfiguration> outputsBuilder();
+
+        public Builder addOutput(final String outputName, final CommandOutputConfiguration commandOutputConfiguration) {
+            outputsBuilder().put(outputName, commandOutputConfiguration);
+            return this;
+        }
+
+        public abstract CommandConfiguration build();
     }
 
     @Nullable

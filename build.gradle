@@ -95,6 +95,7 @@ dependencies {
     compile "com.fasterxml.jackson.core:jackson-annotations:${vJackson}"
     compile "com.fasterxml.jackson.core:jackson-core:${vJackson}"
     compile "com.fasterxml.jackson.core:jackson-databind:${vJackson}"
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-guava:${vJackson}"
 
     compile "org.slf4j:slf4j-api:${vSlf4j}"
     compile "org.slf4j:slf4j-log4j12:${vSlf4j}"

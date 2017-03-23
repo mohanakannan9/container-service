@@ -39,11 +39,6 @@ import java.util.Properties;
 @Import({CommandConfig.class, HibernateConfig.class})
 public class CommandTestConfig {
     @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
-    }
-
-    @Bean
     public ContainerService containerService(final CommandService commandService,
                                              final ContainerControlApi containerControlApi,
                                              final ContainerEntityService containerEntityService,
