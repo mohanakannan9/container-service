@@ -1,5 +1,6 @@
 package org.nrg.containers.config;
 
+import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import org.nrg.containers.events.DockerEventPuller;
@@ -27,6 +28,11 @@ import java.util.concurrent.TimeUnit;
         excludeFilters = @Filter(type = FilterType.REGEX, pattern = ".*TestConfig.*", value = {}))
 @Import({RootConfig.class, TransporterConfig.class})
 public class ContainersConfig {
+    @Bean
+    public Module guavaModule() {
+        return new GuavaModule();
+    }
+
     @Bean
     public ObjectMapper objectMapper(final Jackson2ObjectMapperBuilder objectMapperBuilder) {
         return objectMapperBuilder.build();
