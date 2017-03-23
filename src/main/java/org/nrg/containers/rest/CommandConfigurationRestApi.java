@@ -59,7 +59,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     }
 
     // Configure for site + command wrapper
-    @RequestMapping(value = {"/commands/{commandId:" + ID_REGEX + "}/wrappers/{wrapperName:" + NAME_REGEX + "}/config"}, method = POST)
+    @RequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/config"}, method = POST)
     public ResponseEntity<Void> createConfiguration(final @RequestBody CommandConfiguration commandConfiguration,
                                                     final @PathVariable long commandId,
                                                     final @PathVariable String wrapperName,
@@ -73,7 +73,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     }
 
     // Get configuration for site + command wrapper
-    @RequestMapping(value = {"/commands/{commandId:" + ID_REGEX + "}/wrappers/{wrapperName:" + NAME_REGEX + "}/config"}, method = GET)
+    @RequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/config"}, method = GET)
     @ResponseBody
     public CommandConfiguration getConfiguration(final @PathVariable long commandId,
                                                  final @PathVariable String wrapperName) throws NotFoundException {
@@ -83,7 +83,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     }
 
     // Delete configuration for site + command wrapper
-    @RequestMapping(value = {"/commands/{commandId:" + ID_REGEX + "}/wrappers/{wrapperName:" + NAME_REGEX + "}/config"}, method = DELETE)
+    @RequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/config"}, method = DELETE)
     public ResponseEntity<Void> deleteConfiguration(final @PathVariable long commandId,
                                                     final @PathVariable String wrapperName)
             throws CommandConfigurationException {
@@ -94,7 +94,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     }
 
     // Configure for project + command wrapper
-    @RequestMapping(value = {"/projects/{project}/commands/{commandId:" + ID_REGEX + "}/wrappers/{wrapperName:" + NAME_REGEX + "}/config"}, method = POST)
+    @RequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/config"}, method = POST)
     public ResponseEntity<Void> createConfiguration(final @RequestBody CommandConfiguration commandConfiguration,
                                                     final @PathVariable String project,
                                                     final @PathVariable long commandId,
@@ -109,7 +109,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     }
 
     // Get configuration for project + command wrapper
-    @RequestMapping(value = {"/projects/{project}/commands/{commandId:" + ID_REGEX + "}/wrappers/{wrapperName:" + NAME_REGEX + "}/config"}, method = GET)
+    @RequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/config"}, method = GET)
     @ResponseBody
     public CommandConfiguration getConfiguration(final @PathVariable String project,
                                                  final @PathVariable long commandId,
@@ -120,7 +120,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     }
 
     // Delete configuration for project + command wrapper
-    @RequestMapping(value = {"/projects/{project}/commands/{commandId:" + ID_REGEX + "}/wrappers/{wrapperName:" + NAME_REGEX + "}/config"}, method = DELETE)
+    @RequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/config"}, method = DELETE)
     public ResponseEntity<Void> deleteConfiguration(final @PathVariable String project,
                                                     final @PathVariable long commandId,
                                                     final @PathVariable String wrapperName)
