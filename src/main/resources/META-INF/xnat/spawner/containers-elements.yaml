@@ -181,6 +181,30 @@ installedImagesPanel:
 #            tag: link|rel="stylesheet"|type="text/css"|href="/scripts/xnat/admin/imagePanelStyle.css"
             tag: link|rel="stylesheet"|type="text/css"|href="~/scripts/xnat/admin/imagePanelStyle.css"
 
+sitewideCommandConfigsPanel:
+    kind: panel
+    name: sitewideCommandConfigsPanel
+    label: Site-wide Command Configurations
+    footer: false
+    contents:
+        commandConfigDescription:
+            tag: "p"
+            contents:
+                "This panel lists all commands and XNAT-aware command wrappers from all installed images, and allows admins to define a site-wide configuration for each command wrapper. This site-wide configuration can be used by default by a project, or a project can create its own configuration to overwrite the site-wide defaults."
+        commandConfigListContainer:
+            tag: "div#command-config-list-container"
+        commandConfigTemplate:
+            tag: "div#command-config-template.html-template"
+            contents:
+                configViewer:
+                    kind: panel
+                    name: configViewer
+                    id: config-viewer
+                    header: false
+                    footer: false
+        commandConfigScript:
+#           tag: script|src="/scripts/xnat/admin/commandConfigManagement.js"
+            tag: script|src="~/scripts/xnat/admin/commandConfigManagement.js"
 
 #################################################
 ####  Root Site Admin Spawner Config Object  ####
@@ -212,6 +236,14 @@ siteSettings:
             active: false
             contents:
                 ${installedImagesPanel}
+        commandConfigTab:
+            kind: tab
+            name: commandConfigTab
+            label: Command Configurations
+            group: containerServiceTabGroup
+            active: false
+            contents:
+                ${sitewideCommandConfigsPanel}
 
 #######################################################
 ####  Root Project Settings Spawner Config Object  ####

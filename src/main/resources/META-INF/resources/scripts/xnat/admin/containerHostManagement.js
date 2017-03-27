@@ -8,7 +8,7 @@
  */
 
 /*!
- * Manage DICOM SCP Receivers
+ * Manage Container Hosts
  */
 
 console.log('containerHostManagement.js');

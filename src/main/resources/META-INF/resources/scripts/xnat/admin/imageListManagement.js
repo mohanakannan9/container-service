@@ -326,9 +326,9 @@ var XNAT = getObject(XNAT || {});
         // add table header row
         chTable.tr()
             .th({ addClass: 'left', html: '<b>Command</b>' })
-            .th('<b>XNAT Actions (Contexts)</b>')
+            .th('<b>XNAT Actions</b>')
+            .th('<b>Site-wide Config</b>')
             .th('<b>Version</b>')
-            .th('<b>Image</b>')
             .th('<b>Actions</b>');
 
         function viewLink(item, text){
@@ -429,8 +429,8 @@ var XNAT = getObject(XNAT || {});
                     chTable.tr({title: item.name, data: {id: item.id, name: item.name, image: item.image}})
                         .td([viewLink(item, item.name)]).addClass('name')
                         .td(xnatActions)
+                        .td('N/A')
                         .td(item.version)
-                        .td(item.image)
                         .td([['div.center', [viewCommandButton(item), spacer(10), deleteCommandButton(item)]]]);
                 }
             } else {
