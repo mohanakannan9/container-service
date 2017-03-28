@@ -9,6 +9,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.nrg.containers.model.command.auto.Command;
+import org.nrg.containers.model.command.entity.CommandType;
 
 import java.io.Serializable;
 import java.util.List;

@@ -1,4 +1,4 @@
-package org.nrg.containers.model;
+package org.nrg.containers.model.command.entity;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.MoreObjects.ToStringHelper;

@@ -1,7 +1,7 @@
 package org.nrg.containers.services;
 
-import org.nrg.containers.model.CommandEntity;
-import org.nrg.containers.model.CommandWrapperEntity;
+import org.nrg.containers.model.command.entity.CommandEntity;
+import org.nrg.containers.model.command.entity.CommandWrapperEntity;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
 

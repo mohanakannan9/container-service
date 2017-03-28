@@ -3,6 +3,7 @@ package org.nrg.containers.model;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Maps;
 import org.nrg.containers.model.command.auto.Command;
+import org.nrg.containers.model.command.entity.CommandType;
 
 import java.util.Map;
 import java.util.Objects;

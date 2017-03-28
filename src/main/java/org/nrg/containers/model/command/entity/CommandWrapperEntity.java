@@ -1,4 +1,4 @@
-package org.nrg.containers.model;
+package org.nrg.containers.model.command.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;

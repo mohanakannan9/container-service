@@ -35,8 +35,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.nrg.containers.model.CommandWrapperOutputEntity.Type.ASSESSOR;
-import static org.nrg.containers.model.CommandWrapperOutputEntity.Type.RESOURCE;
+import static org.nrg.containers.model.command.entity.CommandWrapperOutputEntity.Type.ASSESSOR;
+import static org.nrg.containers.model.command.entity.CommandWrapperOutputEntity.Type.RESOURCE;
 
 public class ContainerFinalizeHelper {
     private static final Logger log = LoggerFactory.getLogger(ContainerFinalizeHelper.class);
