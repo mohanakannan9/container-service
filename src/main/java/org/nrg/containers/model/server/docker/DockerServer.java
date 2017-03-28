@@ -1,4 +1,4 @@
-package org.nrg.containers.model;
+package org.nrg.containers.model.server.docker;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

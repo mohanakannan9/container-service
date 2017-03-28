@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.mockito.Mockito;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.api.DockerControlApi;
-import org.nrg.containers.model.DockerServerPrefsBean;
+import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.rest.DockerRestApi;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.DockerHubService;

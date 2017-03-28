@@ -23,7 +23,7 @@ import org.nrg.containers.config.IntegrationTestConfig;
 import org.nrg.containers.model.ContainerEntity;
 import org.nrg.containers.model.ContainerEntityMount;
 import org.nrg.containers.model.ContainerEntityOutput;
-import org.nrg.containers.model.DockerServerPrefsBean;
+import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.model.xnat.Resource;

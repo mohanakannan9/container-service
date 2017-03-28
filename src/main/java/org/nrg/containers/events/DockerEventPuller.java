@@ -3,7 +3,7 @@ package org.nrg.containers.events;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.model.DockerServerPrefsBean;
+import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.xft.schema.XFTManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

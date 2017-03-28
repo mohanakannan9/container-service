@@ -1,7 +1,7 @@
 package org.nrg.containers.config;
 
 import org.mockito.Mockito;
-import org.nrg.containers.model.DockerServerPrefsBean;
+import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.rest.CommandRestApi;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerService;

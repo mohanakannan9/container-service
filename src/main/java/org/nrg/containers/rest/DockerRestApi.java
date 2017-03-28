@@ -12,7 +12,7 @@ import org.nrg.containers.exceptions.NotUniqueException;
 import org.nrg.containers.exceptions.UnauthorizedException;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.auto.DockerImage;
-import org.nrg.containers.model.DockerServer;
+import org.nrg.containers.model.server.docker.DockerServer;
 import org.nrg.containers.model.dockerhub.DockerHub;
 import org.nrg.containers.model.auto.DockerImageAndCommandSummary;
 import org.nrg.containers.services.DockerHubService.DockerHubDeleteDefaultException;

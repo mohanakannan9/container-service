@@ -1,4 +1,4 @@
-package org.nrg.containers.model;
+package org.nrg.containers.model.server.docker;
 
 import com.google.common.base.MoreObjects;
 import org.nrg.framework.configuration.ConfigPaths;
