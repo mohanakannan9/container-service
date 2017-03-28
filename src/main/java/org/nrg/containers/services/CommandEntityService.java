@@ -18,4 +18,6 @@ public interface CommandEntityService extends BaseHibernateService<CommandEntity
     CommandWrapperEntity get(final CommandEntity commandEntity, long wrapperId) throws NotFoundException;
     CommandWrapperEntity update(CommandWrapperEntity updates) throws NotFoundException;
     void delete(long commandId, long wrapperId);
+
+    void assertPairExists(long commandId, String wrapperName) throws NotFoundException;
 }

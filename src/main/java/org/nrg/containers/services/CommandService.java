@@ -28,8 +28,8 @@ public interface CommandService {
     CommandWrapper update(long commandId, CommandWrapper updates) throws CommandValidationException, NotFoundException;
     void delete(long commandId, long wrapperId);
 
-    void configureForSite(CommandConfiguration commandConfiguration, long commandId, String wrapperName, boolean enable, String username, String reason) throws CommandConfigurationException;
-    void configureForProject(CommandConfiguration commandConfiguration, String project, long commandId, String wrapperName, boolean enable, String username, String reason) throws CommandConfigurationException;
+    void configureForSite(CommandConfiguration commandConfiguration, long commandId, String wrapperName, boolean enable, String username, String reason) throws CommandConfigurationException, NotFoundException;
+    void configureForProject(CommandConfiguration commandConfiguration, String project, long commandId, String wrapperName, boolean enable, String username, String reason) throws CommandConfigurationException, NotFoundException;
 
     CommandConfiguration getSiteConfiguration(long commandId, String wrapperName) throws NotFoundException;
     CommandConfiguration getProjectConfiguration(String project, long commandId, String wrapperName) throws NotFoundException;
@@ -46,10 +46,10 @@ public interface CommandService {
     void setAllDisabledForProject(Boolean allDisabled, String project, String username, String reason) throws ConfigServiceException;
     Boolean getAllDisabledForProject(String project);
 
-    void enableForSite(long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException;
-    void disableForSite(long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException;
-    Boolean isEnabledForSite(long commandId, String wrapperName);
-    void enableForProject(String project, long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException;
-    void disableForProject(String project, long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException;
-    Boolean isEnabledForProject(String project, long commandId, String wrapperName);
+    void enableForSite(long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException, NotFoundException;
+    void disableForSite(long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException, NotFoundException;
+    Boolean isEnabledForSite(long commandId, String wrapperName) throws NotFoundException;
+    void enableForProject(String project, long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException, NotFoundException;
+    void disableForProject(String project, long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException, NotFoundException;
+    Boolean isEnabledForProject(String project, long commandId, String wrapperName) throws NotFoundException;
 }

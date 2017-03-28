@@ -20,7 +20,6 @@ import org.nrg.containers.services.CommandEntityService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerConfigService;
 import org.nrg.containers.services.ContainerConfigService.CommandConfigurationException;
-import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -210,18 +209,21 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
 
     @Override
     public void configureForSite(final CommandConfiguration commandConfiguration, final long commandId, final String wrapperName, final boolean enable, final String username, final String reason)
-            throws CommandConfigurationException {
+            throws CommandConfigurationException, NotFoundException {
+        assertPairExists(commandId, wrapperName);
         containerConfigService.configureForSite(commandConfiguration, commandId, wrapperName, enable, username, reason);
     }
 
     @Override
-    public void configureForProject(final CommandConfiguration commandConfiguration, final String project, final long commandId, final String wrapperName, final boolean enable, final String username, final String reason) throws CommandConfigurationException {
+    public void configureForProject(final CommandConfiguration commandConfiguration, final String project, final long commandId, final String wrapperName, final boolean enable, final String username, final String reason) throws CommandConfigurationException, NotFoundException {
+        assertPairExists(commandId, wrapperName);
         containerConfigService.configureForProject(commandConfiguration, project, commandId, wrapperName, enable, username, reason);
     }
 
     @Override
     @Nullable
     public CommandConfiguration getSiteConfiguration(final long commandId, final String wrapperName) throws NotFoundException {
+        assertPairExists(commandId, wrapperName);
         final CommandConfiguration commandConfiguration = containerConfigService.getSiteConfiguration(commandId, wrapperName);
         if (commandConfiguration == null) {
             return CommandConfiguration.create(get(commandId), wrapperName);
@@ -233,6 +235,7 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     @Override
     @Nullable
     public CommandConfiguration getProjectConfiguration(final String project, final long commandId, final String wrapperName) throws NotFoundException {
+        assertPairExists(commandId, wrapperName);
         final CommandConfiguration commandConfiguration = containerConfigService.getProjectConfiguration(project, commandId, wrapperName);
         if (commandConfiguration == null) {
             return CommandConfiguration.create(get(commandId), wrapperName);
@@ -292,32 +295,38 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     }
 
     @Override
-    public void enableForSite(final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
+    public void enableForSite(final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException, NotFoundException {
+        assertPairExists(commandId, wrapperName);
         containerConfigService.enableForSite(commandId, wrapperName, username, reason);
     }
 
     @Override
-    public void disableForSite(final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
+    public void disableForSite(final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException, NotFoundException {
+        assertPairExists(commandId, wrapperName);
         containerConfigService.disableForSite(commandId, wrapperName, username, reason);
     }
 
     @Override
-    public Boolean isEnabledForSite(final long commandId, final String wrapperName) {
+    public Boolean isEnabledForSite(final long commandId, final String wrapperName) throws NotFoundException {
+        assertPairExists(commandId, wrapperName);
         return containerConfigService.isEnabledForSite(commandId, wrapperName);
     }
 
     @Override
-    public void enableForProject(final String project, final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
+    public void enableForProject(final String project, final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException, NotFoundException {
+        assertPairExists(commandId, wrapperName);
         containerConfigService.enableForProject(project, commandId, wrapperName, username, reason);
     }
 
     @Override
-    public void disableForProject(final String project, final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
+    public void disableForProject(final String project, final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException, NotFoundException {
+        assertPairExists(commandId, wrapperName);
         containerConfigService.disableForProject(project, commandId, wrapperName, username, reason);
     }
 
     @Override
-    public Boolean isEnabledForProject(final String project, final long commandId, final String wrapperName) {
+    public Boolean isEnabledForProject(final String project, final long commandId, final String wrapperName) throws NotFoundException {
+        assertPairExists(commandId, wrapperName);
         return containerConfigService.isEnabledForProject(project, commandId, wrapperName);
     }
 
@@ -355,5 +364,9 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     @Nonnull
     private CommandWrapper toPojo(@Nonnull final CommandWrapperEntity commandWrapperEntity) {
         return CommandWrapper.create(commandWrapperEntity);
+    }
+
+    private void assertPairExists(final long commandId, final String wrapperName) throws NotFoundException {
+        commandEntityService.assertPairExists(commandId, wrapperName);
     }
 }

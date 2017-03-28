@@ -65,7 +65,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
                                                     final @PathVariable String wrapperName,
                                                     final @RequestParam(required = false, defaultValue = "true") boolean enable,
                                                     final @RequestParam(required = false) String reason)
-            throws CommandConfigurationException {
+            throws CommandConfigurationException, NotFoundException {
         final UserI userI = XDAT.getUserDetails();
         // TODO Check: can user create?
         commandService.configureForSite(commandConfiguration, commandId, wrapperName, enable, userI.getLogin(), reason);
@@ -101,7 +101,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
                                                     final @PathVariable String wrapperName,
                                                     final @RequestParam(required = false, defaultValue = "true") boolean enable,
                                                     final @RequestParam(required = false) String reason)
-            throws CommandConfigurationException {
+            throws CommandConfigurationException, NotFoundException {
         final UserI userI = XDAT.getUserDetails();
         // TODO Check: can user create?
         commandService.configureForProject(commandConfiguration, project, commandId, wrapperName, enable, userI.getLogin(), reason);

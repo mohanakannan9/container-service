@@ -6,11 +6,14 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import org.hamcrest.Matchers;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.nrg.containers.config.CommandTestConfig;
 import org.nrg.containers.model.auto.Command;
 import org.nrg.containers.services.CommandEntityService;
+import org.nrg.framework.exceptions.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
@@ -119,6 +122,8 @@ public class CommandEntityTest {
 
     @Autowired private ObjectMapper mapper;
     @Autowired private CommandEntityService commandEntityService;
+
+    @Rule public ExpectedException expectedException = ExpectedException.none();
 
     @Test
     public void testSpringConfiguration() {
@@ -399,5 +404,24 @@ public class CommandEntityTest {
         final String commandJsonFile = dir + "/command.json";
         final CommandEntity ecatHeaderDump = mapper.readValue(new File(commandJsonFile), CommandEntity.class);
         commandEntityService.create(ecatHeaderDump);
+    }
+
+    @Test
+    @DirtiesContext
+    public void testAssertPairExists() throws Exception {
+        final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
+        commandEntityService.create(commandEntity);
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        commandEntityService.assertPairExists(commandEntity.getId(), XNAT_COMMAND_WRAPPER_NAME);
+
+        final String fakeWrapperName = "blargle";
+        expectedException.expect(NotFoundException.class);
+        expectedException.expectMessage("Command " + String.valueOf(commandEntity.getId()) +
+                " has no wrapper " + fakeWrapperName);
+        commandEntityService.assertPairExists(commandEntity.getId(), fakeWrapperName);
     }
 }

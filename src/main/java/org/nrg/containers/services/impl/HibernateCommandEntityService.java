@@ -114,4 +114,9 @@ public class HibernateCommandEntityService extends AbstractHibernateEntityServic
             getDao().delete(commandWrapperEntity);
         }
     }
+
+    @Override
+    public void assertPairExists(final long commandId, final String wrapperName) throws NotFoundException {
+        getDao().assertPairExists(commandId, wrapperName);
+    }
 }

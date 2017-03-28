@@ -2,12 +2,12 @@ package org.nrg.containers.daos;
 
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
-import org.hibernate.Criteria;
 import org.hibernate.Hibernate;
 import org.hibernate.NonUniqueObjectException;
 import org.nrg.containers.model.CommandEntity;
 import org.nrg.containers.model.CommandWrapperEntity;
 import org.nrg.containers.model.DockerCommandEntity;
+import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -130,5 +130,22 @@ public class CommandEntityRepository extends AbstractHibernateDAO<CommandEntity>
     public void delete(final @Nonnull CommandWrapperEntity commandWrapperEntity) {
         commandWrapperEntity.getCommandEntity().getCommandWrapperEntities().remove(commandWrapperEntity);
         getSession().delete(commandWrapperEntity);
+    }
+
+    public void assertPairExists(final long commandId, final String wrapperName) throws NotFoundException {
+        final Object commandExistsResult = getSession().createQuery("select 1 from CommandEntity as command where command.id = :commandId")
+                .setLong("commandId", commandId)
+                .uniqueResult();
+        if (commandExistsResult == null) {
+            throw new NotFoundException("No command with id " + String.valueOf(commandId));
+        }
+
+        final Object wrapperExistsResult = getSession().createQuery("select 1 from CommandWrapperEntity as wrapper where wrapper.name = :wrapperName and wrapper.commandEntity.id = :commandId")
+                .setString("wrapperName", wrapperName)
+                .setLong("commandId", commandId)
+                .uniqueResult();
+        if (wrapperExistsResult == null) {
+            throw new NotFoundException("Command " + String.valueOf(commandId) + " has no wrapper " + wrapperName);
+        }
     }
 }
