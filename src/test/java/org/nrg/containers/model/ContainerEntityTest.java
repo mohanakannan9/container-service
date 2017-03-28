@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.nrg.containers.config.ContainerEntityTestConfig;
+import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.annotation.Autowired;

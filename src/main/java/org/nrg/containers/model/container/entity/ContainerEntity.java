@@ -1,4 +1,4 @@
-package org.nrg.containers.model;
+package org.nrg.containers.model.container.entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
@@ -7,6 +7,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.envers.Audited;
+import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.CascadeType;

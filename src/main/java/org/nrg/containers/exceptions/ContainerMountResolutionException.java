@@ -1,6 +1,6 @@
 package org.nrg.containers.exceptions;
 
-import org.nrg.containers.model.ContainerEntityMount;
+import org.nrg.containers.model.container.entity.ContainerEntityMount;
 
 public class ContainerMountResolutionException extends CommandResolutionException {
     final ContainerEntityMount mount;

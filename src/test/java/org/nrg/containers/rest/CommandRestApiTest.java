@@ -18,7 +18,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.config.CommandRestApiTestConfig;
-import org.nrg.containers.model.ContainerEntity;
+import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.server.docker.DockerServer;
 import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.model.ResolvedCommand;

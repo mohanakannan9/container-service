@@ -29,7 +29,7 @@ import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.helpers.CommandLabelHelper;
 import org.nrg.containers.model.Container;
-import org.nrg.containers.model.ContainerEntityMount;
+import org.nrg.containers.model.container.entity.ContainerEntityMount;
 import org.nrg.containers.model.server.docker.DockerServer;
 import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.model.ResolvedDockerCommand;
