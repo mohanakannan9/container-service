@@ -35,7 +35,7 @@ import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.dockerhub.DockerHub;
-import org.nrg.containers.model.auto.DockerImage;
+import org.nrg.containers.model.image.docker.DockerImage;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;

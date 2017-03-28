@@ -22,7 +22,7 @@ import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.server.docker.DockerServer;
 import org.nrg.containers.model.dockerhub.DockerHub;
-import org.nrg.containers.model.auto.DockerImage;
+import org.nrg.containers.model.image.docker.DockerImage;
 import org.nrg.framework.scope.EntityId;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.springframework.beans.factory.annotation.Autowired;
