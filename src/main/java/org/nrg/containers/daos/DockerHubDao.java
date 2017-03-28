@@ -1,7 +1,7 @@
 package org.nrg.containers.daos;
 
 import org.nrg.containers.exceptions.NotUniqueException;
-import org.nrg.containers.model.DockerHubEntity;
+import org.nrg.containers.model.dockerhub.DockerHubEntity;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.springframework.stereotype.Repository;
 

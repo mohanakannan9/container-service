@@ -5,7 +5,7 @@ import org.hibernate.SessionFactory;
 import org.mockito.Mockito;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.daos.DockerHubDao;
-import org.nrg.containers.model.DockerHubEntity;
+import org.nrg.containers.model.dockerhub.DockerHubEntity;
 import org.nrg.containers.services.ContainerConfigService;
 import org.nrg.containers.services.DockerHubService;
 import org.nrg.containers.services.impl.ContainerConfigServiceImpl;

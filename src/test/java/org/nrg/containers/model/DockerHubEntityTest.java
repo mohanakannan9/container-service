@@ -1,12 +1,12 @@
 package org.nrg.containers.model;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.codec.binary.Base64;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.config.DockerHubEntityTestConfig;
-import org.nrg.containers.model.auto.DockerHub;
+import org.nrg.containers.model.dockerhub.DockerHub;
+import org.nrg.containers.model.dockerhub.DockerHubEntity;
 import org.nrg.containers.services.DockerHubService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;

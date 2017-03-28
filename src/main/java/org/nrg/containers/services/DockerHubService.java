@@ -1,8 +1,8 @@
 package org.nrg.containers.services;
 
 import org.nrg.containers.exceptions.NotUniqueException;
-import org.nrg.containers.model.DockerHubEntity;
-import org.nrg.containers.model.auto.DockerHub;
+import org.nrg.containers.model.dockerhub.DockerHubEntity;
+import org.nrg.containers.model.dockerhub.DockerHub;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
 

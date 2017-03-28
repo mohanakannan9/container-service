@@ -1,9 +1,6 @@
-package org.nrg.containers.model;
+package org.nrg.containers.model.dockerhub;
 
 import com.google.common.base.MoreObjects;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang3.StringUtils;
-import org.nrg.containers.model.auto.DockerHub;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.Column;

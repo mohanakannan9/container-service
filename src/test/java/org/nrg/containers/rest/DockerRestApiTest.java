@@ -21,7 +21,7 @@ import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.model.DockerServerPrefsBean;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
-import org.nrg.containers.model.auto.DockerHub;
+import org.nrg.containers.model.dockerhub.DockerHub;
 import org.nrg.containers.model.auto.DockerImage;
 import org.nrg.containers.model.auto.DockerImageAndCommandSummary;
 import org.nrg.containers.services.CommandService;
