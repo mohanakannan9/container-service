@@ -1,4 +1,4 @@
-package org.nrg.containers.events;
+package org.nrg.containers.events.model;
 
 import org.nrg.containers.model.xnat.Scan;
 import org.nrg.framework.event.EventI;

@@ -17,7 +17,7 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.nrg.containers.config.DockerControlApiTestConfig;
-import org.nrg.containers.events.DockerContainerEvent;
+import org.nrg.containers.events.model.DockerContainerEvent;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.server.docker.DockerServer;

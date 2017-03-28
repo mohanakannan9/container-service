@@ -1,4 +1,4 @@
-package org.nrg.containers.events;
+package org.nrg.containers.events.model;
 
 import org.nrg.framework.event.EventI;
 import org.nrg.xdat.om.XnatImagesessiondata;

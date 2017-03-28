@@ -24,7 +24,7 @@ import com.spotify.docker.client.messages.ImageInfo;
 import com.spotify.docker.client.messages.PortBinding;
 import com.spotify.docker.client.messages.RegistryAuth;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.containers.events.DockerContainerEvent;
+import org.nrg.containers.events.model.DockerContainerEvent;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.helpers.CommandLabelHelper;

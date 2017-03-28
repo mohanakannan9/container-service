@@ -1,6 +1,6 @@
 package org.nrg.containers.api;
 
-import org.nrg.containers.events.DockerContainerEvent;
+import org.nrg.containers.events.model.DockerContainerEvent;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.Container;

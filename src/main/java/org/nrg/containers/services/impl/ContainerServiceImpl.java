@@ -7,7 +7,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.api.ContainerControlApi;
-import org.nrg.containers.events.ContainerEvent;
+import org.nrg.containers.events.model.ContainerEvent;
 import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.ContainerMountResolutionException;

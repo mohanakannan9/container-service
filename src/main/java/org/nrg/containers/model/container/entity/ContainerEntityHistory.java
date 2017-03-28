@@ -3,8 +3,8 @@ package org.nrg.containers.model.container.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
 import org.hibernate.envers.Audited;
-import org.nrg.containers.events.ContainerEvent;
-import org.nrg.containers.events.DockerContainerEvent;
+import org.nrg.containers.events.model.ContainerEvent;
+import org.nrg.containers.events.model.DockerContainerEvent;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;

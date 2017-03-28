@@ -1,7 +1,7 @@
 package org.nrg.containers.events.listeners;
 
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.containers.events.SessionArchiveEvent;
+import org.nrg.containers.events.model.SessionArchiveEvent;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.security.helpers.Users;

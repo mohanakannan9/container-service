@@ -1,4 +1,4 @@
-package org.nrg.containers.events;
+package org.nrg.containers.events.model;
 
 import com.google.common.base.MoreObjects;
 

@@ -1,6 +1,6 @@
 package org.nrg.containers.services;
 
-import org.nrg.containers.events.ContainerEvent;
+import org.nrg.containers.events.model.ContainerEvent;
 import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.ContainerMountResolutionException;

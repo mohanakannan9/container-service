@@ -1,6 +1,6 @@
 package org.nrg.containers.services;
 
-import org.nrg.containers.events.ContainerEvent;
+import org.nrg.containers.events.model.ContainerEvent;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.container.entity.ContainerEntityHistory;
 import org.nrg.containers.model.ResolvedCommand;
