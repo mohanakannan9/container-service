@@ -8,7 +8,7 @@ import org.nrg.containers.exceptions.CommandValidationException;
 import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.model.CommandConfiguration;
+import org.nrg.containers.model.configuration.CommandConfiguration;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerConfigService.CommandConfigurationException;
 import org.nrg.framework.annotations.XapiRestController;

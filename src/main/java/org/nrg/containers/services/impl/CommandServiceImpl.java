@@ -11,7 +11,7 @@ import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.containers.exceptions.CommandValidationException;
-import org.nrg.containers.model.CommandConfiguration;
+import org.nrg.containers.model.configuration.CommandConfiguration;
 import org.nrg.containers.model.command.entity.CommandEntity;
 import org.nrg.containers.model.command.entity.CommandWrapperEntity;
 import org.nrg.containers.model.command.auto.Command;

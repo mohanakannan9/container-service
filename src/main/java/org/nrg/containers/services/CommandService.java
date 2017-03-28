@@ -2,7 +2,7 @@ package org.nrg.containers.services;
 
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.containers.exceptions.CommandValidationException;
-import org.nrg.containers.model.CommandConfiguration;
+import org.nrg.containers.model.configuration.CommandConfiguration;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.services.ContainerConfigService.CommandConfigurationException;

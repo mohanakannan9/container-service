@@ -1,4 +1,4 @@
-package org.nrg.containers.model;
+package org.nrg.containers.model.configuration;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

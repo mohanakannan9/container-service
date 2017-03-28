@@ -1,7 +1,6 @@
 package org.nrg.containers.model;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -9,14 +8,15 @@ import org.mockito.Mockito;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.config.CommandConfigurationTestConfig;
-import org.nrg.containers.model.CommandConfiguration.CommandInputConfiguration;
+import org.nrg.containers.model.configuration.CommandConfiguration;
+import org.nrg.containers.model.configuration.CommandConfiguration.CommandInputConfiguration;
+import org.nrg.containers.model.configuration.CommandConfigurationInternalRepresentation;
 import org.nrg.containers.services.ContainerConfigService;
 import org.nrg.framework.constants.Scope;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.util.Collections;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.not;
@@ -73,7 +73,12 @@ public class CommandConfigurationTest {
         final CommandInputConfiguration allNullInput = CommandInputConfiguration.builder().build();
 
         final CommandInputConfiguration allNotNullInput = allNotNullInputBuilder().build();
-        final CommandInputConfiguration allNotNullInput2 = CommandInputConfiguration.create("fly", "fools", false, false);
+        final CommandInputConfiguration allNotNullInput2 = CommandInputConfiguration.builder()
+                .defaultValue("fly")
+                .matcher("fools")
+                .userSettable(false)
+                .advanced(false)
+                .build();
 
         siteInputs.put("a", allNotNullInput);
         projectInputs.put("a", allNullInput);

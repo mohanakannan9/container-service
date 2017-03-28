@@ -1,7 +1,7 @@
 package org.nrg.containers.services;
 
 import org.nrg.config.exceptions.ConfigServiceException;
-import org.nrg.containers.model.CommandConfiguration;
+import org.nrg.containers.model.configuration.CommandConfiguration;
 
 public interface ContainerConfigService {
     String TOOL_ID = "container-service";
