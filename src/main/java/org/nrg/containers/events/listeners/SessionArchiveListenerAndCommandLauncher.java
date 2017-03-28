@@ -1,9 +1,11 @@
-package org.nrg.containers.events;
+package org.nrg.containers.events.listeners;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.containers.events.ScanArchiveEventToLaunchCommands;
+import org.nrg.containers.events.SessionArchiveEvent;
 import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.DockerServerException;

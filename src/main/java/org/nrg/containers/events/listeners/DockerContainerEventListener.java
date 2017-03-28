@@ -1,5 +1,6 @@
-package org.nrg.containers.events;
+package org.nrg.containers.events.listeners;
 
+import org.nrg.containers.events.DockerContainerEvent;
 import org.nrg.containers.services.ContainerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
