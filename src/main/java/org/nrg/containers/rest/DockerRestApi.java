@@ -94,7 +94,7 @@ public class DockerRestApi extends AbstractXapiRestController {
     public ResponseEntity<String> setServer(final @RequestBody DockerServer dockerServer)
             throws InvalidPreferenceName, JsonProcessingException, UnauthorizedException {
         checkCreateOrThrow();
-        if (StringUtils.isBlank(dockerServer.getHost())) {
+        if (StringUtils.isBlank(dockerServer.host())) {
             return new ResponseEntity<>("Must set the \"host\" property in request body.",
                     HttpStatus.BAD_REQUEST);
         }

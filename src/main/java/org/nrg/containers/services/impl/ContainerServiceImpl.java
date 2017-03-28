@@ -306,7 +306,7 @@ public class ContainerServiceImpl implements ContainerService {
         // Transport mounts
         if (resolvedDockerCommand.getMounts() != null && !resolvedDockerCommand.getMounts().isEmpty()) {
 
-            final String dockerHost = containerControlApi.getServer().getHost();
+            final String dockerHost = containerControlApi.getServer().host();
             for (final ContainerEntityMount mount : resolvedDockerCommand.getMounts()) {
                 // First, figure out what we have.
                 // Do we have source files? A source directory?

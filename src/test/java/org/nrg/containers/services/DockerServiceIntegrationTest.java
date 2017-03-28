@@ -58,7 +58,7 @@ public class DockerServiceIntegrationTest {
         // Mock out the prefs bean
         final String containerHost = "unix:///var/run/docker.sock";
         when(mockDockerServerPrefsBean.getHost()).thenReturn(containerHost);
-        when(mockDockerServerPrefsBean.toDto()).thenCallRealMethod();
+        when(mockDockerServerPrefsBean.toPojo()).thenCallRealMethod();
 
         // Mock the userI
         mockUser = Mockito.mock(UserI.class);

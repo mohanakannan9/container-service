@@ -79,7 +79,7 @@ public class DockerControlApi implements ContainerControlApi {
         if (containerServerPref == null || containerServerPref.getHost() == null) {
             throw new NoServerPrefException("No container server URI defined in preferences.");
         }
-        return containerServerPref.toDto();
+        return containerServerPref.toPojo();
     }
 
     @Override
@@ -92,13 +92,13 @@ public class DockerControlApi implements ContainerControlApi {
     public DockerServer setServer(final String host, final String certPath) throws InvalidPreferenceName {
         containerServerPref.setHost(host);
         containerServerPref.setCertPath(certPath);
-        return containerServerPref.toDto();
+        return containerServerPref.toPojo();
     }
 
     @Override
     @Nonnull
     public DockerServer setServer(final DockerServer serverBean) throws InvalidPreferenceName {
-        containerServerPref.setFromDto(serverBean);
+        containerServerPref.fromPojo(serverBean);
         return serverBean;
     }
 
@@ -575,15 +575,15 @@ public class DockerControlApi implements ContainerControlApi {
 
         DefaultDockerClient.Builder clientBuilder =
             DefaultDockerClient.builder()
-                .uri(server.getHost());
+                .uri(server.host());
 
-        if (StringUtils.isNotBlank(server.getCertPath())) {
+        if (StringUtils.isNotBlank(server.certPath())) {
             try {
                 final DockerCertificates certificates =
-                    new DockerCertificates(Paths.get(server.getCertPath()));
+                    new DockerCertificates(Paths.get(server.certPath()));
                 clientBuilder = clientBuilder.dockerCertificates(certificates);
             } catch (DockerCertificateException e) {
-                log.error("Could not find docker certificates at " + server.getCertPath(), e);
+                log.error("Could not find docker certificates at " + server.certPath(), e);
             }
         }
 

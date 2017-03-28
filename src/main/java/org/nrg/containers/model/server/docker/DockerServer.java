@@ -1,69 +1,47 @@
 package org.nrg.containers.model.server.docker;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.auto.value.AutoValue;
+import org.apache.commons.lang3.StringUtils;
 
-import java.util.Objects;
+import javax.annotation.Nullable;
 
-public class DockerServer {
-    private String name;
-    private String host;
-    @JsonProperty("cert-path") private String certPath;
+@AutoValue
+public abstract class DockerServer {
+    @JsonProperty("name") public abstract String name();
+    @JsonProperty("host") public abstract String host();
+    @Nullable @JsonProperty("cert-path") public abstract String certPath();
 
-    public DockerServer() {}
-
-    public DockerServer(final String name, final String host, final String certPath) {
-        this.name = name;
-        this.host = host;
-        this.certPath = certPath;
+    @JsonCreator
+    public static DockerServer create(@JsonProperty("name") final String name,
+                                      @JsonProperty("host") final String host,
+                                      @JsonProperty("cert-path") final String certPath) {
+        return builder()
+                .host(host)
+                .name(StringUtils.isBlank(name) ? host : name)
+                .certPath(certPath)
+                .build();
     }
 
-    public DockerServer(final DockerServerPrefsBean dockerServerPrefsBean) {
-        this.name = dockerServerPrefsBean.getName();
-        this.host = dockerServerPrefsBean.getHost();
-        this.certPath = dockerServerPrefsBean.getCertPath();
+    public static DockerServer create(final DockerServerPrefsBean dockerServerPrefsBean) {
+        return create(dockerServerPrefsBean.getName(),
+                dockerServerPrefsBean.getHost(),
+                dockerServerPrefsBean.getCertPath());
     }
 
-    public String getName() {
-        return name;
+    public static Builder builder() {
+        return new AutoValue_DockerServer.Builder();
     }
 
-    public void setName(final String name) {
-        this.name = name;
-    }
+    @AutoValue.Builder
+    public static abstract class Builder {
+        public abstract Builder name(String name);
 
-    public String getHost() {
-        return host;
-    }
+        public abstract Builder host(String host);
 
-    public void setHost(final String host) {
-        this.host = host;
-    }
+        public abstract Builder certPath(String certPath);
 
-    public String getCertPath() {
-        return certPath;
-    }
-
-    public void setCertPath(final String certPath) {
-        this.certPath = certPath;
-    }
-
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        DockerServer that = (DockerServer) o;
-        return Objects.equals(this.name, that.name) &&
-                Objects.equals(this.host, that.host) &&
-                Objects.equals(this.certPath, that.certPath);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(name, host, certPath);
+        public abstract DockerServer build();
     }
 }

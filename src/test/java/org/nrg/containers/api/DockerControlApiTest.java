@@ -102,8 +102,8 @@ public class DockerControlApiTest {
     @Test
     public void testGetServer() throws Exception {
         final DockerServer server = controlApi.getServer();
-        assertEquals(CONTAINER_HOST, server.getHost());
-        assertEquals(CERT_PATH, server.getCertPath());
+        assertEquals(CONTAINER_HOST, server.host());
+        assertEquals(CERT_PATH, server.certPath());
     }
 
     @Test
