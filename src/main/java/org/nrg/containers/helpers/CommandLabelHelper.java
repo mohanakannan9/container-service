@@ -6,7 +6,7 @@ import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.model.CommandType;
 import org.nrg.containers.model.auto.DockerImage;
-import org.nrg.containers.model.auto.Command;
+import org.nrg.containers.model.command.auto.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

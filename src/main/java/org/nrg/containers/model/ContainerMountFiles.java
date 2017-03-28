@@ -12,7 +12,7 @@ import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import java.util.Objects;
 
-import static org.nrg.containers.model.auto.Command.CommandWrapperInput;
+import static org.nrg.containers.model.command.auto.Command.CommandWrapperInput;
 
 @Entity
 @Audited

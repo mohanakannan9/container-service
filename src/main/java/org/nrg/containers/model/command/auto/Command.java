@@ -1,4 +1,4 @@
-package org.nrg.containers.model.auto;
+package org.nrg.containers.model.command.auto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;

@@ -4,7 +4,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.MoreObjects.ToStringHelper;
 import com.google.common.collect.Maps;
 import org.hibernate.envers.Audited;
-import org.nrg.containers.model.auto.Command;
+import org.nrg.containers.model.command.auto.Command;
 
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.ElementCollection;

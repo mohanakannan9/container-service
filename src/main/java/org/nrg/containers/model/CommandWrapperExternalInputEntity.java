@@ -6,7 +6,7 @@ import com.google.common.base.MoreObjects;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.envers.Audited;
-import org.nrg.containers.model.auto.Command;
+import org.nrg.containers.model.command.auto.Command;
 
 import javax.annotation.Nonnull;
 import javax.persistence.Entity;

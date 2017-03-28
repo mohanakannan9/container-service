@@ -6,7 +6,7 @@ import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import org.nrg.containers.model.auto.Command;
+import org.nrg.containers.model.command.auto.Command;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

@@ -8,7 +8,7 @@ import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import org.hibernate.envers.Audited;
-import org.nrg.containers.model.auto.Command;
+import org.nrg.containers.model.command.auto.Command;
 
 import javax.annotation.Nullable;
 import javax.persistence.Entity;

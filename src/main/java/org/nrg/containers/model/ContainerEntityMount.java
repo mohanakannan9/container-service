@@ -6,7 +6,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.envers.Audited;
-import org.nrg.containers.model.auto.Command.CommandMount;
+import org.nrg.containers.model.command.auto.Command.CommandMount;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;

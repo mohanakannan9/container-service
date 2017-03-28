@@ -1,6 +1,6 @@
 package org.nrg.containers.exceptions;
 
-import org.nrg.containers.model.auto.Command.CommandWrapperInput;
+import org.nrg.containers.model.command.auto.Command.CommandWrapperInput;
 
 public class CommandWrapperInputResolutionException extends CommandResolutionException {
     private final CommandWrapperInput input;

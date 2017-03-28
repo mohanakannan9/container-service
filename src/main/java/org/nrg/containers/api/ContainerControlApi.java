@@ -7,7 +7,7 @@ import org.nrg.containers.model.Container;
 import org.nrg.containers.model.auto.DockerImage;
 import org.nrg.containers.model.DockerServer;
 import org.nrg.containers.model.ResolvedDockerCommand;
-import org.nrg.containers.model.auto.Command;
+import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.auto.DockerHub;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;

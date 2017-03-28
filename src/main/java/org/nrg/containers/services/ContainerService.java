@@ -1,7 +1,6 @@
 package org.nrg.containers.services;
 
 import org.nrg.containers.events.ContainerEvent;
-import org.nrg.containers.events.DockerContainerEvent;
 import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.ContainerMountResolutionException;
@@ -10,8 +9,8 @@ import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.ContainerEntity;
 import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.containers.model.ResolvedDockerCommand;
-import org.nrg.containers.model.auto.Command;
-import org.nrg.containers.model.auto.Command.CommandWrapper;
+import org.nrg.containers.model.command.auto.Command;
+import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xft.security.UserI;
 

@@ -11,11 +11,10 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.envers.Audited;
-import org.nrg.containers.model.auto.Command;
+import org.nrg.containers.model.command.auto.Command;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.persistence.CascadeType;
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.ElementCollection;

@@ -3,7 +3,7 @@ package org.nrg.containers.services;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotUniqueException;
-import org.nrg.containers.model.auto.Command;
+import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.auto.DockerHub;
 import org.nrg.containers.model.auto.DockerImage;
 import org.nrg.containers.model.auto.DockerImageAndCommandSummary;

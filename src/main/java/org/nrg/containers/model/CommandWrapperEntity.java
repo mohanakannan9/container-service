@@ -7,7 +7,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.envers.Audited;
-import org.nrg.containers.model.auto.Command;
+import org.nrg.containers.model.command.auto.Command;
 
 import javax.annotation.Nonnull;
 import javax.persistence.CascadeType;

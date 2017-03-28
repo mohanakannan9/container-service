@@ -11,7 +11,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.nrg.containers.config.CommandTestConfig;
-import org.nrg.containers.model.auto.Command;
+import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.services.CommandEntityService;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;

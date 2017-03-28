@@ -3,8 +3,8 @@ package org.nrg.containers.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
 import org.hibernate.envers.Audited;
-import org.nrg.containers.model.auto.Command.CommandOutput;
-import org.nrg.containers.model.auto.Command.CommandWrapperOutput;
+import org.nrg.containers.model.command.auto.Command.CommandOutput;
+import org.nrg.containers.model.command.auto.Command.CommandWrapperOutput;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;

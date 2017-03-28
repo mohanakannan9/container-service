@@ -12,7 +12,7 @@ import org.mockito.Mockito;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.config.DockerServiceIntegrationTestConfig;
 import org.nrg.containers.model.DockerServerPrefsBean;
-import org.nrg.containers.model.auto.Command;
+import org.nrg.containers.model.command.auto.Command;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
