@@ -49,6 +49,8 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.file.Paths;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -714,7 +716,12 @@ public class DockerControlApi implements ContainerControlApi {
     @Nullable
     private DockerImage spotifyToNrg(final @Nullable ImageInfo image) {
         return image == null ? null :
-                DockerImage.create(image.id(), null, image.config().labels());
+                DockerImage.builder()
+                        .imageId(image.id())
+                        .labels(image.config().labels() == null ?
+                                Collections.<String, String>emptyMap() :
+                                image.config().labels())
+                        .build();
     }
 
     /**
