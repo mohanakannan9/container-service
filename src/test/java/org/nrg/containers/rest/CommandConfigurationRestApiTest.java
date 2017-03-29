@@ -16,7 +16,7 @@ import org.nrg.containers.model.command.auto.Command.CommandOutput;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.model.command.entity.CommandEntity;
 import org.nrg.containers.model.configuration.CommandConfiguration;
-import org.nrg.containers.model.configuration.CommandConfigurationInternalRepresentation;
+import org.nrg.containers.model.configuration.CommandConfigurationInternal;
 import org.nrg.containers.services.CommandEntityService;
 import org.nrg.containers.services.ContainerConfigService;
 import org.nrg.containers.services.impl.ContainerConfigServiceImpl;
@@ -65,7 +65,7 @@ public class CommandConfigurationRestApiTest {
     private MockMvc mockMvc;
     private CommandConfiguration commandConfiguration;
     private String commandConfigurationJson;
-    private CommandConfigurationInternalRepresentation commandConfigurationInternalRepresentation;
+    private CommandConfigurationInternal commandConfigurationInternal;
     private String commandConfigurationInternalRepresentationJson;
     private Configuration mockConfig;
     private String configPath;
@@ -132,8 +132,8 @@ public class CommandConfigurationRestApiTest {
                 .build();
         commandConfigurationJson = mapper.writeValueAsString(commandConfiguration);
 
-        commandConfigurationInternalRepresentation = CommandConfigurationInternalRepresentation.create(true, commandConfiguration);
-        commandConfigurationInternalRepresentationJson = mapper.writeValueAsString(commandConfigurationInternalRepresentation);
+        commandConfigurationInternal = CommandConfigurationInternal.create(true, commandConfiguration);
+        commandConfigurationInternalRepresentationJson = mapper.writeValueAsString(commandConfigurationInternal);
 
 
         // mock out a org.nrg.config.Configuration

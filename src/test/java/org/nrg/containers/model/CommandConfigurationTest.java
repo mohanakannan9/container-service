@@ -10,7 +10,7 @@ import org.nrg.config.services.ConfigService;
 import org.nrg.containers.config.CommandConfigurationTestConfig;
 import org.nrg.containers.model.configuration.CommandConfiguration;
 import org.nrg.containers.model.configuration.CommandConfiguration.CommandInputConfiguration;
-import org.nrg.containers.model.configuration.CommandConfigurationInternalRepresentation;
+import org.nrg.containers.model.configuration.CommandConfigurationInternal;
 import org.nrg.containers.services.ContainerConfigService;
 import org.nrg.framework.constants.Scope;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,7 +53,7 @@ public class CommandConfigurationTest {
                 .addInput("foo", CommandInputConfiguration.builder().defaultValue("a").userSettable(true).build())
                 .addOutput("bar", CommandConfiguration.CommandOutputConfiguration.create("label"))
                 .build();
-        final String siteJson = mapper.writeValueAsString(CommandConfigurationInternalRepresentation.create(true, site));
+        final String siteJson = mapper.writeValueAsString(CommandConfigurationInternal.create(true, site));
 
         final Configuration mockSiteConfiguration = Mockito.mock(Configuration.class);
         when(mockSiteConfiguration.getContents()).thenReturn(siteJson);
@@ -128,8 +128,8 @@ public class CommandConfigurationTest {
         final CommandConfiguration project = CommandConfiguration.create(projectInputs, projectOutputs);
         final CommandConfiguration expected = CommandConfiguration.create(expectedInputs, expectedOutputs);
 
-        final String siteJson = mapper.writeValueAsString(CommandConfigurationInternalRepresentation.create(true, site));
-        final String projectJson = mapper.writeValueAsString(CommandConfigurationInternalRepresentation.create(true, project));
+        final String siteJson = mapper.writeValueAsString(CommandConfigurationInternal.create(true, site));
+        final String projectJson = mapper.writeValueAsString(CommandConfigurationInternal.create(true, project));
 
         final Configuration mockSiteConfiguration = Mockito.mock(Configuration.class);
         when(mockSiteConfiguration.getContents()).thenReturn(siteJson);

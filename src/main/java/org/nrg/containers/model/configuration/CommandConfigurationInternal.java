@@ -7,13 +7,13 @@ import com.google.auto.value.AutoValue;
 import javax.annotation.Nullable;
 
 @AutoValue
-public abstract class CommandConfigurationInternalRepresentation {
+public abstract class CommandConfigurationInternal {
     @Nullable @JsonProperty("enabled") public abstract Boolean enabled();
     @Nullable @JsonProperty("configuration") public abstract CommandConfiguration configuration();
 
     @JsonCreator
-    public static CommandConfigurationInternalRepresentation create(@JsonProperty("enabled") final Boolean enabled,
-                                                                    @JsonProperty("configuration") final CommandConfiguration configuration) {
-        return new AutoValue_CommandConfigurationInternalRepresentation(enabled, configuration);
+    public static CommandConfigurationInternal create(@JsonProperty("enabled") final Boolean enabled,
+                                                      @JsonProperty("configuration") final CommandConfiguration configuration) {
+        return new AutoValue_CommandConfigurationInternal(enabled, configuration);
     }
 }
