@@ -1,6 +1,8 @@
 package org.nrg.containers.model.configuration;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableMap;
@@ -15,6 +17,7 @@ import java.util.Map;
 import java.util.Set;
 
 @AutoValue
+@JsonInclude(Include.ALWAYS)
 public abstract class CommandConfiguration {
     @JsonProperty("inputs") public abstract ImmutableMap<String, CommandInputConfiguration> inputs();
     @JsonProperty("outputs") public abstract ImmutableMap<String, CommandOutputConfiguration> outputs();
@@ -97,6 +100,7 @@ public abstract class CommandConfiguration {
     }
 
     @AutoValue
+    @JsonInclude(Include.ALWAYS)
     public static abstract class CommandInputConfiguration {
         @Nullable @JsonProperty("description") public abstract String description();
         @Nullable @JsonProperty("type") public abstract String type();
@@ -195,6 +199,7 @@ public abstract class CommandConfiguration {
     }
 
     @AutoValue
+    @JsonInclude(Include.ALWAYS)
     public static abstract class CommandOutputConfiguration {
         @Nullable @JsonProperty("type") public abstract String type();
         @Nullable @JsonProperty("label") public abstract String label();
