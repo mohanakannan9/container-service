@@ -133,15 +133,24 @@ public abstract class CommandConfiguration {
         }
 
         static CommandInputConfiguration create(final Command.CommandInput commandInput) {
-            return create(commandInput.defaultValue(), commandInput.matcher(), true, false);
+            return builder()
+                    .defaultValue(commandInput.defaultValue())
+                    .matcher(commandInput.matcher())
+                    .build();
         }
 
         static CommandInputConfiguration create(final Command.CommandWrapperInput commandWrapperInput) {
-            return create(commandWrapperInput.defaultValue(), commandWrapperInput.matcher(), true, false);
+            return builder()
+                    .defaultValue(commandWrapperInput.defaultValue())
+                    .matcher(commandWrapperInput.matcher())
+                    .userSettable(commandWrapperInput.userSettable())
+                    .build();
         }
 
         public static Builder builder() {
-            return new AutoValue_CommandConfiguration_CommandInputConfiguration.Builder();
+            return new AutoValue_CommandConfiguration_CommandInputConfiguration.Builder()
+                    .userSettable(true)
+                    .advanced(false);
         }
 
         @AutoValue.Builder
@@ -161,11 +170,26 @@ public abstract class CommandConfiguration {
 
         @JsonCreator
         public static CommandOutputConfiguration create(@JsonProperty("label") final String label) {
-            return new AutoValue_CommandConfiguration_CommandOutputConfiguration(label);
+            return builder()
+                    .label(label)
+                    .build();
         }
 
         static CommandOutputConfiguration create(final Command.CommandWrapperOutput commandWrapperOutput) {
-            return create(commandWrapperOutput.label());
+            return builder()
+                    .label(commandWrapperOutput.label())
+                    .build();
+        }
+
+        public static Builder builder() {
+            return new AutoValue_CommandConfiguration_CommandOutputConfiguration.Builder();
+        }
+
+        @AutoValue.Builder
+        public static abstract class Builder {
+            public abstract Builder label(String label);
+
+            public abstract CommandOutputConfiguration build();
         }
     }
 }
