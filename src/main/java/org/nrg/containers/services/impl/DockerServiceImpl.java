@@ -1,5 +1,6 @@
 package org.nrg.containers.services.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
@@ -36,16 +37,19 @@ public class DockerServiceImpl implements DockerService {
     private DockerHubService dockerHubService;
     private CommandService commandService;
     private DockerServerPrefsBean dockerServerPrefsBean;
+    private ObjectMapper objectMapper;
 
     @Autowired
     public DockerServiceImpl(final ContainerControlApi controlApi,
                              final DockerHubService dockerHubService,
                              final CommandService commandService,
-                             final DockerServerPrefsBean dockerServerPrefsBean) {
+                             final DockerServerPrefsBean dockerServerPrefsBean,
+                             final ObjectMapper objectMapper) {
         this.controlApi = controlApi;
         this.dockerHubService = dockerHubService;
         this.commandService = commandService;
         this.dockerServerPrefsBean = dockerServerPrefsBean;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -230,7 +234,9 @@ public class DockerServiceImpl implements DockerService {
             if (StringUtils.isNotBlank(image.imageId())) {
                 imagesByIdUniqueValues.put(image.imageId(), image);
 
-                imageSummariesByImageId.put(image.imageId(), DockerImageAndCommandSummary.create(image, server));
+                imageSummariesByImageId.put(image.imageId(),
+                        DockerImageAndCommandSummary.create(image, server,
+                                CommandLabelHelper.parseLabels(null, image, objectMapper)));
             }
         }
 
@@ -308,7 +314,7 @@ public class DockerServiceImpl implements DockerService {
         if (log.isDebugEnabled()) {
             log.debug("Parsing labels for " + imageName);
         }
-        final List<Command> parsed = CommandLabelHelper.parseLabels(imageName, dockerImage);
+        final List<Command> parsed = CommandLabelHelper.parseLabels(imageName, dockerImage, objectMapper);
 
         if (parsed == null || parsed.isEmpty()) {
             log.debug("Did not find any command labels.");

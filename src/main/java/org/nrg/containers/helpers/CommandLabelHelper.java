@@ -19,11 +19,6 @@ public class CommandLabelHelper {
 
     public static final String LABEL_KEY = "org.nrg.commands";
 
-
-    public static List<Command> parseLabels(final String imageName, final DockerImage dockerImage) {
-        return parseLabels(imageName, dockerImage, new ObjectMapper());
-    }
-
     public static List<Command> parseLabels(final String imageName, final DockerImage dockerImage, final ObjectMapper objectMapper) {
         if (dockerImage == null) {
             return null;

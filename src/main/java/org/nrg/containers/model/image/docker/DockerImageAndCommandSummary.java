@@ -33,21 +33,14 @@ public abstract class DockerImageAndCommandSummary {
                 commands == null ? Lists.<Command>newArrayList() : commands);
     }
 
-    public static DockerImageAndCommandSummary create(final DockerImage dockerImage, final String server) {
-        final DockerImageAndCommandSummary created = create(
+    public static DockerImageAndCommandSummary create(final DockerImage dockerImage,
+                                                      final String server,
+                                                      final List<Command> commands) {
+        return create(
                 dockerImage == null ? "" : dockerImage.imageId(),
                 server,
                 dockerImage == null ? Sets.<String>newHashSet() : Sets.newHashSet(dockerImage.tags()),
-                Lists.<Command>newArrayList());
-
-        final List<Command> commandsFromImageLabels = CommandLabelHelper.parseLabels(null, dockerImage);
-        if (commandsFromImageLabels != null) {
-            for (final Command command : commandsFromImageLabels) {
-                created.addCommand(command);
-            }
-        }
-
-        return created;
+                commands == null ? Lists.<Command>newArrayList() : commands);
     }
 
     public static DockerImageAndCommandSummary create(final String imageId, final String server, final Command command) {

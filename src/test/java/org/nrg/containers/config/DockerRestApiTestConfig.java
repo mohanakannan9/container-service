@@ -42,8 +42,9 @@ public class DockerRestApiTestConfig extends WebSecurityConfigurerAdapter {
     public DockerService dockerService(final ContainerControlApi controlApi,
                                        final DockerHubService dockerHubService,
                                        final CommandService commandService,
-                                       final DockerServerPrefsBean dockerServerPrefsBean) {
-        return new DockerServiceImpl(controlApi, dockerHubService, commandService, dockerServerPrefsBean);
+                                       final DockerServerPrefsBean dockerServerPrefsBean,
+                                       final ObjectMapper objectMapper) {
+        return new DockerServiceImpl(controlApi, dockerHubService, commandService, dockerServerPrefsBean, objectMapper);
     }
 
     @Bean

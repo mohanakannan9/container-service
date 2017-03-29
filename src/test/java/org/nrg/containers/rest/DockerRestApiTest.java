@@ -625,7 +625,7 @@ public class DockerRestApiTest {
         final List<DockerImageAndCommandSummary> expected = Lists.newArrayList(
                 DockerImageAndCommandSummary.create(imageWithSavedCommand_id, MOCK_CONTAINER_SERVER_NAME, commandWithImage),
                 DockerImageAndCommandSummary.create(unknownCommand),
-                DockerImageAndCommandSummary.create(imageWithNonDbCommandLabels, MOCK_CONTAINER_SERVER_NAME)
+                DockerImageAndCommandSummary.create(imageWithNonDbCommandLabels, MOCK_CONTAINER_SERVER_NAME, null)
         );
 
         final MockHttpServletRequestBuilder request = get(path)
