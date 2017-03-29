@@ -360,64 +360,70 @@ public abstract class Command {
 
     @AutoValue.Builder
     public abstract static class Builder {
-        public abstract Builder id(final long id);
-        public abstract Builder name(final String name);
-        public abstract Builder label(final String label);
-        public abstract Builder description(final String description);
-        public abstract Builder version(final String version);
-        public abstract Builder schemaVersion(final String schemaVersion);
-        public abstract Builder infoUrl(final String infoUrl);
-        public abstract Builder image(final String image);
-        public abstract Builder type(final String type);
-        public abstract Builder index(final String index);
-        public abstract Builder hash(final String hash);
-        public abstract Builder workingDirectory(final String workingDirectory);
-        public abstract Builder commandLine(final String commandLine);
-        public abstract Builder mounts(final List<CommandMount> mounts);
-        public abstract Builder environmentVariables(final Map<String, String> environmentVariables);
-        public abstract Builder ports(final Map<String, String> ports);
-        public abstract Builder inputs(final List<CommandInput> inputs);
-        public abstract Builder outputs(final List<CommandOutput> outputs);
-        public abstract Builder xnatCommandWrappers(final List<CommandWrapper> xnatCommandWrappers);
+        public abstract Builder id(long id);
 
-        abstract ImmutableMap.Builder<String, String> environmentVariablesBuilder();
+        public abstract Builder name(String name);
 
-        public Builder addEnvironmentVariable(final String name, final String value) {
-            environmentVariablesBuilder().put(name, value);
-            return this;
-        }
+        public abstract Builder label(String label);
 
-        abstract ImmutableMap.Builder<String, String> portsBuilder();
+        public abstract Builder description(String description);
 
-        public Builder addPort(final String containerPort, final String hostPort) {
-            portsBuilder().put(containerPort, hostPort);
-            return this;
-        }
+        public abstract Builder version(String version);
 
+        public abstract Builder schemaVersion(String schemaVersion);
+
+        public abstract Builder infoUrl(String infoUrl);
+
+        public abstract Builder image(String image);
+
+        public abstract Builder type(String type);
+
+        public abstract Builder index(String index);
+
+        public abstract Builder hash(String hash);
+
+        public abstract Builder workingDirectory(String workingDirectory);
+
+        public abstract Builder commandLine(String commandLine);
+
+        public abstract Builder mounts(@Nonnull List<CommandMount> mounts);
         abstract ImmutableList.Builder<CommandMount> mountsBuilder();
-
-        public Builder addMount(final CommandMount commandMount) {
+        public Builder addMount(final @Nonnull CommandMount commandMount) {
             mountsBuilder().add(commandMount);
             return this;
         }
 
-        abstract ImmutableList.Builder<CommandInput> inputsBuilder();
+        public abstract Builder environmentVariables(@Nonnull Map<String, String> environmentVariables);
+        abstract ImmutableMap.Builder<String, String> environmentVariablesBuilder();
+        public Builder addEnvironmentVariable(final @Nonnull String name, final String value) {
+            environmentVariablesBuilder().put(name, value);
+            return this;
+        }
 
-        public Builder addInput(final CommandInput commandInput) {
+        public abstract Builder ports(@Nonnull Map<String, String> ports);
+        abstract ImmutableMap.Builder<String, String> portsBuilder();
+        public Builder addPort(final @Nonnull String containerPort, final String hostPort) {
+            portsBuilder().put(containerPort, hostPort);
+            return this;
+        }
+
+        public abstract Builder inputs(@Nonnull List<CommandInput> inputs);
+        abstract ImmutableList.Builder<CommandInput> inputsBuilder();
+        public Builder addInput(final @Nonnull CommandInput commandInput) {
             inputsBuilder().add(commandInput);
             return this;
         }
 
+        public abstract Builder outputs(@Nonnull List<CommandOutput> outputs);
         abstract ImmutableList.Builder<CommandOutput> outputsBuilder();
-
-        public Builder addOutput(final CommandOutput commandOutput) {
+        public Builder addOutput(final @Nonnull CommandOutput commandOutput) {
             outputsBuilder().add(commandOutput);
             return this;
         }
 
+        public abstract Builder xnatCommandWrappers(@Nonnull List<CommandWrapper> xnatCommandWrappers);
         abstract ImmutableList.Builder<CommandWrapper> xnatCommandWrappersBuilder();
-
-        public Builder addCommandWrapper(final CommandWrapper commandWrapper) {
+        public Builder addCommandWrapper(final @Nonnull CommandWrapper commandWrapper) {
             xnatCommandWrappersBuilder().add(commandWrapper);
             return this;
         }
@@ -770,33 +776,36 @@ public abstract class Command {
 
         @AutoValue.Builder
         public abstract static class Builder {
-            public abstract Builder id(final long id);
-            public abstract Builder name(final String name);
-            public abstract Builder description(final String description);
-            public abstract Builder contexts(final Set<String> contexts);
+            public abstract Builder id(long id);
+
+            public abstract Builder name(String name);
+
+            public abstract Builder description(String description);
+
+            public abstract Builder contexts(@Nonnull Set<String> contexts);
             abstract ImmutableSet.Builder<String> contextsBuilder();
-            public Builder addContext(final String context) {
+            public Builder addContext(final @Nonnull String context) {
                 contextsBuilder().add(context);
                 return this;
             }
 
-            public abstract Builder externalInputs(final List<CommandWrapperExternalInput> externalInputs);
+            public abstract Builder externalInputs(@Nonnull List<CommandWrapperExternalInput> externalInputs);
             abstract ImmutableList.Builder<CommandWrapperExternalInput> externalInputsBuilder();
-            public Builder addExternalInput(final CommandWrapperExternalInput externalInput) {
+            public Builder addExternalInput(final @Nonnull CommandWrapperExternalInput externalInput) {
                 externalInputsBuilder().add(externalInput);
                 return this;
             }
 
-            public abstract Builder derivedInputs(final List<CommandWrapperDerivedInput> derivedInputs);
+            public abstract Builder derivedInputs(@Nonnull List<CommandWrapperDerivedInput> derivedInputs);
             abstract ImmutableList.Builder<CommandWrapperDerivedInput> derivedInputsBuilder();
-            public Builder addDerivedInput(final CommandWrapperDerivedInput derivedInput) {
+            public Builder addDerivedInput(final @Nonnull CommandWrapperDerivedInput derivedInput) {
                 derivedInputsBuilder().add(derivedInput);
                 return this;
             }
 
-            public abstract Builder outputHandlers(final List<CommandWrapperOutput> outputHandlers);
+            public abstract Builder outputHandlers(@Nonnull List<CommandWrapperOutput> outputHandlers);
             abstract ImmutableList.Builder<CommandWrapperOutput> outputHandlersBuilder();
-            public Builder addOutputHandler(final CommandWrapperOutput output) {
+            public Builder addOutputHandler(final @Nonnull CommandWrapperOutput output) {
                 outputHandlersBuilder().add(output);
                 return this;
             }

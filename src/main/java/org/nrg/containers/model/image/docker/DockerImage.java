@@ -10,6 +10,7 @@ import com.google.common.collect.Maps;
 import io.swagger.annotations.ApiModel;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
@@ -42,7 +43,7 @@ public abstract class DockerImage {
     public static abstract class Builder {
         public abstract Builder imageId(String imageId);
 
-        public abstract Builder tags(List<String> tags);
+        public abstract Builder tags(@Nonnull List<String> tags);
         abstract ImmutableList.Builder<String> tagsBuilder();
         public Builder addTag(final String tag) {
             if (StringUtils.isNotBlank(tag)) {
@@ -51,7 +52,7 @@ public abstract class DockerImage {
             return this;
         }
 
-        public abstract Builder labels(Map<String, String> labels);
+        public abstract Builder labels(@Nonnull Map<String, String> labels);
         abstract ImmutableMap.Builder<String, String> labelsBuilder();
         public Builder addLabel(final String name, final String value) {
             if (StringUtils.isNotBlank(name)) {

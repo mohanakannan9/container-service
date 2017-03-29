@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 @AutoValue
@@ -36,9 +37,9 @@ public abstract class DockerServer {
 
     @AutoValue.Builder
     public static abstract class Builder {
-        public abstract Builder name(String name);
+        public abstract Builder name(@Nonnull String name);
 
-        public abstract Builder host(String host);
+        public abstract Builder host(@Nonnull String host);
 
         public abstract Builder certPath(String certPath);
 

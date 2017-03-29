@@ -94,20 +94,16 @@ public abstract class CommandConfiguration {
 
     @AutoValue.Builder
     public abstract static class Builder {
-        public abstract Builder inputs(final Map<String, CommandInputConfiguration> inputs);
-
+        public abstract Builder inputs(@Nonnull Map<String, CommandInputConfiguration> inputs);
         abstract ImmutableMap.Builder<String, CommandInputConfiguration> inputsBuilder();
-
-        public Builder addInput(final String inputName, final CommandInputConfiguration commandInputConfiguration) {
+        public Builder addInput(final @Nonnull String inputName, final CommandInputConfiguration commandInputConfiguration) {
             inputsBuilder().put(inputName, commandInputConfiguration);
             return this;
         }
 
-        public abstract Builder outputs(final Map<String, CommandOutputConfiguration> outputs);
-
+        public abstract Builder outputs(@Nonnull Map<String, CommandOutputConfiguration> outputs);
         abstract ImmutableMap.Builder<String, CommandOutputConfiguration> outputsBuilder();
-
-        public Builder addOutput(final String outputName, final CommandOutputConfiguration commandOutputConfiguration) {
+        public Builder addOutput(final @Nonnull String outputName, final CommandOutputConfiguration commandOutputConfiguration) {
             outputsBuilder().put(outputName, commandOutputConfiguration);
             return this;
         }

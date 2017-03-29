@@ -49,7 +49,7 @@ public abstract class DockerImageAndCommandSummary {
 
         public abstract Builder imageId(String imageId);
 
-        public abstract Builder imageNames(Set<String> imageNames);
+        public abstract Builder imageNames(@Nonnull Set<String> imageNames);
         abstract ImmutableSet.Builder<String> imageNamesBuilder();
         public Builder addImageName(final String imageName) {
             if (StringUtils.isNotBlank(imageName)) {
@@ -57,7 +57,7 @@ public abstract class DockerImageAndCommandSummary {
             }
             return this;
         }
-        public Builder imageNames(List<String> imageNames) {
+        public Builder imageNames(@Nonnull List<String> imageNames) {
             return this.imageNames(new HashSet<>(imageNames));
         }
 
@@ -66,7 +66,7 @@ public abstract class DockerImageAndCommandSummary {
                     .imageNames(dockerImage.tags());
         }
 
-        public abstract Builder commands(List<Command> commands);
+        public abstract Builder commands(@Nonnull List<Command> commands);
         abstract ImmutableList.Builder<Command> commandsBuilder();
         public Builder addCommand(final @Nonnull Command command) {
             commandsBuilder().add(command);
