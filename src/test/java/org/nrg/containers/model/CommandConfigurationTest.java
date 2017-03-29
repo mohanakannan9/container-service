@@ -8,9 +8,9 @@ import org.mockito.Mockito;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.config.CommandConfigurationTestConfig;
-import org.nrg.containers.model.configuration.CommandConfiguration;
-import org.nrg.containers.model.configuration.CommandConfiguration.CommandInputConfiguration;
 import org.nrg.containers.model.configuration.CommandConfigurationInternal;
+import org.nrg.containers.model.configuration.CommandConfigurationInternal.CommandInputConfiguration;
+import org.nrg.containers.model.configuration.CommandConfigurationInternal.CommandOutputConfiguration;
 import org.nrg.containers.services.ContainerConfigService;
 import org.nrg.framework.constants.Scope;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,17 +49,17 @@ public class CommandConfigurationTest {
 
     @Test
     public void testConfigureCommandForSite() throws Exception {
-        final CommandConfiguration site = CommandConfiguration.builder()
+        final CommandConfigurationInternal site = CommandConfigurationInternal.builder()
                 .addInput("foo", CommandInputConfiguration.builder().defaultValue("a").userSettable(true).build())
-                .addOutput("bar", CommandConfiguration.CommandOutputConfiguration.create("label"))
+                .addOutput("bar", CommandOutputConfiguration.create("label"))
                 .build();
-        final String siteJson = mapper.writeValueAsString(CommandConfigurationInternal.create(true, site));
+        final String siteJson = mapper.writeValueAsString(site);
 
         final Configuration mockSiteConfiguration = Mockito.mock(Configuration.class);
         when(mockSiteConfiguration.getContents()).thenReturn(siteJson);
         when(mockConfigService.getConfig(eq(TOOL_ID), anyString(), eq(Scope.Site), isNull(String.class))).thenReturn(mockSiteConfiguration);
 
-        final CommandConfiguration retrieved = containerConfigService.getSiteConfiguration(COMMAND_ID, WRAPPER_NAME);
+        final CommandConfigurationInternal retrieved = containerConfigService.getSiteConfiguration(COMMAND_ID, WRAPPER_NAME);
         assertEquals(site, retrieved);
     }
 
@@ -104,13 +104,13 @@ public class CommandConfigurationTest {
         projectInputs.put("d", CommandInputConfiguration.builder().userSettable(false).build());
         expectedInputs.put("d", allNotNullInputBuilder().userSettable(false).build());
 
-        final Map<String, CommandConfiguration.CommandOutputConfiguration> siteOutputs = Maps.newHashMap();
-        final Map<String, CommandConfiguration.CommandOutputConfiguration> projectOutputs = Maps.newHashMap();
-        final Map<String, CommandConfiguration.CommandOutputConfiguration> expectedOutputs = Maps.newHashMap();
+        final Map<String, CommandOutputConfiguration> siteOutputs = Maps.newHashMap();
+        final Map<String, CommandOutputConfiguration> projectOutputs = Maps.newHashMap();
+        final Map<String, CommandOutputConfiguration> expectedOutputs = Maps.newHashMap();
 
-        final CommandConfiguration.CommandOutputConfiguration allNull = CommandConfiguration.CommandOutputConfiguration.create((String)null);
-        final CommandConfiguration.CommandOutputConfiguration nonNull = CommandConfiguration.CommandOutputConfiguration.create("181024y2");
-        final CommandConfiguration.CommandOutputConfiguration nonNull2 = CommandConfiguration.CommandOutputConfiguration.create("2");
+        final CommandOutputConfiguration allNull = CommandOutputConfiguration.create(null);
+        final CommandOutputConfiguration nonNull = CommandOutputConfiguration.create("181024y2");
+        final CommandOutputConfiguration nonNull2 = CommandOutputConfiguration.create("2");
 
         siteOutputs.put("a", nonNull);
         projectOutputs.put("a", allNull);
@@ -124,12 +124,12 @@ public class CommandConfigurationTest {
         projectOutputs.put("c", nonNull2);
         expectedOutputs.put("c", nonNull2);
 
-        final CommandConfiguration site = CommandConfiguration.create(siteInputs, siteOutputs);
-        final CommandConfiguration project = CommandConfiguration.create(projectInputs, projectOutputs);
-        final CommandConfiguration expected = CommandConfiguration.create(expectedInputs, expectedOutputs);
+        final CommandConfigurationInternal site = CommandConfigurationInternal.create(true, siteInputs, siteOutputs);
+        final CommandConfigurationInternal project = CommandConfigurationInternal.create(true, projectInputs, projectOutputs);
+        final CommandConfigurationInternal expected = CommandConfigurationInternal.create(true, expectedInputs, expectedOutputs);
 
-        final String siteJson = mapper.writeValueAsString(CommandConfigurationInternal.create(true, site));
-        final String projectJson = mapper.writeValueAsString(CommandConfigurationInternal.create(true, project));
+        final String siteJson = mapper.writeValueAsString(site);
+        final String projectJson = mapper.writeValueAsString(project);
 
         final Configuration mockSiteConfiguration = Mockito.mock(Configuration.class);
         when(mockSiteConfiguration.getContents()).thenReturn(siteJson);
@@ -138,7 +138,8 @@ public class CommandConfigurationTest {
         when(mockProjectConfiguration.getContents()).thenReturn(projectJson);
         when(mockConfigService.getConfig(eq(TOOL_ID), anyString(), eq(Scope.Project), isNotNull(String.class))).thenReturn(mockProjectConfiguration);
 
-        final CommandConfiguration retrieved = containerConfigService.getProjectConfiguration(PROJECT_NAME, COMMAND_ID, WRAPPER_NAME);
+        final CommandConfigurationInternal retrieved =
+                containerConfigService.getProjectConfiguration(PROJECT_NAME, COMMAND_ID, WRAPPER_NAME);
         assertEquals(expected, retrieved);
     }
 

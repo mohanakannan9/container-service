@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 
@@ -63,26 +64,26 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
     }
 
     @Override
-    public void configureForProject(final CommandConfiguration commandConfiguration, final String project, final long commandId, final String wrapperName, final boolean enable, final String username, final String reason) throws CommandConfigurationException {
-        setCommandConfiguration(commandConfiguration, Scope.Project, project, commandId, wrapperName, enable, username, reason);
+    public void configureForProject(final CommandConfigurationInternal commandConfigurationInternal, final String project, final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
+        setCommandConfigurationInternal(commandConfigurationInternal, Scope.Project, project, commandId, wrapperName, username, reason);
     }
 
     @Override
-    public void configureForSite(final CommandConfiguration commandConfiguration, final long commandId, final String wrapperName, final boolean enable, final String username, final String reason) throws CommandConfigurationException {
-        setCommandConfiguration(commandConfiguration, Scope.Site, null, commandId, wrapperName, enable, username, reason);
+    public void configureForSite(final CommandConfigurationInternal commandConfigurationInternal, final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
+        setCommandConfigurationInternal(commandConfigurationInternal, Scope.Site, null, commandId, wrapperName, username, reason);
     }
 
     @Override
     @Nullable
-    public CommandConfiguration getSiteConfiguration(final long commandId, final String wrapperName) {
+    public CommandConfigurationInternal getSiteConfiguration(final long commandId, final String wrapperName) {
         return getCommandConfiguration(Scope.Site, null, commandId, wrapperName);
     }
 
     @Override
     @Nullable
-    public CommandConfiguration getProjectConfiguration(final String project, final long commandId, final String wrapperName) {
-        final CommandConfiguration siteConfig = getSiteConfiguration(commandId, wrapperName);
-        final CommandConfiguration projectConfig = getCommandConfiguration(Scope.Project, project, commandId, wrapperName);
+    public CommandConfigurationInternal getProjectConfiguration(final String project, final long commandId, final String wrapperName) {
+        final CommandConfigurationInternal siteConfig = getSiteConfiguration(commandId, wrapperName);
+        final CommandConfigurationInternal projectConfig = getCommandConfiguration(Scope.Project, project, commandId, wrapperName);
         return siteConfig == null ? projectConfig : siteConfig.merge(projectConfig);
     }
 
@@ -181,25 +182,17 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
         return getCommandIsEnabled(Scope.Project, project, commandId, wrapperName);
     }
 
-    private void setCommandConfiguration(final CommandConfiguration commandConfiguration, final Scope scope, final String project, final long commandId, final String wrapperName, final boolean enable, final String username, final String reason) throws CommandConfigurationException {
-        final CommandConfigurationInternal alreadyExists = getCommandConfigurationInternalRepresentation(scope, project, commandId, wrapperName);
-        // If the "enable" param is true, we enable the configuration.
-        // Otherwise, we leave it alone if the configuration already exists, or set it to null.
-        // We will never set "enabled=false" here.
-        final Boolean enabledStatusToSet = enable ? Boolean.TRUE : (alreadyExists == null ? null : alreadyExists.enabled());
-        setCommandConfigurationInternalRepresentation(
-                CommandConfigurationInternal.create(enabledStatusToSet, commandConfiguration),
-                scope, project, commandId, wrapperName, username, reason);
-    }
-
     private void setCommandEnabled(final Boolean enabled, final Scope scope, final String project, final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
-        final CommandConfigurationInternal alreadyExists = getCommandConfigurationInternalRepresentation(scope, project, commandId, wrapperName);
-        setCommandConfigurationInternalRepresentation(CommandConfigurationInternal.create(enabled, alreadyExists == null ? null : alreadyExists.configuration()),
-                scope, project, commandId, wrapperName, username, reason);
+        final CommandConfigurationInternal alreadyExists = getCommandConfiguration(scope, project, commandId, wrapperName);
+        final CommandConfigurationInternal toSet =
+                (alreadyExists == null ? CommandConfigurationInternal.builder() : alreadyExists.toBuilder())
+                        .enabled(enabled)
+                        .build();
+        setCommandConfigurationInternal(toSet, scope, project, commandId, wrapperName, username, reason);
     }
 
-    private void setCommandConfigurationInternalRepresentation(final CommandConfigurationInternal commandConfigurationInternal,
-                                                               final Scope scope, final String project, final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
+    private void setCommandConfigurationInternal(final CommandConfigurationInternal commandConfigurationInternal,
+                                                 final Scope scope, final String project, final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
         if (scope.equals(Scope.Project) && StringUtils.isBlank(project)) {
             // TODO error: project can't be blank
         }
@@ -228,19 +221,13 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
     }
 
     @Nullable
-    private CommandConfiguration getCommandConfiguration(final Scope scope, final String project, final long commandId, final String wrapperName) {
-        final CommandConfigurationInternal commandConfigurationInternal = getCommandConfigurationInternalRepresentation(scope, project, commandId, wrapperName);
-        return commandConfigurationInternal == null ? null : commandConfigurationInternal.configuration();
-    }
-
-    @Nullable
     private Boolean getCommandIsEnabled(final Scope scope, final String project, final long commandId, final String wrapperName) {
-        final CommandConfigurationInternal commandConfigurationInternal = getCommandConfigurationInternalRepresentation(scope, project, commandId, wrapperName);
+        final CommandConfigurationInternal commandConfigurationInternal = getCommandConfiguration(scope, project, commandId, wrapperName);
         return commandConfigurationInternal == null ? null : commandConfigurationInternal.enabled();
     }
 
     @Nullable
-    private CommandConfigurationInternal getCommandConfigurationInternalRepresentation(final Scope scope, final String project, final long commandId, final String wrapperName) {
+    private CommandConfigurationInternal getCommandConfiguration(final Scope scope, final String project, final long commandId, final String wrapperName) {
         if (scope.equals(Scope.Project) && StringUtils.isBlank(project)) {
             // TODO error: project can't be blank
         }
@@ -282,7 +269,7 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
             // TODO error
         }
 
-        final CommandConfigurationInternal commandConfigurationInternal = getCommandConfigurationInternalRepresentation(scope, project, commandId, wrapperName);
+        final CommandConfigurationInternal commandConfigurationInternal = getCommandConfiguration(scope, project, commandId, wrapperName);
         if (commandConfigurationInternal == null) {
             return;
         }
@@ -292,7 +279,7 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
             return;
         }
 
-        setCommandConfigurationInternalRepresentation(CommandConfigurationInternal.create(commandConfigurationInternal.enabled(), null),
+        setCommandConfigurationInternal(CommandConfigurationInternal.create(commandConfigurationInternal.enabled(), null),
                 scope, project, commandId, wrapperName, username, "Deleting command configuration");
     }
 }
