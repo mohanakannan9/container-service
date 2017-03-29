@@ -5,6 +5,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Function;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -23,6 +26,7 @@ import org.nrg.containers.model.command.entity.CommandWrapperEntity;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -30,7 +34,7 @@ import java.util.Set;
 @AutoValue
 public abstract class Command {
     @JsonProperty("id") public abstract long id();
-    @JsonProperty("name") public abstract String name();
+    @Nullable @JsonProperty("name") public abstract String name();
     @Nullable @JsonProperty("label") public abstract String label();
     @Nullable @JsonProperty("description") public abstract String description();
     @Nullable @JsonProperty("version") public abstract String version();
@@ -42,12 +46,12 @@ public abstract class Command {
     @Nullable @JsonProperty("hash") public abstract String hash();
     @Nullable @JsonProperty("working-directory") public abstract String workingDirectory();
     @Nullable @JsonProperty("command-line") public abstract String commandLine();
-    @JsonProperty("mounts") public abstract List<CommandMount> mounts();
-    @JsonProperty("environment-variables") public abstract Map<String, String> environmentVariables();
-    @JsonProperty("ports") public abstract Map<String, String> ports();
-    @JsonProperty("inputs") public abstract List<CommandInput> inputs();
-    @JsonProperty("outputs") public abstract List<CommandOutput> outputs();
-    @JsonProperty("xnat") public abstract List<CommandWrapper> xnatCommandWrappers();
+    @JsonProperty("mounts") public abstract ImmutableList<CommandMount> mounts();
+    @JsonProperty("environment-variables") public abstract ImmutableMap<String, String> environmentVariables();
+    @JsonProperty("ports") public abstract ImmutableMap<String, String> ports();
+    @JsonProperty("inputs") public abstract ImmutableList<CommandInput> inputs();
+    @JsonProperty("outputs") public abstract ImmutableList<CommandOutput> outputs();
+    @JsonProperty("xnat") public abstract ImmutableList<CommandWrapper> xnatCommandWrappers();
 
     @JsonCreator
     static Command create(@JsonProperty("id") final long id,
@@ -71,7 +75,7 @@ public abstract class Command {
                           @JsonProperty("xnat") final List<CommandWrapper> xnatCommandWrappers) {
         return builder()
                 .id(id)
-                .name(name == null ? "" : name)
+                .name(name)
                 .label(label)
                 .description(description)
                 .version(version)
@@ -83,12 +87,12 @@ public abstract class Command {
                 .hash(hash)
                 .workingDirectory(workingDirectory)
                 .commandLine(commandLine)
-                .mounts(mounts == null ? Lists.<CommandMount>newArrayList() : mounts)
-                .environmentVariables(environmentVariables == null ? Maps.<String, String>newHashMap() : environmentVariables)
-                .ports(ports == null ? Maps.<String, String>newHashMap() : ports)
-                .inputs(inputs == null ? Lists.<CommandInput>newArrayList() : inputs)
-                .outputs(outputs == null ? Lists.<CommandOutput>newArrayList() : outputs)
-                .xnatCommandWrappers(xnatCommandWrappers == null ? Lists.<CommandWrapper>newArrayList() : xnatCommandWrappers)
+                .mounts(mounts == null ? Collections.<CommandMount>emptyList() : mounts)
+                .environmentVariables(environmentVariables == null ? Collections.<String, String>emptyMap() : environmentVariables)
+                .ports(ports == null ? Collections.<String, String>emptyMap() : ports)
+                .inputs(inputs == null ? Collections.<CommandInput>emptyList() : inputs)
+                .outputs(outputs == null ? Collections.<CommandOutput>emptyList() : outputs)
+                .xnatCommandWrappers(xnatCommandWrappers == null ? Collections.<CommandWrapper>emptyList() : xnatCommandWrappers)
                 .build();
     }
 
@@ -109,10 +113,10 @@ public abstract class Command {
                 .workingDirectory(commandEntity.getWorkingDirectory())
                 .commandLine(commandEntity.getCommandLine())
                 .environmentVariables(commandEntity.getEnvironmentVariables() == null ?
-                        Maps.<String, String>newHashMap() :
-                        Maps.newHashMap(commandEntity.getEnvironmentVariables()))
+                        Collections.<String, String>emptyMap() :
+                        commandEntity.getEnvironmentVariables())
                 .mounts(commandEntity.getMounts() == null ?
-                        Lists.<CommandMount>newArrayList() :
+                        Collections.<CommandMount>emptyList() :
                         Lists.newArrayList(Lists.transform(commandEntity.getMounts(), new Function<CommandMountEntity, CommandMount>() {
                             @Nullable
                             @Override
@@ -121,7 +125,7 @@ public abstract class Command {
                             }
                         })))
                 .inputs(commandEntity.getInputs() == null ?
-                        Lists.<CommandInput>newArrayList() :
+                        Collections.<CommandInput>emptyList() :
                         Lists.newArrayList(Lists.transform(commandEntity.getInputs(), new Function<CommandInputEntity, CommandInput>() {
                             @Nullable
                             @Override
@@ -130,7 +134,7 @@ public abstract class Command {
                             }
                         })))
                 .outputs(commandEntity.getOutputs() == null ?
-                        Lists.<CommandOutput>newArrayList() :
+                        Collections.<CommandOutput>emptyList() :
                         Lists.newArrayList(Lists.transform(commandEntity.getOutputs(), new Function<CommandOutputEntity, CommandOutput>() {
                             @Nullable
                             @Override
@@ -139,7 +143,7 @@ public abstract class Command {
                             }
                         })))
                 .xnatCommandWrappers(commandEntity.getCommandWrapperEntities() == null ?
-                        Lists.<CommandWrapper>newArrayList() :
+                        Collections.<CommandWrapper>emptyList() :
                         Lists.newArrayList(Lists.transform(commandEntity.getCommandWrapperEntities(), new Function<CommandWrapperEntity, CommandWrapper>() {
                             @Nullable
                             @Override
@@ -153,16 +157,12 @@ public abstract class Command {
                 builder = builder.index(((DockerCommandEntity) commandEntity).getIndex())
                         .hash(((DockerCommandEntity) commandEntity).getHash())
                         .ports(((DockerCommandEntity) commandEntity).getPorts() == null ?
-                                Maps.<String, String>newHashMap() :
+                                Collections.<String, String>emptyMap() :
                                 Maps.newHashMap(((DockerCommandEntity) commandEntity).getPorts()));
                 break;
         }
 
         return builder.build();
-    }
-
-    public void addWrapper(final CommandWrapper commandWrapper) {
-        xnatCommandWrappers().add(commandWrapper);
     }
 
     public abstract Builder toBuilder();
@@ -171,13 +171,7 @@ public abstract class Command {
         return new AutoValue_Command.Builder()
                 .id(0L)
                 .name("")
-                .type(CommandEntity.DEFAULT_TYPE.getName())
-                .mounts(Lists.<CommandMount>newArrayList())
-                .environmentVariables(Maps.<String, String>newHashMap())
-                .ports(Maps.<String, String>newHashMap())
-                .inputs(Lists.<CommandInput>newArrayList())
-                .outputs(Lists.<CommandOutput>newArrayList())
-                .xnatCommandWrappers(Lists.<CommandWrapper>newArrayList());
+                .type(CommandEntity.DEFAULT_TYPE.getName());
     }
 
     @Nonnull
@@ -199,7 +193,6 @@ public abstract class Command {
         }
 
         final Function<String, String> addCommandNameToError = new Function<String, String>() {
-            @Nullable
             @Override
             public String apply(@Nullable final String input) {
                 return commandName + input;
@@ -272,7 +265,6 @@ public abstract class Command {
             }
             final String wrapperName = commandName + "wrapper \"" + commandWrapper.name() + "\" - ";
             final Function<String, String> addWrapperNameToError = new Function<String, String>() {
-                @Nullable
                 @Override
                 public String apply(@Nullable final String input) {
                     return wrapperName + input;
@@ -328,6 +320,8 @@ public abstract class Command {
 
                 if (wrapperOutputNames.contains(output.name())) {
                     errors.add(wrapperName + "output handler name \"" + output.name() + "\" is not unique.");
+                } else {
+                    wrapperOutputNames.add(output.name());
                 }
 
                 if (!outputNames.contains(output.commandOutputName())) {
@@ -386,13 +380,55 @@ public abstract class Command {
         public abstract Builder outputs(final List<CommandOutput> outputs);
         public abstract Builder xnatCommandWrappers(final List<CommandWrapper> xnatCommandWrappers);
 
+        abstract ImmutableMap.Builder<String, String> environmentVariablesBuilder();
+
+        public Builder addEnvironmentVariable(final String name, final String value) {
+            environmentVariablesBuilder().put(name, value);
+            return this;
+        }
+
+        abstract ImmutableMap.Builder<String, String> portsBuilder();
+
+        public Builder addPort(final String containerPort, final String hostPort) {
+            portsBuilder().put(containerPort, hostPort);
+            return this;
+        }
+
+        abstract ImmutableList.Builder<CommandMount> mountsBuilder();
+
+        public Builder addMount(final CommandMount commandMount) {
+            mountsBuilder().add(commandMount);
+            return this;
+        }
+
+        abstract ImmutableList.Builder<CommandInput> inputsBuilder();
+
+        public Builder addInput(final CommandInput commandInput) {
+            inputsBuilder().add(commandInput);
+            return this;
+        }
+
+        abstract ImmutableList.Builder<CommandOutput> outputsBuilder();
+
+        public Builder addOutput(final CommandOutput commandOutput) {
+            outputsBuilder().add(commandOutput);
+            return this;
+        }
+
+        abstract ImmutableList.Builder<CommandWrapper> xnatCommandWrappersBuilder();
+
+        public Builder addCommandWrapper(final CommandWrapper commandWrapper) {
+            xnatCommandWrappersBuilder().add(commandWrapper);
+            return this;
+        }
+
         public abstract Command build();
     }
 
     @AutoValue
     public static abstract class CommandMount {
         @JsonIgnore public abstract long id();
-        @JsonProperty("name") public abstract String name();
+        @Nullable @JsonProperty("name") public abstract String name();
         @JsonProperty("writable") public abstract boolean writable();
         @Nullable @JsonProperty("path") public abstract String path();
 
@@ -433,7 +469,7 @@ public abstract class Command {
     @AutoValue
     public static abstract class CommandInput {
         @JsonIgnore public abstract long id();
-        @JsonProperty("name") public abstract String name();
+        @Nullable @JsonProperty("name") public abstract String name();
         @Nullable @JsonProperty("description") public abstract String description();
         @JsonProperty("type") public abstract String type();
         @JsonProperty("required") public abstract boolean required();
@@ -458,7 +494,7 @@ public abstract class Command {
                                    @JsonProperty("true-value") final String trueValue,
                                    @JsonProperty("false-value") final String falseValue) {
             return builder()
-                    .name(name == null ? "" : name)
+                    .name(name)
                     .description(description)
                     .type(type == null ? CommandInputEntity.DEFAULT_TYPE.getName() : type)
                     .required(required == null ? false : required)
@@ -535,7 +571,7 @@ public abstract class Command {
     @AutoValue
     public static abstract class CommandOutput {
         @JsonIgnore public abstract long id();
-        @JsonProperty("name") public abstract String name();
+        @Nullable @JsonProperty("name") public abstract String name();
         @Nullable @JsonProperty("description") public abstract String description();
         @Nullable @JsonProperty("required") public abstract Boolean required();
         @Nullable @JsonProperty("mount") public abstract String mount();
@@ -549,7 +585,14 @@ public abstract class Command {
                                     @JsonProperty("mount") final String mount,
                                     @JsonProperty("path") final String path,
                                     @JsonProperty("glob") final String glob) {
-            return create(0L, name == null ? "" : name, description, required, mount, path, glob);
+            return builder()
+                    .name(name)
+                    .description(description)
+                    .required(required)
+                    .mount(mount)
+                    .path(path)
+                    .glob(glob)
+                    .build();
         }
 
         static CommandOutput create(final long id,
@@ -559,15 +602,31 @@ public abstract class Command {
                                     final String mount,
                                     final String path,
                                     final String glob) {
-            return new AutoValue_Command_CommandOutput(id, name == null ? "" : name, description, required, mount, path, glob);
+            return builder()
+                    .id(id)
+                    .name(name)
+                    .description(description)
+                    .required(required)
+                    .mount(mount)
+                    .path(path)
+                    .glob(glob)
+                    .build();
         }
 
         static CommandOutput create(final CommandOutputEntity commandOutputEntity) {
             if (commandOutputEntity == null) {
                 return null;
             }
-            return create(commandOutputEntity.getId(), commandOutputEntity.getName(), commandOutputEntity.getDescription(), commandOutputEntity.isRequired(), commandOutputEntity.getMount(),
-                    commandOutputEntity.getPath(), commandOutputEntity.getGlob());
+
+            return builder()
+                    .id(commandOutputEntity.getId())
+                    .name(commandOutputEntity.getName())
+                    .description(commandOutputEntity.getDescription())
+                    .required(commandOutputEntity.isRequired())
+                    .mount(commandOutputEntity.getMount())
+                    .path(commandOutputEntity.getPath())
+                    .glob(commandOutputEntity.getGlob())
+                    .build();
         }
 
         @Nonnull
@@ -581,17 +640,36 @@ public abstract class Command {
             }
             return errors;
         }
+
+        public static Builder builder() {
+            return new AutoValue_Command_CommandOutput.Builder()
+                    .id(0L)
+                    .name("")
+                    .required(false);
+        }
+
+        @AutoValue.Builder
+        public static abstract class Builder {
+            public abstract Builder id(long id);
+            public abstract Builder name(String name);
+            public abstract Builder description(String description);
+            public abstract Builder required(Boolean required);
+            public abstract Builder mount(String mount);
+            public abstract Builder path(String path);
+            public abstract Builder glob(String glob);
+            public abstract CommandOutput build();
+        }
     }
 
     @AutoValue
     public static abstract class CommandWrapper {
         @JsonProperty("id") public abstract long id();
-        @JsonProperty("name") public abstract String name();
+        @Nullable @JsonProperty("name") public abstract String name();
         @Nullable @JsonProperty("description") public abstract String description();
-        @JsonProperty("contexts") public abstract Set<String> contexts();
-        @JsonProperty("external-inputs") public abstract List<CommandWrapperExternalInput> externalInputs();
-        @JsonProperty("derived-inputs") public abstract List<CommandWrapperDerivedInput> derivedInputs();
-        @JsonProperty("output-handlers") public abstract List<CommandWrapperOutput> outputHandlers();
+        @JsonProperty("contexts") public abstract ImmutableSet<String> contexts();
+        @JsonProperty("external-inputs") public abstract ImmutableList<CommandWrapperExternalInput> externalInputs();
+        @JsonProperty("derived-inputs") public abstract ImmutableList<CommandWrapperDerivedInput> derivedInputs();
+        @JsonProperty("output-handlers") public abstract ImmutableList<CommandWrapperOutput> outputHandlers();
 
         @JsonCreator
         static CommandWrapper create(@JsonProperty("id") final long id,
@@ -605,10 +683,10 @@ public abstract class Command {
                     .id(id)
                     .name(name == null ? "" : name)
                     .description(description)
-                    .contexts(contexts == null ? Sets.<String>newHashSet() : contexts)
-                    .externalInputs(externalInputs == null ? Lists.<CommandWrapperExternalInput>newArrayList() : externalInputs)
-                    .derivedInputs(derivedInputs == null ? Lists.<CommandWrapperDerivedInput>newArrayList() : derivedInputs)
-                    .outputHandlers(outputHandlers == null ? Lists.<CommandWrapperOutput>newArrayList() : outputHandlers)
+                    .contexts(contexts == null ? Collections.<String>emptySet() : contexts)
+                    .externalInputs(externalInputs == null ? Collections.<CommandWrapperExternalInput>emptyList() : externalInputs)
+                    .derivedInputs(derivedInputs == null ? Collections.<CommandWrapperDerivedInput>emptyList() : derivedInputs)
+                    .outputHandlers(outputHandlers == null ? Collections.<CommandWrapperOutput>emptyList() : outputHandlers)
                     .build();
         }
 
@@ -630,32 +708,20 @@ public abstract class Command {
         public static Builder builder() {
             return new AutoValue_Command_CommandWrapper.Builder()
                     .id(0L)
-                    .name("")
-                    .contexts(Sets.<String>newHashSet())
-                    .externalInputs(Lists.<CommandWrapperExternalInput>newArrayList())
-                    .derivedInputs(Lists.<CommandWrapperDerivedInput>newArrayList())
-                    .outputHandlers(Lists.<CommandWrapperOutput>newArrayList());
+                    .name("");
         }
 
-        public Builder toBuilder() {
-            return builder()
-                    .id(this.id())
-                    .name(this.name())
-                    .contexts(this.contexts())
-                    .externalInputs(this.externalInputs())
-                    .derivedInputs(this.derivedInputs())
-                    .outputHandlers(this.outputHandlers());
-        }
+        public abstract Builder toBuilder();
 
         public static CommandWrapper create(final CommandWrapperEntity commandWrapperEntity) {
             if (commandWrapperEntity == null) {
                 return null;
             }
             final Set<String> contexts = commandWrapperEntity.getContexts() == null ?
-                    Sets.<String>newHashSet() :
+                    Collections.<String>emptySet() :
                     Sets.newHashSet(commandWrapperEntity.getContexts());
             final List<CommandWrapperExternalInput> external = commandWrapperEntity.getExternalInputs() == null ?
-                    Lists.<CommandWrapperExternalInput>newArrayList() :
+                    Collections.<CommandWrapperExternalInput>emptyList() :
                     Lists.newArrayList(Lists.transform(commandWrapperEntity.getExternalInputs(), new Function<CommandWrapperExternalInputEntity, CommandWrapperExternalInput>() {
                         @Nullable
                         @Override
@@ -664,7 +730,7 @@ public abstract class Command {
                         }
                     }));
             final List<CommandWrapperDerivedInput> derived = commandWrapperEntity.getDerivedInputs() == null ?
-                    Lists.<CommandWrapperDerivedInput>newArrayList() :
+                    Collections.<CommandWrapperDerivedInput>emptyList() :
                     Lists.newArrayList(Lists.transform(commandWrapperEntity.getDerivedInputs(), new Function<CommandWrapperDerivedInputEntity, CommandWrapperDerivedInput>() {
                         @Nullable
                         @Override
@@ -673,7 +739,7 @@ public abstract class Command {
                         }
                     }));
             final List<CommandWrapperOutput> outputs = commandWrapperEntity.getOutputHandlers() == null ?
-                    Lists.<CommandWrapperOutput>newArrayList() :
+                    Collections.<CommandWrapperOutput>emptyList() :
                     Lists.newArrayList(Lists.transform(commandWrapperEntity.getOutputHandlers(), new Function<CommandWrapperOutputEntity, CommandWrapperOutput>() {
                         @Nullable
                         @Override
@@ -681,8 +747,15 @@ public abstract class Command {
                             return xnatCommandOutput == null ? null : CommandWrapperOutput.create(xnatCommandOutput);
                         }
                     }));
-            return create(commandWrapperEntity.getId(), commandWrapperEntity.getName(), commandWrapperEntity.getDescription(),
-                    contexts, external, derived, outputs);
+            return builder()
+                    .id(commandWrapperEntity.getId())
+                    .name(commandWrapperEntity.getName())
+                    .description(commandWrapperEntity.getDescription())
+                    .contexts(contexts)
+                    .externalInputs(external)
+                    .derivedInputs(derived)
+                    .outputHandlers(outputs)
+                    .build();
         }
 
         @Nonnull
@@ -701,9 +774,32 @@ public abstract class Command {
             public abstract Builder name(final String name);
             public abstract Builder description(final String description);
             public abstract Builder contexts(final Set<String> contexts);
+            abstract ImmutableSet.Builder<String> contextsBuilder();
+            public Builder addContext(final String context) {
+                contextsBuilder().add(context);
+                return this;
+            }
+
             public abstract Builder externalInputs(final List<CommandWrapperExternalInput> externalInputs);
+            abstract ImmutableList.Builder<CommandWrapperExternalInput> externalInputsBuilder();
+            public Builder addExternalInput(final CommandWrapperExternalInput externalInput) {
+                externalInputsBuilder().add(externalInput);
+                return this;
+            }
+
             public abstract Builder derivedInputs(final List<CommandWrapperDerivedInput> derivedInputs);
+            abstract ImmutableList.Builder<CommandWrapperDerivedInput> derivedInputsBuilder();
+            public Builder addDerivedInput(final CommandWrapperDerivedInput derivedInput) {
+                derivedInputsBuilder().add(derivedInput);
+                return this;
+            }
+
             public abstract Builder outputHandlers(final List<CommandWrapperOutput> outputHandlers);
+            abstract ImmutableList.Builder<CommandWrapperOutput> outputHandlersBuilder();
+            public Builder addOutputHandler(final CommandWrapperOutput output) {
+                outputHandlersBuilder().add(output);
+                return this;
+            }
 
             public abstract CommandWrapper build();
         }
@@ -711,7 +807,7 @@ public abstract class Command {
 
     public static abstract class CommandWrapperInput {
         @JsonIgnore public abstract long id();
-        @JsonProperty("name") public abstract String name();
+        @Nullable @JsonProperty("name") public abstract String name();
         @Nullable @JsonProperty("description") public abstract String description();
         @JsonProperty("type") public abstract String type();
         @Nullable @JsonProperty("matcher") public abstract String matcher();
@@ -740,8 +836,6 @@ public abstract class Command {
         public String replacementKey() {
             return StringUtils.isNotBlank(rawReplacementKey()) ? rawReplacementKey() : "#" + name() + "#";
         }
-
-
     }
 
     @AutoValue
@@ -758,7 +852,7 @@ public abstract class Command {
                                                   @JsonProperty("replacement-key") final String rawReplacementKey,
                                                   @JsonProperty("required") final Boolean required) {
             return builder()
-                    .name(name == null ? "" : name)
+                    .name(name)
                     .description(description)
                     .type(type == null ? CommandWrapperExternalInputEntity.DEFAULT_TYPE.getName() : type)
                     .matcher(matcher)
@@ -851,7 +945,7 @@ public abstract class Command {
                                                  @JsonProperty("replacement-key") final String rawReplacementKey,
                                                  @JsonProperty("required") final Boolean required) {
             return builder()
-                    .name(name == null ? "" : name)
+                    .name(name)
                     .description(description)
                     .type(type == null ? CommandWrapperDerivedInputEntity.DEFAULT_TYPE.getName() : type)
                     .derivedFromXnatInput(derivedFromXnatInput)
@@ -935,9 +1029,9 @@ public abstract class Command {
     @AutoValue
     public static abstract class CommandWrapperOutput {
         @JsonIgnore public abstract long id();
-        @JsonProperty("name") public abstract String name();
-        @JsonProperty("accepts-command-output") public abstract String commandOutputName();
-        @JsonProperty("as-a-child-of-xnat-input") public abstract String xnatInputName();
+        @Nullable @JsonProperty("name") public abstract String name();
+        @Nullable @JsonProperty("accepts-command-output") public abstract String commandOutputName();
+        @Nullable @JsonProperty("as-a-child-of-xnat-input") public abstract String xnatInputName();
         @JsonProperty("type") public abstract String type();
         @Nullable @JsonProperty("label") public abstract String label();
 
@@ -949,9 +1043,9 @@ public abstract class Command {
                                            @JsonProperty("label") final String label) {
             return create(
                     0L,
-                    name == null ? "" : name,
-                    commandOutputName == null ? "" : commandOutputName,
-                    xnatInputName == null ? "" : xnatInputName,
+                    name,
+                    commandOutputName,
+                    xnatInputName,
                     type == null ? CommandWrapperOutputEntity.DEFAULT_TYPE.getName() : type,
                     label);
         }
@@ -964,9 +1058,9 @@ public abstract class Command {
                                            final String label) {
             return new AutoValue_Command_CommandWrapperOutput(
                     id,
-                    name == null ? "" : name,
-                    commandOutputName == null ? "" : commandOutputName,
-                    xnatInputName == null ? "" : xnatInputName,
+                    name,
+                    commandOutputName,
+                    xnatInputName,
                     type == null ? CommandWrapperOutputEntity.DEFAULT_TYPE.getName() : type,
                     label);
         }
