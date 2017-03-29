@@ -96,30 +96,6 @@ public abstract class CommandConfiguration {
         public abstract CommandConfiguration build();
     }
 
-    @Nullable
-    public String getInputDefaultValue(final String inputName) {
-        final CommandInputConfiguration input = inputs().get(inputName);
-        return input == null ? null : input.defaultValue();
-    }
-
-    @Nullable
-    public String getInputMatcher(final String inputName) {
-        final CommandInputConfiguration input = inputs().get(inputName);
-        return input == null ? null : input.matcher();
-    }
-
-    @Nullable
-    public Boolean isInputUserSettable(final String inputName) {
-        final CommandInputConfiguration input = inputs().get(inputName);
-        return input == null ? null : input.userSettable();
-    }
-
-    @Nullable
-    public String getOutputLabel(final String outputName) {
-        final CommandOutputConfiguration output = outputs().get(outputName);
-        return output == null ? null : output.label();
-    }
-
     @AutoValue
     public static abstract class CommandInputConfiguration {
         @Nullable @JsonProperty("description") public abstract String description();
