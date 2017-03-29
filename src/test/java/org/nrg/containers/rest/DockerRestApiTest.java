@@ -2,9 +2,12 @@ package org.nrg.containers.rest;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Function;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.io.Files;
+import com.google.common.io.Resources;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -13,17 +16,15 @@ import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.config.DockerRestApiTestConfig;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.model.command.entity.CommandEntity;
-import org.nrg.containers.model.command.entity.CommandInputEntity;
-import org.nrg.containers.model.command.entity.CommandWrapperEntity;
-import org.nrg.containers.model.command.entity.DockerCommandEntity;
-import org.nrg.containers.model.server.docker.DockerServer;
-import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
+import org.nrg.containers.model.command.entity.CommandWrapperEntity;
+import org.nrg.containers.model.command.entity.DockerCommandEntity;
 import org.nrg.containers.model.dockerhub.DockerHub;
 import org.nrg.containers.model.image.docker.DockerImage;
 import org.nrg.containers.model.image.docker.DockerImageAndCommandSummary;
+import org.nrg.containers.model.server.docker.DockerServer;
+import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.DockerHubService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
@@ -42,6 +43,8 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.io.File;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
 
@@ -51,6 +54,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isIn;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.anyListOf;
@@ -468,74 +472,23 @@ public class DockerRestApiTest {
         final String path = "/docker/images/save";
 
         final String fakeImageId = "xnat/thisisfake";
-        final String labelTestCommandJson =
-                "{\"name\": \"label-test\"," +
-                        "\"image\": \"" + fakeImageId + "\"," +
-                        "\"description\": \"Command to test label-parsing and command-importing code\"," +
-                        "\"type\": \"docker\", " +
-                        "\"command-line\": \"#CMD#\"," +
-                        "\"inputs\": [{\"name\": \"CMD\", \"description\": \"Command to run\", \"required\": true}]}";
-        final Command expected = mapper.readValue(labelTestCommandJson, Command.class);
-        final List<Command> toReturnList = Lists.newArrayList(expected);
 
-        final Map<String, String> imageLabels = Maps.newHashMap();
-        imageLabels.put(LABEL_KEY, "[" + labelTestCommandJson + "]");
+        final String resourceDir = Resources.getResource("dockerRestApiTest").getPath().replace("%20", " ");
+        final String commandJsonFile = resourceDir + "/commands.json";
 
-        final DockerImage dockerImage = DockerImage.create(fakeImageId, null, imageLabels);
-        doReturn(dockerImage).when(mockContainerControlApi).getImageById(fakeImageId);
-        when(mockCommandService.save(anyListOf(Command.class))).thenReturn(toReturnList);
+        // For some reason Jackson throws an exception when parsing this file. So read it first, then deserialize.
+        // final List<Command> fromResource = mapper.readValue(new File(commandJsonFile), new TypeReference<List<Command>>(){});
+        final String labelTestCommandListJsonFromFile = Files.toString(new File(commandJsonFile), Charset.defaultCharset());
+        final List<Command> fromResource = mapper.readValue(labelTestCommandListJsonFromFile, new TypeReference<List<Command>>(){});
+        final String labelTestCommandListJson = mapper.writeValueAsString(fromResource);
 
-        final MockHttpServletRequestBuilder request =
-                post(path).param("image", fakeImageId)
-                        .with(authentication(ADMIN_AUTH))
-                        .with(csrf()).with(testSecurityContext());
-
-        final String responseStr =
-                mockMvc.perform(request)
-                        .andExpect(status().isOk())
-                        .andReturn()
-                        .getResponse()
-                        .getContentAsString();
-
-        final List<CommandEntity> responseList = mapper.readValue(responseStr, new TypeReference<List<CommandEntity>>(){});
-        assertThat(responseList, hasSize(1));
-        final CommandEntity response = responseList.get(0);
-
-        // "response" will have been saved, so it will not be exactly equal to "expected"
-        // Must compare attribute-by-attribute
-        assertEquals(expected.name(), response.getName());
-        assertEquals(expected.description(), response.getDescription());
-        assertEquals(expected.commandLine(), response.getCommandLine());
-        assertEquals(expected.image(), response.getImage()); // Did not set image ID on "expected"
-
-        for (final Command.CommandInput commandInput : expected.inputs()) {
-            final CommandInputEntity commandInputEntity = CommandInputEntity.fromPojo(commandInput);
-            commandInputEntity.setCommandEntity(response);
-            assertThat(commandInputEntity, isIn(response.getInputs()));
-        }
-    }
-
-    @Test
-    public void testSaveFromLabels2() throws Exception {
-        final String path = "/docker/images/save";
-
-        final String fakeImageId = "xnat/thisisfake";
-        final String labelTestCommandListJson =
-                "[{\"name\":\"dcm2niix-scan\", \"description\":\"Run dcm2niix on a scan's DICOMs\", " +
-                        "\"image\": \"" + fakeImageId + "\"," +
-                        "\"type\": \"docker\", " +
-                        "\"command-line\": \"/run/dcm2niix-scan.sh #scanId# #sessionId#\", " +
-                        "\"mounts\": [" +
-                            "{\"name\":\"DICOM\", \"path\":\"/input\"}," +
-                            "{\"name\":\"NIFTI\", \"path\":\"/output\"}" +
-                        "]," +
-                        "\"inputs\":[" +
-                            "{\"name\":\"scanId\", \"required\":true}, " +
-                            "{\"name\":\"sessionId\", \"required\":true}" +
-                        "] " +
-                    "}]";
-        final List<Command> expectedList = mapper.readValue(labelTestCommandListJson, new TypeReference<List<Command>>(){});
-        final Command expected = expectedList.get(0);
+        final List<Command> expectedList = Lists.newArrayList(
+                Lists.transform(fromResource, new Function<Command, Command>() {
+                    @Override
+                    public Command apply(final Command command) {
+                        return command.toBuilder().image(fakeImageId).build();
+                    }
+                }));
 
         final Map<String, String> imageLabels = Maps.newHashMap();
         imageLabels.put(LABEL_KEY, labelTestCommandListJson);
@@ -556,21 +509,8 @@ public class DockerRestApiTest {
                         .getResponse()
                         .getContentAsString();
 
-        final List<CommandEntity> responseList = mapper.readValue(responseStr, new TypeReference<List<CommandEntity>>(){});
-        assertThat(responseList, hasSize(1));
-        final CommandEntity response = responseList.get(0);
-
-        // "response" will have been saved, so it will not be exactly equal to "expected"
-        // Must compare attribute-by-attribute
-        assertEquals(expected.name(), response.getName());
-        assertEquals(expected.description(), response.getDescription());
-        assertEquals(expected.commandLine(), response.getCommandLine());
-        assertEquals(expected.image(), response.getImage()); // Did not set image ID on "expected"
-        for (final Command.CommandInput commandInput : expected.inputs()) {
-            final CommandInputEntity commandInputEntity = CommandInputEntity.fromPojo(commandInput);
-            commandInputEntity.setCommandEntity(response);
-            assertThat(commandInputEntity, isIn(response.getInputs()));
-        }
+        final List<Command> responseList = mapper.readValue(responseStr, new TypeReference<List<Command>>(){});
+        assertThat(responseList, is(equalTo(expectedList)));
     }
 
     @Test
