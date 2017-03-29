@@ -1,19 +1,23 @@
 package org.nrg.containers.services.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotUniqueException;
 import org.nrg.containers.helpers.CommandLabelHelper;
-import org.nrg.containers.model.DockerServer;
-import org.nrg.containers.model.DockerServerPrefsBean;
-import org.nrg.containers.model.auto.Command;
-import org.nrg.containers.model.auto.DockerHub;
-import org.nrg.containers.model.auto.DockerImage;
-import org.nrg.containers.model.auto.DockerImageAndCommandSummary;
+import org.nrg.containers.model.image.docker.DockerImageAndCommandSummary.Builder;
+import org.nrg.containers.model.server.docker.DockerServer;
+import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
+import org.nrg.containers.model.command.auto.Command;
+import org.nrg.containers.model.dockerhub.DockerHub;
+import org.nrg.containers.model.image.docker.DockerImage;
+import org.nrg.containers.model.image.docker.DockerImageAndCommandSummary;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.DockerHubService;
 import org.nrg.containers.services.DockerHubService.DockerHubDeleteDefaultException;
@@ -25,6 +29,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 
@@ -36,16 +42,19 @@ public class DockerServiceImpl implements DockerService {
     private DockerHubService dockerHubService;
     private CommandService commandService;
     private DockerServerPrefsBean dockerServerPrefsBean;
+    private ObjectMapper objectMapper;
 
     @Autowired
     public DockerServiceImpl(final ContainerControlApi controlApi,
                              final DockerHubService dockerHubService,
                              final CommandService commandService,
-                             final DockerServerPrefsBean dockerServerPrefsBean) {
+                             final DockerServerPrefsBean dockerServerPrefsBean,
+                             final ObjectMapper objectMapper) {
         this.controlApi = controlApi;
         this.dockerHubService = dockerHubService;
         this.commandService = commandService;
         this.dockerServerPrefsBean = dockerServerPrefsBean;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -214,75 +223,116 @@ public class DockerServiceImpl implements DockerService {
         final List<DockerImage> rawImages = controlApi.getAllImages();
 
         // Store the images by every name that someone might call them: all tags and id
-        final Map<String, DockerImage> imagesByIdUniqueValues = Maps.newHashMap();
+        // final Map<String, DockerImage> imagesByIdUniqueValues = Maps.newHashMap();
         final Map<String, String> imageIdsByNameDuplicateValues = Maps.newHashMap();
 
         // Store the summaries indexed by image id
-        final Map<String, DockerImageAndCommandSummary> imageSummariesByImageId = Maps.newHashMap();
+        final Map<String, DockerImageAndCommandSummary.Builder> imageSummaryBuildersByImageId = Maps.newHashMap();
+        final Map<String, List<Command>> commandListsByImageId = Maps.newHashMap();
         for (final DockerImage image : rawImages) {
 
-            if (image.tags() != null && !image.tags().isEmpty()) {
-                for (final String tag : image.tags()) {
-                    imageIdsByNameDuplicateValues.put(tag, image.imageId());
-                }
-            }
-
             if (StringUtils.isNotBlank(image.imageId())) {
-                imagesByIdUniqueValues.put(image.imageId(), image);
-
-                imageSummariesByImageId.put(image.imageId(), DockerImageAndCommandSummary.create(image, server));
-            }
-        }
-
-        // final Map<DockerImage, DockerImageAndCommandSummary> imageToImageSummaryMap = Maps.newHashMap();
-
-        // Go through all commands, update the images with command info (or add new images if we can't find them)
-        final List<Command> commands = commandService.getAll();
-        if (commands != null) {
-            for (final Command command : commands) {
-                final String imageNameUsedByTheCommand = command.image();
-                if (StringUtils.isNotBlank(imageNameUsedByTheCommand)) {
-                    if (imageIdsByNameDuplicateValues.containsKey(imageNameUsedByTheCommand)) {
-
-                        // We do recognize the image by this name, so either make a new summary for it or add this command to an existing summary
-                        final String dockerImageId = imageIdsByNameDuplicateValues.get(imageNameUsedByTheCommand);
-                        imageSummariesByImageId.get(dockerImageId).addOrUpdateCommand(command);
-
-                    } else {
-                        // the command refers to some image that either
-                        //   A. we have not cached by that name, or
-                        //   B. does not exist on the docker server
-                        DockerImage dockerImage = null;
-                        try {
-                            dockerImage = controlApi.getImageById(imageNameUsedByTheCommand);
-                        } catch (NotFoundException ignored) {
-                            // ignored
-                        }
-
-                        if (dockerImage != null) {
-                            // This means A: we have the image on the server, just not by this name
-                            final String dockerImageId = dockerImage.imageId();
-
-                            imageIdsByNameDuplicateValues.put(imageNameUsedByTheCommand, dockerImageId);
-
-                            final DockerImageAndCommandSummary summary = imageSummariesByImageId.get(dockerImageId);
-                            summary.addOrUpdateCommand(command);
-                        } else {
-                            // This means B: the command refers to some image that we do not have on the docker server
-                            // Create a placeholder image summary object
-                            final DockerImageAndCommandSummary summary = DockerImageAndCommandSummary.create(command);
-
-                            imageIdsByNameDuplicateValues.put(imageNameUsedByTheCommand, summary.imageId());
-                            imageSummariesByImageId.put(summary.imageId(), summary);
-                        }
+                // Keep track of all the tags that the image uses. This will make the image
+                // easier to find if a command uses one of these tags as its "image name".
+                if (image.tags() != null && !image.tags().isEmpty()) {
+                    for (final String tag : image.tags()) {
+                        imageIdsByNameDuplicateValues.put(tag, image.imageId());
                     }
-                } else {
-                    // TODO command does not refer to an image? Should not be possible...
                 }
+
+                // Start building the image summary (but leave it partially built for now).
+                // The reason for leaving it as a Builder is that we may need to modify the
+                // list of commands later (when we have to reconcile the commands that are defined
+                // in the image's labels with the commands we read from the database),
+                // but if we fully build the image summary then the commands are in an ImmutableList.
+                imageSummaryBuildersByImageId.put(image.imageId(),
+                        DockerImageAndCommandSummary.builder()
+                                .addDockerImage(image)
+                                .server(server)
+                );
+                commandListsByImageId.put(image.imageId(),
+                        CommandLabelHelper.parseLabels(image, objectMapper)
+                );
+            } else {
+                // If image has no ID, then we will have problems tracking it uniquely.
+                // Just skip it.
             }
         }
 
-        return Lists.newArrayList(imageSummariesByImageId.values());
+        // Go through all commands in the database, update the image summaries we have with
+        // any new info about these commands, and add new images summaries if we haven't made one yet.
+        for (final Command command : commandService.getAll()) {
+            final String imageNameUsedByTheCommand = command.image();
+            if (StringUtils.isNotBlank(imageNameUsedByTheCommand)) {
+                // The command refers to the image by some name. Let's see if we've already
+                // started an image summary with that name...
+                if (imageIdsByNameDuplicateValues.containsKey(imageNameUsedByTheCommand)) {
+
+                    // We do recognize the image by this name, so we have already started building a summary.
+                    // Merge this command into the list of the image's commands
+                    //      i.e. add it if it isn't there, or update it if it already is there.
+                    //
+                    // Note: if we have the image name in the map imageIdsByNameDuplicateValue, we know that
+                    // we also have some list of commands in the map commandListsByImageId, so we can safely
+                    // check the former and get an object from the latter.
+                    final String dockerImageId = imageIdsByNameDuplicateValues.get(imageNameUsedByTheCommand);
+                    addOrUpdateCommand(commandListsByImageId.get(dockerImageId), command);
+                } else {
+                    // We do *not* recognize the image by this name. However, we may yet have a summary
+                    // started for the image, just with different names. We must first check whether
+                    //   A. docker recognizes the image by that name, or
+                    //   B. docker does not recognize the image by that name
+                    DockerImage dockerImage = null;
+                    try {
+                        dockerImage = controlApi.getImageById(imageNameUsedByTheCommand);
+                    } catch (NotFoundException ignored) {
+                        // ignored
+                    }
+
+                    if (dockerImage != null) {
+                        // This means A: we do have the image on the docker server, just not by this name
+                        // Since we have already started summaries for all the images docker knows about,
+                        // and docker knows about this one, then we are certain we have already started a
+                        // summary for this image.
+                        final String dockerImageId = dockerImage.imageId();
+
+                        // This is a new name, so add it to the name cache
+                        imageIdsByNameDuplicateValues.put(imageNameUsedByTheCommand, dockerImageId);
+
+                        // Now add the command to or update the command in the list
+                        addOrUpdateCommand(commandListsByImageId.get(dockerImageId), command);
+                    } else {
+                        // This means B: the command refers to some image that we do not have on the docker server.
+                        // We still want to report a summary, but we have to create a new one with some information
+                        // left blank.
+
+                        // We use the command's imageName as a surrogate "id".
+                        imageIdsByNameDuplicateValues.put(imageNameUsedByTheCommand, imageNameUsedByTheCommand);
+
+                        imageSummaryBuildersByImageId.put(imageNameUsedByTheCommand,
+                                DockerImageAndCommandSummary.builder()
+                                .addImageName(imageNameUsedByTheCommand)
+                        );
+                        commandListsByImageId.put(imageNameUsedByTheCommand,
+                                Lists.newArrayList(command)
+                        );
+                    }
+                }
+            } else {
+                // command does not refer to an image? Should not be possible...
+                log.error("Command " + String.valueOf(command.id()) + " has a blank imageName.");
+            }
+        }
+
+        // Now we go through the imagesummary builders and build all of them,
+        // including the final list of commands.
+        final List<DockerImageAndCommandSummary> summaries = Lists.newArrayList();
+        for (final String imageId : imageSummaryBuildersByImageId.keySet()) {
+            final DockerImageAndCommandSummary.Builder builder = imageSummaryBuildersByImageId.get(imageId);
+            final List<Command> commands = commandListsByImageId.get(imageId);
+            summaries.add(builder.commands(commands).build());
+        }
+        return summaries;
     }
 
     public DockerImage getImage(final String imageId)
@@ -300,22 +350,50 @@ public class DockerServiceImpl implements DockerService {
     }
 
     @Override
+    @Nonnull
     public List<Command> saveFromImageLabels(final String imageName) throws DockerServerException, NotFoundException, NoServerPrefException {
         return saveFromImageLabels(imageName, controlApi.getImageById(imageName));
     }
 
+    @Nonnull
     private List<Command> saveFromImageLabels(final String imageName, final DockerImage dockerImage) {
         if (log.isDebugEnabled()) {
             log.debug("Parsing labels for " + imageName);
         }
-        final List<Command> parsed = CommandLabelHelper.parseLabels(imageName, dockerImage);
+        final List<Command> parsed = CommandLabelHelper.parseLabels(imageName, dockerImage, objectMapper);
 
-        if (parsed == null || parsed.isEmpty()) {
+        if (parsed.isEmpty()) {
             log.debug("Did not find any command labels.");
-            return null;
+            return parsed;
         }
 
         log.debug("Saving commands from image labels");
         return commandService.save(parsed);
+    }
+
+    private void addOrUpdateCommand(final List<Command> commandsList,
+                                    final Command commandToAddOrUpdate) {
+        // Check to see if the list of commands already has one with this name.
+        // If so, we added the existing command from the labels.
+        // It will not have an id, and might not have any xnat wrappers.
+        // So we should replace it.
+        boolean shouldUpdate = false;
+        int updateIndex = -1;
+        int numCommands = commandsList.size();
+        for (int i = 0; i < numCommands; i++) {
+            final Command existingCommand = commandsList.get(i);
+            if (existingCommand.name() != null &&
+                    existingCommand.name().equals(commandToAddOrUpdate.name())) {
+                shouldUpdate = true;
+                updateIndex = i;
+                break;
+            }
+        }
+        if (shouldUpdate && updateIndex > -1) {
+            commandsList.remove(updateIndex);
+            commandsList.add(updateIndex, commandToAddOrUpdate);
+        } else {
+            commandsList.add(commandToAddOrUpdate);
+        }
     }
 }

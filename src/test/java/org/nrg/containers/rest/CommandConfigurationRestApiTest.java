@@ -1,7 +1,6 @@
 package org.nrg.containers.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -11,10 +10,14 @@ import org.mockito.Mockito;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.config.CommandConfigurationRestApiTestConfig;
-import org.nrg.containers.model.CommandConfiguration;
-import org.nrg.containers.model.CommandConfiguration.CommandInputConfiguration;
-import org.nrg.containers.model.CommandConfiguration.CommandOutputConfiguration;
-import org.nrg.containers.model.CommandConfigurationInternalRepresentation;
+import org.nrg.containers.model.command.auto.Command;
+import org.nrg.containers.model.command.auto.Command.CommandInput;
+import org.nrg.containers.model.command.auto.Command.CommandOutput;
+import org.nrg.containers.model.command.auto.Command.CommandWrapper;
+import org.nrg.containers.model.command.entity.CommandEntity;
+import org.nrg.containers.model.configuration.CommandConfiguration;
+import org.nrg.containers.model.configuration.CommandConfigurationInternal;
+import org.nrg.containers.services.CommandEntityService;
 import org.nrg.containers.services.ContainerConfigService;
 import org.nrg.containers.services.impl.ContainerConfigServiceImpl;
 import org.nrg.framework.constants.Scope;
@@ -62,7 +65,7 @@ public class CommandConfigurationRestApiTest {
     private MockMvc mockMvc;
     private CommandConfiguration commandConfiguration;
     private String commandConfigurationJson;
-    private CommandConfigurationInternalRepresentation commandConfigurationInternalRepresentation;
+    private CommandConfigurationInternal commandConfigurationInternal;
     private String commandConfigurationInternalRepresentationJson;
     private Configuration mockConfig;
     private String configPath;
@@ -77,6 +80,7 @@ public class CommandConfigurationRestApiTest {
 
     @Autowired private WebApplicationContext wac;
     @Autowired private ObjectMapper mapper;
+    @Autowired private CommandEntityService mockCommandEntityService;
     @Autowired private ConfigService mockConfigService;
     @Autowired private RoleServiceI mockRoleService;
     @Autowired private UserManagementServiceI mockUserManagementServiceI;
@@ -98,24 +102,39 @@ public class CommandConfigurationRestApiTest {
         // Mock the user management service
         when(mockUserManagementServiceI.getUser(FAKE_USERNAME)).thenReturn(mockAdmin);
 
-        // Create a command configuration
-        commandConfiguration = CommandConfiguration.builder()
-                .addInput("input", CommandInputConfiguration.builder()
-                        .defaultValue("whatever")
-                        .matcher("anything")
-                        .userSettable(true)
-                        .advanced(false)
-                        .build())
-                .addOutput("output", CommandOutputConfiguration.create(null))
-                .build();
-        commandConfigurationJson = mapper.writeValueAsString(commandConfiguration);
-
-        commandConfigurationInternalRepresentation = CommandConfigurationInternalRepresentation.create(true, commandConfiguration);
-        commandConfigurationInternalRepresentationJson = mapper.writeValueAsString(commandConfigurationInternalRepresentation);
-
         // Command and wrapper
         final long commandId = 0L;
         final String wrapperName = "aWrapper";
+        final String inputName = "input";
+        final String outputName = "output";
+        final Command command = Command.builder()
+                .id(commandId)
+                .name("aCommand")
+                .type("docker")
+                .addCommandWrapper(CommandWrapper.builder().name(wrapperName).build())
+                .addInput(CommandInput.builder().name(inputName).build())
+                .addOutput(CommandOutput.builder().name(outputName).build())
+                .build();
+        final CommandEntity commandEntity = CommandEntity.fromPojo(command);
+        when(mockCommandEntityService.get(commandId)).thenReturn(commandEntity);
+
+        // Create a command configuration
+        commandConfiguration = CommandConfiguration.builder()
+                .addInput(inputName,
+                        CommandConfiguration.CommandInputConfiguration.builder()
+                                .defaultValue("whatever")
+                                .matcher("anything")
+                                .userSettable(true)
+                                .advanced(false)
+                                .build())
+                .addOutput(outputName,
+                        CommandConfiguration.CommandOutputConfiguration.create(null))
+                .build();
+        commandConfigurationJson = mapper.writeValueAsString(commandConfiguration);
+
+        commandConfigurationInternal = CommandConfigurationInternal.create(true, commandConfiguration);
+        commandConfigurationInternalRepresentationJson = mapper.writeValueAsString(commandConfigurationInternal);
+
 
         // mock out a org.nrg.config.Configuration
         mockConfig = mock(Configuration.class);

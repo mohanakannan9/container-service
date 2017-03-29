@@ -2,9 +2,9 @@ package org.nrg.containers.services.impl;
 
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.daos.ContainerEntityRepository;
-import org.nrg.containers.events.ContainerEvent;
-import org.nrg.containers.model.ContainerEntity;
-import org.nrg.containers.model.ContainerEntityHistory;
+import org.nrg.containers.events.model.ContainerEvent;
+import org.nrg.containers.model.container.entity.ContainerEntity;
+import org.nrg.containers.model.container.entity.ContainerEntityHistory;
 import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.framework.exceptions.NotFoundException;

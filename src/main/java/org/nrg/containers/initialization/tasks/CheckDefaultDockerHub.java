@@ -1,6 +1,6 @@
 package org.nrg.containers.initialization.tasks;
 
-import org.nrg.containers.model.auto.DockerHub;
+import org.nrg.containers.model.dockerhub.DockerHub;
 import org.nrg.containers.services.DockerHubService;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.initialization.tasks.AbstractInitializingTask;

@@ -11,8 +11,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.config.DockerServiceIntegrationTestConfig;
-import org.nrg.containers.model.DockerServerPrefsBean;
-import org.nrg.containers.model.auto.Command;
+import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
+import org.nrg.containers.model.command.auto.Command;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
@@ -58,7 +58,7 @@ public class DockerServiceIntegrationTest {
         // Mock out the prefs bean
         final String containerHost = "unix:///var/run/docker.sock";
         when(mockDockerServerPrefsBean.getHost()).thenReturn(containerHost);
-        when(mockDockerServerPrefsBean.toDto()).thenCallRealMethod();
+        when(mockDockerServerPrefsBean.toPojo()).thenCallRealMethod();
 
         // Mock the userI
         mockUser = Mockito.mock(UserI.class);

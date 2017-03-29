@@ -6,8 +6,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
-import org.nrg.containers.model.CommandConfiguration;
-import org.nrg.containers.model.CommandConfigurationInternalRepresentation;
+import org.nrg.containers.model.configuration.CommandConfiguration;
+import org.nrg.containers.model.configuration.CommandConfigurationInternal;
 import org.nrg.containers.services.ContainerConfigService;
 import org.nrg.framework.constants.Scope;
 import org.slf4j.Logger;
@@ -182,23 +182,23 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
     }
 
     private void setCommandConfiguration(final CommandConfiguration commandConfiguration, final Scope scope, final String project, final long commandId, final String wrapperName, final boolean enable, final String username, final String reason) throws CommandConfigurationException {
-        final CommandConfigurationInternalRepresentation alreadyExists = getCommandConfigurationInternalRepresentation(scope, project, commandId, wrapperName);
+        final CommandConfigurationInternal alreadyExists = getCommandConfigurationInternalRepresentation(scope, project, commandId, wrapperName);
         // If the "enable" param is true, we enable the configuration.
         // Otherwise, we leave it alone if the configuration already exists, or set it to null.
         // We will never set "enabled=false" here.
         final Boolean enabledStatusToSet = enable ? Boolean.TRUE : (alreadyExists == null ? null : alreadyExists.enabled());
         setCommandConfigurationInternalRepresentation(
-                CommandConfigurationInternalRepresentation.create(enabledStatusToSet, commandConfiguration),
+                CommandConfigurationInternal.create(enabledStatusToSet, commandConfiguration),
                 scope, project, commandId, wrapperName, username, reason);
     }
 
     private void setCommandEnabled(final Boolean enabled, final Scope scope, final String project, final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
-        final CommandConfigurationInternalRepresentation alreadyExists = getCommandConfigurationInternalRepresentation(scope, project, commandId, wrapperName);
-        setCommandConfigurationInternalRepresentation(CommandConfigurationInternalRepresentation.create(enabled, alreadyExists == null ? null : alreadyExists.configuration()),
+        final CommandConfigurationInternal alreadyExists = getCommandConfigurationInternalRepresentation(scope, project, commandId, wrapperName);
+        setCommandConfigurationInternalRepresentation(CommandConfigurationInternal.create(enabled, alreadyExists == null ? null : alreadyExists.configuration()),
                 scope, project, commandId, wrapperName, username, reason);
     }
 
-    private void setCommandConfigurationInternalRepresentation(final CommandConfigurationInternalRepresentation commandConfigurationInternalRepresentation,
+    private void setCommandConfigurationInternalRepresentation(final CommandConfigurationInternal commandConfigurationInternal,
                                                                final Scope scope, final String project, final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
         if (scope.equals(Scope.Project) && StringUtils.isBlank(project)) {
             // TODO error: project can't be blank
@@ -210,7 +210,7 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
 
         String contents = "";
         try {
-            contents = mapper.writeValueAsString(commandConfigurationInternalRepresentation);
+            contents = mapper.writeValueAsString(commandConfigurationInternal);
         } catch (JsonProcessingException e) {
             final String message = String.format("Could not save configuration for command id %d, wrapper name \"%s\".", commandId, wrapperName);
             log.error(message);
@@ -229,18 +229,18 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
 
     @Nullable
     private CommandConfiguration getCommandConfiguration(final Scope scope, final String project, final long commandId, final String wrapperName) {
-        final CommandConfigurationInternalRepresentation commandConfigurationInternalRepresentation = getCommandConfigurationInternalRepresentation(scope, project, commandId, wrapperName);
-        return commandConfigurationInternalRepresentation == null ? null : commandConfigurationInternalRepresentation.configuration();
+        final CommandConfigurationInternal commandConfigurationInternal = getCommandConfigurationInternalRepresentation(scope, project, commandId, wrapperName);
+        return commandConfigurationInternal == null ? null : commandConfigurationInternal.configuration();
     }
 
     @Nullable
     private Boolean getCommandIsEnabled(final Scope scope, final String project, final long commandId, final String wrapperName) {
-        final CommandConfigurationInternalRepresentation commandConfigurationInternalRepresentation = getCommandConfigurationInternalRepresentation(scope, project, commandId, wrapperName);
-        return commandConfigurationInternalRepresentation == null ? null : commandConfigurationInternalRepresentation.enabled();
+        final CommandConfigurationInternal commandConfigurationInternal = getCommandConfigurationInternalRepresentation(scope, project, commandId, wrapperName);
+        return commandConfigurationInternal == null ? null : commandConfigurationInternal.enabled();
     }
 
     @Nullable
-    private CommandConfigurationInternalRepresentation getCommandConfigurationInternalRepresentation(final Scope scope, final String project, final long commandId, final String wrapperName) {
+    private CommandConfigurationInternal getCommandConfigurationInternalRepresentation(final Scope scope, final String project, final long commandId, final String wrapperName) {
         if (scope.equals(Scope.Project) && StringUtils.isBlank(project)) {
             // TODO error: project can't be blank
         }
@@ -261,7 +261,7 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
         }
 
         try {
-            return mapper.readValue(configurationJson, CommandConfigurationInternalRepresentation.class);
+            return mapper.readValue(configurationJson, CommandConfigurationInternal.class);
         } catch (IOException e) {
             final String message = String.format("Could not deserialize Command Configuration for %s, command id %s, wrapper \"%s\".",
                     scope.equals(Scope.Site) ? "site" : "project " + project,
@@ -282,17 +282,17 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
             // TODO error
         }
 
-        final CommandConfigurationInternalRepresentation commandConfigurationInternalRepresentation = getCommandConfigurationInternalRepresentation(scope, project, commandId, wrapperName);
-        if (commandConfigurationInternalRepresentation == null) {
+        final CommandConfigurationInternal commandConfigurationInternal = getCommandConfigurationInternalRepresentation(scope, project, commandId, wrapperName);
+        if (commandConfigurationInternal == null) {
             return;
         }
-        if (commandConfigurationInternalRepresentation.enabled() == null) {
+        if (commandConfigurationInternal.enabled() == null) {
             final String path = String.format(COMMAND_CONFIG_PATH_TEMPLATE, commandId, wrapperName != null ? wrapperName : "");
             configService.delete(configService.getConfig(TOOL_ID, path, scope, project));
             return;
         }
 
-        setCommandConfigurationInternalRepresentation(CommandConfigurationInternalRepresentation.create(commandConfigurationInternalRepresentation.enabled(), null),
+        setCommandConfigurationInternalRepresentation(CommandConfigurationInternal.create(commandConfigurationInternal.enabled(), null),
                 scope, project, commandId, wrapperName, username, "Deleting command configuration");
     }
 }

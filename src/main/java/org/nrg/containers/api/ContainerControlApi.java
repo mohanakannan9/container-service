@@ -1,14 +1,15 @@
 package org.nrg.containers.api;
 
-import org.nrg.containers.events.DockerContainerEvent;
+import org.nrg.containers.events.model.DockerContainerEvent;
+import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.model.Container;
-import org.nrg.containers.model.auto.DockerImage;
-import org.nrg.containers.model.DockerServer;
+import org.nrg.containers.model.container.auto.Container;
+import org.nrg.containers.model.image.docker.DockerImage;
+import org.nrg.containers.model.server.docker.DockerServer;
 import org.nrg.containers.model.ResolvedDockerCommand;
-import org.nrg.containers.model.auto.Command;
-import org.nrg.containers.model.auto.DockerHub;
+import org.nrg.containers.model.command.auto.Command;
+import org.nrg.containers.model.dockerhub.DockerHub;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 
@@ -35,7 +36,7 @@ public interface ContainerControlApi {
     DockerImage pullImage(String name, DockerHub hub) throws NoServerPrefException, DockerServerException;
     DockerImage pullImage(String name, DockerHub hub, String username, String password) throws NoServerPrefException, DockerServerException;
 
-    String createContainer(final ResolvedDockerCommand dockerCommand) throws NoServerPrefException, DockerServerException;
+    String createContainer(final ResolvedDockerCommand dockerCommand) throws NoServerPrefException, DockerServerException, ContainerException;
     //    String createContainer(final String imageName, final List<String> runCommand, final List <String> volumes) throws NoServerPrefException, DockerServerException;
 //    String createContainer(final DockerServer server, final String imageName,
 //                       final List<String> runCommand, final List <String> volumes) throws DockerServerException;

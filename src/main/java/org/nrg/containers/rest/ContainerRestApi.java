@@ -2,7 +2,7 @@ package org.nrg.containers.rest;
 
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.model.ContainerEntity;
+import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.containers.services.ContainerService;
 import org.nrg.framework.annotations.XapiRestController;

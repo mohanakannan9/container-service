@@ -10,9 +10,9 @@ import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.model.ContainerEntity;
-import org.nrg.containers.model.ContainerEntityMount;
-import org.nrg.containers.model.ContainerEntityOutput;
+import org.nrg.containers.model.container.entity.ContainerEntity;
+import org.nrg.containers.model.container.entity.ContainerEntityMount;
+import org.nrg.containers.model.container.entity.ContainerEntityOutput;
 import org.nrg.transporter.TransportService;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -35,8 +35,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.nrg.containers.model.CommandWrapperOutputEntity.Type.ASSESSOR;
-import static org.nrg.containers.model.CommandWrapperOutputEntity.Type.RESOURCE;
+import static org.nrg.containers.model.command.entity.CommandWrapperOutputEntity.Type.ASSESSOR;
+import static org.nrg.containers.model.command.entity.CommandWrapperOutputEntity.Type.RESOURCE;
 
 public class ContainerFinalizeHelper {
     private static final Logger log = LoggerFactory.getLogger(ContainerFinalizeHelper.class);

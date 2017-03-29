@@ -1,15 +1,10 @@
 package org.nrg.containers.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.hibernate.SessionFactory;
 import org.mockito.Mockito;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.api.DockerControlApi;
-import org.nrg.containers.daos.CommandEntityRepository;
-import org.nrg.containers.model.CommandEntity;
-import org.nrg.containers.model.DockerCommandEntity;
-import org.nrg.containers.model.DockerServerPrefsBean;
-import org.nrg.containers.model.CommandWrapperEntity;
+import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.rest.DockerRestApi;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.DockerHubService;
@@ -20,22 +15,15 @@ import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.orm.hibernate4.HibernateTransactionManager;
-import org.springframework.orm.hibernate4.LocalSessionFactoryBean;
 import org.springframework.security.authentication.TestingAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.transaction.support.ResourceTransactionManager;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
-
-import javax.sql.DataSource;
-import java.util.Properties;
 
 @Configuration
 @EnableWebMvc
@@ -54,8 +42,9 @@ public class DockerRestApiTestConfig extends WebSecurityConfigurerAdapter {
     public DockerService dockerService(final ContainerControlApi controlApi,
                                        final DockerHubService dockerHubService,
                                        final CommandService commandService,
-                                       final DockerServerPrefsBean dockerServerPrefsBean) {
-        return new DockerServiceImpl(controlApi, dockerHubService, commandService, dockerServerPrefsBean);
+                                       final DockerServerPrefsBean dockerServerPrefsBean,
+                                       final ObjectMapper objectMapper) {
+        return new DockerServiceImpl(controlApi, dockerHubService, commandService, dockerServerPrefsBean, objectMapper);
     }
 
     @Bean

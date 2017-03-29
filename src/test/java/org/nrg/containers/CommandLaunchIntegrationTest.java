@@ -20,12 +20,12 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.nrg.containers.config.IntegrationTestConfig;
-import org.nrg.containers.model.ContainerEntity;
-import org.nrg.containers.model.ContainerEntityMount;
-import org.nrg.containers.model.ContainerEntityOutput;
-import org.nrg.containers.model.DockerServerPrefsBean;
-import org.nrg.containers.model.auto.Command;
-import org.nrg.containers.model.auto.Command.CommandWrapper;
+import org.nrg.containers.model.container.entity.ContainerEntity;
+import org.nrg.containers.model.container.entity.ContainerEntityMount;
+import org.nrg.containers.model.container.entity.ContainerEntityOutput;
+import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
+import org.nrg.containers.model.command.auto.Command;
+import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.model.xnat.Resource;
 import org.nrg.containers.model.xnat.Scan;
 import org.nrg.containers.model.xnat.Session;
@@ -102,7 +102,7 @@ public class CommandLaunchIntegrationTest {
         // Mock out the prefs bean
         final String containerHost = "unix:///var/run/docker.sock";
         when(mockDockerServerPrefsBean.getHost()).thenReturn(containerHost);
-        when(mockDockerServerPrefsBean.toDto()).thenCallRealMethod();
+        when(mockDockerServerPrefsBean.toPojo()).thenCallRealMethod();
 
         // Mock the userI
         mockUser = Mockito.mock(UserI.class);

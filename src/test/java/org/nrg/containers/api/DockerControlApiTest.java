@@ -17,12 +17,12 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.nrg.containers.config.DockerControlApiTestConfig;
-import org.nrg.containers.events.DockerContainerEvent;
+import org.nrg.containers.events.model.DockerContainerEvent;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.model.DockerServer;
-import org.nrg.containers.model.auto.DockerHub;
-import org.nrg.containers.model.auto.DockerImage;
+import org.nrg.containers.model.server.docker.DockerServer;
+import org.nrg.containers.model.dockerhub.DockerHub;
+import org.nrg.containers.model.image.docker.DockerImage;
 import org.nrg.framework.scope.EntityId;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -102,8 +102,8 @@ public class DockerControlApiTest {
     @Test
     public void testGetServer() throws Exception {
         final DockerServer server = controlApi.getServer();
-        assertEquals(CONTAINER_HOST, server.getHost());
-        assertEquals(CERT_PATH, server.getCertPath());
+        assertEquals(CONTAINER_HOST, server.host());
+        assertEquals(CERT_PATH, server.certPath());
     }
 
     @Test

@@ -18,13 +18,13 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.config.CommandRestApiTestConfig;
-import org.nrg.containers.model.ContainerEntity;
-import org.nrg.containers.model.DockerServer;
-import org.nrg.containers.model.DockerServerPrefsBean;
+import org.nrg.containers.model.container.entity.ContainerEntity;
+import org.nrg.containers.model.server.docker.DockerServer;
+import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.containers.model.ResolvedDockerCommand;
-import org.nrg.containers.model.auto.Command;
-import org.nrg.containers.model.auto.Command.CommandWrapper;
+import org.nrg.containers.model.command.auto.Command;
+import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.xdat.entities.AliasToken;
@@ -132,10 +132,10 @@ public class CommandRestApiTest {
         // Mock out the prefs bean
         final String containerServerName = "testy test";
         final String containerHost = "unix:///var/run/docker.sock";
-        final DockerServer dockerServer = new DockerServer(containerServerName, containerHost, null);
+        final DockerServer dockerServer = DockerServer.create(containerServerName, containerHost, null);
         when(mockDockerServerPrefsBean.getName()).thenReturn(containerServerName);
         when(mockDockerServerPrefsBean.getHost()).thenReturn(containerHost);
-        when(mockDockerServerPrefsBean.toDto()).thenReturn(dockerServer);
+        when(mockDockerServerPrefsBean.toPojo()).thenReturn(dockerServer);
         when(mockDockerControlApi.getServer()).thenReturn(dockerServer);
 
         // Mock the userI
@@ -298,7 +298,7 @@ public class CommandRestApiTest {
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
-        assertEquals("Invalid command:\n\tCommand name cannot be blank.\n\tCommand \"\" - image name cannot be blank.", blankCommandResponse);
+        assertEquals("Invalid command:\n\tCommand name cannot be blank.\n\tCommand \"null\" - image name cannot be blank.", blankCommandResponse);
     }
 
     @Test

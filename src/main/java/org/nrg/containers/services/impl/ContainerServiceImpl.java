@@ -7,8 +7,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.api.ContainerControlApi;
-import org.nrg.containers.events.ContainerEvent;
-import org.nrg.containers.events.DockerContainerEvent;
+import org.nrg.containers.events.model.ContainerEvent;
 import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.ContainerMountResolutionException;
@@ -16,14 +15,14 @@ import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.helpers.CommandResolutionHelper;
 import org.nrg.containers.helpers.ContainerFinalizeHelper;
-import org.nrg.containers.model.ContainerEntity;
-import org.nrg.containers.model.ContainerEntityHistory;
-import org.nrg.containers.model.ContainerEntityMount;
-import org.nrg.containers.model.ContainerMountFiles;
+import org.nrg.containers.model.container.entity.ContainerEntity;
+import org.nrg.containers.model.container.entity.ContainerEntityHistory;
+import org.nrg.containers.model.container.entity.ContainerEntityMount;
+import org.nrg.containers.model.container.entity.ContainerMountFiles;
 import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.containers.model.ResolvedDockerCommand;
-import org.nrg.containers.model.auto.Command;
-import org.nrg.containers.model.auto.Command.CommandWrapper;
+import org.nrg.containers.model.command.auto.Command;
+import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.containers.services.ContainerService;
@@ -307,7 +306,7 @@ public class ContainerServiceImpl implements ContainerService {
         // Transport mounts
         if (resolvedDockerCommand.getMounts() != null && !resolvedDockerCommand.getMounts().isEmpty()) {
 
-            final String dockerHost = containerControlApi.getServer().getHost();
+            final String dockerHost = containerControlApi.getServer().host();
             for (final ContainerEntityMount mount : resolvedDockerCommand.getMounts()) {
                 // First, figure out what we have.
                 // Do we have source files? A source directory?

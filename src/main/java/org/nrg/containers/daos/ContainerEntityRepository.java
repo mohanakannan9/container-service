@@ -1,9 +1,9 @@
 package org.nrg.containers.daos;
 
 import org.hibernate.Hibernate;
-import org.nrg.containers.model.ContainerEntity;
-import org.nrg.containers.model.ContainerEntityHistory;
-import org.nrg.containers.model.ContainerEntityMount;
+import org.nrg.containers.model.container.entity.ContainerEntity;
+import org.nrg.containers.model.container.entity.ContainerEntityHistory;
+import org.nrg.containers.model.container.entity.ContainerEntityMount;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.springframework.stereotype.Repository;
 
