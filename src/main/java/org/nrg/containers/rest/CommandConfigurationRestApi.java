@@ -35,6 +35,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import static org.springframework.web.bind.annotation.RequestMethod.DELETE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
+import static org.springframework.web.bind.annotation.RequestMethod.PUT;
 
 @XapiRestController
 @Api("Command Configuration API for XNAT Container service")
@@ -129,6 +130,72 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
         final UserI userI = XDAT.getUserDetails();
         commandService.deleteProjectConfiguration(project, commandId, wrapperName, userI.getLogin());
         return ResponseEntity.noContent().build();
+    }
+
+    /*
+    ENABLE/DISABLE
+     */
+    @RequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/enabled"}, method = GET)
+    public ResponseEntity<Boolean> isConfigurationEnabled(final @PathVariable long commandId,
+                                                       final @PathVariable String wrapperName)
+            throws CommandConfigurationException, NotFoundException {
+        // TODO Check: can user create?
+        return ResponseEntity.ok(commandService.isEnabledForSite(commandId, wrapperName));
+    }
+
+    @RequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/enabled"}, method = PUT)
+    public ResponseEntity<Void> enableConfiguration(final @PathVariable long commandId,
+                                                    final @PathVariable String wrapperName,
+                                                    final @RequestParam(required = false) String reason)
+            throws CommandConfigurationException, NotFoundException {
+        final UserI userI = XDAT.getUserDetails();
+        // TODO Check: can user create?
+        commandService.enableForSite(commandId, wrapperName, userI.getLogin(), reason);
+        return ResponseEntity.ok().build();
+    }
+
+    @RequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/disabled"}, method = PUT)
+    public ResponseEntity<Void> disableConfiguration(final @PathVariable long commandId,
+                                                     final @PathVariable String wrapperName,
+                                                     final @RequestParam(required = false) String reason)
+            throws CommandConfigurationException, NotFoundException {
+        final UserI userI = XDAT.getUserDetails();
+        // TODO Check: can user create?
+        commandService.disableForSite(commandId, wrapperName, userI.getLogin(), reason);
+        return ResponseEntity.ok().build();
+    }
+
+    @RequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/enabled"}, method = GET)
+    public ResponseEntity<Boolean> isConfigurationEnabled(final @PathVariable String project,
+                                                          final @PathVariable long commandId,
+                                                          final @PathVariable String wrapperName)
+            throws CommandConfigurationException, NotFoundException {
+        // TODO Check: can user create?
+        return ResponseEntity.ok(commandService.isEnabledForProject(project, commandId, wrapperName));
+    }
+
+    @RequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/enabled"}, method = PUT)
+    public ResponseEntity<Void> enableConfiguration(final @PathVariable String project,
+                                                    final @PathVariable long commandId,
+                                                    final @PathVariable String wrapperName,
+                                                    final @RequestParam(required = false) String reason)
+            throws CommandConfigurationException, NotFoundException {
+        final UserI userI = XDAT.getUserDetails();
+        // TODO Check: can user create?
+        commandService.enableForProject(project, commandId, wrapperName, userI.getLogin(), reason);
+        return ResponseEntity.ok().build();
+    }
+
+    @RequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/disabled"}, method = PUT)
+    public ResponseEntity<Void> disableConfiguration(final @PathVariable String project,
+                                                     final @PathVariable long commandId,
+                                                     final @PathVariable String wrapperName,
+                                                     final @RequestParam(required = false) String reason)
+            throws CommandConfigurationException, NotFoundException {
+        final UserI userI = XDAT.getUserDetails();
+        // TODO Check: can user create?
+        commandService.disableForProject(project, commandId, wrapperName, userI.getLogin(), reason);
+        return ResponseEntity.ok().build();
     }
 
     /*

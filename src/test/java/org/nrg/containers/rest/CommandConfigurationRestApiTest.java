@@ -45,6 +45,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isNull;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -53,6 +54,7 @@ import static org.springframework.security.test.web.servlet.setup.SecurityMockMv
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -65,12 +67,17 @@ public class CommandConfigurationRestApiTest {
     private MockMvc mockMvc;
     private CommandConfiguration commandConfiguration;
     private String commandConfigurationJson;
-    private CommandConfigurationInternal commandConfigurationInternal;
     private String commandConfigurationInternalJson;
+    private String commandConfigurationInternalDisabledJson;
     private Configuration mockConfig;
+    // private Configuration mockConfigDisabled;
     private String configPath;
     private String siteConfigRestPath;
     private String projectConfigRestPath;
+    private String siteEnableRestPath;
+    private String projectEnableRestPath;
+    private String siteDisableRestPath;
+    private String projectDisbaleRestPath;
 
     private final String project = "some-project";
     private final String FAKE_USERNAME = "fakeuser";
@@ -118,7 +125,7 @@ public class CommandConfigurationRestApiTest {
         when(mockCommandEntityService.get(commandId)).thenReturn(CommandEntity.fromPojo(command));
 
         // Create a command configuration
-        commandConfigurationInternal = CommandConfigurationInternal.builder()
+        final CommandConfigurationInternal commandConfigurationInternal = CommandConfigurationInternal.builder()
                 .enabled(true)
                 .addInput(inputName,
                         CommandConfigurationInternal.CommandInputConfiguration.builder()
@@ -131,6 +138,10 @@ public class CommandConfigurationRestApiTest {
                         CommandConfigurationInternal.CommandOutputConfiguration.create("doesn't matter"))
                 .build();
         commandConfigurationInternalJson = mapper.writeValueAsString(commandConfigurationInternal);
+        final CommandConfigurationInternal commandConfigurationInternalDisabled =
+                commandConfigurationInternal.toBuilder().enabled(false).build();
+        commandConfigurationInternalDisabledJson =
+                mapper.writeValueAsString(commandConfigurationInternalDisabled);
 
         commandConfiguration = CommandConfiguration.create(command, commandConfigurationInternal, wrapperName);
         commandConfigurationJson = mapper.writeValueAsString(commandConfiguration);
@@ -138,6 +149,8 @@ public class CommandConfigurationRestApiTest {
         // mock out a org.nrg.config.Configuration
         mockConfig = mock(Configuration.class);
         when(mockConfig.getContents()).thenReturn(commandConfigurationInternalJson);
+        // mockConfigDisabled = mock(Configuration.class);
+        // when(mockConfigDisabled.getContents()).thenReturn(commandConfigurationInternalDisabledJson);
 
         configPath = String.format(ContainerConfigServiceImpl.COMMAND_CONFIG_PATH_TEMPLATE, commandId, wrapperName);
 
@@ -147,6 +160,18 @@ public class CommandConfigurationRestApiTest {
 
         final String projectConfigRestPathTemplate = "/projects/%s/commands/%d/wrappers/%s/config";
         projectConfigRestPath = String.format(projectConfigRestPathTemplate, project, commandId, wrapperName);
+
+        final String siteEnableRestPathTemplate = "/commands/%d/wrappers/%s/enabled";
+        siteEnableRestPath = String.format(siteEnableRestPathTemplate, commandId, wrapperName);
+
+        final String projectEnableRestPathTemplate = "/projects/%s/commands/%d/wrappers/%s/enabled";
+        projectEnableRestPath = String.format(projectEnableRestPathTemplate, project, commandId, wrapperName);
+
+        final String siteDisableRestPathTemplate = "/commands/%d/wrappers/%s/disabled";
+        siteDisableRestPath = String.format(siteDisableRestPathTemplate, commandId, wrapperName);
+
+        final String projectDisableRestPathTemplate = "/projects/%s/commands/%d/wrappers/%s/disabled";
+        projectDisbaleRestPath = String.format(projectDisableRestPathTemplate, project, commandId, wrapperName);
     }
 
     @Test
@@ -299,5 +324,125 @@ public class CommandConfigurationRestApiTest {
 
         mockMvc.perform(request)
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    public void testEnableForSite() throws Exception {
+        when(mockConfigService
+                .getConfig(
+                        eq(ContainerConfigService.TOOL_ID),
+                        eq(configPath),
+                        eq(Scope.Site),
+                        isNull(String.class)
+                ))
+                .thenReturn(mockConfig);
+
+        final MockHttpServletRequestBuilder request =
+                put(siteEnableRestPath)
+                        .with(authentication(authentication))
+                        .with(csrf())
+                        .with(testSecurityContext());
+
+        mockMvc.perform(request)
+                .andExpect(status().isOk());
+
+        // This method will be called to set the config to "enabled"
+        verify(mockConfigService).replaceConfig(FAKE_USERNAME,
+                null,
+                ContainerConfigService.TOOL_ID,
+                configPath,
+                commandConfigurationInternalJson,
+                Scope.Site,
+                null);
+    }
+
+    @Test
+    public void testDisableForSite() throws Exception {
+        when(mockConfigService
+                .getConfig(
+                        eq(ContainerConfigService.TOOL_ID),
+                        eq(configPath),
+                        eq(Scope.Site),
+                        isNull(String.class)
+                ))
+                .thenReturn(mockConfig);
+
+        final MockHttpServletRequestBuilder request =
+                put(siteDisableRestPath)
+                        .with(authentication(authentication))
+                        .with(csrf())
+                        .with(testSecurityContext());
+
+        mockMvc.perform(request)
+                .andExpect(status().isOk());
+
+        // This method will be called to set the config to "disabled"
+        verify(mockConfigService).replaceConfig(FAKE_USERNAME,
+                null,
+                ContainerConfigService.TOOL_ID,
+                configPath,
+                commandConfigurationInternalDisabledJson,
+                Scope.Site,
+                null);
+    }
+
+    @Test
+    public void testEnableForProject() throws Exception {
+        when(mockConfigService
+                .getConfig(
+                        eq(ContainerConfigService.TOOL_ID),
+                        eq(configPath),
+                        eq(Scope.Project),
+                        eq(project)
+                ))
+                .thenReturn(mockConfig);
+
+        final MockHttpServletRequestBuilder request =
+                put(projectEnableRestPath)
+                        .with(authentication(authentication))
+                        .with(csrf())
+                        .with(testSecurityContext());
+
+        mockMvc.perform(request)
+                .andExpect(status().isOk());
+
+        // This method will be called to set the config to "enabled"
+        verify(mockConfigService).replaceConfig(FAKE_USERNAME,
+                null,
+                ContainerConfigService.TOOL_ID,
+                configPath,
+                commandConfigurationInternalJson,
+                Scope.Project,
+                project);
+    }
+
+    @Test
+    public void testDisableForProject() throws Exception {
+        when(mockConfigService
+                .getConfig(
+                        eq(ContainerConfigService.TOOL_ID),
+                        eq(configPath),
+                        eq(Scope.Project),
+                        eq(project)
+                ))
+                .thenReturn(mockConfig);
+
+        final MockHttpServletRequestBuilder request =
+                put(projectDisbaleRestPath)
+                        .with(authentication(authentication))
+                        .with(csrf())
+                        .with(testSecurityContext());
+
+        mockMvc.perform(request)
+                .andExpect(status().isOk());
+
+        // This method will be called to set the config to "disabled"
+        verify(mockConfigService).replaceConfig(FAKE_USERNAME,
+                null,
+                ContainerConfigService.TOOL_ID,
+                configPath,
+                commandConfigurationInternalDisabledJson,
+                Scope.Project,
+                project);
     }
 }
