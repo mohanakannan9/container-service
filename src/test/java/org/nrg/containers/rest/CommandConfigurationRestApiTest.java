@@ -66,7 +66,7 @@ public class CommandConfigurationRestApiTest {
     private CommandConfiguration commandConfiguration;
     private String commandConfigurationJson;
     private CommandConfigurationInternal commandConfigurationInternal;
-    private String commandConfigurationInternalRepresentationJson;
+    private String commandConfigurationInternalJson;
     private Configuration mockConfig;
     private String configPath;
     private String siteConfigRestPath;
@@ -115,30 +115,29 @@ public class CommandConfigurationRestApiTest {
                 .addInput(CommandInput.builder().name(inputName).build())
                 .addOutput(CommandOutput.builder().name(outputName).build())
                 .build();
-        final CommandEntity commandEntity = CommandEntity.fromPojo(command);
-        when(mockCommandEntityService.get(commandId)).thenReturn(commandEntity);
+        when(mockCommandEntityService.get(commandId)).thenReturn(CommandEntity.fromPojo(command));
 
         // Create a command configuration
-        commandConfiguration = CommandConfiguration.builder()
+        commandConfigurationInternal = CommandConfigurationInternal.builder()
+                .enabled(true)
                 .addInput(inputName,
-                        CommandConfiguration.CommandInputConfiguration.builder()
+                        CommandConfigurationInternal.CommandInputConfiguration.builder()
                                 .defaultValue("whatever")
                                 .matcher("anything")
                                 .userSettable(true)
                                 .advanced(false)
                                 .build())
                 .addOutput(outputName,
-                        CommandConfiguration.CommandOutputConfiguration.create(null))
+                        CommandConfigurationInternal.CommandOutputConfiguration.create("doesn't matter"))
                 .build();
+        commandConfigurationInternalJson = mapper.writeValueAsString(commandConfigurationInternal);
+
+        commandConfiguration = CommandConfiguration.create(command, commandConfigurationInternal, wrapperName);
         commandConfigurationJson = mapper.writeValueAsString(commandConfiguration);
-
-        commandConfigurationInternal = CommandConfigurationInternal.create(true, commandConfiguration);
-        commandConfigurationInternalRepresentationJson = mapper.writeValueAsString(commandConfigurationInternal);
-
 
         // mock out a org.nrg.config.Configuration
         mockConfig = mock(Configuration.class);
-        when(mockConfig.getContents()).thenReturn(commandConfigurationInternalRepresentationJson);
+        when(mockConfig.getContents()).thenReturn(commandConfigurationInternalJson);
 
         configPath = String.format(ContainerConfigServiceImpl.COMMAND_CONFIG_PATH_TEMPLATE, commandId, wrapperName);
 
@@ -158,7 +157,7 @@ public class CommandConfigurationRestApiTest {
                         anyString(),
                         eq(ContainerConfigService.TOOL_ID),
                         eq(configPath),
-                        eq(commandConfigurationInternalRepresentationJson),
+                        eq(commandConfigurationInternalJson),
                         eq(Scope.Site),
                         isNull(String.class)))
                 .thenReturn(null);
@@ -234,7 +233,7 @@ public class CommandConfigurationRestApiTest {
                         anyString(),
                         eq(ContainerConfigService.TOOL_ID),
                         eq(configPath),
-                        eq(commandConfigurationInternalRepresentationJson),
+                        eq(commandConfigurationInternalJson),
                         eq(Scope.Project),
                         eq(project)))
                 .thenReturn(null);

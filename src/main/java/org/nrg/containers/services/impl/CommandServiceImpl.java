@@ -16,6 +16,7 @@ import org.nrg.containers.model.command.entity.CommandEntity;
 import org.nrg.containers.model.command.entity.CommandWrapperEntity;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
+import org.nrg.containers.model.configuration.CommandConfigurationInternal;
 import org.nrg.containers.services.CommandEntityService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerConfigService;
@@ -211,37 +212,42 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     public void configureForSite(final CommandConfiguration commandConfiguration, final long commandId, final String wrapperName, final boolean enable, final String username, final String reason)
             throws CommandConfigurationException, NotFoundException {
         assertPairExists(commandId, wrapperName);
-        containerConfigService.configureForSite(commandConfiguration, commandId, wrapperName, enable, username, reason);
+        // If the "enable" param is true, we enable the configuration.
+        // Otherwise, we leave the existing "enabled" setting alone (even if it is null).
+        // We will never change "enabled" to "false" here.
+        final Boolean enabledStatusToSet = enable ? Boolean.TRUE : isEnabledForSite(commandId, wrapperName);
+        containerConfigService.configureForSite(
+                CommandConfigurationInternal.create(enabledStatusToSet, commandConfiguration),
+                commandId, wrapperName, username, reason);
     }
 
     @Override
     public void configureForProject(final CommandConfiguration commandConfiguration, final String project, final long commandId, final String wrapperName, final boolean enable, final String username, final String reason) throws CommandConfigurationException, NotFoundException {
         assertPairExists(commandId, wrapperName);
-        containerConfigService.configureForProject(commandConfiguration, project, commandId, wrapperName, enable, username, reason);
+
+        // If the "enable" param is true, we enable the configuration.
+        // Otherwise, we leave the existing "enabled" setting alone (even if it is null).
+        // We will never change "enabled" to "false" here.
+        final Boolean enabledStatusToSet = enable ? Boolean.TRUE : isEnabledForProject(project, commandId, wrapperName);
+        containerConfigService.configureForProject(
+                CommandConfigurationInternal.create(enabledStatusToSet, commandConfiguration),
+                project, commandId, wrapperName, username, reason);
     }
 
     @Override
     @Nullable
     public CommandConfiguration getSiteConfiguration(final long commandId, final String wrapperName) throws NotFoundException {
         assertPairExists(commandId, wrapperName);
-        final CommandConfiguration commandConfiguration = containerConfigService.getSiteConfiguration(commandId, wrapperName);
-        if (commandConfiguration == null) {
-            return CommandConfiguration.create(get(commandId), wrapperName);
-        } else {
-            return commandConfiguration;
-        }
+        final CommandConfigurationInternal commandConfigurationInternal = containerConfigService.getSiteConfiguration(commandId, wrapperName);
+        return CommandConfiguration.create(get(commandId), commandConfigurationInternal, wrapperName);
     }
 
     @Override
     @Nullable
     public CommandConfiguration getProjectConfiguration(final String project, final long commandId, final String wrapperName) throws NotFoundException {
         assertPairExists(commandId, wrapperName);
-        final CommandConfiguration commandConfiguration = containerConfigService.getProjectConfiguration(project, commandId, wrapperName);
-        if (commandConfiguration == null) {
-            return CommandConfiguration.create(get(commandId), wrapperName);
-        } else {
-            return commandConfiguration;
-        }
+        final CommandConfigurationInternal commandConfigurationInternal = containerConfigService.getProjectConfiguration(project, commandId, wrapperName);
+        return CommandConfiguration.create(get(commandId), commandConfigurationInternal, wrapperName);
     }
 
     @Override

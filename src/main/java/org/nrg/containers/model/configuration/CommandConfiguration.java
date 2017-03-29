@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.nrg.containers.model.command.auto.Command;
 
@@ -16,8 +15,8 @@ import java.util.Set;
 
 @AutoValue
 public abstract class CommandConfiguration {
-    @JsonProperty("inputs") abstract ImmutableMap<String, CommandInputConfiguration> inputs();
-    @JsonProperty("outputs") abstract ImmutableMap<String, CommandOutputConfiguration> outputs();
+    @JsonProperty("inputs") public abstract ImmutableMap<String, CommandInputConfiguration> inputs();
+    @JsonProperty("outputs") public abstract ImmutableMap<String, CommandOutputConfiguration> outputs();
 
     @JsonCreator
     public static CommandConfiguration create(@JsonProperty("inputs") final Map<String, CommandInputConfiguration> inputs,
@@ -29,9 +28,12 @@ public abstract class CommandConfiguration {
     }
 
     public static CommandConfiguration create(final @Nonnull Command command,
+                                              final CommandConfigurationInternal commandConfigurationInternal,
                                               final String wrapperName) {
         Builder builder = builder();
         final Set<String> handledCommandInputs = Sets.newHashSet();
+
+        // TODO do something with the configuration
 
         Command.CommandWrapper commandWrapper = null;
         for (final Command.CommandWrapper commandWrapperLoop : command.xnatCommandWrappers()) {
@@ -61,31 +63,6 @@ public abstract class CommandConfiguration {
         }
 
         return builder.build();
-    }
-
-    public CommandConfiguration merge(final CommandConfiguration that) {
-        if (that == null) {
-            return this;
-        }
-
-        final Map<String, CommandInputConfiguration> mergedInputs = Maps.newHashMap(this.inputs());
-        for (final Map.Entry<String, CommandInputConfiguration> otherInput : that.inputs().entrySet()) {
-            final CommandInputConfiguration thisInputValue = this.inputs().get(otherInput.getKey());
-            mergedInputs.put(otherInput.getKey(),
-                    thisInputValue == null ? otherInput.getValue() : thisInputValue.merge(otherInput.getValue()));
-        }
-
-        final Map<String, CommandOutputConfiguration> mergedOutputs = Maps.newHashMap(this.outputs());
-        for (final Map.Entry<String, CommandOutputConfiguration> otherOutput : that.outputs().entrySet()) {
-            final CommandOutputConfiguration thisOutputValue = this.outputs().get(otherOutput.getKey());
-            mergedOutputs.put(otherOutput.getKey(),
-                    thisOutputValue == null ? otherOutput.getValue() : thisOutputValue.merge(otherOutput.getValue()));
-        }
-
-        return builder()
-                .inputs(mergedInputs)
-                .outputs(mergedOutputs)
-                .build();
     }
 
     public static Builder builder() {
@@ -163,16 +140,6 @@ public abstract class CommandConfiguration {
             return create(commandWrapperInput.defaultValue(), commandWrapperInput.matcher(), true, false);
         }
 
-        CommandInputConfiguration merge(final CommandInputConfiguration that) {
-            if (that == null) {
-                return this;
-            }
-            return create(that.defaultValue() == null ? this.defaultValue() : that.defaultValue(),
-                    that.matcher() == null ? this.matcher() : that.matcher(),
-                    that.userSettable() == null ? this.userSettable() : that.userSettable(),
-                    that.advanced() == null ? this.advanced() : that.advanced());
-        }
-
         public static Builder builder() {
             return new AutoValue_CommandConfiguration_CommandInputConfiguration.Builder();
         }
@@ -199,13 +166,6 @@ public abstract class CommandConfiguration {
 
         static CommandOutputConfiguration create(final Command.CommandWrapperOutput commandWrapperOutput) {
             return create(commandWrapperOutput.label());
-        }
-
-        CommandOutputConfiguration merge(final CommandOutputConfiguration that) {
-            if (that == null) {
-                return this;
-            }
-            return create(that.label() == null ? this.label() : that.label());
         }
     }
 }
