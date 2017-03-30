@@ -61,6 +61,11 @@ var XNAT = getObject(XNAT || {});
         return rootUrl('/xapi/commands/'+command+'/wrappers/'+wrapperName+'/config' + appended);
     }
 
+    function configEnableUrl(command,wrapperName,flag){
+        if (!command || !wrapperName || !flag) return false;
+        return rootUrl('/xapi/commands/'+command+'/wrappers/'+wrapperName+'/' + flag);
+    }
+
     commandConfigManager.getCommands = commandConfigManager.getAll = function(callback){
         
         callback = isFunction(callback) ? callback : function(){};
@@ -106,19 +111,6 @@ var XNAT = getObject(XNAT || {});
         function basicConfigInput(name,value,required) {
             value = (value === undefined) ? '' : value;
             return '<input type="text" name="'+name+'" value="'+value+'" />';
-        }
-
-        function userSettableCheckbox(name,checked){
-            var enabled = !!checked;
-            var inputName = name + 'Settable';
-            var ckbox = spawn('input.config-enabled', {
-                type: 'checkbox',
-                checked: enabled,
-                value: 'true',
-                data: { name: inputName, checked: enabled }
-            });
-
-            return ckbox;
         }
 
         function configCheckbox(name,checked,onText,offText){
@@ -176,17 +168,13 @@ var XNAT = getObject(XNAT || {});
             // add table header row
             chTable.tr()
                 .th({ addClass: 'left', html: '<b>Output</b>' })
-                .th('<b>Label</b>')
-                .th('<b>User-Settable</b>')
-                .th('<b>Advanced</b>');
+                .th({ addClass: 'left', width: '75%', html: '<b>Label</b>' });
 
             for (o in outputs) {
                 var output = outputs[o];
                 chTable.tr({ data: { output: o }, className: 'output' })
                     .td( { data: { key: 'key' }, addClass: 'left'}, o )
-                    .td( { data: { key: 'property', property: 'label' }}, basicConfigInput('label',output['label']) )
-                    .td( [['div.center|style="color:#808080"', ['Yes']]] )
-                    .td( [['div.center|style="color:#808080"', ['No']]] );
+                    .td( { data: { key: 'property', property: 'label' }}, basicConfigInput('label',output['label']) );
             }
 
         }
@@ -342,25 +330,27 @@ var XNAT = getObject(XNAT || {});
         }
 
         function enabledCheckbox(item,wrapper){
-            var enabled = !!item.enabled;
+            enabled = !!item.enabled;
             var ckbox = spawn('input.config-enabled', {
                 type: 'checkbox',
                 checked: enabled,
                 value: enabled,
                 data: { name: item.name },
                 onchange: function(){
-                     // save the status when clicked
-                     var checkbox = this;
-                     enabled = checkbox.checked;
-                     XNAT.xhr.post({
-                         url: configUrl(item.id,wrapper.name,'enable='+enabled),
-                         success: function(){
-                             var status = (enabled ? ' enabled' : ' disabled');
-                             checkbox.value = enabled;
-                             XNAT.ui.banner.top(1000, '<b>' + wrapper.name+ '</b> ' + status, 'success');
-                             console.log(wrapper.name + status)
-                         }
-                     });
+                    // save the status when clicked
+                    var checkbox = this;
+                    enabled = checkbox.checked;
+                    var enabledFlag = (enabled) ? 'enabled' : 'disabled';
+
+                    XNAT.xhr.put({
+                        url: configEnableUrl(item.id,wrapper.name,enabledFlag),
+                        success: function(){
+                            var status = (enabled ? ' enabled' : ' disabled');
+                            checkbox.value = enabled;
+                            XNAT.ui.banner.top(1000, '<b>' + wrapper.name+ '</b> ' + status, 'success');
+                            console.log(wrapper.name + status)
+                        }
+                    });
                 }
             });
 
@@ -370,6 +360,7 @@ var XNAT = getObject(XNAT || {});
                     ['span.switchbox-outer', [['span.switchbox-inner']]]
                 ])
             ]);
+
         }
 
         function deleteConfigButton(item,wrapper){
@@ -405,11 +396,18 @@ var XNAT = getObject(XNAT || {});
                         for (var k = 0, l = item.xnat.length; k < l; k++) {
                             var wrapper = item.xnat[k];
 
-                            chTable.tr({title: wrapper.name, data: {id: item.id, name: wrapper.name, image: item.image}})
-                                .td([viewLink(item, wrapper, wrapper.description)]).addClass('name')
-                                .td(item.image)
-                                .td([['div.center', [enabledCheckbox(item,wrapper)]]])
-                                .td([['div.center', [viewConfigButton(item,wrapper), spacer(10), deleteConfigButton(item,wrapper)]]]);
+                            XNAT.xhr.get({
+                                url: configEnableUrl(item.id,wrapper.name,'enabled'),
+                                success: function(enabled){
+                                    item.enabled = enabled;
+                                    chTable.tr({title: wrapper.name, data: {id: item.id, name: wrapper.name, image: item.image}})
+                                        .td([viewLink(item, wrapper, wrapper.description)]).addClass('name')
+                                        .td(item.image)
+                                        .td([['div.center', [enabledCheckbox(item,wrapper)]]])
+                                        .td([['div.center', [viewConfigButton(item,wrapper), spacer(10), deleteConfigButton(item,wrapper)]]]);
+                                }
+                            });
+
                         }
                     }
 
