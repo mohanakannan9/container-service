@@ -9,3 +9,14 @@
     padding: 10px 20px;
     margin: -20px -20px 0 -20px;
 }
+.commandConfigInputRow {
+    padding: 5px 0;
+}
+.commandConfigInputMain {
+    display: inline-block;
+    width: 70%;
+}
+.commandConfigInputToggle {
+    display: inline-block;
+    width: 30%;
+}

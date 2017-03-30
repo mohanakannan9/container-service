@@ -178,8 +178,8 @@ installedImagesPanel:
 #           tag: script|src="/scripts/xnat/admin/imageListManagement.js"
             tag: script|src="~/scripts/xnat/admin/imageListManagement.js"
         panelStyleSheet:
-#            tag: link|rel="stylesheet"|type="text/css"|href="/scripts/xnat/admin/imagePanelStyle.css"
-            tag: link|rel="stylesheet"|type="text/css"|href="~/scripts/xnat/admin/imagePanelStyle.css"
+#            tag: link|rel="stylesheet"|type="text/css"|href="/scripts/xnat/admin/containerConfig.css"
+            tag: link|rel="stylesheet"|type="text/css"|href="~/scripts/xnat/admin/containerConfig.css"
 
 sitewideCommandConfigsPanel:
     kind: panel

@@ -91,26 +91,207 @@ var XNAT = getObject(XNAT || {});
         });
     };
 
+    configDefinition.table = function(config) {
+
+        // initialize the table - we'll add to it below
+        var chTable = XNAT.table({
+            className: 'command-config-definition xnat-table '+config.type,
+            style: {
+                width: '100%',
+                marginTop: '15px',
+                marginBottom: '15px'
+            }
+        });
+
+        function basicConfigInput(name,value,required) {
+            value = (value === undefined) ? '' : value;
+            return '<input type="text" name="'+name+'" value="'+value+'" />';
+        }
+
+        function userSettableCheckbox(name,checked){
+            var enabled = !!checked;
+            var inputName = name + 'Settable';
+            var ckbox = spawn('input.config-enabled', {
+                type: 'checkbox',
+                checked: enabled,
+                value: 'true',
+                data: { name: inputName, checked: enabled }
+            });
+
+            return ckbox;
+        }
+
+        function configCheckbox(name,checked,onText,offText){
+            onText = onText || 'Yes';
+            offText = offText || 'No';
+            var enabled = !!checked;
+            var ckbox = spawn('input.config-enabled', {
+                type: 'checkbox',
+                checked: enabled,
+                value: 'true',
+                data: { name: name, checked: enabled },
+            });
+
+            return spawn('div.left', [
+                spawn('label.switchbox', [
+                    ckbox,
+                    ['span.switchbox-outer', [['span.switchbox-inner']]],
+                    ['span.switchbox-on',[onText]],
+                    ['span.switchbox-off',[offText]]
+                ])
+            ]);
+        }
+
+        function hiddenConfigInput(name,value) {
+            return '<input type="hidden" name="'+name+'" value="'+value+'" />'
+        }
+
+
+        // determine which type of table to build.
+        if (config.type === 'inputs') {
+            var inputs = config.inputs;
+
+            // add table header row
+            chTable.tr()
+                .th({ addClass: 'left', html: '<b>Input</b>' })
+                .th('<b>Default Value</b>')
+                .th('<b>Matcher Value</b>')
+                .th('<b>User-Settable?</b>')
+                .th('<b>Advanced?</b>');
+
+            for (i in inputs) {
+                var input = inputs[i];
+                chTable.tr({ data: { input: i }, className: 'input' })
+                    .td( { data: { key: 'key' }, addClass: 'left'}, i )
+                    .td( { data: { key: 'property', property: 'default-value' }}, basicConfigInput('defaultVal',input['default-value']) )
+                    .td( { data: { key: 'property', property: 'matcher' }}, basicConfigInput('matcher',input['matcher']) )
+                    .td( { data: { key: 'property', property: 'user-settable' }}, [['div', [configCheckbox('userSettable',input['user-settable']) ]]])
+                    .td( { data: { key: 'property', property: 'advanced' }}, [['div', [configCheckbox('advanced',input['advanced']) ]]]);
+
+            }
+
+        } else if (config.type === 'outputs') {
+            var outputs = config.outputs;
+
+            // add table header row
+            chTable.tr()
+                .th({ addClass: 'left', html: '<b>Output</b>' })
+                .th('<b>Label</b>')
+                .th('<b>User-Settable</b>')
+                .th('<b>Advanced</b>');
+
+            for (o in outputs) {
+                var output = outputs[o];
+                chTable.tr({ data: { output: o }, className: 'output' })
+                    .td( { data: { key: 'key' }, addClass: 'left'}, o )
+                    .td( { data: { key: 'property', property: 'label' }}, basicConfigInput('label',output['label']) )
+                    .td( [['div.center|style="color:#808080"', ['Yes']]] )
+                    .td( [['div.center|style="color:#808080"', ['No']]] );
+            }
+
+        }
+
+        configDefinition.$table = $(chTable.table);
+
+        return chTable.table;
+    };
+
+
     configDefinition.dialog = function(commandId,wrapperName){
         // get command definition
         configDefinition.getConfig(commandId,wrapperName)
             .success(function(data){
+                var tmpl = $('div#command-config-template');
+                var tmplBody = $(tmpl).find('.panel-body').html('');
 
-                var _source = spawn('textarea', JSON.stringify(data, null, 4));
+                var inputs = data.inputs;
+                var outputs = data.outputs;
 
-                var _editor = XNAT.app.codeEditor.init(_source, {
-                    language: 'json'
-                });
+                tmplBody.spawn('h3','Inputs');
+                tmplBody.append(configDefinition.table({ type: 'inputs', inputs: inputs }));
 
-                _editor.openEditor({
-                    title: 'Config Definition for '+wrapperName,
-                    classes: 'plugin-json',
-                    footerContent: '(read-only)',
-                    buttons: {
-                        close: { label: 'Close' },
+                tmplBody.spawn('h3','Outputs');
+                tmplBody.append(configDefinition.table({ type: 'outputs', outputs: outputs }));
+
+                xmodal.open({
+                    title: 'Set Config Values',
+                    template: tmpl.clone(),
+                    width: 850,
+                    height: 500,
+                    scroll: true,
+                    beforeShow: function(obj){
+                        var $panel = obj.$modal.find('#config-viewer-panel');
+                        /*
+                        $panel.find('input[type=text]').each(function(){
+                            $(this).val($(this).data('value'));
+                        });
+                        */
+                        $panel.find('input[type=checkbox]').each(function(){
+                            $(this).prop('checked',$(this).data('checked'));
+                        })
                     },
-                    afterShow: function(dialog, obj){
-                        obj.aceEditor.setReadOnly(true);
+                    okClose: false,
+                    okLabel: 'Save',
+                    okAction: function(obj){
+                        var $panel = obj.$modal.find('#config-viewer-panel');
+                        var configObj = { inputs: {}, outputs: {} };
+
+                        // gather input items from table
+                        var inputRows = $panel.find('table.inputs').find('tr.input');
+                        $(inputRows).each(function(){
+                            var row = $(this);
+                            // each row contains multiple cells, each of which defines a property.
+                            var key = $(row).find("[data-key='key']").html();
+                            configObj.inputs[key] = {};
+
+                            $(row).find("[data-key='property']").each(function(){
+                                var propKey = $(this).data('property');
+                                var formInput = $(this).find('input');
+                                if ($(formInput).is('input[type=checkbox]')) {
+                                    var checkboxVal = ($(formInput).is(':checked')) ? $(formInput).val() : 'false';
+                                    configObj.inputs[key][propKey] = checkboxVal;
+                                } else {
+                                    configObj.inputs[key][propKey] = $(this).find('input').val();
+                                }
+                            });
+
+                        });
+
+                        // gather output items from table
+                        var outputRows = $panel.find('table.outputs').find('tr.output');
+                        $(outputRows).each(function(){
+                            var row = $(this);
+                            // each row contains multiple cells, each of which defines a property.
+                            var key = $(row).find("[data-key='key']").html();
+                            configObj.outputs[key] = {};
+
+                            $(row).find("[data-key='property']").each(function(){
+                                var propKey = $(this).data('property');
+                                configObj.outputs[key][propKey] = $(this).find('input').val();
+                            });
+
+                        });
+
+                        // POST the updated command config
+                        XNAT.xhr.postJSON({
+                            url: configUrl(commandId,wrapperName,'enabled=true'),
+                            dataType: 'json',
+                            data: JSON.stringify(configObj),
+                            success: function() {
+                                console.log('"' + wrapperName + '" updated');
+                                XNAT.ui.banner.top(1000, '<b>"' + wrapperName + '"</b> updated.', 'success');
+                                xmodal.closeAll();
+                            },
+                            fail: function(e) {
+                                xmodal.alert({
+                                    title: 'Error',
+                                    content: '<p><strong>Error '+e.status+'</strong></p><p>'+e.statusText+'</p>',
+                                    okAction: function(){
+                                        xmodal.closeAll();
+                                    }
+                                });
+                            }
+                        })
                     }
                 });
 
