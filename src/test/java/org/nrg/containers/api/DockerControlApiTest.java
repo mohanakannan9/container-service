@@ -20,9 +20,9 @@ import org.nrg.containers.config.DockerControlApiTestConfig;
 import org.nrg.containers.events.model.DockerContainerEvent;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.model.server.docker.DockerServer;
 import org.nrg.containers.model.dockerhub.DockerHub;
 import org.nrg.containers.model.image.docker.DockerImage;
+import org.nrg.containers.model.server.docker.DockerServer;
 import org.nrg.framework.scope.EntityId;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,10 +33,9 @@ import java.util.Date;
 import java.util.List;
 
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isIn;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.doNothing;
@@ -102,8 +101,8 @@ public class DockerControlApiTest {
     @Test
     public void testGetServer() throws Exception {
         final DockerServer server = controlApi.getServer();
-        assertEquals(CONTAINER_HOST, server.host());
-        assertEquals(CERT_PATH, server.certPath());
+        assertThat(server.host(), is(CONTAINER_HOST));
+        assertThat(server.certPath(), is(CERT_PATH));
     }
 
     @Test
@@ -157,12 +156,12 @@ public class DockerControlApiTest {
 
     @Test
     public void testPingServer() throws Exception {
-        assertEquals("OK", controlApi.pingServer());
+        assertThat(controlApi.pingServer(), is("OK"));
     }
 
     @Test
     public void testPingHub() throws Exception {
-        assertEquals("OK", controlApi.pingHub(DOCKER_HUB));
+        assertThat(controlApi.pingHub(DOCKER_HUB), is("OK"));
     }
 
     @Test
@@ -187,9 +186,9 @@ public class DockerControlApiTest {
         controlApi.deleteImageById(BUSYBOX_ID, true);
         List<com.spotify.docker.client.messages.Image> images = client.listImages();
         int afterImageCount = images.size();
-        assertEquals(beforeImageCount, afterImageCount+1);
+        assertThat(afterImageCount+1, is(beforeImageCount));
         for(com.spotify.docker.client.messages.Image image:images){
-            assertNotEquals(BUSYBOX_ID, image.id());
+            assertThat(image.id(), is(not(BUSYBOX_ID)));
         }
     }
 

@@ -3,7 +3,6 @@ package org.nrg.containers.rest;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Function;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
@@ -18,8 +17,6 @@ import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
-import org.nrg.containers.model.command.entity.CommandWrapperEntity;
-import org.nrg.containers.model.command.entity.DockerCommandEntity;
 import org.nrg.containers.model.dockerhub.DockerHub;
 import org.nrg.containers.model.image.docker.DockerImage;
 import org.nrg.containers.model.image.docker.DockerImageAndCommandSummary;
@@ -48,7 +45,6 @@ import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
 
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.everyItem;
@@ -56,7 +52,7 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isIn;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
@@ -259,7 +255,7 @@ public class DockerRestApiTest {
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
-        assertEquals("The Docker server returned an error:\nYour server dun goofed.", ISEResponse);
+        assertThat(ISEResponse, is("The Docker server returned an error:\nYour server dun goofed."));
 
         doThrow(NO_SERVER_PREF_EXCEPTION)
                 .when(mockContainerControlApi).pingServer();
@@ -270,8 +266,8 @@ public class DockerRestApiTest {
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
-        assertEquals("Set up Docker server before using this REST endpoint.",
-                failedDepResponse);
+        assertThat(failedDepResponse,
+                is("Set up Docker server before using this REST endpoint."));
     }
 
     @Test
@@ -298,7 +294,7 @@ public class DockerRestApiTest {
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
-        assertEquals(obscuredHubJson, response);
+        assertThat(response, is(obscuredHubJson));
     }
 
     @Test
@@ -328,7 +324,7 @@ public class DockerRestApiTest {
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
-        assertEquals(defaultHubObscuredJson, defaultHubResponse);
+        assertThat(defaultHubResponse, is(defaultHubObscuredJson));
 
         // Get private hub
         final MockHttpServletRequestBuilder privateHubRequest =
@@ -343,7 +339,7 @@ public class DockerRestApiTest {
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
-        assertEquals(privateHubObscuredJson, privateHubResponse);
+        assertThat(privateHubResponse, is(privateHubObscuredJson));
     }
 
     @Test
@@ -373,7 +369,7 @@ public class DockerRestApiTest {
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
-        assertEquals(defaultHubObscuredJson, defaultHubResponse);
+        assertThat(defaultHubResponse, is(defaultHubObscuredJson));
 
         // Get private hub
         final MockHttpServletRequestBuilder privateHubRequest =
@@ -388,7 +384,7 @@ public class DockerRestApiTest {
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
-        assertEquals(privateHubObscuredJson, privateHubResponse);
+        assertThat(privateHubResponse, is(privateHubObscuredJson));
     }
 
     @Test
@@ -424,7 +420,7 @@ public class DockerRestApiTest {
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
-        assertEquals(createdObscuredJson, response);
+        assertThat(response, is(createdObscuredJson));
 
         final MockHttpServletRequestBuilder nonAdminRequest =
                 post(path)
@@ -542,7 +538,7 @@ public class DockerRestApiTest {
 
         final List<DockerImage> responseList = mapper.readValue(responseStr, new TypeReference<List<DockerImage>>(){});
         assertThat(responseList, hasSize(1));
-        assertEquals(fakeDockerImage, responseList.get(0));
+        assertThat(responseList.get(0), is(fakeDockerImage));
     }
 
     @Test
@@ -567,7 +563,7 @@ public class DockerRestApiTest {
                 .build();
         final String fakeSummaryJson = mapper.writeValueAsString(fakeSummary);
         final DockerImageAndCommandSummary deserialized = mapper.readValue(fakeSummaryJson, DockerImageAndCommandSummary.class);
-        assertEquals(fakeSummary, deserialized);
+        assertThat(deserialized, is(fakeSummary));
 
         final String unknownImageName = "unknown";
         final String unknownCommandName = "image-unknown";

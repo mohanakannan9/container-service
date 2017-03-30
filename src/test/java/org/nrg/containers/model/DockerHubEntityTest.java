@@ -15,10 +15,9 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.transaction.TestTransaction;
 import org.springframework.transaction.annotation.Transactional;
 
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThat;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -47,19 +46,19 @@ public class DockerHubEntityTest {
                 "}";
         final DockerHub hubToCreate = mapper.readValue(hubToCreateJson, DockerHub.class);
         final DockerHub created = dockerHubService.create(hubToCreate);
-        assertNotEquals(0L, created.id());
-        assertEquals(hubToCreate.name(), created.name());
-        assertEquals(hubToCreate.url(), created.url());
-        assertEquals(hubToCreate.isDefault(), created.isDefault());
+        assertThat(created.id(), is(not(0L)));
+        assertThat(created.name(), is(hubToCreate.name()));
+        assertThat(created.url(), is(hubToCreate.url()));
+        assertThat(created.isDefault(), is(hubToCreate.isDefault()));
 
         TestTransaction.flagForCommit();
         TestTransaction.end();
         TestTransaction.start();
 
         final DockerHubEntity createdEntity = dockerHubService.retrieve(created.id());
-        assertEquals(created.id(), createdEntity.getId());
-        assertEquals(created.name(), createdEntity.getName());
-        assertEquals(created.url(), createdEntity.getUrl());
+        assertThat(createdEntity.getId(), is(created.id()));
+        assertThat(createdEntity.getName(), is(created.name()));
+        assertThat(createdEntity.getUrl(), is(created.url()));
     }
 
     @Test
@@ -91,7 +90,7 @@ public class DockerHubEntityTest {
         dockerHubService.update(hubEntityToUpdate);
 
         final DockerHubEntity retrieved = dockerHubService.retrieve(created.getId());
-        assertEquals(hubEntityToUpdate, retrieved);
+        assertThat(retrieved, is(hubEntityToUpdate));
     }
 
     @Test
@@ -121,6 +120,6 @@ public class DockerHubEntityTest {
         dockerHubService.update(hubToUpdate);
 
         final DockerHub updated = dockerHubService.retrieveHub(created.id());
-        assertEquals(hubToUpdate, updated);
+        assertThat(updated, is(hubToUpdate));
     }
 }

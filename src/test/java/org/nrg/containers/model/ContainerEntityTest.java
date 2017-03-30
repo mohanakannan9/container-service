@@ -16,10 +16,9 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.transaction.TestTransaction;
 import org.springframework.transaction.annotation.Transactional;
 
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
 
@@ -50,13 +49,13 @@ public class ContainerEntityTest {
         when(mockAdmin.getLogin()).thenReturn("admin");
 
         final ContainerEntity created = containerEntityService.save(resolvedCommand, containerId, mockAdmin);
-        assertNotEquals(0L, created);
+        assertThat(created.getId(), is(not(0L)));
 
         TestTransaction.flagForCommit();
         TestTransaction.end();
         TestTransaction.start();
 
         final ContainerEntity retrieved = containerEntityService.get(created.getId());
-        assertEquals(created, retrieved);
+        assertThat(retrieved, is(created));
     }
 }

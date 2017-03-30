@@ -47,9 +47,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
@@ -142,7 +145,7 @@ public class CommandLaunchIntegrationTest {
                 break;
             }
         }
-        assertNotNull(commandWrapper);
+        assertThat(commandWrapper, is(not(nullValue())));
 
         final Session session = mapper.readValue(new File(sessionJsonFile), Session.class);
         final Scan scan = session.getScans().get(0);
@@ -160,7 +163,7 @@ public class CommandLaunchIntegrationTest {
         Thread.sleep(1000); // Wait for container to finish
 
         // Raw inputs
-        assertEquals(runtimeValues, execution.getRawInputs());
+        assertThat(execution.getRawInputs(), is(runtimeValues));
 
         // xnat wrapper inputs
         final Map<String, String> expectedXnatInputValues = Maps.newHashMap();
@@ -169,13 +172,13 @@ public class CommandLaunchIntegrationTest {
         expectedXnatInputValues.put("label", session.getLabel());
         expectedXnatInputValues.put("T1", session.getScans().get(0).getUri());
         expectedXnatInputValues.put("resource", session.getScans().get(0).getResources().get(0).getUri());
-        assertEquals(expectedXnatInputValues, execution.getWrapperInputs());
+        assertThat(execution.getWrapperInputs(), is(expectedXnatInputValues));
 
         // command inputs
         final Map<String, String> expectedCommandInputValues = Maps.newHashMap();
         expectedCommandInputValues.put("subject-id", session.getLabel());
         expectedCommandInputValues.put("other-recon-all-args", "-all");
-        assertEquals(expectedCommandInputValues, execution.getCommandInputs());
+        assertThat(execution.getCommandInputs(), is(expectedCommandInputValues));
 
         // Outputs
         // assertTrue(resolvedCommand.getOutputs().isEmpty());
@@ -187,14 +190,14 @@ public class CommandLaunchIntegrationTest {
                 return output == null ? "" : output.getName();
             }
         });
-        assertEquals(Lists.newArrayList("data", "text-file"), outputNames);
+        assertThat(outputNames, contains("data", "text-file"));
 
         // Environment variables
         final Map<String, String> expectedEnvironmentVariables = Maps.newHashMap();
         expectedEnvironmentVariables.put("XNAT_USER", FAKE_ALIAS);
         expectedEnvironmentVariables.put("XNAT_PASS", FAKE_SECRET);
         expectedEnvironmentVariables.put("XNAT_HOST", FAKE_HOST);
-        assertEquals(expectedEnvironmentVariables, execution.getEnvironmentVariables());
+        assertThat(execution.getEnvironmentVariables(), is(expectedEnvironmentVariables));
 
 
         final List<ContainerEntityMount> mounts = execution.getMounts();
@@ -212,12 +215,12 @@ public class CommandLaunchIntegrationTest {
             }
         }
 
-        assertNotNull(inputMount);
-        assertEquals("/input", inputMount.getContainerPath());
-        assertEquals(fakeResourceDir, inputMount.getXnatHostPath());
+        assertThat(inputMount, is(not(nullValue())));
+        assertThat(inputMount.getContainerPath(), is("/input"));
+        assertThat(inputMount.getXnatHostPath(), is(fakeResourceDir));
 
-        assertNotNull(outputMount);
-        assertEquals("/output", outputMount.getContainerPath());
+        assertThat(outputMount, is(not(nullValue())));
+        assertThat(outputMount.getContainerPath(), is("/output"));
         final String outputPath = outputMount.getXnatHostPath();
         final File outputFile = new File(outputPath + "/out.txt");
         if (!outputFile.canRead()) {
@@ -225,16 +228,16 @@ public class CommandLaunchIntegrationTest {
         }
         final String[] outputFileContents = FileUtils.readFileToString(outputFile).split("\\n");
         assertThat(outputFileContents.length, greaterThanOrEqualTo(2));
-        assertEquals("recon-all -s session1 -all", outputFileContents[0]);
+        assertThat(outputFileContents[0], is("recon-all -s session1 -all"));
 
         final File fakeResourceDirFile = new File(fakeResourceDir);
-        assertNotNull(fakeResourceDirFile);
-        assertNotNull(fakeResourceDirFile.listFiles());
+        assertThat(fakeResourceDirFile, is(not(nullValue())));
+        assertThat(fakeResourceDirFile.listFiles(), is(not(nullValue())));
         final List<String> fakeResourceDirFileNames = Lists.newArrayList();
         for (final File file : fakeResourceDirFile.listFiles()) {
             fakeResourceDirFileNames.add(file.getName());
 
         }
-        assertEquals(fakeResourceDirFileNames, Lists.newArrayList(outputFileContents[1].split(" ")));
+        assertThat(Lists.newArrayList(outputFileContents[1].split(" ")), is(fakeResourceDirFileNames));
     }
 }

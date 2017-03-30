@@ -1,7 +1,6 @@
 package org.nrg.containers;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.google.common.collect.Lists;
 import com.google.gson.JsonArray;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.DocumentContext;
@@ -24,7 +23,10 @@ import org.nrg.containers.model.xnat.InnerTestPojo;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 public class JsonPathTest {
     private final String JSON = "[{\"foo\": \"bar\"}, {\"foo\": \"baz\"}]";
@@ -47,13 +49,13 @@ public class JsonPathTest {
         final DocumentContext ctx = JsonPath.using(jackson).parse(JSON);
 
         final List<String> doubleQuoteEqualsResult = ctx.read(DOUBLE_QUOTES_EQUALS_FILTER);
-        assertEquals(Lists.newArrayList("bar"), doubleQuoteEqualsResult);
+        assertThat(doubleQuoteEqualsResult, contains("bar"));
 
         final List<String> singleQuoteEqualsResult = ctx.read(SINGLE_QUOTES_EQUALS_FILTER);
-        assertEquals(doubleQuoteEqualsResult, singleQuoteEqualsResult);
+        assertThat(singleQuoteEqualsResult, is(doubleQuoteEqualsResult));
 
         final List<String> doubleQuoteInResult = ctx.read(DOUBLE_QUOTES_IN_FILTER);
-        assertEquals(doubleQuoteInResult, doubleQuoteEqualsResult);
+        assertThat(doubleQuoteEqualsResult, is(doubleQuoteInResult));
 
         exception.expect(InvalidJsonException.class);
         ctx.read(SINGLE_QUOTES_IN_FILTER);
@@ -66,13 +68,13 @@ public class JsonPathTest {
         final DocumentContext ctx = JsonPath.using(jacksonJsonNode).parse(JSON);
 
         final ArrayNode doubleQuoteEqualsResult = ctx.read(DOUBLE_QUOTES_EQUALS_FILTER);
-        assertEquals("bar", doubleQuoteEqualsResult.get(0).asText());
+        assertThat(doubleQuoteEqualsResult.get(0).asText(), is("bar"));
 
         final ArrayNode singleQuoteEqualsResult = ctx.read(SINGLE_QUOTES_EQUALS_FILTER);
-        assertEquals(doubleQuoteEqualsResult, singleQuoteEqualsResult);
+        assertThat(singleQuoteEqualsResult, is(doubleQuoteEqualsResult));
 
         final ArrayNode doubleQuoteInResult = ctx.read(DOUBLE_QUOTES_IN_FILTER);
-        assertEquals(doubleQuoteInResult, doubleQuoteEqualsResult);
+        assertThat(doubleQuoteEqualsResult, is(doubleQuoteInResult));
 
         exception.expect(InvalidJsonException.class);
         ctx.read(SINGLE_QUOTES_IN_FILTER);
@@ -84,16 +86,16 @@ public class JsonPathTest {
         final DocumentContext ctx = JsonPath.using(gson).parse(JSON);
 
         final JsonArray doubleQuoteEqualsResult = ctx.read(DOUBLE_QUOTES_EQUALS_FILTER);
-        assertEquals("bar", doubleQuoteEqualsResult.get(0).getAsString());
+        assertThat(doubleQuoteEqualsResult.get(0).getAsString(), is("bar"));
 
         final JsonArray singleQuoteEqualsResult = ctx.read(SINGLE_QUOTES_EQUALS_FILTER);
-        assertEquals(doubleQuoteEqualsResult, singleQuoteEqualsResult);
+        assertThat(singleQuoteEqualsResult, is(doubleQuoteEqualsResult));
 
         final JsonArray doubleQuoteInResult = ctx.read(DOUBLE_QUOTES_IN_FILTER);
-        assertEquals(doubleQuoteInResult, doubleQuoteEqualsResult);
+        assertThat(doubleQuoteEqualsResult, is(doubleQuoteInResult));
 
         final JsonArray singleQuoteInResult = ctx.read(SINGLE_QUOTES_IN_FILTER);
-        assertEquals(doubleQuoteInResult, singleQuoteInResult);
+        assertThat(singleQuoteInResult, is(doubleQuoteInResult));
     }
 
     @Test
@@ -102,16 +104,16 @@ public class JsonPathTest {
         final DocumentContext ctx = JsonPath.using(jsonOrg).parse(JSON);
 
         final org.json.JSONArray doubleQuoteEqualsResult = ctx.read(DOUBLE_QUOTES_EQUALS_FILTER);
-        assertEquals("bar", doubleQuoteEqualsResult.get(0));
+        assertThat((String)doubleQuoteEqualsResult.get(0), is("bar"));
 
         final org.json.JSONArray singleQuoteEqualsResult = ctx.read(SINGLE_QUOTES_EQUALS_FILTER);
-        assertEquals(doubleQuoteEqualsResult.get(0), singleQuoteEqualsResult.get(0));
+        assertThat(singleQuoteEqualsResult.get(0), is(doubleQuoteEqualsResult.get(0)));
 
         final org.json.JSONArray doubleQuoteInResult = ctx.read(DOUBLE_QUOTES_IN_FILTER);
-        assertEquals(doubleQuoteInResult.get(0), doubleQuoteEqualsResult.get(0));
+        assertThat(doubleQuoteEqualsResult.get(0), is(doubleQuoteInResult.get(0)));
 
         final org.json.JSONArray singleQuoteInResult = ctx.read(SINGLE_QUOTES_IN_FILTER);
-        assertEquals(doubleQuoteInResult.get(0), singleQuoteInResult.get(0));
+        assertThat(singleQuoteInResult.get(0), is(doubleQuoteInResult.get(0)));
     }
 
     @Test
@@ -120,16 +122,16 @@ public class JsonPathTest {
         final DocumentContext ctx = JsonPath.using(jsonSmart).parse(JSON);
 
         final net.minidev.json.JSONArray doubleQuoteEqualsResult = ctx.read(DOUBLE_QUOTES_EQUALS_FILTER);
-        assertEquals("bar", doubleQuoteEqualsResult.get(0));
+        assertThat((String)doubleQuoteEqualsResult.get(0), is("bar"));
 
         final net.minidev.json.JSONArray singleQuoteEqualsResult = ctx.read(SINGLE_QUOTES_EQUALS_FILTER);
-        assertEquals(doubleQuoteEqualsResult, singleQuoteEqualsResult);
+        assertThat(singleQuoteEqualsResult, is(doubleQuoteEqualsResult));
 
         final net.minidev.json.JSONArray doubleQuoteInResult = ctx.read(DOUBLE_QUOTES_IN_FILTER);
-        assertEquals(doubleQuoteInResult, doubleQuoteEqualsResult);
+        assertThat(doubleQuoteEqualsResult, is(doubleQuoteInResult));
 
         final net.minidev.json.JSONArray singleQuoteInResult = ctx.read(SINGLE_QUOTES_IN_FILTER);
-        assertEquals(doubleQuoteInResult, singleQuoteInResult);
+        assertThat(singleQuoteInResult, is(doubleQuoteInResult));
     }
 
     @Test
@@ -140,19 +142,19 @@ public class JsonPathTest {
         final DocumentContext documentContext = JsonPath.using(jackson).parse(json);
 
         final String definite = documentContext.read("$.outerKey1.innerKey1");
-        assertEquals("value", definite);
+        assertThat(definite, is("value"));
 
 //        final List<String> indefinite = documentContext.read("$..key2");
-//        assertEquals(Lists.newArrayList("value"), indefinite);
+//        assertThat(indefinite, is(Lists.newArrayList("value")));
 
         final InnerTestPojo expectedInner = new InnerTestPojo("value", "foo");
-        assertEquals(expectedInner, documentContext.read("$.outerKey1", new TypeRef<InnerTestPojo>() {}));
+        assertThat(documentContext.read("$.outerKey1", new TypeRef<InnerTestPojo>() {}), is(expectedInner));
 
-
-        assertEquals(Lists.newArrayList("value"), JsonPath.parse(json).read("$.outerKey1[?(@.innerKey2 == 'foo')].innerKey1"));
+        final List<String> innerKey = JsonPath.parse(json).read("$.outerKey1[?(@.innerKey2 == 'foo')].innerKey1", new TypeRef<List<String>>() {});
+        assertThat(innerKey, contains("value"));
         final List<InnerTestPojo> actualIndefiniteWPredicate = documentContext.read("$.outerKey1[?(@.innerKey2 == 'foo')]", new TypeRef<List<InnerTestPojo>>(){});
-        assertEquals(Lists.newArrayList(expectedInner), actualIndefiniteWPredicate);
-
-        assertEquals(Lists.newArrayList(), documentContext.read("$.outerKey1[?(@.innerKey2 != 'foo')]"));
+        assertThat(actualIndefiniteWPredicate, contains(expectedInner));
+        final List<InnerTestPojo> emptyIndefiniteWPredicate = documentContext.read("$.outerKey1[?(@.innerKey2 != 'foo')]", new TypeRef<List<InnerTestPojo>>(){});
+        assertThat(emptyIndefiniteWPredicate, is(empty()));
     }
 }

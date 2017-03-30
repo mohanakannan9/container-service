@@ -2,8 +2,6 @@ package org.nrg.containers.model;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import org.hamcrest.Matchers;
 import org.junit.Rule;
@@ -34,14 +32,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.File;
 import java.util.List;
 
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -149,27 +146,27 @@ public class CommandEntityTest {
                 mapper.readValue(STRING_INPUT_JSON, CommandInputEntity.class);
         final Command.CommandInput fooInput = Command.CommandInput.create(fooInputEntity);
 
-        assertEquals("my_cool_input", commandInput0.name());
-        assertEquals("A boolean value", commandInput0.description());
-        assertEquals(CommandInputEntity.Type.BOOLEAN.getName(), commandInput0.type());
+        assertThat(commandInput0.name(), is("my_cool_input"));
+        assertThat(commandInput0.description(), is("A boolean value"));
+        assertThat(commandInput0.type(), is(CommandInputEntity.Type.BOOLEAN.getName()));
         assertTrue(commandInput0.required());
-        assertEquals("-b", commandInput0.trueValue());
-        assertEquals("", commandInput0.falseValue());
-        assertEquals("#my_cool_input#", commandInput0.replacementKey());
-        assertEquals("", commandInput0.commandLineFlag());
-        assertEquals(" ", commandInput0.commandLineSeparator());
-        assertNull(commandInput0.defaultValue());
+        assertThat(commandInput0.trueValue(), is("-b"));
+        assertThat(commandInput0.falseValue(), is(""));
+        assertThat(commandInput0.replacementKey(), is("#my_cool_input#"));
+        assertThat(commandInput0.commandLineFlag(), is(""));
+        assertThat(commandInput0.commandLineSeparator(), is(" "));
+        assertThat(commandInput0.defaultValue(), is(nullValue()));
 
-        assertEquals("foo", fooInput.name());
-        assertEquals("A foo that bars", fooInput.description());
-        assertEquals(CommandInputEntity.Type.STRING.getName(), fooInput.type());
-        assertFalse(fooInput.required());
-        assertNull(fooInput.trueValue());
-        assertNull(fooInput.falseValue());
-        assertEquals("#foo#", fooInput.replacementKey());
-        assertEquals("--flag", fooInput.commandLineFlag());
-        assertEquals("=", fooInput.commandLineSeparator());
-        assertEquals("bar", fooInput.defaultValue());
+        assertThat(fooInput.name(), is("foo"));
+        assertThat(fooInput.description(), is("A foo that bars"));
+        assertThat(fooInput.type(), is(CommandInputEntity.Type.STRING.getName()));
+        assertThat(fooInput.required(), is(false));
+        assertThat(fooInput.trueValue(), is(nullValue()));
+        assertThat(fooInput.falseValue(), is(nullValue()));
+        assertThat(fooInput.replacementKey(), is("#foo#"));
+        assertThat(fooInput.commandLineFlag(), is("--flag"));
+        assertThat(fooInput.commandLineSeparator(), is("="));
+        assertThat(fooInput.defaultValue(), is("bar"));
     }
 
     @Test
@@ -190,21 +187,21 @@ public class CommandEntityTest {
         input.setCommandEntity(commandEntity);
         output.setCommandEntity(commandEntity);
 
-        assertEquals("abc123", commandEntity.getImage());
+        assertThat(commandEntity.getImage(), is("abc123"));
 
-        assertEquals("docker_image_command", commandEntity.getName());
-        assertEquals("Docker Image command for the test", commandEntity.getDescription());
-        assertEquals("http://abc.xyz", commandEntity.getInfoUrl());
-        assertEquals(commandInputEntityList, commandEntity.getInputs());
-        assertEquals(Lists.newArrayList(commandOutputEntity), commandEntity.getOutputs());
+        assertThat(commandEntity.getName(), is("docker_image_command"));
+        assertThat(commandEntity.getDescription(), is("Docker Image command for the test"));
+        assertThat(commandEntity.getInfoUrl(), is("http://abc.xyz"));
+        assertThat(commandEntity.getInputs(), is(commandInputEntityList));
+        assertThat(commandEntity.getOutputs(), contains(commandOutputEntity));
 
         // final CommandRun run = command.getRun();
-        assertEquals("cmd #foo# #my_cool_input#", commandEntity.getCommandLine());
-        assertEquals(ImmutableMap.of("foo", "bar"), commandEntity.getEnvironmentVariables());
-        assertEquals(Lists.newArrayList(input, output), commandEntity.getMounts());
+        assertThat(commandEntity.getCommandLine(), is("cmd #foo# #my_cool_input#"));
+        assertThat(commandEntity.getEnvironmentVariables(), hasEntry("foo", "bar"));
+        assertThat(commandEntity.getMounts(), contains(input, output));
 
         assertThat(commandEntity, instanceOf(DockerCommandEntity.class));
-        assertEquals(ImmutableMap.of("22", "2222"), ((DockerCommandEntity) commandEntity).getPorts());
+        assertThat(((DockerCommandEntity) commandEntity).getPorts(), hasEntry("22", "2222"));
     }
 
     @Test
@@ -221,7 +218,7 @@ public class CommandEntityTest {
 
         final CommandEntity retrievedCommandEntity = commandEntityService.retrieve(commandEntity.getId());
 
-        assertEquals(commandEntity, retrievedCommandEntity);
+        assertThat(retrievedCommandEntity, is(commandEntity));
 
         assertThat(Command.create(commandEntity).validate(), is(Matchers.<String>emptyIterable()));
     }
@@ -229,29 +226,29 @@ public class CommandEntityTest {
     @Test
     public void testDeserializeXnatCommandInputsAndOutputs() throws Exception {
         final CommandWrapperExternalInputEntity externalInput = mapper.readValue(XNAT_COMMAND_WRAPPER_EXTERNAL_INPUT, CommandWrapperExternalInputEntity.class);
-        assertEquals(EXTERNAL_INPUT_NAME, externalInput.getName());
-        assertEquals(CommandWrapperInputType.SESSION, externalInput.getType());
-        assertNull(externalInput.getProvidesValueForCommandInput());
-        assertNull(externalInput.getDefaultValue());
-        assertNull(externalInput.getMatcher());
-        assertFalse(externalInput.getRequired());
+        assertThat(externalInput.getName(), is(EXTERNAL_INPUT_NAME));
+        assertThat(externalInput.getType(), is(CommandWrapperInputType.SESSION));
+        assertThat(externalInput.getProvidesValueForCommandInput(), is(nullValue()));
+        assertThat(externalInput.getDefaultValue(), is(nullValue()));
+        assertThat(externalInput.getMatcher(), is(nullValue()));
+        assertThat(externalInput.getRequired(), is(false));
 
         final CommandWrapperDerivedInputEntity derivedInput = mapper.readValue(XNAT_COMMAND_WRAPPER_DERIVED_INPUT, CommandWrapperDerivedInputEntity.class);
-        assertEquals(DERIVED_INPUT_NAME, derivedInput.getName());
-        assertEquals(CommandWrapperInputType.STRING, derivedInput.getType());
-        assertEquals(EXTERNAL_INPUT_NAME, derivedInput.getDerivedFromXnatInput());
-        assertEquals(XNAT_OBJECT_PROPERTY, derivedInput.getDerivedFromXnatObjectProperty());
-        assertEquals(STRING_INPUT_NAME, derivedInput.getProvidesValueForCommandInput());
-        assertNull(derivedInput.getDefaultValue());
-        assertNull(derivedInput.getMatcher());
-        assertFalse(derivedInput.getRequired());
+        assertThat(derivedInput.getName(), is(DERIVED_INPUT_NAME));
+        assertThat(derivedInput.getType(), is(CommandWrapperInputType.STRING));
+        assertThat(derivedInput.getDerivedFromXnatInput(), is(EXTERNAL_INPUT_NAME));
+        assertThat(derivedInput.getDerivedFromXnatObjectProperty(), is(XNAT_OBJECT_PROPERTY));
+        assertThat(derivedInput.getProvidesValueForCommandInput(), is(STRING_INPUT_NAME));
+        assertThat(derivedInput.getDefaultValue(), is(nullValue()));
+        assertThat(derivedInput.getMatcher(), is(nullValue()));
+        assertThat(derivedInput.getRequired(), is(false));
 
         final CommandWrapperOutputEntity output = mapper.readValue(XNAT_COMMAND_WRAPPER_OUTPUT_HANDLER, CommandWrapperOutputEntity.class);
-        assertEquals(CommandWrapperOutputEntity.Type.RESOURCE, output.getType());
-        assertEquals(EXTERNAL_INPUT_NAME, output.getXnatInputName());
-        assertEquals(COMMAND_OUTPUT_NAME, output.getCommandOutputName());
-        assertEquals(OUTPUT_HANDLER_LABEL, output.getLabel());
-        assertEquals(OUTPUT_HANDLER_NAME, output.getName());
+        assertThat(output.getType(), is(CommandWrapperOutputEntity.Type.RESOURCE));
+        assertThat(output.getXnatInputName(), is(EXTERNAL_INPUT_NAME));
+        assertThat(output.getCommandOutputName(), is(COMMAND_OUTPUT_NAME));
+        assertThat(output.getLabel(), is(OUTPUT_HANDLER_LABEL));
+        assertThat(output.getName(), is(OUTPUT_HANDLER_NAME));
     }
 
     @Test
@@ -279,14 +276,14 @@ public class CommandEntityTest {
 
         final CommandEntity retrievedCommandEntity = commandEntityService.retrieve(commandEntity.getId());
 
-        assertEquals(commandEntity, retrievedCommandEntity);
+        assertThat(retrievedCommandEntity, is(commandEntity));
 
         final List<CommandWrapperEntity> commandWrappers = retrievedCommandEntity.getCommandWrapperEntities();
         assertThat(commandWrappers, hasSize(1));
 
         final CommandWrapperEntity commandWrapperEntity = commandWrappers.get(0);
         assertThat(commandWrapperEntity.getId(), not(0L));
-        assertEquals(commandEntity, commandWrapperEntity.getCommandEntity());
+        assertThat(commandWrapperEntity.getCommandEntity(), is(commandEntity));
 
         assertThat(Command.create(commandEntity).validate(), is(Matchers.<String>emptyIterable()));
     }
@@ -309,7 +306,7 @@ public class CommandEntityTest {
         TestTransaction.end();
         TestTransaction.start();
 
-        assertNull(commandEntityService.retrieve(created.getId()));
+        assertThat(commandEntityService.retrieve(created.getId()), is(nullValue()));
     }
 
     @Test
@@ -326,7 +323,7 @@ public class CommandEntityTest {
 
         final CommandWrapperEntity createdWrapper = created.getCommandWrapperEntities().get(0);
         final long wrapperId = createdWrapper.getId();
-        assertEquals(createdWrapper, commandEntityService.retrieve(created, wrapperId));
+        assertThat(commandEntityService.retrieve(created, wrapperId), is(createdWrapper));
 
         assertThat(Command.create(created).validate(), is(Matchers.<String>emptyIterable()));
     }
@@ -352,7 +349,7 @@ public class CommandEntityTest {
         TestTransaction.start();
 
         final CommandEntity retrieved = commandEntityService.get(commandEntity.getId());
-        assertEquals(added, retrieved.getCommandWrapperEntities().get(0));
+        assertThat(retrieved.getCommandWrapperEntities().get(0), is(added));
 
         assertThat(Command.create(retrieved).validate(), is(Matchers.<String>emptyIterable()));
     }
@@ -378,7 +375,7 @@ public class CommandEntityTest {
         TestTransaction.end();
         TestTransaction.start();
 
-        assertEquals(newDescription, updated.getDescription());
+        assertThat(updated.getDescription(), is(newDescription));
 
         assertThat(Command.create(created).validate(), is(Matchers.<String>emptyIterable()));
     }
@@ -403,7 +400,7 @@ public class CommandEntityTest {
         TestTransaction.end();
         TestTransaction.start();
 
-        assertNull(commandEntityService.retrieve(commandId, wrapperId));
+        assertThat(commandEntityService.retrieve(commandId, wrapperId), is(nullValue()));
     }
 
     @Test

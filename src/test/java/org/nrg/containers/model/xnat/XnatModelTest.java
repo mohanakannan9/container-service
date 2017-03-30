@@ -1,7 +1,6 @@
 package org.nrg.containers.model.xnat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
@@ -17,9 +16,10 @@ import org.junit.Test;
 import java.util.List;
 import java.util.Set;
 
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
@@ -61,31 +61,31 @@ public class XnatModelTest {
     @Test
     public void testDeserializeFile() throws Exception {
         final XnatFile file = mapper.readValue(FILE_JSON, XnatFile.class);
-        assertEquals("file.txt", file.getName());
-        assertEquals("/path/to/files/file.txt", file.getPath());
-        assertEquals(Lists.newArrayList("squishy", "jovial"), file.getTags());
-        assertEquals("TEXT", file.getFormat());
-        assertEquals("TEXT", file.getContent());
+        assertThat(file.getName(), is("file.txt"));
+        assertThat(file.getPath(), is("/path/to/files/file.txt"));
+        assertThat(file.getTags(), contains("squishy", "jovial"));
+        assertThat(file.getFormat(), is("TEXT"));
+        assertThat(file.getContent(), is("TEXT"));
     }
 
     @Test
     public void testDeserializeResource() throws Exception {
         final XnatFile file = mapper.readValue(FILE_JSON, XnatFile.class);
         final Resource resource = mapper.readValue(RESOURCE_JSON, Resource.class);
-        assertEquals("1", resource.getId());
-        assertEquals("a_resource", resource.getLabel());
-        assertEquals("/path/to/files", resource.getDirectory());
-        assertEquals(Lists.newArrayList(file), resource.getFiles());
+        assertThat(resource.getId(), is("1"));
+        assertThat(resource.getLabel(), is("a_resource"));
+        assertThat(resource.getDirectory(), is("/path/to/files"));
+        assertThat(resource.getFiles(), contains(file));
     }
 
     @Test
     public void testDeserializeSession() throws Exception {
         final Resource resource = mapper.readValue(RESOURCE_JSON, Resource.class);
         final Session session = mapper.readValue(SESSION_JSON, Session.class);
-        assertEquals("E1", session.getId());
-        assertEquals("a_session", session.getLabel());
-        assertEquals("xnat:fakesessiondata", session.getXsiType());
-        assertEquals(Lists.newArrayList(resource), session.getResources());
+        assertThat(session.getId(), is("E1"));
+        assertThat(session.getLabel(), is("a_session"));
+        assertThat(session.getXsiType(), is("xnat:fakesessiondata"));
+        assertThat(session.getResources(), contains(resource));
         assertNull(session.getScans());
         assertNull(session.getAssessors());
     }
@@ -97,7 +97,7 @@ public class XnatModelTest {
 
         assertThat(resources, hasSize(1));
         assertThat(resources.get(0), instanceOf(Resource.class));
-        assertEquals(expected, resources.get(0));
+        assertThat(resources, contains(expected));
     }
 
     @Test
@@ -112,7 +112,7 @@ public class XnatModelTest {
                         + "]}";
 
         final List<String> results = JsonPath.parse(commandJson).read("$.inputs[?(@.name == 'T1-scantype')].value");
-        assertEquals(Lists.newArrayList(scantype), results);
+        assertThat(results, contains(scantype));
     }
 
     @Test
@@ -129,6 +129,6 @@ public class XnatModelTest {
 
         final List<Scan> results = JsonPath.parse(sessionRuntimeJson).read("$.scans[?(@.scan-type in [\"SCANTYPE\", \"OTHER_SCANTYPE\"])]", new TypeRef<List<Scan>>(){});
 
-        assertEquals(Lists.newArrayList(expected), results);
+        assertThat(results, contains(expected));
     }
 }

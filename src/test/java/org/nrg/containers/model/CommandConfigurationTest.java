@@ -19,9 +19,9 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.Map;
 
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
@@ -60,7 +60,7 @@ public class CommandConfigurationTest {
         when(mockConfigService.getConfig(eq(TOOL_ID), anyString(), eq(Scope.Site), isNull(String.class))).thenReturn(mockSiteConfiguration);
 
         final CommandConfigurationInternal retrieved = containerConfigService.getSiteConfiguration(COMMAND_ID, WRAPPER_NAME);
-        assertEquals(site, retrieved);
+        assertThat(retrieved, is(site));
     }
 
     @Test
@@ -140,7 +140,7 @@ public class CommandConfigurationTest {
 
         final CommandConfigurationInternal retrieved =
                 containerConfigService.getProjectConfiguration(PROJECT_NAME, COMMAND_ID, WRAPPER_NAME);
-        assertEquals(expected, retrieved);
+        assertThat(retrieved, is(expected));
     }
 
     private CommandInputConfiguration.Builder allNotNullInputBuilder() {

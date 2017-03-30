@@ -52,13 +52,11 @@ import java.io.File;
 import java.util.List;
 import java.util.Set;
 
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -191,10 +189,10 @@ public class CommandRestApiTest {
         final List<Command> commands = mapper.readValue(response, new TypeReference<List<Command>>() {});
         assertThat(commands, hasSize(1));
         final Command command = commands.get(0);
-        assertNotEquals(0L, command.id());
-        assertEquals(created.id(), command.id());
-        assertEquals("one", command.name());
-        assertEquals(FAKE_DOCKER_IMAGE, command.image());
+        assertThat(command.id(), is(not(0L)));
+        assertThat(command.id(), is(created.id()));
+        assertThat(command.name(), is("one"));
+        assertThat(command.image(), is(FAKE_DOCKER_IMAGE));
     }
 
     @Test
@@ -225,8 +223,8 @@ public class CommandRestApiTest {
                         .getContentAsString();
 
         final Command command = mapper.readValue(response, Command.class);
-        assertNotEquals(0L, command.id());
-        assertEquals(created, command);
+        assertThat(command.id(), is(not(0L)));
+        assertThat(command, is(created));
     }
 
     @Test
@@ -256,13 +254,13 @@ public class CommandRestApiTest {
         TestTransaction.start();
 
         final Long idResponse = Long.parseLong(response);
-        assertNotEquals(Long.valueOf(0L), idResponse);
+        assertThat(idResponse, is(not(0L)));
 
         final Command retrieved = commandService.retrieve(idResponse);
-        assertNotEquals(0L, retrieved.id());
-        assertEquals((Long) retrieved.id(), idResponse);
-        assertEquals("toCreate", retrieved.name());
-        assertEquals(FAKE_DOCKER_IMAGE, retrieved.image());
+        assertThat(retrieved.id(), is(not(0L)));
+        assertThat(idResponse, is(retrieved.id()));
+        assertThat(retrieved.name(), is("toCreate"));
+        assertThat(retrieved.image(), is(FAKE_DOCKER_IMAGE));
 
         // Errors
         // No 'Content-type' header
@@ -298,7 +296,8 @@ public class CommandRestApiTest {
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
-        assertEquals("Invalid command:\n\tCommand name cannot be blank.\n\tCommand \"null\" - image name cannot be blank.", blankCommandResponse);
+        assertThat(blankCommandResponse,
+                is("Invalid command:\n\tCommand name cannot be blank.\n\tCommand \"null\" - image name cannot be blank."));
     }
 
     @Test
@@ -323,7 +322,7 @@ public class CommandRestApiTest {
         mockMvc.perform(request)
                 .andExpect(status().isNoContent());
 
-        assertNull(commandService.retrieve(command.id()));
+        assertThat(commandService.retrieve(command.id()), is(nullValue()));
     }
 
     @Test
@@ -361,7 +360,7 @@ public class CommandRestApiTest {
         TestTransaction.start();
 
         final Long idResponse = Long.parseLong(response);
-        assertNotEquals(Long.valueOf(0L), idResponse);
+        assertThat(idResponse, is(not(0L)));
 
         CommandWrapper retrieved = null;
         final Command retrievedCommand = commandService.retrieve(command.id());
@@ -371,10 +370,10 @@ public class CommandRestApiTest {
                 break;
             }
         }
-        assertNotNull(retrieved);
-        assertNotEquals(0L, retrieved.id());
-        assertEquals((Long) retrieved.id(), idResponse);
-        assertEquals("empty wrapper", retrieved.name());
+        assertThat(retrieved, is(not(nullValue())));
+        assertThat(retrieved.id(), is(not(0L)));
+        assertThat(idResponse, is(retrieved.id()));
+        assertThat(retrieved.name(), is("empty wrapper"));
 
         // Errors
 
@@ -391,7 +390,8 @@ public class CommandRestApiTest {
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
-        assertEquals("Invalid command:\n\tCommand \"toCreate\" - Command wrapper name cannot be blank.", blankCommandResponse);
+        assertThat(blankCommandResponse,
+                is("Invalid command:\n\tCommand \"toCreate\" - Command wrapper name cannot be blank."));
     }
 
     @Test
@@ -429,7 +429,7 @@ public class CommandRestApiTest {
         TestTransaction.end();
         TestTransaction.start();
 
-        assertEquals(updates, commandService.retrieve(commandId, wrapperId));
+        assertThat(commandService.retrieve(commandId, wrapperId), is(updates));
     }
 
     @Test
@@ -462,7 +462,7 @@ public class CommandRestApiTest {
         TestTransaction.end();
         TestTransaction.start();
 
-        assertNull(commandService.retrieve(commandId, wrapperId));
+        assertThat(commandService.retrieve(commandId, wrapperId), is(nullValue()));
     }
 
     @Test
@@ -523,7 +523,7 @@ public class CommandRestApiTest {
                 .getResponse()
                 .getContentAsString();
 
-        assertEquals(fakeContainerId, response);
+        assertThat(response, is(fakeContainerId));
     }
 
     @Test
@@ -586,7 +586,7 @@ public class CommandRestApiTest {
                 .getResponse()
                 .getContentAsString();
 
-        assertEquals(fakeContainerId, response);
+        assertThat(response, is(fakeContainerId));
     }
 
 
@@ -616,7 +616,7 @@ public class CommandRestApiTest {
                         .getResponse()
                         .getContentAsString();
 
-        assertNotEquals(response, "0");
+        assertThat(response, is(not("0")));
     }
 
     @Test
@@ -647,6 +647,6 @@ public class CommandRestApiTest {
                         .getResponse()
                         .getContentAsString();
 
-        assertEquals("", badInputTypeCommandResponse);
+        assertThat(badInputTypeCommandResponse, is(""));
     }
 }
