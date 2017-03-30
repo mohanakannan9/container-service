@@ -109,7 +109,7 @@ var XNAT = getObject(XNAT || {});
         });
 
         function basicConfigInput(name,value,required) {
-            value = (value === undefined) ? '' : value;
+            value = (value === undefined || value === null || value == 'null') ? '' : value;
             return '<input type="text" name="'+name+'" value="'+value+'" />';
         }
 
