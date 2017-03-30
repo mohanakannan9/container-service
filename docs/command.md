@@ -27,7 +27,7 @@ If you want XNAT to execute your docker image, you will need a Command. The Comm
         "mounts": [
             {
                 "name": "",
-                "type": "",
+                "writable": false,
                 "path": ""
             }
         ],
@@ -67,6 +67,7 @@ If you want XNAT to execute your docker image, you will need a Command. The Comm
             {
                 "name": "",
                 "description": "",
+                "contexts": [""],
                 "external-inputs": [
                     {
                         "name": "",
@@ -97,6 +98,7 @@ If you want XNAT to execute your docker image, you will need a Command. The Comm
                 ],
                 "output-handlers": [
                     {
+                        "name": "",
                         "type": "",
                         "accepts-command-output": "",
                         "as-a-child-of-xnat-input": "",
@@ -149,6 +151,7 @@ If you want XNAT to execute your docker image, you will need a Command. The Comm
 - **xnat** - A list of [XNAT Command Wrappers](#xnat-command-wrapper), in which you can define how to pull files and properties from XNAT objects into your containers, and upload the containers' outputs back. See the [XNAT Command Wrappers](#xnat-command-wrapper) section below for more.
     - **name** - A user-friendly name. Example: "dcm2niix on a scan".
     - **description** - A longer description of what this command wrapper does: What XNAT object(s) does it take as inputs? How does it use those to fill the command's inputs? Where does it upload the command's outputs?
+    - **contexts** - A list of [XNAT data types](https://wiki.xnat.org/display/XNAT17/Understanding+the+XNAT+Data+Model) on which this command wrapper can be run. If none are provided, the list of contexts is populated from the data types of the external inputs.
     - **external-inputs** - A List of Inputs to the Command Wrapper that will come in when a launch is requested. See [XNAT Inputs](#xnat-inputs) for more.
         - **name**
         - **description**
@@ -172,6 +175,7 @@ If you want XNAT to execute your docker image, you will need a Command. The Comm
         - **derived-from-xnat-input** - Name of an XNAT input which is a "parent" to this input.
         - **derived-from-xnat-object-property** - Name of an XNAT input which is a "parent" to this input.
     - **output-handlers** - A list of [XNAT output handlers](#xnat-output-handling). You use these to instruct the container service how and where to upload your container's outputs.
+        - **name**
         - **type** - The type of object that will be created in XNAT. Currently only `"Resource"` is accepted.
         - **accepts-command-output** - The name of a [command output](#command-outputs) whose files will be handled.
         - **as-a-child-of-xnat-input** - The name of an [XNAT input](#xnat-inputs)—either external or derived—that refers to an XNAT object. The output files will be uploaded as a new child of that object.
