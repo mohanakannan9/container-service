@@ -222,8 +222,8 @@ sitewideCommandProjectPrefs:
             tag: "hr|color=#ccc"
         optIntoSitewideCommands:
             kind: panel.input.switchbox
-            name: optIntoSitewideCommands
             label: Default Project Setting
+            value: true
             onText: Opt-IN To Enabled Site-wide Commands
             offText: Opt-OUT Of Enabled Site-wide Commands
             description: >
@@ -269,72 +269,3 @@ siteSettings:
                 ${sitewideCommandProjectPrefs}
                 ${sitewideCommandConfigsPanel}
 
-#######################################################
-####  Root Project Settings Spawner Config Object  ####
-#######################################################
-
-projectCommandConfigsPanel:
-    kind: panel
-    name: projectCommandConfigsPanel
-    label: Project Command Configurations
-    footer: false
-    contents:
-        projCommandConfigDescription:
-            tag: "p"
-            contents:
-                "This panel lists all enabled commands from all installed images, and allows project owners to define a custom configuration for each command. This configuration will be used by default by all users in this project, but users can override certain parameters."
-        projCommandConfigListContainer:
-            tag: "div#proj-command-config-list-container"
-        projCommandConfigTemplate:
-            tag: "div#proj-command-config-template.html-template"
-            contents:
-                projConfigViewer:
-                    kind: panel
-                    name: projConfigViewer
-                    id: proj-config-viewer
-                    header: false
-                    footer: false
-        projCommandConfigScript:
-#           tag: script|src="/scripts/xnat/admin/projCommandConfigManagement.js"
-            tag: script|src="~/scripts/xnat/admin/projCommandConfigManagement.js"
-
-projectCommandProjectPrefs:
-    kind: panel.form
-    name: projectCommandProjectPrefs
-    label: Site-wide Preferences for Project Command Use
-    method: POST
-    contentType: JSON
-    url: /xapi/siteConfig
-    contents:
-        projectCommandProjectPrefsDesc:
-            tag: "p"
-            contents:
-                "This setting allows you to choose whether to \"opt-in\" or \"opt-out\" of all commands that are enabled at the site-wide level."
-        spacer:
-            tag: "hr|color=#ccc"
-        projectOptIntoSitewideCommands:
-            kind: panel.input.switchbox
-            name: projectOptIntoSitewideCommands
-            label: Enable Site-wide Commands By Default?
-            onText: Opt-IN To Enabled Site-wide Commands
-            offText: Opt-OUT Of Enabled Site-wide Commands
-            description: "If set to \"Opt-OUT,\" each project will either have to enable each command individually, or change their project opt-in setting."
-
-projectSettings:
-    kind: tabs
-    name: projectSettingsPage
-    label: Project Settings for Container Service
-    meta:
-        tabGroups:
-            containerServiceProjectTabGroup: Container Service
-    contains: tabs
-    tabs:
-        commandConfigurationTab:
-            kind: tab
-            name: commandProjectConfig
-            label: Configure Commands
-            group: containerServiceProjectTabGroup
-            active: true
-            contents:
-                ${projectCommandProjectPrefs}
-                ${projectCommandConfigsPanel}
