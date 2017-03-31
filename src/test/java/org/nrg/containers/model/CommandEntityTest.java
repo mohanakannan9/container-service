@@ -3,6 +3,8 @@ package org.nrg.containers.model;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
+import org.hamcrest.CustomTypeSafeMatcher;
+import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.junit.Rule;
 import org.junit.Test;
@@ -10,6 +12,7 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.nrg.containers.config.CommandTestConfig;
 import org.nrg.containers.model.command.auto.Command;
+import org.nrg.containers.model.command.auto.Command.CommandInput;
 import org.nrg.containers.model.command.entity.CommandEntity;
 import org.nrg.containers.model.command.entity.CommandInputEntity;
 import org.nrg.containers.model.command.entity.CommandMountEntity;
@@ -37,6 +40,7 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isIn;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
@@ -356,7 +360,7 @@ public class CommandEntityTest {
 
     @Test
     @DirtiesContext
-    public void testUpdateCommandWrapper() throws Exception {
+    public void testUpdateCommandWrapperDescription() throws Exception {
 
         final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
 
@@ -370,14 +374,67 @@ public class CommandEntityTest {
 
         final String newDescription = "This is probably a new description, right?";
         createdWrapper.setDescription(newDescription);
-        final CommandWrapperEntity updated = commandEntityService.update(createdWrapper);
+
+        commandEntityService.update(createdWrapper);
         TestTransaction.flagForCommit();
         TestTransaction.end();
         TestTransaction.start();
 
-        assertThat(updated.getDescription(), is(newDescription));
+        final CommandEntity retrieved = commandEntityService.get(created.getId());
+        final CommandWrapperEntity retrievedWrapper = retrieved.getCommandWrapperEntities().get(0);
 
-        assertThat(Command.create(created).validate(), is(Matchers.<String>emptyIterable()));
+        assertThat(retrievedWrapper.getDescription(), is(newDescription));
+        assertThat(Command.create(retrieved).validate(), is(Matchers.<String>emptyIterable()));
+    }
+
+    @Test
+    @DirtiesContext
+    public void testUpdateAddInput() throws Exception {
+
+        final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
+
+        final CommandEntity created = commandEntityService.create(commandEntity);
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        final CommandInput pojoToAdd = CommandInput.builder()
+                .name("this is new")
+                .description("A new input that didn't exist before")
+                .commandLineFlag("--flag")
+                .commandLineSeparator("=")
+                .defaultValue("yes")
+                .build();
+        created.addInput(CommandInputEntity.fromPojo(pojoToAdd));
+
+        commandEntityService.update(created);
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        final CommandEntity retrieved = commandEntityService.get(created.getId());
+
+        final Command retrievedPojo = Command.create(retrieved);
+        assertThat(pojoToAdd, isInIgnoreId(retrievedPojo.inputs()));
+        assertThat(retrievedPojo.validate(), is(Matchers.<String>emptyIterable()));
+    }
+
+    private Matcher<CommandInput> isInIgnoreId(final List<CommandInput> expected) {
+        final String description = "a CommandInput equal to (other than the ID) one of " + expected;
+        return new CustomTypeSafeMatcher<CommandInput>(description) {
+            @Override
+            protected boolean matchesSafely(final CommandInput actual) {
+                for (final CommandInput input : expected) {
+                    final CommandInput actualWithSameId =
+                            actual.toBuilder().id(input.id()).build();
+                    if (input.equals(actualWithSameId)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        };
     }
 
     @Test

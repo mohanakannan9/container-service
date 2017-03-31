@@ -542,6 +542,8 @@ public abstract class Command {
                     .required(false);
         }
 
+        public abstract Builder toBuilder();
+
         @Nonnull
         List<String> validate() {
             final List<String> errors = Lists.newArrayList();
