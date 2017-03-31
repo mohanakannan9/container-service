@@ -206,6 +206,29 @@ sitewideCommandConfigsPanel:
 #           tag: script|src="/scripts/xnat/admin/commandConfigManagement.js"
             tag: script|src="~/scripts/xnat/admin/commandConfigManagement.js"
 
+sitewideCommandProjectPrefs:
+    kind: panel.form
+    name: sitewideCommandProjectPrefs
+    label: Site-wide Preferences for Project Command Use
+    method: POST
+    contentType: JSON
+    url: /xapi/siteConfig
+    contents:
+        sitewideCommandProjectPrefsDesc:
+            tag: "p"
+            contents:
+                "This setting sets the default option for all projects, choosing whether they will \"opt-in\" or \"opt-out\" of all commands that are enabled at the site-wide level. This setting can be customized in each project's settings."
+        spacer:
+            tag: "hr|color=#ccc"
+        optIntoSitewideCommands:
+            kind: panel.input.switchbox
+            name: optIntoSitewideCommands
+            label: Default Project Setting
+            onText: Opt-IN To Enabled Site-wide Commands
+            offText: Opt-OUT Of Enabled Site-wide Commands
+            description: >
+                If set to "Opt-OUT," each project will either have to enable each command individually, or change their project opt-in setting.
+
 #################################################
 ####  Root Site Admin Spawner Config Object  ####
 #################################################
@@ -243,11 +266,59 @@ siteSettings:
             group: containerServiceTabGroup
             active: false
             contents:
+                ${sitewideCommandProjectPrefs}
                 ${sitewideCommandConfigsPanel}
 
 #######################################################
 ####  Root Project Settings Spawner Config Object  ####
 #######################################################
+
+projectCommandConfigsPanel:
+    kind: panel
+    name: projectCommandConfigsPanel
+    label: Project Command Configurations
+    footer: false
+    contents:
+        projCommandConfigDescription:
+            tag: "p"
+            contents:
+                "This panel lists all enabled commands from all installed images, and allows project owners to define a custom configuration for each command. This configuration will be used by default by all users in this project, but users can override certain parameters."
+        projCommandConfigListContainer:
+            tag: "div#proj-command-config-list-container"
+        projCommandConfigTemplate:
+            tag: "div#proj-command-config-template.html-template"
+            contents:
+                projConfigViewer:
+                    kind: panel
+                    name: projConfigViewer
+                    id: proj-config-viewer
+                    header: false
+                    footer: false
+        projCommandConfigScript:
+#           tag: script|src="/scripts/xnat/admin/projCommandConfigManagement.js"
+            tag: script|src="~/scripts/xnat/admin/projCommandConfigManagement.js"
+
+projectCommandProjectPrefs:
+    kind: panel.form
+    name: projectCommandProjectPrefs
+    label: Site-wide Preferences for Project Command Use
+    method: POST
+    contentType: JSON
+    url: /xapi/siteConfig
+    contents:
+        projectCommandProjectPrefsDesc:
+            tag: "p"
+            contents:
+                "This setting allows you to choose whether to \"opt-in\" or \"opt-out\" of all commands that are enabled at the site-wide level."
+        spacer:
+            tag: "hr|color=#ccc"
+        projectOptIntoSitewideCommands:
+            kind: panel.input.switchbox
+            name: projectOptIntoSitewideCommands
+            label: Enable Site-wide Commands By Default?
+            onText: Opt-IN To Enabled Site-wide Commands
+            offText: Opt-OUT Of Enabled Site-wide Commands
+            description: "If set to \"Opt-OUT,\" each project will either have to enable each command individually, or change their project opt-in setting."
 
 projectSettings:
     kind: tabs
@@ -265,11 +336,5 @@ projectSettings:
             group: containerServiceProjectTabGroup
             active: true
             contents:
-                commandProjectConfigPanel:
-                    kind: panel
-                    name: commandProjectConfigPanel
-                    label: Configure Commands for Project
-                    contents:
-                        hello:
-                            tag: "p"
-                            contents: Hello there!
+                ${projectCommandProjectPrefs}
+                ${projectCommandConfigsPanel}
