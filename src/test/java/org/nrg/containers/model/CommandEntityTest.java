@@ -356,7 +356,7 @@ public class CommandEntityTest {
 
     @Test
     @DirtiesContext
-    public void testUpdateCommandWrapper() throws Exception {
+    public void testUpdateCommandWrapperDescription() throws Exception {
 
         final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
 
@@ -370,14 +370,17 @@ public class CommandEntityTest {
 
         final String newDescription = "This is probably a new description, right?";
         createdWrapper.setDescription(newDescription);
-        final CommandWrapperEntity updated = commandEntityService.update(createdWrapper);
+
+        commandEntityService.update(createdWrapper);
         TestTransaction.flagForCommit();
         TestTransaction.end();
         TestTransaction.start();
 
-        assertThat(updated.getDescription(), is(newDescription));
+        final CommandEntity retrieved = commandEntityService.get(created.getId());
+        final CommandWrapperEntity retrievedWrapper = retrieved.getCommandWrapperEntities().get(0);
 
-        assertThat(Command.create(created).validate(), is(Matchers.<String>emptyIterable()));
+        assertThat(retrievedWrapper.getDescription(), is(newDescription));
+        assertThat(Command.create(retrieved).validate(), is(Matchers.<String>emptyIterable()));
     }
 
     @Test
