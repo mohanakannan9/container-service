@@ -6,7 +6,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
-import org.nrg.containers.model.configuration.CommandConfiguration;
 import org.nrg.containers.model.configuration.CommandConfigurationInternal;
 import org.nrg.containers.services.ContainerConfigService;
 import org.nrg.framework.constants.Scope;
@@ -15,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 
@@ -25,7 +23,7 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
 
     public static final String DEFAULT_DOCKER_HUB_PATH = "default-docker-hub-id";
     public static final String COMMAND_CONFIG_PATH_TEMPLATE = "command-%d-wrapper-%s";
-    public static final String ALL_DISABLED_PATH = "disable-all-commands";
+    public static final String ALL_ENABLED_PATH = "all-commands-enabled";
 
     private final ConfigService configService;
     private final ObjectMapper mapper;
@@ -108,46 +106,64 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
     }
 
     @Override
-    public void setAllDisabledForSite(final String username, final String reason) throws ConfigServiceException {
-        setAllDisabledForSite(true, username, reason);
+    @Nullable
+    public Boolean getAllEnabled() {
+        return parseAllEnabledConfig(configService.getConfig(TOOL_ID, ALL_ENABLED_PATH, Scope.Site, null));
     }
 
     @Override
-    public void setAllDisabledForSite(final Boolean allDisabled, final String username, final String reason) throws ConfigServiceException {
+    public void enableAll(final String username, final String reason) throws ConfigServiceException {
+        setAllEnabled(true, username, reason);
+    }
+
+    @Override
+    public void disableAll(final String username, final String reason) throws ConfigServiceException {
+        setAllEnabled(false, username, reason);
+    }
+
+    @Override
+    public void deleteAllEnabledSetting(final String username, final String reason) throws ConfigServiceException {
+        setAllEnabled(null, username, reason);
+    }
+
+    private void setAllEnabled(final Boolean allEnabled, final String username, final String reason) throws ConfigServiceException {
         configService.replaceConfig(username, reason,
-                TOOL_ID, ALL_DISABLED_PATH,
-                String.valueOf(allDisabled),
+                TOOL_ID, ALL_ENABLED_PATH,
+                allEnabled == null ? null : String.valueOf(allEnabled),
                 Scope.Site, null);
     }
 
     @Override
     @Nullable
-    public Boolean getAllDisabledForSite() {
-        return parseAllDisabledConfig(configService.getConfig(TOOL_ID, ALL_DISABLED_PATH, Scope.Site, null));
+    public Boolean getAllEnabled(final String project) {
+        return parseAllEnabledConfig(configService.getConfig(TOOL_ID, ALL_ENABLED_PATH, Scope.Project, project));
     }
 
     @Override
-    public void setAllDisabledForProject(final String project, final String username, final String reason) throws ConfigServiceException {
-        setAllDisabledForProject(true, project, username, reason);
+    public void enableAll(final String project, final String username, final String reason) throws ConfigServiceException {
+        setAllEnabled(true, project, username, reason);
     }
 
     @Override
-    public void setAllDisabledForProject(final Boolean allDisabled, final String project, final String username, final String reason) throws ConfigServiceException {
+    public void disableAll(final String project, final String username, final String reason) throws ConfigServiceException {
+        setAllEnabled(false, project, username, reason);
+    }
+
+    @Override
+    public void deleteAllEnabledSetting(final String project, final String username, final String reason) throws ConfigServiceException {
+        setAllEnabled(null, project, username, reason);
+    }
+
+    private void setAllEnabled(final Boolean allEnabled, final String project, final String username, final String reason) throws ConfigServiceException {
         configService.replaceConfig(username, reason,
-                TOOL_ID, ALL_DISABLED_PATH,
-                String.valueOf(allDisabled),
+                TOOL_ID, ALL_ENABLED_PATH,
+                allEnabled == null ? null : String.valueOf(allEnabled),
                 Scope.Project, project);
     }
 
-    @Override
     @Nullable
-    public Boolean getAllDisabledForProject(final String project) {
-        return parseAllDisabledConfig(configService.getConfig(TOOL_ID, ALL_DISABLED_PATH, Scope.Project, project));
-    }
-
-    @Nullable
-    private Boolean parseAllDisabledConfig(final @Nullable Configuration allDisabledConfig) {
-        return Boolean.parseBoolean(allDisabledConfig == null ? null : allDisabledConfig.getContents());
+    private Boolean parseAllEnabledConfig(final @Nullable Configuration allDisabledConfig) {
+        return allDisabledConfig == null ? null : Boolean.parseBoolean(allDisabledConfig.getContents());
     }
 
     @Override

@@ -20,12 +20,14 @@ public interface ContainerConfigService {
     void deleteAllConfiguration(long commandId, String wrapperName);
     void deleteAllConfiguration(long commandId);
 
-    void setAllDisabledForSite(String username, String reason) throws ConfigServiceException;
-    void setAllDisabledForSite(Boolean allDisabled, String username, String reason) throws ConfigServiceException;
-    Boolean getAllDisabledForSite();
-    void setAllDisabledForProject(String project, String username, String reason) throws ConfigServiceException;
-    void setAllDisabledForProject(Boolean allDisabled, String project, String username, String reason) throws ConfigServiceException;
-    Boolean getAllDisabledForProject(String project);
+    Boolean getAllEnabled();
+    void enableAll(String username, String reason) throws ConfigServiceException;
+    void disableAll(String username, String reason) throws ConfigServiceException;
+    void deleteAllEnabledSetting(String username, String reason) throws ConfigServiceException;
+    Boolean getAllEnabled(String project);
+    void enableAll(String project, String username, String reason) throws ConfigServiceException;
+    void disableAll(String project, String username, String reason) throws ConfigServiceException;
+    void deleteAllEnabledSetting(String project, String username, String reason) throws ConfigServiceException;
 
     void enableForSite(long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException;
     void disableForSite(long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException;

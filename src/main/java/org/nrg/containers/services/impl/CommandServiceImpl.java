@@ -271,36 +271,6 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     }
 
     @Override
-    public void setAllDisabledForSite(final String username, final String reason) throws ConfigServiceException {
-        containerConfigService.setAllDisabledForSite(username, reason);
-    }
-
-    @Override
-    public void setAllDisabledForSite(final Boolean allDisabled, final String username, final String reason) throws ConfigServiceException {
-        containerConfigService.setAllDisabledForSite(allDisabled, username, reason);
-    }
-
-    @Override
-    public Boolean getAllDisabledForSite() {
-        return containerConfigService.getAllDisabledForSite();
-    }
-
-    @Override
-    public void setAllDisabledForProject(final String project, final String username, final String reason) throws ConfigServiceException {
-        containerConfigService.setAllDisabledForProject(project, username, reason);
-    }
-
-    @Override
-    public void setAllDisabledForProject(final Boolean allDisabled, final String project, final String username, final String reason) throws ConfigServiceException {
-        containerConfigService.setAllDisabledForProject(allDisabled, project, username, reason);
-    }
-
-    @Override
-    public Boolean getAllDisabledForProject(final String project) {
-        return containerConfigService.getAllDisabledForProject(project);
-    }
-
-    @Override
     public void enableForSite(final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException, NotFoundException {
         assertPairExists(commandId, wrapperName);
         containerConfigService.enableForSite(commandId, wrapperName, username, reason);
