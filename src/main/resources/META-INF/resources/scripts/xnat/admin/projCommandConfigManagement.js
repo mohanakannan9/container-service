@@ -27,7 +27,8 @@ var XNAT = getObject(XNAT || {});
     }
 }(function(){
 
-    var commandConfigManager,
+    var containerService,
+        commandConfigManager,
         configDefinition,
         undefined,
         rootUrl = XNAT.url.rootUrl;
@@ -35,11 +36,15 @@ var XNAT = getObject(XNAT || {});
     XNAT.projectSettings =
         getObject(XNAT.projectSettings || {});
 
-    XNAT.projectSettings.commandConfigManager = commandConfigManager =
-        getObject(XNAT.projectSettings.commandConfigManager || {});
+    XNAT.projectSettings.containerService = containerService =
+        getObject(XNAT.projectSettings.containerService || {});
 
-    XNAT.projectSettings.configDefinition = configDefinition =
-        getObject(XNAT.projectSettings.configDefinition || {});
+    XNAT.projectSettings.containerService.commandConfigManager = commandConfigManager =
+        getObject(XNAT.projectSettings.containerService.commandConfigManager || {});
+
+    XNAT.projectSettings.containerService.configDefinition = configDefinition =
+        getObject(XNAT.projectSettings.containerService.configDefinition || {});
+
 
     function spacer(width){
         return spawn('i.spacer', {
@@ -48,6 +53,26 @@ var XNAT = getObject(XNAT || {});
                 width: width + 'px'
             }
         })
+    }
+
+    function getUrlParams(){
+        var paramObj = {};
+
+        // get the querystring param, redacting the '?', then convert to an array separating on '&'
+        var urlParams = window.location.search.substr(1,window.location.search.length);
+        urlParams = urlParams.split('&');
+
+        urlParams.forEach(function(param){
+            // iterate over every key=value pair, and add to the param object
+            param = param.split('=');
+            paramObj[param[0]] = param[1];
+        });
+
+        return paramObj;
+    }
+
+    function getProjectId(){
+        return getUrlParams().id;
     }
 
     function commandUrl(appended){
@@ -61,9 +86,16 @@ var XNAT = getObject(XNAT || {});
         return rootUrl('/xapi/commands/'+command+'/wrappers/'+wrapperName+'/config' + appended);
     }
 
-    function configEnableUrl(command,wrapperName,flag){
-        if (!command || !wrapperName || !flag) return false;
-        return rootUrl('/xapi/commands/'+command+'/wrappers/'+wrapperName+'/' + flag);
+    function configEnableUrl(projectId,command,wrapperName,flag){
+        if (!projectId || !command || !wrapperName || !flag) return false;
+        return rootUrl('/xapi/projects/'+projectId+'/commands/'+command+'/wrappers/'+wrapperName+'/' + flag);
+    }
+
+    function projectPrefUrl(action){
+        var projectId = getProjectId();
+        action = action||''; 
+        var flag = (action.toUpperCase() === 'PUT') ? '?inbody=true&XNAT_CSRF='+csrfToken : '';
+        return rootUrl('/data/projects/'+projectId+'/config/container-service/general' + flag);
     }
 
     commandConfigManager.getCommands = commandConfigManager.getAll = function(callback){
@@ -95,6 +127,24 @@ var XNAT = getObject(XNAT || {});
             }
         });
     };
+
+    // auto-save to project config on click of the opt-in switchbox.
+    $('#optIntoSitewideCommands').on('change',function(){
+        var optIn = $(this).prop('checked');
+        var paramToPut = JSON.stringify({ optIntoSitewideCommands: optIn });
+        XNAT.xhr.putJSON({
+            url: projectPrefUrl('put'),
+            data: paramToPut,
+            dataType: 'json',
+            success: function(){
+                XNAT.ui.banner.top(1000, '<b>Success: </b> Site-wide Command Opt-in Setting set to <b>' + optIn + '</b>.', 'success');
+            },
+            fail: function(e){
+                xmodal.alert({title: 'Error', content: e.statusText });
+            }
+        })
+    });
+
 
     configDefinition.table = function(config) {
 
@@ -427,19 +477,24 @@ var XNAT = getObject(XNAT || {});
     commandConfigManager.init = function(container){
         var $manager = $$(container||'div#proj-command-config-list-container');
 
-        /*
-         var newCommand = spawn('button.new-command.btn.sm', {
-         html: 'Add New Command',
-         onclick: function(){
-         commandDefinition.dialog(null,true); // opens the command code editor dialog with "new command" set to true
-         }
-         });
-         */
-
         commandConfigManager.container = $manager;
 
         $manager.append(commandConfigManager.table({id: 'sitewide-commands', className: '', type: 'sitewide' }));
         $manager.append(commandConfigManager.table({id: 'project-commands', className: 'hidden', type: 'project' }));
+
+
+
+        // set value of opt-in controller based on project config
+        XNAT.xhr.getJSON({
+            url: projectPrefUrl(),
+            success: function(data){
+                var configParams = JSON.parse(data.ResultSet.Result[0].contents);
+                console.log(configParams);
+                if (configParams.optIntoSitewideCommands === true) {
+                    $('#optIntoSitewideCommands').prop('checked','checked');
+                }
+            }
+        });
     };
 
     commandConfigManager.init();

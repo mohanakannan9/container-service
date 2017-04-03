@@ -27,7 +27,8 @@ var XNAT = getObject(XNAT || {});
     }
 }(function(){
 
-    var commandConfigManager,
+    var containerService,
+        commandConfigManager,
         configDefinition,
         undefined,
         rootUrl = XNAT.url.rootUrl;
@@ -35,11 +36,14 @@ var XNAT = getObject(XNAT || {});
     XNAT.admin =
         getObject(XNAT.admin || {});
 
-    XNAT.admin.commandConfigManager = commandConfigManager =
-        getObject(XNAT.admin.commandConfigManager || {});
+    XNAT.admin.containerService = containerService =
+        getObject(XNAT.admin.containerService || {});
 
-    XNAT.admin.configDefinition = configDefinition =
-        getObject(XNAT.admin.configDefinition || {});
+    XNAT.admin.containerService.commandConfigManager = commandConfigManager =
+        getObject(XNAT.admin.containerService.commandConfigManager || {});
+
+    XNAT.admin.containerService.configDefinition = configDefinition =
+        getObject(XNAT.admin.containerService.configDefinition || {});
 
     function spacer(width){
         return spawn('i.spacer', {

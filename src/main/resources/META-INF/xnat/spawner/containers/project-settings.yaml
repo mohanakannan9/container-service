@@ -28,12 +28,9 @@ projectCommandConfigsPanel:
             tag: script|src="~/scripts/xnat/admin/projCommandConfigManagement.js"
 
 projectCommandProjectPrefs:
-    kind: panel.form
-    name: projectCommandProjectPrefs
+    kind: panel
     label: Site-wide Preferences for Project Command Use
-    method: POST
-    contentType: JSON
-    url: /xapi/siteConfig
+    footer: false
     contents:
         projectCommandProjectPrefsDesc:
             tag: "p"
@@ -41,9 +38,12 @@ projectCommandProjectPrefs:
                 "This setting allows you to choose whether to \"opt-in\" or \"opt-out\" of all commands that are enabled at the site-wide level."
         spacer:
             tag: "hr|color=#ccc"
+        projectCommandPrefsFormContainer:
+            tag: "div#project-command-prefs-form-container"
         projectOptIntoSitewideCommands:
             kind: panel.input.switchbox
-            name: projectOptIntoSitewideCommands
+            id: optIntoSitewideCommands
+            value: true
             label: Enable Site-wide Commands By Default?
             onText: Opt-IN To Enabled Site-wide Commands
             offText: Opt-OUT Of Enabled Site-wide Commands
