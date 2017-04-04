@@ -108,7 +108,7 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
     @Override
     @Nullable
     public Boolean getAllEnabled() {
-        return parseAllEnabledConfig(configService.getConfig(TOOL_ID, ALL_ENABLED_PATH, Scope.Site, null));
+        return parseBooleanConfig(configService.getConfig(TOOL_ID, ALL_ENABLED_PATH, Scope.Site, null));
     }
 
     @Override
@@ -136,7 +136,7 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
     @Override
     @Nullable
     public Boolean getAllEnabled(final String project) {
-        return parseAllEnabledConfig(configService.getConfig(TOOL_ID, ALL_ENABLED_PATH, Scope.Project, project));
+        return parseBooleanConfig(configService.getConfig(TOOL_ID, ALL_ENABLED_PATH, Scope.Project, project));
     }
 
     @Override
@@ -162,8 +162,8 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
     }
 
     @Nullable
-    private Boolean parseAllEnabledConfig(final @Nullable Configuration allDisabledConfig) {
-        return allDisabledConfig == null ? null : Boolean.parseBoolean(allDisabledConfig.getContents());
+    private Boolean parseBooleanConfig(final @Nullable Configuration configuration) {
+        return (configuration == null || configuration.getContents() == null) ? null : Boolean.parseBoolean(configuration.getContents());
     }
 
     @Override
