@@ -6,8 +6,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
-import org.nrg.containers.model.configuration.CommandConfiguration;
 import org.nrg.containers.model.configuration.CommandConfigurationInternal;
+import org.nrg.containers.model.settings.ContainerServiceSettings;
 import org.nrg.containers.services.ContainerConfigService;
 import org.nrg.framework.constants.Scope;
 import org.slf4j.Logger;
@@ -25,7 +25,9 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
 
     public static final String DEFAULT_DOCKER_HUB_PATH = "default-docker-hub-id";
     public static final String COMMAND_CONFIG_PATH_TEMPLATE = "command-%d-wrapper-%s";
-    public static final String ALL_DISABLED_PATH = "disable-all-commands";
+    public static final String OPT_IN_PATH = "opt-in-to-site-commands";
+    public static final boolean OPT_IN_DEFAULT_VALUE = false;
+    public static final String ALL_ENABLED_PATH = "all-commands-enabled";
 
     private final ConfigService configService;
     private final ObjectMapper mapper;
@@ -108,46 +110,132 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
     }
 
     @Override
-    public void setAllDisabledForSite(final String username, final String reason) throws ConfigServiceException {
-        setAllDisabledForSite(true, username, reason);
+    @Nonnull
+    public ContainerServiceSettings getSettings() {
+        return ContainerServiceSettings.create(getOptInToSiteCommands(), getAllEnabled());
     }
 
     @Override
-    public void setAllDisabledForSite(final Boolean allDisabled, final String username, final String reason) throws ConfigServiceException {
+    @Nonnull
+    public ContainerServiceSettings getSettings(final String project) {
+        return ContainerServiceSettings.create(getOptInToSiteCommands(project), getAllEnabled(project));
+    }
+
+    @Override
+    public Boolean getOptInToSiteCommands() {
+        final Boolean setting = parseBooleanConfig(configService.getConfig(TOOL_ID, OPT_IN_PATH, Scope.Site, null));
+        return setting == null ? OPT_IN_DEFAULT_VALUE : setting;
+    }
+
+    @Override
+    public void setOptInToSiteCommands(final String username, final String reason) throws ConfigServiceException {
+        setOptInToSiteCommands(true, username, reason);
+    }
+
+    @Override
+    public void setOptOutOfSiteCommands(final String username, final String reason) throws ConfigServiceException {
+        setOptInToSiteCommands(false, username, reason);
+    }
+
+    @Override
+    public void deleteOptInToSiteCommands(final String username, final String reason) throws ConfigServiceException {
+        setOptInToSiteCommands(OPT_IN_DEFAULT_VALUE, username, reason);
+    }
+
+    private void setOptInToSiteCommands(final boolean optInDefault, final String username, final String reason) throws ConfigServiceException {
         configService.replaceConfig(username, reason,
-                TOOL_ID, ALL_DISABLED_PATH,
-                String.valueOf(allDisabled),
+                TOOL_ID, ALL_ENABLED_PATH,
+                String.valueOf(optInDefault),
                 Scope.Site, null);
     }
 
     @Override
-    @Nullable
-    public Boolean getAllDisabledForSite() {
-        return parseAllDisabledConfig(configService.getConfig(TOOL_ID, ALL_DISABLED_PATH, Scope.Site, null));
+    public Boolean getOptInToSiteCommands(final String project) {
+        final Boolean projectSetting = parseBooleanConfig(configService.getConfig(TOOL_ID, OPT_IN_PATH, Scope.Project, project));
+        return projectSetting == null ? getOptInToSiteCommands() : projectSetting;
     }
 
     @Override
-    public void setAllDisabledForProject(final String project, final String username, final String reason) throws ConfigServiceException {
-        setAllDisabledForProject(true, project, username, reason);
+    public void optInToSiteCommands(final String project, final String username, final String reason) throws ConfigServiceException {
+        setOptInToSiteCommands(true, project, username, reason);
     }
 
     @Override
-    public void setAllDisabledForProject(final Boolean allDisabled, final String project, final String username, final String reason) throws ConfigServiceException {
+    public void optOutOfSiteCommands(final String project, final String username, final String reason) throws ConfigServiceException {
+        setOptInToSiteCommands(false, project, username, reason);
+    }
+
+    @Override
+    public void deleteOptInToSiteCommandsSetting(final String project, final String username, final String reason) throws ConfigServiceException {
+        setOptInToSiteCommands(getOptInToSiteCommands(), project, username, reason);
+    }
+
+    private void setOptInToSiteCommands(final boolean optIn, final String project, final String username, final String reason) throws ConfigServiceException {
         configService.replaceConfig(username, reason,
-                TOOL_ID, ALL_DISABLED_PATH,
-                String.valueOf(allDisabled),
+                TOOL_ID, ALL_ENABLED_PATH,
+                String.valueOf(optIn),
                 Scope.Project, project);
     }
 
     @Override
     @Nullable
-    public Boolean getAllDisabledForProject(final String project) {
-        return parseAllDisabledConfig(configService.getConfig(TOOL_ID, ALL_DISABLED_PATH, Scope.Project, project));
+    public Boolean getAllEnabled() {
+        return parseBooleanConfig(configService.getConfig(TOOL_ID, ALL_ENABLED_PATH, Scope.Site, null));
+    }
+
+    @Override
+    public void enableAll(final String username, final String reason) throws ConfigServiceException {
+        setAllEnabled(true, username, reason);
+    }
+
+    @Override
+    public void disableAll(final String username, final String reason) throws ConfigServiceException {
+        setAllEnabled(false, username, reason);
+    }
+
+    @Override
+    public void deleteAllEnabledSetting(final String username, final String reason) throws ConfigServiceException {
+        setAllEnabled(null, username, reason);
+    }
+
+    private void setAllEnabled(final Boolean allEnabled, final String username, final String reason) throws ConfigServiceException {
+        configService.replaceConfig(username, reason,
+                TOOL_ID, ALL_ENABLED_PATH,
+                allEnabled == null ? null : String.valueOf(allEnabled),
+                Scope.Site, null);
+    }
+
+    @Override
+    @Nullable
+    public Boolean getAllEnabled(final String project) {
+        return parseBooleanConfig(configService.getConfig(TOOL_ID, ALL_ENABLED_PATH, Scope.Project, project));
+    }
+
+    @Override
+    public void enableAll(final String project, final String username, final String reason) throws ConfigServiceException {
+        setAllEnabled(true, project, username, reason);
+    }
+
+    @Override
+    public void disableAll(final String project, final String username, final String reason) throws ConfigServiceException {
+        setAllEnabled(false, project, username, reason);
+    }
+
+    @Override
+    public void deleteAllEnabledSetting(final String project, final String username, final String reason) throws ConfigServiceException {
+        setAllEnabled(null, project, username, reason);
+    }
+
+    private void setAllEnabled(final Boolean allEnabled, final String project, final String username, final String reason) throws ConfigServiceException {
+        configService.replaceConfig(username, reason,
+                TOOL_ID, ALL_ENABLED_PATH,
+                allEnabled == null ? null : String.valueOf(allEnabled),
+                Scope.Project, project);
     }
 
     @Nullable
-    private Boolean parseAllDisabledConfig(final @Nullable Configuration allDisabledConfig) {
-        return Boolean.parseBoolean(allDisabledConfig == null ? null : allDisabledConfig.getContents());
+    private Boolean parseBooleanConfig(final @Nullable Configuration configuration) {
+        return (configuration == null || configuration.getContents() == null) ? null : Boolean.parseBoolean(configuration.getContents());
     }
 
     @Override

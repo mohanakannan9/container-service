@@ -2,6 +2,7 @@ package org.nrg.containers.rest;
 
 import io.swagger.annotations.Api;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.containers.exceptions.BadRequestException;
 import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.CommandValidationException;
@@ -9,7 +10,9 @@ import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.configuration.CommandConfiguration;
+import org.nrg.containers.model.settings.ContainerServiceSettings;
 import org.nrg.containers.services.CommandService;
+import org.nrg.containers.services.ContainerConfigService;
 import org.nrg.containers.services.ContainerConfigService.CommandConfigurationException;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NotFoundException;
@@ -50,13 +53,16 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     private static final String NAME_REGEX = "\\d*[^\\d]+\\d*";
 
     private CommandService commandService;
+    private ContainerConfigService containerConfigService;
 
     @Autowired
     public CommandConfigurationRestApi(final CommandService commandService,
+                                       final ContainerConfigService containerConfigService,
                                        final UserManagementServiceI userManagementService,
                                        final RoleHolder roleHolder) {
         super(userManagementService, roleHolder);
         this.commandService = commandService;
+        this.containerConfigService = containerConfigService;
     }
 
     // Configure for site + command wrapper
@@ -137,7 +143,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
      */
     @RequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/enabled"}, method = GET)
     public ResponseEntity<Boolean> isConfigurationEnabled(final @PathVariable long commandId,
-                                                       final @PathVariable String wrapperName)
+                                                          final @PathVariable String wrapperName)
             throws CommandConfigurationException, NotFoundException {
         // TODO Check: can user create?
         return ResponseEntity.ok(commandService.isEnabledForSite(commandId, wrapperName));
@@ -197,6 +203,102 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
         commandService.disableForProject(project, commandId, wrapperName, userI.getLogin(), reason);
         return ResponseEntity.ok().build();
     }
+
+    /*
+    SETTINGS
+     */
+    @RequestMapping(value = {"/container-service/settings"}, method = GET)
+    @ResponseBody
+    public ContainerServiceSettings getSettings() {
+        return containerConfigService.getSettings();
+    }
+
+    @RequestMapping(value = {"/container-service/settings/all-enabled"}, method = GET)
+    @ResponseBody
+    public Boolean allEnabled()
+            throws ConfigServiceException {
+        final UserI userI = XDAT.getUserDetails();
+        // TODO Check: can user edit?
+        return containerConfigService.getAllEnabled();
+    }
+
+    @RequestMapping(value = {"/container-service/settings/enable-all"}, method = PUT)
+    public ResponseEntity<Void> enableAll(final @RequestParam(required = false) String reason)
+            throws ConfigServiceException {
+        final UserI userI = XDAT.getUserDetails();
+        // TODO Check: can user edit?
+        containerConfigService.enableAll(userI.getLogin(), reason);
+        return ResponseEntity.ok().build();
+    }
+
+    @RequestMapping(value = {"/container-service/settings/disable-all"}, method = PUT)
+    public ResponseEntity<Void> disableAll(final @RequestParam(required = false) String reason)
+            throws ConfigServiceException {
+        final UserI userI = XDAT.getUserDetails();
+        // TODO Check: can user edit?
+        containerConfigService.disableAll(userI.getLogin(), reason);
+        return ResponseEntity.ok().build();
+    }
+
+    @RequestMapping(value = {"/container-service/settings/enable-all",
+                             "/container-service/settings/disable-all"},
+            method = DELETE)
+    public ResponseEntity<Void> deleteAllEnabledSetting(final @RequestParam(required = false) String reason)
+            throws ConfigServiceException {
+        final UserI userI = XDAT.getUserDetails();
+        // TODO Check: can user edit?
+        containerConfigService.deleteAllEnabledSetting(userI.getLogin(), reason);
+        return ResponseEntity.noContent().build();
+    }
+
+    @RequestMapping(value = {"/projects/{project}/container-service/settings/all-enabled"}, method = GET)
+    @ResponseBody
+    public Boolean allEnabled(final @PathVariable String project)
+            throws ConfigServiceException {
+        final UserI userI = XDAT.getUserDetails();
+        // TODO Check: can user edit?
+        return containerConfigService.getAllEnabled(project);
+    }
+
+    @RequestMapping(value = {"/projects/{project}/container-service/settings/enable-all"}, method = PUT)
+    public ResponseEntity<Void> enableAll(final @PathVariable String project,
+                                          final @RequestParam(required = false) String reason)
+            throws ConfigServiceException {
+        final UserI userI = XDAT.getUserDetails();
+        // TODO Check: can user edit?
+        containerConfigService.enableAll(project, userI.getLogin(), reason);
+        return ResponseEntity.ok().build();
+    }
+
+    @RequestMapping(value = {"/projects/{project}/container-service/settings/disable-all"}, method = PUT)
+    public ResponseEntity<Void> disableAll(final @PathVariable String project,
+                                           final @RequestParam(required = false) String reason)
+            throws ConfigServiceException {
+        final UserI userI = XDAT.getUserDetails();
+        // TODO Check: can user edit?
+        containerConfigService.disableAll(project, userI.getLogin(), reason);
+        return ResponseEntity.ok().build();
+    }
+
+    @RequestMapping(value = {"/projects/{project}/container-service/settings/enable-all",
+                             "/projects/{project}/container-service/settings/disable-all"},
+            method = DELETE)
+    public ResponseEntity<Void> deleteAllEnabledSetting(final @PathVariable String project,
+                                                        final @RequestParam(required = false) String reason)
+            throws ConfigServiceException {
+        final UserI userI = XDAT.getUserDetails();
+        // TODO Check: can user edit?
+        containerConfigService.deleteAllEnabledSetting(project, userI.getLogin(), reason);
+        return ResponseEntity.noContent().build();
+    }
+
+    // all above but for projects
+
+    // PUT /container-service/settings/opt-in
+    // PUT /container-service/settings/opt-out
+    // DELETE /container-service/settings/opt-(in|out)
+
+    // all above but for projects
 
     /*
     EXCEPTION HANDLING

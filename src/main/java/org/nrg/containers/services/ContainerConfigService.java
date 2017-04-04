@@ -2,6 +2,7 @@ package org.nrg.containers.services;
 
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.containers.model.configuration.CommandConfigurationInternal;
+import org.nrg.containers.model.settings.ContainerServiceSettings;
 
 public interface ContainerConfigService {
     String TOOL_ID = "container-service";
@@ -20,19 +21,34 @@ public interface ContainerConfigService {
     void deleteAllConfiguration(long commandId, String wrapperName);
     void deleteAllConfiguration(long commandId);
 
-    void setAllDisabledForSite(String username, String reason) throws ConfigServiceException;
-    void setAllDisabledForSite(Boolean allDisabled, String username, String reason) throws ConfigServiceException;
-    Boolean getAllDisabledForSite();
-    void setAllDisabledForProject(String project, String username, String reason) throws ConfigServiceException;
-    void setAllDisabledForProject(Boolean allDisabled, String project, String username, String reason) throws ConfigServiceException;
-    Boolean getAllDisabledForProject(String project);
-
     void enableForSite(long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException;
+
     void disableForSite(long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException;
     Boolean isEnabledForSite(long commandId, String wrapperName);
     void enableForProject(String project, long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException;
     void disableForProject(String project, long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException;
     Boolean isEnabledForProject(String project, long commandId, String wrapperName);
+
+    ContainerServiceSettings getSettings();
+    ContainerServiceSettings getSettings(String project);
+
+    Boolean getOptInToSiteCommands();
+    void setOptInToSiteCommands(String username, String reason) throws ConfigServiceException;
+    void setOptOutOfSiteCommands(String username, String reason) throws ConfigServiceException;
+    void deleteOptInToSiteCommands(String username, String reason) throws ConfigServiceException;
+    Boolean getOptInToSiteCommands(String project);
+    void optInToSiteCommands(String project, String username, String reason) throws ConfigServiceException;
+    void optOutOfSiteCommands(String project, String username, String reason) throws ConfigServiceException;
+    void deleteOptInToSiteCommandsSetting(String project, String username, String reason) throws ConfigServiceException;
+
+    Boolean getAllEnabled();
+    void enableAll(String username, String reason) throws ConfigServiceException;
+    void disableAll(String username, String reason) throws ConfigServiceException;
+    void deleteAllEnabledSetting(String username, String reason) throws ConfigServiceException;
+    Boolean getAllEnabled(String project);
+    void enableAll(String project, String username, String reason) throws ConfigServiceException;
+    void disableAll(String project, String username, String reason) throws ConfigServiceException;
+    void deleteAllEnabledSetting(String project, String username, String reason) throws ConfigServiceException;
 
     class CommandConfigurationException extends Exception {
         public CommandConfigurationException(final String message, final Throwable e) {

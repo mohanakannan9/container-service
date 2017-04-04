@@ -39,13 +39,6 @@ public interface CommandService {
     void deleteAllConfiguration(long commandId, String wrapperName);
     void deleteAllConfiguration(long commandId);
 
-    void setAllDisabledForSite(String username, String reason) throws ConfigServiceException;
-    void setAllDisabledForSite(Boolean allDisabled, String username, String reason) throws ConfigServiceException;
-    Boolean getAllDisabledForSite();
-    void setAllDisabledForProject(String project, String username, String reason) throws ConfigServiceException;
-    void setAllDisabledForProject(Boolean allDisabled, String project, String username, String reason) throws ConfigServiceException;
-    Boolean getAllDisabledForProject(String project);
-
     void enableForSite(long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException, NotFoundException;
     void disableForSite(long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException, NotFoundException;
     Boolean isEnabledForSite(long commandId, String wrapperName) throws NotFoundException;
