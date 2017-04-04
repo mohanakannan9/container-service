@@ -28,6 +28,15 @@ public interface ContainerConfigService {
     void disableForProject(String project, long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException;
     Boolean isEnabledForProject(String project, long commandId, String wrapperName);
 
+    Boolean getOptInToSiteCommands();
+    void setOptInToSiteCommands(String username, String reason) throws ConfigServiceException;
+    void setOptOutOfSiteCommands(String username, String reason) throws ConfigServiceException;
+    void deleteOptInToSiteCommands(String username, String reason) throws ConfigServiceException;
+    Boolean getOptInToSiteCommands(String project);
+    void optInToSiteCommands(String project, String username, String reason) throws ConfigServiceException;
+    void optOutOfSiteCommands(String project, String username, String reason) throws ConfigServiceException;
+    void deleteOptInToSiteCommandsSetting(String project, String username, String reason) throws ConfigServiceException;
+
     Boolean getAllEnabled();
     void enableAll(String username, String reason) throws ConfigServiceException;
     void disableAll(String username, String reason) throws ConfigServiceException;

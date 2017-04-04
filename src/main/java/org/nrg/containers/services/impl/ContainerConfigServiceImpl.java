@@ -23,6 +23,8 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
 
     public static final String DEFAULT_DOCKER_HUB_PATH = "default-docker-hub-id";
     public static final String COMMAND_CONFIG_PATH_TEMPLATE = "command-%d-wrapper-%s";
+    public static final String OPT_IN_PATH = "opt-in-to-site-commands";
+    public static final boolean OPT_IN_DEFAULT_VALUE = false;
     public static final String ALL_ENABLED_PATH = "all-commands-enabled";
 
     private final ConfigService configService;
@@ -103,6 +105,62 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
     @Override
     public void deleteAllConfiguration(final long commandId) {
         // TODO
+    }
+
+    @Override
+    public Boolean getOptInToSiteCommands() {
+        final Boolean setting = parseBooleanConfig(configService.getConfig(TOOL_ID, OPT_IN_PATH, Scope.Site, null));
+        return setting == null ? OPT_IN_DEFAULT_VALUE : setting;
+    }
+
+    @Override
+    public void setOptInToSiteCommands(final String username, final String reason) throws ConfigServiceException {
+        setOptInToSiteCommands(true, username, reason);
+    }
+
+    @Override
+    public void setOptOutOfSiteCommands(final String username, final String reason) throws ConfigServiceException {
+        setOptInToSiteCommands(false, username, reason);
+    }
+
+    @Override
+    public void deleteOptInToSiteCommands(final String username, final String reason) throws ConfigServiceException {
+        setOptInToSiteCommands(OPT_IN_DEFAULT_VALUE, username, reason);
+    }
+
+    private void setOptInToSiteCommands(final boolean optInDefault, final String username, final String reason) throws ConfigServiceException {
+        configService.replaceConfig(username, reason,
+                TOOL_ID, ALL_ENABLED_PATH,
+                String.valueOf(optInDefault),
+                Scope.Site, null);
+    }
+
+    @Override
+    public Boolean getOptInToSiteCommands(final String project) {
+        final Boolean projectSetting = parseBooleanConfig(configService.getConfig(TOOL_ID, OPT_IN_PATH, Scope.Project, project));
+        return projectSetting == null ? getOptInToSiteCommands() : projectSetting;
+    }
+
+    @Override
+    public void optInToSiteCommands(final String project, final String username, final String reason) throws ConfigServiceException {
+        setOptInToSiteCommands(true, project, username, reason);
+    }
+
+    @Override
+    public void optOutOfSiteCommands(final String project, final String username, final String reason) throws ConfigServiceException {
+        setOptInToSiteCommands(false, project, username, reason);
+    }
+
+    @Override
+    public void deleteOptInToSiteCommandsSetting(final String project, final String username, final String reason) throws ConfigServiceException {
+        setOptInToSiteCommands(getOptInToSiteCommands(), project, username, reason);
+    }
+
+    private void setOptInToSiteCommands(final boolean optIn, final String project, final String username, final String reason) throws ConfigServiceException {
+        configService.replaceConfig(username, reason,
+                TOOL_ID, ALL_ENABLED_PATH,
+                String.valueOf(optIn),
+                Scope.Project, project);
     }
 
     @Override
