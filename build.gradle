@@ -117,6 +117,9 @@ dependencies {
     compile ("stratum:stratum:1.0") {
         transitive = false
     }
+    compile ("xalan:xalan:2.7.2") {
+        transitive = false
+    }
 
     testCompile group: 'junit', name: 'junit', version: "${vJunit}"
     testCompile "org.hamcrest:hamcrest-library:1.3"
