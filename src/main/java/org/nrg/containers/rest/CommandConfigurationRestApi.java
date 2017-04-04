@@ -207,6 +207,12 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     /*
     SETTINGS
      */
+    @RequestMapping(value = {"/container-service/settings"}, method = GET)
+    @ResponseBody
+    public ContainerServiceSettings getSettings() {
+        return containerConfigService.getSettings();
+    }
+
     @RequestMapping(value = {"/container-service/settings/all-enabled"}, method = GET)
     @ResponseBody
     public Boolean allEnabled()

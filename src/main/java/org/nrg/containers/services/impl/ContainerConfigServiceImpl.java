@@ -7,6 +7,7 @@ import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.model.configuration.CommandConfigurationInternal;
+import org.nrg.containers.model.settings.ContainerServiceSettings;
 import org.nrg.containers.services.ContainerConfigService;
 import org.nrg.framework.constants.Scope;
 import org.slf4j.Logger;
@@ -14,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 
@@ -105,6 +107,18 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
     @Override
     public void deleteAllConfiguration(final long commandId) {
         // TODO
+    }
+
+    @Override
+    @Nonnull
+    public ContainerServiceSettings getSettings() {
+        return ContainerServiceSettings.create(getOptInToSiteCommands(), getAllEnabled());
+    }
+
+    @Override
+    @Nonnull
+    public ContainerServiceSettings getSettings(final String project) {
+        return ContainerServiceSettings.create(getOptInToSiteCommands(project), getAllEnabled(project));
     }
 
     @Override

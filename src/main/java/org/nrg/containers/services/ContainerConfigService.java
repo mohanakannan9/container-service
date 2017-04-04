@@ -2,6 +2,7 @@ package org.nrg.containers.services;
 
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.containers.model.configuration.CommandConfigurationInternal;
+import org.nrg.containers.model.settings.ContainerServiceSettings;
 
 public interface ContainerConfigService {
     String TOOL_ID = "container-service";
@@ -27,6 +28,9 @@ public interface ContainerConfigService {
     void enableForProject(String project, long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException;
     void disableForProject(String project, long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException;
     Boolean isEnabledForProject(String project, long commandId, String wrapperName);
+
+    ContainerServiceSettings getSettings();
+    ContainerServiceSettings getSettings(String project);
 
     Boolean getOptInToSiteCommands();
     void setOptInToSiteCommands(String username, String reason) throws ConfigServiceException;
