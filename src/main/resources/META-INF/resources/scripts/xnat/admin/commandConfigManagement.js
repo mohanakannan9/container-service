@@ -53,6 +53,16 @@ var XNAT = getObject(XNAT || {});
             }
         })
     }
+    
+    function errorHandler(e){
+        xmodal.alert({
+            title: 'Error',
+            content: '<p><strong>Error ' + e.status + '</strong></p><p>' + e.statusText + '</p>',
+            okAction: function () {
+                xmodal.closeAll();
+            }
+        });
+    }
 
     function commandUrl(appended){
         appended = isDefined(appended) ? appended : '';
@@ -274,16 +284,8 @@ var XNAT = getObject(XNAT || {});
                                 XNAT.ui.banner.top(1000, '<b>"' + wrapperName + '"</b> updated.', 'success');
                                 xmodal.closeAll();
                             },
-                            fail: function(e) {
-                                xmodal.alert({
-                                    title: 'Error',
-                                    content: '<p><strong>Error '+e.status+'</strong></p><p>'+e.statusText+'</p>',
-                                    okAction: function(){
-                                        xmodal.closeAll();
-                                    }
-                                });
-                            }
-                        })
+                            fail: function(e){ errorHandler(e); }
+                        });
                     }
                 });
 
