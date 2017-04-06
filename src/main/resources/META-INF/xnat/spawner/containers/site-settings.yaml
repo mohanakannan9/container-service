@@ -229,6 +229,19 @@ sitewideCommandProjectPrefs:
             description: >
                 If set to "Opt-OUT," each project will either have to enable each command individually, or change their project opt-in setting.
 
+sitewideCommandHistoryPanel:
+    kind: panel
+    name: sitewideCommandHistoryPanel
+    label: Site-wide Command Execution Log
+    footer: false
+    contents:
+        commandHistoryTableContainer:
+            tag: div#container-history-container
+            contents: Table will go here
+        commandHistoryScript:
+#            tag: script|src="/scripts/xnat/admin/commandHistory.js"
+            tag: script|src="~/scripts/xnat/admin/commandHistory.js"
+
 #################################################
 ####  Root Site Admin Spawner Config Object  ####
 #################################################
@@ -268,4 +281,12 @@ siteSettings:
             contents:
                 ${sitewideCommandProjectPrefs}
                 ${sitewideCommandConfigsPanel}
+        commandHistoryTab:
+            kind: tab
+            name: commandHistoryTab
+            label: Command History
+            group: containerServiceTabGroup
+            active: false
+            contents:
+                ${sitewideCommandHistoryPanel}
 
