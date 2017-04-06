@@ -27,12 +27,21 @@ var XNAT = getObject(XNAT || {});
     }
 }(function(){
 
-    var containerService,
-        launcher,
+    var launcher,
         undefined,
         projectId = XNAT.data.context.projectID,
         sessionId = (XNAT.data.context.isImageSession) ? XNAT.data.context.ID : null;
         rootUrl = XNAT.url.rootUrl;
+
+    XNAT.plugin =
+        getObject(XNAT.plugin || {});
+
+    XNAT.plugin.containerService = 
+        getObject(XNAT.plugin.containerService || {});
+
+    XNAT.plugin.containerService.launcher = launcher =
+        getObject(XNAT.plugin.containerService.launcher || {});
+
 
     function errorHandler(e){
         console.log(e);
@@ -44,13 +53,6 @@ var XNAT = getObject(XNAT || {});
             }
         });
     }
-
-    XNAT.containerService = containerService =
-        getObject(XNAT.containerService || {});
-
-    XNAT.containerService.launcher = launcher =
-        getObject(XNAT.containerService.launcher || {});
-
     function getEnabledCommandsUrl(appended){
         appended = isDefined(appended) ? appended : '';
         return rootUrl('/xapi/commands' + appended);
@@ -405,7 +407,7 @@ var XNAT = getObject(XNAT || {});
 
         switch(launcher) {
             case 'select-scan':
-                XNAT.containerService.launcher.dialog(commandId,wrapperName,wrapperId);
+                XNAT.plugin.containerService.launcher.dialog(commandId,wrapperName,wrapperId);
                 break;
             default:
                 xmodal.alert('Sorry, I don\'t know what to do.');

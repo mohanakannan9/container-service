@@ -24,8 +24,8 @@ projectCommandConfigsPanel:
                     header: false
                     footer: false
         projCommandConfigScript:
-#           tag: script|src="/scripts/xnat/admin/projCommandConfigManagement.js"
-            tag: script|src="~/scripts/xnat/admin/projCommandConfigManagement.js"
+#           tag: script|src="/scripts/xnat/plugin/containerService/projCommandConfigManagement.js"
+            tag: script|src="~/scripts/xnat/plugin/containerService/projCommandConfigManagement.js"
 
 projectCommandProjectPrefs:
     kind: panel

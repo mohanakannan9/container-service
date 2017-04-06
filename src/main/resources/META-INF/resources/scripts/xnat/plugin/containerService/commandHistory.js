@@ -27,19 +27,21 @@ var XNAT = getObject(XNAT || {});
     }
 }(function(){
     // populate history table
-    var containerService,
-        historyTable,
+    var historyTable,
         undefined,
         rootUrl = XNAT.url.rootUrl;
 
     // XNAT.plugin.containerService
     // move scripts to scripts/xnat/plugin/containerService
 
-    XNAT.containerService = containerService =
-        getObject(XNAT.containerService || {});
+    XNAT.plugin =
+        getObject(XNAT.plugin || {});
 
-    XNAT.containerService.historyTable = historyTable =
-        getObject(XNAT.containerService || {});
+    XNAT.plugin.containerService = containerService =
+        getObject(XNAT.plugin.containerService || {});
+
+    XNAT.plugin.containerService.historyTable = historyTable =
+        getObject(XNAT.plugin.containerService || {});
 
     function errorHandler(e){
         console.log(e);

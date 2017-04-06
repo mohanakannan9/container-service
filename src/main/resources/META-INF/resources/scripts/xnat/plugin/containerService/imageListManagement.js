@@ -36,26 +36,29 @@ var XNAT = getObject(XNAT || {});
         undefined,
         rootUrl = XNAT.url.rootUrl;
     
-    XNAT.admin =
-        getObject(XNAT.admin || {});
-
-    XNAT.admin.imageListManager = imageListManager =
-        getObject(XNAT.admin.imageListManager || {});
-
-    XNAT.admin.imageFilterManager = imageFilterManager =
-        getObject(XNAT.admin.imageFilterManager || {});
-
-    XNAT.admin.addImage = addImage =
-        getObject(XNAT.admin.addImage || {});
-
-    XNAT.admin.commandListManager = commandListManager =
-        getObject(XNAT.admin.commandListManager || {});
+    XNAT.plugin =
+        getObject(XNAT.plugin || {});
     
-    XNAT.admin.commandDefinition = commandDefinition = 
-        getObject(XNAT.admin.commandDefinition || {});
+    XNAT.plugin.containerService = 
+        getObject(XNAT.plugin.containerService || {});
 
-    XNAT.admin.imageHubs = imageHubs =
-        getObject(XNAT.admin.imageHubs || {});
+    XNAT.plugin.containerService.imageListManager = imageListManager =
+        getObject(XNAT.plugin.containerService.imageListManager || {});
+
+    XNAT.plugin.containerService.imageFilterManager = imageFilterManager =
+        getObject(XNAT.plugin.containerService.imageFilterManager || {});
+
+    XNAT.plugin.containerService.addImage = addImage =
+        getObject(XNAT.plugin.containerService.addImage || {});
+
+    XNAT.plugin.containerService.commandListManager = commandListManager =
+        getObject(XNAT.plugin.containerService.commandListManager || {});
+    
+    XNAT.plugin.containerService.commandDefinition = commandDefinition = 
+        getObject(XNAT.plugin.containerService.commandDefinition || {});
+
+    XNAT.plugin.containerService.imageHubs = imageHubs =
+        getObject(XNAT.plugin.containerService.imageHubs || {});
 
     imageListManager.samples = [
         {
@@ -546,6 +549,6 @@ var XNAT = getObject(XNAT || {});
     imageFilterManager.init();
     imageListManager.init();
 
-//    return XNAT.admin.imageListManager = imageListManager;
+//    return XNAT.plugin.containerService.imageListManager = imageListManager;
 
 }));

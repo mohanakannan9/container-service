@@ -1,5 +1,5 @@
 /*
- * web: projCommandConfigManagement.js
+ * web: commandConfigManagement.js
  * XNAT http://www.xnat.org
  * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
@@ -11,7 +11,7 @@
  * Manage Site-wide Command Configs
  */
 
-console.log('projCommandConfigManagement.js');
+console.log('commandConfigManagement.js');
 
 var XNAT = getObject(XNAT || {});
 
@@ -27,21 +27,22 @@ var XNAT = getObject(XNAT || {});
     }
 }(function(){
 
-    var containerService,
-        projCommandConfigManager,
-        projConfigDefinition,
+    var commandConfigManager,
+        configDefinition,
         undefined,
         rootUrl = XNAT.url.rootUrl;
 
-    XNAT.containerService = containerService =
-        getObject(XNAT.containerService || {});
+    XNAT.plugin =
+        getObject(XNAT.plugin || {});
 
-    XNAT.containerService.projCommandConfigManager = projCommandConfigManager =
-        getObject(XNAT.containerService.projCommandConfigManager || {});
+    XNAT.plugin.containerService = 
+        getObject(XNAT.plugin.containerService || {});
 
-    XNAT.containerService.projConfigDefinition = projConfigDefinition =
-        getObject(XNAT.containerService.projConfigDefinition || {});
+    XNAT.plugin.containerService.commandConfigManager = commandConfigManager =
+        getObject(XNAT.plugin.containerService.commandConfigManager || {});
 
+    XNAT.plugin.containerService.configDefinition = configDefinition =
+        getObject(XNAT.plugin.containerService.configDefinition || {});
 
     function spacer(width){
         return spawn('i.spacer', {
@@ -49,27 +50,17 @@ var XNAT = getObject(XNAT || {});
                 display: 'inline-block',
                 width: width + 'px'
             }
-        });
+        })
     }
-
-    function getUrlParams(){
-        var paramObj = {};
-
-        // get the querystring param, redacting the '?', then convert to an array separating on '&'
-        var urlParams = window.location.search.substr(1,window.location.search.length);
-        urlParams = urlParams.split('&');
-
-        urlParams.forEach(function(param){
-            // iterate over every key=value pair, and add to the param object
-            param = param.split('=');
-            paramObj[param[0]] = param[1];
+    
+    function errorHandler(e){
+        xmodal.alert({
+            title: 'Error',
+            content: '<p><strong>Error ' + e.status + '</strong></p><p>' + e.statusText + '</p>',
+            okAction: function () {
+                xmodal.closeAll();
+            }
         });
-
-        return paramObj;
-    }
-
-    function getProjectId(){
-        return getUrlParams().id;
     }
 
     function commandUrl(appended){
@@ -83,20 +74,13 @@ var XNAT = getObject(XNAT || {});
         return rootUrl('/xapi/commands/'+command+'/wrappers/'+wrapperName+'/config' + appended);
     }
 
-    function configEnableUrl(projectId,command,wrapperName,flag){
-        if (!projectId || !command || !wrapperName || !flag) return false;
-        return rootUrl('/xapi/projects/'+projectId+'/commands/'+command+'/wrappers/'+wrapperName+'/' + flag);
+    function configEnableUrl(command,wrapperName,flag){
+        if (!command || !wrapperName || !flag) return false;
+        return rootUrl('/xapi/commands/'+command+'/wrappers/'+wrapperName+'/' + flag);
     }
 
-    function projectPrefUrl(action){
-        var projectId = getProjectId();
-        action = action||''; 
-        var flag = (action.toUpperCase() === 'PUT') ? '?inbody=true&XNAT_CSRF='+csrfToken : '';
-        return rootUrl('/data/projects/'+projectId+'/config/container-service/general' + flag);
-    }
-
-    projCommandConfigManager.getCommands = projCommandConfigManager.getAll = function(callback){
-
+    commandConfigManager.getCommands = commandConfigManager.getAll = function(callback){
+        
         callback = isFunction(callback) ? callback : function(){};
         return XNAT.xhr.get({
             url: commandUrl(),
@@ -110,7 +94,7 @@ var XNAT = getObject(XNAT || {});
         });
     };
 
-    projConfigDefinition.getConfig = function(commandId,wrapperName,callback){
+    configDefinition.getConfig = function(commandId,wrapperName,callback){
         if (!commandId || !wrapperName) return false;
         callback = isFunction(callback) ? callback : function(){};
         return XNAT.xhr.get({
@@ -125,25 +109,7 @@ var XNAT = getObject(XNAT || {});
         });
     };
 
-    // auto-save to project config on click of the opt-in switchbox.
-    $('#optIntoSitewideCommands').on('change',function(){
-        var optIn = $(this).prop('checked');
-        var paramToPut = JSON.stringify({ optIntoSitewideCommands: optIn });
-        XNAT.xhr.putJSON({
-            url: projectPrefUrl('put'),
-            data: paramToPut,
-            dataType: 'json',
-            success: function(){
-                XNAT.ui.banner.top(1000, '<b>Success: </b> Site-wide Command Opt-in Setting set to <b>' + optIn + '</b>.', 'success');
-            },
-            fail: function(e){
-                xmodal.alert({title: 'Error', content: e.statusText });
-            }
-        })
-    });
-
-
-    projConfigDefinition.table = function(config) {
+    configDefinition.table = function(config) {
 
         // initialize the table - we'll add to it below
         var chTable = XNAT.table({
@@ -206,6 +172,7 @@ var XNAT = getObject(XNAT || {});
                     .td( { data: { key: 'property', property: 'matcher' }}, basicConfigInput('matcher',input['matcher']) )
                     .td( { data: { key: 'property', property: 'user-settable' }}, [['div', [configCheckbox('userSettable',input['user-settable']) ]]])
                     .td( { data: { key: 'property', property: 'advanced' }}, [['div', [configCheckbox('advanced',input['advanced']) ]]]);
+
             }
 
         } else if (config.type === 'outputs') {
@@ -225,27 +192,27 @@ var XNAT = getObject(XNAT || {});
 
         }
 
-        projConfigDefinition.$table = $(chTable.table);
+        configDefinition.$table = $(chTable.table);
 
         return chTable.table;
     };
 
 
-    projConfigDefinition.dialog = function(commandId,wrapperName){
+    configDefinition.dialog = function(commandId,wrapperName){
         // get command definition
-        projConfigDefinition.getConfig(commandId,wrapperName)
+        configDefinition.getConfig(commandId,wrapperName)
             .success(function(data){
-                var tmpl = $('div#proj-command-config-template');
+                var tmpl = $('div#command-config-template');
                 var tmplBody = $(tmpl).find('.panel-body').html('');
 
                 var inputs = data.inputs;
                 var outputs = data.outputs;
 
                 tmplBody.spawn('h3','Inputs');
-                tmplBody.append(projConfigDefinition.table({ type: 'inputs', inputs: inputs }));
+                tmplBody.append(configDefinition.table({ type: 'inputs', inputs: inputs }));
 
                 tmplBody.spawn('h3','Outputs');
-                tmplBody.append(projConfigDefinition.table({ type: 'outputs', outputs: outputs }));
+                tmplBody.append(configDefinition.table({ type: 'outputs', outputs: outputs }));
 
                 xmodal.open({
                     title: 'Set Config Values',
@@ -254,12 +221,12 @@ var XNAT = getObject(XNAT || {});
                     height: 500,
                     scroll: true,
                     beforeShow: function(obj){
-                        var $panel = obj.$modal.find('#proj-config-viewer-panel');
+                        var $panel = obj.$modal.find('#config-viewer-panel');
                         /*
-                         $panel.find('input[type=text]').each(function(){
-                         $(this).val($(this).data('value'));
-                         });
-                         */
+                        $panel.find('input[type=text]').each(function(){
+                            $(this).val($(this).data('value'));
+                        });
+                        */
                         $panel.find('input[type=checkbox]').each(function(){
                             $(this).prop('checked',$(this).data('checked'));
                         })
@@ -267,7 +234,7 @@ var XNAT = getObject(XNAT || {});
                     okClose: false,
                     okLabel: 'Save',
                     okAction: function(obj){
-                        var $panel = obj.$modal.find('#proj-config-viewer-panel');
+                        var $panel = obj.$modal.find('#config-viewer-panel');
                         var configObj = { inputs: {}, outputs: {} };
 
                         // gather input items from table
@@ -316,16 +283,8 @@ var XNAT = getObject(XNAT || {});
                                 XNAT.ui.banner.top(1000, '<b>"' + wrapperName + '"</b> updated.', 'success');
                                 xmodal.closeAll();
                             },
-                            fail: function(e) {
-                                xmodal.alert({
-                                    title: 'Error',
-                                    content: '<p><strong>Error '+e.status+'</strong></p><p>'+e.statusText+'</p>',
-                                    okAction: function(){
-                                        xmodal.closeAll();
-                                    }
-                                });
-                            }
-                        })
+                            fail: function(e){ errorHandler(e); }
+                        });
                     }
                 });
 
@@ -337,17 +296,16 @@ var XNAT = getObject(XNAT || {});
     };
 
 
-    projCommandConfigManager.table = function(config,callback){
+    commandConfigManager.table = function(callback){
 
         // initialize the table - we'll add to it below
         var chTable = XNAT.table({
-            className: 'xnat-table '+config.className,
+            className: 'sitewide-command-configs xnat-table',
             style: {
                 width: '100%',
                 marginTop: '15px',
                 marginBottom: '15px'
-            },
-            id: config.id
+            }
         });
 
         // add table header row
@@ -361,7 +319,7 @@ var XNAT = getObject(XNAT || {});
             return spawn('a.link|href=#!', {
                 onclick: function(e){
                     e.preventDefault();
-                    projConfigDefinition.dialog(item.id, wrapper.name, false);
+                    configDefinition.dialog(item.id, wrapper.name, false);
                     console.log('Open Config definition for '+ wrapper.name);
                 }
             }, [['b', text]]);
@@ -371,7 +329,7 @@ var XNAT = getObject(XNAT || {});
             return spawn('button.btn.sm', {
                 onclick: function(e){
                     e.preventDefault();
-                    projConfigDefinition.dialog(item.id, wrapper.name, false);
+                    configDefinition.dialog(item.id, wrapper.name, false);
                 }
             }, 'View Command Configuration');
         }
@@ -435,7 +393,7 @@ var XNAT = getObject(XNAT || {});
             }, 'Delete');
         }
 
-        projCommandConfigManager.getAll().done(function(data) {
+        commandConfigManager.getAll().done(function(data) {
             if (data) {
                 for (var i = 0, j = data.length; i < j; i++) {
                     var xnatActions = '', item = data[i];
@@ -451,7 +409,7 @@ var XNAT = getObject(XNAT || {});
                                         .td([viewLink(item, wrapper, wrapper.description)]).addClass('name')
                                         .td(item.image)
                                         .td([['div.center', [enabledCheckbox(item,wrapper)]]])
-                                        .td([['div.center', [viewConfigButton(item,wrapper)]]]);
+                                        .td([['div.center', [viewConfigButton(item,wrapper), spacer(10), deleteConfigButton(item,wrapper)]]]);
                                 }
                             });
 
@@ -466,34 +424,28 @@ var XNAT = getObject(XNAT || {});
             }
         });
 
-        projCommandConfigManager.$table = $(chTable.table);
+        commandConfigManager.$table = $(chTable.table);
 
         return chTable.table;
     };
 
-    projCommandConfigManager.init = function(container){
-        var $manager = $$(container||'div#proj-command-config-list-container');
+    commandConfigManager.init = function(container){
+        var $manager = $$(container||'div#command-config-list-container');
 
-        projCommandConfigManager.container = $manager;
-
-        $manager.append(projCommandConfigManager.table({id: 'sitewide-commands', className: '', type: 'sitewide' }));
-        $manager.append(projCommandConfigManager.table({id: 'project-commands', className: 'hidden', type: 'project' }));
-
-
-
-        // set value of opt-in controller based on project config
-        XNAT.xhr.getJSON({
-            url: projectPrefUrl(),
-            success: function(data){
-                var configParams = JSON.parse(data.ResultSet.Result[0].contents);
-                console.log(configParams);
-                if (configParams.optIntoSitewideCommands === true) {
-                    $('#optIntoSitewideCommands').prop('checked','checked');
-                }
+        /*
+        var newCommand = spawn('button.new-command.btn.sm', {
+            html: 'Add New Command',
+            onclick: function(){
+                commandDefinition.dialog(null,true); // opens the command code editor dialog with "new command" set to true
             }
         });
+        */
+
+        commandConfigManager.container = $manager;
+
+        $manager.append(commandConfigManager.table());
     };
 
-    projCommandConfigManager.init();
+    commandConfigManager.init();
 
 }));

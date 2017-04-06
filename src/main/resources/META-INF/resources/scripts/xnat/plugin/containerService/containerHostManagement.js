@@ -1,5 +1,5 @@
 /*
- * web: imageHostManagement.js
+ * web: containerHostManagement.js
  * XNAT http://www.xnat.org
  * Copyright (c) 2005-2017, Washington University School of Medicine and Howard Hughes Medical Institute
  * All Rights Reserved
@@ -8,10 +8,10 @@
  */
 
 /*!
- * Manage DICOM SCP Receivers
+ * Manage Container Hosts
  */
 
-console.log('imageHostManagement.js');
+console.log('containerHostManagement.js');
 
 var XNAT = getObject(XNAT || {});
 
@@ -27,20 +27,23 @@ var XNAT = getObject(XNAT || {});
     }
 }(function(){
 
-    var imageHostManager, undefined,
+    var containerHostManager,
+        undefined,
         rootUrl = XNAT.url.rootUrl;
 
-    XNAT.admin =
-        getObject(XNAT.admin || {});
+    XNAT.plugin =
+        getObject(XNAT.plugin || {});
 
-    XNAT.admin.imageHostManager = imageHostManager =
-        getObject(XNAT.admin.imageHostManager || {});
+    XNAT.plugin.containerService =
+        getObject(XNAT.plugin.containerService || {});
 
-    imageHostManager.samples = [
+    XNAT.plugin.containerService.containerHostManager = containerHostManager =
+        getObject(XNAT.plugin.containerService.containerHostManager || {});
+
+    containerHostManager.samples = [
         {
-            "name": "Docker Hub",
-            "url": "https://hub.docker.com",
-            "enabled": true
+            "host": "unix:///var/run/docker.sock",
+            "cert-path": ""
         }
     ];
 
@@ -53,60 +56,55 @@ var XNAT = getObject(XNAT || {});
         })
     }
 
-    function xapiUrl(isDefault,appended){
+    function xapiUrl(appended){
         appended = isDefined(appended) ? '/' + appended : '';
-        if (isDefault) {
-            return rootUrl('/xapi/docker/hubs' + appended + '?default='+isDefault)
-        } else {
-            return rootUrl('/xapi/docker/hubs' + appended);
-        }
+        return rootUrl('/xapi/docker/server' + appended);
     }
 
     // get the list of hosts
-    imageHostManager.getHosts = imageHostManager.getAll = function(callback){
+    containerHostManager.getHosts = containerHostManager.getAll = function(callback){
         callback = isFunction(callback) ? callback : function(){};
         return XNAT.xhr.get({
             url: xapiUrl(),
             dataType: 'json',
             success: function(data){
-                imageHostManager.hosts = data;
+                containerHostManager.hosts = data;
                 callback.apply(this, arguments);
             }
         });
     };
 
     // dialog to create/edit hosts
-    imageHostManager.dialog = function(item, isNew){
-        var tmpl = $('#image-host-editor-template');
+    containerHostManager.dialog = function(item, isNew){
+        var tmpl = $('#container-host-editor-template');
         var doWhat = !item ? 'New' : 'Edit';
         isNew = firstDefined(isNew, doWhat === 'New');
         console.log(isNew);
         // isNew = true;
         item = item || {};
         xmodal.open({
-            title: doWhat + ' Image Hub',
+            title: doWhat + ' Container Server Host',
             template: tmpl.clone(),
-            width: 450,
-            height: 300,
+            width: 350,
+            height: 250,
             scroll: false,
             padding: '0',
             beforeShow: function(obj){
                 var $form = obj.$modal.find('form');
-                if (item && isDefined(item.url)) {
+                if (item && isDefined(item.host)) {
                     $form.setValues(item);
                 }
             },
             okClose: false,
             okLabel: 'Save',
             okAction: function(obj){
-                // the form panel is 'imageHostTemplate' in containers-elements.yaml
+                // the form panel is 'containerHostTemplate' in site-admin-element.yaml
                 var $form = obj.$modal.find('form');
-                var $url = $form.find('input[name=url]');
-                var $name = $form.find('input[name=name]');
-                var isDefault = $form.find('input[name=default]').val();
+                var $host = $form.find('input[name=host]');
+                console.log($host);
                 $form.submitJSON({
-                    method: 'POST',
-                    url: (isNew) ? xapiUrl(isDefault) : xapiUrl(isDefault,item.id),
+                    method: isNew ? 'POST' : 'PUT',
+                    url: isNew ? xapiUrl() : xapiUrl(item.id),
                     validate: function(){
 
                         $form.find(':input').removeClass('invalid');
@@ -114,7 +112,7 @@ var XNAT = getObject(XNAT || {});
                         var errors = 0;
                         var errorMsg = 'Errors were found with the following fields: <ul>';
 
-                        [$name,$url].forEach(function($el){
+                        [$host].forEach(function($el){
                             var el = $el[0];
                             if (!el.value) {
                                 errors++;
@@ -136,22 +134,18 @@ var XNAT = getObject(XNAT || {});
                         refreshTable();
                         xmodal.close(obj.$modal);
                         XNAT.ui.banner.top(2000, 'Saved.', 'success')
-                    },
-                    fail: function(e){
-                        xmodal.close(obj.$modal);
-                        xmodal.alert({title: 'Error', content: '<p>Could not save changes. Error code: '+e.status+'</p><p>'+e.statusText+'</p>'});
                     }
                 });
             }
         });
     };
 
-    // create table for Image Hosts
-    imageHostManager.table = function(imageHost, callback){
+    // create table for Container Hosts
+    containerHostManager.table = function(container, callback){
 
         // initialize the table - we'll add to it below
         var chTable = XNAT.table({
-            className: 'image-hosts xnat-table',
+            className: 'container-hosts xnat-table',
             style: {
                 width: '100%',
                 marginTop: '15px',
@@ -161,9 +155,8 @@ var XNAT = getObject(XNAT || {});
 
         // add table header row
         chTable.tr()
-            .th({ addClass: 'left', html: '<b>ID</b>' })
-            .th('<b>Name</b>')
-            .th('<b>URL</b>')
+            .th({ addClass: 'left', html: '<b>Host</b>' })
+            .th('<b>Server Type</b>')
             .th('<b>Default</b>')
             .th('<b>Actions</b>');
 
@@ -171,53 +164,52 @@ var XNAT = getObject(XNAT || {});
             return spawn('a.link|href=#!', {
                 onclick: function(e){
                     e.preventDefault();
-                    imageHostManager.dialog(item, false);
+                    containerHostManager.dialog(item, false);
                 }
             }, [['b', text]]);
         }
 
-        function editButton(item) {
-            return spawn('button.btn.sm.edit', {
-                onclick: function(e){
-                    e.preventDefault();
-                    imageHostManager.dialog(item, false);
-                }
-            }, 'Edit');
-        }
-
         function defaultToggle(item){
             var defaultVal = !!item.default;
-            var rdo = spawn('input.image-host-enabled', {
+            var rdo = spawn('input.container-host-enabled', {
                 type: 'radio',
-                name: 'defaultHub',
+                name: 'defaultHost',
                 checked: defaultVal,
                 value: 'default',
                 data: { id: item.id, name: item.name },
                 onchange: function(){
                     // save the status when clicked
                     var radio = this;
+                    xmodal.alert('Cannot set default server yet');
+                    /*
                     defaultVal = radio.checked;
                     XNAT.xhr.post({
-                        url: xapiUrl(true,item.id),
+                        url: xapiUrl(item.id+'?default=true'),
                         success: function(){
                             radio.value = defaultVal;
                             radio.checked = 'checked';
                             refreshTable();
                             XNAT.ui.banner.top(1000, '<b>' + item.name + '</b> set as default', 'success');
                         },
-                        fail: function(e){
+                            fail: function(e){
                             radio.checked = false;
                             refreshTable()
-                            xmodal.alert({title: 'Error', content: '<p>Could not set hub as default. Error code: '+e.status+'</p><p>'+ e.statusText +'</p>'})
+                            xmodal.alert({title: 'Error', content: '<p>Could not set host as default. Error code: '+e.status+'</p><p>'+ e.statusText +'</p>'})
                         }
                     });
+                    */
                 }
             });
             return spawn('div.center', [rdo]);
         }
 
-        function isDefault(status,valIfTrue) {
-            return (status) ? valIfTrue : false;
+        function editButton(item) {
+            return spawn('button.btn.sm.edit', {
+                onclick: function(e){
+                    e.preventDefault();
+                    containerHostManager.dialog(item, false);
+                }
+            }, 'Edit');
         }
 
         function deleteButton(item){
@@ -227,39 +219,36 @@ var XNAT = getObject(XNAT || {});
                         height: 220,
                         scroll: false,
                         content: "" +
-                        "<p>Are you sure you'd like to delete the Container Host at <b>" + item.url + "</b>?</p>" +
+                        "<p>Are you sure you'd like to delete the Container Host at <b>" + item.host + "</b>?</p>" +
                         "<p><b>This action cannot be undone.</b></p>",
                         okAction: function(){
                             console.log('delete id ' + item.id);
                             XNAT.xhr.delete({
-                                url: xapiUrl(false,item.id),
+                                url: xapiUrl(item.id),
                                 success: function(){
-                                    console.log('"'+ item.url + '" deleted');
-                                    XNAT.ui.banner.top(1000, '<b>"'+ item.url + '"</b> deleted.', 'success');
+                                    console.log('"'+ item.host + '" deleted');
+                                    XNAT.ui.banner.top(1000, '<b>"'+ item.host + '"</b> deleted.', 'success');
                                     refreshTable();
                                 }
                             });
                         }
                     })
-                },
-                disabled: isDefault(item.default,"disabled"),
-                title: isDefault(item.default,"Cannot delete the default hub")
+                }
             }, 'Delete');
         }
 
-        imageHostManager.getAll().done(function(data){
+        containerHostManager.getAll().done(function(data){
             data = [].concat(data);
             data.forEach(function(item){
-                chTable.tr({ title: item.name, data: { id: item.id, name: item.name, url: item.url}})
-                    .td(['div.center'],item.id)
-                    .td([editLink(item, item.name)]).addClass('name')
-                    .td(item.url)
-                    .td([defaultToggle(item)]).addClass('status')
+                chTable.tr({ title: item.host, data: { id: item.id, host: item.host, certPath: item.certPath}})
+                    .td([editLink(item, item.host)]).addClass('host')
+                    .td([['div.center', ['Docker']]])
+                    .td([['div.center', [defaultToggle(item)]]])
                     .td([['div.center', [editButton(item), spacer(10), deleteButton(item)]]]);
             });
 
-            if (imageHost){
-                $$(imageHost).append(chTable.table);
+            if (container){
+                $$(container).append(chTable.table);
             }
 
             if (isFunction(callback)) {
@@ -268,33 +257,35 @@ var XNAT = getObject(XNAT || {});
 
         });
 
-        imageHostManager.$table = $(chTable.table);
+        containerHostManager.$table = $(chTable.table);
 
         return chTable.table;
     };
 
-    imageHostManager.init = function(container){
+    containerHostManager.init = function(container){
 
-        var $manager = $$(container||'div#image-host-manager');
-        var $footer = $('#image-host-manager').parents('.panel').find('.panel-footer');
+        var $manager = $$(container||'div#container-host-manager');
+        var $footer = $('#container-host-manager').parents('.panel').find('.panel-footer');
 
-        imageHostManager.container = $manager;
+        containerHostManager.$container = $manager;
 
-        $manager.append(imageHostManager.table());
-        // imageHostManager.table($manager);
+        $manager.append(containerHostManager.table());
+        // containerHostManager.table($manager);
 
-        var newReceiver = spawn('button.new-image-host.btn.btn-sm.submit', {
-            html: 'New Image Hub',
+        var newReceiver = spawn('button.new-container-host.btn.btn-sm.submit', {
+            html: 'New Container Host',
             onclick: function(){
-                imageHostManager.dialog(null, true);
+                containerHostManager.dialog(null, true);
             }
         });
-        
+
+
         // add the 'add new' button to the panel footer
         $footer.append(spawn('div.pull-right', [
             newReceiver
         ]));
         $footer.append(spawn('div.clear.clearFix'));
+        
 
         return {
             element: $manager[0],
@@ -306,16 +297,16 @@ var XNAT = getObject(XNAT || {});
     };
 
     function refreshTable(){
-        imageHostManager.$table.remove();
-        imageHostManager.table(null, function(table){
-            imageHostManager.container.prepend(table);
+        containerHostManager.$table.remove();
+        containerHostManager.table(null, function(table){
+            containerHostManager.$container.prepend(table);
         });
     }
 
-    imageHostManager.refresh = refreshTable;
+    containerHostManager.refresh = refreshTable;
 
-    imageHostManager.init();
+    containerHostManager.init();
 
-    return XNAT.admin.imageHostManager = imageHostManager;
+    return XNAT.plugin.containerService.containerHostManager = containerHostManager;
 
 }));
