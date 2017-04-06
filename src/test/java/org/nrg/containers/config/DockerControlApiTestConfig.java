@@ -7,10 +7,16 @@ import org.nrg.containers.daos.ContainerEntityRepository;
 import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.framework.services.NrgEventService;
+import org.nrg.prefs.beans.AbstractPreferenceBean;
+import org.nrg.prefs.entities.Tool;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+
+import java.util.Collections;
+
+import static org.mockito.Mockito.when;
 
 @Configuration
 @Import({ObjectMapperConfig.class})
@@ -29,7 +35,13 @@ public class DockerControlApiTestConfig {
 
     @Bean
     public NrgPreferenceService mockPrefsService() {
-        return Mockito.mock(NrgPreferenceService.class);
+        final NrgPreferenceService mockPrefsService = Mockito.mock(NrgPreferenceService.class);
+        final Tool tool = Mockito.mock(Tool.class);
+        when(tool.getToolId()).thenReturn("docker-server");
+        when(mockPrefsService.getToolIds()).thenReturn(Collections.singleton("docker-server"));
+        when(mockPrefsService.createTool(Mockito.any(AbstractPreferenceBean.class))).thenReturn(tool);
+        when(mockPrefsService.getTool("docker-server")).thenReturn(tool);
+        return mockPrefsService;
     }
 
     @Bean

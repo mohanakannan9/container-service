@@ -15,6 +15,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.nrg.containers.config.DockerControlApiTestConfig;
 import org.nrg.containers.events.model.DockerContainerEvent;
@@ -24,14 +25,18 @@ import org.nrg.containers.model.dockerhub.DockerHub;
 import org.nrg.containers.model.image.docker.DockerImage;
 import org.nrg.containers.model.server.docker.DockerServer;
 import org.nrg.framework.scope.EntityId;
+import org.nrg.prefs.beans.AbstractPreferenceBean;
+import org.nrg.prefs.entities.Tool;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
+import static org.hamcrest.Matchers.any;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isIn;
@@ -85,15 +90,16 @@ public class DockerControlApiTest {
 
         // Set up mock prefs service for all the calls that will initialize
         // the ContainerServerPrefsBean
-        when(mockPrefsService.getPreferenceValue("docker-server", "host"))
+        final String toolId = "docker-server";
+        when(mockPrefsService.getPreferenceValue(toolId, "host"))
             .thenReturn(CONTAINER_HOST);
-        when(mockPrefsService.getPreferenceValue("docker-server", "certPath"))
+        when(mockPrefsService.getPreferenceValue(toolId, "certPath"))
             .thenReturn(CERT_PATH);
-        when(mockPrefsService.getPreferenceValue("docker-server", "lastEventCheckTime", EntityId.Default.getScope(), EntityId.Default.getEntityId()))
+        when(mockPrefsService.getPreferenceValue(toolId, "lastEventCheckTime", EntityId.Default.getScope(), EntityId.Default.getEntityId()))
             .thenReturn(timeZeroString);
         doNothing().when(mockPrefsService)
-            .setPreferenceValue(Mockito.eq("docker-server"), Mockito.anyString(), Mockito.anyString());
-        when(mockPrefsService.hasPreference(Mockito.eq("docker-server"), Mockito.anyString())).thenReturn(true);
+            .setPreferenceValue(Mockito.eq(toolId), Mockito.anyString(), Mockito.anyString());
+        when(mockPrefsService.hasPreference(Mockito.eq(toolId), Mockito.anyString())).thenReturn(true);
 
         client = controlApi.getClient();
     }
