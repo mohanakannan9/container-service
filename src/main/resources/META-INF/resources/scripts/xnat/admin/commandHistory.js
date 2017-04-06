@@ -29,9 +29,11 @@ var XNAT = getObject(XNAT || {});
     // populate history table
     var containerService,
         historyTable,
-        historyTableContainer = $('#container-history-container'),
         undefined,
         rootUrl = XNAT.url.rootUrl;
+
+    // XNAT.plugin.containerService
+    // move scripts to scripts/xnat/plugin/containerService
 
     XNAT.containerService = containerService =
         getObject(XNAT.containerService || {});
@@ -58,7 +60,7 @@ var XNAT = getObject(XNAT || {});
     historyTable.table = function(callback){
         // initialize the table - we'll add to it below
         var chTable = XNAT.table({
-            className: 'sitewide-command-configs xnat-table',
+            className: 'sitewide-command-configs xnat-table compact',
             style: {
                 width: '100%',
                 marginTop: '15px',
@@ -127,7 +129,7 @@ var XNAT = getObject(XNAT || {});
     };
 
     historyTable.init = function(container){
-        var manager = $$(container || historyTableContainer);
+        var manager = $$(container || '#command-history-container');
         manager.html('');
 
         manager.append(historyTable.table());

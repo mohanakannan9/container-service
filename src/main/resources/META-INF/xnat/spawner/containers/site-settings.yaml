@@ -236,7 +236,7 @@ sitewideCommandHistoryPanel:
     footer: false
     contents:
         commandHistoryTableContainer:
-            tag: div#container-history-container
+            tag: div#command-history-container
             contents: Table will go here
         commandHistoryScript:
 #            tag: script|src="/scripts/xnat/admin/commandHistory.js"

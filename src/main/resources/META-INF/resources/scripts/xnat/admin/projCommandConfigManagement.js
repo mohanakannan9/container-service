@@ -28,22 +28,19 @@ var XNAT = getObject(XNAT || {});
 }(function(){
 
     var containerService,
-        commandConfigManager,
-        configDefinition,
+        projCommandConfigManager,
+        projConfigDefinition,
         undefined,
         rootUrl = XNAT.url.rootUrl;
 
-    XNAT.projectSettings =
-        getObject(XNAT.projectSettings || {});
+    XNAT.containerService = containerService =
+        getObject(XNAT.containerService || {});
 
-    XNAT.projectSettings.containerService = containerService =
-        getObject(XNAT.projectSettings.containerService || {});
+    XNAT.containerService.projCommandConfigManager = projCommandConfigManager =
+        getObject(XNAT.containerService.projCommandConfigManager || {});
 
-    XNAT.projectSettings.containerService.commandConfigManager = commandConfigManager =
-        getObject(XNAT.projectSettings.containerService.commandConfigManager || {});
-
-    XNAT.projectSettings.containerService.configDefinition = configDefinition =
-        getObject(XNAT.projectSettings.containerService.configDefinition || {});
+    XNAT.containerService.projConfigDefinition = projConfigDefinition =
+        getObject(XNAT.containerService.projConfigDefinition || {});
 
 
     function spacer(width){
@@ -52,7 +49,7 @@ var XNAT = getObject(XNAT || {});
                 display: 'inline-block',
                 width: width + 'px'
             }
-        })
+        });
     }
 
     function getUrlParams(){
@@ -98,7 +95,7 @@ var XNAT = getObject(XNAT || {});
         return rootUrl('/data/projects/'+projectId+'/config/container-service/general' + flag);
     }
 
-    commandConfigManager.getCommands = commandConfigManager.getAll = function(callback){
+    projCommandConfigManager.getCommands = projCommandConfigManager.getAll = function(callback){
 
         callback = isFunction(callback) ? callback : function(){};
         return XNAT.xhr.get({
@@ -113,7 +110,7 @@ var XNAT = getObject(XNAT || {});
         });
     };
 
-    configDefinition.getConfig = function(commandId,wrapperName,callback){
+    projConfigDefinition.getConfig = function(commandId,wrapperName,callback){
         if (!commandId || !wrapperName) return false;
         callback = isFunction(callback) ? callback : function(){};
         return XNAT.xhr.get({
@@ -146,7 +143,7 @@ var XNAT = getObject(XNAT || {});
     });
 
 
-    configDefinition.table = function(config) {
+    projConfigDefinition.table = function(config) {
 
         // initialize the table - we'll add to it below
         var chTable = XNAT.table({
@@ -228,15 +225,15 @@ var XNAT = getObject(XNAT || {});
 
         }
 
-        configDefinition.$table = $(chTable.table);
+        projConfigDefinition.$table = $(chTable.table);
 
         return chTable.table;
     };
 
 
-    configDefinition.dialog = function(commandId,wrapperName){
+    projConfigDefinition.dialog = function(commandId,wrapperName){
         // get command definition
-        configDefinition.getConfig(commandId,wrapperName)
+        projConfigDefinition.getConfig(commandId,wrapperName)
             .success(function(data){
                 var tmpl = $('div#proj-command-config-template');
                 var tmplBody = $(tmpl).find('.panel-body').html('');
@@ -245,10 +242,10 @@ var XNAT = getObject(XNAT || {});
                 var outputs = data.outputs;
 
                 tmplBody.spawn('h3','Inputs');
-                tmplBody.append(configDefinition.table({ type: 'inputs', inputs: inputs }));
+                tmplBody.append(projConfigDefinition.table({ type: 'inputs', inputs: inputs }));
 
                 tmplBody.spawn('h3','Outputs');
-                tmplBody.append(configDefinition.table({ type: 'outputs', outputs: outputs }));
+                tmplBody.append(projConfigDefinition.table({ type: 'outputs', outputs: outputs }));
 
                 xmodal.open({
                     title: 'Set Config Values',
@@ -340,7 +337,7 @@ var XNAT = getObject(XNAT || {});
     };
 
 
-    commandConfigManager.table = function(config,callback){
+    projCommandConfigManager.table = function(config,callback){
 
         // initialize the table - we'll add to it below
         var chTable = XNAT.table({
@@ -364,7 +361,7 @@ var XNAT = getObject(XNAT || {});
             return spawn('a.link|href=#!', {
                 onclick: function(e){
                     e.preventDefault();
-                    configDefinition.dialog(item.id, wrapper.name, false);
+                    projConfigDefinition.dialog(item.id, wrapper.name, false);
                     console.log('Open Config definition for '+ wrapper.name);
                 }
             }, [['b', text]]);
@@ -374,7 +371,7 @@ var XNAT = getObject(XNAT || {});
             return spawn('button.btn.sm', {
                 onclick: function(e){
                     e.preventDefault();
-                    configDefinition.dialog(item.id, wrapper.name, false);
+                    projConfigDefinition.dialog(item.id, wrapper.name, false);
                 }
             }, 'View Command Configuration');
         }
@@ -438,7 +435,7 @@ var XNAT = getObject(XNAT || {});
             }, 'Delete');
         }
 
-        commandConfigManager.getAll().done(function(data) {
+        projCommandConfigManager.getAll().done(function(data) {
             if (data) {
                 for (var i = 0, j = data.length; i < j; i++) {
                     var xnatActions = '', item = data[i];
@@ -469,18 +466,18 @@ var XNAT = getObject(XNAT || {});
             }
         });
 
-        commandConfigManager.$table = $(chTable.table);
+        projCommandConfigManager.$table = $(chTable.table);
 
         return chTable.table;
     };
 
-    commandConfigManager.init = function(container){
+    projCommandConfigManager.init = function(container){
         var $manager = $$(container||'div#proj-command-config-list-container');
 
-        commandConfigManager.container = $manager;
+        projCommandConfigManager.container = $manager;
 
-        $manager.append(commandConfigManager.table({id: 'sitewide-commands', className: '', type: 'sitewide' }));
-        $manager.append(commandConfigManager.table({id: 'project-commands', className: 'hidden', type: 'project' }));
+        $manager.append(projCommandConfigManager.table({id: 'sitewide-commands', className: '', type: 'sitewide' }));
+        $manager.append(projCommandConfigManager.table({id: 'project-commands', className: 'hidden', type: 'project' }));
 
 
 
@@ -497,6 +494,6 @@ var XNAT = getObject(XNAT || {});
         });
     };
 
-    commandConfigManager.init();
+    projCommandConfigManager.init();
 
 }));
