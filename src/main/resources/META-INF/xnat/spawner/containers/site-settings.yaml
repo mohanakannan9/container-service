@@ -36,9 +36,12 @@ dockerSetupPanel:
                             className: hidden
         containerHostTable:
             tag: "div#container-host-manager"
-        containerHostScript:
-#            tag: script|src="/scripts/xnat/plugin/containerService/containerHostManagement.js"
-            tag: script|src="~/scripts/xnat/plugin/containerService/containerHostManagement.js"
+        csStylesheet:
+        #   tag: link|rel="stylesheet"|type="text/css"|href="/scripts/xnat/plugin/containerService/containerConfig.css"
+            tag: link|rel="stylesheet"|type="text/css"|href="~/scripts/xnat/plugin/containerService/containerConfig.css"
+        csSiteAdminScripts:
+#           tag: script|src="/scripts/xnat/plugin/containerService/containerServices-siteAdmin.js"
+            tag: script|src="~/scripts/xnat/plugin/containerService/containerServices-siteAdmin.js"
 
 imageHostsPanel:
     kind: panel
@@ -86,9 +89,6 @@ imageHostsPanel:
                                     offText: Not Default
         imageHostTable:
             tag: "div#image-host-manager"
-        imageHostScript:
-#            tag: script|src="/scripts/xnat/plugin/containerService/imageHostManagement.js"
-           tag: script|src="~/scripts/xnat/plugin/containerService/imageHostManagement.js"
 
 installedImagesPanel:
     kind: panel
@@ -174,12 +174,6 @@ installedImagesPanel:
                             contents:
                                 commandViewerDisplay:
                                     tag: textarea.commandViewer
-        imagePanelScript:
-#           tag: script|src="/scripts/xnat/plugin/containerService/imageListManagement.js"
-            tag: script|src="~/scripts/xnat/plugin/containerService/imageListManagement.js"
-        panelStyleSheet:
-#            tag: link|rel="stylesheet"|type="text/css"|href="/scripts/xnat/plugin/containerService/containerConfig.css"
-            tag: link|rel="stylesheet"|type="text/css"|href="~/scripts/xnat/plugin/containerService/containerConfig.css"
 
 sitewideCommandConfigsPanel:
     kind: panel
@@ -202,9 +196,6 @@ sitewideCommandConfigsPanel:
                     id: config-viewer
                     header: false
                     footer: false
-        commandConfigScript:
-#           tag: script|src="/scripts/xnat/plugin/containerService/commandConfigManagement.js"
-            tag: script|src="~/scripts/xnat/plugin/containerService/commandConfigManagement.js"
 
 sitewideCommandProjectPrefs:
     kind: panel.form
@@ -238,9 +229,6 @@ sitewideCommandHistoryPanel:
         commandHistoryTableContainer:
             tag: div#command-history-container
             contents: Table will go here
-        commandHistoryScript:
-#            tag: script|src="/scripts/xnat/plugin/containerService/commandHistory.js"
-            tag: script|src="~/scripts/xnat/plugin/containerService/commandHistory.js"
 
 #################################################
 ####  Root Site Admin Spawner Config Object  ####

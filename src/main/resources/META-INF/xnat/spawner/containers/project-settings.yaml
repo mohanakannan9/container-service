@@ -2,6 +2,7 @@
 ####  Root Project Settings Spawner Config Object  ####
 #######################################################
 
+
 projectCommandConfigsPanel:
     kind: panel
     name: projectCommandConfigsPanel
@@ -24,8 +25,8 @@ projectCommandConfigsPanel:
                     header: false
                     footer: false
         projCommandConfigScript:
-#           tag: script|src="/scripts/xnat/plugin/containerService/projCommandConfigManagement.js"
-            tag: script|src="~/scripts/xnat/plugin/containerService/projCommandConfigManagement.js"
+#           tag: script|src="/scripts/xnat/plugin/containerService/containerServices-projectSettings.js"
+            tag: script|src="~/scripts/xnat/plugin/containerService/containerServices-projectSettings.js"
 
 projectCommandProjectPrefs:
     kind: panel
