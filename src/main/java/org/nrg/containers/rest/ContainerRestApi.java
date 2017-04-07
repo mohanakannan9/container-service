@@ -7,6 +7,7 @@ import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.containers.services.ContainerService;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NotFoundException;
+import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.XDAT;
 import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xdat.security.services.RoleHolder;
@@ -46,13 +47,13 @@ public class ContainerRestApi extends AbstractXapiRestController {
         this.containerService = containerService;
     }
 
-    @RequestMapping(method = GET)
+    @XapiRequestMapping(method = GET)
     @ResponseBody
     public List<ContainerEntity> getAll() {
         return containerEntityService.getAll();
     }
 
-    @RequestMapping(value = "/{id}", method = GET)
+    @XapiRequestMapping(value = "/{id}", method = GET)
     @ResponseBody
     public ContainerEntity getOne(final @PathVariable Long id) throws NotFoundException {
         final ContainerEntity containerEntity = containerEntityService.retrieve(id);
@@ -62,19 +63,19 @@ public class ContainerRestApi extends AbstractXapiRestController {
         return containerEntity;
     }
 
-    @RequestMapping(value = "/{id}", method = DELETE)
+    @XapiRequestMapping(value = "/{id}", method = DELETE)
     public ResponseEntity<Void> delete(final @PathVariable Long id) {
         containerEntityService.delete(id);
         return ResponseEntity.noContent().build();
     }
 
-    @RequestMapping(value = "/{id}/finalize", method = POST, produces = JSON)
+    @XapiRequestMapping(value = "/{id}/finalize", method = POST, produces = JSON)
     public void finalize(final @PathVariable Long id) throws NotFoundException {
         final UserI userI = XDAT.getUserDetails();
         containerService.finalize(id, userI);
     }
 
-    @RequestMapping(value = "/{id}/kill", method = POST)
+    @XapiRequestMapping(value = "/{id}/kill", method = POST)
     @ResponseBody
     public String kill(final @PathVariable Long id)
             throws NotFoundException, NoServerPrefException, DockerServerException {

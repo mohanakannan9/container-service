@@ -16,6 +16,7 @@ import org.nrg.containers.services.ContainerConfigService;
 import org.nrg.containers.services.ContainerConfigService.CommandConfigurationException;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NotFoundException;
+import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.XDAT;
 import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xdat.security.services.RoleHolder;
@@ -30,7 +31,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -66,7 +66,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     }
 
     // Configure for site + command wrapper
-    @RequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/config"}, method = POST)
+    @XapiRequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/config"}, method = POST)
     public ResponseEntity<Void> createConfiguration(final @RequestBody CommandConfiguration commandConfiguration,
                                                     final @PathVariable long commandId,
                                                     final @PathVariable String wrapperName,
@@ -80,7 +80,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     }
 
     // Get configuration for site + command wrapper
-    @RequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/config"}, method = GET)
+    @XapiRequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/config"}, method = GET)
     @ResponseBody
     public CommandConfiguration getConfiguration(final @PathVariable long commandId,
                                                  final @PathVariable String wrapperName) throws NotFoundException {
@@ -90,7 +90,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     }
 
     // Delete configuration for site + command wrapper
-    @RequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/config"}, method = DELETE)
+    @XapiRequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/config"}, method = DELETE)
     public ResponseEntity<Void> deleteConfiguration(final @PathVariable long commandId,
                                                     final @PathVariable String wrapperName)
             throws CommandConfigurationException {
@@ -101,7 +101,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     }
 
     // Configure for project + command wrapper
-    @RequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/config"}, method = POST)
+    @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/config"}, method = POST)
     public ResponseEntity<Void> createConfiguration(final @RequestBody CommandConfiguration commandConfiguration,
                                                     final @PathVariable String project,
                                                     final @PathVariable long commandId,
@@ -116,7 +116,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     }
 
     // Get configuration for project + command wrapper
-    @RequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/config"}, method = GET)
+    @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/config"}, method = GET)
     @ResponseBody
     public CommandConfiguration getConfiguration(final @PathVariable String project,
                                                  final @PathVariable long commandId,
@@ -127,7 +127,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     }
 
     // Delete configuration for project + command wrapper
-    @RequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/config"}, method = DELETE)
+    @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/config"}, method = DELETE)
     public ResponseEntity<Void> deleteConfiguration(final @PathVariable String project,
                                                     final @PathVariable long commandId,
                                                     final @PathVariable String wrapperName)
@@ -141,7 +141,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     /*
     ENABLE/DISABLE
      */
-    @RequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/enabled"}, method = GET)
+    @XapiRequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/enabled"}, method = GET)
     public ResponseEntity<Boolean> isConfigurationEnabled(final @PathVariable long commandId,
                                                           final @PathVariable String wrapperName)
             throws CommandConfigurationException, NotFoundException {
@@ -149,7 +149,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
         return ResponseEntity.ok(commandService.isEnabledForSite(commandId, wrapperName));
     }
 
-    @RequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/enabled"}, method = PUT)
+    @XapiRequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/enabled"}, method = PUT)
     public ResponseEntity<Void> enableConfiguration(final @PathVariable long commandId,
                                                     final @PathVariable String wrapperName,
                                                     final @RequestParam(required = false) String reason)
@@ -160,7 +160,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
         return ResponseEntity.ok().build();
     }
 
-    @RequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/disabled"}, method = PUT)
+    @XapiRequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/disabled"}, method = PUT)
     public ResponseEntity<Void> disableConfiguration(final @PathVariable long commandId,
                                                      final @PathVariable String wrapperName,
                                                      final @RequestParam(required = false) String reason)
@@ -171,7 +171,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
         return ResponseEntity.ok().build();
     }
 
-    @RequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/enabled"}, method = GET)
+    @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/enabled"}, method = GET)
     public ResponseEntity<Boolean> isConfigurationEnabled(final @PathVariable String project,
                                                           final @PathVariable long commandId,
                                                           final @PathVariable String wrapperName)
@@ -180,7 +180,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
         return ResponseEntity.ok(commandService.isEnabledForProject(project, commandId, wrapperName));
     }
 
-    @RequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/enabled"}, method = PUT)
+    @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/enabled"}, method = PUT)
     public ResponseEntity<Void> enableConfiguration(final @PathVariable String project,
                                                     final @PathVariable long commandId,
                                                     final @PathVariable String wrapperName,
@@ -192,7 +192,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
         return ResponseEntity.ok().build();
     }
 
-    @RequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/disabled"}, method = PUT)
+    @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/disabled"}, method = PUT)
     public ResponseEntity<Void> disableConfiguration(final @PathVariable String project,
                                                      final @PathVariable long commandId,
                                                      final @PathVariable String wrapperName,
@@ -207,13 +207,13 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     /*
     SETTINGS
      */
-    @RequestMapping(value = {"/container-service/settings"}, method = GET)
+    @XapiRequestMapping(value = {"/container-service/settings"}, method = GET)
     @ResponseBody
     public ContainerServiceSettings getSettings() {
         return containerConfigService.getSettings();
     }
 
-    @RequestMapping(value = {"/container-service/settings/all-enabled"}, method = GET)
+    @XapiRequestMapping(value = {"/container-service/settings/all-enabled"}, method = GET)
     @ResponseBody
     public Boolean allEnabled()
             throws ConfigServiceException {
@@ -222,7 +222,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
         return containerConfigService.getAllEnabled();
     }
 
-    @RequestMapping(value = {"/container-service/settings/enable-all"}, method = PUT)
+    @XapiRequestMapping(value = {"/container-service/settings/enable-all"}, method = PUT)
     public ResponseEntity<Void> enableAll(final @RequestParam(required = false) String reason)
             throws ConfigServiceException {
         final UserI userI = XDAT.getUserDetails();
@@ -231,7 +231,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
         return ResponseEntity.ok().build();
     }
 
-    @RequestMapping(value = {"/container-service/settings/disable-all"}, method = PUT)
+    @XapiRequestMapping(value = {"/container-service/settings/disable-all"}, method = PUT)
     public ResponseEntity<Void> disableAll(final @RequestParam(required = false) String reason)
             throws ConfigServiceException {
         final UserI userI = XDAT.getUserDetails();
@@ -240,7 +240,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
         return ResponseEntity.ok().build();
     }
 
-    @RequestMapping(value = {"/container-service/settings/enable-all",
+    @XapiRequestMapping(value = {"/container-service/settings/enable-all",
                              "/container-service/settings/disable-all"},
             method = DELETE)
     public ResponseEntity<Void> deleteAllEnabledSetting(final @RequestParam(required = false) String reason)
@@ -251,7 +251,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
         return ResponseEntity.noContent().build();
     }
 
-    @RequestMapping(value = {"/projects/{project}/container-service/settings/all-enabled"}, method = GET)
+    @XapiRequestMapping(value = {"/projects/{project}/container-service/settings/all-enabled"}, method = GET)
     @ResponseBody
     public Boolean allEnabled(final @PathVariable String project)
             throws ConfigServiceException {
@@ -260,7 +260,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
         return containerConfigService.getAllEnabled(project);
     }
 
-    @RequestMapping(value = {"/projects/{project}/container-service/settings/enable-all"}, method = PUT)
+    @XapiRequestMapping(value = {"/projects/{project}/container-service/settings/enable-all"}, method = PUT)
     public ResponseEntity<Void> enableAll(final @PathVariable String project,
                                           final @RequestParam(required = false) String reason)
             throws ConfigServiceException {
@@ -270,7 +270,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
         return ResponseEntity.ok().build();
     }
 
-    @RequestMapping(value = {"/projects/{project}/container-service/settings/disable-all"}, method = PUT)
+    @XapiRequestMapping(value = {"/projects/{project}/container-service/settings/disable-all"}, method = PUT)
     public ResponseEntity<Void> disableAll(final @PathVariable String project,
                                            final @RequestParam(required = false) String reason)
             throws ConfigServiceException {
@@ -280,7 +280,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
         return ResponseEntity.ok().build();
     }
 
-    @RequestMapping(value = {"/projects/{project}/container-service/settings/enable-all",
+    @XapiRequestMapping(value = {"/projects/{project}/container-service/settings/enable-all",
                              "/projects/{project}/container-service/settings/disable-all"},
             method = DELETE)
     public ResponseEntity<Void> deleteAllEnabledSetting(final @PathVariable String project,
