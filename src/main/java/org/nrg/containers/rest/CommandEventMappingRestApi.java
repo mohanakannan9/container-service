@@ -8,7 +8,8 @@ import org.nrg.containers.model.CommandEventMapping;
 import org.nrg.containers.services.CommandEventMappingService;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NrgRuntimeException;
-import org.nrg.xdat.rest.AbstractXapiRestController;
+import org.nrg.xapi.rest.AbstractXapiRestController;
+import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,7 +45,7 @@ public class CommandEventMappingRestApi extends AbstractXapiRestController {
         this.commandEventMappingService = commandEventMappingService;
     }
 
-    @RequestMapping(method = GET)
+    @XapiRequestMapping(method = GET)
     @ApiOperation(value = "Get all Commands Event Mappings")
     @ResponseBody
     public List<CommandEventMapping> getMappings() {
@@ -52,7 +53,7 @@ public class CommandEventMappingRestApi extends AbstractXapiRestController {
     }
 
 
-    @RequestMapping(method = POST)
+    @XapiRequestMapping(method = POST)
     public ResponseEntity<CommandEventMapping> createCommand(final @RequestBody CommandEventMapping commandEventMapping)
             throws BadRequestException {
         try {
@@ -63,14 +64,14 @@ public class CommandEventMappingRestApi extends AbstractXapiRestController {
         }
     }
 
-    @RequestMapping(value = {"/{id}"}, method = GET)
+    @XapiRequestMapping(value = {"/{id}"}, method = GET)
     @ApiOperation(value = "Get a CommandEventMapping")
     @ResponseBody
     public CommandEventMapping retrieve(final @PathVariable Long id) {
         return commandEventMappingService.retrieve(id);
     }
 
-    @RequestMapping(value = {"/{id}"}, method = DELETE)
+    @XapiRequestMapping(value = {"/{id}"}, method = DELETE)
     @ApiOperation(value = "Delete a CommandEventMapping", code = 204)
     public ResponseEntity<String> delete(final @PathVariable Long id) {
         commandEventMappingService.delete(id);
