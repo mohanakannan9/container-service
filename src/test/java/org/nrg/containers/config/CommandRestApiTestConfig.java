@@ -26,10 +26,9 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 public class CommandRestApiTestConfig extends WebSecurityConfigurerAdapter {
     @Bean
     public CommandRestApi commandRestApi(final CommandService commandService,
-                                         final ContainerService containerService,
                                          final UserManagementServiceI userManagementServiceI,
                                          final RoleHolder roleHolder) {
-        return new CommandRestApi(commandService, containerService, userManagementServiceI, roleHolder);
+        return new CommandRestApi(commandService, userManagementServiceI, roleHolder);
     }
 
     @Bean

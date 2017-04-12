@@ -1,9 +1,7 @@
 package org.nrg.containers.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hibernate.SessionFactory;
 import org.mockito.Mockito;
-import org.nrg.config.services.ConfigService;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.model.command.entity.CommandEntity;
 import org.nrg.containers.model.command.entity.CommandInputEntity;
@@ -14,10 +12,7 @@ import org.nrg.containers.model.command.entity.CommandWrapperEntity;
 import org.nrg.containers.model.command.entity.CommandWrapperExternalInputEntity;
 import org.nrg.containers.model.command.entity.CommandWrapperOutputEntity;
 import org.nrg.containers.model.command.entity.DockerCommandEntity;
-import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerEntityService;
-import org.nrg.containers.services.ContainerService;
-import org.nrg.containers.services.impl.ContainerServiceImpl;
 import org.nrg.transporter.TransportService;
 import org.nrg.transporter.TransportServiceImpl;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -38,21 +33,6 @@ import java.util.Properties;
 @Configuration
 @Import({CommandConfig.class, HibernateConfig.class})
 public class CommandTestConfig {
-    @Bean
-    public ContainerService containerService(final CommandService commandService,
-                                             final ContainerControlApi containerControlApi,
-                                             final ContainerEntityService containerEntityService,
-                                             final AliasTokenService aliasTokenService,
-                                             final SiteConfigPreferences siteConfigPreferences,
-                                             final TransportService transportService,
-                                             final PermissionsServiceI permissionsService,
-                                             final CatalogService catalogService,
-                                             final ObjectMapper mapper,
-                                             final ConfigService configService) {
-        return new ContainerServiceImpl(commandService, containerControlApi, containerEntityService, aliasTokenService, siteConfigPreferences,
-                transportService, permissionsService, catalogService, mapper, configService);
-    }
-
     @Bean
     public ContainerControlApi controlApi() {
         return Mockito.mock(ContainerControlApi.class);
