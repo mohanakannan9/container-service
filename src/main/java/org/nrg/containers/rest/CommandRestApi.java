@@ -5,27 +5,24 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.exceptions.BadRequestException;
-import org.nrg.containers.exceptions.CommandInputResolutionException;
 import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.CommandValidationException;
 import org.nrg.containers.exceptions.ContainerException;
-import org.nrg.containers.exceptions.ContainerMountResolutionException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.model.container.entity.ContainerEntity;
-import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
+import org.nrg.containers.model.command.auto.CommandSummaryForContext;
 import org.nrg.containers.services.CommandService;
-import org.nrg.containers.services.ContainerService;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.exceptions.NrgRuntimeException;
+import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.XDAT;
-import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
+import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,11 +33,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
-import springfox.documentation.annotations.ApiIgnore;
 
 import java.util.List;
 import java.util.Map;
@@ -189,12 +184,33 @@ public class CommandRestApi extends AbstractXapiRestController {
     }
 
     /*
+    AVAILABLE FOR LAUNCHING
+     */
+    @XapiRequestMapping(value = {"/commands/available"}, params = {"project", "xsiType"})
+    @ResponseBody
+    public List<CommandSummaryForContext> availableCommands(final @RequestParam String project,
+                                                            final @RequestParam String xsiType)
+            throws ElementNotFoundException {
+        final UserI userI = XDAT.getUserDetails();
+        return commandService.available(project, xsiType, userI);
+    }
+
+
+    /*
     EXCEPTION HANDLING
      */
     @ResponseStatus(value = HttpStatus.NOT_FOUND)
     @ExceptionHandler(value = {NotFoundException.class})
     public String handleNotFound(final Exception e) {
         final String message = e.getMessage();
+        log.debug(message);
+        return message;
+    }
+
+    @ResponseStatus(value = HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(value = {ElementNotFoundException.class})
+    public String handleXsiTypeNotFound(final ElementNotFoundException e) {
+        final String message = "Bad XSI Type. " + e.getMessage();
         log.debug(message);
         return message;
     }

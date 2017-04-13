@@ -9,8 +9,8 @@ import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
 import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
-import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.containers.exceptions.CommandValidationException;
+import org.nrg.containers.model.command.auto.CommandSummaryForContext;
 import org.nrg.containers.model.configuration.CommandConfiguration;
 import org.nrg.containers.model.command.entity.CommandEntity;
 import org.nrg.containers.model.command.entity.CommandWrapperEntity;
@@ -22,6 +22,10 @@ import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerConfigService;
 import org.nrg.containers.services.ContainerConfigService.CommandConfigurationException;
 import org.nrg.framework.exceptions.NotFoundException;
+import org.nrg.xdat.schema.SchemaElement;
+import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -31,8 +35,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 @Service
@@ -283,7 +290,7 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     }
 
     @Override
-    public Boolean isEnabledForSite(final long commandId, final String wrapperName) throws NotFoundException {
+    public boolean isEnabledForSite(final long commandId, final String wrapperName) throws NotFoundException {
         assertPairExists(commandId, wrapperName);
         return containerConfigService.isEnabledForSite(commandId, wrapperName);
     }
@@ -301,10 +308,99 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     }
 
     @Override
-    public Boolean isEnabledForProject(final String project, final long commandId, final String wrapperName) throws NotFoundException {
+    public boolean isEnabledForProject(final String project, final long commandId, final String wrapperName) throws NotFoundException {
         assertPairExists(commandId, wrapperName);
         return containerConfigService.isEnabledForProject(project, commandId, wrapperName);
     }
+
+    @Override
+    @Nonnull
+    public List<CommandSummaryForContext> available(final String project,
+                                                    final String xsiType,
+                                                    final UserI userI) throws ElementNotFoundException {
+        final List<CommandSummaryForContext> available = new ArrayList<>();
+
+        for (final Command command : getAll()) {
+            for (final CommandWrapper wrapper : command.xnatCommandWrappers()) {
+                if (!xsiTypesMatch(xsiType, wrapper.contexts())) {
+                    continue;
+                }
+
+                if (!userCanLaunch(userI, project, wrapper)) {
+                    continue;
+                }
+
+                available.add(CommandSummaryForContext.create(command, wrapper,
+                        containerConfigService.isEnabledForProject(project, command.id(), wrapper.name())));
+            }
+        }
+
+        return available;
+    }
+
+    // Cache the pairs of (parent, child) xsiType relationships.
+    // If child is descended from parent, return true. Else return false.
+    private Map<XsiTypePair, Boolean> xsiTypePairCache = new HashMap<>();
+
+    /**
+     * Check if the xsiType that the user gave us is equal to *or* *descended* *from*
+     * one of the xsiTypes in the wrapper's contexts set.
+     *
+     * Example
+     * If a wrapper can run on {"xnat:mrSessionData", "xnat:petSessionData"}, and
+     * the user asks 'what can I run on an "xnat:mrSessionData"?' we return true.
+     *
+     * If a wrapper can run on {"xnat:imageSessionData", "xnat:imageAssessorData"}, and
+     * the user asks 'what can I run on an "xnat:mrSessionData"?' we return true.
+
+     * If a wrapper can run on {"xnat:mrSessionData"}, and
+     * the user asks 'what can I run on an "xnat:imageSessionData"?' we return false.
+     *
+     * @param xsiType A user asked "what commands can run on this xsiType"?
+     * @param wrapperXsiTypes For a particular command wrapper, there are the xsiTypes it can run on.
+     *                        This may include "parent" xsiTypes. We want all the "child" types of that
+     *                        "parent" type to match as well.
+     * @return Can this wrapper run on this xsiType?
+     */
+    private boolean xsiTypesMatch(final @Nonnull String xsiType,
+                                  final @Nonnull Set<String> wrapperXsiTypes) throws ElementNotFoundException {
+        if (wrapperXsiTypes.contains(xsiType)) {
+            return true;
+        }
+
+        for (final String wrapperXsiType : wrapperXsiTypes) {
+            final XsiTypePair xsiTypeKey = new XsiTypePair(wrapperXsiType, xsiType);
+
+            // Return a result from the cache if it exists.
+            if (xsiTypePairCache.containsKey(xsiTypeKey)) {
+                final Boolean cached = xsiTypePairCache.get(xsiTypeKey);
+                return cached == null ? false : cached; // Should never be null. But let's check for safety.
+            }
+
+            // Compute new result
+            boolean match = false;
+            try {
+                match = SchemaElement.GetElement(xsiType).getGenericXFTElement().instanceOf(wrapperXsiType);
+            } catch (XFTInitException e) {
+                log.error("XFT not initialized."); // If this happens, we have a lot of other problems.
+            }
+
+            // Add result to cache
+            xsiTypePairCache.put(xsiTypeKey, match);
+
+            // Shortcut loop if a result is true
+            if (match) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean userCanLaunch(final UserI userI, final String project, final CommandWrapper wrapper) {
+        // TODO How do we know if the user can launch this command wrapper in this project?
+        return true;
+    }
+
 
     @Nonnull
     private Command toPojo(@Nonnull final CommandEntity commandEntity) {
@@ -344,5 +440,30 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
 
     private void assertPairExists(final long commandId, final String wrapperName) throws NotFoundException {
         commandEntityService.assertPairExists(commandId, wrapperName);
+    }
+
+    private static class XsiTypePair {
+        private String wrapperXsiType;
+        private String userRequestedXsiType;
+
+        XsiTypePair(final String wrapperXsiType,
+                    final String userRequestedXsiType) {
+            this.wrapperXsiType = wrapperXsiType;
+            this.userRequestedXsiType = userRequestedXsiType;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            final XsiTypePair that = (XsiTypePair) o;
+            return Objects.equals(this.wrapperXsiType, that.wrapperXsiType) &&
+                    Objects.equals(this.userRequestedXsiType, that.userRequestedXsiType);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(wrapperXsiType, userRequestedXsiType);
+        }
     }
 }

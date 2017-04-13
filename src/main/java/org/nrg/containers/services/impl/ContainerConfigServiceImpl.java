@@ -85,8 +85,9 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
     @Nullable
     public CommandConfigurationInternal getProjectConfiguration(final String project, final long commandId, final String wrapperName) {
         final CommandConfigurationInternal siteConfig = getSiteConfiguration(commandId, wrapperName);
+        final CommandConfigurationInternal baseConfig = siteConfig != null ? siteConfig : CommandConfigurationInternal.builder().build();
         final CommandConfigurationInternal projectConfig = getCommandConfiguration(Scope.Project, project, commandId, wrapperName);
-        return siteConfig == null ? projectConfig : siteConfig.merge(projectConfig);
+        return baseConfig.merge(projectConfig, isEnabledForProject(project, commandId, wrapperName));
     }
 
     @Override
@@ -249,9 +250,9 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
     }
 
     @Override
-    @Nullable
-    public Boolean isEnabledForSite(final long commandId, final String wrapperName) {
-        return getCommandIsEnabled(Scope.Site, null, commandId, wrapperName);
+    public boolean isEnabledForSite(final long commandId, final String wrapperName) {
+        final Boolean isEnabledConfiguration = getCommandIsEnabledConfiguration(Scope.Site, null, commandId, wrapperName);
+        return !Boolean.FALSE.equals(isEnabledConfiguration);
     }
 
     @Override
@@ -265,9 +266,17 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
     }
 
     @Override
-    @Nullable
-    public Boolean isEnabledForProject(final String project, final long commandId, final String wrapperName) {
-        return getCommandIsEnabled(Scope.Project, project, commandId, wrapperName);
+    public boolean isEnabledForProject(final String project, final long commandId, final String wrapperName) {
+        final Boolean projectIsEnabledConfig = getCommandIsEnabledConfiguration(Scope.Project, project, commandId, wrapperName);
+
+        // How to know if the command is enabled for a project:
+        // If the command is disabled on the site, then the result is disabled
+        // Else, if the site "enabled" is true or null, check the project "enabled".
+        // If the project "enabled" is false, the result is disabled.
+        // If the project "enabled" is true, then the result is enabled.
+        // If the project "enabled" is null, then check the project "opt in": do we enable by default or not?
+        return isEnabledForSite(commandId, wrapperName) &&
+                (projectIsEnabledConfig != null ? projectIsEnabledConfig : getOptInToSiteCommands(project));
     }
 
     private void setCommandEnabled(final Boolean enabled, final Scope scope, final String project, final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
@@ -309,7 +318,7 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
     }
 
     @Nullable
-    private Boolean getCommandIsEnabled(final Scope scope, final String project, final long commandId, final String wrapperName) {
+    private Boolean getCommandIsEnabledConfiguration(final Scope scope, final String project, final long commandId, final String wrapperName) {
         final CommandConfigurationInternal commandConfigurationInternal = getCommandConfiguration(scope, project, commandId, wrapperName);
         return commandConfigurationInternal == null ? null : commandConfigurationInternal.enabled();
     }

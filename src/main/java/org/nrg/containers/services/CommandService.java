@@ -1,12 +1,14 @@
 package org.nrg.containers.services;
 
-import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.containers.exceptions.CommandValidationException;
-import org.nrg.containers.model.configuration.CommandConfiguration;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
+import org.nrg.containers.model.command.auto.CommandSummaryForContext;
+import org.nrg.containers.model.configuration.CommandConfiguration;
 import org.nrg.containers.services.ContainerConfigService.CommandConfigurationException;
 import org.nrg.framework.exceptions.NotFoundException;
+import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.security.UserI;
 
 import java.util.List;
 import java.util.Map;
@@ -41,8 +43,13 @@ public interface CommandService {
 
     void enableForSite(long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException, NotFoundException;
     void disableForSite(long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException, NotFoundException;
-    Boolean isEnabledForSite(long commandId, String wrapperName) throws NotFoundException;
+    boolean isEnabledForSite(long commandId, String wrapperName) throws NotFoundException;
     void enableForProject(String project, long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException, NotFoundException;
     void disableForProject(String project, long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException, NotFoundException;
-    Boolean isEnabledForProject(String project, long commandId, String wrapperName) throws NotFoundException;
+    boolean isEnabledForProject(String project, long commandId, String wrapperName) throws NotFoundException;
+
+    List<CommandSummaryForContext> available(String project,
+                                             String xsiType,
+                                             UserI userI) throws ElementNotFoundException;
+
 }
