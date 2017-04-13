@@ -49,7 +49,7 @@ public abstract class CommandConfigurationInternal {
 
     public abstract Builder toBuilder();
 
-    public CommandConfigurationInternal merge(final CommandConfigurationInternal overlay) {
+    public CommandConfigurationInternal merge(final CommandConfigurationInternal overlay, final boolean enabled) {
         if (overlay == null) {
             return this;
         }
@@ -69,7 +69,7 @@ public abstract class CommandConfigurationInternal {
         }
 
         return builder()
-                .enabled(overlay.enabled() == null ? this.enabled() : overlay.enabled())
+                .enabled(enabled)
                 .inputs(mergedInputs)
                 .outputs(mergedOutputs)
                 .build();

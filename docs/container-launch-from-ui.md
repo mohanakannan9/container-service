@@ -11,7 +11,7 @@ Clearly, we need a simpler way to launch containers. Users should be expected to
 
 This document outlines this multi-stage flow.
 
-# What commands can I launch here?
+# What can I launch here?
 
 This is the first step in the launch flow. As a user is clicking around XNAT, looking at various pages, in the background the UI could be loading information from the container service about the possible containers that could be launched on whatever the user sees at this moment. This API should be fairly lightweight in terms of time and data— the backend should just retrieve some information and send it back, without "thinking" too much about the results—because the UI will presumably make a lot of requests to this endpoint that the user doesn't care about and which will just be wasted.
 
@@ -20,7 +20,7 @@ The purpose is to have a small baseline of information that the user can use to 
 ## Request
 ### REST Endpoint
 
-The API is not set yet. I'm imagining it will be a simple `GET` request, something like:
+The API is very simple. This is intended to be used by the UI pretty much everywhere, just swapping out the contextual query parameters.
 
     GET /xapi/commands/available
 
@@ -41,36 +41,40 @@ I considered requiring a unique identifier for the particular object, but I do n
 ## Backend processing
 When this request is made, the container service backend will use the params to retrieve and filter a list of command wrappers. We have two levels of filtering, corresponding one-to-one with the two required query params:
 
-* "What can be launched in this project?" - Includes checking whether each command is explicitly enabled/disabled on the site, explicitly enabled/disabled on the project, and whether the project allows launching commands that aren't explicitly enabled.
+* "What can be launched in this project?" - Includes checking...
+    * whether each command is explicitly enabled/disabled on the site,
+    * explicitly enabled/disabled on the project,
+    * whether the project allows launching commands that aren't explicitly enabled,
+    * whether the user has permissions to launch commands on this project
 * "What can be launched on this object?" - Each command wrapper's `wrapperContext` list contains XSI types on which the wrapper can be launched. We can check whether the XSI type from the request is in the list for each command wrapper. However, we must also check "child types"; if the request comes in with an XSI type `"xnat:mrSessionData"` and a command wrapper's `wrapperContext` contains `"xnat:imageSessionData"`, that must be considered a match because `"xnat:mrSessionData"` **is** an `"xnat:imageSessionData"`.
 
 These two filters are independent, and could be applied in either order. I'm not sure which should be applied first. Both are well-suited to being cached; we could cache high-level API functions that loop over all commands—"what can launch on project `"XYZ"`?", "what can launch on an `"xnat:fooBarData"`?"—or lower-level API functions that operate on a single command wrapper—"can wrapper `"Bar"` be launched on project `"XYZ"`?", "can wrapper `"Bar"` be launched on an `"xnat:foBarData"`?" I guess I will experiment and see if either ordering is demonstrably slower or faster.
 
 ## Response
 
-An array of objects, each containing summary information about a single command wrapper that can be used to launch a container. I.e., an array of objects of the form:
+An array of objects, each containing summary information about a single command wrapper that can be used to launch a container. I.e., an array of the form:
 
-    {
-        "command": {
-            "id": 0,
-            "name": "foo",
-            "description": "A foo that bars",
-            "image": "xnat/foo-image"
-        },
-        "wrapper": {
-            "id": 0,
-            "name": "foo-sandwich",
-            "description": "Run the foo command on a yummy sandwich",
-            "enabled": true/false
-        }
-    }
-
-This just came off the top of my head. As such, there is a lot of room to improve this.
-
-* Instead of nesting the `"command"` and `"wrapper"` objects I could flatten this structure.
-* I could easily see removing some of these fields if the UI doesn't require them, or adding additional fields that the UI could display. For instance:
-    * I have included `"enabled"` as a boolean, so the UI could display to the user "I know that this command exist and fits the requirements, but you can't launch it because it is not enabled". If we don't think we need to do that, I could remove `"enabled"` as an explicit field and instead only return those command wrappers that are launchable and enabled.
-    * I could add more information about the underlying image, such as its type. (Currently the only supported type is `"docker"` but we want to add `"singularity"` some time.)
+    [
+      {
+          "command-id": 0,
+          "command-name": "foo",
+          "wrapper-id": 0,
+          "wrapper-name": "bar",
+          "enabled": true,
+          "image-name": "xnat/foo",
+          "image-type": "docker"
+      },
+      {
+          "command-id": 1,
+          "command-name": "boo",
+          "wrapper-id": 12,
+          "wrapper-name": "berry",
+          "enabled": false,
+          "image-name": "xnat/bar",
+          "image-type": "singularity"
+      },
+      ...
+    ]
 
 # Create a Launch UI
 

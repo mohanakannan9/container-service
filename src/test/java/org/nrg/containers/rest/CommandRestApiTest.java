@@ -94,7 +94,6 @@ public class CommandRestApiTest {
     @Autowired private CommandService commandService;
     @Autowired private RoleServiceI mockRoleService;
     @Autowired private ContainerControlApi mockDockerControlApi;
-    @Autowired private ContainerEntityService mockContainerEntityService;
     @Autowired private AliasTokenService mockAliasTokenService;
     @Autowired private DockerServerPrefsBean mockDockerServerPrefsBean;
     @Autowired private SiteConfigPreferences mockSiteConfigPreferences;
@@ -105,27 +104,6 @@ public class CommandRestApiTest {
     @Before
     public void setup() throws Exception {
         mockMvc = MockMvcBuilders.webAppContextSetup(wac).apply(springSecurity()).build();
-
-        Configuration.setDefaults(new Configuration.Defaults() {
-
-            private final JsonProvider jsonProvider = new JacksonJsonProvider();
-            private final MappingProvider mappingProvider = new JacksonMappingProvider();
-
-            @Override
-            public JsonProvider jsonProvider() {
-                return jsonProvider;
-            }
-
-            @Override
-            public MappingProvider mappingProvider() {
-                return mappingProvider;
-            }
-
-            @Override
-            public Set<Option> options() {
-                return Sets.newHashSet(Option.DEFAULT_PATH_LEAF_TO_NULL);
-            }
-        });
 
         // Mock out the prefs bean
         final String containerServerName = "testy test";
@@ -464,131 +442,6 @@ public class CommandRestApiTest {
 
         assertThat(commandService.retrieve(commandId, wrapperId), is(nullValue()));
     }
-
-    @Test
-    @DirtiesContext
-    public void testLaunchWithQueryParams() throws Exception {
-        final String pathTemplate = "/commands/%d/launch";
-
-        final String fakeContainerId = "098zyx";
-        final String inputName = "stringInput";
-        final String inputValue = "the super cool value";
-        final String inputJson = "{\"" + inputName + "\": \"" + inputValue + "\"}";
-        final String commandJson =
-                "{\"name\": \"toLaunch\"," +
-                        "\"type\": \"docker\", " +
-                        "\"image\": \"" + FAKE_DOCKER_IMAGE + "\"," +
-                        "\"inputs\": [{\"name\": \"" + inputName + "\"}]}";
-        final Command command = commandService.create(mapper.readValue(commandJson, Command.class));
-        TestTransaction.flagForCommit();
-        TestTransaction.end();
-        TestTransaction.start();
-
-        final long id = command.id();
-
-        // This ResolvedCommand will be used in an internal method to "launch" a container
-        final String environmentVariablesJson = "{" +
-                "\"XNAT_HOST\": \"" + FAKE_URL + "\"," +
-                "\"XNAT_USER\": \"" + FAKE_ALIAS + "\"," +
-                "\"XNAT_PASS\": \"" + FAKE_SECRET + "\"" +
-                "}";
-        final String preparedResolvedCommandJson =
-                "{\"command-id\": " + String.valueOf(id) +"," +
-                        "\"image\": \"" + FAKE_DOCKER_IMAGE + "\"," +
-                        "\"env\": " + environmentVariablesJson + "," +
-                        "\"raw-input-values\": " + inputJson + "," +
-                        "\"mounts\": []," +
-                        "\"outputs\": []," +
-                        "\"ports\": {}" +
-                        "}";
-        final ResolvedDockerCommand preparedResolvedCommand = mapper.readValue(preparedResolvedCommandJson, ResolvedDockerCommand.class);
-        final ContainerEntity containerEntity = new ContainerEntity(preparedResolvedCommand, fakeContainerId, FAKE_USERNAME);
-
-        // We have to match any resolved command because spring will add a csrf token to the inputs. I don't know how to get that token in advance.
-        when(mockDockerControlApi.createContainer(any(ResolvedDockerCommand.class))).thenReturn(fakeContainerId);
-        doNothing().when(mockDockerControlApi).startContainer(fakeContainerId);
-        when(mockContainerEntityService.save(any(ResolvedCommand.class), eq(fakeContainerId), eq(mockAdmin)))
-                .thenReturn(containerEntity);
-
-        final String path = String.format(pathTemplate, id);
-        final MockHttpServletRequestBuilder request =
-                post(path).param(inputName, inputValue)
-                        .with(authentication(authentication))
-                        .with(csrf())
-                        .with(testSecurityContext());
-
-        final String response = mockMvc.perform(request)
-                .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-
-        assertThat(response, is(fakeContainerId));
-    }
-
-    @Test
-    @DirtiesContext
-    public void testLaunchWithParamsInBody() throws Exception {
-        final String pathTemplate = "/commands/%d/launch";
-
-        final String fakeContainerId = "098zyx";
-        final String inputName = "stringInput";
-        final String inputValue = "the super cool value";
-        final String inputJson = "{\"" + inputName + "\": \"" + inputValue + "\"}";
-        final String commandInput = "{\"name\": \"" + inputName + "\"}";
-        final String commandJson = "{" +
-                "\"name\": \"toLaunch\"," +
-                "\"type\": \"docker\", " +
-                "\"image\": \"" + FAKE_DOCKER_IMAGE + "\"," +
-                "\"inputs\": [" + commandInput + "]" +
-                "}";
-        final Command command = commandService.create(mapper.readValue(commandJson, Command.class));
-        TestTransaction.flagForCommit();
-        TestTransaction.end();
-        TestTransaction.start();
-
-        final long id = command.id();
-
-        // This ResolvedCommand will be used in an internal method to "launch" a container
-        final String environmentVariablesJson = "{" +
-                "\"XNAT_HOST\": \"" + FAKE_URL + "\"," +
-                "\"XNAT_USER\": \"" + FAKE_ALIAS + "\"," +
-                "\"XNAT_PASS\": \"" + FAKE_SECRET + "\"" +
-                "}";
-        final String preparedResolvedCommandJson = "{" +
-                "\"command-id\": " + String.valueOf(id) +"," +
-                "\"image\": \"" + FAKE_DOCKER_IMAGE + "\"," +
-                "\"env\": " + environmentVariablesJson + "," +
-                "\"raw-input-values\": " + inputJson + "," +
-                "\"mounts\": []," +
-                "\"outputs\": []," +
-                "\"ports\": {}" +
-                "}";
-        final ResolvedDockerCommand preparedResolvedCommand = mapper.readValue(preparedResolvedCommandJson, ResolvedDockerCommand.class);
-        final ContainerEntity containerEntity = new ContainerEntity(preparedResolvedCommand, fakeContainerId, FAKE_USERNAME);
-
-        // We have to match any resolved command because spring will add a csrf token to the inputs. I don't know how to get that token in advance.
-        when(mockDockerControlApi.createContainer(any(ResolvedDockerCommand.class))).thenReturn(fakeContainerId);
-        doNothing().when(mockDockerControlApi).startContainer(fakeContainerId);
-        when(mockContainerEntityService.save(any(ResolvedCommand.class), eq(fakeContainerId), eq(mockAdmin)))
-                .thenReturn(containerEntity);
-
-        final String path = String.format(pathTemplate, id);
-        final MockHttpServletRequestBuilder request =
-                post(path).content(inputJson).contentType(JSON)
-                        .with(authentication(authentication))
-                        .with(csrf())
-                        .with(testSecurityContext());
-
-        final String response = mockMvc.perform(request)
-                .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-
-        assertThat(response, is(fakeContainerId));
-    }
-
 
     @Test
     public void testCreateEcatHeaderDump() throws Exception {

@@ -24,10 +24,10 @@ public interface ContainerConfigService {
     void enableForSite(long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException;
 
     void disableForSite(long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException;
-    Boolean isEnabledForSite(long commandId, String wrapperName);
+    boolean isEnabledForSite(long commandId, String wrapperName);
     void enableForProject(String project, long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException;
     void disableForProject(String project, long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException;
-    Boolean isEnabledForProject(String project, long commandId, String wrapperName);
+    boolean isEnabledForProject(String project, long commandId, String wrapperName);
 
     ContainerServiceSettings getSettings();
     ContainerServiceSettings getSettings(String project);
