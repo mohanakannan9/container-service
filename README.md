@@ -2,7 +2,7 @@
 
 [XNAT](http://www.xnat.org/) plugin for controlling containers (primarily [Docker](https://www.docker.com/) containers).
 
-To use it, you will need an XNAT running 1.7.1+. Get the containers-all jar (through one of the methods below) and put it into your `{xnat.home}/plugins` directory. Restart tomcat and you are ready to run containers. See the [guide to getting started](https://wiki.xnat.org/display/CS/Getting+Started).
+To use it, you will need an XNAT running 1.7.3+. Get the `containers-<version>-fat` jar (through one of the methods below) and put it into your `{xnat.home}/plugins` directory. Restart tomcat and you are ready to run containers. See the [guide to getting started](https://wiki.xnat.org/display/CS/Getting+Started).
 
 This document is cross-posted on the [XNAT wiki](https://wiki.xnat.org/display/CS/Introduction) and the README in the [source repository](https://github.com/NrgXnat/container-service).
 
@@ -17,7 +17,7 @@ If you clone the source repository, you can build an XNAT plugin jar by running
 [container-service] $ ./gradlew fatJar
 ```
 
-The jar will be created as `build/libs/containers-all-${VERSION}.jar`
+The jar will be created as `build/libs/containers-${VERSION}-fat.jar`
 
 ## Deploy to XNAT
 One you [have a jar](#getting-the-jar), copy it to the `${xnat.home}/plugins` directory, and restart tomcat.
@@ -35,4 +35,4 @@ If you have a docker server that you can use for testing, there are some additio
 ./gradlew test
 ```
 
-We do not have any tests that can integrate with XNAT. All of these tests use bespoke databases and mocked interfaces any time the code intends to communicate with XNAT. We welcome your contributions!
+We do not have any tests that can integrate with a running XNAT. All of the tests in this library use bespoke databases and mocked interfaces any time the code intends to communicate with XNAT. We welcome your contributions!
