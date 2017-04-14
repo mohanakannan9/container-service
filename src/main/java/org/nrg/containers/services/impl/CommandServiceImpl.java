@@ -322,16 +322,32 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
 
         for (final Command command : getAll()) {
             for (final CommandWrapper wrapper : command.xnatCommandWrappers()) {
+
+                // Can only launch if the user gave us an xsiType that matches
+                // one of the wrapper's contexts
                 if (!xsiTypesMatch(xsiType, wrapper.contexts())) {
                     continue;
                 }
 
+                // Can only launch if this user has permission
                 if (!userCanLaunch(userI, project, wrapper)) {
                     continue;
                 }
 
+                // Can only launch with a single external input
+                // It seems iffy to me to bake this into the code, but I don't know a way around it.
+                // We don't have any UI right now where a user can sensibly launch
+                //   on two completely unconnected objects.
+                final String externalInputName;
+                if (wrapper.externalInputs().size() == 1) {
+                    externalInputName = wrapper.externalInputs().get(0).name();
+                } else {
+                    continue;
+                }
+
                 available.add(CommandSummaryForContext.create(command, wrapper,
-                        containerConfigService.isEnabledForProject(project, command.id(), wrapper.name())));
+                        containerConfigService.isEnabledForProject(project, command.id(), wrapper.name()),
+                        externalInputName));
             }
         }
 
