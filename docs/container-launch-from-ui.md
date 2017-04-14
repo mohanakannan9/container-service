@@ -11,6 +11,13 @@ Clearly, we need a simpler way to launch containers. Users should be expected to
 
 This document outlines this multi-stage flow.
 
+## Caveat
+The assumption behind this set of APIs is that the UI will make one request for one XNAT object. When the UI requests a list of commands that can be launched *here*, or requests a launch UI with an ID, there will be one single XNAT object that the *here* and the ID refer to. This implies two things, one on the UI side and one on the command/wrapper definition side:
+
+1. As the user navigates around the XNAT UI, there will often be more than one object loaded on a page. For instance, on an image session page obviously the XNAT image session object is loaded. But also all of the session's scans, resources, and assessors are loaded. Since each request for commands to launch must have only a single object, this implies that many separate requests can be made on each page load.
+2. The command wrapper's `external-inputs` are the entry points where XNAT objects can be inserted. The properties of those objects are pulled out by the `derived-inputs`, into the underlying command's `inputs`, and ultimately provide the files and command line string needed to launch a container. However, while the `external-inputs` may contain an unbounded list of XNAT objects, only those command wrappers with a single external input will be launchable through the UI. The front end code can only request a launch UI for a single object, and the back end will interpret that as the wrapper's external input. If the wrapper has more than one external input, then there is no way for the back end to know which input corresponds to this object, or how to satisfy the other inputs.
+
+
 # What can I launch here?
 
 This is the first step in the launch flow. As a user is clicking around XNAT, looking at various pages, in the background the UI could be loading information from the container service about the possible containers that could be launched on whatever the user sees at this moment. This API should be fairly lightweight in terms of time and data— the backend should just retrieve some information and send it back, without "thinking" too much about the results—because the UI will presumably make a lot of requests to this endpoint that the user doesn't care about and which will just be wasted.
@@ -29,12 +36,15 @@ The UI will need to provide query parameters on that request defining the "`cont
 
 Some query params will be required on each request, and others could optionally be provided under particular circumstances. I haven't nailed down exactly what parameters are in either the required or optional set, but here is my current thinking:
 
-    Required params:
-        xsiType - The XSI type of the object. E.g. `xnat:mrSessionData`,
-            `xnat:projectData`, `xnat:ctScanData`.
-        project - The ID of the project in which the request is being made.
-    Optional params
-        ... Can't think of any right now.
+Required params:
+
+* *`xsiType`* - The XSI type of the object. E.g. `xnat:mrSessionData`,
+    `xnat:projectData`, `xnat:ctScanData`.
+* *`project`* - The ID of the project in which the request is being made.
+
+Optional params
+
+* ... Can't think of any right now.
 
 I considered requiring a unique identifier for the particular object, but I do not think that should be necessary. Any object-specific processing would be too heavy for this particular API. The request can, I think, be as simple as "What can I launch on an 'xnat:fooBarData' in project 'XYZ'?"
 
@@ -62,7 +72,8 @@ An array of objects, each containing summary information about a single command 
           "wrapper-name": "bar",
           "enabled": true,
           "image-name": "xnat/foo",
-          "image-type": "docker"
+          "image-type": "docker",
+          "external-input-name": "alpha"
       },
       {
           "command-id": 1,
@@ -71,20 +82,29 @@ An array of objects, each containing summary information about a single command 
           "wrapper-name": "berry",
           "enabled": false,
           "image-name": "xnat/bar",
-          "image-type": "singularity"
+          "image-type": "singularity",
+          "external-input-name": "omega"
       },
       ...
     ]
 
 # Create a Launch UI
 
-Once a user clicks some button or submits some form or whatever saying "Yes, I would like to launch command wrapper `foo-sandwich`", the UI initiates the next step in the launch flow. At this stage it knows a particular command wrapper the user wants to launch on a particular XNAT object. It will need to request more information from the container service that it will use to render the launch UI.
+Once a user clicks some button or submits some form or whatever saying "Yes, I would like to launch command wrapper `foo-sandwich`", the UI initiates the next step in the launch flow. At this stage it knows a particular command wrapper the user wants to launch on a particular XNAT object. It will need to request more information from the container service, which it will use to render the launch UI.
 
 ## Request
 
-This should be another simple `GET` with query params.
+### REST Endpoint
 
-TODO: Detail the request endpoint and params.
+This is another simple `GET`.
+
+    GET /xapi/commands/{id}/wrappers/{id or name}/launch
+
+### Query Params
+
+Required params:
+
+* *`id`* - The unique identifier of the XNAT object on which the container will be launched
 
 ## Backend Processing
 
