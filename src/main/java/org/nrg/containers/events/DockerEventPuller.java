@@ -1,10 +1,10 @@
 package org.nrg.containers.events;
 
-import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.model.DockerServerPrefsBean;
+import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
+import org.nrg.xft.schema.XFTManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +19,9 @@ public class DockerEventPuller implements Runnable {
     private ContainerControlApi controlApi;
     private DockerServerPrefsBean dockerServerPrefs;
 
+    private boolean haveLoggedDockerConnectFailure = false;
+    private boolean haveLoggedXftInitFailure = false;
+
     @Autowired
     @SuppressWarnings("SpringJavaAutowiringInspection")
     public DockerEventPuller(final ContainerControlApi controlApi,
@@ -29,24 +32,37 @@ public class DockerEventPuller implements Runnable {
 
     @Override
     public void run() {
-        if (log.isDebugEnabled()) {
-            log.debug("Attempting to read docker events.");
-        }
-        if (StringUtils.isBlank(dockerServerPrefs.getHost())) {
-            log.info("No docker server host set. Skipping attempt to read events.");
+        log.trace("Attempting to read docker events.");
+
+        if (!controlApi.canConnect()) {
+            if (!haveLoggedDockerConnectFailure) {
+                log.info("Cannot ping docker server. Skipping attempt to read events.");
+                haveLoggedDockerConnectFailure = true;
+            }
+        } else if (!XFTManager.isInitialized()) {
+            if (!haveLoggedXftInitFailure) {
+                log.info("XFT is not initialized. Skipping attempt to read events.");
+                haveLoggedXftInitFailure = true;
+            }
         } else {
             final Date lastEventCheckTime = dockerServerPrefs.getLastEventCheckTime();
             final Date since = lastEventCheckTime == null ? new Date(0L) : lastEventCheckTime;
 
+            final Date now = new Date();
+
             try {
-                final Date now = new Date();
                 controlApi.getContainerEventsAndThrow(since, now);
                 dockerServerPrefs.setLastEventCheckTime(now);
+
+                // Reset failure flags
+                haveLoggedDockerConnectFailure = false;
+                haveLoggedXftInitFailure = false;
             } catch (NoServerPrefException e) {
                 log.info("Cannot search for Docker container events. No Docker server defined.");
             } catch (DockerServerException e) {
                 log.error("Cannot find Docker container events.", e);
             }
+
         }
     }
 }

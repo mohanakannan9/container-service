@@ -1,20 +1,24 @@
 package org.nrg.containers.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hibernate.SessionFactory;
 import org.mockito.Mockito;
-import org.nrg.config.services.ConfigService;
 import org.nrg.containers.api.ContainerControlApi;
-import org.nrg.containers.daos.CommandDao;
-import org.nrg.containers.model.Command;
-import org.nrg.containers.services.CommandService;
-import org.nrg.containers.services.ContainerExecutionService;
-import org.nrg.containers.services.impl.HibernateCommandService;
-import org.nrg.prefs.services.NrgPreferenceService;
+import org.nrg.containers.model.command.entity.CommandEntity;
+import org.nrg.containers.model.command.entity.CommandInputEntity;
+import org.nrg.containers.model.command.entity.CommandMountEntity;
+import org.nrg.containers.model.command.entity.CommandOutputEntity;
+import org.nrg.containers.model.command.entity.CommandWrapperDerivedInputEntity;
+import org.nrg.containers.model.command.entity.CommandWrapperEntity;
+import org.nrg.containers.model.command.entity.CommandWrapperExternalInputEntity;
+import org.nrg.containers.model.command.entity.CommandWrapperOutputEntity;
+import org.nrg.containers.model.command.entity.DockerCommandEntity;
+import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.transporter.TransportService;
 import org.nrg.transporter.TransportServiceImpl;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xdat.services.AliasTokenService;
+import org.nrg.xnat.services.archive.CatalogService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,42 +31,12 @@ import javax.sql.DataSource;
 import java.util.Properties;
 
 @Configuration
-//@EnableTransactionManagement
-@Import(ExecutionHibernateEntityTestConfig.class)
+@Import({CommandConfig.class, HibernateConfig.class})
 public class CommandTestConfig {
     @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
+    public ContainerControlApi controlApi() {
+        return Mockito.mock(ContainerControlApi.class);
     }
-//    @Bean
-//    public DockerImageService dockerImageService() {
-//        return new HibernateDockerImageService();
-//    }
-//
-//    @Bean
-//    public DockerImageDao dockerImageDao() {
-//        return new DockerImageDao();
-//    }
-
-//    @Bean
-//    public ScriptService scriptService() {
-//        return new HibernateScriptService();
-//    }
-//
-//    @Bean
-//    public ScriptRepository scriptRepository() {
-//        return new ScriptRepository();
-//    }
-
-//    @Bean
-//    public ScriptEnvironmentService scriptEnvironmentService() {
-//        return new HibernateScriptEnvironmentService();
-//    }
-//
-//    @Bean
-//    public ScriptEnvironmentDao scriptEnvironmentDao() {
-//        return new ScriptEnvironmentDao();
-//    }
 
     @Bean
     public AliasTokenService aliasTokenService() {
@@ -75,44 +49,23 @@ public class CommandTestConfig {
     }
 
     @Bean
-    public NrgPreferenceService nrgPreferenceService() {
-        return Mockito.mock(NrgPreferenceService.class);
-    }
-
-    @Bean
-    public CommandService commandService(final ContainerControlApi controlApi,
-                                         final AliasTokenService aliasTokenService,
-                                         final SiteConfigPreferences siteConfigPreferences,
-                                         final TransportService transporter,
-                                         final ContainerExecutionService containerExecutionService,
-                                         final ConfigService configService) {
-        return new HibernateCommandService(controlApi, aliasTokenService, siteConfigPreferences,
-                transporter, containerExecutionService, configService);
-    }
-
-    @Bean
-    public CommandDao commandDao() {
-        return new CommandDao();
-    }
-
-    @Bean
-    public ContainerControlApi controlApi() {
-        return Mockito.mock(ContainerControlApi.class);
-    }
-
-    @Bean
     public TransportService transportService() {
-        return Mockito.mock(TransportServiceImpl.class);
+        return new TransportServiceImpl();
     }
 
     @Bean
-    public ConfigService configService() {
-        return Mockito.mock(ConfigService.class);
+    public ContainerEntityService mockContainerEntityService() {
+        return Mockito.mock(ContainerEntityService.class);
     }
 
     @Bean
-    public ContainerExecutionService mockContainerExecutionService() {
-        return Mockito.mock(ContainerExecutionService.class);
+    public PermissionsServiceI permissionsService() {
+        return Mockito.mock(PermissionsServiceI.class);
+    }
+
+    @Bean
+    public CatalogService catalogService() {
+        return Mockito.mock(CatalogService.class);
     }
 
     @Bean
@@ -121,7 +74,15 @@ public class CommandTestConfig {
         bean.setDataSource(dataSource);
         bean.setHibernateProperties(properties);
         bean.setAnnotatedClasses(
-                Command.class);
+                CommandEntity.class,
+                DockerCommandEntity.class,
+                CommandInputEntity.class,
+                CommandOutputEntity.class,
+                CommandMountEntity.class,
+                CommandWrapperEntity.class,
+                CommandWrapperExternalInputEntity.class,
+                CommandWrapperDerivedInputEntity.class,
+                CommandWrapperOutputEntity.class);
         return bean;
     }
 

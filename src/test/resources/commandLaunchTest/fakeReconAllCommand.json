@@ -1,60 +1,26 @@
 {
     "name": "fake recon-all",
     "description": "Mimics what I think a recon-all command would be, but with a different command-line.",
-    "docker-image": "busybox:latest",
-    "run": {
-        "command-line": "echo recon-all #SUBJECT_ID# #OTHER_ARGS# >> /output/out.txt; ls /input >> /output/out.txt" ,
-        "mounts": [
-            {
-                "name": "input",
-                "type": "input",
-                "path": "/input",
-                "file-input": "resource"
-            },
-            {
-                "name": "output",
-                "type": "output",
-                "path": "/output"
-            }
-        ]
-    },
+    "type": "docker",
+    "image": "busybox:latest",
+    "command-line": "echo recon-all #SUBJECT_ID# #OTHER_ARGS# >> /output/out.txt; ls /input >> /output/out.txt" ,
+    "mounts": [
+        {
+            "name": "input",
+            "writable": "false",
+            "path": "/input"
+        },
+        {
+            "name": "output",
+            "writable": "true",
+            "path": "/output"
+        }
+    ],
     "inputs": [
         {
-            "name": "session",
-            "description": "Input session",
-            "type": "Session",
-            "required": true
-        },
-        {
-            "name": "label",
-            "description": "Session label. Used as Freesurfer subject identifier.",
-            "type": "string",
-            "required": true,
-            "parent": "session",
-            "parent-property": "label",
+            "name": "subject-id",
             "replacement-key": "#SUBJECT_ID#",
             "command-line-flag": "-s"
-        },
-        {
-            "name": "T1-scantype",
-            "description": "Scantype of T1 scans",
-            "type": "string",
-            "default-value": "pipelines/mr_scan_types"
-        },
-        {
-            "name": "T1",
-            "description": "Input T1 scan",
-            "type": "Scan",
-            "parent": "session",
-            "prerequisites": "T1-scantype",
-            "matcher": "@.scan-type == '^$.inputs[?(@.name == 'T1-scantype')].value^'"
-        },
-        {
-            "name": "resource",
-            "description": "Input resource: DICOM or NIFTI",
-            "type": "Resource",
-            "parent": "T1",
-            "matcher": "@.label in [\"DICOM\", \"NIFTI\"]"
         },
         {
             "name": "other-recon-all-args",
@@ -65,23 +31,78 @@
     ],
     "outputs": [
         {
-            "name": "fs",
-            "type": "Assessor",
-            "parent": "session",
-            "files": {
-                "mount": "output",
-                "path": "fs.xml"
-            }
+            "name": "data",
+            "mount": "output",
+            "path": "#SUBJECT_ID#",
+            "required": false
         },
         {
-            "name": "data",
-            "type": "Resource",
-            "parent": "fs",
-            "label": "DATA",
-            "files": {
-                "mount": "output",
-                "path": "#SUBJECT_ID#"
-            }
+            "name": "text-file",
+            "mount": "output",
+            "path": "out.txt",
+            "required": true
+        }
+    ],
+    "xnat": [
+        {
+            "name": "recon-all-session",
+            "description": "launch the fake recon-all command with a session input",
+            "external-inputs": [
+                {
+                    "name": "T1-scantype",
+                    "description": "Scantype of T1 scans",
+                    "type": "string",
+                    "default-value": "pipelines/mr_scan_types"
+                },
+                {
+                    "name": "session",
+                    "description": "Input session",
+                    "type": "Session",
+                    "required": true
+                }
+            ],
+            "derived-inputs": [
+                {
+                    "name": "label",
+                    "description": "Session label. Used as Freesurfer subject identifier.",
+                    "type": "string",
+                    "required": true,
+                    "derived-from-xnat-input": "session",
+                    "derived-from-xnat-object-property": "label",
+                    "provides-value-for-command-input": "subject-id"
+                },
+                {
+                    "name": "T1",
+                    "description": "Input T1 scan",
+                    "type": "Scan",
+                    "derived-from-xnat-input": "session",
+                    "matcher": "@.scan-type == '#T1-scantype#'"
+                },
+                {
+                    "name": "resource",
+                    "description": "Input resource: DICOM or NIFTI",
+                    "type": "Resource",
+                    "derived-from-xnat-input": "T1",
+                    "matcher": "@.label in [\"DICOM\", \"NIFTI\"]",
+                    "provides-files-for-command-mount": "input"
+                }
+            ],
+            "output-handlers": [
+                {
+                    "name": "data-output",
+                    "accepts-command-output": "data",
+                    "as-a-child-of-xnat-input": "session",
+                    "type": "Resource",
+                    "label": "DATA"
+                },
+                {
+                    "name": "text-file-output",
+                    "accepts-command-output": "text-file",
+                    "as-a-child-of-xnat-input": "session",
+                    "type": "Resource",
+                    "label": "TEXT"
+                }
+            ]
         }
     ]
 }

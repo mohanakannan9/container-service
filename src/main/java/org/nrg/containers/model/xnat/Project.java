@@ -3,52 +3,112 @@ package org.nrg.containers.model.xnat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
+import org.apache.commons.lang.StringUtils;
 import org.nrg.xdat.model.XnatAbstractresourceI;
-import org.nrg.xdat.model.XnatProjectdataI;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatResourcecatalog;
+import org.nrg.xdat.om.XnatSubjectdata;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.helpers.uri.URIManager;
+import org.nrg.xnat.helpers.uri.UriParserUtils;
+import org.nrg.xnat.helpers.uri.archive.ProjectURII;
 
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
 @JsonInclude(Include.NON_NULL)
 public class Project extends XnatModelObject {
-    public static Type type = Type.PROJECT;
-    @JsonIgnore private XnatProjectdataI xnatProjectdata;
+    @JsonIgnore private XnatProjectdata xnatProjectdata;
     private List<Resource> resources;
     private List<Subject> subjects;
 
     public Project() {}
 
-    public Project(final XnatProjectdata xnatProjectdataI) {
-        this.xnatProjectdata = xnatProjectdataI;
+    public Project(final String projectId, final UserI userI) {
+        this.id = projectId;
+        loadXnatProjectdata(userI);
+        this.uri = UriParserUtils.getArchiveUri(xnatProjectdata);
+        populateProperties();
+    }
 
-        this.id = xnatProjectdataI.getId();
-        this.label = xnatProjectdataI.getName();
-        this.xsiType = xnatProjectdataI.getXSIType();
-        this.uri = "/projects/" + id;
+    public Project(final ProjectURII projectURII) {
+        this.xnatProjectdata = projectURII.getProject();
+        this.uri = ((URIManager.DataURIA) projectURII).getUri();
+        populateProperties();
+    }
+
+    public Project(final XnatProjectdata xnatProjectdata) {
+        this.xnatProjectdata = xnatProjectdata;
+        this.uri = UriParserUtils.getArchiveUri(xnatProjectdata);
+        populateProperties();
+    }
+
+    private void populateProperties() {
+        this.id = xnatProjectdata.getId();
+        this.label = xnatProjectdata.getName();
+        this.xsiType = xnatProjectdata.getXSIType();
 
         this.subjects = Lists.newArrayList();
-        // TODO how do I get subjects from an XnatProjectdata?
+        for (final XnatSubjectdata subject : xnatProjectdata.getParticipants_participant()) {
+            subjects.add(new Subject(subject, this.uri, xnatProjectdata.getRootArchivePath()));
+        }
 
         this.resources = Lists.newArrayList();
-        for (final XnatAbstractresourceI xnatAbstractresourceI: xnatProjectdataI.getResources_resource()) {
+        for (final XnatAbstractresourceI xnatAbstractresourceI: xnatProjectdata.getResources_resource()) {
             if (xnatAbstractresourceI instanceof XnatResourcecatalog) {
-                resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, this.id, this.uri, xnatProjectdataI.getRootArchivePath()));
+                resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, this.uri, xnatProjectdata.getRootArchivePath()));
             }
         }
     }
 
-    public XnatProjectdataI loadXnatProjectdata(final UserI userI) {
-        xnatProjectdata = XnatProjectdata.getXnatProjectdatasById(id, userI, false);
-        return xnatProjectdata;
+    public static Function<URIManager.ArchiveItemURI, Project> uriToModelObjectFunction() {
+        return new Function<URIManager.ArchiveItemURI, Project>() {
+            @Nullable
+            @Override
+            public Project apply(@Nullable URIManager.ArchiveItemURI uri) {
+                if (uri != null &&
+                        ProjectURII.class.isAssignableFrom(uri.getClass())) {
+                    return new Project((ProjectURII) uri);
+                }
+
+                return null;
+            }
+        };
     }
 
-    public XnatProjectdataI getXnatProjectdata() {
+    public static Function<String, Project> stringToModelObjectFunction(final UserI userI) {
+        return new Function<String, Project>() {
+            @Nullable
+            @Override
+            public Project apply(@Nullable String s) {
+                if (StringUtils.isBlank(s)) {
+                    return null;
+                }
+                final XnatProjectdata xnatProjectdata = XnatProjectdata.getXnatProjectdatasById(s, userI, true);
+                if (xnatProjectdata != null) {
+                    return new Project(xnatProjectdata);
+                }
+                return null;
+            }
+        };
+    }
+
+    public Project getProject(final UserI userI) {
+        loadXnatProjectdata(userI);
+        return this;
+    }
+
+    public void loadXnatProjectdata(final UserI userI) {
+        if (xnatProjectdata == null) {
+            xnatProjectdata = XnatProjectdata.getXnatProjectdatasById(id, userI, false);
+        }
+    }
+
+    public XnatProjectdata getXnatProjectdata() {
         return xnatProjectdata;
     }
 
@@ -70,10 +130,6 @@ public class Project extends XnatModelObject {
 
     public void setSubjects(final List<Subject> subjects) {
         this.subjects = subjects;
-    }
-
-    public Type getType() {
-        return type;
     }
 
     @Override

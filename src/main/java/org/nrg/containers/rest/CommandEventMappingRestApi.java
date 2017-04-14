@@ -8,19 +8,22 @@ import org.nrg.containers.model.CommandEventMapping;
 import org.nrg.containers.services.CommandEventMappingService;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NrgRuntimeException;
-import org.nrg.xdat.rest.AbstractXapiRestController;
+import org.nrg.xapi.rest.AbstractXapiRestController;
+import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.List;
 
+import static org.springframework.web.bind.annotation.RequestMethod.DELETE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
@@ -42,7 +45,7 @@ public class CommandEventMappingRestApi extends AbstractXapiRestController {
         this.commandEventMappingService = commandEventMappingService;
     }
 
-    @RequestMapping(value = {}, method = GET)
+    @XapiRequestMapping(method = GET)
     @ApiOperation(value = "Get all Commands Event Mappings")
     @ResponseBody
     public List<CommandEventMapping> getMappings() {
@@ -50,7 +53,7 @@ public class CommandEventMappingRestApi extends AbstractXapiRestController {
     }
 
 
-    @RequestMapping(value = {}, method = POST)
+    @XapiRequestMapping(method = POST)
     public ResponseEntity<CommandEventMapping> createCommand(final @RequestBody CommandEventMapping commandEventMapping)
             throws BadRequestException {
         try {
@@ -60,6 +63,21 @@ public class CommandEventMappingRestApi extends AbstractXapiRestController {
             throw new BadRequestException(e);
         }
     }
+
+    @XapiRequestMapping(value = {"/{id}"}, method = GET)
+    @ApiOperation(value = "Get a CommandEventMapping")
+    @ResponseBody
+    public CommandEventMapping retrieve(final @PathVariable Long id) {
+        return commandEventMappingService.retrieve(id);
+    }
+
+    @XapiRequestMapping(value = {"/{id}"}, method = DELETE)
+    @ApiOperation(value = "Delete a CommandEventMapping", code = 204)
+    public ResponseEntity<String> delete(final @PathVariable Long id) {
+        commandEventMappingService.delete(id);
+        return new ResponseEntity<>("", HttpStatus.NO_CONTENT);
+    }
+
 
 
 }

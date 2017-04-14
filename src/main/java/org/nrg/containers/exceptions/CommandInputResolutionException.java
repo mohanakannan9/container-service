@@ -1,9 +1,9 @@
 package org.nrg.containers.exceptions;
 
-import org.nrg.containers.model.CommandInput;
+import org.nrg.containers.model.command.auto.Command.CommandInput;
 
 public class CommandInputResolutionException extends CommandResolutionException {
-    final CommandInput input;
+    private final CommandInput input;
 
     public CommandInputResolutionException(final String message, final CommandInput input) {
         super(message);

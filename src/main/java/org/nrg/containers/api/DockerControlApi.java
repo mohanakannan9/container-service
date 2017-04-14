@@ -1,24 +1,20 @@
 package org.nrg.containers.api;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerCertificates;
 import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.DockerClient.ListImagesParam;
 import com.spotify.docker.client.DockerClient.LogsParam;
 import com.spotify.docker.client.EventStream;
 import com.spotify.docker.client.LogStream;
-import com.spotify.docker.client.LoggingPullHandler;
-import com.spotify.docker.client.ProgressHandler;
 import com.spotify.docker.client.exceptions.ContainerNotFoundException;
 import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.exceptions.DockerException;
-import com.spotify.docker.client.exceptions.ImageNotFoundException;
-import com.spotify.docker.client.messages.AuthConfig;
 import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
 import com.spotify.docker.client.messages.ContainerInfo;
@@ -27,21 +23,22 @@ import com.spotify.docker.client.messages.HostConfig;
 import com.spotify.docker.client.messages.Image;
 import com.spotify.docker.client.messages.ImageInfo;
 import com.spotify.docker.client.messages.PortBinding;
-import com.spotify.docker.client.messages.ProgressMessage;
+import com.spotify.docker.client.messages.RegistryAuth;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.containers.events.DockerContainerEvent;
+import org.nrg.containers.exceptions.ContainerException;
+import org.nrg.containers.events.model.DockerContainerEvent;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.exceptions.NotFoundException;
-import org.nrg.containers.model.Command;
-import org.nrg.containers.model.CommandMount;
-import org.nrg.containers.model.Container;
-import org.nrg.containers.model.ContainerExecutionMount;
-import org.nrg.containers.model.DockerHub;
-import org.nrg.containers.model.DockerImage;
-import org.nrg.containers.model.DockerServer;
-import org.nrg.containers.model.DockerServerPrefsBean;
-import org.nrg.containers.model.ResolvedCommand;
+import org.nrg.containers.helpers.CommandLabelHelper;
+import org.nrg.containers.model.container.auto.Container;
+import org.nrg.containers.model.container.entity.ContainerEntityMount;
+import org.nrg.containers.model.server.docker.DockerServer;
+import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
+import org.nrg.containers.model.ResolvedDockerCommand;
+import org.nrg.containers.model.command.auto.Command;
+import org.nrg.containers.model.dockerhub.DockerHub;
+import org.nrg.containers.model.image.docker.DockerImage;
+import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.slf4j.Logger;
@@ -49,8 +46,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.nio.file.Paths;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +58,7 @@ import java.util.Map;
 import static com.spotify.docker.client.DockerClient.EventsParam.since;
 import static com.spotify.docker.client.DockerClient.EventsParam.type;
 import static com.spotify.docker.client.DockerClient.EventsParam.until;
+import static org.nrg.containers.helpers.CommandLabelHelper.LABEL_KEY;
 
 @Service
 public class DockerControlApi implements ContainerControlApi {
@@ -76,25 +77,32 @@ public class DockerControlApi implements ContainerControlApi {
         this.eventService = eventService;
     }
 
+    @Override
+    @Nonnull
     public DockerServer getServer() throws NoServerPrefException {
         if (containerServerPref == null || containerServerPref.getHost() == null) {
             throw new NoServerPrefException("No container server URI defined in preferences.");
         }
-        return containerServerPref.toDto();
+        return containerServerPref.toPojo();
     }
 
+    @Override
     public void setServer(final String host) throws InvalidPreferenceName {
         setServer(host, null);
     }
 
+    @Override
+    @Nonnull
     public DockerServer setServer(final String host, final String certPath) throws InvalidPreferenceName {
         containerServerPref.setHost(host);
         containerServerPref.setCertPath(certPath);
-        return containerServerPref.toDto();
+        return containerServerPref.toPojo();
     }
 
+    @Override
+    @Nonnull
     public DockerServer setServer(final DockerServer serverBean) throws InvalidPreferenceName {
-        containerServerPref.setFromDto(serverBean);
+        containerServerPref.fromPojo(serverBean);
         return serverBean;
     }
 
@@ -109,25 +117,46 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     @Override
-    public String pingHub(DockerHub hub) throws DockerServerException, NoServerPrefException {
-        final AuthConfig authConfig = AuthConfig.builder()
-                .email(hub.getEmail())
-                .username(hub.getUsername())
-                .password(hub.getPassword())
-                .serverAddress(hub.getUrl())
-                .build();
+    public boolean canConnect() {
+        try {
+            final String pingResult = pingServer();
+            return StringUtils.isNotBlank(pingResult) && pingResult.equals("OK");
+        } catch (NoServerPrefException | DockerServerException ignored) {
+            // Any actual errors have already been logged. We can safely ignore them here.
+        }
+
+        return false;
+    }
+
+    @Override
+    @Nonnull
+    public String pingHub(final @Nonnull DockerHub hub) throws DockerServerException, NoServerPrefException {
+        return pingHub(hub, null, null);
+    }
+
+    @Override
+    @Nonnull
+    public String pingHub(final @Nonnull DockerHub hub, final @Nullable String username, final @Nullable String password)
+            throws DockerServerException, NoServerPrefException {
         try (final DockerClient client = getClient()) {
-            client.pull("connectioncheckonly", authConfig);
-        }
-        catch (ImageNotFoundException imageNotFoundException){
-            // Expected result: Hub found, bogus image not found
-            return "OK";
-        }
-        catch (Exception e) {
+            client.auth(registryAuth(hub, username, password));
+        } catch (Exception e) {
             log.error(e.getMessage());
             throw new DockerServerException(e);
         }
-        return null;
+        return "OK";
+    }
+
+    @Nullable
+    private RegistryAuth registryAuth(final @Nullable DockerHub hub, final @Nullable String username, final @Nullable String password) {
+        if (hub == null) {
+            return null;
+        }
+        return RegistryAuth.builder()
+                .serverAddress(hub.url())
+                .username(username == null ? "" : username)
+                .password(password == null ? "" : password)
+                .build();
     }
 
     /**
@@ -136,6 +165,7 @@ public class DockerControlApi implements ContainerControlApi {
      * @return Image objects stored on docker server
      **/
     @Override
+    @Nonnull
     public List<DockerImage> getAllImages() throws NoServerPrefException, DockerServerException {
         return getImages(null);
     }
@@ -146,22 +176,35 @@ public class DockerControlApi implements ContainerControlApi {
      * @param params Map of query parameters (name = value)
      * @return Image objects stored on docker server meeting the query parameters
      **/
-    public List<DockerImage> getImages(final Map<String, String> params)
+    @Nonnull
+    private List<DockerImage> getImages(final Map<String, String> params)
             throws NoServerPrefException, DockerServerException {
-        return DockerImageToNrgImage(_getImages(params));
+        return Lists.newArrayList(
+                Lists.transform(_getImages(params),
+                        new Function<Image, DockerImage>() {
+                            @Override
+                            @Nullable
+                            public DockerImage apply(final @Nullable Image image) {
+                                return spotifyToNrg(image);
+                            }
+                        }
+                )
+        );
     }
 
     private List<com.spotify.docker.client.messages.Image> _getImages(final Map<String, String> params)
             throws NoServerPrefException, DockerServerException {
         // Transform param map to ListImagesParam array
-        DockerClient.ListImagesParam[] dockerParams;
+        final List<ListImagesParam> dockerParamsList = Lists.newArrayList();
         if (params != null && params.size() > 0) {
-            List<DockerClient.ListImagesParam> dockerParamsList =
-                    Lists.transform(Lists.newArrayList(params.entrySet()), imageParamTransformer);
-            dockerParams = dockerParamsList.toArray(new DockerClient.ListImagesParam[dockerParamsList.size()]);
-        } else {
-            dockerParams = new DockerClient.ListImagesParam[] {};
+            for (final Map.Entry<String, String> param : params.entrySet()) {
+                dockerParamsList.add(
+                        ListImagesParam.create(param.getKey(), param.getValue())
+                );
+            }
         }
+        final ListImagesParam[] dockerParams =
+                dockerParamsList.toArray(new ListImagesParam[dockerParamsList.size()]);
 
         try (final DockerClient dockerClient = getClient()) {
             return dockerClient.listImages(dockerParams);
@@ -181,18 +224,26 @@ public class DockerControlApi implements ContainerControlApi {
      * @return Image stored on docker server with the given name
      **/
     @Override
+    @Nonnull
     public DockerImage getImageById(final String imageId)
         throws NotFoundException, DockerServerException, NoServerPrefException {
-        final DockerImage image = DockerImageToNrgImage(_getImageById(imageId));
+        try (final DockerClient client = getClient()) {
+            return getImageById(imageId, client);
+        }
+    }
+
+    private DockerImage getImageById(final String imageId, final DockerClient client)
+            throws NoServerPrefException, DockerServerException, NotFoundException {
+        final DockerImage image = spotifyToNrg(_getImageById(imageId, client));
         if (image != null) {
             return image;
         }
         throw new NotFoundException(String.format("Could not find image %s", imageId));
     }
 
-    private com.spotify.docker.client.messages.ImageInfo _getImageById(final String imageId)
+    private com.spotify.docker.client.messages.ImageInfo _getImageById(final String imageId, final DockerClient client)
         throws DockerServerException, NoServerPrefException {
-        try (final DockerClient client = getClient()) {
+        try {
             return client.inspectImage(imageId);
         } catch (DockerException | InterruptedException e) {
             throw new DockerServerException(e);
@@ -202,58 +253,64 @@ public class DockerControlApi implements ContainerControlApi {
     /**
      * Launch image on Docker server
      *
-     * @param command A ResolvedCommand. All templates are resolved, all mount paths exist.
+     * @param resolvedDockerCommand A ResolvedDockerCommand. All templates are resolved, all mount paths exist.
      * @return ID of created Container
      **/
     @Override
-    public String launchImage(final ResolvedCommand command)
-            throws NoServerPrefException, DockerServerException {
-        final String dockerImageId = command.getDockerImage();
-        final String runCommand = command.getCommandLine();
+    public String createContainer(final ResolvedDockerCommand resolvedDockerCommand)
+            throws NoServerPrefException, DockerServerException, ContainerException {
+
         final List<String> bindMounts = Lists.newArrayList();
-        for (final ContainerExecutionMount mount : command.getMountsIn()) {
-            bindMounts.add(mount.toBindMountString());
-        }
-        for (final ContainerExecutionMount mount : command.getMountsOut()) {
+        for (final ContainerEntityMount mount : resolvedDockerCommand.getMounts()) {
             bindMounts.add(mount.toBindMountString());
         }
         final List<String> environmentVariables = Lists.newArrayList();
-        for (final Map.Entry<String, String> env : command.getEnvironmentVariables().entrySet()) {
+        for (final Map.Entry<String, String> env : resolvedDockerCommand.getEnvironmentVariables().entrySet()) {
             environmentVariables.add(StringUtils.join(new String[] {env.getKey(), env.getValue()}, "="));
         }
-        return launchImage(getServer(), dockerImageId, runCommand, bindMounts, environmentVariables, command.getPorts());
+
+        return createContainer(getServer(),
+                resolvedDockerCommand.getImage(),
+                resolvedDockerCommand.getCommandLine(),
+                bindMounts,
+                environmentVariables,
+                resolvedDockerCommand.getPorts(),
+                StringUtils.isNotBlank(resolvedDockerCommand.getWorkingDirectory()) ?
+                        resolvedDockerCommand.getWorkingDirectory() :
+                        null
+        );
     }
 
-//    /**
-//     * Launch image on Docker server
-//     *
-//     * @param imageName name of image to launch
-//     * @param runCommand Command string to execute
-//     * @param volumes Volume mounts, in the form "/path/on/server:/path/in/container"
-//     * @return ID of created Container
-//     **/
-//    @Override
-//    public String launchImage(final String imageName, final List<String> runCommand, final List<String> volumes)
-//            throws NoServerPrefException, DockerServerException {
-//        return launchImage(getServer(), imageName, runCommand, volumes);
-//    }
+    //    /**
+    //     * Launch image on Docker server
+    //     *
+    //     * @param imageName name of image to launch
+    //     * @param runCommand Command string to execute
+    //     * @param volumes Volume mounts, in the form "/path/on/server:/path/in/container"
+    //     * @return ID of created Container
+    //     **/
+    //    @Override
+    //    public String createContainer(final String imageName, final List<String> runCommand, final List<String> volumes)
+    //            throws NoServerPrefException, DockerServerException {
+    //        return createContainer(getServer(), imageName, runCommand, volumes);
+    //    }
 
-//    /**
-//     * Launch image on Docker server
-//     *
-//     * @param server DockerServer on which to launch
-//     * @param imageName name of image to launch
-//     * @param runCommand Command string list to execute
-//     * @param volumes Volume mounts, in the form "/path/on/server:/path/in/container"
-//     * @return ID of created Container
-//     **/
-//    @Override
-//    public String launchImage(final DockerServer server,
-//                              final String imageName,
-//                              final List<String> runCommand,
-//                              final List<String> volumes) throws DockerServerException {
-//        return launchImage(server, imageName, runCommand, volumes, null);
-//    }
+    //    /**
+    //     * Launch image on Docker server
+    //     *
+    //     * @param server DockerServer on which to launch
+    //     * @param imageName name of image to launch
+    //     * @param runCommand Command string list to execute
+    //     * @param volumes Volume mounts, in the form "/path/on/server:/path/in/container"
+    //     * @return ID of created Container
+    //     **/
+    //    @Override
+    //    public String createContainer(final DockerServer server,
+    //                              final String imageName,
+    //                              final List<String> runCommand,
+    //                              final List<String> volumes) throws DockerServerException {
+    //        return createContainer(server, imageName, runCommand, volumes, null);
+    //    }
     /**
      * Launch image on Docker server
      *
@@ -263,12 +320,14 @@ public class DockerControlApi implements ContainerControlApi {
      * @param volumes Volume mounts, in the form "/path/on/server:/path/in/container"
      * @return ID of created Container
      **/
-    private String launchImage(final DockerServer server,
-                               final String imageName,
-                               final String runCommand,
-                               final List<String> volumes,
-                               final List<String> environmentVariables,
-                               final Map<String, String> ports) throws DockerServerException {
+    private String createContainer(final DockerServer server,
+                                   final String imageName,
+                                   final String runCommand,
+                                   final List<String> volumes,
+                                   final List<String> environmentVariables,
+                                   final Map<String, String> ports,
+                                   final String workingDirectory)
+            throws DockerServerException, ContainerException {
 
         final Map<String, List<PortBinding>> portBindings = Maps.newHashMap();
         final List<String> portStringList = Lists.newArrayList();
@@ -278,20 +337,22 @@ public class DockerControlApi implements ContainerControlApi {
                 final String hostPort = portEntry.getValue();
 
                 if (StringUtils.isNotBlank(containerPort) && StringUtils.isNotBlank(hostPort)) {
-                    final PortBinding portBinding = new PortBinding();
-                    portBinding.hostPort(hostPort);
+                    final PortBinding portBinding = PortBinding.create(null, hostPort);
                     portBindings.put(containerPort + "/tcp", Lists.newArrayList(portBinding));
 
                     portStringList.add("host" + hostPort + "->" + "container" + containerPort);
-                } else if (StringUtils.isNotBlank(containerPort)) {
-                    // hostPort is blank
-                    // TODO log it
-                } else if (StringUtils.isNotBlank(hostPort)) {
-                    // containerPort is blank
-                    // TODO log it
                 } else {
-                    // both are blank
-                    // TODO log it
+                    // One or both of hostPost and containerPort is blank.
+                    final String message;
+                    if (StringUtils.isBlank(containerPort)) {
+                        message = "Container port is blank.";
+                    } else if (StringUtils.isNotBlank(hostPort)) {
+                        message = "Host port is blank";
+                    } else {
+                        message = "Container and host ports are blank";
+                    }
+                    log.error(message);
+                    throw new ContainerException(message);
                 }
             }
         }
@@ -309,20 +370,23 @@ public class DockerControlApi implements ContainerControlApi {
                         .attachStderr(true)
                         .cmd(Lists.newArrayList("/bin/sh", "-c", runCommand))
                         .env(environmentVariables)
+                        .workingDir(workingDirectory)
                         .build();
 
         if (log.isDebugEnabled()) {
             final String message = String.format(
-                    "Starting container:" +
+                    "Creating container:" +
                             "\n\tserver %s" +
                             "\n\timage %s" +
                             "\n\tcommand \"%s\"" +
+                            "\n\tworking directory \"%s\"" +
                             "\n\tvolumes [%s]" +
                             "\n\tenvironment variables [%s]" +
                             "\n\texposed ports: {%s}",
                     server,
                     imageName,
                     runCommand,
+                    workingDirectory,
                     StringUtils.join(volumes, ", "),
                     StringUtils.join(environmentVariables, ", "),
                     StringUtils.join(portStringList, ", ")
@@ -333,21 +397,33 @@ public class DockerControlApi implements ContainerControlApi {
         try (final DockerClient client = getClient(server)) {
             final ContainerCreation container = client.createContainer(containerConfig);
 
-            if (log.isDebugEnabled()) {
-                log.debug("Starting container: id " + container.id());
-            }
-            if (container.getWarnings() != null) {
-                for (String warning : container.getWarnings()) {
+            final List<String> warnings = container.warnings();
+            if (warnings != null) {
+                for (String warning : warnings) {
                     log.warn(warning);
                 }
             }
-            client.startContainer(container.id());
 
             return container.id();
         } catch (DockerException | InterruptedException e) {
             log.error(e.getMessage());
+            throw new DockerServerException("Could not create container from image " + imageName, e);
+        }
+    }
+
+    @Override
+    public void startContainer(final String containerId) throws DockerServerException, NoServerPrefException {
+        startContainer(containerId, getServer());
+    }
+
+    private void startContainer(final String containerId,
+                                final DockerServer server) throws DockerServerException {
+        try (final DockerClient client = getClient(server)) {
+            log.info("Starting container: id " + containerId);
+            client.startContainer(containerId);
+        } catch (DockerException | InterruptedException e) {
             log.error(e.getMessage());
-            throw new DockerServerException("Could not start container from image " + imageName, e);
+            throw new DockerServerException("Could not start container " + containerId, e);
         }
     }
 
@@ -360,121 +436,51 @@ public class DockerControlApi implements ContainerControlApi {
         }
     }
 
-    /**
-     * Pull image from default hub onto docker server
-     *
-     **/
     @Override
-    public void pullImage(String name) throws NoServerPrefException, DockerServerException {
-        try (final DockerClient client = getClient()) {
-            client.pull(name);
-        } catch (DockerException | InterruptedException e) {
-            log.error(e.getMessage());
-            throw new DockerServerException(e);
-        }
-    }
-
-    /**
-     * Pull image from specified hub onto docker server
-     *
-     **/
-    @Override
-    public void pullImage(String name, DockerHub hub) throws NoServerPrefException, DockerServerException {
-        if (hub == null) {
-            pullImage(name);
-        } else {
-            try (final DockerClient client = getClient()) {
-                final AuthConfig authConfig = AuthConfig.builder()
-                        .email(hub.getEmail())
-                        .username(hub.getUsername())
-                        .password(hub.getPassword())
-                        .serverAddress(hub.getUrl())
-                        .build();
-                client.pull(name, authConfig);
-            } catch (DockerException | InterruptedException e) {
-                log.error(e.getMessage());
-                throw new DockerServerException(e);
-            }
-        }
+    @Nullable
+    public DockerImage pullImage(final String name) throws NoServerPrefException, DockerServerException {
+        return pullImage(name, null);
     }
 
     @Override
-    public DockerImage pullAndReturnImage(final String name) throws NoServerPrefException, DockerServerException {
-        try (final DockerClient client = getClient()) {
-            final LoadProgressHandler handler = new LoadProgressHandler();
-            client.pull(name, handler);
-            try {
-                return getImageById(name);
-            } catch (NotFoundException e) {
-                final String m = String.format("The image %s was not found", name);
-                log.error(m);
-                throw new DockerServerException(m);
-            }
-        } catch (DockerException | InterruptedException e) {
-            log.error(e.getMessage());
-            throw new DockerServerException(e);
-        }
-    }
-
-    @Override
-    public DockerImage pullAndReturnImage(final String name, final DockerHub hub)
+    @Nullable
+    public DockerImage pullImage(final String name, final @Nullable DockerHub hub)
             throws NoServerPrefException, DockerServerException {
-        if (hub == null) {
-            return pullAndReturnImage(name);
-        } else {
-            try (final DockerClient client = getClient()) {
-                final LoadProgressHandler handler = new LoadProgressHandler();
-                final AuthConfig authConfig = AuthConfig.builder()
-                        .email(hub.getEmail())
-                        .username(hub.getUsername())
-                        .password(hub.getPassword())
-                        .serverAddress(hub.getUrl())
-                        .build();
-                client.pull(name, authConfig, handler);
-                final String imageId = handler.getImageId();
-                try {
-                    return getImageById(imageId);
-                } catch (NotFoundException e) {
-                    final String m = String.format("The image with id %s was not found", imageId);
-                    log.error(m);
-                    throw new DockerServerException(m);
-                }
-            } catch (DockerException | InterruptedException e) {
-                log.error(e.getMessage());
-                throw new DockerServerException(e);
-            }
-        }
+        return pullImage(name, hub, null, null);
     }
 
     @Override
-    public List<Command> parseLabels(final String imageId)
-            throws DockerServerException, NoServerPrefException, NotFoundException {
-        final DockerImage image = getImageById(imageId);
-        return parseLabels(image);
-    }
-
-    @Override
-    public List<Command> parseLabels(final DockerImage dockerImage) {
-        final Map<String, String> labels = dockerImage.getLabels();
-        if (labels != null && !labels.isEmpty() && labels.containsKey(LABEL_KEY)) {
-            final String labelValue = labels.get(LABEL_KEY);
-            if (StringUtils.isNotBlank(labelValue)) {
-                try {
-                    final List<Command> commands =
-                            objectMapper.readValue(labelValue, new TypeReference<List<Command>>() {});
-                    if (commands != null && !commands.isEmpty()) {
-                        for (final Command command : commands) {
-                            command.setDockerImage(dockerImage.getImageId());
-                        }
-                    }
-                    return commands;
-                } catch (IOException e) {
-                    // TODO throw exception
-                    log.info("Could not parse Commands from label: %s", labelValue);
-                }
-            }
+    @Nullable
+    public DockerImage pullImage(final String name, final @Nullable DockerHub hub, final @Nullable String username, final @Nullable String password) throws NoServerPrefException, DockerServerException {
+        try (final DockerClient client = getClient()) {
+            _pullImage(name, registryAuth(hub, username, password), client);
+            return getImageById(name, client);
+        } catch (NotFoundException e) {
+            final String m = String.format("Image \"%s\" was not found", name);
+            log.error(m);
+            // throw new DockerServerException(m);
         }
         return null;
+    }
+
+    private void _pullImage(final @Nonnull String name, final @Nullable RegistryAuth registryAuth, final @Nonnull DockerClient client) throws DockerServerException {
+        try {
+            if (registryAuth == null) {
+                client.pull(name);
+            } else {
+                client.pull(name, registryAuth);
+            }
+        }  catch (DockerException | InterruptedException e) {
+            log.error(e.getMessage());
+            throw new DockerServerException(e);
+        }
+    }
+
+    @Override
+    public List<Command> parseLabels(final String imageName)
+            throws DockerServerException, NoServerPrefException, NotFoundException {
+        final DockerImage image = getImageById(imageName);
+        return CommandLabelHelper.parseLabels(imageName, image, objectMapper);
     }
 
     /**
@@ -499,14 +505,14 @@ public class DockerControlApi implements ContainerControlApi {
         List<com.spotify.docker.client.messages.Container> containerList;
 
         // Transform param map to ListImagesParam array
-        DockerClient.ListContainersParam[] dockerParams;
+        final List<DockerClient.ListContainersParam> dockerParamsList = Lists.newArrayList();
         if (params != null && params.size() > 0) {
-            List<DockerClient.ListContainersParam> dockerParamsList =
-                    Lists.transform(Lists.newArrayList(params.entrySet()), containerParamTransformer);
-            dockerParams = dockerParamsList.toArray(new DockerClient.ListContainersParam[dockerParamsList.size()]);
-        } else {
-            dockerParams = new DockerClient.ListContainersParam[] {};
+            for (final Map.Entry<String, String> paramEntry : params.entrySet()) {
+                dockerParamsList.add(DockerClient.ListContainersParam.create(paramEntry.getKey(), paramEntry.getValue()));
+            }
         }
+        final DockerClient.ListContainersParam[] dockerParams =
+                dockerParamsList.toArray(new DockerClient.ListContainersParam[dockerParamsList.size()]);
 
         try (final DockerClient dockerClient = getClient()) {
             containerList = dockerClient.listContainers(dockerParams);
@@ -514,7 +520,15 @@ public class DockerControlApi implements ContainerControlApi {
             log.error(e.getMessage());
             throw new DockerServerException(e);
         }
-        return DockerContainerToNrgContainer(containerList);
+        return Lists.newArrayList(
+                Lists.transform(containerList, new Function<com.spotify.docker.client.messages.Container, Container>() {
+                    @Override
+                    @Nullable
+                    public Container apply(final @Nullable com.spotify.docker.client.messages.Container container) {
+                        return spotifyToNrg(container);
+                    }
+                })
+        );
     }
 
     /**
@@ -524,9 +538,10 @@ public class DockerControlApi implements ContainerControlApi {
      * @return Container object with specified ID
      **/
     @Override
+    @Nonnull
     public Container getContainer(final String id)
         throws NotFoundException, NoServerPrefException, DockerServerException {
-        final Container container = DockerContainerToNrgContainer(_getContainer(id));
+        final Container container = spotifyToNrg(_getContainer(id));
         if (container != null) {
             return container;
         }
@@ -554,7 +569,7 @@ public class DockerControlApi implements ContainerControlApi {
         throws NotFoundException, NoServerPrefException, DockerServerException {
         final Container container = getContainer(id);
 
-        return container != null ? container.status() : null;
+        return container.status();
     }
 
     @Override
@@ -577,45 +592,30 @@ public class DockerControlApi implements ContainerControlApi {
         }
     }
 
-    /**
-     * Create a client connection to a Docker server using default image repository configuration
-     *
-     * @return DockerClient object using default authConfig
-     **/
-    public DockerClient getClient() throws NoServerPrefException {
+    @VisibleForTesting
+    @Nonnull
+    DockerClient getClient() throws NoServerPrefException {
         return getClient(getServer());
     }
 
-    /**
-         * Create a client connection to a Docker server using default image repository configuration
-         *
-         * @return DockerClient object using default authConfig
-         **/
-    public DockerClient getClient(final DockerServer server) {
-        if (log.isDebugEnabled()) {
-            log.debug("method getClient, Create server connection, server " + server.getHost());
-        }
+    @Nonnull
+    private DockerClient getClient(final @Nonnull DockerServer server) {
 
         DefaultDockerClient.Builder clientBuilder =
             DefaultDockerClient.builder()
-                .uri(server.getHost());
+                .uri(server.host());
 
-        if (StringUtils.isNotBlank(server.getCertPath())) {
+        if (StringUtils.isNotBlank(server.certPath())) {
             try {
                 final DockerCertificates certificates =
-                    new DockerCertificates(Paths.get(server.getCertPath()));
+                    new DockerCertificates(Paths.get(server.certPath()));
                 clientBuilder = clientBuilder.dockerCertificates(certificates);
             } catch (DockerCertificateException e) {
-                log.error("Could not find docker certificates at " + server.getCertPath(), e);
+                log.error("Could not find docker certificates at " + server.certPath(), e);
             }
         }
 
         return clientBuilder.build();
-    }
-
-    public DockerClient getClientFromEnv() throws DockerCertificateException {
-
-        return DefaultDockerClient.fromEnv().build();
     }
 
     @Override
@@ -624,7 +624,21 @@ public class DockerControlApi implements ContainerControlApi {
 
         final List<DockerContainerEvent> events = Lists.newArrayList();
         for (final Event dockerEvent : dockerEventList) {
-            events.add(new DockerContainerEvent(dockerEvent.status(), dockerEvent.id(), dockerEvent.time()));
+            final Event.Actor dockerEventActor = dockerEvent.actor();
+            final Map<String, String> attributes = Maps.newHashMap();
+            if (dockerEventActor != null && dockerEventActor.attributes() != null) {
+                attributes.putAll(dockerEventActor.attributes());
+            }
+            if (attributes.containsKey(LABEL_KEY)) {
+                attributes.put(LABEL_KEY, "<elided>");
+            }
+            final DockerContainerEvent containerEvent =
+                    new DockerContainerEvent(dockerEvent.action(),
+                            dockerEventActor != null? dockerEventActor.id() : null,
+                            dockerEvent.time(),
+                            dockerEvent.timeNano(),
+                            attributes);
+            events.add(containerEvent);
         }
         return events;
     }
@@ -648,18 +662,18 @@ public class DockerControlApi implements ContainerControlApi {
             if (log.isDebugEnabled()) {
                 log.debug("Reading all docker container events from " + since.getTime() + " to " + until.getTime() + ".");
             }
-            final EventStream eventStream =
-                    client.events(since(since.getTime() / 1000), until((until.getTime() / 1000)), type("container"));
-            if (log.isDebugEnabled()) {
-                log.debug("Got a stream of docker events.");
+            final List<Event> eventList;
+            try (final EventStream eventStream =
+                         client.events(since(since.getTime() / 1000),
+                                 until(until.getTime() / 1000),
+                                 type(Event.Type.CONTAINER))) {
+
+                log.trace("Got a stream of docker events.");
+
+                eventList = Lists.newArrayList(eventStream);
             }
 
-            final List<Event> eventList = Lists.newArrayList(eventStream);
-            eventStream.close();
-
-            if (log.isDebugEnabled()) {
-                log.debug("Closed docker event stream.");
-            }
+            log.trace("Closed docker event stream.");
 
             return eventList;
         } catch (InterruptedException | DockerException e) {
@@ -672,55 +686,13 @@ public class DockerControlApi implements ContainerControlApi {
         try(final DockerClient client = getClient()) {
             log.info("Killing container " + id);
             client.killContainer(id);
-        } catch (InterruptedException e) {
+        } catch (ContainerNotFoundException e) {
+            log.error(e.getMessage());
+            throw new NotFoundException(e);
+        } catch (DockerException | InterruptedException e) {
             log.error(e.getMessage());
             throw new DockerServerException(e);
-        } catch (DockerException e) {
-            if (e.getClass().isAssignableFrom(ContainerNotFoundException.class)) {
-                log.error(e.getMessage());
-                throw new NotFoundException(e);
-            } else {
-                log.error(e.getMessage());
-                throw new DockerServerException(e);
-            }
         }
-    }
-
-    // TODO Move everything below to a DAO class
-    /**
-     * Function to transform image query parameters from key/value to DockerClient.ListImagesParam
-     **/
-    private static Function<Map.Entry<String, String>, DockerClient.ListImagesParam> imageParamTransformer =
-            new Function<Map.Entry<String, String>, DockerClient.ListImagesParam>() {
-                @Override
-                public DockerClient.ListImagesParam apply(Map.Entry<String, String> stringStringEntry) {
-                    return new DockerClient.ListImagesParam(stringStringEntry.getKey(), stringStringEntry.getValue());
-                }
-            };
-
-    /**
-     * Function to transform container query parameters from key/value to DockerClient.ListContainersParam
-     **/
-    private static Function<Map.Entry<String, String>, DockerClient.ListContainersParam> containerParamTransformer =
-            new Function<Map.Entry<String, String>, DockerClient.ListContainersParam>() {
-                @Override
-                public DockerClient.ListContainersParam apply(Map.Entry<String, String> stringStringEntry) {
-                    return new DockerClient.ListContainersParam(stringStringEntry.getKey(), stringStringEntry.getValue());
-                }
-            };
-
-    /**
-     * Convert spotify-docker Image object to xnat-container Image object
-     *
-     * @param image Spotify-Docker Image object
-     * @return NRG Image object
-     **/
-    private static DockerImage DockerImageToNrgImage(final Image image) {
-        if (image == null) {
-            return null;
-        }
-
-        return new DockerImage(image.id(), image.repoTags(), image.labels());
     }
 
     /**
@@ -729,34 +701,28 @@ public class DockerControlApi implements ContainerControlApi {
      * @param image Spotify-Docker Image object
      * @return NRG Image object
      **/
-    private static DockerImage DockerImageToNrgImage(final ImageInfo image) {
-        if (image == null) {
-            return null;
-        }
-
-        return new DockerImage(image.id(), null, image.config().labels());
+    @Nullable
+    private DockerImage spotifyToNrg(final @Nullable Image image) {
+        return image == null ? null :
+                DockerImage.create(image.id(), image.repoTags(), image.labels());
     }
 
     /**
-     * Convert list of spotify-docker Image objects to list of xnat-container Image objects
+     * Convert spotify-docker Image object to xnat-container Image object
      *
-     * @param dockerImageList List of Spotify-Docker Image objects
-     * @return List of NRG Image objects
+     * @param image Spotify-Docker Image object
+     * @return NRG Image object
      **/
-    private static List<DockerImage> DockerImageToNrgImage(final List<Image> dockerImageList) {
-        return Lists.transform(dockerImageList, DockerImageToNrgImage);
+    @Nullable
+    private DockerImage spotifyToNrg(final @Nullable ImageInfo image) {
+        return image == null ? null :
+                DockerImage.builder()
+                        .imageId(image.id())
+                        .labels(image.config().labels() == null ?
+                                Collections.<String, String>emptyMap() :
+                                image.config().labels())
+                        .build();
     }
-
-    /**
-     * Function to convert list of spotify-docker Image objects to list of xnat-container Image objects
-     **/
-    private static Function<Image, DockerImage> DockerImageToNrgImage =
-            new Function<Image, DockerImage>() {
-                @Override
-                public DockerImage apply(final Image image) {
-                    return DockerImageToNrgImage(image);
-                }
-            };
 
     /**
      * Convert spotify-docker Container object to xnat-container Container object
@@ -764,13 +730,9 @@ public class DockerControlApi implements ContainerControlApi {
      * @param dockerContainer Spotify-Docker Container object
      * @return NRG Container object
      **/
-    private static Container DockerContainerToNrgContainer(final com.spotify.docker.client.messages.Container dockerContainer) {
-        Container genericContainer = null;
-        if (dockerContainer != null) {
-            genericContainer =
-                    new Container(dockerContainer.id(), dockerContainer.status());
-        }
-        return genericContainer;
+    @Nullable
+    private Container spotifyToNrg(final @Nullable com.spotify.docker.client.messages.Container dockerContainer) {
+        return dockerContainer == null ? null : Container.create(dockerContainer.id(), dockerContainer.status());
     }
 
     /**
@@ -779,78 +741,15 @@ public class DockerControlApi implements ContainerControlApi {
      * @param dockerContainer Spotify-Docker ContainerInfo object
      * @return NRG Container object
      **/
-    private static Container DockerContainerToNrgContainer(final com.spotify.docker.client.messages.ContainerInfo dockerContainer) {
-        Container genericContainer = null;
-        if (dockerContainer != null) {
-            genericContainer =
-                    new Container(
-                            dockerContainer.id(),
-                            dockerContainer.state().running() ? "Running" :
-                                dockerContainer.state().paused() ? "Paused" :
-                                dockerContainer.state().restarting() ? "Restarting" :
-                                dockerContainer.state().exitCode() != null ? "Exited" :
-                                null
-                    );
-        }
-        return genericContainer;
-    }
-
-    /**
-     * Convert list of spotify-docker Container objects to list of xnat-container Container objects
-     *
-     * @param dockerContainerList List of Spotify-Docker Container objects
-     * @return List of NRG Container objects
-     **/
-    private static List<Container> DockerContainerToNrgContainer(final List<com.spotify.docker.client.messages.Container> dockerContainerList) {
-        return Lists.transform(dockerContainerList, DockerContainerToNrgContainer);
-    }
-
-    /**
-     * Function to convert list of spotify-docker Container objects to xnat-container Container objects
-     **/
-    private static Function<com.spotify.docker.client.messages.Container, Container> DockerContainerToNrgContainer =
-            new Function<com.spotify.docker.client.messages.Container, Container>() {
-                @Override
-                public Container apply(com.spotify.docker.client.messages.Container container) {
-                    return DockerContainerToNrgContainer(container);
-                }
-            };
-
-    private static class LoadProgressHandler implements ProgressHandler {
-
-        // The length of the image hash
-        private static final int EXPECTED_CHARACTER_NUM1 = 64;
-        // The length of the image digest
-        private static final int EXPECTED_CHARACTER_NUM2 = 71;
-
-        private final ProgressHandler delegate;
-
-        private String imageId;
-
-        private LoadProgressHandler() {
-            this.delegate = new LoggingPullHandler("image stream");
-        }
-
-        private LoadProgressHandler(ProgressHandler delegate) {
-            this.delegate = delegate;
-        }
-
-        private String getImageId() {
-            Preconditions.checkState(imageId != null,
-                    "Could not acquire image ID or digest following load");
-            return imageId;
-        }
-
-        @Override
-        public void progress(ProgressMessage message) throws DockerException {
-            delegate.progress(message);
-            final String status = message.status();
-            if (status != null &&
-                    (status.length() == EXPECTED_CHARACTER_NUM1 ||
-                            status.length() == EXPECTED_CHARACTER_NUM2)) {
-                imageId = message.status();
-            }
-        }
-
+    @Nullable
+    private Container spotifyToNrg(final @Nullable com.spotify.docker.client.messages.ContainerInfo dockerContainer) {
+        return dockerContainer == null ? null : Container.create(
+                dockerContainer.id(),
+                dockerContainer.state().running() ? "Running" :
+                        dockerContainer.state().paused() ? "Paused" :
+                        dockerContainer.state().restarting() ? "Restarting" :
+                        dockerContainer.state().exitCode() != null ? "Exited" :
+                        null
+        );
     }
 }

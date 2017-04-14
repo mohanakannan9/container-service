@@ -1,0 +1,280 @@
+
+####
+#### Container Setup Group
+####
+
+dockerSetupPanel:
+    kind: panel
+    name: dockerSetupPanel
+    label: Docker Server Setup
+    contents:
+        containerHostTemplate:
+            tag: "div#container-host-editor-template.html-template"
+            contents:
+                containerHostEditor:
+                    kind: panel.form
+                    name: containerHostEditor
+                    id: container-host-editor
+                    header: false
+                    footer: false
+                    action: /xapi/docker/server
+                    contentType: json
+                    contents:
+                        pad:
+                            tag: div.pad20top
+                        host:
+                            kind: panel.input.text
+                            id: host-name
+                            name: host
+                            label: Host Name
+                            validation: not-empty
+                        certPath:
+                            kind: panel.input.text
+                            id: cert-path
+                            name: certPath
+                            label: "Certificate Path"
+                            className: hidden
+        containerHostTable:
+            tag: "div#container-host-manager"
+        csStylesheet:
+        #   tag: link|rel="stylesheet"|type="text/css"|href="/scripts/xnat/plugin/containerService/containerConfig.css"
+            tag: link|rel="stylesheet"|type="text/css"|href="~/scripts/xnat/plugin/containerService/containerConfig.css"
+        csSiteAdminScripts:
+#           tag: script|src="/scripts/xnat/plugin/containerService/containerServices-siteAdmin.js"
+            tag: script|src="~/scripts/xnat/plugin/containerService/containerServices-siteAdmin.js"
+
+imageHostsPanel:
+    kind: panel
+    name: imageHosts
+    label: Image Hosts
+    contents:
+        imageHostTemplate:
+            tag: "div#image-host-editor-template.html-template"
+            contents:
+                imageHostEditor:
+                    kind: panel.form
+                    name: imageHostEditor
+                    id: image-host-editor
+                    header: false
+                    footer: false
+                    action: /xapi/docker/hubs
+                    contentType: json
+                    contents:
+                        pad:
+                            tag: div.pad20
+                            contents:
+                                id:
+                                    kind: panel.input.hidden
+                                    id: id
+                                    name: hubId
+                                name:
+                                    kind: panel.input.text
+                                    id: hub-name
+                                    name: name
+                                    label: Image Hub Name
+                                    validation: not-empty
+                                url:
+                                    kind: panel.input.text
+                                    id: hub-url
+                                    name: url
+                                    label: URL
+                                    validation: url not-empty
+                                default:
+                                    kind: panel.input.switchbox
+                                    id: default-hub
+                                    name: default
+                                    label: Set As Default?
+                                    checked: false
+                                    onText: Default Hub
+                                    offText: Not Default
+        imageHostTable:
+            tag: "div#image-host-manager"
+
+installedImagesPanel:
+    kind: panel
+    name: installedImagesPanel
+    label: Installed Container Images and Commands
+    contents:
+        imageFilterBar:
+            tag: "div#image-filter-bar"
+        imageListContainer:
+            tag: "div#image-list-container"
+        addImageTemplate:
+            tag: "div#add-image-template.html-template"
+            contents:
+                addImageform:
+                    kind: panel.form
+                    name: addImageForm
+                    id: add-image-form
+                    header: false
+                    footer: false
+                    contents:
+                        pad:
+                            tag: div.pad20
+                            contents:
+                                hubSelector:
+                                    kind: panel.select.single
+                                    name: hubId
+                                    label: Select Image Hub
+                                    element:
+                                        title: Select Image Hub
+                                imageName:
+                                    kind: panel.input.text
+                                    name: image
+                                    label: Image Name
+                                    validation: not-empty
+                                    element:
+                                        title: Enter Image Name
+                                    description: >
+                                        Specify the image name to pull, including the account name (if necessary). For example, to pull the XNAT dcm2niix image, enter "xnat/dcm2niix"
+                                tag:
+                                    kind: panel.input.text
+                                    name: tag
+                                    label: Version Tag
+                                    value: ":latest"
+                                    element:
+                                        title: Enter Version Tag (Optional)
+                                    description: >
+                                        "Specify the tag version of the image to pull. The default is :latest"
+                                saveCommands:
+                                    kind: panel.input.hidden
+                                    name: save-commands
+                                    value: true
+        setCommandDefaults:
+            tag: "div#set-command-defaults-template.html-template"
+            contents:
+                setCommandDefaultForm:
+                    kind: panel
+                    name: setCommandDefaultsForm
+                    id: set-command-defaults-form
+                    header: false
+                    footer: false
+                    contents:
+                        pad:
+                            tag: div.pad20
+                            contents:
+                                imageId:
+                                    kind: panel.input.hidden
+                                    name: imageId
+                                commandId:
+                                    kind: panel.input.hidden
+                                    name: commandId
+        commandViewerTemplate:
+            tag: "div#command-viewer-template.html-template"
+            contents:
+                commandViewer:
+                    kind: panel
+                    name: commandViewer
+                    id: command-viewer
+                    header: false
+                    footer: false
+                    contents:
+                        pad:
+                            tag: div.pad20
+                            contents:
+                                commandViewerDisplay:
+                                    tag: textarea.commandViewer
+
+sitewideCommandConfigsPanel:
+    kind: panel
+    name: sitewideCommandConfigsPanel
+    label: Site-wide Command Configurations
+    footer: false
+    contents:
+        commandConfigDescription:
+            tag: "p"
+            contents:
+                "This panel lists all commands and XNAT-aware command wrappers from all installed images, and allows admins to define a site-wide configuration for each command wrapper. This site-wide configuration can be used by default by a project, or a project can create its own configuration to overwrite the site-wide defaults."
+        commandConfigListContainer:
+            tag: "div#command-config-list-container"
+        commandConfigTemplate:
+            tag: "div#command-config-template.html-template"
+            contents:
+                configViewer:
+                    kind: panel
+                    name: configViewer
+                    id: config-viewer
+                    header: false
+                    footer: false
+
+sitewideCommandProjectPrefs:
+    kind: panel.form
+    name: sitewideCommandProjectPrefs
+    label: Site-wide Preferences for Project Command Use
+    method: POST
+    contentType: JSON
+    url: /xapi/siteConfig
+    contents:
+        sitewideCommandProjectPrefsDesc:
+            tag: "p"
+            contents:
+                "This setting sets the default option for all projects, choosing whether they will \"opt-in\" or \"opt-out\" of all commands that are enabled at the site-wide level. This setting can be customized in each project's settings."
+        spacer:
+            tag: "hr|color=#ccc"
+        optIntoSitewideCommands:
+            kind: panel.input.switchbox
+            label: Default Project Setting
+            value: true
+            onText: Opt-IN To Enabled Site-wide Commands
+            offText: Opt-OUT Of Enabled Site-wide Commands
+            description: >
+                If set to "Opt-OUT," each project will either have to enable each command individually, or change their project opt-in setting.
+
+sitewideCommandHistoryPanel:
+    kind: panel
+    name: sitewideCommandHistoryPanel
+    label: Site-wide Command Execution Log
+    footer: false
+    contents:
+        commandHistoryTableContainer:
+            tag: div#command-history-container
+            contents: Table will go here
+
+#################################################
+####  Root Site Admin Spawner Config Object  ####
+#################################################
+
+siteSettings:
+    kind: tabs
+    name: containerAdminPage
+    label: Administer Container Service
+    meta:
+        tabGroups:
+            containerServiceTabGroup: Container Service
+    contains: tabs
+    tabs:
+        containerServicesTab:
+            kind: tab
+            name: containerSetupTab
+            label: Container Server Setup
+            group: containerServiceTabGroup
+            active: true
+            contents:
+                ${dockerSetupPanel}
+                ${imageHostsPanel}
+        imageCommandTab:
+            kind: tab
+            name: imagesCommandsTab
+            label: "Images & Commands"
+            group: containerServiceTabGroup
+            active: false
+            contents:
+                ${installedImagesPanel}
+        commandConfigTab:
+            kind: tab
+            name: commandConfigTab
+            label: Command Configurations
+            group: containerServiceTabGroup
+            active: false
+            contents:
+                ${sitewideCommandProjectPrefs}
+                ${sitewideCommandConfigsPanel}
+        commandHistoryTab:
+            kind: tab
+            name: commandHistoryTab
+            label: Command History
+            group: containerServiceTabGroup
+            active: false
+            contents:
+                ${sitewideCommandHistoryPanel}
+

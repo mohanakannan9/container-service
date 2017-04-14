@@ -1,17 +1,31 @@
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath "net.ltgt.gradle:gradle-apt-plugin:0.9"
+    }
+}
+
 group 'org.nrg'
-version '1.0-alpha.1'
+version '1.0-alpha.2'
 
 apply plugin: 'java'
 apply plugin: 'idea'
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
-apply plugin: 'jacoco'
+apply plugin: "net.ltgt.apt"
 
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
-def vXnat = '1.7.1'
-def vSpring = '4.2.7.RELEASE'
+def vXnat = '1.7.2'
+def vXnatDev = '1.7.3-SNAPSHOT'
+def vDockerClient = '8+'
+def vSpring = '4.2.9.RELEASE'
+def vSpringSecurity = '4.0.4.RELEASE'
 def vSwagger = '2.4.0'
 def vHibernate = '4.3.11.Final'
 def vJackson = '2.6.5'
@@ -45,23 +59,26 @@ dependencies {
     compileAndInclude (group: "org.nrg", name: "transporter", version: "1.0-SNAPSHOT") {
         transitive = false
     }
-    compileAndInclude "io.rest-assured:rest-assured:3.0.1"
-    compileAndInclude (group: 'com.spotify', name: 'docker-client', version: 'latest.release') {
+    compileAndInclude (group: 'com.spotify', name: 'docker-client', version: vDockerClient) {
         exclude group: "ch.qos.logback"
     }
     compileAndInclude "com.jayway.jsonpath:json-path:2.2.0"
 
-    compile ("org.nrg.xnat:web:${vXnat}") {
+    compile ("org.nrg.xnat:web:${vXnatDev}") {
         transitive = false
     }
-    compile ("org.nrg.xdat:core:${vXnat}") {
+    compile "org.nrg:framework:${vXnatDev}"
+    compile ("org.nrg.xdat:core:${vXnatDev}") {
         transitive = false
     }
-    compile "org.nrg.xnat:xnat-data-models:${vXnat}"
+    compile ("org.nrg.xnat:xnat-data-models:${vXnatDev}") {
+        transitive = false
+    }
     compile "org.nrg:prefs:${vXnat}"
+    compile "org.nrg:notify:${vXnat}"
     compile "org.nrg:config:${vXnat}"
     compile "org.nrg:automation:${vXnat}"
-    compile "org.nrg:framework:${vXnat}"
+    apt "org.nrg:framework:${vXnatDev}"
 
     compile "org.springframework:spring-beans:${vSpring}"
     compile "org.springframework:spring-context:${vSpring}"
@@ -78,6 +95,7 @@ dependencies {
     compile "com.fasterxml.jackson.core:jackson-annotations:${vJackson}"
     compile "com.fasterxml.jackson.core:jackson-core:${vJackson}"
     compile "com.fasterxml.jackson.core:jackson-databind:${vJackson}"
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-guava:${vJackson}"
 
     compile "org.slf4j:slf4j-api:${vSlf4j}"
     compile "org.slf4j:slf4j-log4j12:${vSlf4j}"
@@ -87,13 +105,27 @@ dependencies {
     compile "javax.inject:javax.inject:1"
     compile "javax.servlet:javax.servlet-api:3.1.0"
 
-//    compile "com.google.guava:guava:19.0"
+    compile "com.google.auto.value:auto-value:1.3"
+    apt "com.google.auto.value:auto-value:1.3"
+    
+    compile ("turbine:turbine:2.3.3") {
+        transitive = false
+    }
+    compile ("org.apache.velocity:velocity:1.7") {
+        transitive = false
+    }
+    compile ("stratum:stratum:1.0") {
+        transitive = false
+    }
+    compile ("xalan:xalan:2.7.2") {
+        transitive = false
+    }
 
     testCompile group: 'junit', name: 'junit', version: "${vJunit}"
     testCompile "org.hamcrest:hamcrest-library:1.3"
     testCompile "org.springframework:spring-test:${vSpring}"
-    testCompile "org.springframework.security:spring-security-test:4.0.4.RELEASE"
-    testCompile "org.springframework.security:spring-security-config:4.0.4.RELEASE"
+    testCompile "org.springframework.security:spring-security-test:${vSpringSecurity}"
+    testCompile "org.springframework.security:spring-security-config:${vSpringSecurity}"
     testCompile "org.mockito:mockito-core:1.+"
     testCompile "javax.servlet:javax.servlet-api:3.1.0"
     testCompile "com.h2database:h2:1.4.191"
@@ -104,20 +136,13 @@ dependencies {
     testCompile "org.apache.commons:commons-dbcp2:2.1.1"
 }
 
-jacocoTestReport {
-    reports {
-        xml.enabled = true
-        html.enabled = false
-    }
-}
-
 task unitTest( type: Test ) {
     exclude '**/DockerControlApiTest.class', '**/*IntegrationTest.class'
 }
 
 task fatJar(type: Jar) {
     zip64 true
-    baseName = project.name + '-all'
+    classifier = "fat"
     from {
         configurations.compileAndInclude.collect { it.isDirectory() ? it : zipTree(it) }
     } {
@@ -149,9 +174,7 @@ publishing {
                 classifier "javadoc"
             }
 
-            artifact fatJar {
-                classifier "all"
-            }
+            artifact fatJar
 
             pom.withXml {
                 def root = asNode()
@@ -180,6 +203,11 @@ publishing {
                 kelsey.appendNode('id', 'kelseym')
                 kelsey.appendNode('name', 'Matt Kelsey')
                 kelsey.appendNode('email', 'kelseym@wustl.edu')
+
+                def will = developers.appendNode('developer')
+                will.appendNode('id', 'hortonw')
+                will.appendNode('name', 'Will Horton')
+                will.appendNode('email', 'hortonw@wustl.edu')
             }
         }
     }

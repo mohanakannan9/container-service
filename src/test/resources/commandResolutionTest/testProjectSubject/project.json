@@ -1,0 +1,14 @@
+{
+    "type": "Project",
+    "id": "aProject",
+    "uri": "/projects/aProject",
+    "label": "aProject",
+    "subjects": [
+        {
+            "id": "aSubject",
+            "label": "aSubject",
+            "type": "Subject",
+            "uri": "/projects/aProject/subjects/aSubject"
+        }
+    ]
+}

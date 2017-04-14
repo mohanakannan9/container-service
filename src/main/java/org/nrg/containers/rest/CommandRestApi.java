@@ -1,20 +1,28 @@
 package org.nrg.containers.rest;
 
+import com.google.common.collect.Maps;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
-import org.nrg.containers.exceptions.*;
-import org.nrg.containers.model.Command;
-import org.nrg.containers.model.ContainerExecution;
-import org.nrg.containers.model.ResolvedCommand;
+import org.apache.commons.lang3.StringUtils;
+import org.nrg.containers.exceptions.BadRequestException;
+import org.nrg.containers.exceptions.CommandResolutionException;
+import org.nrg.containers.exceptions.CommandValidationException;
+import org.nrg.containers.exceptions.ContainerException;
+import org.nrg.containers.exceptions.DockerServerException;
+import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.model.command.auto.Command;
+import org.nrg.containers.model.command.auto.Command.CommandWrapper;
+import org.nrg.containers.model.command.auto.CommandSummaryForContext;
 import org.nrg.containers.services.CommandService;
 import org.nrg.framework.annotations.XapiRestController;
+import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.exceptions.NrgRuntimeException;
+import org.nrg.xapi.rest.AbstractXapiRestController;
+import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.rest.AbstractXapiRestController;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
+import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +33,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -38,13 +45,16 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 @XapiRestController
-@RequestMapping("/commands")
-@Api("Command API for XNAT Action/Context Execution service")
+@Api("Command API for XNAT Container service")
 public class CommandRestApi extends AbstractXapiRestController {
     private static final Logger log = LoggerFactory.getLogger(CommandRestApi.class);
+
     private static final String JSON = MediaType.APPLICATION_JSON_UTF8_VALUE;
     private static final String TEXT = MediaType.TEXT_PLAIN_VALUE;
     private static final String FORM = MediaType.APPLICATION_FORM_URLENCODED_VALUE;
+
+    private static final String ID_REGEX = "\\d+";
+    private static final String NAME_REGEX = "\\d*[^\\d]+\\d*";
 
     private CommandService commandService;
 
@@ -56,144 +66,204 @@ public class CommandRestApi extends AbstractXapiRestController {
         this.commandService = commandService;
     }
 
-    @RequestMapping(value = {}, method = GET)
+    /*
+    COMMAND CRUD
+     */
+    @XapiRequestMapping(value = {"/commands"}, params = {"!name", "!version", "!image"}, method = GET)
     @ApiOperation(value = "Get all Commands")
     @ResponseBody
     public List<Command> getCommands() {
         return commandService.getAll();
     }
 
-    @RequestMapping(value = {"/{id}"}, method = GET)
-    @ApiOperation(value = "Get a Command")
+    @XapiRequestMapping(value = {"/commands"}, method = GET)
+    @ApiOperation(value = "Get Commands by criteria")
     @ResponseBody
-    public Command retrieveCommand(final @PathVariable Long id) {
-        return commandService.retrieve(id);
+    public List<Command> getCommands(final @RequestParam(required = false) String name,
+                                     final @RequestParam(required = false) String version,
+                                     final @RequestParam(required = false) String image) throws BadRequestException {
+        if (StringUtils.isBlank(name) && StringUtils.isBlank(version) && StringUtils.isBlank(image)) {
+            return getCommands();
+        }
+
+        if (StringUtils.isBlank(name) && StringUtils.isNotBlank(version)) {
+            throw new BadRequestException("If \"version\" is specified, must specify \"name\" as well.");
+        }
+
+        final Map<String, Object> properties = Maps.newHashMap();
+        if (StringUtils.isNotBlank(name)) {
+            properties.put("name", name);
+        }
+        if (StringUtils.isNotBlank(version)) {
+            properties.put("version", version);
+        }
+        if (StringUtils.isNotBlank(image)) {
+            properties.put("image", image);
+        }
+
+        return commandService.findByProperties(properties);
     }
 
-    @RequestMapping(value = {}, method = POST, produces = JSON)
+    @XapiRequestMapping(value = {"/commands/{id}"}, method = GET)
+    @ApiOperation(value = "Get a Command by ID")
+    @ResponseBody
+    public Command retrieveCommand(final @PathVariable long id) throws NotFoundException {
+        return commandService.get(id);
+    }
+
+    @XapiRequestMapping(value = {"/commands"}, method = POST, produces = JSON)
     @ApiOperation(value = "Create a Command", code = 201)
-    @ApiResponses({
-            @ApiResponse(code = 201, message = "Created", response = Command.class),
-            @ApiResponse(code = 415, message = "Set the Content-type header on the request")
-    })
-    public ResponseEntity<Command> createCommand(final @RequestBody Command command)
-            throws BadRequestException {
+    public ResponseEntity<Long> createCommand(final @RequestBody Command command)
+            throws BadRequestException, CommandValidationException {
+
         try {
             final Command created = commandService.create(command);
-            return new ResponseEntity<>(created, HttpStatus.CREATED);
+            if (created == null) {
+                return new ResponseEntity<>(0L, HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+            return new ResponseEntity<>(created.id(), HttpStatus.CREATED);
         } catch (NrgRuntimeException e) {
             throw new BadRequestException(e);
         }
     }
 
-    @RequestMapping(value = {"/{id}"}, method = POST)
+    @XapiRequestMapping(value = {"/commands/{id}"}, method = POST)
     @ApiOperation(value = "Update a Command")
     @ResponseBody
-    public Command updateCommand(final @RequestBody Command command,
-                                 final @PathVariable Long id) {
-        command.setId(id);
-        commandService.update(command);
-        return command;
+    public ResponseEntity<Void> updateCommand(final @RequestBody Command command,
+                                              final @PathVariable long id)
+            throws NotFoundException, CommandValidationException {
+        commandService.update(command.id() == id ? command : command.toBuilder().id(id).build());
+        return ResponseEntity.ok().build();
     }
 
-    @RequestMapping(value = {"/{id}"}, method = DELETE)
+    @XapiRequestMapping(value = {"/commands/{id}"}, method = DELETE)
     @ApiOperation(value = "Delete a Command", code = 204)
-    public ResponseEntity<String> deleteCommand(final @PathVariable Long id) {
+    public ResponseEntity<Void> delete(final @PathVariable long id) {
         commandService.delete(id);
-        return new ResponseEntity<>("", HttpStatus.NO_CONTENT);
+        return ResponseEntity.noContent().build();
     }
 
-    @RequestMapping(value = {"/launch"}, method = POST)
-    @ApiOperation(value = "Launch a container from a resolved command")
-    @ResponseBody
-    public ContainerExecution launchCommand(final @RequestBody ResolvedCommand resolvedCommand)
-            throws NoServerPrefException, DockerServerException {
-        final UserI userI = XDAT.getUserDetails();
-        return commandService.launchResolvedCommand(resolvedCommand, userI);
-    }
-
-    @RequestMapping(value = {"/{id}/launch"}, method = POST)
-    @ApiOperation(value = "Resolve a command from the variable values in the query string, and launch it")
-    @ResponseBody
-    public ContainerExecution launchCommand(final @PathVariable Long id,
-                                            final @RequestParam Map<String, String> allRequestParams)
-            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException {
-        final UserI userI = XDAT.getUserDetails();
-        try {
-            return commandService.resolveAndLaunchCommand(id, allRequestParams, userI);
-        } catch (CommandInputResolutionException e) {
-            throw new BadRequestException("Must provide value for variable " + e.getInput().getName() + ".", e);
+    /*
+    WRAPPER CUD
+     */
+    @XapiRequestMapping(value = {"/commands/{id}/wrappers"}, method = POST, produces = JSON)
+    @ApiOperation(value = "Create a Command Wrapper", code = 201)
+    public ResponseEntity<Long> createWrapper(final @RequestBody CommandWrapper commandWrapper,
+                                              final @PathVariable long id)
+            throws BadRequestException, CommandValidationException, NotFoundException {
+        if (commandWrapper == null) {
+            throw new BadRequestException("The body of the request must be a CommandWrapper.");
         }
+        final CommandWrapper created = commandService.addWrapper(id, commandWrapper);
+        if (created == null) {
+            return new ResponseEntity<>(0L, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return new ResponseEntity<>(created.id(), HttpStatus.CREATED);
     }
 
-    // HACKY TEST API ENDPOINTS
-//    @RequestMapping(value = "/{id}/resolve", method = POST)
-//    @ResponseBody
-//    public ResolvedCommand resolve(final @PathVariable Long id,
-//                                   final @RequestParam Map<String, String> allRequestParams)
-//            throws NotFoundException, CommandInputResolutionException, NoServerPrefException, XFTInitException {
-//        final UserI userI = XDAT.getUserDetails();
-//        final Command command = commandService.retrieve(id);
-//        if (command == null) {
-//            throw new NotFoundException("Could not find Command with id " + id);
-//        }
-//
-//        if (allRequestParams.containsKey("id")) {
-//            final String itemId = allRequestParams.get("id");
-//            if (itemId.contains(":")) {
-//                final String sessionId = StringUtils.substringBeforeLast(itemId, ":");
-//                final String scanId = StringUtils.substringAfterLast(itemId, ":");
-//
-//                final XnatImagesessiondata session = XnatImagesessiondata.getXnatImagesessiondatasById(sessionId, userI, false);
-//                final XnatImagescandata scan = session.getScanById(scanId);
-//
-//                return commandService.prepareToLaunchScan(command, session, scan, userI);
-//            } else {
-//                log.error("Haven't tested anything other than scan yet.");
-//            }
-//        }
-//        return null;
-//    }
+    @XapiRequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperId}"}, method = POST)
+    @ApiOperation(value = "Update a Command")
+    @ResponseBody
+    public ResponseEntity<Void> updateWrapper(final @RequestBody CommandWrapper commandWrapper,
+                                              final @PathVariable long commandId,
+                                              final @PathVariable long wrapperId)
+            throws NotFoundException, CommandValidationException {
+        commandService.update(commandId,
+                commandWrapper.id() == wrapperId ? commandWrapper : commandWrapper.toBuilder().id(wrapperId).build());
+        return ResponseEntity.ok().build();
+    }
 
-//    @RequestMapping(value = "/{id}/launchtest", method = POST)
-//    @ResponseBody
-//    public ContainerExecution launchTest(final @PathVariable Long id,
-//                                   final @RequestParam Map<String, String> allRequestParams)
-//            throws NotFoundException, CommandInputResolutionException, NoServerPrefException, XFTInitException, DockerServerException {
-//        final UserI userI = XDAT.getUserDetails();
-//
-//        if (allRequestParams.containsKey("id")) {
-//            final String itemId = allRequestParams.get("id");
-//            if (itemId.contains(":")) {
-//                final String sessionId = StringUtils.substringBeforeLast(itemId, ":");
-//                final String scanId = StringUtils.substringAfterLast(itemId, ":");
-//
-//                final XnatImagesessiondata session = XnatImagesessiondata.getXnatImagesessiondatasById(sessionId, userI, false);
-//                if (session == null) {
-//                    throw new NotFoundException(String.format("No session with id %s.", sessionId));
-//                }
-//                final XnatImagescandata scan = session.getScanById(scanId);
-//                if (scan == null) {
-//                    throw new NotFoundException(String.format("No scan with id %s on session with id %s.", scanId, sessionId));
-//                }
-//
-//                return commandService.resolveAndLaunchCommand(id, userI, session, scan);
-//            } else {
-//                log.error("Haven't tested anything other than scan yet.");
-//            }
-//        }
-//        return null;
-//    }
+    @XapiRequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperId}"}, method = DELETE)
+    @ApiOperation(value = "Delete a Command", code = 204)
+    public ResponseEntity<Void> delete(final @PathVariable long commandId,
+                                       final @PathVariable long wrapperId)
+            throws NotFoundException {
+        commandService.delete(commandId, wrapperId);
+        return ResponseEntity.noContent().build();
+    }
+
+    /*
+    AVAILABLE FOR LAUNCHING
+     */
+    @XapiRequestMapping(value = {"/commands/available"}, params = {"project", "xsiType"})
+    @ResponseBody
+    public List<CommandSummaryForContext> availableCommands(final @RequestParam String project,
+                                                            final @RequestParam String xsiType)
+            throws ElementNotFoundException {
+        final UserI userI = XDAT.getUserDetails();
+        return commandService.available(project, xsiType, userI);
+    }
+
+
+    /*
+    EXCEPTION HANDLING
+     */
+    @ResponseStatus(value = HttpStatus.NOT_FOUND)
+    @ExceptionHandler(value = {NotFoundException.class})
+    public String handleNotFound(final Exception e) {
+        final String message = e.getMessage();
+        log.debug(message);
+        return message;
+    }
+
+    @ResponseStatus(value = HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(value = {ElementNotFoundException.class})
+    public String handleXsiTypeNotFound(final ElementNotFoundException e) {
+        final String message = "Bad XSI Type. " + e.getMessage();
+        log.debug(message);
+        return message;
+    }
 
     @ResponseStatus(value = HttpStatus.FAILED_DEPENDENCY)
     @ExceptionHandler(value = {NoServerPrefException.class})
     public String handleFailedDependency(final Exception ignored) {
-        return "Set up Docker server before using this REST endpoint.";
+        final String message = "Set up Docker server before using this REST endpoint.";
+        log.debug(message);
+        return message;
     }
 
     @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(value = {DockerServerException.class})
     public String handleDockerServerError(final Exception e) {
-        return "The Docker server returned an error:\n" + e.getMessage();
+        final String message = "The Docker server returned an error:\n" + e.getMessage();
+        log.debug(message);
+        return message;
+    }
+
+    @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
+    @ExceptionHandler(value = {ContainerException.class})
+    public String handleContainerException(final Exception e) {
+        final String message = "There was a problem with the container:\n" + e.getMessage();
+        log.debug(message);
+        return message;
+    }
+
+    @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
+    @ExceptionHandler(value = {CommandResolutionException.class})
+    public String handleCommandResolutionException(final CommandResolutionException e) {
+        final String message = "The command could not be resolved.\n" + e.getMessage();
+        log.debug(message);
+        return message;
+    }
+
+    @ResponseStatus(value = HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(value = {BadRequestException.class})
+    public String handleBadRequest(final Exception e) {
+        final String message = "Bad request:\n" + e.getMessage();
+        log.debug(message);
+        return message;
+    }
+
+    @ResponseStatus(value = HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(value = {CommandValidationException.class})
+    public String handleBadCommand(final CommandValidationException e) {
+        String message = "Invalid command";
+        if (e != null && e.getErrors() != null && !e.getErrors().isEmpty()) {
+            message += ":\n\t";
+            message += StringUtils.join(e.getErrors(), "\n\t");
+        }
+        log.debug(message);
+        return message;
     }
 }

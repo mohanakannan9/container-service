@@ -1,0 +1,39 @@
+[{
+    "name": "label-test",
+    "description": "Command to test label-parsing and command-importing code",
+    "type": "docker",
+    "command-line": "#CMD#",
+    "inputs": [
+        {
+            "name": "CMD",
+            "description": "Command to run",
+            "required": true
+        }
+    ]
+},
+{
+    "name": "dcm2niix-scan",
+    "description": "Run dcm2niix on a scan's DICOMs",
+    "type": "docker",
+    "command-line": "/run/dcm2niix-scan.sh #scanId# #sessionId#",
+    "mounts": [
+        {
+            "name": "DICOM",
+            "path": "/input"
+        },
+        {
+            "name": "NIFTI",
+            "path": "/output"
+        }
+    ],
+    "inputs": [
+        {
+            "name": "scanId",
+            "required": true
+        },
+        {
+            "name": "sessionId",
+            "required":true
+        }
+    ]
+}]

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import org.nrg.xdat.model.XnatAbstractresourceI;
@@ -11,64 +12,95 @@ import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.om.XnatImagescandata;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.helpers.uri.URIManager;
+import org.nrg.xnat.helpers.uri.UriParserUtils;
+import org.nrg.xnat.helpers.uri.archive.ScanURII;
 
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
 @JsonInclude(Include.NON_NULL)
 public class Scan extends XnatModelObject {
-    public static Type type = Type.SCAN;
-    @JsonIgnore private XnatImagescandataI xnatImagescandata;
-    @JsonProperty(value = "parent-id") private String parentId;
+    @JsonIgnore private XnatImagescandataI xnatImagescandataI;
+    @JsonProperty("integer-id") private Integer integerId;
     @JsonProperty("scan-type") private String scanType;
     private List<Resource> resources;
 
     public Scan() {}
 
-    public Scan(final XnatImagescandataI xnatImagescandata, final XnatModelObject parent) {
-        this(xnatImagescandata, parent.getId(), parent.getUri());
+    public Scan(final ScanURII scanURII) {
+        this.xnatImagescandataI = scanURII.getScan();
+        this.uri = ((URIManager.ArchiveItemURI)scanURII).getUri();
+        populateProperties(null);
     }
 
-    public Scan(final XnatImagescandataI xnatImagescandata, final String parentId, final String parentUri) {
-        this(xnatImagescandata, parentId, parentUri, null);
+    public Scan(final XnatImagescandataI xnatImagescandataI, final String parentUri, final String rootArchivePath) {
+        this.xnatImagescandataI = xnatImagescandataI;
+        if (parentUri == null) {
+            this.uri = UriParserUtils.getArchiveUri(xnatImagescandataI);
+        } else {
+            this.uri = parentUri + "/scans/" + xnatImagescandataI.getId();
+        }
+        populateProperties(rootArchivePath);
     }
 
-    public Scan(final XnatImagescandataI xnatImagescandata, final String parentId, final String parentUri, final String rootArchivePath) {
-        this.xnatImagescandata = xnatImagescandata;
-        this.id = xnatImagescandata.getId();
-        this.xsiType = xnatImagescandata.getXSIType();
-        this.scanType = xnatImagescandata.getType();
-        this.uri = parentUri + "/scans/" + id;
-
-        this.parentId = parentId;
+    private void populateProperties(final String rootArchivePath) {
+        this.integerId = xnatImagescandataI.getXnatImagescandataId();
+        this.id = xnatImagescandataI.getId();
+        this.xsiType = xnatImagescandataI.getXSIType();
+        this.scanType = xnatImagescandataI.getType();
 
         this.resources = Lists.newArrayList();
-        for (final XnatAbstractresourceI xnatAbstractresourceI : xnatImagescandata.getFile()) {
+        for (final XnatAbstractresourceI xnatAbstractresourceI : this.xnatImagescandataI.getFile()) {
             if (xnatAbstractresourceI instanceof XnatResourcecatalog) {
-                resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, this.id, this.uri, rootArchivePath));
+                resources.add(new Resource((XnatResourcecatalog) xnatAbstractresourceI, this.uri, rootArchivePath));
             }
+        }
+
+    }
+
+    public static Function<URIManager.ArchiveItemURI, Scan> uriToModelObjectFunction() {
+        return new Function<URIManager.ArchiveItemURI, Scan>() {
+            @Nullable
+            @Override
+            public Scan apply(@Nullable URIManager.ArchiveItemURI uri) {
+                if (uri != null &&
+                        ScanURII.class.isAssignableFrom(uri.getClass())) {
+                    return new Scan((ScanURII) uri);
+                }
+
+                return null;
+            }
+        };
+    }
+
+    public static Function<String, Scan> stringToModelObjectFunction(final UserI userI) {
+        return null;
+    }
+
+    public Project getProject(final UserI userI) {
+        loadXnatImagescandataI(userI);
+        return new Project(xnatImagescandataI.getProject(), userI);
+    }
+
+    public Session getSession(final UserI userI) {
+        loadXnatImagescandataI(userI);
+        return new Session(xnatImagescandataI.getImageSessionId(), userI);
+    }
+
+    public void loadXnatImagescandataI(final UserI userI) {
+        if (xnatImagescandataI == null) {
+            xnatImagescandataI = XnatImagescandata.getXnatImagescandatasByXnatImagescandataId(integerId, userI, false);
         }
     }
 
-    public XnatImagescandataI loatXnatImagescandataI(final UserI userI) {
-        xnatImagescandata = XnatImagescandata.getXnatImagescandatasByXnatImagescandataId(id, userI, false);
-        return xnatImagescandata;
+    public XnatImagescandataI getXnatImagescandataI() {
+        return xnatImagescandataI;
     }
 
-    public XnatImagescandataI getXnatImagescandata() {
-        return xnatImagescandata;
-    }
-
-    public void setXnatImagescandata(final XnatImagescandataI xnatImagescandata) {
-        this.xnatImagescandata = xnatImagescandata;
-    }
-
-    public String getParentId() {
-        return parentId;
-    }
-
-    public void setParentId(final String parentId) {
-        this.parentId = parentId;
+    public void setXnatImagescandataI(final XnatImagescandataI xnatImagescandataI) {
+        this.xnatImagescandataI = xnatImagescandataI;
     }
 
     public String getScanType() {
@@ -87,31 +119,27 @@ public class Scan extends XnatModelObject {
         this.resources = resources;
     }
 
-    public Type getType() {
-        return type;
-    }
-
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         final Scan that = (Scan) o;
-        return Objects.equals(this.xnatImagescandata, that.xnatImagescandata) &&
-                Objects.equals(this.parentId, that.parentId) &&
+        return Objects.equals(this.xnatImagescandataI, that.xnatImagescandataI) &&
+                Objects.equals(this.integerId, that.integerId) &&
                 Objects.equals(this.scanType, that.scanType) &&
                 Objects.equals(this.resources, that.resources);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), xnatImagescandata, parentId, scanType, resources);
+        return Objects.hash(super.hashCode(), xnatImagescandataI, integerId, scanType, resources);
     }
 
     @Override
     public String toString() {
         return addParentPropertiesToString(MoreObjects.toStringHelper(this))
-                .add("parentId", parentId)
+                .add("integerId", integerId)
                 .add("scanType", scanType)
                 .add("resources", resources)
                 .toString();

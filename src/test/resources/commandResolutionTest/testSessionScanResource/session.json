@@ -1,0 +1,23 @@
+{
+    "id": "session1",
+    "type": "Session",
+    "label": "session1",
+    "uri": "/experiments/session1",
+    "scans": [
+        {
+            "id": "scan1",
+            "type": "Scan",
+            "scan-type": "SCANTYPE",
+            "uri": "/experiments/session1/scans/scan1",
+            "resources": [
+                {
+                    "id": 0,
+                    "type": "Resource",
+                    "label": "DICOM",
+                    "directory": "this will be overwritten at runtime",
+                    "uri": "/experiments/session1/scans/scan1/resources/0"
+                }
+            ]
+        }
+    ]
+}

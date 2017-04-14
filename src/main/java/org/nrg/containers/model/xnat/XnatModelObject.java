@@ -2,7 +2,6 @@ package org.nrg.containers.model.xnat;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.common.base.MoreObjects;
@@ -25,8 +24,6 @@ public abstract class XnatModelObject {
     protected String label;
     protected String xsiType;
     protected String uri;
-
-    public static Type type = null;
 
     public String getId() {
         return id;
@@ -60,10 +57,6 @@ public abstract class XnatModelObject {
         this.uri = uri;
     }
 
-    public abstract Type getType();
-
-    public void setType(final Type type) {}
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -72,13 +65,12 @@ public abstract class XnatModelObject {
         return Objects.equals(this.id, that.id) &&
                 Objects.equals(this.label, that.label) &&
                 Objects.equals(this.xsiType, that.xsiType) &&
-                Objects.equals(this.getType(), that.getType()) &&
                 Objects.equals(this.uri, that.uri);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, label, xsiType, getType(), uri);
+        return Objects.hash(id, label, xsiType, uri);
     }
 
     public MoreObjects.ToStringHelper addParentPropertiesToString(final MoreObjects.ToStringHelper helper) {
@@ -86,17 +78,6 @@ public abstract class XnatModelObject {
                 .add("id", id)
                 .add("label", label)
                 .add("xsiType", xsiType)
-                .add("type", getType())
                 .add("uri", uri);
-    }
-
-    public enum Type {
-        @JsonProperty("Project") PROJECT,
-        @JsonProperty("Subject") SUBJECT,
-        @JsonProperty("Session") SESSION,
-        @JsonProperty("Scan") SCAN,
-        @JsonProperty("Assessor") ASSESSOR,
-        @JsonProperty("Resource") RESOURCE,
-        @JsonProperty("File") FILE
     }
 }
