@@ -1,6 +1,5 @@
 package org.nrg.containers.rest;
 
-import com.google.common.collect.Maps;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.apache.commons.lang3.StringUtils;
@@ -12,15 +11,12 @@ import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.ContainerMountResolutionException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.model.PartiallyResolvedCommand;
 import org.nrg.containers.model.ResolvedDockerCommand;
-import org.nrg.containers.model.command.auto.Command;
-import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.model.container.entity.ContainerEntity;
-import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerService;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NotFoundException;
-import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.XDAT;
@@ -32,7 +28,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -41,10 +36,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import springfox.documentation.annotations.ApiIgnore;
 
-import java.util.List;
 import java.util.Map;
 
-import static org.springframework.web.bind.annotation.RequestMethod.DELETE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
@@ -68,6 +61,35 @@ public class LaunchRestApi extends AbstractXapiRestController {
                          final RoleHolder roleHolder) {
         super(userManagementService, roleHolder);
         this.containerService = containerService;
+    }
+
+    /*
+    GET A LAUNCH UI
+     */
+    @XapiRequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperId:" + ID_REGEX + "}/launch"}, method = GET)
+    @ApiIgnore // Swagger UI does not correctly show this API endpoint
+    @ResponseBody
+    public String getLaunchUi(final @PathVariable long commandId,
+                              final @PathVariable long wrapperId,
+                              final @RequestParam Map<String, String> allRequestParams)
+            {
+        log.info("Launch UI requested for command {}, wrapper {}", commandId, wrapperId);
+        final PartiallyResolvedCommand partiallyResolvedCommand =
+                containerService.partiallyResolveCommand(commandId, wrapperId, allRequestParams);
+        return null; // TODO
+    }
+
+    @XapiRequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName:" + NAME_REGEX + "}/launch"}, method = GET)
+    @ApiIgnore // Swagger UI does not correctly show this API endpoint
+    @ResponseBody
+    public String getLaunchUi(final @PathVariable long commandId,
+                              final @PathVariable String wrapperName,
+                              final @RequestParam Map<String, String> allRequestParams)
+            {
+        log.info("Launch UI requested for command {}, wrapper {}", commandId, wrapperName);
+        final PartiallyResolvedCommand partiallyResolvedCommand =
+                containerService.partiallyResolveCommand(commandId, wrapperName, allRequestParams);
+        return null; // TODO
     }
 
     /*

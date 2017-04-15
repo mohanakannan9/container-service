@@ -6,6 +6,7 @@ import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.ContainerMountResolutionException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.model.PartiallyResolvedCommand;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.containers.model.ResolvedDockerCommand;
@@ -17,6 +18,13 @@ import org.nrg.xft.security.UserI;
 import java.util.Map;
 
 public interface ContainerService {
+    PartiallyResolvedCommand partiallyResolveCommand(long commandId,
+                                                     long wrapperId,
+                                                     Map<String, String> rawParamValues);
+    PartiallyResolvedCommand partiallyResolveCommand(long commandId,
+                                                     String wrapperName,
+                                                     Map<String, String> rawParamValues);
+
     ResolvedCommand resolveCommand(final long commandId,
                                    final Map<String, String> variableRuntimeValues,
                                    final UserI userI)

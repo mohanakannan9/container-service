@@ -15,6 +15,7 @@ import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.helpers.CommandResolutionHelper;
 import org.nrg.containers.helpers.ContainerFinalizeHelper;
+import org.nrg.containers.model.PartiallyResolvedCommand;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.container.entity.ContainerEntityHistory;
 import org.nrg.containers.model.container.entity.ContainerEntityMount;
@@ -112,6 +113,16 @@ public class ContainerServiceImpl implements ContainerService {
         this.catalogService = catalogService;
         this.mapper = mapper;
         this.configService = configService;
+    }
+
+    @Override
+    public PartiallyResolvedCommand partiallyResolveCommand(final long commandId, final long wrapperId, final Map<String, String> rawParamValues) {
+        return null;
+    }
+
+    @Override
+    public PartiallyResolvedCommand partiallyResolveCommand(final long commandId, final String wrapperName, final Map<String, String> rawParamValues) {
+        return null;
     }
 
     @Override
