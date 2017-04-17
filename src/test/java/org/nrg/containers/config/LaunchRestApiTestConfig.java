@@ -1,18 +1,14 @@
 package org.nrg.containers.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.nrg.config.services.ConfigService;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
-import org.nrg.containers.rest.CommandRestApi;
 import org.nrg.containers.rest.LaunchRestApi;
 import org.nrg.containers.services.CommandResolutionService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.containers.services.ContainerService;
-import org.nrg.containers.services.impl.CommandResolutionServiceImpl;
 import org.nrg.containers.services.impl.ContainerServiceImpl;
 import org.nrg.framework.services.ContextService;
 import org.nrg.transporter.TransportService;
@@ -56,9 +52,12 @@ public class LaunchRestApiTestConfig extends WebSecurityConfigurerAdapter {
                                              final PermissionsServiceI permissionsService,
                                              final CatalogService catalogService,
                                              final ObjectMapper mapper) {
-        return new ContainerServiceImpl(commandService, containerControlApi, containerEntityService,
-                commandResolutionService, aliasTokenService, siteConfigPreferences,
-                transportService, permissionsService, catalogService, mapper);
+        final ContainerService containerService =
+                new ContainerServiceImpl(commandService, containerControlApi, containerEntityService,
+                        commandResolutionService, aliasTokenService, siteConfigPreferences,
+                        transportService, catalogService, mapper);
+        ((ContainerServiceImpl)containerService).setPermissionsService(permissionsService);
+        return containerService;
     }
 
     @Bean

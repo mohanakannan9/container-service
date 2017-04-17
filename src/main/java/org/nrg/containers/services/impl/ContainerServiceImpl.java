@@ -12,13 +12,13 @@ import org.nrg.containers.exceptions.ContainerMountResolutionException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.helpers.ContainerFinalizeHelper;
+import org.nrg.containers.model.command.auto.Command;
+import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.command.auto.ResolvedCommand.PartiallyResolvedCommand;
 import org.nrg.containers.model.command.auto.ResolvedCommand.PartiallyResolvedCommandMount;
 import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMount;
 import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMountFiles;
-import org.nrg.containers.model.command.auto.Command;
-import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.container.entity.ContainerEntityHistory;
 import org.nrg.containers.services.CommandResolutionService;
@@ -69,29 +69,6 @@ public class ContainerServiceImpl implements ContainerService {
     private PermissionsServiceI permissionsService;
     private final CatalogService catalogService;
     private final ObjectMapper mapper;
-
-    @VisibleForTesting
-    public ContainerServiceImpl(final CommandService commandService,
-                                final ContainerControlApi containerControlApi,
-                                final ContainerEntityService containerEntityService,
-                                final CommandResolutionService commandResolutionService,
-                                final AliasTokenService aliasTokenService,
-                                final SiteConfigPreferences siteConfigPreferences,
-                                final TransportService transportService,
-                                final PermissionsServiceI permissionsService,
-                                final CatalogService catalogService,
-                                final ObjectMapper mapper) {
-        this.commandService = commandService;
-        this.containerControlApi = containerControlApi;
-        this.containerEntityService = containerEntityService;
-        this.commandResolutionService = commandResolutionService;
-        this.aliasTokenService = aliasTokenService;
-        this.siteConfigPreferences = siteConfigPreferences;
-        this.transportService = transportService;
-        this.permissionsService = permissionsService;
-        this.catalogService = catalogService;
-        this.mapper = mapper;
-    }
 
     @Autowired
     public ContainerServiceImpl(final CommandService commandService,
@@ -512,5 +489,10 @@ public class ContainerServiceImpl implements ContainerService {
             permissionsService = Permissions.getPermissionsService();
         }
         return permissionsService;
+    }
+
+    @VisibleForTesting
+    public void setPermissionsService(final PermissionsServiceI permissionsService) {
+        this.permissionsService = permissionsService;
     }
 }

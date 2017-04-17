@@ -13,17 +13,17 @@ import org.nrg.containers.model.command.entity.CommandInputEntity;
 import org.nrg.containers.model.command.entity.CommandMountEntity;
 import org.nrg.containers.model.command.entity.CommandOutputEntity;
 import org.nrg.containers.model.command.entity.CommandWrapperDerivedInputEntity;
+import org.nrg.containers.model.command.entity.CommandWrapperEntity;
 import org.nrg.containers.model.command.entity.CommandWrapperExternalInputEntity;
 import org.nrg.containers.model.command.entity.CommandWrapperOutputEntity;
+import org.nrg.containers.model.command.entity.DockerCommandEntity;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.container.entity.ContainerEntityHistory;
 import org.nrg.containers.model.container.entity.ContainerEntityInput;
 import org.nrg.containers.model.container.entity.ContainerEntityMount;
 import org.nrg.containers.model.container.entity.ContainerEntityOutput;
 import org.nrg.containers.model.container.entity.ContainerMountFilesEntity;
-import org.nrg.containers.model.command.entity.DockerCommandEntity;
 import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
-import org.nrg.containers.model.command.entity.CommandWrapperEntity;
 import org.nrg.containers.services.CommandResolutionService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerEntityService;
@@ -105,9 +105,12 @@ public class IntegrationTestConfig {
                                              final PermissionsServiceI permissionsService,
                                              final CatalogService catalogService,
                                              final ObjectMapper mapper) {
-        return new ContainerServiceImpl(commandService, containerControlApi, containerEntityService,
-                commandResolutionService, aliasTokenService, siteConfigPreferences,
-                transportService, permissionsService, catalogService, mapper);
+        final ContainerService containerService =
+                new ContainerServiceImpl(commandService, containerControlApi, containerEntityService,
+                        commandResolutionService, aliasTokenService, siteConfigPreferences,
+                        transportService, catalogService, mapper);
+        ((ContainerServiceImpl)containerService).setPermissionsService(permissionsService);
+        return containerService;
     }
 
     @Bean
