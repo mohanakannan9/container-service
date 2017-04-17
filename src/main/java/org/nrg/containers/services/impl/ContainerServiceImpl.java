@@ -5,7 +5,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.config.services.ConfigService;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.events.model.ContainerEvent;
 import org.nrg.containers.exceptions.CommandResolutionException;
@@ -13,17 +12,17 @@ import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.ContainerMountResolutionException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.helpers.CommandResolutionHelper;
 import org.nrg.containers.helpers.ContainerFinalizeHelper;
 import org.nrg.containers.model.PartiallyResolvedCommand;
-import org.nrg.containers.model.container.entity.ContainerEntity;
-import org.nrg.containers.model.container.entity.ContainerEntityHistory;
-import org.nrg.containers.model.container.entity.ContainerEntityMount;
-import org.nrg.containers.model.container.entity.ContainerMountFiles;
 import org.nrg.containers.model.ResolvedCommand;
 import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
+import org.nrg.containers.model.container.entity.ContainerEntity;
+import org.nrg.containers.model.container.entity.ContainerEntityHistory;
+import org.nrg.containers.model.container.entity.ContainerEntityMount;
+import org.nrg.containers.model.container.entity.ContainerMountFiles;
+import org.nrg.containers.services.CommandResolutionService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.containers.services.ContainerService;
@@ -62,57 +61,57 @@ public class ContainerServiceImpl implements ContainerService {
     private final CommandService commandService;
     private final ContainerControlApi containerControlApi;
     private final ContainerEntityService containerEntityService;
+    private final CommandResolutionService commandResolutionService;
     private final AliasTokenService aliasTokenService;
     private final SiteConfigPreferences siteConfigPreferences;
     private final TransportService transportService;
     private PermissionsServiceI permissionsService;
     private final CatalogService catalogService;
     private final ObjectMapper mapper;
-    private final ConfigService configService;
 
     @VisibleForTesting
     public ContainerServiceImpl(final CommandService commandService,
                                 final ContainerControlApi containerControlApi,
                                 final ContainerEntityService containerEntityService,
+                                final CommandResolutionService commandResolutionService,
                                 final AliasTokenService aliasTokenService,
                                 final SiteConfigPreferences siteConfigPreferences,
                                 final TransportService transportService,
                                 final PermissionsServiceI permissionsService,
                                 final CatalogService catalogService,
-                                final ObjectMapper mapper,
-                                final ConfigService configService) {
+                                final ObjectMapper mapper) {
         this.commandService = commandService;
         this.containerControlApi = containerControlApi;
         this.containerEntityService = containerEntityService;
+        this.commandResolutionService = commandResolutionService;
         this.aliasTokenService = aliasTokenService;
         this.siteConfigPreferences = siteConfigPreferences;
         this.transportService = transportService;
         this.permissionsService = permissionsService;
         this.catalogService = catalogService;
         this.mapper = mapper;
-        this.configService = configService;
     }
 
     @Autowired
     public ContainerServiceImpl(final CommandService commandService,
                                 final ContainerControlApi containerControlApi,
                                 final ContainerEntityService containerEntityService,
+                                final CommandResolutionService commandResolutionService,
                                 final AliasTokenService aliasTokenService,
                                 final SiteConfigPreferences siteConfigPreferences,
                                 final TransportService transportService,
                                 final CatalogService catalogService,
-                                final ObjectMapper mapper,
-                                final ConfigService configService) {
+                                final ObjectMapper mapper) {
         this.commandService = commandService;
         this.containerControlApi = containerControlApi;
         this.containerEntityService = containerEntityService;
+        this.commandResolutionService = commandResolutionService;
         this.aliasTokenService = aliasTokenService;
         this.siteConfigPreferences = siteConfigPreferences;
         this.transportService = transportService;
         this.permissionsService = null; // Will be initialized later.
         this.catalogService = catalogService;
         this.mapper = mapper;
-        this.configService = configService;
     }
 
     @Override
@@ -219,7 +218,7 @@ public class ContainerServiceImpl implements ContainerService {
                                           final Map<String, String> runtimeInputValues,
                                           final UserI userI)
             throws NotFoundException, CommandResolutionException {
-        return CommandResolutionHelper.resolve(commandWrapper, command, runtimeInputValues, userI, configService);
+        return commandResolutionService.resolve(commandWrapper, command, runtimeInputValues, userI);
     }
 
     @Override

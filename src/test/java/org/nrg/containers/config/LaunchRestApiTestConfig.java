@@ -8,9 +8,11 @@ import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.rest.CommandRestApi;
 import org.nrg.containers.rest.LaunchRestApi;
+import org.nrg.containers.services.CommandResolutionService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.containers.services.ContainerService;
+import org.nrg.containers.services.impl.CommandResolutionServiceImpl;
 import org.nrg.containers.services.impl.ContainerServiceImpl;
 import org.nrg.framework.services.ContextService;
 import org.nrg.transporter.TransportService;
@@ -47,15 +49,21 @@ public class LaunchRestApiTestConfig extends WebSecurityConfigurerAdapter {
     public ContainerService containerService(final CommandService commandService,
                                              final ContainerControlApi containerControlApi,
                                              final ContainerEntityService containerEntityService,
+                                             final CommandResolutionService commandResolutionService,
                                              final AliasTokenService aliasTokenService,
                                              final SiteConfigPreferences siteConfigPreferences,
                                              final TransportService transportService,
                                              final PermissionsServiceI permissionsService,
                                              final CatalogService catalogService,
-                                             final ObjectMapper mapper,
-                                             final ConfigService configService) {
-        return new ContainerServiceImpl(commandService, containerControlApi, containerEntityService, aliasTokenService, siteConfigPreferences,
-                transportService, permissionsService, catalogService, mapper, configService);
+                                             final ObjectMapper mapper) {
+        return new ContainerServiceImpl(commandService, containerControlApi, containerEntityService,
+                commandResolutionService, aliasTokenService, siteConfigPreferences,
+                transportService, permissionsService, catalogService, mapper);
+    }
+
+    @Bean
+    public CommandResolutionService commandResolutionService(final ConfigService configService) {
+        return new CommandResolutionServiceImpl(configService);
     }
 
     @Bean
