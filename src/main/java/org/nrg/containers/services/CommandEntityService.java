@@ -13,9 +13,13 @@ public interface CommandEntityService extends BaseHibernateService<CommandEntity
 
     CommandWrapperEntity addWrapper(CommandEntity commandEntity, CommandWrapperEntity wrapperToAdd);
     CommandWrapperEntity retrieve(long commandId, long wrapperId);
+    CommandWrapperEntity retrieve(long commandId, String wrapperName);
     CommandWrapperEntity retrieve(final CommandEntity commandEntity, long wrapperId);
+    CommandWrapperEntity retrieve(final CommandEntity commandEntity, String wrapperName);
     CommandWrapperEntity get(long commandId, long wrapperId) throws NotFoundException;
+    CommandWrapperEntity get(long commandId, String wrapperName) throws NotFoundException;
     CommandWrapperEntity get(final CommandEntity commandEntity, long wrapperId) throws NotFoundException;
+    CommandWrapperEntity get(final CommandEntity commandEntity, String wrapperName) throws NotFoundException;
     CommandWrapperEntity update(CommandWrapperEntity updates) throws NotFoundException;
     void delete(long commandId, long wrapperId);
 

@@ -23,6 +23,9 @@ import org.nrg.containers.model.command.entity.CommandWrapperInputType;
 import org.nrg.containers.model.command.entity.DockerCommandEntity;
 import org.nrg.containers.model.command.entity.CommandWrapperOutputEntity;
 import org.nrg.containers.model.command.entity.CommandWrapperEntity;
+import org.nrg.containers.model.configuration.CommandConfiguration;
+import org.nrg.containers.model.configuration.CommandConfiguration.CommandInputConfiguration;
+import org.nrg.containers.model.configuration.CommandConfiguration.CommandOutputConfiguration;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -623,6 +626,23 @@ public abstract class Command {
                     .required(false);
         }
 
+        public CommandInput applyConfiguration(final CommandInputConfiguration commandInputConfiguration) {
+            return builder()
+                    .name(this.name())
+                    .id(this.id())
+                    .description(this.description())
+                    .type(this.type())
+                    .required(this.required())
+                    .rawReplacementKey(this.rawReplacementKey())
+                    .commandLineFlag(this.commandLineFlag())
+                    .commandLineSeparator(this.commandLineSeparator())
+                    .trueValue(this.trueValue())
+                    .falseValue(this.falseValue())
+                    .defaultValue(commandInputConfiguration.defaultValue())
+                    .matcher(commandInputConfiguration.matcher())
+                    .build();
+        }
+
         public abstract Builder toBuilder();
 
         @Nonnull
@@ -1035,6 +1055,19 @@ public abstract class Command {
                     .required(false);
         }
 
+        public CommandWrapperExternalInput applyConfiguration(final CommandInputConfiguration commandInputConfiguration) {
+            return builder()
+                    .name(this.name())
+                    .type(this.type())
+                    .providesValueForCommandInput(this.providesValueForCommandInput())
+                    .providesFilesForCommandMount(this.providesFilesForCommandMount())
+                    .required(this.required())
+                    .defaultValue(commandInputConfiguration.defaultValue())
+                    .matcher(commandInputConfiguration.matcher())
+                    .userSettable(commandInputConfiguration.userSettable())
+                    .build();
+        }
+
         @AutoValue.Builder
         public abstract static class Builder {
             public abstract Builder id(final long id);
@@ -1117,6 +1150,23 @@ public abstract class Command {
                     .required(false);
         }
 
+        public CommandWrapperDerivedInput applyConfiguration(final CommandInputConfiguration commandInputConfiguration) {
+            return builder()
+                    .id(this.id())
+                    .name(this.name())
+                    .type(this.type())
+                    .derivedFromXnatInput(this.derivedFromXnatInput())
+                    .derivedFromXnatObjectProperty(this.derivedFromXnatObjectProperty())
+                    .providesValueForCommandInput(this.providesValueForCommandInput())
+                    .providesFilesForCommandMount(this.providesFilesForCommandMount())
+                    .rawReplacementKey(this.rawReplacementKey())
+                    .required(this.required())
+                    .defaultValue(commandInputConfiguration.defaultValue())
+                    .matcher(commandInputConfiguration.matcher())
+                    .userSettable(commandInputConfiguration.userSettable())
+                    .build();
+        }
+
         @Nonnull
         List<String> validate() {
             // Derived inputs have all the same constraints as external inputs, plus more
@@ -1197,6 +1247,11 @@ public abstract class Command {
                 return null;
             }
             return create(wrapperOutput.getId(), wrapperOutput.getName(), wrapperOutput.getCommandOutputName(), wrapperOutput.getXnatInputName(), wrapperOutput.getType().getName(), wrapperOutput.getLabel());
+        }
+
+        public CommandWrapperOutput applyConfiguration(final CommandOutputConfiguration commandOutputConfiguration) {
+            return create(this.id(), this.name(), this.commandOutputName(), this.xnatInputName(), this.type(),
+                    commandOutputConfiguration.label());
         }
 
         @Nonnull

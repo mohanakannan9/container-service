@@ -115,6 +115,13 @@ public class CommandEntityRepository extends AbstractHibernateDAO<CommandEntity>
                 .uniqueResult();
     }
 
+    public CommandWrapperEntity retrieve(long commandId, String wrapperName) {
+        return (CommandWrapperEntity) getSession().createQuery("from CommandWrapperEntity as wrapper where wrapper.name = :wrapperName and wrapper.commandEntity.id = :commandId")
+                .setString("wrapperName", wrapperName)
+                .setLong("commandId", commandId)
+                .uniqueResult();
+    }
+
     public void update(final CommandWrapperEntity toUpdate) {
         try {
             getSession().update(toUpdate);

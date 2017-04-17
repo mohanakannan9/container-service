@@ -26,15 +26,27 @@ public interface CommandService {
     CommandWrapper addWrapper(long commandId, CommandWrapper commandWrapper) throws CommandValidationException, NotFoundException;
     CommandWrapper addWrapper(Command command, CommandWrapper commandWrapper) throws CommandValidationException, NotFoundException;
     CommandWrapper retrieve(long commandId, long wrapperId);
+    CommandWrapper retrieve(long commandId, String wrapperName);
+    CommandWrapper retrieve(Command command, long wrapperId);
+    CommandWrapper retrieve(Command command, String wrapperName);
     CommandWrapper get(long commandId, long wrapperId) throws NotFoundException;
+    CommandWrapper get(long commandId, String wrapperName) throws NotFoundException;
+    CommandWrapper get(Command command, long wrapperId) throws NotFoundException;
+    CommandWrapper get(Command command, String wrapperName) throws NotFoundException;
     CommandWrapper update(long commandId, CommandWrapper updates) throws CommandValidationException, NotFoundException;
     void delete(long commandId, long wrapperId);
+    Command getCommandWithOneWrapper(long commandId, long wrapperId) throws NotFoundException;
+    Command getCommandWithOneWrapper(long commandId, String wrapperName) throws NotFoundException;
 
     void configureForSite(CommandConfiguration commandConfiguration, long commandId, String wrapperName, boolean enable, String username, String reason) throws CommandConfigurationException, NotFoundException;
     void configureForProject(CommandConfiguration commandConfiguration, String project, long commandId, String wrapperName, boolean enable, String username, String reason) throws CommandConfigurationException, NotFoundException;
 
     CommandConfiguration getSiteConfiguration(long commandId, String wrapperName) throws NotFoundException;
     CommandConfiguration getProjectConfiguration(String project, long commandId, String wrapperName) throws NotFoundException;
+    Command getAndConfigure(long commandId, String wrapperName) throws NotFoundException;
+    // Command getAndConfigure(long commandId, long wrapperId) throws NotFoundException;
+    Command getAndConfigure(String project, long commandId, String wrapperName) throws NotFoundException;
+    // Command getAndConfigure(String project, long commandId, long wrapperId) throws NotFoundException;
 
     void deleteSiteConfiguration(long commandId, String wrapperName, final String username) throws CommandConfigurationException;
     void deleteProjectConfiguration(String project, long commandId, String wrapperName, final String username) throws CommandConfigurationException;

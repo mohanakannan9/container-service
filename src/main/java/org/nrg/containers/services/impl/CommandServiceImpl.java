@@ -10,12 +10,18 @@ import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import org.nrg.containers.exceptions.CommandValidationException;
+import org.nrg.containers.model.command.auto.Command.CommandInput;
+import org.nrg.containers.model.command.auto.Command.CommandOutput;
+import org.nrg.containers.model.command.auto.Command.CommandWrapperDerivedInput;
+import org.nrg.containers.model.command.auto.Command.CommandWrapperExternalInput;
+import org.nrg.containers.model.command.auto.Command.CommandWrapperOutput;
 import org.nrg.containers.model.command.auto.CommandSummaryForContext;
 import org.nrg.containers.model.configuration.CommandConfiguration;
 import org.nrg.containers.model.command.entity.CommandEntity;
 import org.nrg.containers.model.command.entity.CommandWrapperEntity;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
+import org.nrg.containers.model.configuration.CommandConfiguration.CommandOutputConfiguration;
 import org.nrg.containers.model.configuration.CommandConfigurationInternal;
 import org.nrg.containers.services.CommandEntityService;
 import org.nrg.containers.services.CommandService;
@@ -189,11 +195,64 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     }
 
     @Override
+    @Nullable
+    public CommandWrapper retrieve(final long commandId, final String wrapperName) {
+        return toPojo(commandEntityService.retrieve(commandId, wrapperName));
+    }
+
+    @Override
+    @Nullable
+    public CommandWrapper retrieve(final Command command, final long wrapperId) {
+        for (final CommandWrapper commandWrapper : command.xnatCommandWrappers()) {
+            if (commandWrapper.id() == wrapperId) {
+                return commandWrapper;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public CommandWrapper retrieve(final Command command, final String wrapperName) {
+        for (final CommandWrapper commandWrapper : command.xnatCommandWrappers()) {
+            if ((commandWrapper.name() == null && wrapperName == null) ||
+                    commandWrapper.name().equals(wrapperName)) {
+                return commandWrapper;
+            }
+        }
+        return null;
+    }
+
+    @Override
     @Nonnull
     public CommandWrapper get(final long commandId, final long wrapperId) throws NotFoundException {
         return toPojo(commandEntityService.get(commandId, wrapperId));
     }
 
+    @Override
+    @Nonnull
+    public CommandWrapper get(final long commandId, final String wrapperName) throws NotFoundException {
+        return toPojo(commandEntityService.get(commandId, wrapperName));
+    }
+
+    @Override
+    @Nonnull
+    public CommandWrapper get(final @Nonnull Command command, final long wrapperId) throws NotFoundException {
+        final CommandWrapper commandWrapper = retrieve(command, wrapperId);
+        if (commandWrapper == null) {
+            throw new NotFoundException(String.format("No command wrapper for command id %d, wrapper id %d", command.id(), wrapperId));
+        }
+        return commandWrapper;
+    }
+
+    @Override
+    @Nonnull
+    public CommandWrapper get(final @Nonnull Command command, final String wrapperName) throws NotFoundException {
+        final CommandWrapper commandWrapper = retrieve(command, wrapperName);
+        if (commandWrapper == null) {
+            throw new NotFoundException(String.format("No command wrapper for command id %d, wrapper name %s", command.id(), wrapperName));
+        }
+        return commandWrapper;
+    }
     @Override
     @Nonnull
     @Transactional
@@ -213,6 +272,20 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     @Transactional
     public void delete(final long commandId, final long wrapperId) {
         commandEntityService.delete(commandId, wrapperId);
+    }
+
+    @Override
+    @Nonnull
+    public Command getCommandWithOneWrapper(final long commandId, final long wrapperId) throws NotFoundException {
+        final Command command = get(commandId);
+        return getCommandWithOneWrapper(command, get(command, wrapperId));
+    }
+
+    @Override
+    @Nonnull
+    public Command getCommandWithOneWrapper(final long commandId, final String wrapperName) throws NotFoundException {
+        final Command command = get(commandId);
+        return getCommandWithOneWrapper(command, get(command, wrapperName));
     }
 
     @Override
@@ -242,7 +315,7 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     }
 
     @Override
-    @Nullable
+    @Nonnull
     public CommandConfiguration getSiteConfiguration(final long commandId, final String wrapperName) throws NotFoundException {
         assertPairExists(commandId, wrapperName);
         final CommandConfigurationInternal commandConfigurationInternal = containerConfigService.getSiteConfiguration(commandId, wrapperName);
@@ -250,11 +323,140 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     }
 
     @Override
-    @Nullable
+    @Nonnull
     public CommandConfiguration getProjectConfiguration(final String project, final long commandId, final String wrapperName) throws NotFoundException {
         assertPairExists(commandId, wrapperName);
         final CommandConfigurationInternal commandConfigurationInternal = containerConfigService.getProjectConfiguration(project, commandId, wrapperName);
         return CommandConfiguration.create(get(commandId), commandConfigurationInternal, wrapperName);
+    }
+
+    @Override
+    @Nonnull
+    public Command getAndConfigure(final long commandId, final String wrapperName) throws NotFoundException {
+        final Command originalCommand = get(commandId);
+        final Command commandWithOneWrapper = getCommandWithOneWrapper(originalCommand, get(originalCommand, wrapperName));
+        final CommandConfiguration commandConfiguration = getSiteConfiguration(commandId, wrapperName);
+        return applyConfiguration(commandWithOneWrapper, commandConfiguration);
+    }
+
+    // @Override
+    // public Command getAndConfigure(final long commandId, final long wrapperId) throws NotFoundException {
+    //     final Command originalCommand = get(commandId);
+    //     final Command commandWithOneWrapper = getCommandWithOneWrapper(originalCommand, get(originalCommand, wrapperId));
+    //     final CommandConfiguration commandConfiguration = getSiteConfiguration(commandId, wrapperId);
+    //     return null;
+    // }
+
+    @Override
+    @Nonnull
+    public Command getAndConfigure(final String project, final long commandId, final String wrapperName) throws NotFoundException {
+        final Command originalCommand = get(commandId);
+        final Command commandWithOneWrapper = getCommandWithOneWrapper(originalCommand, get(originalCommand, wrapperName));
+        final CommandConfiguration commandConfiguration = getProjectConfiguration(project, commandId, wrapperName);
+        return applyConfiguration(commandWithOneWrapper, commandConfiguration);
+    }
+
+    // @Override
+    // public Command getAndConfigure(final String project, final long commandId, final long wrapperId) throws NotFoundException {
+    //     return null;
+    // }
+
+    @Nonnull
+    private Command getCommandWithOneWrapper(final @Nonnull Command originalCommand,
+                                             final @Nonnull CommandWrapper commandWrapper) {
+        return Command.builder()
+                .name(originalCommand.name())
+                .id(originalCommand.id())
+                .name(originalCommand.name())
+                .label(originalCommand.label())
+                .description(originalCommand.description())
+                .version(originalCommand.version())
+                .schemaVersion(originalCommand.schemaVersion())
+                .infoUrl(originalCommand.infoUrl())
+                .image(originalCommand.image())
+                .type(originalCommand.type())
+                .workingDirectory(originalCommand.workingDirectory())
+                .commandLine(originalCommand.commandLine())
+                .environmentVariables(originalCommand.environmentVariables())
+                .mounts(originalCommand.mounts())
+                .inputs(originalCommand.inputs())
+                .outputs(originalCommand.outputs())
+                .index(originalCommand.index())
+                .hash(originalCommand.hash())
+                .ports(originalCommand.ports())
+                .addCommandWrapper(commandWrapper)
+                .build();
+    }
+
+    @Nonnull
+    private Command applyConfiguration(final @Nonnull Command originalCommand,
+                                       final @Nonnull CommandConfiguration commandConfiguration) {
+        // Initialize the command builder copy
+        final Command.Builder commandBuilder = Command.builder()
+                .name(originalCommand.name())
+                .id(originalCommand.id())
+                .name(originalCommand.name())
+                .label(originalCommand.label())
+                .description(originalCommand.description())
+                .version(originalCommand.version())
+                .schemaVersion(originalCommand.schemaVersion())
+                .infoUrl(originalCommand.infoUrl())
+                .image(originalCommand.image())
+                .type(originalCommand.type())
+                .workingDirectory(originalCommand.workingDirectory())
+                .commandLine(originalCommand.commandLine())
+                .environmentVariables(originalCommand.environmentVariables())
+                .mounts(originalCommand.mounts())
+                .index(originalCommand.index())
+                .hash(originalCommand.hash())
+                .ports(originalCommand.ports())
+                .outputs(originalCommand.outputs());
+
+        // Things we need to apply configuration to:
+        // command inputs
+        // wrapper inputs
+        // wrapper outputs
+
+        for (final CommandInput commandInput : originalCommand.inputs()) {
+            commandBuilder.addInput(
+                    commandConfiguration.inputs().containsKey(commandInput.name()) ?
+                            commandInput.applyConfiguration(commandConfiguration.inputs().get(commandInput.name())) :
+                            commandInput
+            );
+        }
+
+        final CommandWrapper originalCommandWrapper = originalCommand.xnatCommandWrappers().get(0);
+        final CommandWrapper.Builder commandWrapperBuilder = CommandWrapper.builder()
+                .id(originalCommandWrapper.id())
+                .name(originalCommandWrapper.name())
+                .description(originalCommandWrapper.description())
+                .contexts(originalCommandWrapper.contexts());
+
+        for (final CommandWrapperExternalInput externalInput : originalCommandWrapper.externalInputs()) {
+            commandWrapperBuilder.addExternalInput(
+                    commandConfiguration.inputs().containsKey(externalInput.name()) ?
+                            externalInput.applyConfiguration(commandConfiguration.inputs().get(externalInput.name())) :
+                            externalInput
+            );
+        }
+
+        for (final CommandWrapperDerivedInput derivedInput : originalCommandWrapper.derivedInputs()) {
+            commandWrapperBuilder.addDerivedInput(
+                    commandConfiguration.inputs().containsKey(derivedInput.name()) ?
+                            derivedInput.applyConfiguration(commandConfiguration.inputs().get(derivedInput.name())) :
+                            derivedInput
+            );
+        }
+
+        for (final CommandWrapperOutput output : originalCommandWrapper.outputHandlers()) {
+            commandWrapperBuilder.addOutputHandler(
+                    commandConfiguration.outputs().containsKey(output.name()) ?
+                            output.applyConfiguration(commandConfiguration.outputs().get(output.name())) :
+                            output
+            );
+        }
+
+        return commandBuilder.addCommandWrapper(commandWrapperBuilder.build()).build();
     }
 
     @Override
