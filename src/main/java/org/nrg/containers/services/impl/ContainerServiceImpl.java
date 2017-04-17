@@ -2,7 +2,6 @@ package org.nrg.containers.services.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Maps;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.api.ContainerControlApi;
@@ -13,15 +12,15 @@ import org.nrg.containers.exceptions.ContainerMountResolutionException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.helpers.ContainerFinalizeHelper;
-import org.nrg.containers.model.PartiallyResolvedCommand;
-import org.nrg.containers.model.ResolvedCommand;
-import org.nrg.containers.model.ResolvedDockerCommand;
+import org.nrg.containers.model.command.auto.ResolvedCommand;
+import org.nrg.containers.model.command.auto.ResolvedCommand.PartiallyResolvedCommand;
+import org.nrg.containers.model.command.auto.ResolvedCommand.PartiallyResolvedCommandMount;
+import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMount;
+import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMountFiles;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.container.entity.ContainerEntityHistory;
-import org.nrg.containers.model.container.entity.ContainerEntityMount;
-import org.nrg.containers.model.container.entity.ContainerMountFiles;
 import org.nrg.containers.services.CommandResolutionService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerEntityService;
@@ -52,6 +51,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.nrg.containers.model.command.entity.CommandType.DOCKER;
 
 @Service
 public class ContainerServiceImpl implements ContainerService {
@@ -126,9 +127,9 @@ public class ContainerServiceImpl implements ContainerService {
 
     @Override
     @Nonnull
-    public ResolvedCommand resolveCommand(final long commandId,
-                                          final Map<String, String> runtimeInputValues,
-                                          final UserI userI)
+    public PartiallyResolvedCommand resolveCommand(final long commandId,
+                                                   final Map<String, String> runtimeInputValues,
+                                                   final UserI userI)
             throws NotFoundException, CommandResolutionException {
         final Command command = commandService.get(commandId);
         return resolveCommand(command, runtimeInputValues, userI);
@@ -137,10 +138,10 @@ public class ContainerServiceImpl implements ContainerService {
 
     @Override
     @Nonnull
-    public ResolvedCommand resolveCommand(final String xnatCommandWrapperName,
-                                          final long commandId,
-                                          final Map<String, String> runtimeInputValues,
-                                          final UserI userI)
+    public PartiallyResolvedCommand resolveCommand(final String xnatCommandWrapperName,
+                                                   final long commandId,
+                                                   final Map<String, String> runtimeInputValues,
+                                                   final UserI userI)
             throws NotFoundException, CommandResolutionException {
         if (StringUtils.isBlank(xnatCommandWrapperName)) {
             return resolveCommand(commandId, runtimeInputValues, userI);
@@ -165,10 +166,10 @@ public class ContainerServiceImpl implements ContainerService {
 
     @Override
     @Nonnull
-    public ResolvedCommand resolveCommand(final long xnatCommandWrapperId,
-                                          final long commandId,
-                                          final Map<String, String> runtimeInputValues,
-                                          final UserI userI)
+    public PartiallyResolvedCommand resolveCommand(final long xnatCommandWrapperId,
+                                                   final long commandId,
+                                                   final Map<String, String> runtimeInputValues,
+                                                   final UserI userI)
             throws NotFoundException, CommandResolutionException {
         final Command command = commandService.get(commandId);
         CommandWrapper wrapper = null;
@@ -189,9 +190,9 @@ public class ContainerServiceImpl implements ContainerService {
 
     @Override
     @Nonnull
-    public ResolvedCommand resolveCommand(final Command command,
-                                          final Map<String, String> runtimeInputValues,
-                                          final UserI userI)
+    public PartiallyResolvedCommand resolveCommand(final Command command,
+                                                   final Map<String, String> runtimeInputValues,
+                                                   final UserI userI)
             throws NotFoundException, CommandResolutionException {
         // I was not given a wrapper.
         // TODO what should I do here? Should I...
@@ -213,10 +214,10 @@ public class ContainerServiceImpl implements ContainerService {
 
     @Override
     @Nonnull
-    public ResolvedCommand resolveCommand(final CommandWrapper commandWrapper,
-                                          final Command command,
-                                          final Map<String, String> runtimeInputValues,
-                                          final UserI userI)
+    public PartiallyResolvedCommand resolveCommand(final CommandWrapper commandWrapper,
+                                                   final Command command,
+                                                   final Map<String, String> runtimeInputValues,
+                                                   final UserI userI)
             throws NotFoundException, CommandResolutionException {
         return commandResolutionService.resolve(commandWrapper, command, runtimeInputValues, userI);
     }
@@ -226,13 +227,7 @@ public class ContainerServiceImpl implements ContainerService {
                                                    final Map<String, String> runtimeValues,
                                                    final UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException {
-        final ResolvedCommand resolvedCommand = resolveCommand(commandId, runtimeValues, userI);
-        switch (resolvedCommand.getType()) {
-            case DOCKER:
-                return launchResolvedDockerCommand((ResolvedDockerCommand) resolvedCommand, userI);
-            default:
-                return null; // TODO throw error
-        }
+        return launchResolvedCommand(resolveCommand(commandId, runtimeValues, userI), userI);
     }
 
     @Override
@@ -241,13 +236,8 @@ public class ContainerServiceImpl implements ContainerService {
                                                    final Map<String, String> runtimeValues,
                                                    final UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException {
-        final ResolvedCommand resolvedCommand = resolveCommand(xnatCommandWrapperName, commandId, runtimeValues, userI);
-        switch (resolvedCommand.getType()) {
-            case DOCKER:
-                return launchResolvedDockerCommand((ResolvedDockerCommand) resolvedCommand, userI);
-            default:
-                return null; // TODO throw error
-        }
+        return launchResolvedCommand(resolveCommand(xnatCommandWrapperName, commandId, runtimeValues, userI), userI);
+
     }
 
     @Override
@@ -256,22 +246,27 @@ public class ContainerServiceImpl implements ContainerService {
                                                    final Map<String, String> runtimeValues,
                                                    final UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException {
-        final ResolvedCommand resolvedCommand = resolveCommand(xnatCommandWrapperId, commandId, runtimeValues, userI);
-        switch (resolvedCommand.getType()) {
-            case DOCKER:
-                return launchResolvedDockerCommand((ResolvedDockerCommand) resolvedCommand, userI);
-            default:
-                return null; // TODO throw error
+        return launchResolvedCommand(resolveCommand(xnatCommandWrapperId, commandId, runtimeValues, userI), userI);
+    }
+
+    @Nonnull
+    private ContainerEntity launchResolvedCommand(final PartiallyResolvedCommand resolvedCommand,
+                                                  final UserI userI)
+            throws NoServerPrefException, DockerServerException, ContainerMountResolutionException, ContainerException, UnsupportedOperationException {
+        if (resolvedCommand.type().equals(DOCKER.getName())) {
+            return launchResolvedDockerCommand(resolvedCommand, userI);
+        } else {
+            throw new UnsupportedOperationException("Cannot launch a command of type " + resolvedCommand.type());
         }
     }
 
     @Override
     @Nonnull
-    public ContainerEntity launchResolvedDockerCommand(final ResolvedDockerCommand resolvedDockerCommand,
+    public ContainerEntity launchResolvedDockerCommand(final PartiallyResolvedCommand resolvedCommand,
                                                        final UserI userI)
             throws NoServerPrefException, DockerServerException, ContainerMountResolutionException, ContainerException {
         log.info("Preparing to launch resolved command.");
-        final ResolvedDockerCommand preparedToLaunch = prepareToLaunch(resolvedDockerCommand, userI);
+        final ResolvedCommand preparedToLaunch = prepareToLaunch(resolvedCommand, userI);
 
         log.info("Creating container from resolved command.");
         final String containerId = containerControlApi.createContainer(preparedToLaunch);
@@ -293,41 +288,35 @@ public class ContainerServiceImpl implements ContainerService {
     }
 
     @Nonnull
-    private ResolvedDockerCommand prepareToLaunch(final ResolvedDockerCommand resolvedDockerCommand,
-                                                  final UserI userI)
+    private ResolvedCommand prepareToLaunch(final PartiallyResolvedCommand partiallyResolvedCommand,
+                                            final UserI userI)
             throws NoServerPrefException, ContainerMountResolutionException {
+        final ResolvedCommand.Builder resolvedCommandBuilder = partiallyResolvedCommand.toResolvedCommandBuilder();
+
         // Add default environment variables
-        final Map<String, String> defaultEnv = Maps.newHashMap();
-
-        defaultEnv.put("XNAT_HOST", (String)siteConfigPreferences.getProperty("processingUrl", siteConfigPreferences.getSiteUrl()));
-
         final AliasToken token = aliasTokenService.issueTokenForUser(userI);
-        defaultEnv.put("XNAT_USER", token.getAlias());
-        defaultEnv.put("XNAT_PASS", token.getSecret());
-
-        if (log.isDebugEnabled()) {
-            log.debug("Adding default environment variables");
-            for (final String envKey : defaultEnv.keySet()) {
-                log.debug(String.format("%s=%s", envKey, defaultEnv.get(envKey)));
-            }
-        }
-        resolvedDockerCommand.addEnvironmentVariables(defaultEnv);
+        final String processingUrl = (String)siteConfigPreferences.getProperty("processingUrl", siteConfigPreferences.getSiteUrl());
+        resolvedCommandBuilder.addEnvironmentVariable("XNAT_USER", token.getAlias())
+                .addEnvironmentVariable("XNAT_PASS", token.getSecret())
+                .addEnvironmentVariable("XNAT_HOST", processingUrl);
 
         // Transport mounts
-        if (resolvedDockerCommand.getMounts() != null && !resolvedDockerCommand.getMounts().isEmpty()) {
+        if (!partiallyResolvedCommand.mounts().isEmpty()) {
 
             final String dockerHost = containerControlApi.getServer().host();
-            for (final ContainerEntityMount mount : resolvedDockerCommand.getMounts()) {
+            for (final PartiallyResolvedCommandMount mount : partiallyResolvedCommand.mounts()) {
+                final ResolvedCommandMount.Builder resolvedCommandMountBuilder = mount.toResolvedCommandMountBuilder();
+
                 // First, figure out what we have.
                 // Do we have source files? A source directory?
                 // Can we mount a directory directly, or should we copy the contents to a build directory?
-                final List<ContainerMountFiles> filesList = mount.getInputFiles();
+                final List<ResolvedCommandMountFiles> filesList = mount.inputFiles();
                 final String buildDirectory;
                 if (filesList != null && filesList.size() > 1) {
                     // We have multiple sources of files. We must copy them into one common location to mount.
                     buildDirectory = getBuildDirectory();
                     if (log.isDebugEnabled()) {
-                        log.debug(String.format("Mount \"%s\" has multiple sources of files.", mount.getName()));
+                        log.debug(String.format("Mount \"%s\" has multiple sources of files.", mount.name()));
                     }
 
                     // TODO figure out what to do with multiple sources of files
@@ -336,14 +325,14 @@ public class ContainerServiceImpl implements ContainerService {
                     }
                 } else if (filesList != null && filesList.size() == 1) {
                     // We have one source of files. We may need to copy, or may be able to mount directly.
-                    final ContainerMountFiles files = filesList.get(0);
-                    final String path = files.getPath();
+                    final ResolvedCommandMountFiles files = filesList.get(0);
+                    final String path = files.path();
                     final boolean hasPath = StringUtils.isNotBlank(path);
 
-                    if (StringUtils.isNotBlank(files.getRootDirectory())) {
+                    if (StringUtils.isNotBlank(files.rootDirectory())) {
                         // That source of files does have a directory set.
 
-                        if (hasPath || mount.isWritable()) {
+                        if (hasPath || mount.writable()) {
                             // In both of these conditions, we must copy some things to a build directory.
                             // Now we must find out what.
                             if (hasPath) {
@@ -351,7 +340,7 @@ public class ContainerServiceImpl implements ContainerService {
 
                                 buildDirectory = getBuildDirectory();
                                 if (log.isDebugEnabled()) {
-                                    log.debug(String.format("Mount \"%s\" has a root directory and a file. Copying the file from the root directory to build directory.", mount.getName()));
+                                    log.debug(String.format("Mount \"%s\" has a root directory and a file. Copying the file from the root directory to build directory.", mount.name()));
                                 }
 
                                 // TODO copy the file in "path", relative to the root directory, to the build directory
@@ -362,7 +351,7 @@ public class ContainerServiceImpl implements ContainerService {
                                 // The mount is set to "writable".
                                 buildDirectory = getBuildDirectory();
                                 if (log.isDebugEnabled()) {
-                                    log.debug(String.format("Mount \"%s\" has a root directory, and is set to \"writable\". Copying all files from the root directory to build directory.", mount.getName()));
+                                    log.debug(String.format("Mount \"%s\" has a root directory, and is set to \"writable\". Copying all files from the root directory to build directory.", mount.name()));
                                 }
 
                                 // TODO We must copy all files out of the root directory to a build directory.
@@ -373,13 +362,13 @@ public class ContainerServiceImpl implements ContainerService {
                         } else {
                             // The source of files can be directly mounted
                             if (log.isDebugEnabled()) {
-                                log.debug(String.format("Mount \"%s\" has a root directory, and is not set to \"writable\". The root directory can be mounted directly into the container.", mount.getName()));
+                                log.debug(String.format("Mount \"%s\" has a root directory, and is not set to \"writable\". The root directory can be mounted directly into the container.", mount.name()));
                             }
-                            buildDirectory = files.getRootDirectory();
+                            buildDirectory = files.rootDirectory();
                         }
                     } else if (hasPath) {
                         if (log.isDebugEnabled()) {
-                            log.debug(String.format("Mount \"%s\" has a file. Copying it to build directory.", mount.getName()));
+                            log.debug(String.format("Mount \"%s\" has a file. Copying it to build directory.", mount.name()));
                         }
                         buildDirectory = getBuildDirectory();
                         // TODO copy the file to the build directory
@@ -388,39 +377,40 @@ public class ContainerServiceImpl implements ContainerService {
                         }
 
                     } else {
-                        final String message = String.format("Mount \"%s\" should have a file path or a directory or both but it does not.", mount.getName());
+                        final String message = String.format("Mount \"%s\" should have a file path or a directory or both but it does not.", mount.name());
                         log.error(message);
                         throw new ContainerMountResolutionException(message, mount);
                     }
 
                 } else {
                     if (log.isDebugEnabled()) {
-                        log.debug(String.format("Mount \"%s\" has no input files. Ensuring mount is set to \"writable\" and creating new build directory.", mount.getName()));
+                        log.debug(String.format("Mount \"%s\" has no input files. Ensuring mount is set to \"writable\" and creating new build directory.", mount.name()));
                     }
                     buildDirectory = getBuildDirectory();
-                    if (!mount.isWritable()) {
-                        mount.setWritable(true);
+                    if (!mount.writable()) {
+                        resolvedCommandMountBuilder.writable(true);
                     }
                 }
 
                 if (log.isDebugEnabled()) {
-                    log.debug(String.format("Setting mount \"%s\" xnat host path to \"%s\".", mount.getName(), buildDirectory));
+                    log.debug(String.format("Setting mount \"%s\" xnat host path to \"%s\".", mount.name(), buildDirectory));
                 }
-                mount.setXnatHostPath(buildDirectory);
+                resolvedCommandMountBuilder.xnatHostPath(buildDirectory);
 
                 if (log.isDebugEnabled()) {
-                    log.debug(String.format("Transporting mount \"%s\".", mount.getName()));
+                    log.debug(String.format("Transporting mount \"%s\".", mount.name()));
                 }
                 final Path pathOnDockerHost = transportService.transport(dockerHost, Paths.get(buildDirectory));
 
                 if (log.isDebugEnabled()) {
-                    log.debug(String.format("Setting mount \"%s\" container host path to \"%s\".", mount.getName(), buildDirectory));
+                    log.debug(String.format("Setting mount \"%s\" container host path to \"%s\".", mount.name(), buildDirectory));
                 }
-                mount.setContainerHostPath(pathOnDockerHost.toString());
+                resolvedCommandMountBuilder.containerHostPath(pathOnDockerHost.toString());
+                resolvedCommandBuilder.addMount(resolvedCommandMountBuilder.build());
             }
         }
 
-        return resolvedDockerCommand;
+        return resolvedCommandBuilder.build();
     }
 
     private String getBuildDirectory() {

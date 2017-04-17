@@ -30,11 +30,12 @@ import org.nrg.containers.events.model.DockerContainerEvent;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.helpers.CommandLabelHelper;
+import org.nrg.containers.model.command.auto.ResolvedCommand;
+import org.nrg.containers.model.command.auto.ResolvedCommand.PartiallyResolvedCommandMount;
+import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMount;
 import org.nrg.containers.model.container.auto.Container;
-import org.nrg.containers.model.container.entity.ContainerEntityMount;
 import org.nrg.containers.model.server.docker.DockerServer;
 import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
-import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.dockerhub.DockerHub;
 import org.nrg.containers.model.image.docker.DockerImage;
@@ -49,7 +50,6 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.file.Paths;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -253,30 +253,30 @@ public class DockerControlApi implements ContainerControlApi {
     /**
      * Launch image on Docker server
      *
-     * @param resolvedDockerCommand A ResolvedDockerCommand. All templates are resolved, all mount paths exist.
+     * @param resolvedCommand A ResolvedDockerCommand. All templates are resolved, all mount paths exist.
      * @return ID of created Container
      **/
     @Override
-    public String createContainer(final ResolvedDockerCommand resolvedDockerCommand)
+    public String createContainer(final ResolvedCommand resolvedCommand)
             throws NoServerPrefException, DockerServerException, ContainerException {
 
         final List<String> bindMounts = Lists.newArrayList();
-        for (final ContainerEntityMount mount : resolvedDockerCommand.getMounts()) {
+        for (final ResolvedCommandMount mount : resolvedCommand.mounts()) {
             bindMounts.add(mount.toBindMountString());
         }
         final List<String> environmentVariables = Lists.newArrayList();
-        for (final Map.Entry<String, String> env : resolvedDockerCommand.getEnvironmentVariables().entrySet()) {
+        for (final Map.Entry<String, String> env : resolvedCommand.environmentVariables().entrySet()) {
             environmentVariables.add(StringUtils.join(new String[] {env.getKey(), env.getValue()}, "="));
         }
 
         return createContainer(getServer(),
-                resolvedDockerCommand.getImage(),
-                resolvedDockerCommand.getCommandLine(),
+                resolvedCommand.image(),
+                resolvedCommand.commandLine(),
                 bindMounts,
                 environmentVariables,
-                resolvedDockerCommand.getPorts(),
-                StringUtils.isNotBlank(resolvedDockerCommand.getWorkingDirectory()) ?
-                        resolvedDockerCommand.getWorkingDirectory() :
+                resolvedCommand.ports(),
+                StringUtils.isNotBlank(resolvedCommand.workingDirectory()) ?
+                        resolvedCommand.workingDirectory() :
                         null
         );
     }

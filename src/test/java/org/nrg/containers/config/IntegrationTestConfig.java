@@ -20,7 +20,7 @@ import org.nrg.containers.model.container.entity.ContainerEntityHistory;
 import org.nrg.containers.model.container.entity.ContainerEntityInput;
 import org.nrg.containers.model.container.entity.ContainerEntityMount;
 import org.nrg.containers.model.container.entity.ContainerEntityOutput;
-import org.nrg.containers.model.container.entity.ContainerMountFiles;
+import org.nrg.containers.model.container.entity.ContainerMountFilesEntity;
 import org.nrg.containers.model.command.entity.DockerCommandEntity;
 import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.model.command.entity.CommandWrapperEntity;
@@ -181,7 +181,7 @@ public class IntegrationTestConfig {
                 ContainerEntityInput.class,
                 ContainerEntityOutput.class,
                 ContainerEntityMount.class,
-                ContainerMountFiles.class);
+                ContainerMountFilesEntity.class);
 
         return bean;
     }

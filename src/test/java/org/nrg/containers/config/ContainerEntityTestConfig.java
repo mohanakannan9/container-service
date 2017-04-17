@@ -9,7 +9,7 @@ import org.nrg.containers.model.container.entity.ContainerEntityHistory;
 import org.nrg.containers.model.container.entity.ContainerEntityInput;
 import org.nrg.containers.model.container.entity.ContainerEntityMount;
 import org.nrg.containers.model.container.entity.ContainerEntityOutput;
-import org.nrg.containers.model.container.entity.ContainerMountFiles;
+import org.nrg.containers.model.container.entity.ContainerMountFilesEntity;
 import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.containers.services.impl.HibernateContainerEntityService;
 import org.nrg.framework.services.NrgEventService;
@@ -95,7 +95,7 @@ public class ContainerEntityTestConfig {
                 ContainerEntityInput.class,
                 ContainerEntityOutput.class,
                 ContainerEntityMount.class,
-                ContainerMountFiles.class);
+                ContainerMountFilesEntity.class);
         return bean;
     }
 

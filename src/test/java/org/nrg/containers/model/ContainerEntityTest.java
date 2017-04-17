@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.nrg.containers.config.ContainerEntityTestConfig;
+import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.xft.security.UserI;
@@ -38,11 +39,13 @@ public class ContainerEntityTest {
     @Test
     @DirtiesContext
     public void testSave() throws Exception {
-        final ResolvedCommand resolvedCommand = new ResolvedDockerCommand();
-        resolvedCommand.setCommandId(1L);
-        resolvedCommand.setXnatCommandWrapperId(1L);
-        resolvedCommand.setImage("xnat/dcm2niix:1.0");
-        resolvedCommand.setCommandInputValues(ImmutableMap.of("foo", "bar"));
+        final ResolvedCommand resolvedCommand = ResolvedCommand.builder()
+                .commandId(1L)
+                .xnatCommandWrapperId(1L)
+                .image("xnat/dcm2niix:1.0")
+                .commandInputValues(ImmutableMap.of("foo", "bar"))
+                .commandLine("Anything I want")
+                .build();
 
         final String containerId = "abc123";
         final UserI mockAdmin = Mockito.mock(UserI.class);

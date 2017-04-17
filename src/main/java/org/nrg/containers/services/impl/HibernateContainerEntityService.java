@@ -5,7 +5,7 @@ import org.nrg.containers.daos.ContainerEntityRepository;
 import org.nrg.containers.events.model.ContainerEvent;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.container.entity.ContainerEntityHistory;
-import org.nrg.containers.model.ResolvedCommand;
+import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;

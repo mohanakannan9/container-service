@@ -62,8 +62,8 @@ public class LaunchRestApiTestConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public CommandResolutionService commandResolutionService(final ConfigService configService) {
-        return new CommandResolutionServiceImpl(configService);
+    public CommandResolutionService commandResolutionService() {
+        return Mockito.mock(CommandResolutionService.class);
     }
 
     @Bean
@@ -109,11 +109,6 @@ public class LaunchRestApiTestConfig extends WebSecurityConfigurerAdapter {
     @Bean
     public CatalogService catalogService() {
         return Mockito.mock(CatalogService.class);
-    }
-
-    @Bean
-    public ConfigService configService() {
-        return Mockito.mock(ConfigService.class);
     }
 
     @Bean

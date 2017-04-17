@@ -3,8 +3,7 @@ package org.nrg.containers.model.container.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
 import org.hibernate.envers.Audited;
-import org.nrg.containers.model.command.auto.Command.CommandOutput;
-import org.nrg.containers.model.command.auto.Command.CommandWrapperOutput;
+import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandOutput;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -33,15 +32,15 @@ public class ContainerEntityOutput implements Serializable {
 
     public ContainerEntityOutput() {}
 
-    public ContainerEntityOutput(final CommandOutput commandOutput, final CommandWrapperOutput commandOutputHandler) {
-        this.name = commandOutput.name();
-        this.required = commandOutput.required();
-        this.mount = commandOutput.mount();
-        this.path = commandOutput.path();
-        this.glob = commandOutput.glob();
-        this.label = commandOutputHandler.label();
-        this.type = commandOutputHandler.type();
-        this.handledByXnatCommandInput = commandOutputHandler.xnatInputName();
+    public ContainerEntityOutput(final ResolvedCommandOutput resolvedCommandOutput) {
+        this.name = resolvedCommandOutput.name();
+        this.required = resolvedCommandOutput.required();
+        this.mount = resolvedCommandOutput.mount();
+        this.path = resolvedCommandOutput.path();
+        this.glob = resolvedCommandOutput.glob();
+        this.label = resolvedCommandOutput.label();
+        this.type = resolvedCommandOutput.type();
+        this.handledByXnatCommandInput = resolvedCommandOutput.handledByXnatCommandInput();
     }
 
     @Id
