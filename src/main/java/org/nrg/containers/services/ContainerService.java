@@ -23,6 +23,14 @@ public interface ContainerService {
     PartiallyResolvedCommand partiallyResolveCommand(long commandId,
                                                      String wrapperName,
                                                      Map<String, String> rawParamValues);
+    PartiallyResolvedCommand partiallyResolveCommand(String project,
+                                                     long commandId,
+                                                     long wrapperId,
+                                                     Map<String, String> rawParamValues);
+    PartiallyResolvedCommand partiallyResolveCommand(String project,
+                                                     long commandId,
+                                                     String wrapperName,
+                                                     Map<String, String> rawParamValues);
 
     PartiallyResolvedCommand resolveCommand(final long commandId,
                                             final Map<String, String> variableRuntimeValues,

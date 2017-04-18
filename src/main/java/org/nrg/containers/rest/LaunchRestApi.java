@@ -91,6 +91,34 @@ public class LaunchRestApi extends AbstractXapiRestController {
         return null; // TODO
     }
 
+    @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperId:" + ID_REGEX + "}/launch"}, method = GET)
+    @ApiIgnore // Swagger UI does not correctly show this API endpoint
+    @ResponseBody
+    public String getLaunchUi(final @PathVariable String project,
+                              final @PathVariable long commandId,
+                              final @PathVariable long wrapperId,
+                              final @RequestParam Map<String, String> allRequestParams)
+            {
+        log.info("Launch UI requested for project {}, command {}, wrapper {}", project, commandId, wrapperId);
+        final PartiallyResolvedCommand partiallyResolvedCommand =
+                containerService.partiallyResolveCommand(project, commandId, wrapperId, allRequestParams);
+        return null; // TODO
+    }
+
+    @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName:" + NAME_REGEX + "}/launch"}, method = GET)
+    @ApiIgnore // Swagger UI does not correctly show this API endpoint
+    @ResponseBody
+    public String getLaunchUi(final @PathVariable String project,
+                              final @PathVariable long commandId,
+                              final @PathVariable String wrapperName,
+                              final @RequestParam Map<String, String> allRequestParams)
+            {
+        log.info("Launch UI requested for project {}, command {}, wrapper {}", project, commandId, wrapperName);
+        final PartiallyResolvedCommand partiallyResolvedCommand =
+                containerService.partiallyResolveCommand(project, commandId, wrapperName, allRequestParams);
+        return null; // TODO
+    }
+
     /*
     LAUNCH COMMANDS
      */

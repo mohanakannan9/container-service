@@ -103,6 +103,16 @@ public class ContainerServiceImpl implements ContainerService {
     }
 
     @Override
+    public PartiallyResolvedCommand partiallyResolveCommand(final String project, final long commandId, final long wrapperId, final Map<String, String> rawParamValues) {
+        return null;
+    }
+
+    @Override
+    public PartiallyResolvedCommand partiallyResolveCommand(final String project, final long commandId, final String wrapperName, final Map<String, String> rawParamValues) {
+        return null;
+    }
+
+    @Override
     @Nonnull
     public PartiallyResolvedCommand resolveCommand(final long commandId,
                                                    final Map<String, String> runtimeInputValues,
