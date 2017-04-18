@@ -11,8 +11,10 @@ import com.google.auto.value.AutoValue;
 public abstract class CommandSummaryForContext {
     @JsonProperty("command-id") public abstract long commandId();
     @JsonProperty("command-name") public abstract String commandName();
+    @JsonProperty("command-description") public abstract String commandDescription();
     @JsonProperty("wrapper-id") public abstract long wrapperId();
     @JsonProperty("wrapper-name") public abstract String wrapperName();
+    @JsonProperty("wrapper-description") public abstract String wrapperDescription();
     @JsonProperty("image-name") public abstract String imageName();
     @JsonProperty("image-type") public abstract String imageType();
     @JsonProperty("enabled") public abstract boolean enabled();
@@ -25,8 +27,10 @@ public abstract class CommandSummaryForContext {
         return new AutoValue_CommandSummaryForContext(
                 command.id(),
                 command.name(),
+                command.description(),
                 wrapper.id(),
                 wrapper.name(),
+                wrapper.description(),
                 command.image(),
                 command.type(),
                 enabled,
