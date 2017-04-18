@@ -57,11 +57,11 @@ public class SessionArchiveListenerAndCommandLauncher implements Consumer<Event<
     @Override
     public void accept(Event<SessionArchiveEvent> event) {
         final SessionArchiveEvent sessionArchivedEvent = event.getData();
-        final Session session = new Session(sessionArchivedEvent.getSession());
+        final Session session = new Session(sessionArchivedEvent.session());
 
         // Fire ScanArchiveEvent for each contained scan
         for (final Scan scan : session.getScans()) {
-            eventService.triggerEvent(new ScanArchiveEventToLaunchCommands(scan, sessionArchivedEvent.getUser()));
+            eventService.triggerEvent(ScanArchiveEventToLaunchCommands.create(scan, sessionArchivedEvent.session().getProject(), sessionArchivedEvent.user()));
         }
 
         // Find commands defined for this event type
@@ -70,32 +70,32 @@ public class SessionArchiveListenerAndCommandLauncher implements Consumer<Event<
         if (commandEventMappings != null && !commandEventMappings.isEmpty()){
             for (CommandEventMapping commandEventMapping: commandEventMappings) {
                 final Long commandId = commandEventMapping.getCommandId();
-                final String xnatCommandWrapperName = commandEventMapping.getXnatCommandWrapperName();
+                final String wrapperName = commandEventMapping.getXnatCommandWrapperName();
 
-                final Map<String, String> runtimeValues = Maps.newHashMap();
+                final Map<String, String> inputValues = Maps.newHashMap();
                 String sessionString = session.getUri();
                 try {
                     sessionString = mapper.writeValueAsString(session);
                 } catch (JsonProcessingException e) {
                     log.error(String.format("Could not serialize Session %s to json.", session), e);
                 }
-                runtimeValues.put("session", sessionString);
+                inputValues.put("session", sessionString);
                 try {
                     if (log.isInfoEnabled()) {
-                        final String wrapperMessage = StringUtils.isNotBlank(xnatCommandWrapperName) ?
-                                String.format("wrapper \"%s\"", xnatCommandWrapperName) :
+                        final String wrapperMessage = StringUtils.isNotBlank(wrapperName) ?
+                                String.format("wrapper \"%s\"", wrapperName) :
                                 "identity wrapper";
                         final String message = String.format(
-                                "Launching command %s, %s, for user \"%s\"", commandId, wrapperMessage, sessionArchivedEvent.getUser().getLogin());
+                                "Launching command %s, %s, for user \"%s\"", commandId, wrapperMessage, sessionArchivedEvent.user().getLogin());
                         log.info(message);
                     }
                     if (log.isDebugEnabled()) {
                         log.debug("Runtime parameter values:");
-                        for (final Map.Entry<String, String> paramEntry : runtimeValues.entrySet()) {
+                        for (final Map.Entry<String, String> paramEntry : inputValues.entrySet()) {
                             log.debug(paramEntry.getKey() + ": " + paramEntry.getValue());
                         }
                     }
-                    containerService.resolveAndLaunchCommand(xnatCommandWrapperName, commandId, runtimeValues, sessionArchivedEvent.getUser());
+                    containerService.resolveCommandAndLaunchContainer(commandId, wrapperName, inputValues, sessionArchivedEvent.user());
                 } catch (NotFoundException | CommandResolutionException | NoServerPrefException | DockerServerException | ContainerException e) {
                     log.error("Error launching command " + commandId, e);
                 }

@@ -93,131 +93,50 @@ public class ContainerServiceImpl implements ContainerService {
     }
 
     @Override
-    public PartiallyResolvedCommand partiallyResolveCommand(final long commandId, final long wrapperId, final Map<String, String> rawParamValues) {
-        return null;
-    }
-
-    @Override
-    public PartiallyResolvedCommand partiallyResolveCommand(final long commandId, final String wrapperName, final Map<String, String> rawParamValues) {
-        return null;
-    }
-
-    @Override
-    public PartiallyResolvedCommand partiallyResolveCommand(final String project, final long commandId, final long wrapperId, final Map<String, String> rawParamValues) {
-        return null;
-    }
-
-    @Override
-    public PartiallyResolvedCommand partiallyResolveCommand(final String project, final long commandId, final String wrapperName, final Map<String, String> rawParamValues) {
-        return null;
-    }
-
-    @Override
     @Nonnull
-    public PartiallyResolvedCommand resolveCommand(final long commandId,
-                                                   final Map<String, String> runtimeInputValues,
-                                                   final UserI userI)
-            throws NotFoundException, CommandResolutionException {
-        final Command command = commandService.get(commandId);
-        return resolveCommand(command, runtimeInputValues, userI);
-
-    }
-
-    @Override
-    @Nonnull
-    public PartiallyResolvedCommand resolveCommand(final String xnatCommandWrapperName,
-                                                   final long commandId,
-                                                   final Map<String, String> runtimeInputValues,
-                                                   final UserI userI)
-            throws NotFoundException, CommandResolutionException {
-        if (StringUtils.isBlank(xnatCommandWrapperName)) {
-            return resolveCommand(commandId, runtimeInputValues, userI);
-        }
-
-        // The command that gets returned from getAndConfigure only has one wrapper
-        final Command command = commandService.getAndConfigure(commandId, xnatCommandWrapperName);
-        final CommandWrapper wrapper = command.xnatCommandWrappers().get(0);
-
-        return resolveCommand(wrapper, command, runtimeInputValues, userI);
-    }
-
-    @Override
-    @Nonnull
-    public PartiallyResolvedCommand resolveCommand(final long xnatCommandWrapperId,
-                                                   final long commandId,
-                                                   final Map<String, String> runtimeInputValues,
-                                                   final UserI userI)
-            throws NotFoundException, CommandResolutionException {
-        // The command that gets returned from getAndConfigure only has one wrapper
-        final Command command = commandService.getAndConfigure(xnatCommandWrapperId);
-        final CommandWrapper wrapper = command.xnatCommandWrappers().get(0);
-
-        return resolveCommand(wrapper, command, runtimeInputValues, userI);
-    }
-
-    @Override
-    @Nonnull
-    public PartiallyResolvedCommand resolveCommand(final Command command,
-                                                   final Map<String, String> runtimeInputValues,
-                                                   final UserI userI)
-            throws NotFoundException, CommandResolutionException {
-        // I was not given a wrapper.
-        // TODO what should I do here? Should I...
-        //  1. Use the "passthrough" wrapper, no matter what
-        //  2. Use the "passthrough" wrapper only if the command has no outputs
-        //  3. check if the command has any wrappers, and use one if it exists
-        //  4. Something else
-        //
-        // I guess for now I'll do 2.
-
-        if (!command.outputs().isEmpty()) {
-            throw new CommandResolutionException("Cannot resolve command without an XNAT wrapper. Command has outputs that will not be handled.");
-        }
-
-        final CommandWrapper commandWrapperToResolve = CommandWrapper.passthrough(command);
-
-        return resolveCommand(commandWrapperToResolve, command, runtimeInputValues, userI);
-    }
-
-    @Override
-    @Nonnull
-    public PartiallyResolvedCommand resolveCommand(final CommandWrapper commandWrapper,
-                                                   final Command command,
-                                                   final Map<String, String> runtimeInputValues,
-                                                   final UserI userI)
-            throws NotFoundException, CommandResolutionException {
-        return commandResolutionService.resolve(commandWrapper, command, runtimeInputValues, userI);
-    }
-
-    @Override
-    public ContainerEntity resolveAndLaunchCommand(final long commandId,
-                                                   final Map<String, String> runtimeValues,
-                                                   final UserI userI)
+    public ContainerEntity resolveCommandAndLaunchContainer(final long wrapperId,
+                                                            final Map<String, String> inputValues,
+                                                            final UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException {
-        return launchResolvedCommand(resolveCommand(commandId, runtimeValues, userI), userI);
+        return launchResolvedCommand(commandResolutionService.resolve(wrapperId, inputValues, userI), userI);
     }
 
     @Override
-    public ContainerEntity resolveAndLaunchCommand(final String xnatCommandWrapperName,
-                                                   final long commandId,
-                                                   final Map<String, String> runtimeValues,
-                                                   final UserI userI)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException {
-        return launchResolvedCommand(resolveCommand(xnatCommandWrapperName, commandId, runtimeValues, userI), userI);
-
-    }
-
-    @Override
-    public ContainerEntity resolveAndLaunchCommand(final long xnatCommandWrapperId,
-                                                   final long commandId,
-                                                   final Map<String, String> runtimeValues,
-                                                   final UserI userI)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException {
-        return launchResolvedCommand(resolveCommand(xnatCommandWrapperId, commandId, runtimeValues, userI), userI);
-    }
-
     @Nonnull
-    private ContainerEntity launchResolvedCommand(final PartiallyResolvedCommand resolvedCommand,
+    public ContainerEntity resolveCommandAndLaunchContainer(final long commandId,
+                                                            final String wrapperName,
+                                                            final Map<String, String> inputValues,
+                                                            final UserI userI)
+            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException {
+        return launchResolvedCommand(commandResolutionService.resolve(commandId, wrapperName, inputValues, userI), userI);
+
+    }
+
+    @Override
+    @Nonnull
+    public ContainerEntity resolveCommandAndLaunchContainer(final String project,
+                                                            final long wrapperId,
+                                                            final Map<String, String> inputValues,
+                                                            final UserI userI)
+            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException {
+        return launchResolvedCommand(commandResolutionService.resolve(project, wrapperId, inputValues, userI), userI);
+    }
+
+    @Override
+    @Nonnull
+    public ContainerEntity resolveCommandAndLaunchContainer(final String project,
+                                                            final long commandId,
+                                                            final String wrapperName,
+                                                            final Map<String, String> inputValues,
+                                                            final UserI userI)
+            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException {
+        return launchResolvedCommand(commandResolutionService.resolve(project, commandId, wrapperName, inputValues, userI), userI);
+
+    }
+
+    @Override
+    @Nonnull
+    public ContainerEntity launchResolvedCommand(final PartiallyResolvedCommand resolvedCommand,
                                                   final UserI userI)
             throws NoServerPrefException, DockerServerException, ContainerMountResolutionException, ContainerException, UnsupportedOperationException {
         if (resolvedCommand.type().equals(DOCKER.getName())) {
@@ -227,9 +146,8 @@ public class ContainerServiceImpl implements ContainerService {
         }
     }
 
-    @Override
     @Nonnull
-    public ContainerEntity launchResolvedDockerCommand(final PartiallyResolvedCommand resolvedCommand,
+    private ContainerEntity launchResolvedDockerCommand(final PartiallyResolvedCommand resolvedCommand,
                                                        final UserI userI)
             throws NoServerPrefException, DockerServerException, ContainerMountResolutionException, ContainerException {
         log.info("Preparing to launch resolved command.");

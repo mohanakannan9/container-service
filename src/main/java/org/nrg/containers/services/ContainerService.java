@@ -17,57 +17,27 @@ import org.nrg.xft.security.UserI;
 import java.util.Map;
 
 public interface ContainerService {
-    PartiallyResolvedCommand partiallyResolveCommand(long commandId,
-                                                     long wrapperId,
-                                                     Map<String, String> rawParamValues);
-    PartiallyResolvedCommand partiallyResolveCommand(long commandId,
+    ContainerEntity resolveCommandAndLaunchContainer(long wrapperId,
+                                                     Map<String, String> inputValues,
+                                                     UserI userI)
+            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException;
+    ContainerEntity resolveCommandAndLaunchContainer(long commandId,
                                                      String wrapperName,
-                                                     Map<String, String> rawParamValues);
-    PartiallyResolvedCommand partiallyResolveCommand(String project,
-                                                     long commandId,
+                                                     Map<String, String> inputValues,
+                                                     UserI userI)
+            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException;
+    ContainerEntity resolveCommandAndLaunchContainer(String project,
                                                      long wrapperId,
-                                                     Map<String, String> rawParamValues);
-    PartiallyResolvedCommand partiallyResolveCommand(String project,
+                                                     Map<String, String> inputValues,
+                                                     UserI userI)
+            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException;
+    ContainerEntity resolveCommandAndLaunchContainer(String project,
                                                      long commandId,
                                                      String wrapperName,
-                                                     Map<String, String> rawParamValues);
-
-    PartiallyResolvedCommand resolveCommand(final long commandId,
-                                            final Map<String, String> variableRuntimeValues,
-                                            final UserI userI)
-            throws NotFoundException, CommandResolutionException;
-    PartiallyResolvedCommand resolveCommand(final String xnatCommandWrapperName,
-                                            final long commandId,
-                                            final Map<String, String> variableRuntimeValues,
-                                            final UserI userI)
-            throws NotFoundException, CommandResolutionException;
-    PartiallyResolvedCommand resolveCommand(final long xnatCommandWrapperId,
-                                            final long commandId,
-                                            final Map<String, String> variableRuntimeValues,
-                                            final UserI userI)
-            throws NotFoundException, CommandResolutionException;
-    PartiallyResolvedCommand resolveCommand(final Command command,
-                                            final Map<String, String> variableRuntimeValues,
-                                            final UserI userI)
-            throws NotFoundException, CommandResolutionException;
-    PartiallyResolvedCommand resolveCommand(final CommandWrapper commandWrapper,
-                                            final Command command,
-                                            final Map<String, String> variableRuntimeValues,
-                                            final UserI userI)
-            throws NotFoundException, CommandResolutionException;
-
-    ContainerEntity resolveAndLaunchCommand(final long commandId,
-                                            final Map<String, String> variableRuntimeValues, final UserI userI)
+                                                     Map<String, String> inputValues,
+                                                     UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException;
-    ContainerEntity resolveAndLaunchCommand(final String xnatCommandWrapperName,
-                                            final long commandId,
-                                            final Map<String, String> variableRuntimeValues, final UserI userI)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException;
-    ContainerEntity resolveAndLaunchCommand(final long xnatCommandWrapperId,
-                                            final long commandId,
-                                            final Map<String, String> variableRuntimeValues, final UserI userI)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException;
-    ContainerEntity launchResolvedDockerCommand(final PartiallyResolvedCommand resolvedCommand, final UserI userI)
+    ContainerEntity launchResolvedCommand(final PartiallyResolvedCommand resolvedCommand, final UserI userI)
             throws NoServerPrefException, DockerServerException, ContainerMountResolutionException, ContainerException;
 
     void processEvent(final ContainerEvent event);

@@ -39,7 +39,9 @@ import org.nrg.containers.model.xnat.Subject;
 import org.nrg.containers.model.xnat.XnatFile;
 import org.nrg.containers.model.xnat.XnatModelObject;
 import org.nrg.containers.services.CommandResolutionService;
+import org.nrg.containers.services.CommandService;
 import org.nrg.framework.constants.Scope;
+import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.URIManager.ArchiveItemURI;
@@ -74,21 +76,116 @@ import static org.nrg.containers.model.command.entity.CommandWrapperInputType.SU
 @Service
 public class CommandResolutionServiceImpl implements CommandResolutionService {
 
+    private final CommandService commandService;
     private final ConfigService configService;
 
     @Autowired
-    public CommandResolutionServiceImpl(final ConfigService configService) {
+    public CommandResolutionServiceImpl(final CommandService commandService,
+                                        final ConfigService configService) {
+        this.commandService = commandService;
         this.configService = configService;
     }
 
     @Override
-    public PartiallyResolvedCommand resolve(final CommandWrapper commandWrapper, final Command command, final Map<String, String> inputValues, final UserI userI) throws CommandResolutionException {
-        return CommandResolutionHelper.resolve(commandWrapper, command, inputValues, userI);
+    public PartiallyResolvedCommand preResolve(final long wrapperId, final Map<String, String> rawParamValues) {
+        return null;
     }
 
     @Override
-    public PartiallyResolvedCommand preResolveForUi(final CommandWrapper commandWrapper, final Command command, final Map<String, String> inputValues, final UserI userI) {
+    public PartiallyResolvedCommand preResolve(final long commandId, final String wrapperName, final Map<String, String> rawParamValues) {
         return null;
+    }
+
+    @Override
+    public PartiallyResolvedCommand preResolve(final String project, final long wrapperId, final Map<String, String> rawParamValues) {
+        return null;
+    }
+
+    @Override
+    public PartiallyResolvedCommand preResolve(final String project, final long commandId, final String wrapperName, final Map<String, String> rawParamValues) {
+        return null;
+    }
+
+    @Override
+    public PartiallyResolvedCommand resolve(final long commandId,
+                                            final String wrapperName,
+                                            final Map<String, String> inputValues,
+                                            final UserI userI)
+            throws NotFoundException, CommandResolutionException {
+        final Command command = commandService.getAndConfigure(commandId, wrapperName);
+        final CommandWrapper wrapper = command.xnatCommandWrappers().get(0);
+        return resolve(wrapper, command, inputValues, userI);
+    }
+
+    @Override
+    @Nonnull
+    public PartiallyResolvedCommand resolve(final long wrapperId,
+                                            final Map<String, String> inputValues,
+                                            final UserI userI)
+            throws NotFoundException, CommandResolutionException {
+        // The command that gets returned from getAndConfigure only has one wrapper
+        final Command command = commandService.getAndConfigure(wrapperId);
+        final CommandWrapper wrapper = command.xnatCommandWrappers().get(0);
+
+        return resolve(wrapper, command, inputValues, userI);
+    }
+
+    @Override
+    @Nonnull
+    public PartiallyResolvedCommand resolve(final String project,
+                                            final long wrapperId,
+                                            final Map<String, String> inputValues,
+                                            final UserI userI)
+            throws NotFoundException, CommandResolutionException {
+        final Command command = commandService.getAndConfigure(project, wrapperId);
+        final CommandWrapper wrapper = command.xnatCommandWrappers().get(0);
+        return resolve(wrapper, command, inputValues, userI);
+    }
+
+    @Override
+    public PartiallyResolvedCommand resolve(final String project,
+                                            final long commandId,
+                                            final String wrapperName,
+                                            final Map<String, String> inputValues,
+                                            final UserI userI)
+            throws NotFoundException, CommandResolutionException {
+        final Command command = commandService.getAndConfigure(project, commandId, wrapperName);
+        final CommandWrapper wrapper = command.xnatCommandWrappers().get(0);
+        return resolve(wrapper, command, inputValues, userI);
+    }
+
+    // @Override
+    // @Nonnull
+    // public PartiallyResolvedCommand resolve(final Command command,
+    //                                                final Map<String, String> runtimeInputValues,
+    //                                                final UserI userI)
+    //         throws NotFoundException, CommandResolutionException {
+    //     // I was not given a wrapper.
+    //     // TODO what should I do here? Should I...
+    //     //  1. Use the "passthrough" wrapper, no matter what
+    //     //  2. Use the "passthrough" wrapper only if the command has no outputs
+    //     //  3. check if the command has any wrappers, and use one if it exists
+    //     //  4. Something else
+    //     //
+    //     // I guess for now I'll do 2.
+    //
+    //     if (!command.outputs().isEmpty()) {
+    //         throw new CommandResolutionException("Cannot resolve command without an XNAT wrapper. Command has outputs that will not be handled.");
+    //     }
+    //
+    //     final CommandWrapper commandWrapperToResolve = CommandWrapper.passthrough(command);
+    //
+    //     return resolve(commandWrapperToResolve, command, runtimeInputValues, userI);
+    // }
+
+    @Override
+    @Nonnull
+    public PartiallyResolvedCommand resolve(final CommandWrapper commandWrapper,
+                                            final Command command,
+                                            final Map<String, String> inputValues,
+                                            final UserI userI)
+            throws NotFoundException, CommandResolutionException {
+        return CommandResolutionHelper.resolve(commandWrapper, command, inputValues, userI);
     }
 
     private static class CommandResolutionHelper {

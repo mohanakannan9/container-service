@@ -114,8 +114,9 @@ public class IntegrationTestConfig {
     }
 
     @Bean
-    public CommandResolutionService commandResolutionService(final ConfigService configService) {
-        return new CommandResolutionServiceImpl(configService);
+    public CommandResolutionService commandResolutionService(final CommandService commandService,
+                                                             final ConfigService configService) {
+        return new CommandResolutionServiceImpl(commandService, configService);
     }
 
     @Bean

@@ -159,7 +159,7 @@ public class CommandLaunchIntegrationTest {
         runtimeValues.put("session", sessionJson);
         runtimeValues.put("T1-scantype", t1Scantype);
 
-        final ContainerEntity execution = containerService.resolveAndLaunchCommand(commandWrapper.id(), fakeReconAllCreated.id(), runtimeValues, mockUser);
+        final ContainerEntity execution = containerService.resolveCommandAndLaunchContainer(commandWrapper.id(), runtimeValues, mockUser);
         Thread.sleep(1000); // Wait for container to finish
 
         // Raw inputs

@@ -45,7 +45,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.io.File;
-import java.util.Map;
 import java.util.Set;
 
 import static org.hamcrest.Matchers.is;
@@ -74,7 +73,7 @@ public class LaunchRestApiTest {
     private final String INPUT_VALUE = "the super cool value";
     private final String INPUT_JSON = "{\"" + INPUT_NAME + "\": \"" + INPUT_VALUE + "\"}";
     private final String FAKE_CONTAINER_ID = "098zyx";
-    private final long COMMAND_ID = 10L;
+    private final long WRAPPER_ID = 10L;
 
     private final MediaType JSON = MediaType.APPLICATION_JSON_UTF8;
     private final MediaType XML = MediaType.APPLICATION_XML;
@@ -155,26 +154,31 @@ public class LaunchRestApiTest {
         when(mockSiteConfigPreferences.getBuildPath()).thenReturn(folder.newFolder().getAbsolutePath()); // transporter makes a directory under build
         when(mockSiteConfigPreferences.getArchivePath()).thenReturn(folder.newFolder().getAbsolutePath()); // container logs get stored under archive
 
+        final CommandWrapper mockCommandWrapper = CommandWrapper.builder()
+                .id(WRAPPER_ID)
+                .name("I don't know")
+                .build();
+        final long commandId = 15L;
         final Command mockCommand = Command.builder()
                 .name("command-to-launch")
                 .commandLine("echo hello world")
-                .id(COMMAND_ID)
+                .id(commandId)
                 .addInput(CommandInput.builder().name(INPUT_NAME).build())
+                .addCommandWrapper(mockCommandWrapper)
                 .build();
-        when(mockCommandService.get(COMMAND_ID)).thenReturn(mockCommand);
+        when(mockCommandService.getWrapper(WRAPPER_ID)).thenReturn(mockCommandWrapper);
 
         // This ResolvedCommand will be used in an internal method to "launch" a container
         final PartiallyResolvedCommand partiallyResolvedCommand = PartiallyResolvedCommand.builder()
-                .commandId(COMMAND_ID)
-                .xnatCommandWrapperId(0L)
+                .commandId(commandId)
+                .xnatCommandWrapperId(WRAPPER_ID)
                 .image("abc123")
                 .commandLine("echo hello world")
                 .addRawInputValue(INPUT_NAME, INPUT_VALUE)
                 .build();
         final ResolvedCommand resolvedCommand = partiallyResolvedCommand.toResolvedCommandBuilder().build();
         when(mockCommandResolutionService.resolve(
-                any(CommandWrapper.class),
-                eq(mockCommand),
+                eq(WRAPPER_ID),
                 anyMapOf(String.class, String.class),
                 eq(mockAdmin)
         )).thenReturn(partiallyResolvedCommand);
@@ -189,9 +193,9 @@ public class LaunchRestApiTest {
 
     @Test
     public void testLaunchWithQueryParams() throws Exception {
-        final String pathTemplate = "/commands/%d/launch";
+        final String pathTemplate = "/wrappers/%d/launch";
 
-        final String path = String.format(pathTemplate, COMMAND_ID);
+        final String path = String.format(pathTemplate, WRAPPER_ID);
         final MockHttpServletRequestBuilder request =
                 post(path).param(INPUT_NAME, INPUT_VALUE)
                         .with(authentication(authentication))
@@ -209,9 +213,9 @@ public class LaunchRestApiTest {
 
     @Test
     public void testLaunchWithParamsInBody() throws Exception {
-        final String pathTemplate = "/commands/%d/launch";
+        final String pathTemplate = "/wrappers/%d/launch";
 
-        final String path = String.format(pathTemplate, COMMAND_ID);
+        final String path = String.format(pathTemplate, WRAPPER_ID);
         final MockHttpServletRequestBuilder request =
                 post(path).content(INPUT_JSON).contentType(JSON)
                         .with(authentication(authentication))
