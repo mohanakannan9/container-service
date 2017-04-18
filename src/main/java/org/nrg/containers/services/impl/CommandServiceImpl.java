@@ -11,7 +11,6 @@ import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import org.nrg.containers.exceptions.CommandValidationException;
 import org.nrg.containers.model.command.auto.Command.CommandInput;
-import org.nrg.containers.model.command.auto.Command.CommandOutput;
 import org.nrg.containers.model.command.auto.Command.CommandWrapperDerivedInput;
 import org.nrg.containers.model.command.auto.Command.CommandWrapperExternalInput;
 import org.nrg.containers.model.command.auto.Command.CommandWrapperOutput;
@@ -21,7 +20,6 @@ import org.nrg.containers.model.command.entity.CommandEntity;
 import org.nrg.containers.model.command.entity.CommandWrapperEntity;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
-import org.nrg.containers.model.configuration.CommandConfiguration.CommandOutputConfiguration;
 import org.nrg.containers.model.configuration.CommandConfigurationInternal;
 import org.nrg.containers.services.CommandEntityService;
 import org.nrg.containers.services.CommandService;
@@ -364,60 +362,24 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     @Nonnull
     private Command getCommandWithOneWrapper(final @Nonnull Command originalCommand,
                                              final @Nonnull CommandWrapper commandWrapper) {
-        return Command.builder()
-                .name(originalCommand.name())
-                .id(originalCommand.id())
-                .name(originalCommand.name())
-                .label(originalCommand.label())
-                .description(originalCommand.description())
-                .version(originalCommand.version())
-                .schemaVersion(originalCommand.schemaVersion())
-                .infoUrl(originalCommand.infoUrl())
-                .image(originalCommand.image())
-                .type(originalCommand.type())
-                .workingDirectory(originalCommand.workingDirectory())
-                .commandLine(originalCommand.commandLine())
-                .environmentVariables(originalCommand.environmentVariables())
-                .mounts(originalCommand.mounts())
+        return copyWithNoInputsOrWrappers(originalCommand)
                 .inputs(originalCommand.inputs())
-                .outputs(originalCommand.outputs())
-                .index(originalCommand.index())
-                .hash(originalCommand.hash())
-                .ports(originalCommand.ports())
                 .addCommandWrapper(commandWrapper)
                 .build();
     }
 
     @Nonnull
-    private Command applyConfiguration(final @Nonnull Command originalCommand,
+    private Command applyConfiguration(final @Nonnull Command commandWithOneWrapper,
                                        final @Nonnull CommandConfiguration commandConfiguration) {
         // Initialize the command builder copy
-        final Command.Builder commandBuilder = Command.builder()
-                .name(originalCommand.name())
-                .id(originalCommand.id())
-                .name(originalCommand.name())
-                .label(originalCommand.label())
-                .description(originalCommand.description())
-                .version(originalCommand.version())
-                .schemaVersion(originalCommand.schemaVersion())
-                .infoUrl(originalCommand.infoUrl())
-                .image(originalCommand.image())
-                .type(originalCommand.type())
-                .workingDirectory(originalCommand.workingDirectory())
-                .commandLine(originalCommand.commandLine())
-                .environmentVariables(originalCommand.environmentVariables())
-                .mounts(originalCommand.mounts())
-                .index(originalCommand.index())
-                .hash(originalCommand.hash())
-                .ports(originalCommand.ports())
-                .outputs(originalCommand.outputs());
+        final Command.Builder commandBuilder = copyWithNoInputsOrWrappers(commandWithOneWrapper);
 
         // Things we need to apply configuration to:
         // command inputs
         // wrapper inputs
         // wrapper outputs
 
-        for (final CommandInput commandInput : originalCommand.inputs()) {
+        for (final CommandInput commandInput : commandWithOneWrapper.inputs()) {
             commandBuilder.addInput(
                     commandConfiguration.inputs().containsKey(commandInput.name()) ?
                             commandInput.applyConfiguration(commandConfiguration.inputs().get(commandInput.name())) :
@@ -425,7 +387,7 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
             );
         }
 
-        final CommandWrapper originalCommandWrapper = originalCommand.xnatCommandWrappers().get(0);
+        final CommandWrapper originalCommandWrapper = commandWithOneWrapper.xnatCommandWrappers().get(0);
         final CommandWrapper.Builder commandWrapperBuilder = CommandWrapper.builder()
                 .id(originalCommandWrapper.id())
                 .name(originalCommandWrapper.name())
@@ -457,6 +419,27 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
         }
 
         return commandBuilder.addCommandWrapper(commandWrapperBuilder.build()).build();
+    }
+
+    private Command.Builder copyWithNoInputsOrWrappers(final Command command) {
+        return Command.builder()
+                .name(command.name())
+                .id(command.id())
+                .label(command.label())
+                .description(command.description())
+                .version(command.version())
+                .schemaVersion(command.schemaVersion())
+                .infoUrl(command.infoUrl())
+                .image(command.image())
+                .type(command.type())
+                .workingDirectory(command.workingDirectory())
+                .commandLine(command.commandLine())
+                .environmentVariables(command.environmentVariables())
+                .mounts(command.mounts())
+                .index(command.index())
+                .hash(command.hash())
+                .ports(command.ports())
+                .outputs(command.outputs());
     }
 
     @Override
