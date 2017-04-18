@@ -821,7 +821,7 @@ var XNAT = getObject(XNAT || {});
                 language: 'json'
             });
 
-            _source.openEditor({
+            _editor.openEditor({
                 title: commandDef.name,
                 classes: 'plugin-json',
                 footerContent: '(read-only)',
@@ -839,7 +839,7 @@ var XNAT = getObject(XNAT || {});
                 }
             });
         } else {
-            _source = spawn('textarea', null);
+            _source = spawn('textarea', '{}');
 
             _editor = XNAT.app.codeEditor.init(_source, {
                 language: 'json'
