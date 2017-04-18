@@ -192,7 +192,7 @@ public class CommandRestApi extends AbstractXapiRestController {
     /*
     AVAILABLE FOR LAUNCHING
      */
-    @XapiRequestMapping(value = {"/commands/available"}, params = {"project", "xsiType"})
+    @XapiRequestMapping(value = {"/commands/available"}, params = {"project", "xsiType"}, method = GET)
     @ResponseBody
     public List<CommandSummaryForContext> availableCommands(final @RequestParam String project,
                                                             final @RequestParam String xsiType)
