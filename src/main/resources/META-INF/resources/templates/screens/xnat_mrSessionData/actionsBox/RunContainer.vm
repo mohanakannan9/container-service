@@ -3,14 +3,11 @@
 <!-- xnat_projectData/actionsBox/RunContainer.vm -->
 
 #if($data.getSession().getAttribute("userHelper").canEdit("xnat:subjectData/project",$project.getId()))
-<li class="yuimenuitem">
+<li class="yuimenuitem" id="container-launch-menu">
     <a class="yuimenuitemlabel" href="#insertbox">Run Container</a>
     <div class="yuimenu">
         <div class="bd">
             <ul class="first-of-type">
-                <li class="yuimenuitem">
-                    <a class="yuimenuitemlabel commandLauncher" href="#!" data-commandId="1" data-wrapperId="1" data-wrapperName="dcm2niix-scan" data-launcher="select-scan">Run dcm2niix on a Scan</a>
-                </li>
             </ul>
         </div>
     </div>

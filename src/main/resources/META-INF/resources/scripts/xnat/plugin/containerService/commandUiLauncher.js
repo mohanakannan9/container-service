@@ -29,9 +29,11 @@ var XNAT = getObject(XNAT || {});
 
     var launcher,
         undefined,
+        launcherMenu = $('#container-launch-menu'),
+        rootUrl = XNAT.url.rootUrl,
         projectId = XNAT.data.context.projectID,
+        xsiType = XNAT.data.context.xsiType,
         sessionId = (XNAT.data.context.isImageSession) ? XNAT.data.context.ID : null;
-        rootUrl = XNAT.url.rootUrl;
 
     XNAT.plugin =
         getObject(XNAT.plugin || {});
@@ -397,12 +399,57 @@ var XNAT = getObject(XNAT || {});
         });
     }
 
-    // when command launcher is clicked, determine what to do
-    $('.commandLauncher').on('click',function(){
-        var launcher = $(this).data('launcher'),
-            commandId = $(this).data('commandid'),
-            wrapperId = $(this).data('wrapperid'),
-            wrapperName = $(this).data('wrappername');
+    launcher.createLink = function(commandObj){
+        if (!commandObj) return false;
+        var link = spawn('li.yuimenuitem',[
+            spawn('a', {
+                className: 'yuimenuitemlabel commandLauncher',
+                data: {
+                    commandid: commandObj['command-id'],
+                    wrapperid: commandObj['wrapper-id'],
+                    wrappername: commandObj['wrapper-name'],
+                    launcher: 'select-scan'
+                },
+                onclick: function(){
+                    XNAT.plugin.containerService.launcher.open($(this));
+                },
+                html: commandObj['wrapper-name']
+            })
+        ]);
+        return link;
+//        return '<li class="yuimenuitem"><a href="#!" class="yuimenuitemlabel commandLauncher" data-commandId="'+commandObj['command-id']+'" data-wrapperId="'+commandObj['wrapper-id']+'" data-wrapperName="'+commandObj['wrapper-name']+'" data-launcher="select-scan">'+commandObj['wrapper-name']+'</a></li>';
+    };
+
+    launcher.init = function() {
+        // populate or hide the command launcher based on what's in context
+        XNAT.xhr.getJSON({
+            url: rootUrl('/xapi/commands/available?project=' + projectId + '&xsiType=' + xsiType),
+            success: function (data) {
+                var availableCommands = data;
+                if (!availableCommands.length) {
+                    launcherMenu.hide();
+                    return false;
+                } else {
+                    var submenu = launcherMenu.find('ul');
+                    availableCommands.forEach(function (command) {
+                        var item = XNAT.plugin.containerService.launcher.createLink(command);
+                        submenu.append(item);
+                    });
+                }
+
+            },
+            fail: function (e) {
+                errorHandler(e);
+            }
+        });
+    };
+
+    launcher.open = function(clickedObj){
+        clickedObj = $$(clickedObj);
+        var launcher = clickedObj.data('launcher'),
+            commandId = clickedObj.data('commandid'),
+            wrapperId = clickedObj.data('wrapperid'),
+            wrapperName = clickedObj.data('wrappername');
 
 
         switch(launcher) {
@@ -412,7 +459,14 @@ var XNAT = getObject(XNAT || {});
             default:
                 xmodal.alert('Sorry, I don\'t know what to do.');
         }
+    };
 
-    });
+    launcher.refresh = function(){
+        launcherMenu.html('');
+        launcher.init();
+    };
+
+    launcher.init();
+
 
 }));
