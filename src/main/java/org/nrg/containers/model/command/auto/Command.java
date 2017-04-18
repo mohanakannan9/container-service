@@ -165,6 +165,36 @@ public abstract class Command {
         return builder.build();
     }
 
+    public static Command create(final CommandCreation creation) {
+        return builder()
+                .name(creation.name())
+                .label(creation.label())
+                .description(creation.description())
+                .version(creation.version())
+                .schemaVersion(creation.schemaVersion())
+                .infoUrl(creation.infoUrl())
+                .image(creation.image())
+                .type(creation.type())
+                .index(creation.index())
+                .hash(creation.hash())
+                .workingDirectory(creation.workingDirectory())
+                .commandLine(creation.commandLine())
+                .mounts(creation.mounts() == null ? Collections.<CommandMount>emptyList() : creation.mounts())
+                .environmentVariables(creation.environmentVariables() == null ? Collections.<String, String>emptyMap() : creation.environmentVariables())
+                .ports(creation.ports() == null ? Collections.<String, String>emptyMap() : creation.ports())
+                .inputs(creation.inputs() == null ? Collections.<CommandInput>emptyList() : creation.inputs())
+                .outputs(creation.outputs() == null ? Collections.<CommandOutput>emptyList() : creation.outputs())
+                .xnatCommandWrappers(creation.commandWrapperCreations() == null ? Collections.<CommandWrapper>emptyList() :
+                        Lists.transform(creation.commandWrapperCreations(), new Function<CommandWrapperCreation, CommandWrapper>() {
+                            @Override
+                            public CommandWrapper apply(final CommandWrapperCreation input) {
+                                return CommandWrapper.create(input);
+                            }
+                        })
+                )
+                .build();
+    }
+
     public abstract Builder toBuilder();
 
     public static Builder builder() {
@@ -422,13 +452,64 @@ public abstract class Command {
         }
 
         public abstract Builder xnatCommandWrappers(@Nonnull List<CommandWrapper> xnatCommandWrappers);
-        abstract ImmutableList.Builder<CommandWrapper> xnatCommandWrappersBuilder();
+        public abstract ImmutableList.Builder<CommandWrapper> xnatCommandWrappersBuilder();
         public Builder addCommandWrapper(final @Nonnull CommandWrapper commandWrapper) {
             xnatCommandWrappersBuilder().add(commandWrapper);
             return this;
         }
 
         public abstract Command build();
+    }
+
+    @AutoValue
+    public static abstract class CommandCreation {
+        @Nullable @JsonProperty("name") public abstract String name();
+        @Nullable @JsonProperty("label") public abstract String label();
+        @Nullable @JsonProperty("description") public abstract String description();
+        @Nullable @JsonProperty("version") public abstract String version();
+        @Nullable @JsonProperty("schema-version") public abstract String schemaVersion();
+        @Nullable @JsonProperty("info-url") public abstract String infoUrl();
+        @Nullable @JsonProperty("image") public abstract String image();
+        @Nullable @JsonProperty("type") public abstract String type();
+        @Nullable @JsonProperty("index") public abstract String index();
+        @Nullable @JsonProperty("hash") public abstract String hash();
+        @Nullable @JsonProperty("working-directory") public abstract String workingDirectory();
+        @Nullable @JsonProperty("command-line") public abstract String commandLine();
+        @JsonProperty("mounts") public abstract ImmutableList<CommandMount> mounts();
+        @JsonProperty("environment-variables") public abstract ImmutableMap<String, String> environmentVariables();
+        @JsonProperty("ports") public abstract ImmutableMap<String, String> ports();
+        @JsonProperty("inputs") public abstract ImmutableList<CommandInput> inputs();
+        @JsonProperty("outputs") public abstract ImmutableList<CommandOutput> outputs();
+        @JsonProperty("xnat") public abstract ImmutableList<CommandWrapperCreation> commandWrapperCreations();
+
+        @JsonCreator
+        static CommandCreation create(@JsonProperty("name") final String name,
+                                      @JsonProperty("label") final String label,
+                                      @JsonProperty("description") final String description,
+                                      @JsonProperty("version") final String version,
+                                      @JsonProperty("schema-version") final String schemaVersion,
+                                      @JsonProperty("info-url") final String infoUrl,
+                                      @JsonProperty("image") final String image,
+                                      @JsonProperty("type") final String type,
+                                      @JsonProperty("index") final String index,
+                                      @JsonProperty("hash") final String hash,
+                                      @JsonProperty("working-directory") final String workingDirectory,
+                                      @JsonProperty("command-line") final String commandLine,
+                                      @JsonProperty("mounts") final List<CommandMount> mounts,
+                                      @JsonProperty("environment-variables") final Map<String, String> environmentVariables,
+                                      @JsonProperty("ports") final Map<String, String> ports,
+                                      @JsonProperty("inputs") final List<CommandInput> inputs,
+                                      @JsonProperty("outputs") final List<CommandOutput> outputs,
+                                      @JsonProperty("xnat") final List<CommandWrapperCreation> commandWrapperCreations) {
+            return new AutoValue_Command_CommandCreation(name, label, description, version, schemaVersion, infoUrl, image,
+                    type, index, hash, workingDirectory, commandLine,
+                    mounts == null ? ImmutableList.<CommandMount>of() : ImmutableList.copyOf(mounts),
+                    environmentVariables == null ? ImmutableMap.<String, String>of() : ImmutableMap.copyOf(environmentVariables),
+                    ports == null ? ImmutableMap.<String, String>of() : ImmutableMap.copyOf(ports),
+                    inputs == null ? ImmutableList.<CommandInput>of() : ImmutableList.copyOf(inputs),
+                    outputs == null ? ImmutableList.<CommandOutput>of() : ImmutableList.copyOf(outputs),
+                    commandWrapperCreations == null ? ImmutableList.<CommandWrapperCreation>of() : ImmutableList.copyOf(commandWrapperCreations));
+        }
     }
 
     @AutoValue
@@ -698,6 +779,17 @@ public abstract class Command {
                     .build();
         }
 
+        static CommandWrapper create(final CommandWrapperCreation creation) {
+            return builder()
+                    .name(creation.name())
+                    .description(creation.description())
+                    .contexts(creation.contexts() == null ? Collections.<String>emptySet() : creation.contexts())
+                    .externalInputs(creation.externalInputs() == null ? Collections.<CommandWrapperExternalInput>emptyList() : creation.externalInputs())
+                    .derivedInputs(creation.derivedInputs() == null ? Collections.<CommandWrapperDerivedInput>emptyList() : creation.derivedInputs())
+                    .outputHandlers(creation.outputHandlers() == null ? Collections.<CommandWrapperOutput>emptyList() : creation.outputHandlers())
+                    .build();
+        }
+
         public static CommandWrapper passthrough(final Command command) {
             if (command == null) {
                 return null;
@@ -813,6 +905,30 @@ public abstract class Command {
             }
 
             public abstract CommandWrapper build();
+        }
+    }
+
+    @AutoValue
+    public static abstract class CommandWrapperCreation {
+        @Nullable @JsonProperty("name") public abstract String name();
+        @Nullable @JsonProperty("description") public abstract String description();
+        @JsonProperty("contexts") public abstract ImmutableSet<String> contexts();
+        @JsonProperty("external-inputs") public abstract ImmutableList<CommandWrapperExternalInput> externalInputs();
+        @JsonProperty("derived-inputs") public abstract ImmutableList<CommandWrapperDerivedInput> derivedInputs();
+        @JsonProperty("output-handlers") public abstract ImmutableList<CommandWrapperOutput> outputHandlers();
+
+        @JsonCreator
+        static CommandWrapperCreation create(@JsonProperty("name") final String name,
+                                             @JsonProperty("description") final String description,
+                                             @JsonProperty("contexts") final Set<String> contexts,
+                                             @JsonProperty("external-inputs") final List<CommandWrapperExternalInput> externalInputs,
+                                             @JsonProperty("derived-inputs") final List<CommandWrapperDerivedInput> derivedInputs,
+                                             @JsonProperty("output-handlers") final List<CommandWrapperOutput> outputHandlers) {
+            return new AutoValue_Command_CommandWrapperCreation(name, description,
+                    contexts == null ? ImmutableSet.<String>of() : ImmutableSet.copyOf(contexts),
+                    externalInputs == null ? ImmutableList.<CommandWrapperExternalInput>of() : ImmutableList.copyOf(externalInputs),
+                    derivedInputs == null ? ImmutableList.<CommandWrapperDerivedInput>of() : ImmutableList.copyOf(derivedInputs),
+                    outputHandlers == null ? ImmutableList.<CommandWrapperOutput>of() : ImmutableList.copyOf(outputHandlers));
         }
     }
 
