@@ -153,6 +153,11 @@ public class HibernateCommandEntityService extends AbstractHibernateEntityServic
     }
 
     @Override
+    public void assertPairExists(final long commandId, final long wrapperId) throws NotFoundException {
+        getDao().assertPairExists(commandId, wrapperId);
+    }
+
+    @Override
     public void assertPairExists(final long commandId, final String wrapperName) throws NotFoundException {
         getDao().assertPairExists(commandId, wrapperName);
     }

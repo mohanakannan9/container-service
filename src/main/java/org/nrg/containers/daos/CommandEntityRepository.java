@@ -139,6 +139,23 @@ public class CommandEntityRepository extends AbstractHibernateDAO<CommandEntity>
         getSession().delete(commandWrapperEntity);
     }
 
+    public void assertPairExists(final long commandId, final long wrapperId) throws NotFoundException {
+        final Object commandExistsResult = getSession().createQuery("select 1 from CommandEntity as command where command.id = :commandId")
+                .setLong("commandId", commandId)
+                .uniqueResult();
+        if (commandExistsResult == null) {
+            throw new NotFoundException("No command with id " + String.valueOf(commandId));
+        }
+
+        final Object wrapperExistsResult = getSession().createQuery("select 1 from CommandWrapperEntity as wrapper where wrapper.id = :wrapperId and wrapper.commandEntity.id = :commandId")
+                .setLong("wrapperId", wrapperId)
+                .setLong("commandId", commandId)
+                .uniqueResult();
+        if (wrapperExistsResult == null) {
+            throw new NotFoundException("Command " + String.valueOf(commandId) + " has no wrapper " + wrapperId);
+        }
+    }
+
     public void assertPairExists(final long commandId, final String wrapperName) throws NotFoundException {
         final Object commandExistsResult = getSession().createQuery("select 1 from CommandEntity as command where command.id = :commandId")
                 .setLong("commandId", commandId)

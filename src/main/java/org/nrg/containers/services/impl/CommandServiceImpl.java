@@ -656,6 +656,10 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
         return CommandWrapper.create(commandWrapperEntity);
     }
 
+    private void assertPairExists(final long commandId, final long wrapperId) throws NotFoundException {
+        commandEntityService.assertPairExists(commandId, wrapperId);
+    }
+
     private void assertPairExists(final long commandId, final String wrapperName) throws NotFoundException {
         commandEntityService.assertPairExists(commandId, wrapperName);
     }
