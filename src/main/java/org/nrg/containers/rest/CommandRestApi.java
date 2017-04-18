@@ -175,17 +175,16 @@ public class CommandRestApi extends AbstractXapiRestController {
                                               final @PathVariable long commandId,
                                               final @PathVariable long wrapperId)
             throws NotFoundException, CommandValidationException {
-        commandService.update(commandId,
+        commandService.updateWrapper(commandId,
                 commandWrapper.id() == wrapperId ? commandWrapper : commandWrapper.toBuilder().id(wrapperId).build());
         return ResponseEntity.ok().build();
     }
 
-    @XapiRequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperId}"}, method = DELETE)
+    @XapiRequestMapping(value = {"/wrappers/{wrapperId}"}, method = DELETE)
     @ApiOperation(value = "Delete a Command", code = 204)
-    public ResponseEntity<Void> delete(final @PathVariable long commandId,
-                                       final @PathVariable long wrapperId)
+    public ResponseEntity<Void> deleteWrapper(final @PathVariable long wrapperId)
             throws NotFoundException {
-        commandService.delete(commandId, wrapperId);
+        commandService.deleteWrapper(wrapperId);
         return ResponseEntity.noContent().build();
     }
 

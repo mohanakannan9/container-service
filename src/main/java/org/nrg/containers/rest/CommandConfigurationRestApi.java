@@ -79,6 +79,18 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
+    @XapiRequestMapping(value = {"/wrappers/{wrapperId}/config"}, method = POST)
+    public ResponseEntity<Void> createConfiguration(final @RequestBody CommandConfiguration commandConfiguration,
+                                                    final @PathVariable long wrapperId,
+                                                    final @RequestParam(required = false, defaultValue = "true") boolean enable,
+                                                    final @RequestParam(required = false) String reason)
+            throws CommandConfigurationException, NotFoundException {
+        final UserI userI = XDAT.getUserDetails();
+        // TODO Check: can user create?
+        commandService.configureForSite(commandConfiguration, wrapperId, enable, userI.getLogin(), reason);
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
     // Get configuration for site + command wrapper
     @XapiRequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/config"}, method = GET)
     @ResponseBody
@@ -89,14 +101,31 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
         return commandService.getSiteConfiguration(commandId, wrapperName);
     }
 
+    @XapiRequestMapping(value = {"/wrappers/{wrapperId}/config"}, method = GET)
+    @ResponseBody
+    public CommandConfiguration getConfiguration(final @PathVariable long wrapperId) throws NotFoundException {
+        // TODO Check: can user read?
+        // final UserI userI = XDAT.getUserDetails();
+        return commandService.getSiteConfiguration(wrapperId);
+    }
+
     // Delete configuration for site + command wrapper
     @XapiRequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/config"}, method = DELETE)
     public ResponseEntity<Void> deleteConfiguration(final @PathVariable long commandId,
                                                     final @PathVariable String wrapperName)
-            throws CommandConfigurationException {
+            throws CommandConfigurationException, NotFoundException {
         // TODO Check: can user delete?
         final UserI userI = XDAT.getUserDetails();
         commandService.deleteSiteConfiguration(commandId, wrapperName, userI.getLogin());
+        return ResponseEntity.noContent().build();
+    }
+
+    @XapiRequestMapping(value = {"/wrappers/{wrapperId}/config"}, method = DELETE)
+    public ResponseEntity<Void> deleteConfiguration(final @PathVariable long wrapperId)
+            throws CommandConfigurationException, NotFoundException {
+        // TODO Check: can user delete?
+        final UserI userI = XDAT.getUserDetails();
+        commandService.deleteSiteConfiguration(wrapperId, userI.getLogin());
         return ResponseEntity.noContent().build();
     }
 
@@ -115,6 +144,19 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
+    @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/config"}, method = POST)
+    public ResponseEntity<Void> createConfiguration(final @RequestBody CommandConfiguration commandConfiguration,
+                                                    final @PathVariable String project,
+                                                    final @PathVariable long wrapperId,
+                                                    final @RequestParam(required = false, defaultValue = "true") boolean enable,
+                                                    final @RequestParam(required = false) String reason)
+            throws CommandConfigurationException, NotFoundException {
+        final UserI userI = XDAT.getUserDetails();
+        // TODO Check: can user create?
+        commandService.configureForProject(commandConfiguration, project, wrapperId, enable, userI.getLogin(), reason);
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
     // Get configuration for project + command wrapper
     @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/config"}, method = GET)
     @ResponseBody
@@ -126,15 +168,34 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
         return commandService.getProjectConfiguration(project, commandId, wrapperName);
     }
 
+    @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/config"}, method = GET)
+    @ResponseBody
+    public CommandConfiguration getConfiguration(final @PathVariable String project,
+                                                 final @PathVariable long wrapperId) throws NotFoundException {
+        // TODO Check: can user read?
+        // final UserI userI = XDAT.getUserDetails();
+        return commandService.getProjectConfiguration(project, wrapperId);
+    }
+
     // Delete configuration for project + command wrapper
     @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/config"}, method = DELETE)
     public ResponseEntity<Void> deleteConfiguration(final @PathVariable String project,
                                                     final @PathVariable long commandId,
                                                     final @PathVariable String wrapperName)
-            throws CommandConfigurationException {
+            throws CommandConfigurationException, NotFoundException {
         // TODO Check: can user delete?
         final UserI userI = XDAT.getUserDetails();
         commandService.deleteProjectConfiguration(project, commandId, wrapperName, userI.getLogin());
+        return ResponseEntity.noContent().build();
+    }
+
+    @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/config"}, method = DELETE)
+    public ResponseEntity<Void> deleteConfiguration(final @PathVariable String project,
+                                                    final @PathVariable long wrapperId)
+            throws CommandConfigurationException, NotFoundException {
+        // TODO Check: can user delete?
+        final UserI userI = XDAT.getUserDetails();
+        commandService.deleteProjectConfiguration(project, wrapperId, userI.getLogin());
         return ResponseEntity.noContent().build();
     }
 
@@ -142,11 +203,20 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     ENABLE/DISABLE
      */
     @XapiRequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/enabled"}, method = GET)
-    public ResponseEntity<Boolean> isConfigurationEnabled(final @PathVariable long commandId,
-                                                          final @PathVariable String wrapperName)
+    @ResponseBody
+    public Boolean isConfigurationEnabled(final @PathVariable long commandId,
+                                          final @PathVariable String wrapperName)
             throws CommandConfigurationException, NotFoundException {
         // TODO Check: can user create?
-        return ResponseEntity.ok(commandService.isEnabledForSite(commandId, wrapperName));
+        return commandService.isEnabledForSite(commandId, wrapperName);
+    }
+
+    @XapiRequestMapping(value = {"/wrappers/{wrapperId}/enabled"}, method = GET)
+    @ResponseBody
+    public Boolean isConfigurationEnabled(final @PathVariable long wrapperId)
+            throws CommandConfigurationException, NotFoundException {
+        // TODO Check: can user create?
+        return commandService.isEnabledForSite(wrapperId);
     }
 
     @XapiRequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/enabled"}, method = PUT)
@@ -157,6 +227,16 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
         final UserI userI = XDAT.getUserDetails();
         // TODO Check: can user create?
         commandService.enableForSite(commandId, wrapperName, userI.getLogin(), reason);
+        return ResponseEntity.ok().build();
+    }
+
+    @XapiRequestMapping(value = {"/wrappers/{wrapperId}/enabled"}, method = PUT)
+    public ResponseEntity<Void> enableConfiguration(final @PathVariable long wrapperId,
+                                                    final @RequestParam(required = false) String reason)
+            throws CommandConfigurationException, NotFoundException {
+        final UserI userI = XDAT.getUserDetails();
+        // TODO Check: can user create?
+        commandService.enableForSite(wrapperId, userI.getLogin(), reason);
         return ResponseEntity.ok().build();
     }
 
@@ -171,13 +251,33 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
         return ResponseEntity.ok().build();
     }
 
+    @XapiRequestMapping(value = {"/wrappers/{wrapperId}/disabled"}, method = PUT)
+    public ResponseEntity<Void> disableConfiguration(final @PathVariable long wrapperId,
+                                                     final @RequestParam(required = false) String reason)
+            throws CommandConfigurationException, NotFoundException {
+        final UserI userI = XDAT.getUserDetails();
+        // TODO Check: can user create?
+        commandService.disableForSite(wrapperId, userI.getLogin(), reason);
+        return ResponseEntity.ok().build();
+    }
+
     @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/enabled"}, method = GET)
-    public ResponseEntity<Boolean> isConfigurationEnabled(final @PathVariable String project,
-                                                          final @PathVariable long commandId,
-                                                          final @PathVariable String wrapperName)
+    @ResponseBody
+    public Boolean isConfigurationEnabled(final @PathVariable String project,
+                                          final @PathVariable long commandId,
+                                          final @PathVariable String wrapperName)
             throws CommandConfigurationException, NotFoundException {
         // TODO Check: can user create?
-        return ResponseEntity.ok(commandService.isEnabledForProject(project, commandId, wrapperName));
+        return commandService.isEnabledForProject(project, commandId, wrapperName);
+    }
+
+    @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/enabled"}, method = GET)
+    @ResponseBody
+    public Boolean isConfigurationEnabled(final @PathVariable String project,
+                                          final @PathVariable long wrapperId)
+            throws CommandConfigurationException, NotFoundException {
+        // TODO Check: can user create?
+        return commandService.isEnabledForProject(project, wrapperId);
     }
 
     @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/enabled"}, method = PUT)
@@ -192,6 +292,17 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
         return ResponseEntity.ok().build();
     }
 
+    @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/enabled"}, method = PUT)
+    public ResponseEntity<Void> enableConfiguration(final @PathVariable String project,
+                                                    final @PathVariable long wrapperId,
+                                                    final @RequestParam(required = false) String reason)
+            throws CommandConfigurationException, NotFoundException {
+        final UserI userI = XDAT.getUserDetails();
+        // TODO Check: can user create?
+        commandService.enableForProject(project, wrapperId, userI.getLogin(), reason);
+        return ResponseEntity.ok().build();
+    }
+
     @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/disabled"}, method = PUT)
     public ResponseEntity<Void> disableConfiguration(final @PathVariable String project,
                                                      final @PathVariable long commandId,
@@ -201,6 +312,17 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
         final UserI userI = XDAT.getUserDetails();
         // TODO Check: can user create?
         commandService.disableForProject(project, commandId, wrapperName, userI.getLogin(), reason);
+        return ResponseEntity.ok().build();
+    }
+
+    @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/disabled"}, method = PUT)
+    public ResponseEntity<Void> disableConfiguration(final @PathVariable String project,
+                                                     final @PathVariable long wrapperId,
+                                                     final @RequestParam(required = false) String reason)
+            throws CommandConfigurationException, NotFoundException {
+        final UserI userI = XDAT.getUserDetails();
+        // TODO Check: can user create?
+        commandService.disableForProject(project, wrapperId, userI.getLogin(), reason);
         return ResponseEntity.ok().build();
     }
 

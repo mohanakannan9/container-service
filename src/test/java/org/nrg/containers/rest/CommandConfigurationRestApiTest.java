@@ -111,18 +111,24 @@ public class CommandConfigurationRestApiTest {
 
         // Command and wrapper
         final long commandId = 0L;
+        final long wrapperId = 100L;
         final String wrapperName = "aWrapper";
         final String inputName = "input";
         final String outputName = "output";
+        final CommandWrapper commandWrapper = CommandWrapper.builder()
+                .id(wrapperId)
+                .name(wrapperName)
+                .build();
         final Command command = Command.builder()
                 .id(commandId)
                 .name("aCommand")
                 .type("docker")
-                .addCommandWrapper(CommandWrapper.builder().name(wrapperName).build())
+                .addCommandWrapper(commandWrapper)
                 .addInput(CommandInput.builder().name(inputName).build())
                 .addOutput(CommandOutput.builder().name(outputName).build())
                 .build();
-        when(mockCommandEntityService.get(commandId)).thenReturn(CommandEntity.fromPojo(command));
+        when(mockCommandEntityService.getWrapperId(commandId, wrapperName)).thenReturn(wrapperId);
+        when(mockCommandEntityService.getCommandWithOneWrapper(wrapperId)).thenReturn(CommandEntity.fromPojo(command));
 
         // Create a command configuration
         final CommandConfigurationInternal commandConfigurationInternal = CommandConfigurationInternal.builder()
@@ -143,7 +149,7 @@ public class CommandConfigurationRestApiTest {
         commandConfigurationInternalDisabledJson =
                 mapper.writeValueAsString(commandConfigurationInternalDisabled);
 
-        commandConfiguration = CommandConfiguration.create(command, commandConfigurationInternal, wrapperName);
+        commandConfiguration = CommandConfiguration.create(command, commandWrapper, commandConfigurationInternal);
         commandConfigurationJson = mapper.writeValueAsString(commandConfiguration);
 
         // mock out a org.nrg.config.Configuration
@@ -152,7 +158,7 @@ public class CommandConfigurationRestApiTest {
         // mockConfigDisabled = mock(Configuration.class);
         // when(mockConfigDisabled.getContents()).thenReturn(commandConfigurationInternalDisabledJson);
 
-        configPath = String.format(ContainerConfigServiceImpl.COMMAND_CONFIG_PATH_TEMPLATE, commandId, wrapperName);
+        configPath = String.format(ContainerConfigServiceImpl.WRAPPER_CONFIG_PATH_TEMPLATE, wrapperId);
 
         // REST paths
         final String siteConfigRestPathTemplate = "/commands/%d/wrappers/%s/config";

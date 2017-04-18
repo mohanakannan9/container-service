@@ -24,7 +24,7 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
     private static final Logger log = LoggerFactory.getLogger(ContainerConfigService.class);
 
     public static final String DEFAULT_DOCKER_HUB_PATH = "default-docker-hub-id";
-    public static final String COMMAND_CONFIG_PATH_TEMPLATE = "command-%d-wrapper-%s";
+    public static final String WRAPPER_CONFIG_PATH_TEMPLATE = "wrapper-%d";
     public static final String OPT_IN_PATH = "opt-in-to-site-commands";
     public static final boolean OPT_IN_DEFAULT_VALUE = false;
     public static final String ALL_ENABLED_PATH = "all-commands-enabled";
@@ -66,47 +66,42 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
     }
 
     @Override
-    public void configureForProject(final CommandConfigurationInternal commandConfigurationInternal, final String project, final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
-        setCommandConfigurationInternal(commandConfigurationInternal, Scope.Project, project, commandId, wrapperName, username, reason);
+    public void configureForProject(final CommandConfigurationInternal commandConfigurationInternal, final String project, final long wrapperId, final String username, final String reason) throws CommandConfigurationException {
+        setCommandConfigurationInternal(commandConfigurationInternal, Scope.Project, project, wrapperId, username, reason);
     }
 
     @Override
-    public void configureForSite(final CommandConfigurationInternal commandConfigurationInternal, final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
-        setCommandConfigurationInternal(commandConfigurationInternal, Scope.Site, null, commandId, wrapperName, username, reason);
-    }
-
-    @Override
-    @Nullable
-    public CommandConfigurationInternal getSiteConfiguration(final long commandId, final String wrapperName) {
-        return getCommandConfiguration(Scope.Site, null, commandId, wrapperName);
+    public void configureForSite(final CommandConfigurationInternal commandConfigurationInternal, final long wrapperId, final String username, final String reason) throws CommandConfigurationException {
+        setCommandConfigurationInternal(commandConfigurationInternal, Scope.Site, null, wrapperId, username, reason);
     }
 
     @Override
     @Nullable
-    public CommandConfigurationInternal getProjectConfiguration(final String project, final long commandId, final String wrapperName) {
-        final CommandConfigurationInternal siteConfig = getSiteConfiguration(commandId, wrapperName);
+    public CommandConfigurationInternal getSiteConfiguration(final long wrapperId) {
+        return getCommandConfiguration(Scope.Site, null, wrapperId);
+    }
+
+    @Override
+    @Nullable
+    public CommandConfigurationInternal getProjectConfiguration(final String project, final long wrapperId) {
+        final CommandConfigurationInternal siteConfig = getSiteConfiguration(wrapperId);
         final CommandConfigurationInternal baseConfig = siteConfig != null ? siteConfig : CommandConfigurationInternal.builder().build();
-        final CommandConfigurationInternal projectConfig = getCommandConfiguration(Scope.Project, project, commandId, wrapperName);
-        return baseConfig.merge(projectConfig, isEnabledForProject(project, commandId, wrapperName));
+        final CommandConfigurationInternal projectConfig = getCommandConfiguration(Scope.Project, project, wrapperId);
+        return baseConfig.merge(projectConfig, isEnabledForProject(project, wrapperId));
     }
 
     @Override
-    public void deleteSiteConfiguration(final long commandId, final String wrapperName, final String username) throws CommandConfigurationException {
-        deleteCommandConfiguration(Scope.Site, null, commandId, wrapperName, username);
+    public void deleteSiteConfiguration(final long wrapperId, final String username) throws CommandConfigurationException {
+        deleteCommandConfiguration(Scope.Site, null, wrapperId, username);
     }
 
     @Override
-    public void deleteProjectConfiguration(final String project, final long commandId, final String wrapperName, final String username) throws CommandConfigurationException {
-        deleteCommandConfiguration(Scope.Project, project, commandId, wrapperName, username);
+    public void deleteProjectConfiguration(final String project, final long wrapperId, final String username) throws CommandConfigurationException {
+        deleteCommandConfiguration(Scope.Project, project, wrapperId, username);
     }
 
     @Override
-    public void deleteAllConfiguration(final long commandId, final String wrapperName) {
-        // TODO
-    }
-
-    @Override
-    public void deleteAllConfiguration(final long commandId) {
+    public void deleteAllConfiguration(final long wrapperId) {
         // TODO
     }
 
@@ -240,34 +235,34 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
     }
 
     @Override
-    public void enableForSite(final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
-        setCommandEnabled(true, Scope.Site, null, commandId, wrapperName, username, reason);
+    public void enableForSite(final long wrapperId, final String username, final String reason) throws CommandConfigurationException {
+        setCommandEnabled(true, Scope.Site, null, wrapperId, username, reason);
     }
 
     @Override
-    public void disableForSite(final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
-        setCommandEnabled(false, Scope.Site, null, commandId, wrapperName, username, reason);
+    public void disableForSite(final long wrapperId, final String username, final String reason) throws CommandConfigurationException {
+        setCommandEnabled(false, Scope.Site, null, wrapperId, username, reason);
     }
 
     @Override
-    public boolean isEnabledForSite(final long commandId, final String wrapperName) {
-        final Boolean isEnabledConfiguration = getCommandIsEnabledConfiguration(Scope.Site, null, commandId, wrapperName);
+    public boolean isEnabledForSite(final long wrapperId) {
+        final Boolean isEnabledConfiguration = getCommandIsEnabledConfiguration(Scope.Site, null, wrapperId);
         return !Boolean.FALSE.equals(isEnabledConfiguration);
     }
 
     @Override
-    public void enableForProject(final String project, final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
-        setCommandEnabled(true, Scope.Project, project, commandId, wrapperName, username, reason);
+    public void enableForProject(final String project, final long wrapperId, final String username, final String reason) throws CommandConfigurationException {
+        setCommandEnabled(true, Scope.Project, project, wrapperId, username, reason);
     }
 
     @Override
-    public void disableForProject(final String project, final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
-        setCommandEnabled(false, Scope.Project, project, commandId, wrapperName, username, reason);
+    public void disableForProject(final String project, final long wrapperId, final String username, final String reason) throws CommandConfigurationException {
+        setCommandEnabled(false, Scope.Project, project, wrapperId, username, reason);
     }
 
     @Override
-    public boolean isEnabledForProject(final String project, final long commandId, final String wrapperName) {
-        final Boolean projectIsEnabledConfig = getCommandIsEnabledConfiguration(Scope.Project, project, commandId, wrapperName);
+    public boolean isEnabledForProject(final String project, final long wrapperId) {
+        final Boolean projectIsEnabledConfig = getCommandIsEnabledConfiguration(Scope.Project, project, wrapperId);
 
         // How to know if the command is enabled for a project:
         // If the command is disabled on the site, then the result is disabled
@@ -275,26 +270,26 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
         // If the project "enabled" is false, the result is disabled.
         // If the project "enabled" is true, then the result is enabled.
         // If the project "enabled" is null, then check the project "opt in": do we enable by default or not?
-        return isEnabledForSite(commandId, wrapperName) &&
+        return isEnabledForSite(wrapperId) &&
                 (projectIsEnabledConfig != null ? projectIsEnabledConfig : getOptInToSiteCommands(project));
     }
 
-    private void setCommandEnabled(final Boolean enabled, final Scope scope, final String project, final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
-        final CommandConfigurationInternal alreadyExists = getCommandConfiguration(scope, project, commandId, wrapperName);
+    private void setCommandEnabled(final Boolean enabled, final Scope scope, final String project, final long wrapperId, final String username, final String reason) throws CommandConfigurationException {
+        final CommandConfigurationInternal alreadyExists = getCommandConfiguration(scope, project, wrapperId);
         final CommandConfigurationInternal toSet =
                 (alreadyExists == null ? CommandConfigurationInternal.builder() : alreadyExists.toBuilder())
                         .enabled(enabled)
                         .build();
-        setCommandConfigurationInternal(toSet, scope, project, commandId, wrapperName, username, reason);
+        setCommandConfigurationInternal(toSet, scope, project, wrapperId, username, reason);
     }
 
     private void setCommandConfigurationInternal(final CommandConfigurationInternal commandConfigurationInternal,
-                                                 final Scope scope, final String project, final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException {
+                                                 final Scope scope, final String project, final long wrapperId, final String username, final String reason) throws CommandConfigurationException {
         if (scope.equals(Scope.Project) && StringUtils.isBlank(project)) {
             // TODO error: project can't be blank
         }
 
-        if (commandId == 0L) {
+        if (wrapperId == 0L) {
             // TODO error
         }
 
@@ -302,38 +297,38 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
         try {
             contents = mapper.writeValueAsString(commandConfigurationInternal);
         } catch (JsonProcessingException e) {
-            final String message = String.format("Could not save configuration for command id %d, wrapper name \"%s\".", commandId, wrapperName);
+            final String message = String.format("Could not save configuration for wrapper id %d.", wrapperId);
             log.error(message);
             throw new CommandConfigurationException(message, e);
         }
 
-        final String path = String.format(COMMAND_CONFIG_PATH_TEMPLATE, commandId, wrapperName != null ? wrapperName : "");
+        final String path = String.format(WRAPPER_CONFIG_PATH_TEMPLATE, wrapperId);
         try {
             configService.replaceConfig(username, reason, TOOL_ID, path, contents, scope, project);
         } catch (ConfigServiceException e) {
-            final String message = String.format("Could not save configuration for command id %d, wrapper name \"%s\".", commandId, wrapperName);
+            final String message = String.format("Could not save configuration for wrapper id %d.", wrapperId);
             log.error(message);
             throw new CommandConfigurationException(message, e);
         }
     }
 
     @Nullable
-    private Boolean getCommandIsEnabledConfiguration(final Scope scope, final String project, final long commandId, final String wrapperName) {
-        final CommandConfigurationInternal commandConfigurationInternal = getCommandConfiguration(scope, project, commandId, wrapperName);
+    private Boolean getCommandIsEnabledConfiguration(final Scope scope, final String project, final long wrapperId) {
+        final CommandConfigurationInternal commandConfigurationInternal = getCommandConfiguration(scope, project, wrapperId);
         return commandConfigurationInternal == null ? null : commandConfigurationInternal.enabled();
     }
 
     @Nullable
-    private CommandConfigurationInternal getCommandConfiguration(final Scope scope, final String project, final long commandId, final String wrapperName) {
+    private CommandConfigurationInternal getCommandConfiguration(final Scope scope, final String project, final long wrapperId) {
         if (scope.equals(Scope.Project) && StringUtils.isBlank(project)) {
             // TODO error: project can't be blank
         }
 
-        if (commandId == 0L) {
+        if (wrapperId == 0L) {
             // TODO error
         }
 
-        final String path = String.format(COMMAND_CONFIG_PATH_TEMPLATE, commandId, wrapperName != null ? wrapperName : "");
+        final String path = String.format(WRAPPER_CONFIG_PATH_TEMPLATE, wrapperId);
         final Configuration configuration = configService.getConfig(TOOL_ID, path, scope, project);
         if (configuration == null) {
             return null;
@@ -347,36 +342,35 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
         try {
             return mapper.readValue(configurationJson, CommandConfigurationInternal.class);
         } catch (IOException e) {
-            final String message = String.format("Could not deserialize Command Configuration for %s, command id %s, wrapper \"%s\".",
+            final String message = String.format("Could not deserialize Command Configuration for %s, wrapper id %d.",
                     scope.equals(Scope.Site) ? "site" : "project " + project,
-                    commandId,
-                    wrapperName);
+                    wrapperId);
             log.error(message, e);
             //throw new CommandConfigurationException(message, e);
         }
         return null;
     }
 
-    private void deleteCommandConfiguration(final Scope scope, final String project, final long commandId, final String wrapperName, final String username) throws CommandConfigurationException {
+    private void deleteCommandConfiguration(final Scope scope, final String project, final long wrapperId, final String username) throws CommandConfigurationException {
         if (scope.equals(Scope.Project) && StringUtils.isBlank(project)) {
             // TODO error: project can't be blank
         }
 
-        if (commandId == 0L) {
+        if (wrapperId == 0L) {
             // TODO error
         }
 
-        final CommandConfigurationInternal commandConfigurationInternal = getCommandConfiguration(scope, project, commandId, wrapperName);
+        final CommandConfigurationInternal commandConfigurationInternal = getCommandConfiguration(scope, project, wrapperId);
         if (commandConfigurationInternal == null) {
             return;
         }
         if (commandConfigurationInternal.enabled() == null) {
-            final String path = String.format(COMMAND_CONFIG_PATH_TEMPLATE, commandId, wrapperName != null ? wrapperName : "");
+            final String path = String.format(WRAPPER_CONFIG_PATH_TEMPLATE, wrapperId);
             configService.delete(configService.getConfig(TOOL_ID, path, scope, project));
             return;
         }
 
         setCommandConfigurationInternal(CommandConfigurationInternal.create(commandConfigurationInternal.enabled(), null),
-                scope, project, commandId, wrapperName, username, "Deleting command configuration");
+                scope, project, wrapperId, username, "Deleting command configuration");
     }
 }

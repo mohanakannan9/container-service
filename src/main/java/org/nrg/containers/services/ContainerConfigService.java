@@ -10,24 +10,23 @@ public interface ContainerConfigService {
     long getDefaultDockerHubId();
     void setDefaultDockerHubId(long hubId, String username, String reason);
 
-    void configureForSite(CommandConfigurationInternal commandConfiguration, long commandId, String wrapperName, String username, String reason) throws CommandConfigurationException;
-    void configureForProject(CommandConfigurationInternal commandConfiguration, String project, long commandId, String wrapperName, String username, String reason) throws CommandConfigurationException;
+    void configureForSite(CommandConfigurationInternal commandConfiguration, long wrapperId, String username, String reason) throws CommandConfigurationException;
+    void configureForProject(CommandConfigurationInternal commandConfiguration, String project, long wrapperId, String username, String reason) throws CommandConfigurationException;
 
-    CommandConfigurationInternal getSiteConfiguration(long commandId, String wrapperName);
-    CommandConfigurationInternal getProjectConfiguration(String project, long commandId, String wrapperName);
+    CommandConfigurationInternal getSiteConfiguration(long wrapperId);
+    CommandConfigurationInternal getProjectConfiguration(String project, long wrapperId);
 
-    void deleteSiteConfiguration(long commandId, String wrapperName, final String username) throws CommandConfigurationException;
-    void deleteProjectConfiguration(String project, long commandId, String wrapperName, final String username) throws CommandConfigurationException;
-    void deleteAllConfiguration(long commandId, String wrapperName);
-    void deleteAllConfiguration(long commandId);
+    void deleteSiteConfiguration(long commandId, final String username) throws CommandConfigurationException;
+    void deleteProjectConfiguration(String project, long wrapperId, final String username) throws CommandConfigurationException;
+    void deleteAllConfiguration(long wrapperId);
 
-    void enableForSite(long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException;
+    void enableForSite(long wrapperId, final String username, final String reason) throws CommandConfigurationException;
 
-    void disableForSite(long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException;
-    boolean isEnabledForSite(long commandId, String wrapperName);
-    void enableForProject(String project, long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException;
-    void disableForProject(String project, long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException;
-    boolean isEnabledForProject(String project, long commandId, String wrapperName);
+    void disableForSite(long wrapperId, final String username, final String reason) throws CommandConfigurationException;
+    boolean isEnabledForSite(long wrapperId);
+    void enableForProject(String project, long wrapperId, final String username, final String reason) throws CommandConfigurationException;
+    void disableForProject(String project, long wrapperId, final String username, final String reason) throws CommandConfigurationException;
+    boolean isEnabledForProject(String project, long wrapperId);
 
     ContainerServiceSettings getSettings();
     ContainerServiceSettings getSettings(String project);

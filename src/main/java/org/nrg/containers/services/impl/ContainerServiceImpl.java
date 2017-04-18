@@ -134,19 +134,9 @@ public class ContainerServiceImpl implements ContainerService {
             return resolveCommand(commandId, runtimeInputValues, userI);
         }
 
-        final Command command = commandService.get(commandId);
-        CommandWrapper wrapper = null;
-
-        for (final CommandWrapper commandWrapper : command.xnatCommandWrappers()) {
-            if (xnatCommandWrapperName.equals(commandWrapper.name())) {
-                wrapper = commandWrapper;
-                break;
-            }
-        }
-
-        if (wrapper == null) {
-            throw new NotFoundException(String.format("Command %d has no wrapper with name \"%s\".", commandId, xnatCommandWrapperName));
-        }
+        // The command that gets returned from getAndConfigure only has one wrapper
+        final Command command = commandService.getAndConfigure(commandId, xnatCommandWrapperName);
+        final CommandWrapper wrapper = command.xnatCommandWrappers().get(0);
 
         return resolveCommand(wrapper, command, runtimeInputValues, userI);
     }
@@ -158,19 +148,9 @@ public class ContainerServiceImpl implements ContainerService {
                                                    final Map<String, String> runtimeInputValues,
                                                    final UserI userI)
             throws NotFoundException, CommandResolutionException {
-        final Command command = commandService.get(commandId);
-        CommandWrapper wrapper = null;
-
-        for (final CommandWrapper commandWrapper : command.xnatCommandWrappers()) {
-            if (xnatCommandWrapperId == commandWrapper.id()) {
-                wrapper = commandWrapper;
-                break;
-            }
-        }
-
-        if (wrapper == null) {
-            throw new NotFoundException(String.format("Command %d has no wrapper with id %d.", commandId, xnatCommandWrapperId));
-        }
+        // The command that gets returned from getAndConfigure only has one wrapper
+        final Command command = commandService.getAndConfigure(xnatCommandWrapperId);
+        final CommandWrapper wrapper = command.xnatCommandWrappers().get(0);
 
         return resolveCommand(wrapper, command, runtimeInputValues, userI);
     }

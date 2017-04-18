@@ -394,13 +394,13 @@ public class CommandRestApiTest {
         TestTransaction.end();
         TestTransaction.start();
 
-        assertThat(commandService.retrieve(commandId, wrapperId), is(updates));
+        assertThat(commandService.retrieveWrapper(wrapperId), is(updates));
     }
 
     @Test
     @DirtiesContext
     public void testDeleteWrapper() throws Exception {
-        final String pathTemplate = "/commands/%d/wrappers/%d";
+        final String pathTemplate = "/wrappers/%d";
 
         final String commandJson =
                 "{\"name\": \"toCreate\", \"type\": \"docker\", \"image\":\"" + FAKE_DOCKER_IMAGE + "\"," +
@@ -427,7 +427,7 @@ public class CommandRestApiTest {
         TestTransaction.end();
         TestTransaction.start();
 
-        assertThat(commandService.retrieve(commandId, wrapperId), is(nullValue()));
+        assertThat(commandService.retrieveWrapper(wrapperId), is(nullValue()));
     }
 
     @Test

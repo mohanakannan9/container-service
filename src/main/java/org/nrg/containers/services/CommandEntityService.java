@@ -12,17 +12,14 @@ public interface CommandEntityService extends BaseHibernateService<CommandEntity
     List<CommandEntity> findByProperties(Map<String, Object> properties);
 
     CommandWrapperEntity addWrapper(CommandEntity commandEntity, CommandWrapperEntity wrapperToAdd);
-    CommandWrapperEntity retrieve(long commandId, long wrapperId);
-    CommandWrapperEntity retrieve(long commandId, String wrapperName);
-    CommandWrapperEntity retrieve(final CommandEntity commandEntity, long wrapperId);
-    CommandWrapperEntity retrieve(final CommandEntity commandEntity, String wrapperName);
-    CommandWrapperEntity get(long commandId, long wrapperId) throws NotFoundException;
-    CommandWrapperEntity get(long commandId, String wrapperName) throws NotFoundException;
-    CommandWrapperEntity get(final CommandEntity commandEntity, long wrapperId) throws NotFoundException;
-    CommandWrapperEntity get(final CommandEntity commandEntity, String wrapperName) throws NotFoundException;
+    CommandWrapperEntity retrieveWrapper(long wrapperId);
+    CommandWrapperEntity retrieveWrapper(long commandId, String wrapperName);
+    CommandWrapperEntity getWrapper(long wrapperId) throws NotFoundException;
+    CommandWrapperEntity getWrapper(long commandId, String wrapperName) throws NotFoundException;
     CommandWrapperEntity update(CommandWrapperEntity updates) throws NotFoundException;
-    void delete(long commandId, long wrapperId);
+    void deleteWrapper(long wrapperId);
 
-    void assertPairExists(long commandId, long wrapperId) throws NotFoundException;
-    void assertPairExists(long commandId, String wrapperName) throws NotFoundException;
+    long getWrapperId(long commandId, String wrapperName) throws NotFoundException;
+
+    CommandEntity getCommandWithOneWrapper(long wrapperId) throws NotFoundException;
 }

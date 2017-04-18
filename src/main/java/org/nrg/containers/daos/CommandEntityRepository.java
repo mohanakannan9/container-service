@@ -2,6 +2,7 @@ package org.nrg.containers.daos;
 
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
+import org.hibernate.FlushMode;
 import org.hibernate.Hibernate;
 import org.hibernate.NonUniqueObjectException;
 import org.nrg.containers.model.command.entity.CommandEntity;
@@ -108,14 +109,11 @@ public class CommandEntityRepository extends AbstractHibernateDAO<CommandEntity>
         update(commandEntity);
     }
 
-    public CommandWrapperEntity retrieve(long commandId, long wrapperId) {
-        return (CommandWrapperEntity) getSession().createQuery("from CommandWrapperEntity as wrapper where wrapper.id = :wrapperId and wrapper.commandEntity.id = :commandId")
-                .setLong("wrapperId", wrapperId)
-                .setLong("commandId", commandId)
-                .uniqueResult();
+    public CommandWrapperEntity retrieveWrapper(long wrapperId) {
+        return (CommandWrapperEntity) getSession().get(CommandWrapperEntity.class, wrapperId);
     }
 
-    public CommandWrapperEntity retrieve(long commandId, String wrapperName) {
+    public CommandWrapperEntity retrieveWrapper(long commandId, String wrapperName) {
         return (CommandWrapperEntity) getSession().createQuery("from CommandWrapperEntity as wrapper where wrapper.name = :wrapperName and wrapper.commandEntity.id = :commandId")
                 .setString("wrapperName", wrapperName)
                 .setLong("commandId", commandId)
@@ -139,7 +137,7 @@ public class CommandEntityRepository extends AbstractHibernateDAO<CommandEntity>
         getSession().delete(commandWrapperEntity);
     }
 
-    public void assertPairExists(final long commandId, final long wrapperId) throws NotFoundException {
+    public long getWrapperId(final long commandId, final String wrapperName) throws NotFoundException {
         final Object commandExistsResult = getSession().createQuery("select 1 from CommandEntity as command where command.id = :commandId")
                 .setLong("commandId", commandId)
                 .uniqueResult();
@@ -147,29 +145,27 @@ public class CommandEntityRepository extends AbstractHibernateDAO<CommandEntity>
             throw new NotFoundException("No command with id " + String.valueOf(commandId));
         }
 
-        final Object wrapperExistsResult = getSession().createQuery("select 1 from CommandWrapperEntity as wrapper where wrapper.id = :wrapperId and wrapper.commandEntity.id = :commandId")
-                .setLong("wrapperId", wrapperId)
-                .setLong("commandId", commandId)
-                .uniqueResult();
-        if (wrapperExistsResult == null) {
-            throw new NotFoundException("Command " + String.valueOf(commandId) + " has no wrapper " + wrapperId);
-        }
-    }
-
-    public void assertPairExists(final long commandId, final String wrapperName) throws NotFoundException {
-        final Object commandExistsResult = getSession().createQuery("select 1 from CommandEntity as command where command.id = :commandId")
-                .setLong("commandId", commandId)
-                .uniqueResult();
-        if (commandExistsResult == null) {
-            throw new NotFoundException("No command with id " + String.valueOf(commandId));
-        }
-
-        final Object wrapperExistsResult = getSession().createQuery("select 1 from CommandWrapperEntity as wrapper where wrapper.name = :wrapperName and wrapper.commandEntity.id = :commandId")
+        final Object wrapperId = getSession().createQuery("select wrapper.id from CommandWrapperEntity as wrapper where wrapper.name = :wrapperName and wrapper.commandEntity.id = :commandId")
                 .setString("wrapperName", wrapperName)
                 .setLong("commandId", commandId)
                 .uniqueResult();
-        if (wrapperExistsResult == null) {
+        if (wrapperId == null) {
             throw new NotFoundException("Command " + String.valueOf(commandId) + " has no wrapper " + wrapperName);
         }
+        return (Long) wrapperId;
+    }
+
+    public CommandEntity getCommandByWrapperId(final long wrapperId) throws NotFoundException {
+        final Object commandEntityResult = getSession().createQuery("select wrapper.commandEntity from CommandWrapperEntity as wrapper where wrapper.id = :wrapperId")
+                .setLong("wrapperId", wrapperId)
+                .setFlushMode(FlushMode.MANUAL)
+                .uniqueResult();
+        if (commandEntityResult == null) {
+            throw new NotFoundException("No command with wrapper with id " + String.valueOf(wrapperId));
+        }
+
+        final CommandEntity commandEntity = (CommandEntity) commandEntityResult;
+        initialize(commandEntity);
+        return commandEntity;
     }
 }
