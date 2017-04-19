@@ -3,6 +3,7 @@ package org.nrg.containers.services;
 import org.nrg.containers.exceptions.CommandValidationException;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
+import org.nrg.containers.model.command.auto.Command.ConfiguredCommand;
 import org.nrg.containers.model.command.auto.CommandSummaryForContext;
 import org.nrg.containers.model.configuration.CommandConfiguration;
 import org.nrg.containers.services.ContainerConfigService.CommandConfigurationException;
@@ -41,10 +42,10 @@ public interface CommandService {
     CommandConfiguration getSiteConfiguration(long commandId, String wrapperName) throws NotFoundException;
     CommandConfiguration getProjectConfiguration(String project, long wrapperId) throws NotFoundException;
     CommandConfiguration getProjectConfiguration(String project, long commandId, String wrapperName) throws NotFoundException;
-    Command getAndConfigure(long wrapperId) throws NotFoundException;
-    Command getAndConfigure(long commandId, String wrapperName) throws NotFoundException;
-    Command getAndConfigure(String project, long wrapperId) throws NotFoundException;
-    Command getAndConfigure(String project, long commandId, String wrapperName) throws NotFoundException;
+    ConfiguredCommand getAndConfigure(long wrapperId) throws NotFoundException;
+    ConfiguredCommand getAndConfigure(long commandId, String wrapperName) throws NotFoundException;
+    ConfiguredCommand getAndConfigure(String project, long wrapperId) throws NotFoundException;
+    ConfiguredCommand getAndConfigure(String project, long commandId, String wrapperName) throws NotFoundException;
 
     void deleteSiteConfiguration(long wrapperId, final String username) throws CommandConfigurationException, NotFoundException;
     void deleteSiteConfiguration(long commandId, String wrapperName, final String username) throws CommandConfigurationException, NotFoundException;

@@ -13,6 +13,7 @@ import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.model.command.auto.Command.CommandWrapperDerivedInput;
 import org.nrg.containers.model.command.auto.Command.CommandWrapperExternalInput;
 import org.nrg.containers.model.command.auto.Command.CommandWrapperOutput;
+import org.nrg.containers.model.command.auto.Command.ConfiguredCommand;
 import org.nrg.containers.model.configuration.CommandConfiguration.Builder;
 import org.nrg.containers.model.configuration.CommandConfigurationInternal.CommandInputConfiguration;
 
@@ -243,26 +244,9 @@ public abstract class CommandConfiguration {
     }
 
     @Nonnull
-    public Command apply(final Command commandWithOneWrapper) {
+    public ConfiguredCommand apply(final Command commandWithOneWrapper) {
         // Initialize the command builder copy
-        final Command.Builder commandBuilder = Command.builder()
-                .name(commandWithOneWrapper.name())
-                .id(commandWithOneWrapper.id())
-                .label(commandWithOneWrapper.label())
-                .description(commandWithOneWrapper.description())
-                .version(commandWithOneWrapper.version())
-                .schemaVersion(commandWithOneWrapper.schemaVersion())
-                .infoUrl(commandWithOneWrapper.infoUrl())
-                .image(commandWithOneWrapper.image())
-                .type(commandWithOneWrapper.type())
-                .workingDirectory(commandWithOneWrapper.workingDirectory())
-                .commandLine(commandWithOneWrapper.commandLine())
-                .environmentVariables(commandWithOneWrapper.environmentVariables())
-                .mounts(commandWithOneWrapper.mounts())
-                .index(commandWithOneWrapper.index())
-                .hash(commandWithOneWrapper.hash())
-                .ports(commandWithOneWrapper.ports())
-                .outputs(commandWithOneWrapper.outputs());
+        final ConfiguredCommand.Builder commandBuilder = ConfiguredCommand.initialize(commandWithOneWrapper);
 
         // Things we need to apply configuration to:
         // command inputs
@@ -308,6 +292,6 @@ public abstract class CommandConfiguration {
             );
         }
 
-        return commandBuilder.addCommandWrapper(commandWrapperBuilder.build()).build();
+        return commandBuilder.wrapper(commandWrapperBuilder.build()).build();
     }
 }

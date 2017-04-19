@@ -22,6 +22,7 @@ import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandInput;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.model.command.auto.Command.CommandWrapperExternalInput;
+import org.nrg.containers.model.command.auto.Command.ConfiguredCommand;
 import org.nrg.containers.model.command.auto.ResolvedCommand.PartiallyResolvedCommand;
 import org.nrg.containers.model.command.entity.CommandType;
 import org.nrg.containers.model.configuration.CommandConfiguration;
@@ -184,9 +185,9 @@ public class CommandResolutionTest {
 
         {
             // Assert that the site configuration changes the one default input value we set
-            final Command siteConfigCommand = siteConfiguration.apply(command);
+            final ConfiguredCommand siteConfigCommand = siteConfiguration.apply(command);
             final CommandInput siteConfigCommandInput = siteConfigCommand.inputs().get(0);
-            final CommandWrapperExternalInput siteConfigExternalInput = siteConfigCommand.xnatCommandWrappers().get(0).externalInputs().get(0);
+            final CommandWrapperExternalInput siteConfigExternalInput = siteConfigCommand.wrapper().externalInputs().get(0);
             assertThat(siteConfigCommandInput.name(), is(commandInputName));
             assertThat(siteConfigCommandInput.defaultValue(), is(commandInputConfiguredDefaultValue)); // Default got changed
             assertThat(siteConfigExternalInput.name(), is(commandWrapperExternalInputName));
@@ -199,9 +200,9 @@ public class CommandResolutionTest {
         {
             // Assert that the project configuration changes both the default we set at the project level,
             // and the default we set at the site level.
-            final Command projectConfigCommand = projectConfiguration.apply(command);
+            final ConfiguredCommand projectConfigCommand = projectConfiguration.apply(command);
             final CommandInput projectConfigCommandInput = projectConfigCommand.inputs().get(0);
-            final CommandWrapperExternalInput siteConfigExternalInput = projectConfigCommand.xnatCommandWrappers().get(0).externalInputs().get(0);
+            final CommandWrapperExternalInput siteConfigExternalInput = projectConfigCommand.wrapper().externalInputs().get(0);
             assertThat(projectConfigCommandInput.name(), is(commandInputName));
             assertThat(projectConfigCommandInput.defaultValue(), is(commandInputConfiguredDefaultValue)); // Default got changed
             assertThat(siteConfigExternalInput.name(), is(commandWrapperExternalInputName));

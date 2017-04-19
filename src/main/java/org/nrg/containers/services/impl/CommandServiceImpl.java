@@ -10,10 +10,6 @@ import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import org.nrg.containers.exceptions.CommandValidationException;
-import org.nrg.containers.model.command.auto.Command.CommandInput;
-import org.nrg.containers.model.command.auto.Command.CommandWrapperDerivedInput;
-import org.nrg.containers.model.command.auto.Command.CommandWrapperExternalInput;
-import org.nrg.containers.model.command.auto.Command.CommandWrapperOutput;
 import org.nrg.containers.model.command.auto.CommandSummaryForContext;
 import org.nrg.containers.model.configuration.CommandConfiguration;
 import org.nrg.containers.model.command.entity.CommandEntity;
@@ -303,7 +299,7 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
 
     @Override
     @Nonnull
-    public Command getAndConfigure(final long wrapperId) throws NotFoundException {
+    public Command.ConfiguredCommand getAndConfigure(final long wrapperId) throws NotFoundException {
         final CommandConfiguration commandConfiguration = getSiteConfiguration(wrapperId);
         final Command command = getCommandWithOneWrapper(wrapperId);
         return commandConfiguration.apply(command);
@@ -311,13 +307,13 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
 
     @Override
     @Nonnull
-    public Command getAndConfigure(final long commandId, final String wrapperName) throws NotFoundException {
+    public Command.ConfiguredCommand getAndConfigure(final long commandId, final String wrapperName) throws NotFoundException {
         return getAndConfigure(getWrapperId(commandId, wrapperName));
     }
 
     @Override
     @Nonnull
-    public Command getAndConfigure(final String project, final long wrapperId) throws NotFoundException {
+    public Command.ConfiguredCommand getAndConfigure(final String project, final long wrapperId) throws NotFoundException {
         final CommandConfiguration commandConfiguration = getProjectConfiguration(project, wrapperId);
         final Command command = getCommandWithOneWrapper(wrapperId);
         return commandConfiguration.apply(command);
@@ -325,7 +321,7 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
 
     @Override
     @Nonnull
-    public Command getAndConfigure(final String project, final long commandId, final String wrapperName) throws NotFoundException {
+    public Command.ConfiguredCommand getAndConfigure(final String project, final long commandId, final String wrapperName) throws NotFoundException {
         return getAndConfigure(project, getWrapperId(commandId, wrapperName));
     }
 

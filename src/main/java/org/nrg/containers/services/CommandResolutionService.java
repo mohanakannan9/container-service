@@ -1,9 +1,7 @@
 package org.nrg.containers.services;
 
 import org.nrg.containers.exceptions.CommandResolutionException;
-import org.nrg.containers.model.command.auto.ResolvedCommand;
-import org.nrg.containers.model.command.auto.Command;
-import org.nrg.containers.model.command.auto.Command.CommandWrapper;
+import org.nrg.containers.model.command.auto.Command.ConfiguredCommand;
 import org.nrg.containers.model.command.auto.ResolvedCommand.PartiallyResolvedCommand;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xft.security.UserI;
@@ -31,8 +29,7 @@ public interface CommandResolutionService {
                                         Map<String, String> inputValues,
                                         final UserI userI)
             throws NotFoundException;
-    PartiallyResolvedCommand preResolve(CommandWrapper commandWrapper,
-                                        Command command,
+    PartiallyResolvedCommand preResolve(ConfiguredCommand configuredCommand,
                                         Map<String, String> inputValues,
                                         UserI userI);
 
@@ -56,8 +53,7 @@ public interface CommandResolutionService {
                                      Map<String, String> inputValues,
                                      UserI userI)
             throws NotFoundException, CommandResolutionException;
-    PartiallyResolvedCommand resolve(CommandWrapper commandWrapper,
-                                     Command command,
+    PartiallyResolvedCommand resolve(ConfiguredCommand configuredCommand,
                                      Map<String, String> inputValues,
                                      UserI userI)
             throws NotFoundException, CommandResolutionException;

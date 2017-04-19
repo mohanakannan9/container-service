@@ -465,57 +465,6 @@ public abstract class Command {
     }
 
     @AutoValue
-    public static abstract class CommandCreation {
-        @Nullable @JsonProperty("name") public abstract String name();
-        @Nullable @JsonProperty("label") public abstract String label();
-        @Nullable @JsonProperty("description") public abstract String description();
-        @Nullable @JsonProperty("version") public abstract String version();
-        @Nullable @JsonProperty("schema-version") public abstract String schemaVersion();
-        @Nullable @JsonProperty("info-url") public abstract String infoUrl();
-        @Nullable @JsonProperty("image") public abstract String image();
-        @Nullable @JsonProperty("type") public abstract String type();
-        @Nullable @JsonProperty("index") public abstract String index();
-        @Nullable @JsonProperty("hash") public abstract String hash();
-        @Nullable @JsonProperty("working-directory") public abstract String workingDirectory();
-        @Nullable @JsonProperty("command-line") public abstract String commandLine();
-        @JsonProperty("mounts") public abstract ImmutableList<CommandMount> mounts();
-        @JsonProperty("environment-variables") public abstract ImmutableMap<String, String> environmentVariables();
-        @JsonProperty("ports") public abstract ImmutableMap<String, String> ports();
-        @JsonProperty("inputs") public abstract ImmutableList<CommandInput> inputs();
-        @JsonProperty("outputs") public abstract ImmutableList<CommandOutput> outputs();
-        @JsonProperty("xnat") public abstract ImmutableList<CommandWrapperCreation> commandWrapperCreations();
-
-        @JsonCreator
-        static CommandCreation create(@JsonProperty("name") final String name,
-                                      @JsonProperty("label") final String label,
-                                      @JsonProperty("description") final String description,
-                                      @JsonProperty("version") final String version,
-                                      @JsonProperty("schema-version") final String schemaVersion,
-                                      @JsonProperty("info-url") final String infoUrl,
-                                      @JsonProperty("image") final String image,
-                                      @JsonProperty("type") final String type,
-                                      @JsonProperty("index") final String index,
-                                      @JsonProperty("hash") final String hash,
-                                      @JsonProperty("working-directory") final String workingDirectory,
-                                      @JsonProperty("command-line") final String commandLine,
-                                      @JsonProperty("mounts") final List<CommandMount> mounts,
-                                      @JsonProperty("environment-variables") final Map<String, String> environmentVariables,
-                                      @JsonProperty("ports") final Map<String, String> ports,
-                                      @JsonProperty("inputs") final List<CommandInput> inputs,
-                                      @JsonProperty("outputs") final List<CommandOutput> outputs,
-                                      @JsonProperty("xnat") final List<CommandWrapperCreation> commandWrapperCreations) {
-            return new AutoValue_Command_CommandCreation(name, label, description, version, schemaVersion, infoUrl, image,
-                    type, index, hash, workingDirectory, commandLine,
-                    mounts == null ? ImmutableList.<CommandMount>of() : ImmutableList.copyOf(mounts),
-                    environmentVariables == null ? ImmutableMap.<String, String>of() : ImmutableMap.copyOf(environmentVariables),
-                    ports == null ? ImmutableMap.<String, String>of() : ImmutableMap.copyOf(ports),
-                    inputs == null ? ImmutableList.<CommandInput>of() : ImmutableList.copyOf(inputs),
-                    outputs == null ? ImmutableList.<CommandOutput>of() : ImmutableList.copyOf(outputs),
-                    commandWrapperCreations == null ? ImmutableList.<CommandWrapperCreation>of() : ImmutableList.copyOf(commandWrapperCreations));
-        }
-    }
-
-    @AutoValue
     public static abstract class CommandMount {
         @JsonIgnore public abstract long id();
         @Nullable @JsonProperty("name") public abstract String name();
@@ -1277,5 +1226,167 @@ public abstract class Command {
             return errors;
         }
     }
+
+    /**
+     * A command with no IDs. Intended to be sent in by a user when creating a new command.
+     */
+    @AutoValue
+    public static abstract class CommandCreation {
+        @Nullable @JsonProperty("name") public abstract String name();
+        @Nullable @JsonProperty("label") public abstract String label();
+        @Nullable @JsonProperty("description") public abstract String description();
+        @Nullable @JsonProperty("version") public abstract String version();
+        @Nullable @JsonProperty("schema-version") public abstract String schemaVersion();
+        @Nullable @JsonProperty("info-url") public abstract String infoUrl();
+        @Nullable @JsonProperty("image") public abstract String image();
+        @Nullable @JsonProperty("type") public abstract String type();
+        @Nullable @JsonProperty("index") public abstract String index();
+        @Nullable @JsonProperty("hash") public abstract String hash();
+        @Nullable @JsonProperty("working-directory") public abstract String workingDirectory();
+        @Nullable @JsonProperty("command-line") public abstract String commandLine();
+        @JsonProperty("mounts") public abstract ImmutableList<CommandMount> mounts();
+        @JsonProperty("environment-variables") public abstract ImmutableMap<String, String> environmentVariables();
+        @JsonProperty("ports") public abstract ImmutableMap<String, String> ports();
+        @JsonProperty("inputs") public abstract ImmutableList<CommandInput> inputs();
+        @JsonProperty("outputs") public abstract ImmutableList<CommandOutput> outputs();
+        @JsonProperty("xnat") public abstract ImmutableList<CommandWrapperCreation> commandWrapperCreations();
+
+        @JsonCreator
+        static CommandCreation create(@JsonProperty("name") final String name,
+                                      @JsonProperty("label") final String label,
+                                      @JsonProperty("description") final String description,
+                                      @JsonProperty("version") final String version,
+                                      @JsonProperty("schema-version") final String schemaVersion,
+                                      @JsonProperty("info-url") final String infoUrl,
+                                      @JsonProperty("image") final String image,
+                                      @JsonProperty("type") final String type,
+                                      @JsonProperty("index") final String index,
+                                      @JsonProperty("hash") final String hash,
+                                      @JsonProperty("working-directory") final String workingDirectory,
+                                      @JsonProperty("command-line") final String commandLine,
+                                      @JsonProperty("mounts") final List<CommandMount> mounts,
+                                      @JsonProperty("environment-variables") final Map<String, String> environmentVariables,
+                                      @JsonProperty("ports") final Map<String, String> ports,
+                                      @JsonProperty("inputs") final List<CommandInput> inputs,
+                                      @JsonProperty("outputs") final List<CommandOutput> outputs,
+                                      @JsonProperty("xnat") final List<CommandWrapperCreation> commandWrapperCreations) {
+            return new AutoValue_Command_CommandCreation(name, label, description, version, schemaVersion, infoUrl, image,
+                    type, index, hash, workingDirectory, commandLine,
+                    mounts == null ? ImmutableList.<CommandMount>of() : ImmutableList.copyOf(mounts),
+                    environmentVariables == null ? ImmutableMap.<String, String>of() : ImmutableMap.copyOf(environmentVariables),
+                    ports == null ? ImmutableMap.<String, String>of() : ImmutableMap.copyOf(ports),
+                    inputs == null ? ImmutableList.<CommandInput>of() : ImmutableList.copyOf(inputs),
+                    outputs == null ? ImmutableList.<CommandOutput>of() : ImmutableList.copyOf(outputs),
+                    commandWrapperCreations == null ? ImmutableList.<CommandWrapperCreation>of() : ImmutableList.copyOf(commandWrapperCreations));
+        }
+    }
+
+    /**
+     * A command with project- or site-wide configuration applied. Contains only a single wrapper.
+     */
+    @AutoValue
+    public static abstract class ConfiguredCommand {
+        public abstract long id();
+        public abstract String name();
+        @Nullable public abstract String label();
+        @Nullable public abstract String description();
+        @Nullable public abstract String version();
+        @Nullable public abstract String schemaVersion();
+        @Nullable public abstract String infoUrl();
+        @Nullable public abstract String image();
+        public abstract String type();
+        @Nullable public abstract String index();
+        @Nullable public abstract String hash();
+        @Nullable public abstract String workingDirectory();
+        @Nullable public abstract String commandLine();
+        public abstract ImmutableList<CommandMount> mounts();
+        public abstract ImmutableMap<String, String> environmentVariables();
+        public abstract ImmutableMap<String, String> ports();
+        public abstract ImmutableList<CommandInput> inputs();
+        public abstract ImmutableList<CommandOutput> outputs();
+        public abstract CommandWrapper wrapper();
+
+        public static ConfiguredCommand.Builder initialize(final Command command) {
+            return builder()
+                    .id(command.id())
+                    .name(command.name())
+                    .label(command.label())
+                    .description(command.description())
+                    .version(command.version())
+                    .schemaVersion(command.schemaVersion())
+                    .infoUrl(command.infoUrl())
+                    .image(command.image())
+                    .type(command.type())
+                    .workingDirectory(command.workingDirectory())
+                    .commandLine(command.commandLine())
+                    .environmentVariables(command.environmentVariables())
+                    .mounts(command.mounts())
+                    .index(command.index())
+                    .hash(command.hash())
+                    .ports(command.ports())
+                    .outputs(command.outputs());
+        }
+
+        static Builder builder() {
+            return new AutoValue_Command_ConfiguredCommand.Builder();
+        }
+
+        @AutoValue.Builder
+        public static abstract class Builder {
+            public abstract Builder id(long id);
+            public abstract Builder name(String name);
+            public abstract Builder label(String label);
+            public abstract Builder description(String description);
+            public abstract Builder version(String version);
+            public abstract Builder schemaVersion(String schemaVersion);
+            public abstract Builder infoUrl(String infoUrl);
+            public abstract Builder image(String image);
+            public abstract Builder type(String type);
+            public abstract Builder index(String index);
+            public abstract Builder hash(String hash);
+            public abstract Builder workingDirectory(String workingDirectory);
+            public abstract Builder commandLine(String commandLine);
+
+            public abstract Builder mounts(@Nonnull List<CommandMount> mounts);
+            abstract ImmutableList.Builder<CommandMount> mountsBuilder();
+            public Builder addMount(final @Nonnull CommandMount commandMount) {
+                mountsBuilder().add(commandMount);
+                return this;
+            }
+
+            public abstract Builder environmentVariables(@Nonnull Map<String, String> environmentVariables);
+            abstract ImmutableMap.Builder<String, String> environmentVariablesBuilder();
+            public Builder addEnvironmentVariable(final @Nonnull String name, final String value) {
+                environmentVariablesBuilder().put(name, value);
+                return this;
+            }
+
+            public abstract Builder ports(@Nonnull Map<String, String> ports);
+            abstract ImmutableMap.Builder<String, String> portsBuilder();
+            public Builder addPort(final @Nonnull String containerPort, final String hostPort) {
+                portsBuilder().put(containerPort, hostPort);
+                return this;
+            }
+
+            public abstract Builder inputs(@Nonnull List<CommandInput> inputs);
+            abstract ImmutableList.Builder<CommandInput> inputsBuilder();
+            public Builder addInput(final @Nonnull CommandInput commandInput) {
+                inputsBuilder().add(commandInput);
+                return this;
+            }
+
+            public abstract Builder outputs(@Nonnull List<CommandOutput> outputs);
+            abstract ImmutableList.Builder<CommandOutput> outputsBuilder();
+            public Builder addOutput(final @Nonnull CommandOutput commandOutput) {
+                outputsBuilder().add(commandOutput);
+                return this;
+            }
+
+            public abstract Builder wrapper(CommandWrapper commandWrapper);
+
+            public abstract ConfiguredCommand build();
+        }
+    }
+
 
 }
