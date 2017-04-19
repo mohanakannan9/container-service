@@ -413,7 +413,7 @@ var XNAT = getObject(XNAT || {});
 
     launcher.addMenuItem = function(item){
         containerMenuItems[0].submenu.itemdata.push({
-            text: item['wrapper-name'],
+            text: item['wrapper-description'],
             url: 'javascript:openCommandLauncher({ commandid:"'+item['command-id']+'", wrapperid:"'+item['wrapper-id']+'", wrappername:"'+item['wrapper-name']+'", launcher: "select-scan" })'
         });
     };
