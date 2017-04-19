@@ -9,7 +9,6 @@ import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.envers.Audited;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
-import org.nrg.containers.model.command.auto.ResolvedCommand.PartiallyResolvedCommandMount;
 import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMount;
 import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandOutput;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
@@ -49,7 +48,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
         this.userId = userId;
 
         this.commandId = resolvedCommand.commandId();
-        this.xnatCommandWrapperId = resolvedCommand.xnatCommandWrapperId();
+        this.xnatCommandWrapperId = resolvedCommand.wrapperId();
         this.dockerImage = resolvedCommand.image();
         this.commandLine = resolvedCommand.commandLine();
         setEnvironmentVariables(resolvedCommand.environmentVariables());
@@ -330,7 +329,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
         return MoreObjects.toStringHelper(this)
                 .add("containerId", containerId)
                 .add("commandId", commandId)
-                .add("xnatCommandWrapperId", xnatCommandWrapperId)
+                .add("wrapperId", xnatCommandWrapperId)
                 .add("dockerImage", dockerImage)
                 .add("commandLine", commandLine)
                 .add("environmentVariables", environmentVariables)

@@ -154,13 +154,15 @@ public class LaunchRestApiTest {
         when(mockSiteConfigPreferences.getBuildPath()).thenReturn(folder.newFolder().getAbsolutePath()); // transporter makes a directory under build
         when(mockSiteConfigPreferences.getArchivePath()).thenReturn(folder.newFolder().getAbsolutePath()); // container logs get stored under archive
 
+        final String wrapperName = "I don't know";
         final CommandWrapper mockCommandWrapper = CommandWrapper.builder()
                 .id(WRAPPER_ID)
-                .name("I don't know")
+                .name(wrapperName)
                 .build();
         final long commandId = 15L;
+        final String commandName = "command-to-launch";
         final Command mockCommand = Command.builder()
-                .name("command-to-launch")
+                .name(commandName)
                 .commandLine("echo hello world")
                 .id(commandId)
                 .addInput(CommandInput.builder().name(INPUT_NAME).build())
@@ -171,7 +173,9 @@ public class LaunchRestApiTest {
         // This ResolvedCommand will be used in an internal method to "launch" a container
         final PartiallyResolvedCommand partiallyResolvedCommand = PartiallyResolvedCommand.builder()
                 .commandId(commandId)
-                .xnatCommandWrapperId(WRAPPER_ID)
+                .commandName(commandName)
+                .wrapperId(WRAPPER_ID)
+                .wrapperName(wrapperName)
                 .image("abc123")
                 .commandLine("echo hello world")
                 .addRawInputValue(INPUT_NAME, INPUT_VALUE)

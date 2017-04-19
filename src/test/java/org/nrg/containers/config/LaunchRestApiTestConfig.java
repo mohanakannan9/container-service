@@ -35,11 +35,12 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 @Import({RestApiTestConfig.class, ObjectMapperConfig.class})
 public class LaunchRestApiTestConfig extends WebSecurityConfigurerAdapter {
     @Bean
-    public LaunchRestApi launchRestApi(final ContainerService containerService,
+    public LaunchRestApi launchRestApi(final CommandService commandService,
+                                       final ContainerService containerService,
                                        final CommandResolutionService commandResolutionService,
                                        final UserManagementServiceI userManagementServiceI,
                                        final RoleHolder roleHolder) {
-        return new LaunchRestApi(containerService, commandResolutionService, userManagementServiceI, roleHolder);
+        return new LaunchRestApi(commandService, containerService, commandResolutionService, userManagementServiceI, roleHolder);
     }
 
     @Bean

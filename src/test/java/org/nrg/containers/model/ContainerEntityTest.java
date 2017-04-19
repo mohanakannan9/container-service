@@ -41,7 +41,9 @@ public class ContainerEntityTest {
     public void testSave() throws Exception {
         final ResolvedCommand resolvedCommand = ResolvedCommand.builder()
                 .commandId(1L)
-                .xnatCommandWrapperId(1L)
+                .commandName("a name")
+                .wrapperId(1L)
+                .wrapperName("another name")
                 .image("xnat/dcm2niix:1.0")
                 .commandInputValues(ImmutableMap.of("foo", "bar"))
                 .commandLine("Anything I want")

@@ -232,7 +232,7 @@ public class CommandResolutionTest {
 
         final PartiallyResolvedCommand resolvedCommand = commandResolutionService.resolve(commandWrapper.id(), runtimeValues, mockUser);
         assertThat(resolvedCommand.commandId(), is(dummyCommand.id()));
-        assertThat(resolvedCommand.xnatCommandWrapperId(), is(commandWrapper.id()));
+        assertThat(resolvedCommand.wrapperId(), is(commandWrapper.id()));
         assertThat(resolvedCommand.image(), is(dummyCommand.image()));
         assertThat(resolvedCommand.commandLine(), is(dummyCommand.commandLine()));
         assertThat(resolvedCommand.environmentVariables().isEmpty(), is(true));
@@ -282,7 +282,7 @@ public class CommandResolutionTest {
 
         final PartiallyResolvedCommand resolvedCommand = commandResolutionService.resolve(commandWrapper.id(), runtimeValues, mockUser);
         assertThat(resolvedCommand.commandId(), is(dummyCommand.id()));
-        assertThat(resolvedCommand.xnatCommandWrapperId(), is(commandWrapper.id()));
+        assertThat(resolvedCommand.wrapperId(), is(commandWrapper.id()));
         assertThat(resolvedCommand.image(), is(dummyCommand.image()));
         assertThat(resolvedCommand.commandLine(), is(dummyCommand.commandLine()));
         assertThat(resolvedCommand.environmentVariables().isEmpty(), is(true));
@@ -329,7 +329,7 @@ public class CommandResolutionTest {
 
         final PartiallyResolvedCommand resolvedCommand = commandResolutionService.resolve(commandWrapper.id(), runtimeValues, mockUser);
         assertThat(resolvedCommand.commandId(), is(dummyCommand.id()));
-        assertThat(resolvedCommand.xnatCommandWrapperId(), is(commandWrapper.id()));
+        assertThat(resolvedCommand.wrapperId(), is(commandWrapper.id()));
         assertThat(resolvedCommand.image(), is(dummyCommand.image()));
         assertThat(resolvedCommand.commandLine(), is(dummyCommand.commandLine()));
         assertThat(resolvedCommand.environmentVariables().isEmpty(), is(true));
@@ -372,7 +372,7 @@ public class CommandResolutionTest {
 
         final PartiallyResolvedCommand resolvedCommand = commandResolutionService.resolve(commandWrapper.id(), runtimeValues, mockUser);
         assertThat(resolvedCommand.commandId(), is(dummyCommand.id()));
-        assertThat(resolvedCommand.xnatCommandWrapperId(), is(commandWrapper.id()));
+        assertThat(resolvedCommand.wrapperId(), is(commandWrapper.id()));
         assertThat(resolvedCommand.image(), is(dummyCommand.image()));
         assertThat(resolvedCommand.commandLine(), is(dummyCommand.commandLine()));
         assertThat(resolvedCommand.environmentVariables().isEmpty(), is(true));
@@ -416,7 +416,7 @@ public class CommandResolutionTest {
 
         final PartiallyResolvedCommand resolvedCommand = commandResolutionService.resolve(commandWrapper.id(), runtimeValues, mockUser);
         assertThat(resolvedCommand.commandId(), is(dummyCommand.id()));
-        assertThat(resolvedCommand.xnatCommandWrapperId(), is(commandWrapper.id()));
+        assertThat(resolvedCommand.wrapperId(), is(commandWrapper.id()));
         assertThat(resolvedCommand.image(), is(dummyCommand.image()));
         assertThat(resolvedCommand.commandLine(), is(dummyCommand.commandLine()));
         assertThat(resolvedCommand.environmentVariables().isEmpty(), is(true));

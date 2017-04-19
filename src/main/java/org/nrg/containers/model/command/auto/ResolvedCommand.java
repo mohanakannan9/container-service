@@ -15,8 +15,12 @@ import java.util.Map;
 @AutoValue
 public abstract class ResolvedCommand {
 
-    @JsonProperty("xnat-command-wrapper-id") public abstract Long xnatCommandWrapperId();
+    @JsonProperty("wrapper-id") public abstract Long wrapperId();
+    @JsonProperty("wrapper-name") public abstract String wrapperName();
+    @Nullable @JsonProperty("wrapper-description") public abstract String wrapperDescription();
     @JsonProperty("command-id") public abstract Long commandId();
+    @JsonProperty("command-name") public abstract String commandName();
+    @Nullable @JsonProperty("command-description") public abstract String commandDescription();
     @JsonProperty("image") public abstract String image();
     @JsonProperty("type") public abstract String type();
     @JsonProperty("raw-input-values") public abstract ImmutableMap<String, String> rawInputValues();
@@ -30,8 +34,12 @@ public abstract class ResolvedCommand {
     @Nullable @JsonProperty("working-directory") public abstract String workingDirectory();
 
     @JsonCreator
-    public static ResolvedCommand create(@JsonProperty("xnat-command-wrapper-id") final Long xnatCommandWrapperId,
+    public static ResolvedCommand create(@JsonProperty("wrapper-id") final Long wrapperId,
+                                         @JsonProperty("wrapper-name") final String wrapperName,
+                                         @JsonProperty("wrapper-description") final String wrapperDescription,
                                          @JsonProperty("command-id") final Long commandId,
+                                         @JsonProperty("command-name") final String commandName,
+                                         @JsonProperty("command-description") final String commandDescription,
                                          @JsonProperty("image") final String image,
                                          @JsonProperty("type") final String type,
                                          @JsonProperty("raw-input-values") final Map<String, String> rawInputValues,
@@ -44,8 +52,12 @@ public abstract class ResolvedCommand {
                                          @JsonProperty("outputs") final List<ResolvedCommandOutput> outputs,
                                          @JsonProperty("working-directory") final String workingDirectory) {
         return builder()
-                .xnatCommandWrapperId(xnatCommandWrapperId)
+                .wrapperId(wrapperId)
+                .wrapperName(wrapperName)
+                .wrapperDescription(wrapperDescription)
                 .commandId(commandId)
+                .commandName(commandName)
+                .commandDescription(commandDescription)
                 .image(image)
                 .type(type == null ? CommandEntity.DEFAULT_TYPE.getName() : type)
                 .rawInputValues(rawInputValues == null ? Collections.<String, String>emptyMap() : rawInputValues)
@@ -67,8 +79,12 @@ public abstract class ResolvedCommand {
 
     @AutoValue.Builder
     public static abstract class Builder {
-        public abstract Builder xnatCommandWrapperId(Long xnatCommandWrapperId);
+        public abstract Builder wrapperId(Long wrapperId);
+        public abstract Builder wrapperName(String wrapperDescription);
+        public abstract Builder wrapperDescription(String wrapperDescription);
         public abstract Builder commandId(Long commandId);
+        public abstract Builder commandName(String commandDescription);
+        public abstract Builder commandDescription(String commandDescription);
         public abstract Builder image(String image);
         public abstract Builder type(String type);
         public abstract Builder rawInputValues(Map<String, String> rawInputValues);
@@ -121,8 +137,12 @@ public abstract class ResolvedCommand {
 
     @AutoValue
     public abstract static class PartiallyResolvedCommand {
-        @JsonProperty("xnat-command-wrapper-id") public abstract Long xnatCommandWrapperId();
+        @JsonProperty("wrapper-id") public abstract Long wrapperId();
+        @JsonProperty("wrapper-name") public abstract String wrapperName();
+        @Nullable @JsonProperty("wrapper-description") public abstract String wrapperDescription();
         @JsonProperty("command-id") public abstract Long commandId();
+        @JsonProperty("command-name") public abstract String commandName();
+        @Nullable @JsonProperty("command-description") public abstract String commandDescription();
         @JsonProperty("image") public abstract String image();
         @JsonProperty("type") public abstract String type();
         @JsonProperty("raw-input-values") public abstract ImmutableMap<String, String> rawInputValues();
@@ -136,8 +156,12 @@ public abstract class ResolvedCommand {
         @Nullable @JsonProperty("working-directory") public abstract String workingDirectory();
 
         @JsonCreator
-        public static PartiallyResolvedCommand create(@JsonProperty("xnat-command-wrapper-id") final Long xnatCommandWrapperId,
+        public static PartiallyResolvedCommand create(@JsonProperty("wrapper-id") final Long wrapperId,
+                                                      @JsonProperty("wrapper-name") final String wrapperName,
+                                                      @JsonProperty("wrapper-description") final String wrapperDescription,
                                                       @JsonProperty("command-id") final Long commandId,
+                                                      @JsonProperty("command-name") final String commandName,
+                                                      @JsonProperty("command-description") final String commandDescription,
                                                       @JsonProperty("image") final String image,
                                                       @JsonProperty("type") final String type,
                                                       @JsonProperty("raw-input-values") final Map<String, String> rawInputValues,
@@ -150,8 +174,12 @@ public abstract class ResolvedCommand {
                                                       @JsonProperty("outputs") final List<ResolvedCommandOutput> outputs,
                                                       @JsonProperty("working-directory") final String workingDirectory) {
             return builder()
-                    .xnatCommandWrapperId(xnatCommandWrapperId)
+                    .wrapperId(wrapperId)
+                    .wrapperName(wrapperName)
+                    .wrapperDescription(wrapperDescription)
                     .commandId(commandId)
+                    .commandName(commandName)
+                    .commandDescription(commandDescription)
                     .image(image)
                     .type(type == null ? CommandEntity.DEFAULT_TYPE.getName() : type)
                     .rawInputValues(rawInputValues == null ? Collections.<String, String>emptyMap() : rawInputValues)
@@ -174,8 +202,12 @@ public abstract class ResolvedCommand {
         public ResolvedCommand.Builder toResolvedCommandBuilder() {
             // Set everything but the mounts. Those will be resolved separately.
             return ResolvedCommand.builder()
-                    .xnatCommandWrapperId(this.xnatCommandWrapperId())
+                    .wrapperId(this.wrapperId())
+                    .wrapperName(this.wrapperName())
+                    .wrapperDescription(this.wrapperDescription())
                     .commandId(this.commandId())
+                    .commandName(this.commandName())
+                    .commandDescription(this.commandDescription())
                     .image(this.image())
                     .type(this.type())
                     .rawInputValues(this.rawInputValues())
@@ -191,8 +223,12 @@ public abstract class ResolvedCommand {
 
         @AutoValue.Builder
         public static abstract class Builder {
-            public abstract Builder xnatCommandWrapperId(Long xnatCommandWrapperId);
+            public abstract Builder wrapperId(Long wrapperId);
+            public abstract Builder wrapperName(String wrapperDescription);
+            public abstract Builder wrapperDescription(String wrapperDescription);
             public abstract Builder commandId(Long commandId);
+            public abstract Builder commandName(String commandDescription);
+            public abstract Builder commandDescription(String commandDescription);
             public abstract Builder image(String image);
             public abstract Builder type(String type);
             public abstract Builder rawInputValues(Map<String, String> rawInputValues);

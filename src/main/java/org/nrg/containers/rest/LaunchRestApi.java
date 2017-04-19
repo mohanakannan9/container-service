@@ -11,9 +11,12 @@ import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.ContainerMountResolutionException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.model.command.auto.LaunchUi;
 import org.nrg.containers.model.command.auto.ResolvedCommand.PartiallyResolvedCommand;
+import org.nrg.containers.model.configuration.CommandConfiguration;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.services.CommandResolutionService;
+import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerService;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NotFoundException;
@@ -53,15 +56,18 @@ public class LaunchRestApi extends AbstractXapiRestController {
     private static final String ID_REGEX = "\\d+";
     private static final String NAME_REGEX = "\\d*[^\\d]+\\d*";
 
+    private final CommandService commandService;
     private final ContainerService containerService;
     private final CommandResolutionService commandResolutionService;
 
     @Autowired
-    public LaunchRestApi(final ContainerService containerService,
+    public LaunchRestApi(final CommandService commandService,
+                         final ContainerService containerService,
                          final CommandResolutionService commandResolutionService,
                          final UserManagementServiceI userManagementService,
                          final RoleHolder roleHolder) {
         super(userManagementService, roleHolder);
+        this.commandService = commandService;
         this.containerService = containerService;
         this.commandResolutionService = commandResolutionService;
     }
@@ -72,57 +78,61 @@ public class LaunchRestApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = {"/wrappers/{wrapperId}/launch"}, method = GET)
     @ApiIgnore // Swagger UI does not correctly show this API endpoint
     @ResponseBody
-    public String getLaunchUi(final @PathVariable long wrapperId,
-                              final @RequestParam Map<String, String> allRequestParams)
+    public LaunchUi getLaunchUi(final @PathVariable long wrapperId,
+                                final @RequestParam Map<String, String> allRequestParams)
             throws NotFoundException {
         log.info("Launch UI requested for wrapper {}", wrapperId);
         final UserI userI = XDAT.getUserDetails();
         final PartiallyResolvedCommand partiallyResolvedCommand =
                 commandResolutionService.preResolve(wrapperId, allRequestParams, userI);
-        return null; // TODO
+        final CommandConfiguration commandConfiguration = commandService.getSiteConfiguration(wrapperId);
+        return LaunchUi.create(partiallyResolvedCommand, commandConfiguration);
     }
 
     @XapiRequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/launch"}, method = GET)
     @ApiIgnore // Swagger UI does not correctly show this API endpoint
     @ResponseBody
-    public String getLaunchUi(final @PathVariable long commandId,
-                              final @PathVariable String wrapperName,
-                              final @RequestParam Map<String, String> allRequestParams)
+    public LaunchUi getLaunchUi(final @PathVariable long commandId,
+                                final @PathVariable String wrapperName,
+                                final @RequestParam Map<String, String> allRequestParams)
             throws NotFoundException {
         log.info("Launch UI requested for command {}, wrapper {}", commandId, wrapperName);
         final UserI userI = XDAT.getUserDetails();
         final PartiallyResolvedCommand partiallyResolvedCommand =
                 commandResolutionService.preResolve(commandId, wrapperName, allRequestParams, userI);
-        return null; // TODO
+        final CommandConfiguration commandConfiguration = commandService.getSiteConfiguration(commandId, wrapperName);
+        return LaunchUi.create(partiallyResolvedCommand, commandConfiguration);
     }
 
     @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/launch"}, method = GET)
     @ApiIgnore // Swagger UI does not correctly show this API endpoint
     @ResponseBody
-    public String getLaunchUi(final @PathVariable String project,
-                              final @PathVariable long wrapperId,
-                              final @RequestParam Map<String, String> allRequestParams)
+    public LaunchUi getLaunchUi(final @PathVariable String project,
+                                final @PathVariable long wrapperId,
+                                final @RequestParam Map<String, String> allRequestParams)
             throws NotFoundException {
         log.info("Launch UI requested for project {}, wrapper {}", project, wrapperId);
         final UserI userI = XDAT.getUserDetails();
         final PartiallyResolvedCommand partiallyResolvedCommand =
                 commandResolutionService.preResolve(project, wrapperId, allRequestParams, userI);
-        return null; // TODO
+        final CommandConfiguration commandConfiguration = commandService.getProjectConfiguration(project, wrapperId);
+        return LaunchUi.create(partiallyResolvedCommand, commandConfiguration);
     }
 
     @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/launch"}, method = GET)
     @ApiIgnore // Swagger UI does not correctly show this API endpoint
     @ResponseBody
-    public String getLaunchUi(final @PathVariable String project,
-                              final @PathVariable long commandId,
-                              final @PathVariable String wrapperName,
-                              final @RequestParam Map<String, String> allRequestParams)
+    public LaunchUi getLaunchUi(final @PathVariable String project,
+                                final @PathVariable long commandId,
+                                final @PathVariable String wrapperName,
+                                final @RequestParam Map<String, String> allRequestParams)
             throws NotFoundException {
         log.info("Launch UI requested for project {}, command {}, wrapper {}", project, commandId, wrapperName);
         final UserI userI = XDAT.getUserDetails();
         final PartiallyResolvedCommand partiallyResolvedCommand =
                 commandResolutionService.preResolve(project, commandId, wrapperName, allRequestParams, userI);
-        return null; // TODO
+        final CommandConfiguration commandConfiguration = commandService.getProjectConfiguration(project, commandId, wrapperName);
+        return LaunchUi.create(partiallyResolvedCommand, commandConfiguration);
     }
 
     /*

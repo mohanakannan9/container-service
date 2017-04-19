@@ -110,6 +110,7 @@ public abstract class CommandConfiguration {
         @Nullable @JsonProperty("matcher") public abstract String matcher();
         @Nullable @JsonProperty("user-settable") public abstract Boolean userSettable();
         @Nullable @JsonProperty("advanced") public abstract Boolean advanced();
+        @Nullable @JsonProperty("required") public abstract Boolean required();
 
         @JsonCreator
         static CommandInputConfiguration create(@JsonProperty("description") final String description,
@@ -117,7 +118,8 @@ public abstract class CommandConfiguration {
                                                 @JsonProperty("default-value") final String defaultValue,
                                                 @JsonProperty("matcher") final String matcher,
                                                 @JsonProperty("user-settable") final Boolean userSettable,
-                                                @JsonProperty("advanced") final Boolean advanced) {
+                                                @JsonProperty("advanced") final Boolean advanced,
+                                                @JsonProperty("required") final Boolean required) {
             return builder()
                     .description(description)
                     .type(type)
@@ -125,6 +127,7 @@ public abstract class CommandConfiguration {
                     .matcher(matcher)
                     .userSettable(userSettable)
                     .advanced(advanced)
+                    .required(required)
                     .build();
         }
 
@@ -134,7 +137,8 @@ public abstract class CommandConfiguration {
                     .description(commandInput.description())
                     .type(commandInput.type())
                     .defaultValue(commandInput.defaultValue())
-                    .matcher(commandInput.matcher());
+                    .matcher(commandInput.matcher())
+                    .required(commandInput.required());
 
             if (commandInputConfiguration != null) {
                 // Set those things that the command input does not have, even if they are null
@@ -195,6 +199,7 @@ public abstract class CommandConfiguration {
             public abstract Builder matcher(final String matcher);
             public abstract Builder userSettable(final Boolean userSettable);
             public abstract Builder advanced(final Boolean advanced);
+            public abstract Builder required(final Boolean required);
 
             public abstract CommandInputConfiguration build();
         }

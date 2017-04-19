@@ -232,8 +232,12 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                     inputValues;
 
             partiallyResolvedCommandBuilder = PartiallyResolvedCommand.builder()
-                    .xnatCommandWrapperId(commandWrapper.id())
+                    .wrapperId(commandWrapper.id())
+                    .wrapperName(commandWrapper.name())
+                    .wrapperDescription(commandWrapper.description())
                     .commandId(command.id())
+                    .commandName(command.name())
+                    .commandDescription(command.description())
                     .image(command.image())
                     .rawInputValues(this.inputValues);
         }
