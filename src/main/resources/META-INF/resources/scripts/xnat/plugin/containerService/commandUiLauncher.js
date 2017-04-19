@@ -399,25 +399,30 @@ var XNAT = getObject(XNAT || {});
         });
     }
 
-    launcher.createLink = function(commandObj){
-        if (!commandObj) return false;
-        var link = spawn('li.yuimenuitem',[
-            spawn('a', {
-                className: 'yuimenuitemlabel commandLauncher',
-                data: {
-                    commandid: commandObj['command-id'],
-                    wrapperid: commandObj['wrapper-id'],
-                    wrappername: commandObj['wrapper-name'],
-                    launcher: 'select-scan'
-                },
-                onclick: function(){
-                    XNAT.plugin.containerService.launcher.open($(this));
-                },
-                html: commandObj['wrapper-name']
-            })
-        ]);
-        return link;
-//        return '<li class="yuimenuitem"><a href="#!" class="yuimenuitemlabel commandLauncher" data-commandId="'+commandObj['command-id']+'" data-wrapperId="'+commandObj['wrapper-id']+'" data-wrapperName="'+commandObj['wrapper-name']+'" data-launcher="select-scan">'+commandObj['wrapper-name']+'</a></li>';
+    var containerMenuItems = [
+        {
+            text: 'Run Containers',
+            url: '#run',
+            submenu: {
+                id: 'containerSubmenuItems',
+                itemdata: [
+                ]
+            }
+        }
+    ];
+
+    launcher.addMenuItem = function(item){
+        containerMenuItems[0].submenu.itemdata.push({
+            text: item['wrapper-name'],
+            url: 'javascript:openCommandLauncher({ commandid:"'+item['command-id']+'", wrapperid:"'+item['wrapper-id']+'", wrappername:"'+item['wrapper-name']+'", launcher: "select-scan" })'
+        });
+    };
+
+    launcher.createMenu = function(target){
+        target = target || 'actionsMenu';
+        var containerMenu = new YAHOO.widget.Menu('containerMenu', { autosubmenudisplay:true, scrollincrement:5, position:'static' });
+        containerMenu.addItems(containerMenuItems);
+        containerMenu.render(target);
     };
 
     launcher.init = function() {
@@ -427,14 +432,12 @@ var XNAT = getObject(XNAT || {});
             success: function (data) {
                 var availableCommands = data;
                 if (!availableCommands.length) {
-                    launcherMenu.hide();
                     return false;
                 } else {
-                    var submenu = launcherMenu.find('ul');
                     availableCommands.forEach(function (command) {
-                        var item = XNAT.plugin.containerService.launcher.createLink(command);
-                        submenu.append(item);
+                        launcher.addMenuItem(command);
                     });
+                    launcher.createMenu();
                 }
 
             },
@@ -444,12 +447,11 @@ var XNAT = getObject(XNAT || {});
         });
     };
 
-    launcher.open = function(clickedObj){
-        clickedObj = $$(clickedObj);
-        var launcher = clickedObj.data('launcher'),
-            commandId = clickedObj.data('commandid'),
-            wrapperId = clickedObj.data('wrapperid'),
-            wrapperName = clickedObj.data('wrappername');
+    launcher.open = window.openCommandLauncher = function(obj){
+        var launcher = obj.launcher,
+            commandId = obj.commandid,
+            wrapperId = obj.wrapperid,
+            wrapperName = obj.wrappername;
 
 
         switch(launcher) {
