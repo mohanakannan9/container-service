@@ -1057,6 +1057,7 @@ public abstract class Command {
 
         public CommandWrapperExternalInput applyConfiguration(final CommandInputConfiguration commandInputConfiguration) {
             return builder()
+                    .id(this.id())
                     .name(this.name())
                     .type(this.type())
                     .providesValueForCommandInput(this.providesValueForCommandInput())

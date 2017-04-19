@@ -8,7 +8,11 @@ import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import org.nrg.containers.model.command.auto.Command;
+import org.nrg.containers.model.command.auto.Command.CommandInput;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
+import org.nrg.containers.model.command.auto.Command.CommandWrapperDerivedInput;
+import org.nrg.containers.model.command.auto.Command.CommandWrapperExternalInput;
+import org.nrg.containers.model.command.auto.Command.CommandWrapperOutput;
 import org.nrg.containers.model.configuration.CommandConfiguration.Builder;
 import org.nrg.containers.model.configuration.CommandConfigurationInternal.CommandInputConfiguration;
 
@@ -236,5 +240,74 @@ public abstract class CommandConfiguration {
 
             public abstract CommandOutputConfiguration build();
         }
+    }
+
+    @Nonnull
+    public Command apply(final Command commandWithOneWrapper) {
+        // Initialize the command builder copy
+        final Command.Builder commandBuilder = Command.builder()
+                .name(commandWithOneWrapper.name())
+                .id(commandWithOneWrapper.id())
+                .label(commandWithOneWrapper.label())
+                .description(commandWithOneWrapper.description())
+                .version(commandWithOneWrapper.version())
+                .schemaVersion(commandWithOneWrapper.schemaVersion())
+                .infoUrl(commandWithOneWrapper.infoUrl())
+                .image(commandWithOneWrapper.image())
+                .type(commandWithOneWrapper.type())
+                .workingDirectory(commandWithOneWrapper.workingDirectory())
+                .commandLine(commandWithOneWrapper.commandLine())
+                .environmentVariables(commandWithOneWrapper.environmentVariables())
+                .mounts(commandWithOneWrapper.mounts())
+                .index(commandWithOneWrapper.index())
+                .hash(commandWithOneWrapper.hash())
+                .ports(commandWithOneWrapper.ports())
+                .outputs(commandWithOneWrapper.outputs());
+
+        // Things we need to apply configuration to:
+        // command inputs
+        // wrapper inputs
+        // wrapper outputs
+
+        for (final CommandInput commandInput : commandWithOneWrapper.inputs()) {
+            commandBuilder.addInput(
+                    this.inputs().containsKey(commandInput.name()) ?
+                            commandInput.applyConfiguration(this.inputs().get(commandInput.name())) :
+                            commandInput
+            );
+        }
+
+        final CommandWrapper originalCommandWrapper = commandWithOneWrapper.xnatCommandWrappers().get(0);
+        final CommandWrapper.Builder commandWrapperBuilder = CommandWrapper.builder()
+                .id(originalCommandWrapper.id())
+                .name(originalCommandWrapper.name())
+                .description(originalCommandWrapper.description())
+                .contexts(originalCommandWrapper.contexts());
+
+        for (final CommandWrapperExternalInput externalInput : originalCommandWrapper.externalInputs()) {
+            commandWrapperBuilder.addExternalInput(
+                    this.inputs().containsKey(externalInput.name()) ?
+                            externalInput.applyConfiguration(this.inputs().get(externalInput.name())) :
+                            externalInput
+            );
+        }
+
+        for (final CommandWrapperDerivedInput derivedInput : originalCommandWrapper.derivedInputs()) {
+            commandWrapperBuilder.addDerivedInput(
+                    this.inputs().containsKey(derivedInput.name()) ?
+                            derivedInput.applyConfiguration(this.inputs().get(derivedInput.name())) :
+                            derivedInput
+            );
+        }
+
+        for (final CommandWrapperOutput output : originalCommandWrapper.outputHandlers()) {
+            commandWrapperBuilder.addOutputHandler(
+                    this.outputs().containsKey(output.name()) ?
+                            output.applyConfiguration(this.outputs().get(output.name())) :
+                            output
+            );
+        }
+
+        return commandBuilder.addCommandWrapper(commandWrapperBuilder.build()).build();
     }
 }

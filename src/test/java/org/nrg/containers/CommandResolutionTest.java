@@ -18,31 +18,37 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.config.IntegrationTestConfig;
-import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.command.auto.Command;
+import org.nrg.containers.model.command.auto.Command.CommandInput;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
+import org.nrg.containers.model.command.auto.Command.CommandWrapperExternalInput;
 import org.nrg.containers.model.command.auto.ResolvedCommand.PartiallyResolvedCommand;
 import org.nrg.containers.model.command.entity.CommandType;
+import org.nrg.containers.model.configuration.CommandConfiguration;
+import org.nrg.containers.model.configuration.CommandConfiguration.CommandInputConfiguration;
+import org.nrg.containers.model.configuration.CommandConfigurationInternal;
 import org.nrg.containers.model.xnat.Project;
 import org.nrg.containers.model.xnat.Resource;
 import org.nrg.containers.model.xnat.Scan;
 import org.nrg.containers.model.xnat.Session;
 import org.nrg.containers.services.CommandResolutionService;
 import org.nrg.containers.services.CommandService;
-import org.nrg.containers.services.ContainerService;
+import org.nrg.containers.services.ContainerConfigService;
+import org.nrg.framework.constants.Scope;
 import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.transaction.TestTransaction;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 import java.util.Map;
 import java.util.Set;
 
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
@@ -64,6 +70,7 @@ public class CommandResolutionTest {
     @Autowired private ObjectMapper mapper;
     @Autowired private CommandService commandService;
     @Autowired private CommandResolutionService commandResolutionService;
+    @Autowired private ContainerConfigService containerConfigService;
     @Autowired private ConfigService mockConfigService;
 
     @Rule
@@ -103,6 +110,105 @@ public class CommandResolutionTest {
         xnatCommandWrappers = Maps.newHashMap();
         for (final CommandWrapper commandWrapperEntity : dummyCommand.xnatCommandWrappers()) {
             xnatCommandWrappers.put(commandWrapperEntity.name(), commandWrapperEntity);
+        }
+    }
+
+    @Test
+    @DirtiesContext
+    public void testGetAndConfigure() throws Exception {
+
+        final String commandInputName = "command-input";
+        final String commandInputDefaultValue = "yucky";
+        final String commandInputConfiguredDefaultValue = "yummy";
+        final String commandWrapperExternalInputName = "wrapper-input";
+        final String commandWrapperExternalInputDefaultValue = "blue";
+        final String commandWrapperExternalInputConfiguredDefaultValue = "red";
+        final Command command = commandService.create(Command.builder()
+                .name("command")
+                .image("whatever")
+                .addInput(CommandInput.builder()
+                        .name(commandInputName)
+                        .defaultValue(commandInputDefaultValue)
+                        .build())
+                .addCommandWrapper(CommandWrapper.builder()
+                        .name("wrapper")
+                        .addExternalInput(CommandWrapperExternalInput.builder()
+                                .name(commandWrapperExternalInputName)
+                                .defaultValue(commandWrapperExternalInputDefaultValue)
+                                .build())
+                        .build())
+                .build());
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        final CommandConfiguration siteConfiguration = CommandConfiguration.builder()
+                .addInput(commandInputName, CommandInputConfiguration.builder()
+                        .defaultValue(commandInputConfiguredDefaultValue)
+                        .build())
+                .build();
+        final CommandConfigurationInternal siteConfigurationInternal =
+                CommandConfigurationInternal.create(true, siteConfiguration);
+        final String siteConfigJson = mapper.writeValueAsString(siteConfigurationInternal);
+        final org.nrg.config.entities.Configuration mockSiteConfig =
+                Mockito.mock(org.nrg.config.entities.Configuration.class);
+        when(mockSiteConfig.getContents()).thenReturn(siteConfigJson);
+
+        final CommandConfigurationInternal projectConfigurationInternal =
+                siteConfigurationInternal.merge(CommandConfigurationInternal.create(true, CommandConfiguration.builder()
+                        .addInput(commandWrapperExternalInputName, CommandInputConfiguration.builder()
+                                .defaultValue(commandWrapperExternalInputConfiguredDefaultValue)
+                                .build())
+                        .build()), true);
+        final CommandConfiguration projectConfiguration = CommandConfiguration.create(
+                command,
+                command.xnatCommandWrappers().get(0),
+                projectConfigurationInternal
+        );
+        final org.nrg.config.entities.Configuration mockProjectConfig =
+                Mockito.mock(org.nrg.config.entities.Configuration.class);
+        final String projectConfigJson = mapper.writeValueAsString(projectConfigurationInternal);
+        when(mockProjectConfig.getContents()).thenReturn(projectConfigJson);
+
+        final long wrapperId = command.xnatCommandWrappers().get(0).id();
+        final String path = "wrapper-" + String.valueOf(wrapperId);
+        final String project = "a-project";
+        when(mockConfigService.getConfig(ContainerConfigService.TOOL_ID, path, Scope.Project, project))
+                .thenReturn(mockProjectConfig);
+        when(mockConfigService.getConfig(ContainerConfigService.TOOL_ID, path, Scope.Site, null))
+                .thenReturn(mockSiteConfig);
+
+        // Assert that the command is the command
+        assertThat(commandService.get(command.id()), is(command));
+
+        {
+            // Assert that the site configuration changes the one default input value we set
+            final Command siteConfigCommand = siteConfiguration.apply(command);
+            final CommandInput siteConfigCommandInput = siteConfigCommand.inputs().get(0);
+            final CommandWrapperExternalInput siteConfigExternalInput = siteConfigCommand.xnatCommandWrappers().get(0).externalInputs().get(0);
+            assertThat(siteConfigCommandInput.name(), is(commandInputName));
+            assertThat(siteConfigCommandInput.defaultValue(), is(commandInputConfiguredDefaultValue)); // Default got changed
+            assertThat(siteConfigExternalInput.name(), is(commandWrapperExternalInputName));
+            assertThat(siteConfigExternalInput.defaultValue(), is(commandWrapperExternalInputDefaultValue)); // Default did not get changed
+
+            // The service gives us the same command as doing the process manually
+            assertThat(commandService.getAndConfigure(wrapperId), is(siteConfigCommand));
+        }
+
+        {
+            // Assert that the project configuration changes both the default we set at the project level,
+            // and the default we set at the site level.
+            final Command projectConfigCommand = projectConfiguration.apply(command);
+            final CommandInput projectConfigCommandInput = projectConfigCommand.inputs().get(0);
+            final CommandWrapperExternalInput siteConfigExternalInput = projectConfigCommand.xnatCommandWrappers().get(0).externalInputs().get(0);
+            assertThat(projectConfigCommandInput.name(), is(commandInputName));
+            assertThat(projectConfigCommandInput.defaultValue(), is(commandInputConfiguredDefaultValue)); // Default got changed
+            assertThat(siteConfigExternalInput.name(), is(commandWrapperExternalInputName));
+            assertThat(siteConfigExternalInput.defaultValue(), is(commandWrapperExternalInputConfiguredDefaultValue)); // Default got changed
+
+            // The service gives us the same command as doing the process manually
+            assertThat(commandService.getAndConfigure(project, wrapperId), is(projectConfigCommand));
         }
     }
 
