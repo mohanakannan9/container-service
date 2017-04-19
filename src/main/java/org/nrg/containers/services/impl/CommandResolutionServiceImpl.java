@@ -26,6 +26,7 @@ import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.model.command.auto.Command.CommandWrapperDerivedInput;
 import org.nrg.containers.model.command.auto.Command.CommandWrapperInput;
 import org.nrg.containers.model.command.auto.Command.CommandWrapperOutput;
+import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.command.auto.ResolvedCommand.PartiallyResolvedCommand;
 import org.nrg.containers.model.command.auto.ResolvedCommand.PartiallyResolvedCommandMount;
 import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMountFiles;
@@ -87,23 +88,36 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
     }
 
     @Override
-    public PartiallyResolvedCommand preResolve(final long wrapperId, final Map<String, String> rawParamValues) {
-        return null;
+    public PartiallyResolvedCommand preResolve(final long wrapperId, final Map<String, String> inputValues, final UserI userI) throws NotFoundException {
+        final Command command = commandService.getAndConfigure(wrapperId);
+        final CommandWrapper wrapper = command.xnatCommandWrappers().get(0);
+        return preResolve(wrapper, command, inputValues, userI);
     }
 
     @Override
-    public PartiallyResolvedCommand preResolve(final long commandId, final String wrapperName, final Map<String, String> rawParamValues) {
-        return null;
+    public PartiallyResolvedCommand preResolve(final long commandId, final String wrapperName, final Map<String, String> inputValues, final UserI userI) throws NotFoundException {
+        final Command command = commandService.getAndConfigure(commandId, wrapperName);
+        final CommandWrapper wrapper = command.xnatCommandWrappers().get(0);
+        return preResolve(wrapper, command, inputValues, userI);
     }
 
     @Override
-    public PartiallyResolvedCommand preResolve(final String project, final long wrapperId, final Map<String, String> rawParamValues) {
-        return null;
+    public PartiallyResolvedCommand preResolve(final String project, final long wrapperId, final Map<String, String> inputValues, final UserI userI) throws NotFoundException {
+        final Command command = commandService.getAndConfigure(project, wrapperId);
+        final CommandWrapper wrapper = command.xnatCommandWrappers().get(0);
+        return preResolve(wrapper, command, inputValues, userI);
     }
 
     @Override
-    public PartiallyResolvedCommand preResolve(final String project, final long commandId, final String wrapperName, final Map<String, String> rawParamValues) {
-        return null;
+    public PartiallyResolvedCommand preResolve(final String project, final long commandId, final String wrapperName, final Map<String, String> inputValues, final UserI userI) throws NotFoundException {
+        final Command command = commandService.getAndConfigure(project, commandId, wrapperName);
+        final CommandWrapper wrapper = command.xnatCommandWrappers().get(0);
+        return preResolve(wrapper, command, inputValues, userI);
+    }
+
+    @Override
+    public PartiallyResolvedCommand preResolve(final CommandWrapper commandWrapper, final Command command, final Map<String, String> inputValues, final UserI userI) {
+        return CommandResolutionHelper.preResolve(commandWrapper, command, inputValues, userI);
     }
 
     @Override
@@ -217,7 +231,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
         private CommandResolutionHelper(final CommandWrapper commandWrapper,
                                         final Command command,
                                         final Map<String, String> inputValues,
-                                        final UserI userI) throws CommandResolutionException {
+                                        final UserI userI) {
             this.commandWrapper = commandWrapper;
             this.command = command;
             this.cachedCommand = null;
@@ -244,12 +258,24 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
         }
 
         static PartiallyResolvedCommand resolve(final CommandWrapper commandWrapper,
-                                              final Command command,
-                                              final Map<String, String> inputValues,
-                                              final UserI userI)
+                                                final Command command,
+                                                final Map<String, String> inputValues,
+                                                final UserI userI)
                 throws CommandResolutionException {
             final CommandResolutionHelper helper = new CommandResolutionHelper(commandWrapper, command, inputValues, userI);
             return helper.resolve();
+        }
+
+        static PartiallyResolvedCommand preResolve(final CommandWrapper commandWrapper,
+                                                   final Command command,
+                                                   final Map<String, String> inputValues,
+                                                   final UserI userI) {
+            final CommandResolutionHelper helper = new CommandResolutionHelper(commandWrapper, command, inputValues, userI);
+            return helper.preResolve();
+        }
+
+        private PartiallyResolvedCommand preResolve() {
+            return null; // TODO
         }
 
         private PartiallyResolvedCommand resolve() throws CommandResolutionException {

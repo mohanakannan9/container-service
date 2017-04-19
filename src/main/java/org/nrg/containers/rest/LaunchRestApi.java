@@ -74,10 +74,11 @@ public class LaunchRestApi extends AbstractXapiRestController {
     @ResponseBody
     public String getLaunchUi(final @PathVariable long wrapperId,
                               final @RequestParam Map<String, String> allRequestParams)
-            {
+            throws NotFoundException {
         log.info("Launch UI requested for wrapper {}", wrapperId);
+        final UserI userI = XDAT.getUserDetails();
         final PartiallyResolvedCommand partiallyResolvedCommand =
-                commandResolutionService.preResolve(wrapperId, allRequestParams);
+                commandResolutionService.preResolve(wrapperId, allRequestParams, userI);
         return null; // TODO
     }
 
@@ -87,10 +88,11 @@ public class LaunchRestApi extends AbstractXapiRestController {
     public String getLaunchUi(final @PathVariable long commandId,
                               final @PathVariable String wrapperName,
                               final @RequestParam Map<String, String> allRequestParams)
-            {
+            throws NotFoundException {
         log.info("Launch UI requested for command {}, wrapper {}", commandId, wrapperName);
+        final UserI userI = XDAT.getUserDetails();
         final PartiallyResolvedCommand partiallyResolvedCommand =
-                commandResolutionService.preResolve(commandId, wrapperName, allRequestParams);
+                commandResolutionService.preResolve(commandId, wrapperName, allRequestParams, userI);
         return null; // TODO
     }
 
@@ -100,10 +102,11 @@ public class LaunchRestApi extends AbstractXapiRestController {
     public String getLaunchUi(final @PathVariable String project,
                               final @PathVariable long wrapperId,
                               final @RequestParam Map<String, String> allRequestParams)
-            {
+            throws NotFoundException {
         log.info("Launch UI requested for project {}, wrapper {}", project, wrapperId);
+        final UserI userI = XDAT.getUserDetails();
         final PartiallyResolvedCommand partiallyResolvedCommand =
-                commandResolutionService.preResolve(project, wrapperId, allRequestParams);
+                commandResolutionService.preResolve(project, wrapperId, allRequestParams, userI);
         return null; // TODO
     }
 
@@ -114,10 +117,11 @@ public class LaunchRestApi extends AbstractXapiRestController {
                               final @PathVariable long commandId,
                               final @PathVariable String wrapperName,
                               final @RequestParam Map<String, String> allRequestParams)
-            {
+            throws NotFoundException {
         log.info("Launch UI requested for project {}, command {}, wrapper {}", project, commandId, wrapperName);
+        final UserI userI = XDAT.getUserDetails();
         final PartiallyResolvedCommand partiallyResolvedCommand =
-                commandResolutionService.preResolve(project, commandId, wrapperName, allRequestParams);
+                commandResolutionService.preResolve(project, commandId, wrapperName, allRequestParams, userI);
         return null; // TODO
     }
 

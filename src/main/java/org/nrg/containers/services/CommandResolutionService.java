@@ -12,17 +12,29 @@ import java.util.Map;
 
 public interface CommandResolutionService {
     PartiallyResolvedCommand preResolve(long wrapperId,
-                                        Map<String, String> rawParamValues);
+                                        Map<String, String> inputValues,
+                                        final UserI userI)
+            throws NotFoundException;
     PartiallyResolvedCommand preResolve(long commandId,
                                         String wrapperName,
-                                        Map<String, String> rawParamValues);
+                                        Map<String, String> inputValues,
+                                        final UserI userI)
+            throws NotFoundException;
     PartiallyResolvedCommand preResolve(String project,
                                         long wrapperId,
-                                        Map<String, String> rawParamValues);
+                                        Map<String, String> inputValues,
+                                        final UserI userI)
+            throws NotFoundException;
     PartiallyResolvedCommand preResolve(String project,
                                         long commandId,
                                         String wrapperName,
-                                        Map<String, String> rawParamValues);
+                                        Map<String, String> inputValues,
+                                        final UserI userI)
+            throws NotFoundException;
+    PartiallyResolvedCommand preResolve(CommandWrapper commandWrapper,
+                                        Command command,
+                                        Map<String, String> inputValues,
+                                        UserI userI);
 
     PartiallyResolvedCommand resolve(long commandId,
                                      String wrapperName,
