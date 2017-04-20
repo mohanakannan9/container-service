@@ -36,10 +36,7 @@ public class CommandEntityRepository extends AbstractHibernateDAO<CommandEntity>
         Hibernate.initialize(commandEntity.getCommandWrapperEntities());
         if (commandEntity.getCommandWrapperEntities() != null) {
             for (final CommandWrapperEntity commandWrapperEntity : commandEntity.getCommandWrapperEntities()) {
-                Hibernate.initialize(commandWrapperEntity.getContexts());
-                Hibernate.initialize(commandWrapperEntity.getExternalInputs());
-                Hibernate.initialize(commandWrapperEntity.getDerivedInputs());
-                Hibernate.initialize(commandWrapperEntity.getOutputHandlers());
+                initialize(commandWrapperEntity);
             }
         }
 
@@ -48,6 +45,16 @@ public class CommandEntityRepository extends AbstractHibernateDAO<CommandEntity>
                 Hibernate.initialize(((DockerCommandEntity) commandEntity).getPorts());
                 break;
         }
+    }
+
+    public void initialize(final CommandWrapperEntity commandWrapperEntity) {
+        if (commandWrapperEntity == null) {
+            return;
+        }
+        Hibernate.initialize(commandWrapperEntity.getContexts());
+        Hibernate.initialize(commandWrapperEntity.getExternalInputs());
+        Hibernate.initialize(commandWrapperEntity.getDerivedInputs());
+        Hibernate.initialize(commandWrapperEntity.getOutputHandlers());
     }
 
     @Nullable
@@ -110,14 +117,29 @@ public class CommandEntityRepository extends AbstractHibernateDAO<CommandEntity>
     }
 
     public CommandWrapperEntity retrieveWrapper(long wrapperId) {
-        return (CommandWrapperEntity) getSession().get(CommandWrapperEntity.class, wrapperId);
+        final CommandWrapperEntity commandWrapperEntity = (CommandWrapperEntity) getSession().get(CommandWrapperEntity.class, wrapperId);
+        initialize(commandWrapperEntity);
+        return commandWrapperEntity;
+    }
+
+    public boolean commandExists(final long commandId) {
+        return getSession().createQuery("select 1 from CommandEntity as command where command.id = :commandId")
+                .setLong("commandId", commandId)
+                .uniqueResult() != null;
     }
 
     public CommandWrapperEntity retrieveWrapper(long commandId, String wrapperName) {
-        return (CommandWrapperEntity) getSession().createQuery("from CommandWrapperEntity as wrapper where wrapper.name = :wrapperName and wrapper.commandEntity.id = :commandId")
+        if (!commandExists(commandId)) {
+            return null;
+        }
+        final CommandWrapperEntity commandWrapperEntity = (CommandWrapperEntity) getSession()
+                .createQuery("select wrapper from CommandWrapperEntity as wrapper where wrapper.name = :wrapperName and wrapper.commandEntity.id = :commandId")
                 .setString("wrapperName", wrapperName)
                 .setLong("commandId", commandId)
+                .setFlushMode(FlushMode.MANUAL)
                 .uniqueResult();
+        initialize(commandWrapperEntity);
+        return commandWrapperEntity;
     }
 
     public void update(final CommandWrapperEntity toUpdate) {
@@ -138,10 +160,8 @@ public class CommandEntityRepository extends AbstractHibernateDAO<CommandEntity>
     }
 
     public long getWrapperId(final long commandId, final String wrapperName) throws NotFoundException {
-        final Object commandExistsResult = getSession().createQuery("select 1 from CommandEntity as command where command.id = :commandId")
-                .setLong("commandId", commandId)
-                .uniqueResult();
-        if (commandExistsResult == null) {
+
+        if (!commandExists(commandId)) {
             throw new NotFoundException("No command with id " + String.valueOf(commandId));
         }
 
@@ -149,14 +169,31 @@ public class CommandEntityRepository extends AbstractHibernateDAO<CommandEntity>
                 .setString("wrapperName", wrapperName)
                 .setLong("commandId", commandId)
                 .uniqueResult();
-        if (wrapperId == null) {
-            throw new NotFoundException("Command " + String.valueOf(commandId) + " has no wrapper " + wrapperName);
+        if (wrapperId != null) {
+            return (Long) wrapperId;
         }
-        return (Long) wrapperId;
+
+        // We didn't find the wrapper by name. Maybe we accidentally got the id as a string?
+        try {
+            final Long possibleWrapperId = Long.parseLong(wrapperName);
+            final boolean wrapperExists = getSession()
+                    .createQuery("select 1 from CommandWrapperEntity as wrapper where wrapper.id = :wrapperId and wrapper.commandEntity.id = :commandId")
+                    .setLong("wrapperId", possibleWrapperId)
+                    .setLong("commandId", commandId)
+                    .uniqueResult() != null;
+            if (wrapperExists) {
+                return possibleWrapperId;
+            }
+        } catch (NumberFormatException ignored) {
+            // No, wrapperName is not a number
+        }
+
+        throw new NotFoundException("Command " + String.valueOf(commandId) + " has no wrapper " + wrapperName);
     }
 
     public CommandEntity getCommandByWrapperId(final long wrapperId) throws NotFoundException {
-        final Object commandEntityResult = getSession().createQuery("select wrapper.commandEntity from CommandWrapperEntity as wrapper where wrapper.id = :wrapperId")
+        final Object commandEntityResult = getSession()
+                .createQuery("select wrapper.commandEntity from CommandWrapperEntity as wrapper where wrapper.id = :wrapperId")
                 .setLong("wrapperId", wrapperId)
                 .setFlushMode(FlushMode.MANUAL)
                 .uniqueResult();
