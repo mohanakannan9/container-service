@@ -21,5 +21,5 @@ public interface CommandEntityService extends BaseHibernateService<CommandEntity
 
     long getWrapperId(long commandId, String wrapperName) throws NotFoundException;
 
-    CommandEntity getCommandWithOneWrapper(long wrapperId) throws NotFoundException;
+    CommandEntity getCommandByWrapperId(long wrapperId) throws NotFoundException;
 }

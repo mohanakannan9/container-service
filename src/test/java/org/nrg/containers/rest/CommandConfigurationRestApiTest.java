@@ -128,7 +128,7 @@ public class CommandConfigurationRestApiTest {
                 .addOutput(CommandOutput.builder().name(outputName).build())
                 .build();
         when(mockCommandEntityService.getWrapperId(commandId, wrapperName)).thenReturn(wrapperId);
-        when(mockCommandEntityService.getCommandWithOneWrapper(wrapperId)).thenReturn(CommandEntity.fromPojo(command));
+        when(mockCommandEntityService.getCommandByWrapperId(wrapperId)).thenReturn(CommandEntity.fromPojo(command));
 
         // Create a command configuration
         final CommandConfigurationInternal commandConfigurationInternal = CommandConfigurationInternal.builder()

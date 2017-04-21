@@ -116,16 +116,7 @@ public class HibernateCommandEntityService extends AbstractHibernateEntityServic
     }
 
     @Override
-    public CommandEntity getCommandWithOneWrapper(final long wrapperId) throws NotFoundException {
-        final CommandEntity commandWithAllWrappers = getDao().getCommandByWrapperId(wrapperId);
-        final List<CommandWrapperEntity> listWithOneWrapper = Lists.newArrayList();
-        for (final CommandWrapperEntity wrapper : commandWithAllWrappers.getCommandWrapperEntities()) {
-            if (wrapper.getId() == wrapperId) {
-                listWithOneWrapper.add(wrapper);
-                break;
-            }
-        }
-        commandWithAllWrappers.setCommandWrapperEntities(listWithOneWrapper);
-        return commandWithAllWrappers;
+    public CommandEntity getCommandByWrapperId(final long wrapperId) throws NotFoundException {
+        return getDao().getCommandByWrapperId(wrapperId);
     }
 }
