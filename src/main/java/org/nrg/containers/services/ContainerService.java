@@ -37,7 +37,7 @@ public interface ContainerService {
                                                      Map<String, String> inputValues,
                                                      UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException;
-    ContainerEntity launchResolvedCommand(final PartiallyResolvedCommand resolvedCommand, final UserI userI)
+    ContainerEntity launchResolvedCommand(final ResolvedCommand resolvedCommand, final UserI userI)
             throws NoServerPrefException, DockerServerException, ContainerMountResolutionException, ContainerException;
 
     void processEvent(final ContainerEvent event);

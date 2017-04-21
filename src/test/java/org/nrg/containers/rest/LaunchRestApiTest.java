@@ -171,7 +171,7 @@ public class LaunchRestApiTest {
         when(mockCommandService.getWrapper(WRAPPER_ID)).thenReturn(mockCommandWrapper);
 
         // This ResolvedCommand will be used in an internal method to "launch" a container
-        final PartiallyResolvedCommand partiallyResolvedCommand = PartiallyResolvedCommand.builder()
+        final ResolvedCommand resolvedCommand = ResolvedCommand.builder()
                 .commandId(commandId)
                 .commandName(commandName)
                 .wrapperId(WRAPPER_ID)
@@ -180,12 +180,11 @@ public class LaunchRestApiTest {
                 .commandLine("echo hello world")
                 .addRawInputValue(INPUT_NAME, INPUT_VALUE)
                 .build();
-        final ResolvedCommand resolvedCommand = partiallyResolvedCommand.toResolvedCommandBuilder().build();
         when(mockCommandResolutionService.resolve(
                 eq(WRAPPER_ID),
                 anyMapOf(String.class, String.class),
                 eq(mockAdmin)
-        )).thenReturn(partiallyResolvedCommand);
+        )).thenReturn(resolvedCommand);
         final ContainerEntity containerEntity = new ContainerEntity(resolvedCommand, FAKE_CONTAINER_ID, username);
 
         // We have to match any resolved command because spring will add a csrf token to the inputs. I don't know how to get that token in advance.

@@ -12,11 +12,7 @@ import org.nrg.containers.exceptions.ContainerMountResolutionException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.helpers.ContainerFinalizeHelper;
-import org.nrg.containers.model.command.auto.Command;
-import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
-import org.nrg.containers.model.command.auto.ResolvedCommand.PartiallyResolvedCommand;
-import org.nrg.containers.model.command.auto.ResolvedCommand.PartiallyResolvedCommandMount;
 import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMount;
 import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMountFiles;
 import org.nrg.containers.model.container.entity.ContainerEntity;
@@ -46,6 +42,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Nonnull;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -136,8 +133,8 @@ public class ContainerServiceImpl implements ContainerService {
 
     @Override
     @Nonnull
-    public ContainerEntity launchResolvedCommand(final PartiallyResolvedCommand resolvedCommand,
-                                                  final UserI userI)
+    public ContainerEntity launchResolvedCommand(final ResolvedCommand resolvedCommand,
+                                                 final UserI userI)
             throws NoServerPrefException, DockerServerException, ContainerMountResolutionException, ContainerException, UnsupportedOperationException {
         if (resolvedCommand.type().equals(DOCKER.getName())) {
             return launchResolvedDockerCommand(resolvedCommand, userI);
@@ -147,8 +144,8 @@ public class ContainerServiceImpl implements ContainerService {
     }
 
     @Nonnull
-    private ContainerEntity launchResolvedDockerCommand(final PartiallyResolvedCommand resolvedCommand,
-                                                       final UserI userI)
+    private ContainerEntity launchResolvedDockerCommand(final ResolvedCommand resolvedCommand,
+                                                        final UserI userI)
             throws NoServerPrefException, DockerServerException, ContainerMountResolutionException, ContainerException {
         log.info("Preparing to launch resolved command.");
         final ResolvedCommand preparedToLaunch = prepareToLaunch(resolvedCommand, userI);
@@ -173,10 +170,12 @@ public class ContainerServiceImpl implements ContainerService {
     }
 
     @Nonnull
-    private ResolvedCommand prepareToLaunch(final PartiallyResolvedCommand partiallyResolvedCommand,
+    private ResolvedCommand prepareToLaunch(final ResolvedCommand resolvedCommand,
                                             final UserI userI)
             throws NoServerPrefException, ContainerMountResolutionException {
-        final ResolvedCommand.Builder resolvedCommandBuilder = partiallyResolvedCommand.toResolvedCommandBuilder();
+        final ResolvedCommand.Builder resolvedCommandBuilder =
+                resolvedCommand.toBuilder()
+                .mounts(Collections.<ResolvedCommandMount>emptyList()); // Initialize to empty mounts so we can re-add them
 
         // Add default environment variables
         final AliasToken token = aliasTokenService.issueTokenForUser(userI);
@@ -186,11 +185,11 @@ public class ContainerServiceImpl implements ContainerService {
                 .addEnvironmentVariable("XNAT_HOST", processingUrl);
 
         // Transport mounts
-        if (!partiallyResolvedCommand.mounts().isEmpty()) {
+        if (!resolvedCommand.mounts().isEmpty()) {
 
             final String dockerHost = containerControlApi.getServer().host();
-            for (final PartiallyResolvedCommandMount mount : partiallyResolvedCommand.mounts()) {
-                final ResolvedCommandMount.Builder resolvedCommandMountBuilder = mount.toResolvedCommandMountBuilder();
+            for (final ResolvedCommandMount mount : resolvedCommand.mounts()) {
+                final ResolvedCommandMount.Builder resolvedCommandMountBuilder = mount.toBuilder();
 
                 // First, figure out what we have.
                 // Do we have source files? A source directory?

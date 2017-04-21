@@ -18,7 +18,6 @@ import org.nrg.containers.exceptions.CommandInputResolutionException;
 import org.nrg.containers.exceptions.CommandMountResolutionException;
 import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.CommandWrapperInputResolutionException;
-import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandInput;
 import org.nrg.containers.model.command.auto.Command.CommandMount;
 import org.nrg.containers.model.command.auto.Command.CommandOutput;
@@ -114,39 +113,39 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
     }
 
     @Override
-    public PartiallyResolvedCommand resolve(final long commandId,
-                                            final String wrapperName,
-                                            final Map<String, String> inputValues,
-                                            final UserI userI)
+    public ResolvedCommand resolve(final long commandId,
+                                   final String wrapperName,
+                                   final Map<String, String> inputValues,
+                                   final UserI userI)
             throws NotFoundException, CommandResolutionException {
         return resolve(commandService.getAndConfigure(commandId, wrapperName), inputValues, userI);
     }
 
     @Override
     @Nonnull
-    public PartiallyResolvedCommand resolve(final long wrapperId,
-                                            final Map<String, String> inputValues,
-                                            final UserI userI)
+    public ResolvedCommand resolve(final long wrapperId,
+                                   final Map<String, String> inputValues,
+                                   final UserI userI)
             throws NotFoundException, CommandResolutionException {
         return resolve(commandService.getAndConfigure(wrapperId), inputValues, userI);
     }
 
     @Override
     @Nonnull
-    public PartiallyResolvedCommand resolve(final String project,
-                                            final long wrapperId,
-                                            final Map<String, String> inputValues,
-                                            final UserI userI)
+    public ResolvedCommand resolve(final String project,
+                                   final long wrapperId,
+                                   final Map<String, String> inputValues,
+                                   final UserI userI)
             throws NotFoundException, CommandResolutionException {
         return resolve(commandService.getAndConfigure(project, wrapperId), inputValues, userI);
     }
 
     @Override
-    public PartiallyResolvedCommand resolve(final String project,
-                                            final long commandId,
-                                            final String wrapperName,
-                                            final Map<String, String> inputValues,
-                                            final UserI userI)
+    public ResolvedCommand resolve(final String project,
+                                   final long commandId,
+                                   final String wrapperName,
+                                   final Map<String, String> inputValues,
+                                   final UserI userI)
             throws NotFoundException, CommandResolutionException {
         return resolve(commandService.getAndConfigure(project, commandId, wrapperName), inputValues, userI);
     }
@@ -177,9 +176,9 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
 
     @Override
     @Nonnull
-    public PartiallyResolvedCommand resolve(final ConfiguredCommand configuredCommand,
-                                            final Map<String, String> inputValues,
-                                            final UserI userI)
+    public ResolvedCommand resolve(final ConfiguredCommand configuredCommand,
+                                   final Map<String, String> inputValues,
+                                   final UserI userI)
             throws NotFoundException, CommandResolutionException {
         return CommandResolutionHelper.resolve(configuredCommand, inputValues, userI);
     }
@@ -242,9 +241,9 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                     .rawInputValues(this.inputValues);
         }
 
-        static PartiallyResolvedCommand resolve(final ConfiguredCommand configuredCommand,
-                                                final Map<String, String> inputValues,
-                                                final UserI userI)
+        static ResolvedCommand resolve(final ConfiguredCommand configuredCommand,
+                                       final Map<String, String> inputValues,
+                                       final UserI userI)
                 throws CommandResolutionException {
             final CommandResolutionHelper helper = new CommandResolutionHelper(configuredCommand, inputValues, userI);
             return helper.resolve();
@@ -261,13 +260,13 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             return null; // TODO
         }
 
-        private PartiallyResolvedCommand resolve() throws CommandResolutionException {
+        private ResolvedCommand resolve() throws CommandResolutionException {
             log.info("Resolving command.");
             if (log.isDebugEnabled()) {
                 log.debug(command.toString());
             }
 
-            final PartiallyResolvedCommand partiallyResolvedCommand =
+            final ResolvedCommand resolvedCommand =
                     partiallyResolvedCommandBuilder.xnatInputValues(resolveXnatWrapperInputs())
                             .commandInputValues(resolveInputs())
                             .outputs(resolveOutputs())
@@ -276,13 +275,15 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                             .environmentVariables(resolveEnvironmentVariables())
                             .workingDirectory(resolveTemplate(command.workingDirectory()))
                             .ports(resolvePorts())
+                            .build()
+                            .toResolvedCommandBuilder()
                             .build();
 
             log.info("Done resolving command.");
             if (log.isDebugEnabled()) {
-                log.debug("Resolved command: \n" + partiallyResolvedCommand);
+                log.debug("Resolved command: \n" + resolvedCommand);
             }
-            return partiallyResolvedCommand;
+            return resolvedCommand;
         }
 
         private Map<String, String> resolveXnatWrapperInputs() throws CommandResolutionException {

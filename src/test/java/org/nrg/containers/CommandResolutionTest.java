@@ -23,6 +23,7 @@ import org.nrg.containers.model.command.auto.Command.CommandInput;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.model.command.auto.Command.CommandWrapperExternalInput;
 import org.nrg.containers.model.command.auto.Command.ConfiguredCommand;
+import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.command.auto.ResolvedCommand.PartiallyResolvedCommand;
 import org.nrg.containers.model.command.entity.CommandType;
 import org.nrg.containers.model.configuration.CommandConfiguration;
@@ -230,7 +231,7 @@ public class CommandResolutionTest {
         final CommandWrapper commandWrapper = xnatCommandWrappers.get(commandWrapperName);
         assertThat(commandWrapper, is(not(nullValue())));
 
-        final PartiallyResolvedCommand resolvedCommand = commandResolutionService.resolve(commandWrapper.id(), runtimeValues, mockUser);
+        final ResolvedCommand resolvedCommand = commandResolutionService.resolve(commandWrapper.id(), runtimeValues, mockUser);
         assertThat(resolvedCommand.commandId(), is(dummyCommand.id()));
         assertThat(resolvedCommand.wrapperId(), is(commandWrapper.id()));
         assertThat(resolvedCommand.image(), is(dummyCommand.image()));
@@ -280,7 +281,7 @@ public class CommandResolutionTest {
         final CommandWrapper commandWrapper = xnatCommandWrappers.get(commandWrapperName);
         assertThat(commandWrapper, is(not(nullValue())));
 
-        final PartiallyResolvedCommand resolvedCommand = commandResolutionService.resolve(commandWrapper.id(), runtimeValues, mockUser);
+        final ResolvedCommand resolvedCommand = commandResolutionService.resolve(commandWrapper.id(), runtimeValues, mockUser);
         assertThat(resolvedCommand.commandId(), is(dummyCommand.id()));
         assertThat(resolvedCommand.wrapperId(), is(commandWrapper.id()));
         assertThat(resolvedCommand.image(), is(dummyCommand.image()));
@@ -327,7 +328,7 @@ public class CommandResolutionTest {
         final CommandWrapper commandWrapper = xnatCommandWrappers.get(commandWrapperName);
         assertThat(commandWrapper, is(not(nullValue())));
 
-        final PartiallyResolvedCommand resolvedCommand = commandResolutionService.resolve(commandWrapper.id(), runtimeValues, mockUser);
+        final ResolvedCommand resolvedCommand = commandResolutionService.resolve(commandWrapper.id(), runtimeValues, mockUser);
         assertThat(resolvedCommand.commandId(), is(dummyCommand.id()));
         assertThat(resolvedCommand.wrapperId(), is(commandWrapper.id()));
         assertThat(resolvedCommand.image(), is(dummyCommand.image()));
@@ -370,7 +371,7 @@ public class CommandResolutionTest {
         final CommandWrapper commandWrapper = xnatCommandWrappers.get(commandWrapperName);
         assertThat(commandWrapper, is(not(nullValue())));
 
-        final PartiallyResolvedCommand resolvedCommand = commandResolutionService.resolve(commandWrapper.id(), runtimeValues, mockUser);
+        final ResolvedCommand resolvedCommand = commandResolutionService.resolve(commandWrapper.id(), runtimeValues, mockUser);
         assertThat(resolvedCommand.commandId(), is(dummyCommand.id()));
         assertThat(resolvedCommand.wrapperId(), is(commandWrapper.id()));
         assertThat(resolvedCommand.image(), is(dummyCommand.image()));
@@ -414,7 +415,7 @@ public class CommandResolutionTest {
         final CommandWrapper commandWrapper = xnatCommandWrappers.get(commandWrapperName);
         assertThat(commandWrapper, is(not(nullValue())));
 
-        final PartiallyResolvedCommand resolvedCommand = commandResolutionService.resolve(commandWrapper.id(), runtimeValues, mockUser);
+        final ResolvedCommand resolvedCommand = commandResolutionService.resolve(commandWrapper.id(), runtimeValues, mockUser);
         assertThat(resolvedCommand.commandId(), is(dummyCommand.id()));
         assertThat(resolvedCommand.wrapperId(), is(commandWrapper.id()));
         assertThat(resolvedCommand.image(), is(dummyCommand.image()));

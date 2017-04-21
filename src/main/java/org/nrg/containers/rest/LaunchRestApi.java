@@ -12,6 +12,7 @@ import org.nrg.containers.exceptions.ContainerMountResolutionException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.command.auto.LaunchUi;
+import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.command.auto.ResolvedCommand.PartiallyResolvedCommand;
 import org.nrg.containers.model.configuration.CommandConfiguration;
 import org.nrg.containers.model.container.entity.ContainerEntity;
@@ -141,10 +142,10 @@ public class LaunchRestApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = {"/commands/launch"}, method = POST)
     @ApiOperation(value = "Launch a container from a resolved command")
     @ResponseBody
-    public String launchContainer(final @RequestBody PartiallyResolvedCommand partiallyResolvedCommand)
+    public String launchContainer(final @RequestBody ResolvedCommand resolvedCommand)
             throws NoServerPrefException, DockerServerException, ContainerMountResolutionException, ContainerException {
         final UserI userI = XDAT.getUserDetails();
-        final ContainerEntity executed = containerService.launchResolvedCommand(partiallyResolvedCommand, userI);
+        final ContainerEntity executed = containerService.launchResolvedCommand(resolvedCommand, userI);
         return executed.getContainerId();
     }
 

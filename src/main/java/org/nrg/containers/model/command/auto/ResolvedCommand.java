@@ -77,6 +77,8 @@ public abstract class ResolvedCommand {
                 .type(CommandEntity.DEFAULT_TYPE.getName());
     }
 
+    public abstract Builder toBuilder();
+
     @AutoValue.Builder
     public static abstract class Builder {
         public abstract Builder wrapperId(Long wrapperId);
@@ -309,6 +311,8 @@ public abstract class ResolvedCommand {
         public static Builder builder() {
             return new AutoValue_ResolvedCommand_ResolvedCommandMount.Builder();
         }
+
+        public abstract Builder toBuilder();
 
         public String toBindMountString() {
             return containerHostPath() + ":" + containerPath() + (writable() ? "" : ":ro");

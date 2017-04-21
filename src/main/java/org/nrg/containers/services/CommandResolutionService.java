@@ -2,6 +2,7 @@ package org.nrg.containers.services;
 
 import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.model.command.auto.Command.ConfiguredCommand;
+import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.command.auto.ResolvedCommand.PartiallyResolvedCommand;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xft.security.UserI;
@@ -33,28 +34,28 @@ public interface CommandResolutionService {
                                         Map<String, String> inputValues,
                                         UserI userI);
 
-    PartiallyResolvedCommand resolve(long commandId,
-                                     String wrapperName,
-                                     Map<String, String> inputValues,
-                                     UserI userI)
+    ResolvedCommand resolve(long commandId,
+                            String wrapperName,
+                            Map<String, String> inputValues,
+                            UserI userI)
             throws NotFoundException, CommandResolutionException;
-    PartiallyResolvedCommand resolve(long wrapperId,
-                                     Map<String, String> inputValues,
-                                     UserI userI)
+    ResolvedCommand resolve(long wrapperId,
+                            Map<String, String> inputValues,
+                            UserI userI)
             throws NotFoundException, CommandResolutionException;
-    PartiallyResolvedCommand resolve(String project,
-                                     long commandId,
-                                     String wrapperName,
-                                     Map<String, String> inputValues,
-                                     UserI userI)
+    ResolvedCommand resolve(String project,
+                            long commandId,
+                            String wrapperName,
+                            Map<String, String> inputValues,
+                            UserI userI)
             throws NotFoundException, CommandResolutionException;
-    PartiallyResolvedCommand resolve(String project,
-                                     long wrapperId,
-                                     Map<String, String> inputValues,
-                                     UserI userI)
+    ResolvedCommand resolve(String project,
+                            long wrapperId,
+                            Map<String, String> inputValues,
+                            UserI userI)
             throws NotFoundException, CommandResolutionException;
-    PartiallyResolvedCommand resolve(ConfiguredCommand configuredCommand,
-                                     Map<String, String> inputValues,
-                                     UserI userI)
+    ResolvedCommand resolve(ConfiguredCommand configuredCommand,
+                            Map<String, String> inputValues,
+                            UserI userI)
             throws NotFoundException, CommandResolutionException;
 }
