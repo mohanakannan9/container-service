@@ -267,7 +267,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             }
 
             final ResolvedCommand resolvedCommand =
-                    partiallyResolvedCommandBuilder.xnatInputValues(resolveXnatWrapperInputs())
+                    partiallyResolvedCommandBuilder.wrapperInputValues(resolveXnatWrapperInputs())
                             .commandInputValues(resolveInputs())
                             .outputs(resolveOutputs())
                             .commandLine(resolveCommandLine())

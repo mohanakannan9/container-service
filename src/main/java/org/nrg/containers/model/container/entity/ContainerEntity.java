@@ -61,7 +61,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
                 })
         ));
         addRawInputs(resolvedCommand.rawInputValues());
-        addWrapperInputs(resolvedCommand.xnatInputValues());
+        addWrapperInputs(resolvedCommand.wrapperInputValues());
         addCommandInputs(resolvedCommand.commandInputValues());
         setOutputs(Lists.newArrayList(
                 Lists.transform(resolvedCommand.outputs(), new Function<ResolvedCommandOutput, ContainerEntityOutput>() {

@@ -38,8 +38,8 @@ public abstract class LaunchUi {
             final String inputName = commandInputConfigurationEntry.getKey();
             final CommandInputConfiguration inputConfiguration = commandInputConfigurationEntry.getValue();
 
-            final String resolvedValue = partiallyResolvedCommand.xnatInputValues().containsKey(inputName) ?
-                    partiallyResolvedCommand.xnatInputValues().get(inputName) :
+            final String resolvedValue = partiallyResolvedCommand.wrapperInputValues().containsKey(inputName) ?
+                    partiallyResolvedCommand.wrapperInputValues().get(inputName) :
                     partiallyResolvedCommand.commandInputValues().containsKey(inputName) ?
                             partiallyResolvedCommand.commandInputValues().get(inputName) :
                             partiallyResolvedCommand.rawInputValues().containsKey(inputName) ?

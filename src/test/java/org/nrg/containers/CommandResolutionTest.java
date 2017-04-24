@@ -24,7 +24,6 @@ import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.model.command.auto.Command.CommandWrapperExternalInput;
 import org.nrg.containers.model.command.auto.Command.ConfiguredCommand;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
-import org.nrg.containers.model.command.auto.ResolvedCommand.PartiallyResolvedCommand;
 import org.nrg.containers.model.command.entity.CommandType;
 import org.nrg.containers.model.configuration.CommandConfiguration;
 import org.nrg.containers.model.configuration.CommandConfiguration.CommandInputConfiguration;
@@ -251,7 +250,7 @@ public class CommandResolutionTest {
         expectedXnatInputValues.put("scan", session.getScans().get(0).getUri());
         expectedXnatInputValues.put("dicom", session.getScans().get(0).getResources().get(0).getUri());
         expectedXnatInputValues.put("scan-id", session.getScans().get(0).getId());
-        assertThat(resolvedCommand.xnatInputValues(), is(expectedXnatInputValues));
+        assertThat(resolvedCommand.wrapperInputValues(), is(expectedXnatInputValues));
 
         // command inputs
         final Map<String, String> expectedCommandInputValues = Maps.newHashMap();
@@ -301,7 +300,7 @@ public class CommandResolutionTest {
         expectedXnatInputValues.put("a file", resource.getFiles().get(0).getUri());
         expectedXnatInputValues.put("a file path", resource.getFiles().get(0).getPath());
         expectedXnatInputValues.put("scan-id", scan.getId());
-        assertThat(resolvedCommand.xnatInputValues(), is(expectedXnatInputValues));
+        assertThat(resolvedCommand.wrapperInputValues(), is(expectedXnatInputValues));
 
         // command inputs
         final Map<String, String> expectedCommandInputValues = Maps.newHashMap();
@@ -345,7 +344,7 @@ public class CommandResolutionTest {
         final Map<String, String> expectedXnatInputValues = Maps.newHashMap();
         expectedXnatInputValues.put("project", project.getUri());
         expectedXnatInputValues.put("project-label", project.getLabel());
-        assertThat(resolvedCommand.xnatInputValues(), is(expectedXnatInputValues));
+        assertThat(resolvedCommand.wrapperInputValues(), is(expectedXnatInputValues));
 
         // command inputs
         final Map<String, String> expectedCommandInputValues = Maps.newHashMap();
@@ -389,7 +388,7 @@ public class CommandResolutionTest {
         expectedXnatInputValues.put("project", project.getUri());
         expectedXnatInputValues.put("subject", project.getSubjects().get(0).getUri());
         expectedXnatInputValues.put("project-label", project.getLabel());
-        assertThat(resolvedCommand.xnatInputValues(), is(expectedXnatInputValues));
+        assertThat(resolvedCommand.wrapperInputValues(), is(expectedXnatInputValues));
 
         // command inputs
         final Map<String, String> expectedCommandInputValues = Maps.newHashMap();
@@ -433,7 +432,7 @@ public class CommandResolutionTest {
         expectedXnatInputValues.put("session", session.getUri());
         expectedXnatInputValues.put("assessor", session.getAssessors().get(0).getUri());
         expectedXnatInputValues.put("assessor-label", session.getAssessors().get(0).getLabel());
-        assertThat(resolvedCommand.xnatInputValues(), is(expectedXnatInputValues));
+        assertThat(resolvedCommand.wrapperInputValues(), is(expectedXnatInputValues));
 
         // command inputs
         final Map<String, String> expectedCommandInputValues = Maps.newHashMap();

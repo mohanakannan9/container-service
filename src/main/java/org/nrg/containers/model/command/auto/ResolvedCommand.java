@@ -24,7 +24,7 @@ public abstract class ResolvedCommand {
     @JsonProperty("image") public abstract String image();
     @JsonProperty("type") public abstract String type();
     @JsonProperty("raw-input-values") public abstract ImmutableMap<String, String> rawInputValues();
-    @JsonProperty("xnat-input-values") public abstract ImmutableMap<String, String> xnatInputValues();
+    @JsonProperty("xwrapper-input-values") public abstract ImmutableMap<String, String> wrapperInputValues();
     @JsonProperty("command-input-values") public abstract ImmutableMap<String, String> commandInputValues();
     @JsonProperty("command-line") public abstract String commandLine();
     @JsonProperty("env") public abstract ImmutableMap<String, String> environmentVariables();
@@ -43,7 +43,7 @@ public abstract class ResolvedCommand {
                                          @JsonProperty("image") final String image,
                                          @JsonProperty("type") final String type,
                                          @JsonProperty("raw-input-values") final Map<String, String> rawInputValues,
-                                         @JsonProperty("xnat-input-values") final Map<String, String> xnatInputValues,
+                                         @JsonProperty("wrapper-input-values") final Map<String, String> wrapperInputValues,
                                          @JsonProperty("command-input-values") final Map<String, String> commandInputValues,
                                          @JsonProperty("command-line") final String commandLine,
                                          @JsonProperty("env") final Map<String, String> environmentVariables,
@@ -61,7 +61,7 @@ public abstract class ResolvedCommand {
                 .image(image)
                 .type(type == null ? CommandEntity.DEFAULT_TYPE.getName() : type)
                 .rawInputValues(rawInputValues == null ? Collections.<String, String>emptyMap() : rawInputValues)
-                .xnatInputValues(xnatInputValues == null ? Collections.<String, String>emptyMap() : xnatInputValues)
+                .wrapperInputValues(wrapperInputValues == null ? Collections.<String, String>emptyMap() : wrapperInputValues)
                 .commandInputValues(commandInputValues == null ? Collections.<String, String>emptyMap() : commandInputValues)
                 .commandLine(commandLine)
                 .environmentVariables(environmentVariables == null ? Collections.<String, String>emptyMap() : environmentVariables)
@@ -95,10 +95,10 @@ public abstract class ResolvedCommand {
             rawInputValuesBuilder().put(inputName, inputValue);
             return this;
         }
-        public abstract Builder xnatInputValues(Map<String, String> xnatInputValues);
-        public abstract ImmutableMap.Builder<String, String> xnatInputValuesBuilder();
-        public Builder addXnatInputValue(final String inputName, final String inputValue) {
-            xnatInputValuesBuilder().put(inputName, inputValue);
+        public abstract Builder wrapperInputValues(Map<String, String> xnatInputValues);
+        public abstract ImmutableMap.Builder<String, String> wrapperInputValuesBuilder();
+        public Builder addWrapperInputValue(final String inputName, final String inputValue) {
+            wrapperInputValuesBuilder().put(inputName, inputValue);
             return this;
         }
         public abstract Builder commandInputValues(Map<String, String> commandInputValues);
@@ -148,7 +148,7 @@ public abstract class ResolvedCommand {
         @JsonProperty("image") public abstract String image();
         @JsonProperty("type") public abstract String type();
         @JsonProperty("raw-input-values") public abstract ImmutableMap<String, String> rawInputValues();
-        @JsonProperty("xnat-input-values") public abstract ImmutableMap<String, String> xnatInputValues();
+        @JsonProperty("wrapper-input-values") public abstract ImmutableMap<String, String> wrapperInputValues();
         @JsonProperty("command-input-values") public abstract ImmutableMap<String, String> commandInputValues();
         @JsonProperty("command-line") public abstract String commandLine();
         @JsonProperty("env") public abstract ImmutableMap<String, String> environmentVariables();
@@ -167,7 +167,7 @@ public abstract class ResolvedCommand {
                                                       @JsonProperty("image") final String image,
                                                       @JsonProperty("type") final String type,
                                                       @JsonProperty("raw-input-values") final Map<String, String> rawInputValues,
-                                                      @JsonProperty("xnat-input-values") final Map<String, String> xnatInputValues,
+                                                      @JsonProperty("wrapper-input-values") final Map<String, String> wrapperInputValues,
                                                       @JsonProperty("command-input-values") final Map<String, String> commandInputValues,
                                                       @JsonProperty("command-line") final String commandLine,
                                                       @JsonProperty("env") final Map<String, String> environmentVariables,
@@ -185,7 +185,7 @@ public abstract class ResolvedCommand {
                     .image(image)
                     .type(type == null ? CommandEntity.DEFAULT_TYPE.getName() : type)
                     .rawInputValues(rawInputValues == null ? Collections.<String, String>emptyMap() : rawInputValues)
-                    .xnatInputValues(xnatInputValues == null ? Collections.<String, String>emptyMap() : xnatInputValues)
+                    .wrapperInputValues(wrapperInputValues == null ? Collections.<String, String>emptyMap() : wrapperInputValues)
                     .commandInputValues(commandInputValues == null ? Collections.<String, String>emptyMap() : commandInputValues)
                     .commandLine(commandLine)
                     .environmentVariables(environmentVariables == null ? Collections.<String, String>emptyMap() : environmentVariables)
@@ -213,7 +213,7 @@ public abstract class ResolvedCommand {
                     .image(this.image())
                     .type(this.type())
                     .rawInputValues(this.rawInputValues())
-                    .xnatInputValues(this.xnatInputValues())
+                    .wrapperInputValues(this.wrapperInputValues())
                     .commandInputValues(this.commandInputValues())
                     .commandLine(this.commandLine())
                     .environmentVariables(this.environmentVariables())
@@ -239,10 +239,10 @@ public abstract class ResolvedCommand {
                 rawInputValuesBuilder().put(inputName, inputValue);
                 return this;
             }
-            public abstract Builder xnatInputValues(Map<String, String> xnatInputValues);
-            public abstract ImmutableMap.Builder<String, String> xnatInputValuesBuilder();
-            public Builder addXnatInputValue(final String inputName, final String inputValue) {
-                xnatInputValuesBuilder().put(inputName, inputValue);
+            public abstract Builder wrapperInputValues(Map<String, String> wrapperInputValues);
+            public abstract ImmutableMap.Builder<String, String> wrapperInputValuesBuilder();
+            public Builder addWrapperInputValue(final String inputName, final String inputValue) {
+                wrapperInputValuesBuilder().put(inputName, inputValue);
                 return this;
             }
             public abstract Builder commandInputValues(Map<String, String> commandInputValues);
