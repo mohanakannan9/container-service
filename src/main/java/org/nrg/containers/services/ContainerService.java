@@ -38,7 +38,7 @@ public interface ContainerService {
                                                      UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException;
     ContainerEntity launchResolvedCommand(final ResolvedCommand resolvedCommand, final UserI userI)
-            throws NoServerPrefException, DockerServerException, ContainerMountResolutionException, ContainerException;
+            throws NoServerPrefException, DockerServerException, ContainerException;
 
     void processEvent(final ContainerEvent event);
 

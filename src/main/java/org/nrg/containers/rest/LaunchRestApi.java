@@ -81,7 +81,7 @@ public class LaunchRestApi extends AbstractXapiRestController {
     @ResponseBody
     public LaunchUi getLaunchUi(final @PathVariable long wrapperId,
                                 final @RequestParam Map<String, String> allRequestParams)
-            throws NotFoundException {
+            throws NotFoundException, CommandResolutionException {
         log.info("Launch UI requested for wrapper {}", wrapperId);
         final UserI userI = XDAT.getUserDetails();
         final PartiallyResolvedCommand partiallyResolvedCommand =
@@ -96,7 +96,7 @@ public class LaunchRestApi extends AbstractXapiRestController {
     public LaunchUi getLaunchUi(final @PathVariable long commandId,
                                 final @PathVariable String wrapperName,
                                 final @RequestParam Map<String, String> allRequestParams)
-            throws NotFoundException {
+            throws NotFoundException, CommandResolutionException {
         log.info("Launch UI requested for command {}, wrapper {}", commandId, wrapperName);
         final UserI userI = XDAT.getUserDetails();
         final PartiallyResolvedCommand partiallyResolvedCommand =
@@ -111,7 +111,7 @@ public class LaunchRestApi extends AbstractXapiRestController {
     public LaunchUi getLaunchUi(final @PathVariable String project,
                                 final @PathVariable long wrapperId,
                                 final @RequestParam Map<String, String> allRequestParams)
-            throws NotFoundException {
+            throws NotFoundException, CommandResolutionException {
         log.info("Launch UI requested for project {}, wrapper {}", project, wrapperId);
         final UserI userI = XDAT.getUserDetails();
         final PartiallyResolvedCommand partiallyResolvedCommand =
@@ -127,7 +127,7 @@ public class LaunchRestApi extends AbstractXapiRestController {
                                 final @PathVariable long commandId,
                                 final @PathVariable String wrapperName,
                                 final @RequestParam Map<String, String> allRequestParams)
-            throws NotFoundException {
+            throws NotFoundException, CommandResolutionException {
         log.info("Launch UI requested for project {}, command {}, wrapper {}", project, commandId, wrapperName);
         final UserI userI = XDAT.getUserDetails();
         final PartiallyResolvedCommand partiallyResolvedCommand =
@@ -143,7 +143,7 @@ public class LaunchRestApi extends AbstractXapiRestController {
     @ApiOperation(value = "Launch a container from a resolved command")
     @ResponseBody
     public String launchContainer(final @RequestBody ResolvedCommand resolvedCommand)
-            throws NoServerPrefException, DockerServerException, ContainerMountResolutionException, ContainerException {
+            throws NoServerPrefException, DockerServerException, ContainerException {
         final UserI userI = XDAT.getUserDetails();
         final ContainerEntity executed = containerService.launchResolvedCommand(resolvedCommand, userI);
         return executed.getContainerId();

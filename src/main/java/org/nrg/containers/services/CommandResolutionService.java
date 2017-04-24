@@ -13,26 +13,27 @@ public interface CommandResolutionService {
     PartiallyResolvedCommand preResolve(long wrapperId,
                                         Map<String, String> inputValues,
                                         final UserI userI)
-            throws NotFoundException;
+            throws NotFoundException, CommandResolutionException;
     PartiallyResolvedCommand preResolve(long commandId,
                                         String wrapperName,
                                         Map<String, String> inputValues,
                                         final UserI userI)
-            throws NotFoundException;
+            throws NotFoundException, CommandResolutionException;
     PartiallyResolvedCommand preResolve(String project,
                                         long wrapperId,
                                         Map<String, String> inputValues,
                                         final UserI userI)
-            throws NotFoundException;
+            throws NotFoundException, CommandResolutionException;
     PartiallyResolvedCommand preResolve(String project,
                                         long commandId,
                                         String wrapperName,
                                         Map<String, String> inputValues,
                                         final UserI userI)
-            throws NotFoundException;
+            throws NotFoundException, CommandResolutionException;
     PartiallyResolvedCommand preResolve(ConfiguredCommand configuredCommand,
                                         Map<String, String> inputValues,
-                                        UserI userI);
+                                        UserI userI)
+            throws CommandResolutionException;
 
     ResolvedCommand resolve(long commandId,
                             String wrapperName,

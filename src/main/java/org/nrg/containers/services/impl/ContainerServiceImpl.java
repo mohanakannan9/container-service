@@ -135,7 +135,7 @@ public class ContainerServiceImpl implements ContainerService {
     @Nonnull
     public ContainerEntity launchResolvedCommand(final ResolvedCommand resolvedCommand,
                                                  final UserI userI)
-            throws NoServerPrefException, DockerServerException, ContainerMountResolutionException, ContainerException, UnsupportedOperationException {
+            throws NoServerPrefException, DockerServerException, ContainerException, UnsupportedOperationException {
         if (resolvedCommand.type().equals(DOCKER.getName())) {
             return launchResolvedDockerCommand(resolvedCommand, userI);
         } else {
@@ -146,7 +146,7 @@ public class ContainerServiceImpl implements ContainerService {
     @Nonnull
     private ContainerEntity launchResolvedDockerCommand(final ResolvedCommand resolvedCommand,
                                                         final UserI userI)
-            throws NoServerPrefException, DockerServerException, ContainerMountResolutionException, ContainerException {
+            throws NoServerPrefException, DockerServerException, ContainerException {
         log.info("Preparing to launch resolved command.");
         final ResolvedCommand preparedToLaunch = prepareToLaunch(resolvedCommand, userI);
 
@@ -171,137 +171,21 @@ public class ContainerServiceImpl implements ContainerService {
 
     @Nonnull
     private ResolvedCommand prepareToLaunch(final ResolvedCommand resolvedCommand,
-                                            final UserI userI)
-            throws NoServerPrefException, ContainerMountResolutionException {
+                                            final UserI userI) {
         final ResolvedCommand.Builder resolvedCommandBuilder =
-                resolvedCommand.toBuilder()
-                .mounts(Collections.<ResolvedCommandMount>emptyList()); // Initialize to empty mounts so we can re-add them
+                resolvedCommand.toBuilder();
 
-        // Add default environment variables
+        // Add default environment variables & create new alias token
         final AliasToken token = aliasTokenService.issueTokenForUser(userI);
         final String processingUrl = (String)siteConfigPreferences.getProperty("processingUrl", siteConfigPreferences.getSiteUrl());
         resolvedCommandBuilder.addEnvironmentVariable("XNAT_USER", token.getAlias())
                 .addEnvironmentVariable("XNAT_PASS", token.getSecret())
                 .addEnvironmentVariable("XNAT_HOST", processingUrl);
 
-        // Transport mounts
-        if (!resolvedCommand.mounts().isEmpty()) {
-
-            final String dockerHost = containerControlApi.getServer().host();
-            for (final ResolvedCommandMount mount : resolvedCommand.mounts()) {
-                final ResolvedCommandMount.Builder resolvedCommandMountBuilder = mount.toBuilder();
-
-                // First, figure out what we have.
-                // Do we have source files? A source directory?
-                // Can we mount a directory directly, or should we copy the contents to a build directory?
-                final List<ResolvedCommandMountFiles> filesList = mount.inputFiles();
-                final String buildDirectory;
-                if (filesList != null && filesList.size() > 1) {
-                    // We have multiple sources of files. We must copy them into one common location to mount.
-                    buildDirectory = getBuildDirectory();
-                    if (log.isDebugEnabled()) {
-                        log.debug(String.format("Mount \"%s\" has multiple sources of files.", mount.name()));
-                    }
-
-                    // TODO figure out what to do with multiple sources of files
-                    if (log.isDebugEnabled()) {
-                        log.debug("TODO");
-                    }
-                } else if (filesList != null && filesList.size() == 1) {
-                    // We have one source of files. We may need to copy, or may be able to mount directly.
-                    final ResolvedCommandMountFiles files = filesList.get(0);
-                    final String path = files.path();
-                    final boolean hasPath = StringUtils.isNotBlank(path);
-
-                    if (StringUtils.isNotBlank(files.rootDirectory())) {
-                        // That source of files does have a directory set.
-
-                        if (hasPath || mount.writable()) {
-                            // In both of these conditions, we must copy some things to a build directory.
-                            // Now we must find out what.
-                            if (hasPath) {
-                                // The source of files also has one or more paths set
-
-                                buildDirectory = getBuildDirectory();
-                                if (log.isDebugEnabled()) {
-                                    log.debug(String.format("Mount \"%s\" has a root directory and a file. Copying the file from the root directory to build directory.", mount.name()));
-                                }
-
-                                // TODO copy the file in "path", relative to the root directory, to the build directory
-                                if (log.isDebugEnabled()) {
-                                    log.debug("TODO");
-                                }
-                            } else {
-                                // The mount is set to "writable".
-                                buildDirectory = getBuildDirectory();
-                                if (log.isDebugEnabled()) {
-                                    log.debug(String.format("Mount \"%s\" has a root directory, and is set to \"writable\". Copying all files from the root directory to build directory.", mount.name()));
-                                }
-
-                                // TODO We must copy all files out of the root directory to a build directory.
-                                if (log.isDebugEnabled()) {
-                                    log.debug("TODO");
-                                }
-                            }
-                        } else {
-                            // The source of files can be directly mounted
-                            if (log.isDebugEnabled()) {
-                                log.debug(String.format("Mount \"%s\" has a root directory, and is not set to \"writable\". The root directory can be mounted directly into the container.", mount.name()));
-                            }
-                            buildDirectory = files.rootDirectory();
-                        }
-                    } else if (hasPath) {
-                        if (log.isDebugEnabled()) {
-                            log.debug(String.format("Mount \"%s\" has a file. Copying it to build directory.", mount.name()));
-                        }
-                        buildDirectory = getBuildDirectory();
-                        // TODO copy the file to the build directory
-                        if (log.isDebugEnabled()) {
-                            log.debug("TODO");
-                        }
-
-                    } else {
-                        final String message = String.format("Mount \"%s\" should have a file path or a directory or both but it does not.", mount.name());
-                        log.error(message);
-                        throw new ContainerMountResolutionException(message, mount);
-                    }
-
-                } else {
-                    if (log.isDebugEnabled()) {
-                        log.debug(String.format("Mount \"%s\" has no input files. Ensuring mount is set to \"writable\" and creating new build directory.", mount.name()));
-                    }
-                    buildDirectory = getBuildDirectory();
-                    if (!mount.writable()) {
-                        resolvedCommandMountBuilder.writable(true);
-                    }
-                }
-
-                if (log.isDebugEnabled()) {
-                    log.debug(String.format("Setting mount \"%s\" xnat host path to \"%s\".", mount.name(), buildDirectory));
-                }
-                resolvedCommandMountBuilder.xnatHostPath(buildDirectory);
-
-                if (log.isDebugEnabled()) {
-                    log.debug(String.format("Transporting mount \"%s\".", mount.name()));
-                }
-                final Path pathOnDockerHost = transportService.transport(dockerHost, Paths.get(buildDirectory));
-
-                if (log.isDebugEnabled()) {
-                    log.debug(String.format("Setting mount \"%s\" container host path to \"%s\".", mount.name(), buildDirectory));
-                }
-                resolvedCommandMountBuilder.containerHostPath(pathOnDockerHost.toString());
-                resolvedCommandBuilder.addMount(resolvedCommandMountBuilder.build());
-            }
-        }
-
         return resolvedCommandBuilder.build();
     }
 
-    private String getBuildDirectory() {
-        String buildPath = siteConfigPreferences.getBuildPath();
-        final String uuid = UUID.randomUUID().toString();
-        return FilenameUtils.concat(buildPath, uuid);
-    }
+
 
 
     @Override
