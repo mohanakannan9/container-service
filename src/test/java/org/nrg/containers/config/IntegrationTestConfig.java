@@ -13,20 +13,22 @@ import org.nrg.containers.model.command.entity.CommandInputEntity;
 import org.nrg.containers.model.command.entity.CommandMountEntity;
 import org.nrg.containers.model.command.entity.CommandOutputEntity;
 import org.nrg.containers.model.command.entity.CommandWrapperDerivedInputEntity;
+import org.nrg.containers.model.command.entity.CommandWrapperEntity;
 import org.nrg.containers.model.command.entity.CommandWrapperExternalInputEntity;
 import org.nrg.containers.model.command.entity.CommandWrapperOutputEntity;
+import org.nrg.containers.model.command.entity.DockerCommandEntity;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.container.entity.ContainerEntityHistory;
 import org.nrg.containers.model.container.entity.ContainerEntityInput;
 import org.nrg.containers.model.container.entity.ContainerEntityMount;
 import org.nrg.containers.model.container.entity.ContainerEntityOutput;
-import org.nrg.containers.model.container.entity.ContainerMountFiles;
-import org.nrg.containers.model.command.entity.DockerCommandEntity;
+import org.nrg.containers.model.container.entity.ContainerMountFilesEntity;
 import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
-import org.nrg.containers.model.command.entity.CommandWrapperEntity;
+import org.nrg.containers.services.CommandResolutionService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.containers.services.ContainerService;
+import org.nrg.containers.services.impl.CommandResolutionServiceImpl;
 import org.nrg.containers.services.impl.ContainerServiceImpl;
 import org.nrg.containers.services.impl.HibernateContainerEntityService;
 import org.nrg.framework.services.NrgEventService;
@@ -96,15 +98,26 @@ public class IntegrationTestConfig {
     public ContainerService containerService(final CommandService commandService,
                                              final ContainerControlApi containerControlApi,
                                              final ContainerEntityService containerEntityService,
+                                             final CommandResolutionService commandResolutionService,
                                              final AliasTokenService aliasTokenService,
                                              final SiteConfigPreferences siteConfigPreferences,
                                              final TransportService transportService,
                                              final PermissionsServiceI permissionsService,
                                              final CatalogService catalogService,
-                                             final ObjectMapper mapper,
-                                             final ConfigService configService) {
-        return new ContainerServiceImpl(commandService, containerControlApi, containerEntityService, aliasTokenService, siteConfigPreferences,
-                transportService, permissionsService, catalogService, mapper, configService);
+                                             final ObjectMapper mapper) {
+        final ContainerService containerService =
+                new ContainerServiceImpl(commandService, containerControlApi, containerEntityService,
+                        commandResolutionService, aliasTokenService, siteConfigPreferences,
+                        transportService, catalogService, mapper);
+        ((ContainerServiceImpl)containerService).setPermissionsService(permissionsService);
+        return containerService;
+    }
+
+    @Bean
+    public CommandResolutionService commandResolutionService(final CommandService commandService,
+                                                             final ConfigService configService,
+                                                             final SiteConfigPreferences siteConfigPreferences) {
+        return new CommandResolutionServiceImpl(commandService, configService, siteConfigPreferences);
     }
 
     @Bean
@@ -173,7 +186,7 @@ public class IntegrationTestConfig {
                 ContainerEntityInput.class,
                 ContainerEntityOutput.class,
                 ContainerEntityMount.class,
-                ContainerMountFiles.class);
+                ContainerMountFilesEntity.class);
 
         return bean;
     }

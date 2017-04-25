@@ -2,11 +2,14 @@ package org.nrg.containers.model.container.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.envers.Audited;
-import org.nrg.containers.model.command.auto.Command.CommandMount;
+import org.nrg.containers.model.command.auto.ResolvedCommand.PartiallyResolvedCommandMount;
+import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMount;
+import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMountFiles;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
@@ -31,17 +34,24 @@ public class ContainerEntityMount implements Serializable {
     @JsonProperty("xnat-host-path") private String xnatHostPath;
     @JsonProperty("container-host-path") private String containerHostPath;
     @JsonProperty("container-path") private String containerPath;
-    @JsonProperty("input-files") private List<ContainerMountFiles> inputFiles;
+    @JsonProperty("input-files") private List<ContainerMountFilesEntity> inputFiles;
 
     public ContainerEntityMount() {}
 
-    public ContainerEntityMount(final CommandMount commandMount) {
-        this.name = commandMount.name();
-        this.writable = commandMount.writable();
-        this.xnatHostPath = null;        // Intentionally blank. Will be set later.
-        this.containerHostPath = null;   // Intentionally blank. Will be set later.
-        this.containerPath = null;       // Intentionally blank. Will be set later.
-        this.inputFiles = null;          // Intentionally blank. Will be set later.
+    public ContainerEntityMount(final ResolvedCommandMount resolvedCommandMount) {
+        this.name = resolvedCommandMount.name();
+        this.writable = resolvedCommandMount.writable();
+        this.xnatHostPath = resolvedCommandMount.xnatHostPath();
+        this.containerHostPath = resolvedCommandMount.containerHostPath();
+        this.containerPath = resolvedCommandMount.containerPath();
+        setInputFiles(Lists.newArrayList(
+                Lists.transform(resolvedCommandMount.inputFiles(), new Function<ResolvedCommandMountFiles, ContainerMountFilesEntity>() {
+                    @Override
+                    public ContainerMountFilesEntity apply(final ResolvedCommandMountFiles resolvedCommandMountFiles) {
+                        return new ContainerMountFilesEntity(resolvedCommandMountFiles);
+                    }
+                })
+        ));
     }
 
     @Id
@@ -110,23 +120,17 @@ public class ContainerEntityMount implements Serializable {
     }
 
     @OneToMany(mappedBy = "containerEntityMount", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
-    public List<ContainerMountFiles> getInputFiles() {
+    public List<ContainerMountFilesEntity> getInputFiles() {
         return inputFiles;
     }
 
-    public void setInputFiles(final List<ContainerMountFiles> inputFiles) {
+    public void setInputFiles(final List<ContainerMountFilesEntity> inputFiles) {
         this.inputFiles = inputFiles == null ?
-                Lists.<ContainerMountFiles>newArrayList() :
+                Lists.<ContainerMountFilesEntity>newArrayList() :
                 inputFiles;
-        for (final ContainerMountFiles files : this.inputFiles) {
+        for (final ContainerMountFilesEntity files : this.inputFiles) {
             files.setContainerEntityMount(this);
         }
-    }
-
-    @Transient
-    @ApiModelProperty(hidden = true)
-    public String toBindMountString() {
-        return containerHostPath + ":" + containerPath + (writable ? "" : ":ro");
     }
 
     @Override

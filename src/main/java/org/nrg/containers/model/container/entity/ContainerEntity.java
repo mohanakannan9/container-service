@@ -1,13 +1,16 @@
 package org.nrg.containers.model.container.entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.envers.Audited;
-import org.nrg.containers.model.ResolvedCommand;
+import org.nrg.containers.model.command.auto.ResolvedCommand;
+import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMount;
+import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandOutput;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.CascadeType;
@@ -44,16 +47,30 @@ public class ContainerEntity extends AbstractHibernateEntity {
         this.containerId = containerId;
         this.userId = userId;
 
-        this.commandId = resolvedCommand.getCommandId();
-        this.xnatCommandWrapperId = resolvedCommand.getXnatCommandWrapperId();
-        this.dockerImage = resolvedCommand.getImage();
-        this.commandLine = resolvedCommand.getCommandLine();
-        setEnvironmentVariables(resolvedCommand.getEnvironmentVariables());
-        setMounts(resolvedCommand.getMounts());
-        addRawInputs(resolvedCommand.getRawInputValues());
-        addWrapperInputs(resolvedCommand.getXnatInputValues());
-        addCommandInputs(resolvedCommand.getCommandInputValues());
-        setOutputs(resolvedCommand.getOutputs());
+        this.commandId = resolvedCommand.commandId();
+        this.xnatCommandWrapperId = resolvedCommand.wrapperId();
+        this.dockerImage = resolvedCommand.image();
+        this.commandLine = resolvedCommand.commandLine();
+        setEnvironmentVariables(resolvedCommand.environmentVariables());
+        setMounts(Lists.newArrayList(
+                Lists.transform(resolvedCommand.mounts(), new Function<ResolvedCommandMount, ContainerEntityMount>() {
+                    @Override
+                    public ContainerEntityMount apply(final ResolvedCommandMount resolvedCommandMount) {
+                        return new ContainerEntityMount(resolvedCommandMount);
+                    }
+                })
+        ));
+        addRawInputs(resolvedCommand.rawInputValues());
+        addWrapperInputs(resolvedCommand.wrapperInputValues());
+        addCommandInputs(resolvedCommand.commandInputValues());
+        setOutputs(Lists.newArrayList(
+                Lists.transform(resolvedCommand.outputs(), new Function<ResolvedCommandOutput, ContainerEntityOutput>() {
+                    @Override
+                    public ContainerEntityOutput apply(final ResolvedCommandOutput resolvedCommandOutput) {
+                        return new ContainerEntityOutput(resolvedCommandOutput);
+                    }
+                })
+        ));
         setLogPaths(null);
     }
 
@@ -312,7 +329,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
         return MoreObjects.toStringHelper(this)
                 .add("containerId", containerId)
                 .add("commandId", commandId)
-                .add("xnatCommandWrapperId", xnatCommandWrapperId)
+                .add("wrapperId", xnatCommandWrapperId)
                 .add("dockerImage", dockerImage)
                 .add("commandLine", commandLine)
                 .add("environmentVariables", environmentVariables)

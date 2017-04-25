@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import org.hibernate.envers.Audited;
+import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMountFiles;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -16,7 +17,7 @@ import static org.nrg.containers.model.command.auto.Command.CommandWrapperInput;
 
 @Entity
 @Audited
-public class ContainerMountFiles {
+public class ContainerMountFilesEntity {
     private long id;
     @JsonIgnore private ContainerEntityMount containerEntityMount;
     @JsonProperty("from-xnat-input") private String fromXnatInput;
@@ -24,10 +25,13 @@ public class ContainerMountFiles {
     @JsonProperty("root-directory") private String rootDirectory;
     private String path;
 
-    public ContainerMountFiles() {}
+    public ContainerMountFilesEntity() {}
 
-    public ContainerMountFiles(final CommandWrapperInput commandWrapperInput) {
-        this.fromXnatInput = commandWrapperInput.name();
+    public ContainerMountFilesEntity(final ResolvedCommandMountFiles resolvedCommandMountFiles) {
+        this.fromXnatInput = resolvedCommandMountFiles.fromXnatInput();
+        this.fromUri = resolvedCommandMountFiles.fromUri();
+        this.rootDirectory = resolvedCommandMountFiles.rootDirectory();
+        this.path = resolvedCommandMountFiles.path();
     }
 
     @Id
@@ -85,7 +89,7 @@ public class ContainerMountFiles {
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final ContainerMountFiles that = (ContainerMountFiles) o;
+        final ContainerMountFilesEntity that = (ContainerMountFilesEntity) o;
         return Objects.equals(this.containerEntityMount, that.containerEntityMount) &&
                 Objects.equals(this.fromXnatInput, that.fromXnatInput) &&
                 Objects.equals(this.fromUri, that.fromUri) &&

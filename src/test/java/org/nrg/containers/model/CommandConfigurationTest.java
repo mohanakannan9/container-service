@@ -34,8 +34,7 @@ import static org.nrg.containers.services.ContainerConfigService.TOOL_ID;
 @ContextConfiguration(classes = CommandConfigurationTestConfig.class)
 public class CommandConfigurationTest {
 
-    private static final long COMMAND_ID = 12L;
-    private static final String WRAPPER_NAME = "what";
+    private static final long WRAPPER_ID = 12L;
     private static final String PROJECT_NAME = "xyz";
 
     @Autowired private ObjectMapper mapper;
@@ -59,7 +58,7 @@ public class CommandConfigurationTest {
         when(mockSiteConfiguration.getContents()).thenReturn(siteJson);
         when(mockConfigService.getConfig(eq(TOOL_ID), anyString(), eq(Scope.Site), isNull(String.class))).thenReturn(mockSiteConfiguration);
 
-        final CommandConfigurationInternal retrieved = containerConfigService.getSiteConfiguration(COMMAND_ID, WRAPPER_NAME);
+        final CommandConfigurationInternal retrieved = containerConfigService.getSiteConfiguration(WRAPPER_ID);
         assertThat(retrieved, is(site));
     }
 
@@ -139,7 +138,7 @@ public class CommandConfigurationTest {
         when(mockConfigService.getConfig(eq(TOOL_ID), anyString(), eq(Scope.Project), isNotNull(String.class))).thenReturn(mockProjectConfiguration);
 
         final CommandConfigurationInternal retrieved =
-                containerConfigService.getProjectConfiguration(PROJECT_NAME, COMMAND_ID, WRAPPER_NAME);
+                containerConfigService.getProjectConfiguration(PROJECT_NAME, WRAPPER_ID);
         assertThat(retrieved, is(expected));
     }
 

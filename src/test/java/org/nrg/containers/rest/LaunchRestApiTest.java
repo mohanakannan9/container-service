@@ -1,6 +1,5 @@
 package org.nrg.containers.rest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.Option;
@@ -16,13 +15,15 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.config.LaunchRestApiTestConfig;
-import org.nrg.containers.model.ResolvedCommand;
-import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandInput;
+import org.nrg.containers.model.command.auto.Command.CommandWrapper;
+import org.nrg.containers.model.command.auto.ResolvedCommand;
+import org.nrg.containers.model.command.auto.ResolvedCommand.PartiallyResolvedCommand;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.server.docker.DockerServer;
 import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
+import org.nrg.containers.services.CommandResolutionService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.xdat.entities.AliasToken;
@@ -37,7 +38,6 @@ import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.transaction.TestTransaction;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -50,6 +50,7 @@ import java.util.Set;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyMapOf;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
@@ -72,17 +73,17 @@ public class LaunchRestApiTest {
     private final String INPUT_VALUE = "the super cool value";
     private final String INPUT_JSON = "{\"" + INPUT_NAME + "\": \"" + INPUT_VALUE + "\"}";
     private final String FAKE_CONTAINER_ID = "098zyx";
-    private final long COMMAND_ID = 10L;
+    private final long WRAPPER_ID = 10L;
 
     private final MediaType JSON = MediaType.APPLICATION_JSON_UTF8;
     private final MediaType XML = MediaType.APPLICATION_XML;
 
     @Autowired private WebApplicationContext wac;
-    @Autowired private ObjectMapper mapper;
     @Autowired private CommandService mockCommandService;
     @Autowired private RoleServiceI mockRoleService;
     @Autowired private ContainerControlApi mockDockerControlApi;
     @Autowired private ContainerEntityService mockContainerEntityService;
+    @Autowired private CommandResolutionService mockCommandResolutionService;
     @Autowired private AliasTokenService mockAliasTokenService;
     @Autowired private DockerServerPrefsBean mockDockerServerPrefsBean;
     @Autowired private SiteConfigPreferences mockSiteConfigPreferences;
@@ -153,33 +154,41 @@ public class LaunchRestApiTest {
         when(mockSiteConfigPreferences.getBuildPath()).thenReturn(folder.newFolder().getAbsolutePath()); // transporter makes a directory under build
         when(mockSiteConfigPreferences.getArchivePath()).thenReturn(folder.newFolder().getAbsolutePath()); // container logs get stored under archive
 
-        final Command mockCommand = Command.builder()
-                .name("command-to-launch")
-                .id(COMMAND_ID)
-                .addInput(CommandInput.builder().name(INPUT_NAME).build())
+        final String wrapperName = "I don't know";
+        final CommandWrapper mockCommandWrapper = CommandWrapper.builder()
+                .id(WRAPPER_ID)
+                .name(wrapperName)
                 .build();
-        when(mockCommandService.get(COMMAND_ID)).thenReturn(mockCommand);
+        final long commandId = 15L;
+        final String commandName = "command-to-launch";
+        final Command mockCommand = Command.builder()
+                .name(commandName)
+                .commandLine("echo hello world")
+                .id(commandId)
+                .addInput(CommandInput.builder().name(INPUT_NAME).build())
+                .addCommandWrapper(mockCommandWrapper)
+                .build();
+        when(mockCommandService.getWrapper(WRAPPER_ID)).thenReturn(mockCommandWrapper);
 
         // This ResolvedCommand will be used in an internal method to "launch" a container
-        final String environmentVariablesJson = "{" +
-                "\"XNAT_HOST\": \"" + url + "\"," +
-                "\"XNAT_USER\": \"" + alias + "\"," +
-                "\"XNAT_PASS\": \"" + secret + "\"" +
-                "}";
-        final String preparedResolvedCommandJson =
-                "{\"command-id\": " + String.valueOf(COMMAND_ID) +"," +
-                        "\"image\": \"abc123\"," +
-                        "\"env\": " + environmentVariablesJson + "," +
-                        "\"raw-input-values\": " + INPUT_JSON + "," +
-                        "\"mounts\": []," +
-                        "\"outputs\": []," +
-                        "\"ports\": {}" +
-                        "}";
-        final ResolvedDockerCommand preparedResolvedCommand = mapper.readValue(preparedResolvedCommandJson, ResolvedDockerCommand.class);
-        final ContainerEntity containerEntity = new ContainerEntity(preparedResolvedCommand, FAKE_CONTAINER_ID, username);
+        final ResolvedCommand resolvedCommand = ResolvedCommand.builder()
+                .commandId(commandId)
+                .commandName(commandName)
+                .wrapperId(WRAPPER_ID)
+                .wrapperName(wrapperName)
+                .image("abc123")
+                .commandLine("echo hello world")
+                .addRawInputValue(INPUT_NAME, INPUT_VALUE)
+                .build();
+        when(mockCommandResolutionService.resolve(
+                eq(WRAPPER_ID),
+                anyMapOf(String.class, String.class),
+                eq(mockAdmin)
+        )).thenReturn(resolvedCommand);
+        final ContainerEntity containerEntity = new ContainerEntity(resolvedCommand, FAKE_CONTAINER_ID, username);
 
         // We have to match any resolved command because spring will add a csrf token to the inputs. I don't know how to get that token in advance.
-        when(mockDockerControlApi.createContainer(any(ResolvedDockerCommand.class))).thenReturn(FAKE_CONTAINER_ID);
+        when(mockDockerControlApi.createContainer(any(ResolvedCommand.class))).thenReturn(FAKE_CONTAINER_ID);
         doNothing().when(mockDockerControlApi).startContainer(FAKE_CONTAINER_ID);
         when(mockContainerEntityService.save(any(ResolvedCommand.class), eq(FAKE_CONTAINER_ID), eq(mockAdmin)))
                 .thenReturn(containerEntity);
@@ -187,9 +196,9 @@ public class LaunchRestApiTest {
 
     @Test
     public void testLaunchWithQueryParams() throws Exception {
-        final String pathTemplate = "/commands/%d/launch";
+        final String pathTemplate = "/wrappers/%d/launch";
 
-        final String path = String.format(pathTemplate, COMMAND_ID);
+        final String path = String.format(pathTemplate, WRAPPER_ID);
         final MockHttpServletRequestBuilder request =
                 post(path).param(INPUT_NAME, INPUT_VALUE)
                         .with(authentication(authentication))
@@ -207,9 +216,9 @@ public class LaunchRestApiTest {
 
     @Test
     public void testLaunchWithParamsInBody() throws Exception {
-        final String pathTemplate = "/commands/%d/launch";
+        final String pathTemplate = "/wrappers/%d/launch";
 
-        final String path = String.format(pathTemplate, COMMAND_ID);
+        final String path = String.format(pathTemplate, WRAPPER_ID);
         final MockHttpServletRequestBuilder request =
                 post(path).content(INPUT_JSON).contentType(JSON)
                         .with(authentication(authentication))

@@ -58,35 +58,35 @@ public class ScanArchiveListenerAndCommandLauncher implements Consumer<Event<Sca
         if (commandEventMappings != null && !commandEventMappings.isEmpty()) {
             for (CommandEventMapping commandEventMapping: commandEventMappings) {
                 final Long commandId = commandEventMapping.getCommandId();
-                final String xnatCommandWrapperName = commandEventMapping.getXnatCommandWrapperName();
+                final String wrapperName = commandEventMapping.getXnatCommandWrapperName();
 
-                final Map<String, String> runtimeValues = Maps.newHashMap();
+                final Map<String, String> inputValues = Maps.newHashMap();
 
-                final Scan scan = scanArchiveEventToLaunchCommands.getScan();
+                final Scan scan = scanArchiveEventToLaunchCommands.scan();
                 String scanString = scan.getUri();
                 try {
                     scanString = mapper.writeValueAsString(scan);
                 } catch (JsonProcessingException e) {
                     log.error(String.format("Could not serialize Scan %s to json.", scan), e);
                 }
-                runtimeValues.put("scan", scanString);
+                inputValues.put("scan", scanString);
                 try {
                     if (log.isInfoEnabled()) {
-                        final String wrapperMessage = StringUtils.isNotBlank(xnatCommandWrapperName) ?
-                                String.format("wrapper \"%s\"", xnatCommandWrapperName) :
+                        final String wrapperMessage = StringUtils.isNotBlank(wrapperName) ?
+                                String.format("wrapper \"%s\"", wrapperName) :
                                 "identity wrapper";
                         final String message = String.format(
-                                "Launching command %s, %s, for user \"%s\".", commandId, wrapperMessage, scanArchiveEventToLaunchCommands.getUser().getLogin()
+                                "Launching command %s, %s, for user \"%s\".", commandId, wrapperMessage, scanArchiveEventToLaunchCommands.user().getLogin()
                         );
                         log.info(message);
                         if (log.isDebugEnabled()) {
                             log.debug("Runtime parameter values:");
-                            for (final Map.Entry<String, String> paramEntry : runtimeValues.entrySet()) {
+                            for (final Map.Entry<String, String> paramEntry : inputValues.entrySet()) {
                                 log.debug(paramEntry.getKey() + ": " + paramEntry.getValue());
                             }
                         }
                     }
-                    containerService.resolveAndLaunchCommand(xnatCommandWrapperName, commandId, runtimeValues, scanArchiveEventToLaunchCommands.getUser());
+                    containerService.resolveCommandAndLaunchContainer(commandId, wrapperName, inputValues, scanArchiveEventToLaunchCommands.user());
                 } catch (NotFoundException | CommandResolutionException | NoServerPrefException | DockerServerException | ContainerException e) {
                     log.error("Error launching command " + commandId, e);
                 }

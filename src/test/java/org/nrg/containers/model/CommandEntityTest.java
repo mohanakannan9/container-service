@@ -327,7 +327,7 @@ public class CommandEntityTest {
 
         final CommandWrapperEntity createdWrapper = created.getCommandWrapperEntities().get(0);
         final long wrapperId = createdWrapper.getId();
-        assertThat(commandEntityService.retrieve(created, wrapperId), is(createdWrapper));
+        assertThat(commandEntityService.retrieveWrapper(wrapperId), is(createdWrapper));
 
         assertThat(Command.create(created).validate(), is(Matchers.<String>emptyIterable()));
     }
@@ -449,15 +449,14 @@ public class CommandEntityTest {
         TestTransaction.end();
         TestTransaction.start();
 
-        final long commandId = created.getId();
         final long wrapperId = created.getCommandWrapperEntities().get(0).getId();
-        commandEntityService.delete(commandId, wrapperId);
+        commandEntityService.deleteWrapper(wrapperId);
 
         TestTransaction.flagForCommit();
         TestTransaction.end();
         TestTransaction.start();
 
-        assertThat(commandEntityService.retrieve(commandId, wrapperId), is(nullValue()));
+        assertThat(commandEntityService.retrieveWrapper(wrapperId), is(nullValue()));
     }
 
     @Test
@@ -468,24 +467,5 @@ public class CommandEntityTest {
         final String commandJsonFile = dir + "/command.json";
         final CommandEntity ecatHeaderDump = mapper.readValue(new File(commandJsonFile), CommandEntity.class);
         commandEntityService.create(ecatHeaderDump);
-    }
-
-    @Test
-    @DirtiesContext
-    public void testAssertPairExists() throws Exception {
-        final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
-        commandEntityService.create(commandEntity);
-
-        TestTransaction.flagForCommit();
-        TestTransaction.end();
-        TestTransaction.start();
-
-        commandEntityService.assertPairExists(commandEntity.getId(), XNAT_COMMAND_WRAPPER_NAME);
-
-        final String fakeWrapperName = "blargle";
-        expectedException.expect(NotFoundException.class);
-        expectedException.expectMessage("Command " + String.valueOf(commandEntity.getId()) +
-                " has no wrapper " + fakeWrapperName);
-        commandEntityService.assertPairExists(commandEntity.getId(), fakeWrapperName);
     }
 }

@@ -1,13 +1,11 @@
 package org.nrg.containers.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.nrg.config.services.ConfigService;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
-import org.nrg.containers.rest.CommandRestApi;
 import org.nrg.containers.rest.LaunchRestApi;
+import org.nrg.containers.services.CommandResolutionService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.containers.services.ContainerService;
@@ -37,25 +35,36 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 @Import({RestApiTestConfig.class, ObjectMapperConfig.class})
 public class LaunchRestApiTestConfig extends WebSecurityConfigurerAdapter {
     @Bean
-    public LaunchRestApi launchRestApi(final ContainerService containerService,
+    public LaunchRestApi launchRestApi(final CommandService commandService,
+                                       final ContainerService containerService,
+                                       final CommandResolutionService commandResolutionService,
                                        final UserManagementServiceI userManagementServiceI,
                                        final RoleHolder roleHolder) {
-        return new LaunchRestApi(containerService, userManagementServiceI, roleHolder);
+        return new LaunchRestApi(commandService, containerService, commandResolutionService, userManagementServiceI, roleHolder);
     }
 
     @Bean
     public ContainerService containerService(final CommandService commandService,
                                              final ContainerControlApi containerControlApi,
                                              final ContainerEntityService containerEntityService,
+                                             final CommandResolutionService commandResolutionService,
                                              final AliasTokenService aliasTokenService,
                                              final SiteConfigPreferences siteConfigPreferences,
                                              final TransportService transportService,
                                              final PermissionsServiceI permissionsService,
                                              final CatalogService catalogService,
-                                             final ObjectMapper mapper,
-                                             final ConfigService configService) {
-        return new ContainerServiceImpl(commandService, containerControlApi, containerEntityService, aliasTokenService, siteConfigPreferences,
-                transportService, permissionsService, catalogService, mapper, configService);
+                                             final ObjectMapper mapper) {
+        final ContainerService containerService =
+                new ContainerServiceImpl(commandService, containerControlApi, containerEntityService,
+                        commandResolutionService, aliasTokenService, siteConfigPreferences,
+                        transportService, catalogService, mapper);
+        ((ContainerServiceImpl)containerService).setPermissionsService(permissionsService);
+        return containerService;
+    }
+
+    @Bean
+    public CommandResolutionService commandResolutionService() {
+        return Mockito.mock(CommandResolutionService.class);
     }
 
     @Bean
@@ -101,11 +110,6 @@ public class LaunchRestApiTestConfig extends WebSecurityConfigurerAdapter {
     @Bean
     public CatalogService catalogService() {
         return Mockito.mock(CatalogService.class);
-    }
-
-    @Bean
-    public ConfigService configService() {
-        return Mockito.mock(ConfigService.class);
     }
 
     @Bean
