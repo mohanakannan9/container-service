@@ -363,6 +363,7 @@ public class LaunchRestApi extends AbstractXapiRestController {
                 if (log.isInfoEnabled()) {
                     log.error("Launch failed for command wrapper id {}.", wrapperId);
                     log.error(mapLogString("Params: ", paramsSet));
+                    log.error("Exception: ", e);
                 }
                 reportBuilder.addFailure(BulkLaunchReport.Failure.create(paramsSet, e.getMessage()));
             }
