@@ -1,5 +1,6 @@
 package org.nrg.containers.model.command.auto;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
@@ -16,6 +17,15 @@ public abstract class BulkLaunchReport {
 
     public static Builder builder() {
         return new AutoValue_BulkLaunchReport.Builder();
+    }
+
+    @JsonCreator
+    public static BulkLaunchReport create(@JsonProperty("successes") final List<Success> successes,
+                                          @JsonProperty("failures") final List<Failure> failures) {
+        return builder()
+                .successes(successes)
+                .failures(failures)
+                .build();
     }
 
     @AutoValue.Builder
@@ -41,8 +51,9 @@ public abstract class BulkLaunchReport {
         @JsonProperty("params") public abstract ImmutableMap<String, String> launchParams();
         @JsonProperty("container-id") public abstract String containerId();
 
-        public static Success create(final Map<String, String> launchParams,
-                                     final @Nonnull String containerId) {
+        @JsonCreator
+        public static Success create(@JsonProperty("params") final Map<String, String> launchParams,
+                                     @JsonProperty("container-id") final @Nonnull String containerId) {
             final ImmutableMap<String, String> launchParamsCopy =
                     launchParams == null ?
                             ImmutableMap.<String, String>of() :
@@ -54,10 +65,11 @@ public abstract class BulkLaunchReport {
     @AutoValue
     public static abstract class Failure {
         @JsonProperty("params") public abstract ImmutableMap<String, String> launchParams();
-        @JsonProperty("container-id") public abstract String containerId();
+        @JsonProperty("message") public abstract String message();
 
-        public static Failure create(final Map<String, String> launchParams,
-                                     final @Nonnull String message) {
+        @JsonCreator
+        public static Failure create(@JsonProperty("params") final Map<String, String> launchParams,
+                                     @JsonProperty("message") final @Nonnull String message) {
             final ImmutableMap<String, String> launchParamsCopy =
                     launchParams == null ?
                             ImmutableMap.<String, String>of() :
