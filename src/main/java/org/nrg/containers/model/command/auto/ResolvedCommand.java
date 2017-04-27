@@ -405,7 +405,7 @@ public abstract class ResolvedCommand {
         @JsonProperty("type") public abstract String type();
         @JsonProperty("required") public abstract Boolean required();
         @JsonProperty("mount") public abstract String mount();
-        @JsonProperty("path") public abstract String path();
+        @Nullable @JsonProperty("path") public abstract String path();
         @Nullable @JsonProperty("glob") public abstract String glob();
         @JsonProperty("label") public abstract String label();
         @JsonProperty("handled-by-xnat-command-input") public abstract String handledByXnatCommandInput();
