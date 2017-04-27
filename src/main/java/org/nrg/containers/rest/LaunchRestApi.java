@@ -8,9 +8,9 @@ import org.nrg.containers.exceptions.CommandInputResolutionException;
 import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.CommandValidationException;
 import org.nrg.containers.exceptions.ContainerException;
-import org.nrg.containers.exceptions.ContainerMountResolutionException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.model.command.auto.BulkLaunchReport;
 import org.nrg.containers.model.command.auto.LaunchUi;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.command.auto.ResolvedCommand.PartiallyResolvedCommand;
@@ -40,6 +40,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import springfox.documentation.annotations.ApiIgnore;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
@@ -326,6 +327,59 @@ public class LaunchRestApi extends AbstractXapiRestController {
         } catch (CommandInputResolutionException e) {
             throw new BadRequestException("Must provide value for variable " + e.getInput().name() + ".", e);
         }
+    }
+
+    /*
+    BULK LAUNCH
+     */
+    @XapiRequestMapping(value = {"/wrappers/{wrapperId}/bulklaunch"}, method = POST, consumes = {JSON})
+    @ApiOperation(value = "Resolve a command from the variable values in the request body, and launch it")
+    @ResponseBody
+    public BulkLaunchReport bulklaunchWJsonBody(final @PathVariable long wrapperId,
+                                                final @RequestBody List<Map<String, String>> allRequestParams)
+            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException, ContainerException {
+        log.info("Launch requested for command wrapper id " + String.valueOf(wrapperId));
+        return bulkLaunch(wrapperId, allRequestParams);
+    }
+
+    private BulkLaunchReport bulkLaunch(final long wrapperId,
+                                        final List<Map<String, String>> allRequestParams) {
+        final UserI userI = XDAT.getUserDetails();
+
+        final BulkLaunchReport.Builder reportBuilder = BulkLaunchReport.builder();
+        for (final Map<String, String> paramsSet : allRequestParams) {
+            try {
+                final ContainerEntity containerEntity = containerService.resolveCommandAndLaunchContainer(wrapperId, paramsSet, userI);
+
+                log.info("Launched command wrapper id {}. Produced container {}.", wrapperId, containerEntity.getId());
+                if (log.isDebugEnabled()) {
+                    log.debug(mapLogString("Params: ", paramsSet));
+                    log.debug(containerEntity.toString());
+                }
+
+                final String containerId = containerEntity.getContainerId() == null ? "null" : containerEntity.getContainerId();
+                reportBuilder.addSuccess(BulkLaunchReport.Success.create(paramsSet, containerId));
+            } catch (Exception e) {
+                if (log.isInfoEnabled()) {
+                    log.error("Launch failed for command wrapper id {}.", wrapperId);
+                    log.error(mapLogString("Params: ", paramsSet));
+                }
+                reportBuilder.addFailure(BulkLaunchReport.Failure.create(paramsSet, e.getMessage()));
+            }
+        }
+
+        return reportBuilder.build();
+    }
+
+    private String mapLogString(final String title, final Map<String, String> map) {
+        final StringBuilder messageBuilder = new StringBuilder(title);
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            messageBuilder.append(entry.getKey());
+            messageBuilder.append(": ");
+            messageBuilder.append(entry.getValue());
+            messageBuilder.append(", ");
+        }
+        return messageBuilder.substring(0, messageBuilder.length() - 2);
     }
 
     /*
