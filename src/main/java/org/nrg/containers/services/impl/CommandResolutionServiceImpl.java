@@ -1835,18 +1835,17 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
 
             // Look through the provided map of cached replacement values, and replace any that are found.
             for (final String replacementKey : valuesMap.keySet()) {
-                final String replacementValue = valuesMap.get(replacementKey) != null ? valuesMap.get(replacementKey) : "";
-                final String copyForLogging = log.isDebugEnabled() ? toResolve : null;
+                final String replacementValue = valuesMap.get(replacementKey);
+                final String copyForLogging = toResolve;
 
-                toResolve = toResolve.replace(replacementKey, replacementValue);
-                if (log.isDebugEnabled() && copyForLogging != null && !toResolve.equals(copyForLogging)) {
-                    log.debug(String.format("%s -> %s", replacementKey, replacementValue));
+                toResolve = toResolve.replace(replacementKey, replacementValue == null ? "" : replacementValue);
+                if (!toResolve.equals(copyForLogging)) {
+                    // If the replacement operation changed the template, log the replacement
+                    log.debug("{} -> {}", replacementKey, replacementValue);
                 }
             }
 
-            if (log.isInfoEnabled()) {
-                log.info("Resolved template: " + toResolve);
-            }
+            log.info("Resolved template: {}", toResolve);
             return toResolve;
         }
 
