@@ -220,7 +220,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
         private final CommandWrapper commandWrapper;
         private final ConfiguredCommand command;
         private final ResolvedCommand.Builder resolvedCommandBuilder;
-        private final Map<String, CommandWrapperInput> resolvedXnatInputObjects = Maps.newHashMap();
+        private final Map<String, CommandWrapperInput> resolvedWrapperInputObjects = Maps.newHashMap();
         private final Map<String, String> resolvedXnatInputValuesByCommandInputName = Maps.newHashMap();
         private final Map<String, List<CommandWrapperInput>> commandMountsToReceiveFilesFromXnatInputs = Maps.newHashMap();
         private final Map<String, String> resolvedInputValuesByReplacementKey = Maps.newHashMap();
@@ -597,7 +597,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 setValue(externalInput, resolvedValue);;
                 setJsonValue(externalInput, jsonRepresentation != null ? jsonRepresentation : resolvedValue);;
 
-                resolvedXnatInputObjects.put(externalInput.name(), externalInput);
+                resolvedWrapperInputObjects.put(externalInput.name(), externalInput);
 
                 resolvedXnatWrapperInputValuesByName.put(externalInput.name(), getValue(externalInput));
 
@@ -640,7 +640,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                     }
 
                     final String prereq = derivedInput.derivedFromXnatInput();
-                    if (!resolvedXnatInputObjects.containsKey(prereq)) {
+                    if (!resolvedWrapperInputObjects.containsKey(prereq)) {
                         // TODO this should be caught during validation. If prereq exists, but is in the wrong order, re-order inputs. If not, then error.
                         final String message = String.format(
                                 "Input \"%1$s\" is derived from input \"%2$s\" which has not been resolved. Re-order the derived inputs so \"%1$s\" appears after \"%2$s\".",
@@ -649,7 +649,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                         log.error(message);
                         throw new CommandWrapperInputResolutionException(message, derivedInput);
                     }
-                    final CommandWrapperInput parentInput = resolvedXnatInputObjects.get(prereq);
+                    final CommandWrapperInput parentInput = resolvedWrapperInputObjects.get(prereq);
 
                     String resolvedValue = null;
                     String jsonRepresentation = null;
@@ -1084,7 +1084,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                     setValue(derivedInput, resolvedValue);;
                     setJsonValue(derivedInput, jsonRepresentation != null ? jsonRepresentation : resolvedValue);;
 
-                    resolvedXnatInputObjects.put(derivedInput.name(), derivedInput);
+                    resolvedWrapperInputObjects.put(derivedInput.name(), derivedInput);
 
                     resolvedXnatWrapperInputValuesByName.put(derivedInput.name(), getValue(derivedInput));
 
