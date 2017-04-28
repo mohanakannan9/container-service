@@ -6,6 +6,7 @@ import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.InvalidJsonException;
 import com.jayway.jsonpath.InvalidPathException;
 import com.jayway.jsonpath.JsonPath;
@@ -86,14 +87,17 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
     private final CommandService commandService;
     private final ConfigService configService;
     private final SiteConfigPreferences siteConfigPreferences;
+    private final ObjectMapper mapper;
 
     @Autowired
     public CommandResolutionServiceImpl(final CommandService commandService,
                                         final ConfigService configService,
-                                        final SiteConfigPreferences siteConfigPreferences) {
+                                        final SiteConfigPreferences siteConfigPreferences,
+                                        final ObjectMapper mapper) {
         this.commandService = commandService;
         this.configService = configService;
         this.siteConfigPreferences = siteConfigPreferences;
+        this.mapper = mapper;
     }
 
     @Override
@@ -222,16 +226,13 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
         private final Map<String, String> resolvedInputValuesByReplacementKey = Maps.newHashMap();
         private final Map<String, String> resolvedInputCommandLineValuesByReplacementKey = Maps.newHashMap();
         private final UserI userI;
-        private final ObjectMapper mapper;
         private final Map<String, String> inputValues;
         private final Pattern jsonpathSubstringPattern;
+        private final DocumentContext commandJsonpathSearchContext;
+        private final DocumentContext commandWrapperJsonpathSearchContext;
         private String containerHost;
 
         // Caches
-        private ConfiguredCommand cachedCommand;
-        private String commandJson;
-        private CommandWrapper cachedCommandWrapper;
-        private String commandWrapperJson;
         private Map<CommandInput, String> commandInputValues =  Maps.newHashMap();
         private Map<CommandWrapperInput, String> commandWrapperInputValues =  Maps.newHashMap();
         private Map<CommandWrapperInput, String> commandWrapperInputJsonValues =  Maps.newHashMap();
@@ -241,16 +242,27 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                                         final UserI userI) throws CommandResolutionException {
             this.commandWrapper = configuredCommand.wrapper();
             this.command = configuredCommand;
-            this.cachedCommand = null;
-            this.commandJson = null;
-            this.cachedCommandWrapper = null;
-            this.commandWrapperJson = null;
+
+            // Set up JSONPath search contexts
+            final Configuration c = Configuration.defaultConfiguration().addOptions(Option.ALWAYS_RETURN_LIST);
+            try {
+                final String commandJson = mapper.writeValueAsString(command);
+                commandJsonpathSearchContext = JsonPath.using(c).parse(commandJson);
+            } catch (JsonProcessingException e) {
+                throw new CommandResolutionException("Could not serialize command to JSON.", e);
+            }
+
+            try {
+                final String commandWrapperJson = mapper.writeValueAsString(commandWrapper);
+                commandWrapperJsonpathSearchContext = JsonPath.using(c).parse(commandWrapperJson);
+            } catch (JsonProcessingException e) {
+                throw new CommandResolutionException("Could not serialize command to JSON.", e);
+            }
             // this.resolvedXnatInputObjects =
             // this.resolvedXnatInputValuesByCommandInputName = Maps.newHashMap();
             // this.resolvedInputValuesByReplacementKey = Maps.newHashMap();
             // this.resolvedInputCommandLineValuesByReplacementKey = Maps.newHashMap();
             this.userI = userI;
-            this.mapper = new ObjectMapper();
             this.jsonpathSubstringPattern = Pattern.compile(JSONPATH_SUBSTRING_REGEX);
 
             this.inputValues = inputValues == null ?
@@ -1258,38 +1270,6 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             return resolvedInputValuesByName;
         }
 
-        private String commandAsJson() throws CommandResolutionException {
-            if (!command.equals(cachedCommand)) {
-                cachedCommand = command;
-
-                try {
-                    commandJson = mapper.writeValueAsString(cachedCommand);
-                } catch (JsonProcessingException e) {
-                    final String message = "Could not serialize command to json.";
-                    log.debug(message);
-                    throw new CommandResolutionException(message, e);
-                }
-            }
-
-            return commandJson;
-        }
-
-        private String commandWrapperAsJson() throws CommandResolutionException {
-            if (!commandWrapper.equals(cachedCommandWrapper)) {
-                cachedCommandWrapper = commandWrapper;
-
-                try {
-                    commandWrapperJson = mapper.writeValueAsString(cachedCommandWrapper);
-                } catch (JsonProcessingException e) {
-                    final String message = "Could not serialize command wrapper to json.";
-                    log.debug(message);
-                    throw new CommandResolutionException(message, e);
-                }
-            }
-
-            return commandWrapperJson;
-        }
-
         private <T extends XnatModelObject> List<T> matchChildFromParent(final String parentJson, final String value, final String childKey, final String valueMatchProperty, final String matcherFromInput, final TypeRef<List<T>> typeRef) {
             final String matcherFromValue = StringUtils.isNotBlank(value) ?
                     String.format("@.%s == '%s'", valueMatchProperty, value) :
@@ -1869,24 +1849,18 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                     }
 
                     if (StringUtils.isNotBlank(jsonpathSearchWithoutMarkers)) {
-                        final Configuration c = Configuration.defaultConfiguration().addOptions(Option.ALWAYS_RETURN_LIST);
+
                         final List<String> searchResult;
                         if (StringUtils.isNotBlank(useWrapper)) {
-                            if(log.isInfoEnabled()) {
-                                log.info("Performing JSONPath search through command wrapper with search string " + jsonpathSearchWithoutMarkers);
-                            }
-                            searchResult = JsonPath.using(c).parse(commandWrapperAsJson()).read(jsonpathSearchWithoutMarkers);
+                            log.debug("Performing JSONPath search through command wrapper with search string \"{}\".", jsonpathSearchWithoutMarkers);
+                            searchResult = commandWrapperJsonpathSearchContext.read(jsonpathSearchWithoutMarkers);
                         } else {
-                            if(log.isInfoEnabled()) {
-                                log.info("Performing JSONPath search through command with search string " + jsonpathSearchWithoutMarkers);
-                            }
-                            searchResult = JsonPath.using(c).parse(commandAsJson()).read(jsonpathSearchWithoutMarkers);
+                            log.debug("Performing JSONPath search through command with search string \"{}\".", jsonpathSearchWithoutMarkers);
+                            searchResult = commandJsonpathSearchContext.read(jsonpathSearchWithoutMarkers);
                         }
 
                         if (searchResult != null && !searchResult.isEmpty() && searchResult.get(0) != null) {
-                            if (log.isInfoEnabled()) {
-                                log.info("Search result: " + searchResult);
-                            }
+                            log.debug("JSONPath search result: {}", searchResult);
                             if (searchResult.size() == 1) {
                                 final String result = searchResult.get(0);
                                 final String replacement = stringThatMayContainJsonpathSubstring.replace(jsonpathSearchWithMarkers, result);
@@ -1898,10 +1872,10 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                             } else {
                                 final String message =
                                         String.format(
-                                                "JSONPath search %s resulted in multiple results: %s. Cannot determine value to replace into string %s.",
+                                                "JSONPath search \"%s\" returned multiple results: %s. Cannot determine value to replace.",
                                                 jsonpathSearchWithoutMarkers,
-                                                searchResult.toString(),
-                                                stringThatMayContainJsonpathSubstring);
+                                                searchResult.toString());
+                                log.error(message);
                                 throw new CommandResolutionException(message);
                             }
                         } else {

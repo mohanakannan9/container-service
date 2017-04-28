@@ -116,8 +116,9 @@ public class IntegrationTestConfig {
     @Bean
     public CommandResolutionService commandResolutionService(final CommandService commandService,
                                                              final ConfigService configService,
-                                                             final SiteConfigPreferences siteConfigPreferences) {
-        return new CommandResolutionServiceImpl(commandService, configService, siteConfigPreferences);
+                                                             final SiteConfigPreferences siteConfigPreferences,
+                                                             final ObjectMapper objectMapper) {
+        return new CommandResolutionServiceImpl(commandService, configService, siteConfigPreferences, objectMapper);
     }
 
     @Bean
