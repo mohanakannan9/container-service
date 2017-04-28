@@ -1796,6 +1796,28 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             return resolveTemplate(template, resolvedInputValuesByReplacementKey);
         }
 
+        /**
+         * Resolves a templated string by replacing its template substrings.
+         *
+         * Many fields in the command definition may contain templated strings. These
+         * strings are allowed to contain placeholder values, which are intended to be replaced
+         * by real values at resolution time.
+         *
+         * A templatized string may draw its value from anywhere in the command or wrapper by encoding the
+         * value that it needs as a JSONPath expression. This JSONPath expression will be extracted from
+         * the templatized string, used to search through the command or wrapper, and the result replaced into
+         * the templatized string. See {@link #resolveJsonpathSubstring(String)}.
+         *
+         * If the templatized string needs a command or wrapper input value, then the full JSONPath search
+         * syntax is not required. Simply use the input's replacement key (by default the input's name
+         * pre- and postfixed by '#' characters) as the template, and this method will replace it
+         * by the input's value.
+         *
+         * @param template A string that may or may not contain replaceable template substrings
+         * @param valuesMap A Map with keys that are replaceable template strings, and values that
+         *                  are the strings that will replace those templates.
+         * @return The templatized string with all template values replaced
+         */
         @Nonnull
         private String resolveTemplate(final String template, Map<String, String> valuesMap)
                 throws CommandResolutionException {
@@ -1808,8 +1830,10 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 return template;
             }
 
+            // First find any JSONPath strings in the template
             String toResolve = resolveJsonpathSubstring(template);
 
+            // Look through the provided map of cached replacement values, and replace any that are found.
             for (final String replacementKey : valuesMap.keySet()) {
                 final String replacementValue = valuesMap.get(replacementKey) != null ? valuesMap.get(replacementKey) : "";
                 final String copyForLogging = log.isDebugEnabled() ? toResolve : null;
@@ -1826,6 +1850,17 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             return toResolve;
         }
 
+        /**
+         * Checks an input string for a JSONPath substring, extracts it,
+         * and uses it to search the command or wrapper for the value.
+         *
+         * The JSONPath search string can search through the runtime values of the command or the command wrapper
+         * (as far as they are determined).
+         * The JSONPath substrings should be surrounded by caret characters ('^')
+         *
+         * @param stringThatMayContainJsonpathSubstring A string that may or may not contain a JSONPath search as a substring.
+         * @return The input string, with any JSONPath substrings resolved into values.
+         */
         @Nonnull
         private String resolveJsonpathSubstring(final String stringThatMayContainJsonpathSubstring) throws CommandResolutionException {
             if (StringUtils.isNotBlank(stringThatMayContainJsonpathSubstring)) {
@@ -1835,6 +1870,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
 
                 final Matcher jsonpathSubstringMatcher = jsonpathSubstringPattern.matcher(stringThatMayContainJsonpathSubstring);
 
+                // TODO - Consider this: should I be looking for multiple JSONPath substrings and replacing them all?
                 if (jsonpathSubstringMatcher.find()) {
 
                     final String jsonpathSearchWithMarkers = jsonpathSubstringMatcher.group(0);
