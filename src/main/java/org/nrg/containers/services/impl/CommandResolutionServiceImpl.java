@@ -1116,18 +1116,15 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             return resolvedXnatWrapperInputValuesByName;
         }
 
-        private void addInputToMountsList(final CommandWrapperInput input) {
-            if (input != null) {
-                // TODO validate that there is a mount with this name
-                final String mountName = input.providesFilesForCommandMount();
-                if (StringUtils.isNotBlank(mountName)) {
-                    List<CommandWrapperInput> xnatInputs = commandMountsToReceiveFilesFromXnatInputs.get(mountName);
-                    if (xnatInputs == null) {
-                        xnatInputs = Lists.newArrayList();
-                    }
-                    xnatInputs.add(input);
-                    commandMountsToReceiveFilesFromXnatInputs.put(mountName, xnatInputs);
+        private void addInputToMountsList(final @Nonnull CommandWrapperInput input) {
+            final String mountName = input.providesFilesForCommandMount();
+            if (StringUtils.isNotBlank(mountName)) {
+                List<CommandWrapperInput> xnatInputs = commandMountsToReceiveFilesFromXnatInputs.get(mountName);
+                if (xnatInputs == null) {
+                    xnatInputs = Lists.newArrayList();
                 }
+                xnatInputs.add(input);
+                commandMountsToReceiveFilesFromXnatInputs.put(mountName, xnatInputs);
             }
         }
 
