@@ -26,6 +26,7 @@ import org.nrg.containers.model.command.auto.Command.CommandMount;
 import org.nrg.containers.model.command.auto.Command.CommandOutput;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.model.command.auto.Command.CommandWrapperDerivedInput;
+import org.nrg.containers.model.command.auto.Command.CommandWrapperExternalInput;
 import org.nrg.containers.model.command.auto.Command.CommandWrapperInput;
 import org.nrg.containers.model.command.auto.Command.CommandWrapperOutput;
 import org.nrg.containers.model.command.auto.Command.ConfiguredCommand;
@@ -58,6 +59,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.List;
@@ -236,6 +238,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
         private Map<CommandInput, String> commandInputValues =  Maps.newHashMap();
         private Map<CommandWrapperInput, String> commandWrapperInputValues =  Maps.newHashMap();
         private Map<CommandWrapperInput, String> commandWrapperInputJsonValues =  Maps.newHashMap();
+        private final Map<String, ResolvedCommandWrapperInput> resolvedCommandWrapperInputsByName = Maps.newHashMap();
 
         private CommandResolutionHelper(final ConfiguredCommand configuredCommand,
                                         final Map<String, String> inputValues,
@@ -308,233 +311,112 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             return resolvedCommand;
         }
 
-        private Map<String, String> resolveXnatWrapperInputs() throws CommandResolutionException {
-            log.info("Resolving xnat wrapper inputs.");
+        @Nonnull
+        private Map<String, String> resolveExternalWrapperInputs() throws CommandResolutionException {
+            log.info("Resolving external wrapper inputs.");
 
-            final boolean hasExternalInputs = !(commandWrapper.externalInputs() == null || commandWrapper.externalInputs().isEmpty());
-            final boolean hasDerivedInputs = !(commandWrapper.derivedInputs() == null || commandWrapper.derivedInputs().isEmpty());
+            final Map<String, String> resolvedExternalWrapperInputValuesByName = Maps.newHashMap();
 
-            if (!hasExternalInputs) {
-                if (hasDerivedInputs) {
-                    // TODO this should be fixed at validation
-                    final String message = "Cannot resolve inputs. There are no external inputs, but there are inputs that need to be derived from external inputs.";
-                    log.error(message);
-                    throw new CommandResolutionException(message);
-                } else {
-                    log.info("No xnat wrapper inputs.");
-                    return null;
-                }
+            if (commandWrapper.externalInputs().isEmpty()) {
+                log.info("No external wrapper inputs to resolve.");
+                return resolvedExternalWrapperInputValuesByName;
             }
 
-            final Map<String, String> resolvedXnatWrapperInputValuesByName = Maps.newHashMap();
-            log.info("Resolving external xnat wrapper inputs.");
-            for (final CommandWrapperInput externalInput : commandWrapper.externalInputs()) {
-                log.info(String.format("Resolving input \"%s\".", externalInput.name()));
+            for (final CommandWrapperExternalInput input : commandWrapper.externalInputs()) {
+                log.info(String.format("Resolving input \"%s\".", input.name()));
 
                 String resolvedValue = null;
-                String jsonRepresentation = null;
+
+                // Initialize the resolved input
+                final ResolvedCommandWrapperInput resolvedInput = new ResolvedCommandWrapperInput(input);
 
                 // Give the input its default value
                 if (log.isDebugEnabled()) {
-                    log.debug("Default value: " + externalInput.defaultValue());
+                    log.debug("Default value: " + input.defaultValue());
                 }
-                if (externalInput.defaultValue() != null) {
-                    resolvedValue = externalInput.defaultValue();
+                if (input.defaultValue() != null) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Setting resolved value to " + input.defaultValue());
+                    }
+                    resolvedValue = input.defaultValue();
                 }
 
                 // If a value was provided at runtime, use that over the default
-                if (inputValues.containsKey(externalInput.name()) && inputValues.get(externalInput.name()) != null) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Runtime value: " + inputValues.get(input.name()));
+                }
+                if (inputValues.containsKey(input.name()) && inputValues.get(input.name()) != null) {
                     if (log.isDebugEnabled()) {
-                        log.debug("Runtime value: " + inputValues.get(externalInput.name()));
+                        log.debug("Setting resolved value to " + inputValues.get(input.name()));
                     }
-                    resolvedValue = inputValues.get(externalInput.name());
+                    resolvedValue = inputValues.get(input.name());
                 }
 
                 // Check for JSONPath substring in input value
-                resolvedValue = resolveJsonpathSubstring(resolvedValue);
+                if (log.isDebugEnabled()) {
+                    log.debug("Checking resolved value for JSONPath substring.");
+                }
+                final String resolvedValueAfterResolvingJsonpath = resolveJsonpathSubstring(resolvedValue);
+                if (resolvedValue != null && !resolvedValue.equals(resolvedValueAfterResolvingJsonpath)) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Setting resolved value to " + resolvedValueAfterResolvingJsonpath);
+                    }
+                    resolvedValue = resolvedValueAfterResolvingJsonpath;
+                }
 
                 // Resolve the matcher, if one was provided
                 if (log.isDebugEnabled()) {
-                    log.debug("Matcher: " + externalInput.matcher());
+                    log.debug("Matcher: " + input.matcher());
                 }
-                final String resolvedMatcher = externalInput.matcher() != null ? resolveTemplate(externalInput.matcher()) : null;
+                final String resolvedMatcher = input.matcher() != null ? resolveTemplate(input.matcher()) : null;
+                if (log.isDebugEnabled()) {
+                    log.debug("Resolved matcher: " + resolvedMatcher);
+                }
 
                 if (StringUtils.isNotBlank(resolvedValue)) {
                     // Process the input based on its type
                     if (log.isDebugEnabled()) {
-                        log.debug("Processing input value as a " + externalInput.type());
+                        log.debug("Processing input value as a {}.", input.type());
                     }
-                    final String type = externalInput.type();
-                    if (type.equals(PROJECT.getName())) {
+                    final String type = input.type();
+                    if (type.equals(PROJECT.getName()) || type.equals(SUBJECT.getName()) || type.equals(SESSION.getName()) || type.equals(SCAN.getName())
+                            || type.equals(ASSESSOR.getName()) || type.equals(RESOURCE.getName())) {
 
-                        // We were either given, A. an archive-style URI, or B. the project id
-                        final Project aProject;
-                        try {
-                            aProject = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Project.class,
-                                    Project.uriToModelObject(), Project.idToModelObject(userI));
-                        } catch (CommandWrapperInputResolutionException e) {
-                            throw new CommandWrapperInputResolutionException(e.getMessage(), externalInput);
-                        }
-
-                        if (aProject != null) {
-                            if (log.isDebugEnabled()) {
-                                log.debug("Setting resolvedValue to uri " + aProject.getUri());
-                            }
-                            resolvedValue = aProject.getUri();
-                            try {
-                                jsonRepresentation = mapper.writeValueAsString(aProject);
-                            } catch (JsonProcessingException e) {
-                                String message = "Could not serialize project";
-                                if (log.isDebugEnabled()) {
-                                    message += ": " + aProject;
-                                } else {
-                                    message += ".";
-                                }
-                                log.error(message, e);
-                            }
-                        }
-                    } else if (type.equals(SUBJECT.getName())) {
-                        // We were either given, A. an archive-style URI, or B. the subject id
-                        final Subject aSubject;
-                        try {
-                            aSubject = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Subject.class,
-                                    Subject.uriToModelObject(), Subject.idToModelObject(userI));
-                        } catch (CommandWrapperInputResolutionException e) {
-                            throw new CommandWrapperInputResolutionException(e.getMessage(), externalInput);
+                        final XnatModelObject xnatModelObject;
+                        if (type.equals(PROJECT.getName())) {
+                            xnatModelObject = resolveXnatObject(resolvedValue, resolvedMatcher,
+                                    Project.class, Project.uriToModelObject(), Project.idToModelObject(userI));
+                        } else if (type.equals(SUBJECT.getName())) {
+                            xnatModelObject = resolveXnatObject(resolvedValue, resolvedMatcher,
+                                    Subject.class, Subject.uriToModelObject(), Subject.idToModelObject(userI));
+                        } else if (type.equals(SESSION.getName())) {
+                            xnatModelObject = resolveXnatObject(resolvedValue, resolvedMatcher,
+                                    Session.class, Session.uriToModelObject(), Session.idToModelObject(userI));
+                        } else if (type.equals(SCAN.getName())) {
+                            xnatModelObject = resolveXnatObject(resolvedValue, resolvedMatcher,
+                                    Scan.class, Scan.uriToModelObject(), Scan.idToModelObject(userI));
+                        } else if (type.equals(ASSESSOR.getName())) {
+                            xnatModelObject = resolveXnatObject(resolvedValue, resolvedMatcher,
+                                    Assessor.class, Assessor.uriToModelObject(), Assessor.idToModelObject(userI));
+                        } else {
+                            xnatModelObject = resolveXnatObject(resolvedValue, resolvedMatcher,
+                                    Resource.class, Resource.uriToModelObject(), Resource.idToModelObject(userI));
                         }
 
-                        if (aSubject != null) {
-                            if (log.isDebugEnabled()) {
-                                log.debug("Setting resolvedValue to uri " + aSubject.getUri());
-                            }
-                            resolvedValue = aSubject.getUri();
-                            try {
-                                jsonRepresentation = mapper.writeValueAsString(aSubject);
-                            } catch (JsonProcessingException e) {
-                                String message = "Could not serialize subject";
-                                if (log.isDebugEnabled()) {
-                                    message += ": " + aSubject;
-                                } else {
-                                    message += ".";
-                                }
-                                log.error(message, e);
-                            }
-                        }
-                    } else if (type.equals(SESSION.getName())) {
-                        // We were either given, A. an archive-style URI, or B. the session id
-                        final Session aSession;
-                        try {
-                            aSession = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Session.class,
-                                    Session.uriToModelObject(), Session.idToModelObject(userI));
-                        } catch (CommandWrapperInputResolutionException e) {
-                            throw new CommandWrapperInputResolutionException(e.getMessage(), externalInput);
-                        }
-
-                        if (aSession != null) {
-                            if (log.isDebugEnabled()) {
-                                log.debug("Setting resolvedValue to uri " + aSession.getUri());
-                            }
-                            resolvedValue = aSession.getUri();
-                            try {
-                                jsonRepresentation = mapper.writeValueAsString(aSession);
-                            } catch (JsonProcessingException e) {
-                                String message = "Could not serialize session";
-                                if (log.isDebugEnabled()) {
-                                    message += ": " + aSession;
-                                } else {
-                                    message += ".";
-                                }
-                                log.error(message, e);
-                            }
-                        }
-                    } else if (type.equals(SCAN.getName())) {
-                        // We must have been given the Scan as an archive URI
-                        final Scan aScan;
-                        try {
-                            aScan = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Scan.class,
-                                    Scan.uriToModelObject(), Scan.idToModelObject(userI));
-                        } catch (CommandWrapperInputResolutionException e) {
-                            log.debug(e.getMessage());
-                            throw new CommandWrapperInputResolutionException(e.getMessage(), externalInput);
-                        }
-
-                        if (aScan != null) {
-                            if (log.isDebugEnabled()) {
-                                log.debug("Setting resolvedValue to uri " + aScan.getUri());
-                            }
-                            resolvedValue = aScan.getUri();
-                            try {
-                                jsonRepresentation = mapper.writeValueAsString(aScan);
-                            } catch (JsonProcessingException e) {
-                                String message = "Could not serialize scan";
-                                if (log.isDebugEnabled()) {
-                                    message += ": " + aScan;
-                                } else {
-                                    message += ".";
-                                }
-                                log.error(message, e);
-                            }
-                        }
-                    } else if (type.equals(ASSESSOR.getName())) {
-                        // We were either given, A. an archive-style URI, or B. the assessor id
-                        final Assessor anAssessor;
-                        try {
-                            anAssessor = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Assessor.class,
-                                    Assessor.uriToModelObject(), Assessor.idToModelObject(userI));
-                        } catch (CommandWrapperInputResolutionException e) {
-                            throw new CommandWrapperInputResolutionException(e.getMessage(), externalInput);
-                        }
-
-                        if (anAssessor != null) {
-                            if (log.isDebugEnabled()) {
-                                log.debug("Setting resolvedValue to uri " + anAssessor.getUri());
-                            }
-                            resolvedValue = anAssessor.getUri();
-                            try {
-                                jsonRepresentation = mapper.writeValueAsString(anAssessor);
-                            } catch (JsonProcessingException e) {
-                                String message = "Could not serialize assessor";
-                                if (log.isDebugEnabled()) {
-                                    message += ": " + anAssessor;
-                                } else {
-                                    message += ".";
-                                }
-                                log.error(message, e);
-                            }
-                        }
-                    } else if (type.equals(RESOURCE.getName())) {
-                        // We were either given, A. an archive-style URI, or B. the (globally unique integer) resource id
-                        final Resource aResource;
-                        try {
-                            aResource = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Resource.class,
-                                    Resource.uriToModelObject(), Resource.idToModelObject(userI));
-                        } catch (CommandWrapperInputResolutionException e) {
-                            throw new CommandWrapperInputResolutionException(e.getMessage(), externalInput);
-                        }
-
-                        if (aResource != null) {
-                            if (log.isDebugEnabled()) {
-                                log.debug("Setting resolvedValue to uri " + aResource.getUri());
-                            }
-                            resolvedValue = aResource.getUri();
-                            try {
-                                jsonRepresentation = mapper.writeValueAsString(aResource);
-                            } catch (JsonProcessingException e) {
-                                String message = "Could not serialize resource";
-                                if (log.isDebugEnabled()) {
-                                    message += ": " + aResource;
-                                } else {
-                                    message += ".";
-                                }
-                                log.error(message, e);
+                        if (xnatModelObject == null) {
+                            log.debug("Could not instantiate XNAT object from value.");
+                        } else {
+                            resolvedInput.setXnatModelObject(xnatModelObject);
+                            final String resolvedXnatObjectUri = xnatModelObject.getUri();
+                            if (resolvedXnatObjectUri != null) {
+                                log.debug("Setting resolved value to {}.", resolvedXnatObjectUri);
+                                resolvedValue = resolvedXnatObjectUri;
                             }
                         }
                     } else if (type.equals(CONFIG.getName())) {
                         final String[] configProps = resolvedValue != null ? resolvedValue.split("/") : null;
                         if (configProps == null || configProps.length != 2) {
-                            final String message = "Config inputs must have a value that can be interpreted as a config_toolname/config_filename string. Input value: " + resolvedValue;
-                            log.debug(message);
-                            throw new CommandWrapperInputResolutionException(message, externalInput);
+                            log.debug("Config inputs must have a value that can be interpreted as a config_toolname/config_filename string. Input value: {}", resolvedValue);
                         }
 
                         final Scope configScope;
@@ -585,42 +467,69 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                     }
                 }
 
-                // If resolved value is null, and input is required, that is an error
-                if (resolvedValue == null && externalInput.required()) {
-                    final String message = String.format("No value could be resolved for required input \"%s\".", externalInput.name());
-                    log.debug(message);
-                    throw new CommandWrapperInputResolutionException(message, externalInput);
-                }
-                if (log.isInfoEnabled()) {
-                    log.info(String.format("Done resolving input \"%s\". Value: \"%s\".", externalInput.name(), resolvedValue));
-                }
-                setValue(externalInput, resolvedValue);;
-                setJsonValue(externalInput, jsonRepresentation != null ? jsonRepresentation : resolvedValue);;
+                log.info("Done resolving input \"{}\". Resolved value is \"{}\".", input.name(), resolvedValue);
 
-                resolvedWrapperInputObjects.put(externalInput.name(), externalInput);
+                resolvedInput.value = resolvedValue;
 
-                resolvedXnatWrapperInputValuesByName.put(externalInput.name(), getValue(externalInput));
+                // // If resolved value is null, and input is required, that is an error
+                // if (resolvedValue == null && input.required()) {
+                //     final String message = String.format("No value could be resolved for required input \"%s\".", input.name());
+                //     log.debug(message);
+                //     throw new CommandWrapperInputResolutionException(message, input);
+                // }
+
+                setValue(input, resolvedValue);
+                setJsonValue(input, resolvedInput.getJsonValue());
+
+                resolvedWrapperInputObjects.put(input.name(), input);
+                resolvedCommandWrapperInputsByName.put(input.name(), resolvedInput);
+
+                resolvedExternalWrapperInputValuesByName.put(input.name(), getValue(input));
 
                 // If this xnat input provides any command input values, set them now
-                final String commandInputName = externalInput.providesValueForCommandInput();
+                final String commandInputName = input.providesValueForCommandInput();
                 if (StringUtils.isNotBlank(commandInputName)) {
                     if (log.isDebugEnabled()) {
                         log.debug(String.format("Found value for command input \"%s\": \"%s\".",
-                                commandInputName, getValue(externalInput)));
+                                commandInputName, getValue(input)));
                     }
-                    resolvedXnatInputValuesByCommandInputName.put(commandInputName, getValue(externalInput));
+                    resolvedXnatInputValuesByCommandInputName.put(commandInputName, getValue(input));
                 }
 
                 // If this xnat input provides files to a mount, note that now
-                addInputToMountsList(externalInput);
+                addInputToMountsList(input);
 
-                final String replacementKey = externalInput.replacementKey();
-                if (StringUtils.isBlank(replacementKey)) {
-                    continue;
+                // If this input has a replacement key, cache the value by that key
+                final String replacementKey = input.replacementKey();
+                if (StringUtils.isNotBlank(replacementKey)) {
+                    resolvedInputValuesByReplacementKey.put(replacementKey, resolvedValue);
                 }
-                resolvedInputValuesByReplacementKey.put(replacementKey, resolvedValue);
-                // resolvedInputCommandLineValuesByReplacementKey.put(replacementKey, getValueForCommandLine(externalInput, resolvedValue));
             }
+            log.info("Done resolving external xnat wrapper inputs.");
+            return resolvedExternalWrapperInputValuesByName;
+        }
+
+        private Map<String, String> resolveXnatWrapperInputs() throws CommandResolutionException {
+            log.info("Resolving xnat wrapper inputs.");
+
+            final boolean hasExternalInputs = !(commandWrapper.externalInputs() == null || commandWrapper.externalInputs().isEmpty());
+            final boolean hasDerivedInputs = !(commandWrapper.derivedInputs() == null || commandWrapper.derivedInputs().isEmpty());
+
+            if (!hasExternalInputs) {
+                if (hasDerivedInputs) {
+                    // TODO this should be fixed at validation
+                    final String message = "Cannot resolve inputs. There are no external inputs, but there are inputs that need to be derived from external inputs.";
+                    log.error(message);
+                    throw new CommandResolutionException(message);
+                } else {
+                    log.info("No xnat wrapper inputs.");
+                    return null;
+                }
+            }
+
+            final Map<String, String> resolvedXnatWrapperInputValuesByName = Maps.newHashMap();
+            log.info("Resolving external xnat wrapper inputs.");
+            resolvedXnatWrapperInputValuesByName.putAll(resolveExternalWrapperInputs());
             log.info("Done resolving external xnat wrapper inputs.");
 
             if (hasDerivedInputs) {
@@ -1317,104 +1226,104 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             }
         }
 
-        private <T extends XnatModelObject> T resolveXnatObjectUri(final String value,
-                                                                   final String matcher,
-                                                                   final Class<T> model,
-                                                                   final Function<ArchiveItemURI, T> uriToModelObjectFunction,
-                                                                   final Function<String, T> stringToModelObjectFunction)
-                throws CommandWrapperInputResolutionException {
+        @Nullable
+        private <T extends XnatModelObject> T resolveXnatObject(final @Nonnull String value,
+                                                                final @Nullable String matcher,
+                                                                final @Nonnull Class<T> model,
+                                                                final @Nonnull Function<ArchiveItemURI, T> uriToModelObject,
+                                                                final @Nullable Function<String, T> idToModelObject) {
             final String modelName = model.getSimpleName();
-            log.info("Resolving " + modelName + " from value.");
-            if (log.isDebugEnabled()) {
-                log.debug("Value: " + value);
-            }
 
             if (StringUtils.isBlank(value)) {
-                final String message = "Not attempting to resolve blank value.";
-                log.debug(message);
-                throw new CommandWrapperInputResolutionException(message, null);
+                log.debug("Not attempting to resolve {} from blank value.", modelName);
+                return null;
             }
 
-    //        List<T> mayOrMayNotMatch = Lists.newArrayList();
+            log.info("Resolving " + modelName + " from value.");
+            log.debug("Value: {}", value);
+
             T newModelObject = null;
             if (value.startsWith("/")) {
                 if (log.isInfoEnabled()) {
-                    log.info(String.format("Attempting to create a \"%s\" using value as URI.", modelName));
-                }
-                if (uriToModelObjectFunction == null) {
-                    throw new CommandWrapperInputResolutionException("ERROR: Cannot instantiate " + modelName + " without a function.", null);
+                    log.debug("Attempting to create a \"{}\" using value as URI.", modelName);
                 }
 
-                URIManager.DataURIA uri;
+                URIManager.DataURIA uri = null;
                 try {
                     uri = UriParserUtils.parseURI(value.startsWith("/archive") ? value : "/archive" + value);
-                } catch (MalformedURLException e) {
-                    throw new CommandWrapperInputResolutionException(String.format("Cannot interpret value as a URI: %s.", value), null, e);
+                } catch (MalformedURLException ignored) {
+                    // ignored
                 }
 
                 if (uri == null || !(uri instanceof ArchiveItemURI)) {
-                    throw new CommandWrapperInputResolutionException(String.format("Cannot interpret value as a URI: %s.", value), null);
+                    log.debug("Cannot interpret \"{}\" as a URI.", value);
+                } else {
+                    newModelObject = uriToModelObject.apply((ArchiveItemURI) uri);
                 }
-
-                newModelObject = uriToModelObjectFunction.apply((ArchiveItemURI) uri);
 
             } else if (value.startsWith("{")) {
                 try {
-                    if (log.isInfoEnabled()) {
-                        log.info(String.format("Attempting to deserialize type \"%s\" from value", modelName));
-                    }
+                    log.debug("Attempting to deserialize {} from value as JSON.", modelName);
                     newModelObject = mapper.readValue(value, model);
                 } catch (IOException e) {
-                    log.error(String.format("Could not deserialize value into type \"%s\".", modelName), e);
+                    log.debug("Could not deserialize {} from value as JSON.", modelName);
                 }
-            } else if (stringToModelObjectFunction != null) {
-                if (log.isInfoEnabled()) {
-                    log.info(String.format("Attempting to create a \"%s\" using value in function %s.", modelName, stringToModelObjectFunction));
-                }
-                newModelObject = stringToModelObjectFunction.apply(value);
+            } else if (idToModelObject != null) {
+                log.info("Attempting to create a {} using value as ID string.", modelName);
+                newModelObject = idToModelObject.apply(value);
             }
 
             if (newModelObject == null) {
-                throw new CommandWrapperInputResolutionException("Could not instantiate " + modelName + " from value.", null);
+                return null;
             }
 
-            String mayOrMayNotMatchJson;
-            try {
-                mayOrMayNotMatchJson = mapper.writeValueAsString(newModelObject);
-            } catch (JsonProcessingException e) {
-                throw new CommandWrapperInputResolutionException(String.format("Could not serialize object to JSON: %s", newModelObject), null, e);
-            }
-
-            if (StringUtils.isBlank(mayOrMayNotMatchJson)) {
-                throw new CommandWrapperInputResolutionException(String.format("Could not serialize object to JSON: %s", newModelObject), null);
-            }
-
-            final T aMatch;
+            T aMatch = null;
             if (StringUtils.isNotBlank(matcher)) {
-                final List<T> doMatch;
-                final String jsonPathSearch = String.format(
-                        "$[?(%s)]", matcher
-                );
-
-                if (log.isInfoEnabled()) {
-                    log.info(String.format("Using JSONPath matcher \"%s\" to search for matching items.", jsonPathSearch));
-                }
-                doMatch = JsonPath.parse(mayOrMayNotMatchJson).read(jsonPathSearch, new TypeRef<List<T>>(){});
-
-                if (doMatch == null || doMatch.isEmpty()) {
-                    throw new CommandWrapperInputResolutionException(String.format("Could not match any \"%s\" with matcher \"%s\".", modelName, matcher), null);
+                // To apply the JSONPath matcher, we have to serialize our object to JSON.
+                String newModelObjectJson = null;
+                try {
+                    newModelObjectJson = mapper.writeValueAsString(newModelObject);
+                } catch (JsonProcessingException ignored) {
+                    // ignored
                 }
 
-                aMatch = doMatch.get(0);
+                if (StringUtils.isBlank(newModelObjectJson)) {
+                    log.debug("Could not serialize object to JSON: {}", newModelObject);
+                } else {
+                    // We have our JSON-serialized object. Now we can apply the matcher.
+                    final List<T> doMatch;
+                    final String jsonPathSearch = String.format(
+                            "$[?(%s)]", matcher
+                    );
+
+                    log.debug("Using JSONPath matcher \"{}\" to search for matching items.", jsonPathSearch);
+                    doMatch = JsonPath.parse(newModelObjectJson).read(jsonPathSearch, new TypeRef<List<T>>() {});
+
+                    if (doMatch != null && !doMatch.isEmpty()) {
+                        // We found a match!
+                        // The JSONPath search syntax we used will always return a list. But we know that,
+                        // since we started with one serialized object, we will only get back a list with
+                        // that one object in it.
+                        aMatch = doMatch.get(0);
+                    } else {
+                        log.debug("Object did not match matcher \"{}\".", modelName, matcher);
+                    }
+                }
             } else {
+                // We have no matcher, so any object we have is a match
                 aMatch = newModelObject;
             }
 
-            log.info(String.format("Successfully instantiated matching %s.", modelName));
-            if (log.isDebugEnabled()) {
-                log.debug("Match: " + aMatch);
+            if (aMatch == null) {
+                log.info("Failed to instantiate matching {}.", modelName);
+                return null;
+            } else {
+                log.info("Successfully instantiated matching {}.", modelName);
+                if (log.isDebugEnabled()) {
+                    log.debug("Match: " + aMatch);
+                }
+                return aMatch;
             }
-            return aMatch;
         }
 
         @Nonnull
@@ -1922,30 +1831,36 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
         }
 
         @Nonnull
+        @Deprecated
         private String getValue(final CommandWrapperInput commandWrapperInput) {
             return commandWrapperInputValues.get(commandWrapperInput);
         }
 
+        @Deprecated
         private void setValue(final CommandWrapperInput commandWrapperInput,
                                 final String value) {
             commandWrapperInputValues.put(commandWrapperInput, value);
         }
 
         @Nonnull
+        @Deprecated
         private String getValue(final CommandInput commandInput) {
             return commandInputValues.get(commandInput);
         }
 
+        @Deprecated
         private void setValue(final CommandInput commandInput,
                                 final String value) {
             commandInputValues.put(commandInput, value);
         }
 
         @Nonnull
+        @Deprecated
         private String getJsonValue(final CommandWrapperInput commandWrapperInput) {
             return commandWrapperInputJsonValues.get(commandWrapperInput);
         }
 
+        @Deprecated
         private void setJsonValue(final CommandWrapperInput commandWrapperInput,
                                     final String jsonValue) {
             commandWrapperInputJsonValues.put(commandWrapperInput, jsonValue);
@@ -1956,5 +1871,52 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
         String buildPath = siteConfigPreferences.getBuildPath();
         final String uuid = UUID.randomUUID().toString();
         return FilenameUtils.concat(buildPath, uuid);
+    }
+
+    private class ResolvedCommandWrapperInput {
+        public CommandWrapperInput getInput() {
+            return input;
+        }
+
+        public void setInput(final CommandWrapperInput input) {
+            this.input = input;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public void setValue(final String value) {
+            this.value = value;
+        }
+
+        public XnatModelObject getXnatModelObject() {
+            return xnatModelObject;
+        }
+
+        void setXnatModelObject(final XnatModelObject xnatModelObject) {
+            this.xnatModelObject = xnatModelObject;
+            try {
+                xnatModelObjectJson = mapper.writeValueAsString(xnatModelObject);
+            } catch (JsonProcessingException e) {
+                log.error("Could not serialize model object to json.", e);
+            }
+        }
+
+        public String getJsonValue() {
+            return xnatModelObjectJson == null ? value : xnatModelObjectJson;
+        }
+
+        private CommandWrapperInput input;
+        private String value;
+        private XnatModelObject xnatModelObject;
+        private String xnatModelObjectJson;
+
+        ResolvedCommandWrapperInput(final CommandWrapperInput input) {
+            this.input = input;
+            this.value = null;
+            this.xnatModelObject = null;
+            this.xnatModelObjectJson = null;
+        }
     }
 }
