@@ -84,7 +84,7 @@ public class Session extends XnatModelObject {
         }
     }
 
-    public static Function<URIManager.ArchiveItemURI, Session> uriToModelObjectFunction() {
+    public static Function<URIManager.ArchiveItemURI, Session> uriToModelObject() {
         return new Function<URIManager.ArchiveItemURI, Session>() {
             @Nullable
             @Override
@@ -105,7 +105,7 @@ public class Session extends XnatModelObject {
         };
     }
 
-    public static Function<String, Session> stringToModelObjectFunction(final UserI userI) {
+    public static Function<String, Session> idToModelObject(final UserI userI) {
         return new Function<String, Session>() {
             @Nullable
             @Override

@@ -78,7 +78,7 @@ public class Subject extends XnatModelObject {
         }
     }
 
-    public static Function<URIManager.ArchiveItemURI, Subject> uriToModelObjectFunction() {
+    public static Function<URIManager.ArchiveItemURI, Subject> uriToModelObject() {
         return new Function<URIManager.ArchiveItemURI, Subject>() {
             @Nullable
             @Override
@@ -93,7 +93,7 @@ public class Subject extends XnatModelObject {
         };
     }
 
-    public static Function<String, Subject> stringToModelObjectFunction(final UserI userI) {
+    public static Function<String, Subject> idToModelObject(final UserI userI) {
         return new Function<String, Subject>() {
             @Nullable
             @Override

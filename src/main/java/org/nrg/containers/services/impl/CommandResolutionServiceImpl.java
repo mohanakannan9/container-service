@@ -359,7 +359,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                         final Project aProject;
                         try {
                             aProject = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Project.class,
-                                    Project.uriToModelObjectFunction(), Project.stringToModelObjectFunction(userI));
+                                    Project.uriToModelObject(), Project.idToModelObject(userI));
                         } catch (CommandWrapperInputResolutionException e) {
                             throw new CommandWrapperInputResolutionException(e.getMessage(), externalInput);
                         }
@@ -386,7 +386,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                         final Subject aSubject;
                         try {
                             aSubject = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Subject.class,
-                                    Subject.uriToModelObjectFunction(), Subject.stringToModelObjectFunction(userI));
+                                    Subject.uriToModelObject(), Subject.idToModelObject(userI));
                         } catch (CommandWrapperInputResolutionException e) {
                             throw new CommandWrapperInputResolutionException(e.getMessage(), externalInput);
                         }
@@ -413,7 +413,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                         final Session aSession;
                         try {
                             aSession = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Session.class,
-                                    Session.uriToModelObjectFunction(), Session.stringToModelObjectFunction(userI));
+                                    Session.uriToModelObject(), Session.idToModelObject(userI));
                         } catch (CommandWrapperInputResolutionException e) {
                             throw new CommandWrapperInputResolutionException(e.getMessage(), externalInput);
                         }
@@ -440,7 +440,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                         final Scan aScan;
                         try {
                             aScan = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Scan.class,
-                                    Scan.uriToModelObjectFunction(), Scan.stringToModelObjectFunction(userI));
+                                    Scan.uriToModelObject(), Scan.idToModelObject(userI));
                         } catch (CommandWrapperInputResolutionException e) {
                             log.debug(e.getMessage());
                             throw new CommandWrapperInputResolutionException(e.getMessage(), externalInput);
@@ -468,7 +468,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                         final Assessor anAssessor;
                         try {
                             anAssessor = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Assessor.class,
-                                    Assessor.uriToModelObjectFunction(), Assessor.stringToModelObjectFunction(userI));
+                                    Assessor.uriToModelObject(), Assessor.idToModelObject(userI));
                         } catch (CommandWrapperInputResolutionException e) {
                             throw new CommandWrapperInputResolutionException(e.getMessage(), externalInput);
                         }
@@ -495,7 +495,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                         final Resource aResource;
                         try {
                             aResource = resolveXnatObjectUri(resolvedValue, resolvedMatcher, Resource.class,
-                                    Resource.uriToModelObjectFunction(), Resource.stringToModelObjectFunction(userI));
+                                    Resource.uriToModelObject(), Resource.idToModelObject(userI));
                         } catch (CommandWrapperInputResolutionException e) {
                             throw new CommandWrapperInputResolutionException(e.getMessage(), externalInput);
                         }

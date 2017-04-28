@@ -80,7 +80,7 @@ public class Resource extends XnatModelObject {
         }
     }
 
-    public static Function<URIManager.ArchiveItemURI, Resource> uriToModelObjectFunction() {
+    public static Function<URIManager.ArchiveItemURI, Resource> uriToModelObject() {
         return new Function<URIManager.ArchiveItemURI, Resource>() {
             @Nullable
             @Override
@@ -101,7 +101,7 @@ public class Resource extends XnatModelObject {
         };
     }
 
-    public static Function<String, Resource> stringToModelObjectFunction(final UserI userI) {
+    public static Function<String, Resource> idToModelObject(final UserI userI) {
         return new Function<String, Resource>() {
             @Nullable
             @Override

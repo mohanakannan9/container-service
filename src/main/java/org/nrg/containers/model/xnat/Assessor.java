@@ -61,7 +61,7 @@ public class Assessor extends XnatModelObject {
         }
     }
 
-    public static Function<URIManager.ArchiveItemURI, Assessor> uriToModelObjectFunction() {
+    public static Function<URIManager.ArchiveItemURI, Assessor> uriToModelObject() {
         return new Function<URIManager.ArchiveItemURI, Assessor>() {
             @Nullable
             @Override
@@ -82,7 +82,7 @@ public class Assessor extends XnatModelObject {
         };
     }
 
-    public static Function<String, Assessor> stringToModelObjectFunction(final UserI userI) {
+    public static Function<String, Assessor> idToModelObject(final UserI userI) {
         return new Function<String, Assessor>() {
             @Nullable
             @Override

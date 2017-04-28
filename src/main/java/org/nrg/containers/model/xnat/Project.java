@@ -65,7 +65,7 @@ public class Project extends XnatModelObject {
         }
     }
 
-    public static Function<URIManager.ArchiveItemURI, Project> uriToModelObjectFunction() {
+    public static Function<URIManager.ArchiveItemURI, Project> uriToModelObject() {
         return new Function<URIManager.ArchiveItemURI, Project>() {
             @Nullable
             @Override
@@ -80,7 +80,7 @@ public class Project extends XnatModelObject {
         };
     }
 
-    public static Function<String, Project> stringToModelObjectFunction(final UserI userI) {
+    public static Function<String, Project> idToModelObject(final UserI userI) {
         return new Function<String, Project>() {
             @Nullable
             @Override

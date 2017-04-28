@@ -64,7 +64,7 @@ public class Scan extends XnatModelObject {
 
     }
 
-    public static Function<URIManager.ArchiveItemURI, Scan> uriToModelObjectFunction() {
+    public static Function<URIManager.ArchiveItemURI, Scan> uriToModelObject() {
         return new Function<URIManager.ArchiveItemURI, Scan>() {
             @Nullable
             @Override
@@ -79,7 +79,7 @@ public class Scan extends XnatModelObject {
         };
     }
 
-    public static Function<String, Scan> stringToModelObjectFunction(final UserI userI) {
+    public static Function<String, Scan> idToModelObject(final UserI userI) {
         return null;
     }
 
