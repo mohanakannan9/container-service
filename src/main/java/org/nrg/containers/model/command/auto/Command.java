@@ -506,15 +506,7 @@ public abstract class Command {
     }
 
     @AutoValue
-    public static abstract class CommandInput {
-        @JsonIgnore public abstract long id();
-        @Nullable @JsonProperty("name") public abstract String name();
-        @Nullable @JsonProperty("description") public abstract String description();
-        @JsonProperty("type") public abstract String type();
-        @JsonProperty("required") public abstract boolean required();
-        @Nullable @JsonProperty("matcher") public abstract String matcher();
-        @Nullable @JsonProperty("default-value") public abstract String defaultValue();
-        @Nullable @JsonProperty("replacement-key") public abstract String rawReplacementKey();
+    public static abstract class CommandInput extends Input {
         @Nullable @JsonProperty("command-line-flag") public abstract String commandLineFlag();
         @Nullable @JsonProperty("command-line-separator") public abstract String commandLineSeparator();
         @Nullable @JsonProperty("true-value") public abstract String trueValue();
@@ -601,10 +593,6 @@ public abstract class Command {
                 errors.add("Command input name cannot be blank");
             }
             return errors;
-        }
-
-        public String replacementKey() {
-            return StringUtils.isNotBlank(rawReplacementKey()) ? rawReplacementKey() : "#" + name() + "#";
         }
 
         @AutoValue.Builder
@@ -901,18 +889,10 @@ public abstract class Command {
         }
     }
 
-    public static abstract class CommandWrapperInput {
-        @JsonIgnore public abstract long id();
-        @Nullable @JsonProperty("name") public abstract String name();
-        @Nullable @JsonProperty("description") public abstract String description();
-        @JsonProperty("type") public abstract String type();
-        @Nullable @JsonProperty("matcher") public abstract String matcher();
+    public static abstract class CommandWrapperInput extends Input {
         @Nullable @JsonProperty("provides-value-for-command-input") public abstract String providesValueForCommandInput();
         @Nullable @JsonProperty("provides-files-for-command-mount") public abstract String providesFilesForCommandMount();
-        @Nullable @JsonProperty("default-value") public abstract String defaultValue();
         @Nullable @JsonProperty("user-settable") public abstract Boolean userSettable();
-        @Nullable @JsonProperty("replacement-key") public abstract String rawReplacementKey();
-        @JsonProperty("required") public abstract boolean required();
 
         @Nonnull
         List<String> validate() {
@@ -1127,10 +1107,6 @@ public abstract class Command {
             }
 
             return errors;
-        }
-
-        public String replacementKey() {
-            return StringUtils.isNotBlank(rawReplacementKey()) ? rawReplacementKey() : "#" + name() + "#";
         }
 
         @AutoValue.Builder
@@ -1388,5 +1364,18 @@ public abstract class Command {
         }
     }
 
+    public static abstract class Input {
+        @JsonIgnore public abstract long id();
+        @Nullable @JsonProperty("name") public abstract String name();
+        @Nullable @JsonProperty("description") public abstract String description();
+        @JsonProperty("type") public abstract String type();
+        @Nullable @JsonProperty("matcher") public abstract String matcher();
+        @Nullable @JsonProperty("default-value") public abstract String defaultValue();
+        @JsonProperty("required") public abstract boolean required();
+        @Nullable @JsonProperty("replacement-key") public abstract String rawReplacementKey();
 
+        public String replacementKey() {
+            return StringUtils.isNotBlank(rawReplacementKey()) ? rawReplacementKey() : "#" + name() + "#";
+        }
+    }
 }
