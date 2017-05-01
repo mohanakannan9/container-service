@@ -71,21 +71,7 @@ var XNAT = getObject(XNAT || {});
         return rootUrl('/xapi/projects/'+projectId+'/commands/'+commandId+'/wrapper/'+wrapperName+'/config');
     }
 
-    function scanSelector(scanArray){
-        // build a scan object from the array of scans
-        var scanObj = {};
-        scanArray.forEach(function(item){
-            scanObj['/experiments/'+sessionId+'/scans/'+item.id] = item.id + ' - ' +item.series_description;
-        });
-        var optionsObj = {
-            label: 'Scan',
-            options: scanObj,
-            description: 'Required',
-            name: 'scan'
-        };
-        return XNAT.ui.panel.select.menu(optionsObj).element;
-    }
-
+    /* Temporary Functions */
     launcher.getConfig = function(commandId,wrapperName,callback) {
 
         var config = {
@@ -132,6 +118,46 @@ var XNAT = getObject(XNAT || {});
 
         return config;
     };
+
+    // cheat the logic and get a list of scans for this session
+    launcher.scanList = [];
+    if (XNAT.data.context.isImageSession === true) {
+        XNAT.xhr.getJSON({
+            url: rootUrl('/data/experiments/' + sessionId),
+            success: function (data) {
+                var scans = [], children = data.items[0].children;
+                children.forEach(function(child){
+                    if (child.field === "scans/scan") scans = child.items;
+                });
+                scans.forEach(function(scan){
+                    launcher.scanList.push({
+                        id: scan.data_fields.ID,
+                        series_description: scan.data_fields.series_description
+                    });
+                });
+            }
+        });
+    }
+
+
+    /*
+     * Panel form elements for launcher
+     */
+
+    function scanSelector(scanArray){
+        // build a scan object from the array of scans
+        var scanObj = {};
+        scanArray.forEach(function(item){
+            scanObj['/experiments/'+sessionId+'/scans/'+item.id] = item.id + ' - ' +item.series_description;
+        });
+        var optionsObj = {
+            label: 'Scan',
+            options: scanObj,
+            description: 'Required',
+            name: 'scan'
+        };
+        return XNAT.ui.panel.select.menu(optionsObj).element;
+    }
 
     launcher.formInputs = function(config) {
         var formPanelElements = [];
@@ -180,7 +206,6 @@ var XNAT = getObject(XNAT || {});
             }).element;
         }
 
-
         // determine which type of table to build.
         if (config.type === 'inputs') {
             var inputs = config.inputs;
@@ -192,6 +217,8 @@ var XNAT = getObject(XNAT || {});
                     case 'scan':
                         if (launcher.scanList.length > 0 && input['user-settable'] && !input.value) {
                             formPanelElements.push(scanSelector(launcher.scanList, input.value))
+                        } else {
+                            formPanelElements.push(hiddenConfigInput(i,input.value));
                         }
                         break;
                     case 'hidden':
@@ -228,7 +255,12 @@ var XNAT = getObject(XNAT || {});
     };
 
 
-    launcher.dialog = function(commandId,wrapperName,wrapperId,scanId){
+
+    /*
+     ** Launcher Options
+     */
+
+    launcher.scanSelectDialog = function(commandId,wrapperName,wrapperId){
         // get command definition
         var launcherConfig = launcher.getConfig(commandId,wrapperName);
 
@@ -239,6 +271,8 @@ var XNAT = getObject(XNAT || {});
         var outputs = launcherConfig.outputs;
 
         tmplBody.spawn('p','Please specify settings for this container.');
+
+        // place input form elements into the template
         XNAT.ui.panel
             .init({
                 header: false,
@@ -247,6 +281,7 @@ var XNAT = getObject(XNAT || {});
             })
             .render(tmplBody);
 
+        // place output form elements into the template
         XNAT.ui.panel
             .init({
                 header: false,
@@ -255,6 +290,7 @@ var XNAT = getObject(XNAT || {});
             })
             .render(tmplBody);
 
+        // open the template form in a modal
         xmodal.open({
             title: 'Set Config Values',
             template: tmpl.clone(),
@@ -316,88 +352,15 @@ var XNAT = getObject(XNAT || {});
 
     };
 
-    /*
-    ** Launcher Options
-     */
+    launcher.singleScanDialog = function(commandId,wrapperId,scanId){
+        if (!scanId) return false;
 
-    launcher.openScanSelectModal = function(commandId,wrapperId){
-        // if we need to select a scan, we need scan information.
-        // first make sure we are in the right context
-        console.log(commandId,wrapperId);
-
-        if (!XNAT.data.context.isImageSession) {
-            xmodal.alert('Sorry, something went wrong and I cannot launch.');
-            return false;
-        }
-
-        XNAT.xhr.getJSON({
-            url: rootUrl('/data/experiments/'+sessionId),
-            success: function(data,commandId,wrapperId){
-                var scans = data.items[0].children[0].items;
-                var tmpl = $('#proj-command-config-template');
-                var tmplBody = tmpl.find('.panel-body').html('');
-                var selector = scanSelector(scans);
-                tmplBody.append( selector );
-
-                console.log(commandId,wrapperId);
-
-                // open quick selector
-                xmodal.open({
-                    title: 'Select Scan to Run Command On',
-                    height: 200,
-                    width: 450,
-                    template: tmpl.clone(),
-                    beforeShow: function(obj){
-                        var $panel = obj.$modal.find('#proj-config-viewer-panel');
-                        $panel.find('select[name=scan]').prepend('<option value selected>Select Scan</option>');
-                    },
-                    okClose: false,
-                    okAction: function(obj,commandId,wrapperId){
-
-                        console.log(commandId,wrapperId);
-                        var $panel = obj.$modal.find('#proj-config-viewer-panel');
-                        var scan = $panel.find('select[name=scan]').find('option:selected').val();
-                        var scanPath = '/experiments/'+sessionId+'/scans/'+scan;
-                        var dataToPost = { scan: scanPath };
-                        XNAT.xhr.postJSON({
-                            url: '/xapi/commands/'+commandId+'/wrappers/'+wrapperId+'/launch',
-                            data: JSON.stringify(dataToPost),
-                            success: function(containerId){
-                                console.log(containerId);
-                            },
-                            fail: function(e){
-                                errorHandler(e);
-                            }
-                        })
-                    }
-                });
-            },
-            fail: function(e){
-                errorHandler(e);
-            }
-        })
 
     };
 
-    // cheat the logic and get a list of scans for this session
-    launcher.scanList = [];
-    if (XNAT.data.context.isImageSession === true) {
-        XNAT.xhr.getJSON({
-            url: rootUrl('/data/experiments/' + sessionId),
-            success: function (data) {
-                var scans = [], children = data.items[0].children;
-                children.forEach(function(child){
-                    if (child.field === "scans/scan") scans = child.items;
-                });
-                scans.forEach(function(scan){
-                    launcher.scanList.push({
-                        id: scan.data_fields.ID,
-                        series_description: scan.data_fields.series_description
-                    });
-                });
-            }
-        });
-    }
+    /*
+     * Build UI for menu selection
+     */
 
     var containerMenuItems = [
         {
@@ -411,14 +374,44 @@ var XNAT = getObject(XNAT || {});
         }
     ];
 
-    launcher.addMenuItem = function(item){
+    launcher.addMenuItem = function(item,itemSet){
+        itemSet = itemSet || [];
+        itemSet.push(
+            spawn('li', [
+                spawn('a', {
+                    html: item['wrapper-description'],
+                    href: '#!',
+                    className: 'commandLauncher',
+                    data: {
+                        commandid: item['command-id'],
+                        wrapperid: item['wrapper-id'],
+                        wrappername: item['wrapper-name'],
+                        launcher: item['launcher']
+                    }
+                })
+            ]));
+        return itemSet;
+    };
+
+    launcher.createMenu = function(target,itemSet){
+        var containerMenu = spawn('li.has-submenu',[
+            spawn(['a',{ href: '#!', html: 'Run' }]),
+            spawn(['ul.dropdown-submenu', itemSet ])
+        ]);
+
+
+        target.append(containerMenu);
+    };
+
+    /* to be replaced when we kill YUI */
+    launcher.addYUIMenuItem = function(item){
         containerMenuItems[0].submenu.itemdata.push({
             text: item['wrapper-description'],
             url: 'javascript:openCommandLauncher({ commandid:"'+item['command-id']+'", wrapperid:"'+item['wrapper-id']+'", wrappername:"'+item['wrapper-name']+'", launcher: "select-scan" })'
         });
     };
 
-    launcher.createMenu = function(target){
+    launcher.createYUIMenu = function(target){
         target = target || 'actionsMenu';
         var containerMenu = new YAHOO.widget.Menu('containerMenu', { autosubmenudisplay:true, scrollincrement:5, position:'static' });
         containerMenu.addItems(containerMenuItems);
@@ -434,10 +427,11 @@ var XNAT = getObject(XNAT || {});
                 if (!availableCommands.length) {
                     return false;
                 } else {
+                    var spawnedCommands = [];
                     availableCommands.forEach(function (command) {
-                        launcher.addMenuItem(command);
+                        launcher.addYUIMenuItem(command,spawnedCommands);
                     });
-                    launcher.createMenu();
+                    launcher.createYUIMenu('actionsMenu',spawnedCommands);
                 }
 
             },
@@ -445,6 +439,32 @@ var XNAT = getObject(XNAT || {});
                 errorHandler(e);
             }
         });
+
+        // if this is a session, run a second context check for scans
+        if (xsiType.indexOf('SessionData') > 0) {
+            var xsiScanType = xsiType.replace('Session','Scan');
+            XNAT.xhr.getJSON({
+                url: rootUrl('/xapi/commands/available?project=' + projectId + '&xsiType=' + xsiScanType),
+                success: function (data) {
+                    var availableCommands = data;
+                    if (!availableCommands.length) {
+                        return false;
+                    } else {
+                        var spawnedCommands = [];
+                        availableCommands.forEach(function (command) {
+                            command.launcher = 'single-scan';
+                            launcher.addMenuItem(command,spawnedCommands);
+                        });
+                        menuTarget = $('#scanActionsMenu');
+                        launcher.createMenu(menuTarget,spawnedCommands);
+                        $('.scan-actions-controls').show();
+                    }
+                },
+                fail: function(e) {
+                    errorHandler(e);
+                }
+            })
+        }
     };
 
     launcher.open = window.openCommandLauncher = function(obj){
@@ -456,12 +476,25 @@ var XNAT = getObject(XNAT || {});
 
         switch(launcher) {
             case 'select-scan':
-                XNAT.plugin.containerService.launcher.dialog(commandId,wrapperName,wrapperId);
+                XNAT.plugin.containerService.launcher.scanSelectDialog(commandId,wrapperName,wrapperId);
+                break;
+            case 'single-scan':
+                XNAT.plugin.containerService.launcher.singleScanDialog(commandId,wrapperName,scanId);
                 break;
             default:
                 xmodal.alert('Sorry, I don\'t know what to do.');
         }
     };
+
+    $(document).on('click','.commandLauncher',function(){
+        var launcherObj = {};
+        launcherObj.commandid = $(this).data('commandid');
+        launcherObj.wrapperid = $(this).data('wrapperid');
+        launcherObj.wrappername = $(this).data('wrappername');
+        launcherObj.launcher = $(this).data('launcher');
+
+        launcher.open(launcherObj);
+    });
 
     launcher.refresh = function(){
         launcherMenu.html('');
