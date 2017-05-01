@@ -26,6 +26,7 @@ public class Scan extends XnatModelObject {
     @JsonProperty("integer-id") private Integer integerId;
     @JsonProperty("scan-type") private String scanType;
     private List<Resource> resources;
+    private String directory;
 
     public Scan() {}
 
@@ -50,6 +51,9 @@ public class Scan extends XnatModelObject {
         this.id = xnatImagescandataI.getId();
         this.xsiType = xnatImagescandataI.getXSIType();
         this.scanType = xnatImagescandataI.getType();
+        if (this.xnatImagescandataI instanceof XnatImagescandata) {
+            this.directory = ((XnatImagescandata) xnatImagescandataI).deriveScanDir();
+        }
 
         this.resources = Lists.newArrayList();
         for (final XnatAbstractresourceI xnatAbstractresourceI : this.xnatImagescandataI.getFile()) {
@@ -119,6 +123,14 @@ public class Scan extends XnatModelObject {
         this.resources = resources;
     }
 
+    public String getDirectory() {
+        return directory;
+    }
+
+    public void setDirectory(final String directory) {
+        this.directory = directory;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
@@ -128,12 +140,13 @@ public class Scan extends XnatModelObject {
         return Objects.equals(this.xnatImagescandataI, that.xnatImagescandataI) &&
                 Objects.equals(this.integerId, that.integerId) &&
                 Objects.equals(this.scanType, that.scanType) &&
-                Objects.equals(this.resources, that.resources);
+                Objects.equals(this.resources, that.resources) &&
+                Objects.equals(this.directory, that.directory);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), xnatImagescandataI, integerId, scanType, resources);
+        return Objects.hash(super.hashCode(), xnatImagescandataI, integerId, scanType, resources, directory);
     }
 
     @Override
@@ -142,6 +155,7 @@ public class Scan extends XnatModelObject {
                 .add("integerId", integerId)
                 .add("scanType", scanType)
                 .add("resources", resources)
+                .add("directory", directory)
                 .toString();
     }
 }
