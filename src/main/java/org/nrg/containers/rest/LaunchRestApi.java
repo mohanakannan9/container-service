@@ -248,7 +248,12 @@ public class LaunchRestApi extends AbstractXapiRestController {
             }
             return containerEntity;
         } catch (CommandInputResolutionException e) {
-            throw new BadRequestException("Must provide value for variable " + e.getInput().name() + ".", e);
+            if (e.getValue() == null) {
+                throw new BadRequestException("Must provide value for input \"" + e.getInput().name() + "\".", e);
+            } else {
+                throw new BadRequestException("Input \"" + e.getInput().name() + "\"" +
+                        " received invalid value \"" + e.getValue() + "\".", e);
+            }
         }
     }
 
@@ -292,7 +297,12 @@ public class LaunchRestApi extends AbstractXapiRestController {
             }
             return containerEntity;
         } catch (CommandInputResolutionException e) {
-            throw new BadRequestException("Must provide value for variable " + e.getInput().name() + ".", e);
+            if (e.getValue() == null) {
+                throw new BadRequestException("Must provide value for input \"" + e.getInput().name() + "\".", e);
+            } else {
+                throw new BadRequestException("Input \"" + e.getInput().name() + "\"" +
+                        " received invalid value \"" + e.getValue() + "\".", e);
+            }
         }
     }
 
@@ -339,7 +349,12 @@ public class LaunchRestApi extends AbstractXapiRestController {
             }
             return containerEntity;
         } catch (CommandInputResolutionException e) {
-            throw new BadRequestException("Must provide value for variable " + e.getInput().name() + ".", e);
+            if (e.getValue() == null) {
+                throw new BadRequestException("Must provide value for input \"" + e.getInput().name() + "\".", e);
+            } else {
+                throw new BadRequestException("Input \"" + e.getInput().name() + "\"" +
+                        " received invalid value \"" + e.getValue() + "\".", e);
+            }
         }
     }
 
@@ -386,7 +401,12 @@ public class LaunchRestApi extends AbstractXapiRestController {
             }
             return containerEntity;
         } catch (CommandInputResolutionException e) {
-            throw new BadRequestException("Must provide value for variable " + e.getInput().name() + ".", e);
+            if (e.getValue() == null) {
+                throw new BadRequestException("Must provide value for input \"" + e.getInput().name() + "\".", e);
+            } else {
+                throw new BadRequestException("Input \"" + e.getInput().name() + "\"" +
+                        " received invalid value \"" + e.getValue() + "\".", e);
+            }
         }
     }
 

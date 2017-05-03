@@ -16,6 +16,7 @@ import com.jayway.jsonpath.spi.mapper.MappingException;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.services.ConfigService;
+import org.nrg.containers.exceptions.CommandInputResolutionException;
 import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.ContainerMountResolutionException;
 import org.nrg.containers.model.command.auto.Command.CommandInput;
@@ -364,6 +365,8 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 }
             }
 
+            // TODO Check that we have all required inputs
+
             final ResolvedCommand resolvedCommand = ResolvedCommand.builder()
                     .wrapperId(commandWrapper.id())
                     .wrapperName(commandWrapper.name())
@@ -461,24 +464,30 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                         || type.equals(ASSESSOR.getName()) || type.equals(RESOURCE.getName())) {
 
                     final XnatModelObject xnatModelObject;
-                    if (type.equals(PROJECT.getName())) {
-                        xnatModelObject = resolveXnatObject(resolvedValue, resolvedMatcher,
-                                Project.class, Project.uriToModelObject(), Project.idToModelObject(userI));
-                    } else if (type.equals(SUBJECT.getName())) {
-                        xnatModelObject = resolveXnatObject(resolvedValue, resolvedMatcher,
-                                Subject.class, Subject.uriToModelObject(), Subject.idToModelObject(userI));
-                    } else if (type.equals(SESSION.getName())) {
-                        xnatModelObject = resolveXnatObject(resolvedValue, resolvedMatcher,
-                                Session.class, Session.uriToModelObject(), Session.idToModelObject(userI));
-                    } else if (type.equals(SCAN.getName())) {
-                        xnatModelObject = resolveXnatObject(resolvedValue, resolvedMatcher,
-                                Scan.class, Scan.uriToModelObject(), Scan.idToModelObject(userI));
-                    } else if (type.equals(ASSESSOR.getName())) {
-                        xnatModelObject = resolveXnatObject(resolvedValue, resolvedMatcher,
-                                Assessor.class, Assessor.uriToModelObject(), Assessor.idToModelObject(userI));
-                    } else {
-                        xnatModelObject = resolveXnatObject(resolvedValue, resolvedMatcher,
-                                Resource.class, Resource.uriToModelObject(), Resource.idToModelObject(userI));
+                    try {
+                        if (type.equals(PROJECT.getName())) {
+                            xnatModelObject = resolveXnatObject(resolvedValue, resolvedMatcher,
+                                    Project.class, Project.uriToModelObject(), Project.idToModelObject(userI));
+                        } else if (type.equals(SUBJECT.getName())) {
+                            xnatModelObject = resolveXnatObject(resolvedValue, resolvedMatcher,
+                                    Subject.class, Subject.uriToModelObject(), Subject.idToModelObject(userI));
+                        } else if (type.equals(SESSION.getName())) {
+                            xnatModelObject = resolveXnatObject(resolvedValue, resolvedMatcher,
+                                    Session.class, Session.uriToModelObject(), Session.idToModelObject(userI));
+                        } else if (type.equals(SCAN.getName())) {
+                            xnatModelObject = resolveXnatObject(resolvedValue, resolvedMatcher,
+                                    Scan.class, Scan.uriToModelObject(), Scan.idToModelObject(userI));
+                        } else if (type.equals(ASSESSOR.getName())) {
+                            xnatModelObject = resolveXnatObject(resolvedValue, resolvedMatcher,
+                                    Assessor.class, Assessor.uriToModelObject(), Assessor.idToModelObject(userI));
+                        } else {
+                            xnatModelObject = resolveXnatObject(resolvedValue, resolvedMatcher,
+                                    Resource.class, Resource.uriToModelObject(), Resource.idToModelObject(userI));
+                        }
+                    } catch (CommandInputResolutionException e) {
+                        // When resolveXnatObject throws this, it does not have the input object in scope
+                        // So we just add the input and throw a new exception with everything else the same.
+                        throw new CommandInputResolutionException(e.getMessage(), input, e.getValue(), e.getCause());
                     }
 
                     if (xnatModelObject == null) {
@@ -1204,7 +1213,8 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                                                                 final @Nullable String matcher,
                                                                 final @Nonnull Class<T> model,
                                                                 final @Nonnull Function<ArchiveItemURI, T> uriToModelObject,
-                                                                final @Nullable Function<String, T> idToModelObject) {
+                                                                final @Nullable Function<String, T> idToModelObject)
+                throws CommandInputResolutionException {
             final String modelName = model.getSimpleName();
 
             if (StringUtils.isBlank(value)) {
@@ -1229,7 +1239,13 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 if (uri == null || !(uri instanceof ArchiveItemURI)) {
                     log.debug("Cannot interpret \"{}\" as a URI.", value);
                 } else {
-                    newModelObject = uriToModelObject.apply((ArchiveItemURI) uri);
+                    try {
+                        newModelObject = uriToModelObject.apply((ArchiveItemURI) uri);
+                    } catch (Throwable e) {
+                        final String message = String.format("Could not instantiate %s with URI %s.", modelName, value);
+                        log.error(message);
+                        throw new CommandInputResolutionException(message, value);
+                    }
                 }
 
             } else if (value.startsWith("{")) {
