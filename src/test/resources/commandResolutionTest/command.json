@@ -22,15 +22,15 @@
             "description": "run the dummy command with a session, from which we derive a scan and a resource",
             "external-inputs": [
                 {
-                    "name": "session",
-                    "type": "Session",
-                    "required": true
-                },
-                {
                     "name": "T1-scantype",
                     "description": "scantype of T1 scan",
                     "type": "string",
                     "default-value": "\"SCANTYPE\", \"OTHER_SCANTYPE\"",
+                    "required": true
+                },
+                {
+                    "name": "session",
+                    "type": "Session",
                     "required": true
                 }
             ],

@@ -1,11 +1,17 @@
 package org.nrg.containers.model.command.auto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import org.nrg.containers.model.command.auto.Command.CommandInput;
+import org.nrg.containers.model.command.auto.Command.CommandWrapperInput;
+import org.nrg.containers.model.command.auto.ResolvedCommand.Builder;
 import org.nrg.containers.model.command.entity.CommandEntity;
+import org.nrg.containers.model.xnat.XnatModelObject;
 
 import javax.annotation.Nullable;
 import java.util.Collections;
@@ -150,12 +156,6 @@ public abstract class ResolvedCommand {
         @JsonProperty("raw-input-values") public abstract ImmutableMap<String, String> rawInputValues();
         @JsonProperty("wrapper-input-values") public abstract ImmutableMap<String, String> wrapperInputValues();
         @JsonProperty("command-input-values") public abstract ImmutableMap<String, String> commandInputValues();
-        @JsonProperty("command-line") public abstract String commandLine();
-        @JsonProperty("env") public abstract ImmutableMap<String, String> environmentVariables();
-        @JsonProperty("ports") public abstract ImmutableMap<String, String> ports();
-        @JsonProperty("mounts") public abstract ImmutableList<PartiallyResolvedCommandMount> mounts();
-        @JsonProperty("outputs") public abstract ImmutableList<ResolvedCommandOutput> outputs();
-        @Nullable @JsonProperty("working-directory") public abstract String workingDirectory();
 
         @JsonCreator
         public static PartiallyResolvedCommand create(@JsonProperty("wrapper-id") final Long wrapperId,
@@ -168,13 +168,7 @@ public abstract class ResolvedCommand {
                                                       @JsonProperty("type") final String type,
                                                       @JsonProperty("raw-input-values") final Map<String, String> rawInputValues,
                                                       @JsonProperty("wrapper-input-values") final Map<String, String> wrapperInputValues,
-                                                      @JsonProperty("command-input-values") final Map<String, String> commandInputValues,
-                                                      @JsonProperty("command-line") final String commandLine,
-                                                      @JsonProperty("env") final Map<String, String> environmentVariables,
-                                                      @JsonProperty("ports")final Map<String, String> ports,
-                                                      @JsonProperty("mounts") final List<PartiallyResolvedCommandMount> mounts,
-                                                      @JsonProperty("outputs") final List<ResolvedCommandOutput> outputs,
-                                                      @JsonProperty("working-directory") final String workingDirectory) {
+                                                      @JsonProperty("command-input-values") final Map<String, String> commandInputValues) {
             return builder()
                     .wrapperId(wrapperId)
                     .wrapperName(wrapperName)
@@ -187,40 +181,12 @@ public abstract class ResolvedCommand {
                     .rawInputValues(rawInputValues == null ? Collections.<String, String>emptyMap() : rawInputValues)
                     .wrapperInputValues(wrapperInputValues == null ? Collections.<String, String>emptyMap() : wrapperInputValues)
                     .commandInputValues(commandInputValues == null ? Collections.<String, String>emptyMap() : commandInputValues)
-                    .commandLine(commandLine)
-                    .environmentVariables(environmentVariables == null ? Collections.<String, String>emptyMap() : environmentVariables)
-                    .ports(ports == null ? Collections.<String, String>emptyMap() : ports)
-                    .mounts(mounts == null ? Collections.<PartiallyResolvedCommandMount>emptyList() : mounts)
-                    .outputs(outputs == null ? Collections.<ResolvedCommandOutput>emptyList() : outputs)
-                    .workingDirectory(workingDirectory)
                     .build();
         }
 
         public static Builder builder() {
             return new AutoValue_ResolvedCommand_PartiallyResolvedCommand.Builder()
                     .type(CommandEntity.DEFAULT_TYPE.getName());
-        }
-
-        public ResolvedCommand.Builder toResolvedCommandBuilder() {
-            // Set everything but the mounts. Those will be resolved separately.
-            return ResolvedCommand.builder()
-                    .wrapperId(this.wrapperId())
-                    .wrapperName(this.wrapperName())
-                    .wrapperDescription(this.wrapperDescription())
-                    .commandId(this.commandId())
-                    .commandName(this.commandName())
-                    .commandDescription(this.commandDescription())
-                    .image(this.image())
-                    .type(this.type())
-                    .rawInputValues(this.rawInputValues())
-                    .wrapperInputValues(this.wrapperInputValues())
-                    .commandInputValues(this.commandInputValues())
-                    .commandLine(this.commandLine())
-                    .environmentVariables(this.environmentVariables())
-                    .ports(this.ports())
-                    .outputs(this.outputs())
-                    .workingDirectory(this.workingDirectory());
-
         }
 
         @AutoValue.Builder
@@ -251,32 +217,6 @@ public abstract class ResolvedCommand {
                 commandInputValuesBuilder().put(inputName, inputValue);
                 return this;
             }
-            public abstract Builder commandLine(String commandLine);
-            public abstract Builder environmentVariables(Map<String, String> environmentVariables);
-            public abstract ImmutableMap.Builder<String, String> environmentVariablesBuilder();
-            public Builder addEnvironmentVariable(final String name, final String value) {
-                environmentVariablesBuilder().put(name, value);
-                return this;
-            }
-            public abstract Builder ports(Map<String, String> ports);
-            public abstract ImmutableMap.Builder<String, String> portsBuilder();
-            public Builder addPort(final String name, final String value) {
-                portsBuilder().put(name, value);
-                return this;
-            }
-            public abstract Builder mounts(List<PartiallyResolvedCommandMount> mounts);
-            public abstract ImmutableList.Builder<PartiallyResolvedCommandMount> mountsBuilder();
-            public Builder addMount(final PartiallyResolvedCommandMount mount) {
-                mountsBuilder().add(mount);
-                return this;
-            }
-            public abstract Builder outputs(List<ResolvedCommandOutput> outputs);
-            public abstract ImmutableList.Builder<ResolvedCommandOutput> outputsBuilder();
-            public Builder addOutput(final ResolvedCommandOutput output) {
-                outputsBuilder().add(output);
-                return this;
-            }
-            public abstract Builder workingDirectory(String workingDirectory);
 
             public abstract PartiallyResolvedCommand build();
         }
@@ -449,4 +389,5 @@ public abstract class ResolvedCommand {
             public abstract ResolvedCommandOutput build();
         }
     }
+
 }

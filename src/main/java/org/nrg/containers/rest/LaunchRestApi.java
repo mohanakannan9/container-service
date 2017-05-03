@@ -137,6 +137,67 @@ public class LaunchRestApi extends AbstractXapiRestController {
         return LaunchUi.create(partiallyResolvedCommand, commandConfiguration);
     }
 
+    // TODO Remove this. It is only for Swagger demo purposes.
+    @XapiRequestMapping(value = {"/wrappers/{wrapperId}/launchui"}, method = POST, consumes = JSON)
+    @ResponseBody
+    public LaunchUi getLaunchUiWithJsonBody(final @PathVariable long wrapperId,
+                                            final @RequestBody Map<String, String> allRequestParams)
+            throws NotFoundException, CommandResolutionException {
+        log.info("Launch UI requested for wrapper {}", wrapperId);
+        final UserI userI = XDAT.getUserDetails();
+        final PartiallyResolvedCommand partiallyResolvedCommand =
+                commandResolutionService.preResolve(wrapperId, allRequestParams, userI);
+        final CommandConfiguration commandConfiguration = commandService.getSiteConfiguration(wrapperId);
+        return LaunchUi.create(partiallyResolvedCommand, commandConfiguration);
+    }
+
+    // TODO Remove this. It is only for Swagger demo purposes.
+    @XapiRequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/launchui"}, method = POST, consumes = JSON)
+    @ResponseBody
+    public LaunchUi getLaunchUiWithJsonBody(final @PathVariable long commandId,
+                                            final @PathVariable String wrapperName,
+                                            final @RequestBody Map<String, String> allRequestParams)
+            throws NotFoundException, CommandResolutionException {
+        log.info("Launch UI requested for command {}, wrapper {}", commandId, wrapperName);
+        final UserI userI = XDAT.getUserDetails();
+        final PartiallyResolvedCommand partiallyResolvedCommand =
+                commandResolutionService.preResolve(commandId, wrapperName, allRequestParams, userI);
+        final CommandConfiguration commandConfiguration = commandService.getSiteConfiguration(commandId, wrapperName);
+        return LaunchUi.create(partiallyResolvedCommand, commandConfiguration);
+    }
+
+    // TODO Remove this. It is only for Swagger demo purposes.
+    @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/launchui"}, method = POST, consumes = JSON)
+    @ResponseBody
+    public LaunchUi getLaunchUiWithJsonBody(final @PathVariable String project,
+                                            final @PathVariable long wrapperId,
+                                            final @RequestBody Map<String, String> allRequestParams)
+            throws NotFoundException, CommandResolutionException {
+        log.info("Launch UI requested for project {}, wrapper {}", project, wrapperId);
+        final UserI userI = XDAT.getUserDetails();
+        final PartiallyResolvedCommand partiallyResolvedCommand =
+                commandResolutionService.preResolve(project, wrapperId, allRequestParams, userI);
+        final CommandConfiguration commandConfiguration = commandService.getProjectConfiguration(project, wrapperId);
+        return LaunchUi.create(partiallyResolvedCommand, commandConfiguration);
+    }
+
+    // TODO Remove this. It is only for Swagger demo purposes.
+    @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/launchui"},
+            method = POST, consumes = JSON)
+    @ResponseBody
+    public LaunchUi getLaunchUiWithJsonBody(final @PathVariable String project,
+                                            final @PathVariable long commandId,
+                                            final @PathVariable String wrapperName,
+                                            final @RequestBody Map<String, String> allRequestParams)
+            throws NotFoundException, CommandResolutionException {
+        log.info("Launch UI requested for project {}, command {}, wrapper {}", project, commandId, wrapperName);
+        final UserI userI = XDAT.getUserDetails();
+        final PartiallyResolvedCommand partiallyResolvedCommand =
+                commandResolutionService.preResolve(project, commandId, wrapperName, allRequestParams, userI);
+        final CommandConfiguration commandConfiguration = commandService.getProjectConfiguration(project, commandId, wrapperName);
+        return LaunchUi.create(partiallyResolvedCommand, commandConfiguration);
+    }
+
     /*
     LAUNCH CONTAINERS
      */
@@ -187,7 +248,12 @@ public class LaunchRestApi extends AbstractXapiRestController {
             }
             return containerEntity;
         } catch (CommandInputResolutionException e) {
-            throw new BadRequestException("Must provide value for variable " + e.getInput().name() + ".", e);
+            if (e.getValue() == null) {
+                throw new BadRequestException("Must provide value for input \"" + e.getInput().name() + "\".", e);
+            } else {
+                throw new BadRequestException("Input \"" + e.getInput().name() + "\"" +
+                        " received invalid value \"" + e.getValue() + "\".", e);
+            }
         }
     }
 
@@ -231,7 +297,12 @@ public class LaunchRestApi extends AbstractXapiRestController {
             }
             return containerEntity;
         } catch (CommandInputResolutionException e) {
-            throw new BadRequestException("Must provide value for variable " + e.getInput().name() + ".", e);
+            if (e.getValue() == null) {
+                throw new BadRequestException("Must provide value for input \"" + e.getInput().name() + "\".", e);
+            } else {
+                throw new BadRequestException("Input \"" + e.getInput().name() + "\"" +
+                        " received invalid value \"" + e.getValue() + "\".", e);
+            }
         }
     }
 
@@ -278,7 +349,12 @@ public class LaunchRestApi extends AbstractXapiRestController {
             }
             return containerEntity;
         } catch (CommandInputResolutionException e) {
-            throw new BadRequestException("Must provide value for variable " + e.getInput().name() + ".", e);
+            if (e.getValue() == null) {
+                throw new BadRequestException("Must provide value for input \"" + e.getInput().name() + "\".", e);
+            } else {
+                throw new BadRequestException("Input \"" + e.getInput().name() + "\"" +
+                        " received invalid value \"" + e.getValue() + "\".", e);
+            }
         }
     }
 
@@ -325,7 +401,12 @@ public class LaunchRestApi extends AbstractXapiRestController {
             }
             return containerEntity;
         } catch (CommandInputResolutionException e) {
-            throw new BadRequestException("Must provide value for variable " + e.getInput().name() + ".", e);
+            if (e.getValue() == null) {
+                throw new BadRequestException("Must provide value for input \"" + e.getInput().name() + "\".", e);
+            } else {
+                throw new BadRequestException("Input \"" + e.getInput().name() + "\"" +
+                        " received invalid value \"" + e.getValue() + "\".", e);
+            }
         }
     }
 
