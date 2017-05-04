@@ -54,6 +54,17 @@ repositories {
 configurations {
     compile.extendsFrom(compileAndInclude)
 }
+//// Possibly add annotation processor dependencies  to IntelliJ
+//idea {
+//    module {
+//        // With Gradle 3.4:
+//        scopes.PROVIDED.plus += [ configurations.apt ]
+//        scopes.TEST.plus += [ configurations.testApt ]
+//        // With older Gradle versions:
+//        // scopes.COMPILE.plus += [ configurations.apt ]
+//        // scopes.TEST.plus += [ configurations.testApt ]
+//    }
+//}
 
 dependencies {
     compileAndInclude (group: "org.nrg", name: "transporter", version: "1.0-SNAPSHOT") {
@@ -105,7 +116,7 @@ dependencies {
     compile "javax.inject:javax.inject:1"
     compile "javax.servlet:javax.servlet-api:3.1.0"
 
-    compile "com.google.auto.value:auto-value:1.3"
+    compileOnly "com.google.auto.value:auto-value:1.3"
     apt "com.google.auto.value:auto-value:1.3"
     
     compile ("turbine:turbine:2.3.3") {

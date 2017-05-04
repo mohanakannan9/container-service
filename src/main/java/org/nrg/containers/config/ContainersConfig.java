@@ -27,7 +27,8 @@ import java.util.concurrent.TimeUnit;
         name = "containers",
         description = "Container Service",
         entityPackages = "org.nrg.containers",
-        log4jPropertiesFile = "META-INF/resources/log4j.properties"
+        log4jPropertiesFile = "META-INF/resources/log4j.properties",
+        version = ""
 )
 @ComponentScan(value = "org.nrg.containers",
         excludeFilters = @Filter(type = FilterType.REGEX, pattern = ".*TestConfig.*", value = {}))
