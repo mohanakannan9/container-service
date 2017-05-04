@@ -32,8 +32,7 @@ var XNAT = getObject(XNAT || {});
         launcherMenu = $('#container-launch-menu'),
         rootUrl = XNAT.url.rootUrl,
         projectId = XNAT.data.context.projectID,
-        xsiType = XNAT.data.context.xsiType,
-        sessionId = (XNAT.data.context.isImageSession) ? XNAT.data.context.ID : null;
+        xsiType = XNAT.data.context.xsiType;
 
     XNAT.plugin =
         getObject(XNAT.plugin || {});
@@ -70,9 +69,19 @@ var XNAT = getObject(XNAT || {});
         if (!projectId || !commandId || !wrapperName) return false;
         return rootUrl('/xapi/projects/'+projectId+'/commands/'+commandId+'/wrapper/'+wrapperName+'/config');
     }
+    function sessionUrl(){
+        var sessionId = (XNAT.data.context.isImageSession) ? XNAT.data.context.ID : null;
+        if (!sessionId) return false;
+        return rootUrl('/REST/experiments/'+sessionId);
+    }
+    function fullScanPath(scanId){
+        var sessionId = (XNAT.data.context.isImageSession) ? XNAT.data.context.ID : null;
+        if (!sessionId) return false;
+        return '/experiments/'+sessionId+'/scans/'+scanId;
+    }
 
     /* Temporary Functions */
-    launcher.getConfig = function(commandId,wrapperName,callback) {
+    launcher.getConfig = function(commandId,wrapperId) {
 
         var config = {
             inputs: {
@@ -95,7 +104,7 @@ var XNAT = getObject(XNAT || {});
                 bids: {
                     description: "Create BIDS metadata file",
                     type: "boolean",
-                    value: "false",
+                    value: "true",
                     'user-settable': true,
                     advanced: false
                 },
@@ -119,27 +128,6 @@ var XNAT = getObject(XNAT || {});
         return config;
     };
 
-    // cheat the logic and get a list of scans for this session
-    launcher.scanList = [];
-    if (XNAT.data.context.isImageSession === true) {
-        XNAT.xhr.getJSON({
-            url: rootUrl('/data/experiments/' + sessionId),
-            success: function (data) {
-                var scans = [], children = data.items[0].children;
-                children.forEach(function(child){
-                    if (child.field === "scans/scan") scans = child.items;
-                });
-                scans.forEach(function(scan){
-                    launcher.scanList.push({
-                        id: scan.data_fields.ID,
-                        series_description: scan.data_fields.series_description
-                    });
-                });
-            }
-        });
-    }
-
-
     /*
      * Panel form elements for launcher
      */
@@ -148,7 +136,8 @@ var XNAT = getObject(XNAT || {});
         // build a scan object from the array of scans
         var scanObj = {};
         scanArray.forEach(function(item){
-            scanObj['/experiments/'+sessionId+'/scans/'+item.id] = item.id + ' - ' +item.series_description;
+            var scanPath = fullScanPath(item.id);
+            scanObj[scanPath] = item.id + ' - ' +item.series_description;
         });
         var optionsObj = {
             label: 'Scan',
@@ -173,29 +162,28 @@ var XNAT = getObject(XNAT || {});
             }).element;
         }
 
-        function configCheckbox(name,checked,description,onText,offText){
+        function configCheckbox(name,value,outerLabel,innerLabel,condensed){
+
+            var vertSpace = function(condensed) {
+                return (condensed) ? '' : spawn('br.clear');
+            };
+
+            return spawn('div.panel-element', { data: { name: name }}, [
+                spawn('label.element-label', outerLabel),
+                spawn('div.element-wrapper', [
+                    spawn('label', [
+                        spawn('input', { type: 'checkbox', name: name, value: value }),
+                        innerLabel
+                    ])
+                ]),
+                vertSpace(condensed)
+            ]);
+        }
+
+        function booleanCheckbox(name,checked,description,onText,offText){
             checked = (checked === 'true') ? ' checked' : '';
             description = description || name;
-            onText = onText || 'Yes';
-            offText = offText || 'No';
 
-            /*
-            var enabled = !!checked;
-            var ckbox = spawn('input.config-enabled', {
-                type: 'checkbox',
-                checked: enabled,
-                value: 'true',
-                data: { name: name, checked: enabled },
-            });
-            return XNAT.ui.panel.input.switchbox({
-                name: name,
-                label: name,
-                value: 'true',
-                checked: checked,
-                onText: onText,
-                offText: offText
-            });
-            */
             return '<div class="panel-element" data-name="'+name+'"><label class="element-label" for="'+name+'">'+name+'</label><div class="element-wrapper"><label><input type="checkbox" value="true" name="'+name+'" '+ checked +' />'+description+'</label></div><br class="clear" /></div>';
         }
 
@@ -206,6 +194,40 @@ var XNAT = getObject(XNAT || {});
             }).element;
         }
 
+        function staticConfigInput(name,value,text) {
+            return spawn(
+                'div.panel-element', { data: { name: name } }, [
+                    spawn('label.element-label', name),
+                    spawn('div.element-wrapper', text),
+                    XNAT.ui.panel.input.hidden({
+                        name: name,
+                        value: value
+                    }).element,
+                    spawn('br.clear')
+                ]
+            );
+        }
+
+        function staticConfigList(name,list) {
+            var listArray = list.split(',');
+            listArray.forEach(function(item,i){
+                listArray[i] = '<li>'+item+'</li>'
+            });
+            return spawn(
+                'div.panel-element', { data: { name: name } }, [
+                    spawn('label.element-label', name),
+                    spawn('div.element-wrapper', [
+                        spawn('ul',{ style: {
+                            'list-style-type': 'none',
+                            margin: 0,
+                            padding: 0
+                        }},listArray.join(''))
+                    ]),
+                    spawn('br.clear')
+                ]
+            )
+        }
+
         // determine which type of table to build.
         if (config.type === 'inputs') {
             var inputs = config.inputs;
@@ -214,26 +236,41 @@ var XNAT = getObject(XNAT || {});
                 var input = inputs[i];
                 // create a panel.input for each input type
                 switch (input.type){
-                    case 'scan':
-                        if (launcher.scanList.length > 0 && input['user-settable'] && !input.value) {
-                            formPanelElements.push(scanSelector(launcher.scanList, input.value))
-                        } else {
-                            formPanelElements.push(hiddenConfigInput(i,input.value));
-                        }
+                    case 'scanSelectOne':
+                        formPanelElements.push(scanSelector(launcher.scanList, input.value));
+                        break;
+                    case 'scanSelectMany':
+                        launcher.scanList.forEach(function(scan,i){
+                            scan.url = fullScanPath(scan.id);
+                            scan.label = scan.id + ' - ' + scan.series_description;
+                            if (i === 0) {
+                                formPanelElements.push(configCheckbox('scan', scan.url, 'scans', scan.label, 'condensed'));
+                            } else if (i < launcher.scanList.length-1){
+                                formPanelElements.push(configCheckbox('scan', scan.url, '', scan.label, 'condensed'));
+                            } else {
+                                formPanelElements.push(configCheckbox('scan', scan.url, '', scan.label ));
+                            }
+                        });
                         break;
                     case 'hidden':
                         formPanelElements.push(hiddenConfigInput(i,input.value));
                         break;
+                    case 'static':
+                        formPanelElements.push(staticConfigInput(i,input.value,input.value));
+                        break;
+                    case 'staticList':
+                        formPanelElements.push(staticConfigList(i,input.value));
+                        break;
                     case 'boolean':
                         if (input['user-settable']) {
-                            formPanelElements.push(configCheckbox(i,input.value,input.description))
+                            formPanelElements.push(booleanCheckbox(i,input.value,input.description));
                         } else {
                             formPanelElements.push(hiddenConfigInput(i,input.value));
                         }
                         break;
                     default:
                         if (input['user-settable']) {
-                            formPanelElements.push(basicConfigInput(i,input.value,input.required))
+                            formPanelElements.push(basicConfigInput(i,input.value,input.required));
                         } else {
                             formPanelElements.push(hiddenConfigInput(i,input.value));
                         }
@@ -260,102 +297,313 @@ var XNAT = getObject(XNAT || {});
      ** Launcher Options
      */
 
-    launcher.scanSelectDialog = function(commandId,wrapperName,wrapperId){
+    launcher.bulkSelectDialog = function(commandId,wrapperId,rootElement){
         // get command definition
-        var launcherConfig = launcher.getConfig(commandId,wrapperName);
+        var launcherConfig = launcher.getConfig(commandId,wrapperId),
+            inputs = launcherConfig.inputs,
+            outputs = launcherConfig.outputs;
 
-        var tmpl = $('div#proj-command-config-template');
-        var tmplBody = $(tmpl).find('.panel-body').html('');
+        var inputList = Object.keys(inputs);
+        if ( inputList.find(function(input){ return input === rootElement; }) ) { // if the specified root element matches an input parameter, we can proceed
+
+            inputs[rootElement].type = 'scanSelectMany';
+
+            // open the template form in a modal
+            XNAT.ui.dialog.open({
+                title: 'Set Config Values',
+                content: '<div class="panel"></div>',
+                width: 550,
+                scroll: true,
+                nuke: true,
+                beforeShow: function (obj) {
+                    var $panel = obj.$modal.find('.panel');
+                    $panel.spawn('p', 'Please specify settings for this container.');
+                    // place input and output form elements into the template
+                    $panel.append(launcher.formInputs({type: 'inputs', inputs: inputs}));
+                    $panel.append(launcher.formInputs({type: 'outputs', outputs: outputs}));
+                },
+                buttons: [
+                    {
+                        label: 'Run Container',
+                        close: false,
+                        isDefault: true,
+                        action: function (obj) {
+                            var $panel = obj.$modal.find('.panel');
+                            var selectedItems = $panel.find('input[name='+rootElement+']:checked');
+                            if (selectedItems.length === 0) {
+                                XNAT.ui.banner.top(2000,'<b>Error:</b> You must select at least one '+rootElement, 'error');
+                                return false;
+                            } else {
+                                var dataToPost = [];
+                                $(selectedItems).each(function(){
+                                    var itemsToPost = {};
+                                    itemsToPost[rootElement] = $(this).val();
+
+                                    $panel.find('input').not('[type=checkbox]').not('[type=radio]').each(function () {
+                                        // get the name and value from each text element and add it to our data to post
+                                        var key = $(this).prop('name');
+                                        itemsToPost[key] = $(this).val();
+                                    });
+
+                                    $panel.find('input[type=checkbox]').not('input[name='+rootElement+']').each(function () {
+                                        var key = $(this).prop('name');
+                                        var val = ($(this).is(':checked')) ? $(this).val() : false;
+                                        itemsToPost[key] = val;
+                                    });
+
+                                    $panel.find('select').each(function () {
+                                        var key = $(this).prop('name');
+                                        var val = $(this).find('option:selected').val();
+                                        itemsToPost[key] = val;
+                                    });
+
+                                    dataToPost.push(itemsToPost);
+                                });
+
+                                console.log(dataToPost);
+
+                                XNAT.xhr.postJSON({
+                                    url: '/xapi/wrappers/'+wrapperId+'/bulklaunch',
+                                    data: JSON.stringify(dataToPost),
+                                    success: function(data){
+                                        xmodal.loading.close();
+
+                                        var successRecord = '',
+                                            failureRecord = '';
+
+                                        if (data.successes.length > 0) {
+                                            successRecord += '<p>Successfully launched containers on: </p><ul>';
+                                            data.successes.forEach(function(success){
+                                                successRecord += '<li>'+success.params[rootElement]+'</li>';
+                                            });
+                                            successRecord += '</ul>';
+                                        }
+
+                                        if (data.failures.length > 0) {
+                                            failureRecord += '<p>Failed to launch containers on: </p><ul>';
+                                            data.failures.forEach(function(failure){
+                                                failureRecord += '<li>'+failure.params[rootElement]+'</li>';
+                                            });
+                                            failureRecord += '</ul>';
+                                        }
+
+                                        XNAT.ui.dialog.open({
+                                            title: 'Container Launch Record',
+                                            content: successRecord + failureRecord,
+                                            buttons: [
+                                                {
+                                                    label: 'OK',
+                                                    isDefault: true,
+                                                    close: true,
+                                                    action: XNAT.ui.dialog.closeAll()
+                                                }
+                                            ]
+                                        })
+                                    },
+                                    fail: function (e) {
+                                        errorHandler(e);
+                                    }
+                                });
+                            }
+
+                        }
+                    },
+                    {
+                        label: 'Cancel',
+                        isDefault: false,
+                        close: true
+                    }
+                ]
+            });
+        } else {
+            errorHandler({
+                statusText: 'Root element mismatch',
+                responseText: 'No instance of ' + rootElement + ' was found in the list of inputs for this command'
+            });
+        }
+
+    };
+
+    launcher.singleScanDialog = function(commandId,wrapperId,target,rootElement){
+        if (!target) return false;
+
+        var launcherConfig = launcher.getConfig(commandId,wrapperId);
 
         var inputs = launcherConfig.inputs;
         var outputs = launcherConfig.outputs;
 
-        tmplBody.spawn('p','Please specify settings for this container.');
+        var inputList = Object.keys(inputs);
+        if ( inputList.find(function(input){ return input === rootElement; }) ) { // if the specified root element matches an input parameter, we can proceed
 
-        // place input form elements into the template
-        XNAT.ui.panel
-            .init({
-                header: false,
-                footer: false,
-                body: launcher.formInputs({ type: 'inputs', inputs: inputs })
-            })
-            .render(tmplBody);
+            XNAT.ui.dialog.open({
+                title: 'Set Container Launch Values for Scan: '+target,
+                content: '<div class="panel"></div>',
+                width: 550,
+                scroll: true,
+                beforeShow: function(obj){
+                    var $panel = obj.$modal.find('.panel');
+                    $panel.spawn('p','Please specify settings for this container.');
 
-        // place output form elements into the template
-        XNAT.ui.panel
-            .init({
-                header: false,
-                footer: false,
-                body: launcher.formInputs({ type: 'outputs', outputs: outputs})
-            })
-            .render(tmplBody);
+                    // overwrite defaults for root element input in config object
+                    inputs[rootElement].type="static";
+                    inputs[rootElement].value=target;
 
-        // open the template form in a modal
-        xmodal.open({
-            title: 'Set Config Values',
-            template: tmpl.clone(),
-            width: 550,
-            height: 350,
-            scroll: true,
-            beforeShow: function (obj) {
-                var $panel = obj.$modal.find('#proj-config-viewer-panel');
-                $panel.find('input[type=checkbox]').each(function () {
-                    $(this).prop('checked', $(this).data('checked'));
-                })
-            },
-            okClose: false,
-            okLabel: 'Run Container',
-            okAction: function(obj){
+                    $panel.append(launcher.formInputs({ type: 'inputs', inputs: inputs }));
+                    $panel.append(launcher.formInputs({ type: 'outputs', outputs: outputs }));
 
-                console.log(commandId,wrapperId);
-                var $panel = obj.$modal.find('#proj-config-viewer-panel');
-                var dataToPost = {};
-                $panel.find('input[type=text]').not('[type=checkbox]').not('[type=radio]').each(function(){
-                    // get the name and value from each text element and add it to our data to post
-                    var key = $(this).prop('name');
-                    dataToPost[key] = $(this).val();
-                });
+                }
+            });
 
-                $panel.find('input[type=checkbox]').each(function(){
-                    var key = $(this).prop('name');
-                    var val = ($(this).is(':checked')) ? $(this).val() : false;
-                    dataToPost[key] = val;
-                });
-
-                $panel.find('select').each(function(){
-                    var key = $(this).prop('name');
-                    var val = $(this).find('option:selected').val();
-                    dataToPost[key] = val;
-                });
-
-                console.log(dataToPost);
-
-                XNAT.xhr.postJSON({
-                    url: '/xapi/commands/'+commandId+'/wrappers/'+wrapperId+'/launch',
-                    data: JSON.stringify(dataToPost),
-                    success: function(containerId){
-                        console.log(containerId, 'launched');
-                        xmodal.alert({
-                            title: 'Container Launch Success',
-                            content: '<p>Successfully launched container with ID '+containerId+'.</p>',
-                            okAction: function(){
-                                xmodal.closeAll();
-                            }
-                        })
-                    },
-                    fail: function(e){
-                        errorHandler(e);
-                    }
-                })
-            }
-        });
+        }
 
     };
 
-    launcher.singleScanDialog = function(commandId,wrapperId,scanId){
-        if (!scanId) return false;
+    launcher.bulkLaunchDialog = function(commandId,wrapperId,targets,rootElement){
+        // 'targets' should be formatted as an array of XNAT data objects that a container will run on in series.
+        // the 'root element' should match one of the inputs in the command config object, and overwrite it with the values provided in the 'targets' array
 
+        var launcherConfig = launcher.getConfig(commandId,wrapperId),
+            inputs = launcherConfig.inputs,
+            outputs = launcherConfig.outputs;
 
+        var inputList = Object.keys(inputs);
+        if ( inputList.find(function(input){ return input === rootElement; }) ) { // if the specified root element matches an input parameter, we can proceed
+
+            switch (rootElement) {
+                case 'scan':
+                    targets.forEach(function(target,i) {
+                        targets[i] = fullScanPath(target);
+                    });
+                    break;
+
+                default:
+                    break;
+            }
+
+            XNAT.ui.dialog.open({
+                title: 'Set Container Launch Values for '+targets.length+' scans',
+                content: '<div class="panel"></div>',
+                width: 550,
+                scroll: true,
+                nuke: true,
+                footerContent: '<label class="disabled"><input type="checkbox" id="applyBulkSettings" checked="checked" disabled /> Apply settings to all selected items</label>',
+                beforeShow: function(obj){
+                    var $panel = obj.$modal.find('.panel');
+                    var bulkSettings = obj.$modal.find('#applyBulkSettings');
+                    if (bulkSettings.prop('checked')) {
+                        $panel.spawn('p','Select settings to be applied to each item in your list.');
+
+                        // overwrite defaults for root element input in config object. Display a list of targets with no input. We will break this out later.
+                        inputs[rootElement].type="staticList";
+                        inputs[rootElement].value=targets.join(',');
+
+                        $panel.append(launcher.formInputs({ type: 'inputs', inputs: inputs }));
+                        $panel.append(launcher.formInputs({ type: 'outputs', outputs: outputs }));
+                    } else {
+                        xmodal.alert('What, are you trying to kill me?');
+                    }
+                },
+                buttons: [
+                    {
+                        label: 'Run Container(s)',
+                        close: false,
+                        isDefault: true,
+                        action: function(obj){
+                            xmodal.loading.open({ title: "Attempting to launch containers..." });
+
+                            var $panel = obj.$modal.find('.panel'),
+                                bulkSettings = obj.$modal.find('#applyBulkSettings'),
+                                dataToPost = [];
+
+                            if (bulkSettings.prop('checked')) {
+                                targets.forEach(function(target){ // iterate over each item in the list of selected items to run container on
+                                    var targetData = {};
+                                    targetData[rootElement] = target;
+
+                                    $panel.find('input').not('[type=checkbox]').not('[type=radio]').not('[name='+rootElement+']').each(function(){
+                                        // get the name and value from each text element and add it to our data to post
+                                        var key = $(this).prop('name');
+                                        targetData[key] = $(this).val();
+                                    });
+
+                                    $panel.find('input[type=checkbox]').each(function(){
+                                        var key = $(this).prop('name');
+                                        var val = ($(this).is(':checked')) ? $(this).val() : false;
+                                        targetData[key] = val;
+                                    });
+
+                                    $panel.find('select').each(function(){
+                                        var key = $(this).prop('name');
+                                        var val = $(this).find('option:selected').val();
+                                        targetData[key] = val;
+                                    });
+
+                                    dataToPost.push(targetData);
+                                });
+                            } else {
+                                return false; // for now, don't handle unique param settings for multiple objects.
+                            }
+
+                            console.log(JSON.stringify(dataToPost));
+
+                            XNAT.xhr.postJSON({
+                                url: '/xapi/wrappers/'+wrapperId+'/bulklaunch',
+                                data: JSON.stringify(dataToPost),
+                                success: function(data){
+                                    xmodal.loading.close();
+
+                                    var successRecord = '',
+                                        failureRecord = '';
+
+                                    if (data.successes.length > 0) {
+                                        successRecord += '<p>Successfully launched containers on: </p><ul>';
+                                        data.successes.forEach(function(success){
+                                            successRecord += '<li>'+success.params[rootElement]+'</li>';
+                                        });
+                                        successRecord += '</ul>';
+                                    }
+
+                                    if (data.failures.length > 0) {
+                                        failureRecord += '<p>Failed to launch containers on: </p><ul>';
+                                        data.failures.forEach(function(failure){
+                                            failureRecord += '<li>'+failure.params[rootElement]+'</li>';
+                                        });
+                                        failureRecord += '</ul>';
+                                    }
+
+                                    XNAT.ui.dialog.open({
+                                        title: 'Container Launch Record',
+                                        content: successRecord + failureRecord,
+                                        buttons: [
+                                            {
+                                                label: 'OK',
+                                                isDefault: true,
+                                                close: true,
+                                                action: XNAT.ui.dialog.closeAll()
+                                            }
+                                        ]
+                                    })
+                                },
+                                fail: function(e){
+                                    errorHandler(e);
+                                }
+                            })
+                        }
+                    },
+                    {
+                        label: 'Cancel',
+                        isDefault: false,
+                        close: true
+                    }
+                ]
+            });
+
+        } else {
+            errorHandler({
+                statusText: 'Root element mismatch',
+                responseText: 'No instance of '+rootElement+' was found in the list of inputs for this command'
+            });
+        }
     };
 
     /*
@@ -441,7 +689,7 @@ var XNAT = getObject(XNAT || {});
         });
 
         // if this is a session, run a second context check for scans
-        if (xsiType.indexOf('SessionData') > 0) {
+        if (XNAT.data.context.isImageSession) {
             var xsiScanType = xsiType.replace('Session','Scan');
             XNAT.xhr.getJSON({
                 url: rootUrl('/xapi/commands/available?project=' + projectId + '&xsiType=' + xsiScanType),
@@ -452,7 +700,7 @@ var XNAT = getObject(XNAT || {});
                     } else {
                         var spawnedCommands = [];
                         availableCommands.forEach(function (command) {
-                            command.launcher = 'single-scan';
+                            command.launcher = 'multiple-scans';
                             launcher.addMenuItem(command,spawnedCommands);
                         });
                         menuTarget = $('#scanActionsMenu');
@@ -463,8 +711,27 @@ var XNAT = getObject(XNAT || {});
                 fail: function(e) {
                     errorHandler(e);
                 }
-            })
+            });
+
+            // also, generate a list of scans
+            launcher.scanList = [];
+            XNAT.xhr.getJSON({
+                url: sessionUrl(),
+                success: function (data) {
+                    var scans = [], children = data.items[0].children;
+                    children.forEach(function(child){
+                        if (child.field === "scans/scan") scans = child.items;
+                    });
+                    scans.forEach(function(scan){
+                        launcher.scanList.push({
+                            id: scan.data_fields.ID,
+                            series_description: scan.data_fields.series_description
+                        });
+                    });
+                }
+            });
         }
+        
     };
 
     launcher.open = window.openCommandLauncher = function(obj){
@@ -476,10 +743,17 @@ var XNAT = getObject(XNAT || {});
 
         switch(launcher) {
             case 'select-scan':
-                XNAT.plugin.containerService.launcher.scanSelectDialog(commandId,wrapperName,wrapperId);
+                XNAT.plugin.containerService.launcher.bulkSelectDialog(commandId,wrapperId,'scan');
                 break;
             case 'single-scan':
                 XNAT.plugin.containerService.launcher.singleScanDialog(commandId,wrapperName,scanId);
+                break;
+            case 'multiple-scans':
+                var listOfScans = [];
+                $('.selectable').find('tbody').find('input:checked').each(function(){
+                    listOfScans.push($(this).val());
+                });
+                XNAT.plugin.containerService.launcher.bulkLaunchDialog(commandId,wrapperId,listOfScans,'scan');
                 break;
             default:
                 xmodal.alert('Sorry, I don\'t know what to do.');
@@ -502,6 +776,5 @@ var XNAT = getObject(XNAT || {});
     };
 
     launcher.init();
-
 
 }));
