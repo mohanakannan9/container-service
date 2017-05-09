@@ -311,7 +311,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             final Map<String, String> wrapperInputValues = Maps.newHashMap();
             final Map<String, String> commandInputValues = Maps.newHashMap();
             for (final ResolvedInputTreeNode<? extends Input> node : flatTree) {
-                final String value = node.inputValuesAndChildren().get(0).resolvedValue().value();
+                final String value = node.valuesAndChildren().get(0).resolvedValue().value();
                 if (value != null) {
                     if (node.input() instanceof CommandWrapperInput) {
                         wrapperInputValues.put(node.input().name(), value);
@@ -355,7 +355,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             final Map<String, String> wrapperInputValues = Maps.newHashMap();
             final Map<String, String> commandInputValues = Maps.newHashMap();
             for (final ResolvedInputTreeNode<? extends Input> node : flatTree) {
-                final String value = node.inputValuesAndChildren().get(0).resolvedValue().value();
+                final String value = node.valuesAndChildren().get(0).resolvedValue().value();
                 if (value != null) {
                     if (node.input() instanceof CommandWrapperInput) {
                         wrapperInputValues.put(node.input().name(), value);
@@ -397,7 +397,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             log.debug("Adding input \"{}\" to flattened tree.", node.input().name());
             flatTree.add(node);
 
-            final List<ResolvedInputTreeValueAndChildren> resolvedValueAndChildren = node.inputValuesAndChildren();
+            final List<ResolvedInputTreeValueAndChildren> resolvedValueAndChildren = node.valuesAndChildren();
             if (resolvedValueAndChildren.size() == 1) {
                 // This node has a single value, so we can attempt to flatten its children
                 final ResolvedInputTreeValueAndChildren singleValue = resolvedValueAndChildren.get(0);
@@ -1076,7 +1076,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 }
             }
 
-            thisNode.inputValuesAndChildren().addAll(resolvedValuesAndChildren);
+            thisNode.valuesAndChildren().addAll(resolvedValuesAndChildren);
             log.debug("Done resolving node for input \"{}\".", preresolvedInputNode.input().name());
             return thisNode;
         }
@@ -1086,7 +1086,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             // Collect any unique values into the resolvedValuesByReplacementKey map
             final Map<String, String> resolvedValuesByReplacementKey = Maps.newHashMap();
 
-            final List<ResolvedInputTreeValueAndChildren> resolvedValueAndChildren = node.inputValuesAndChildren();
+            final List<ResolvedInputTreeValueAndChildren> resolvedValueAndChildren = node.valuesAndChildren();
             if (resolvedValueAndChildren.size() == 1) {
                 // This node has a single value, so we can add it to the map of resolved values by replacement key
                 final ResolvedInputTreeValueAndChildren singleValue = resolvedValueAndChildren.get(0);
@@ -1115,7 +1115,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             // Collect any unique values into the resolvedValuesByReplacementKey map
             final Map<String, String> resolvedValuesByReplacementKey = Maps.newHashMap();
 
-            final List<ResolvedInputTreeValueAndChildren> resolvedValueAndChildren = node.inputValuesAndChildren();
+            final List<ResolvedInputTreeValueAndChildren> resolvedValueAndChildren = node.valuesAndChildren();
             if (resolvedValueAndChildren.size() == 1) {
                 // This node has a single value, so we can add it to the map of resolved values by replacement key
                 final ResolvedInputTreeValueAndChildren singleValue = resolvedValueAndChildren.get(0);
@@ -1537,9 +1537,9 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 log.debug("Input \"{}\" is a command input, and cannot provide files to mounts.", input.name());
             }
 
-            if (node.inputValuesAndChildren() != null && node.inputValuesAndChildren().size() == 1) {
+            if (node.valuesAndChildren() != null && node.valuesAndChildren().size() == 1) {
                 log.debug("Input \"{}\" has a unique value. Checking children.", input.name());
-                final ResolvedInputTreeValueAndChildren singleValue = node.inputValuesAndChildren().get(0);
+                final ResolvedInputTreeValueAndChildren singleValue = node.valuesAndChildren().get(0);
                 if (singleValue.children() == null || singleValue.children().isEmpty()) {
                     log.debug("Input \"{}\" has no children.", input.name());
                 } else {
@@ -1594,7 +1594,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                             inputName,
                             inputType);
 
-                    final List<ResolvedInputTreeValueAndChildren> valuesAndChildren = sourceInput.inputValuesAndChildren();
+                    final List<ResolvedInputTreeValueAndChildren> valuesAndChildren = sourceInput.valuesAndChildren();
                     if (valuesAndChildren.size() > 1) {
                         log.debug("Input \"{}\" has multiple resolved values. Adding them all to the mount. (This may be a bad idea.)");
                     }
