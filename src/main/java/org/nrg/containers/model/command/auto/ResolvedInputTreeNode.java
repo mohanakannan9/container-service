@@ -4,9 +4,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.Lists;
-import org.nrg.containers.model.command.auto.Command.CommandInput;
-import org.nrg.containers.model.command.auto.Command.CommandWrapperDerivedInput;
-import org.nrg.containers.model.command.auto.Command.CommandWrapperExternalInput;
 import org.nrg.containers.model.command.auto.Command.Input;
 
 import java.util.List;
@@ -17,26 +14,8 @@ public abstract class ResolvedInputTreeNode<T extends Input> {
     @JsonProperty("values-and-children") public abstract List<ResolvedInputTreeValueAndChildren> valuesAndChildren();
 
     public static ResolvedInputTreeNode<? extends Input> create(final PreresolvedInputTreeNode preresolvedInputTreeNode) {
-        final Input input = preresolvedInputTreeNode.input();
-        if (input instanceof CommandWrapperExternalInput) {
-            return create((CommandWrapperExternalInput) input);
-        } else if (input instanceof CommandWrapperDerivedInput) {
-            return create((CommandWrapperDerivedInput) input);
-        } else {
-            return create((CommandInput) input);
-        }
-    }
-
-    static ResolvedInputTreeNode<CommandWrapperExternalInput> create(final CommandWrapperExternalInput externalInput) {
-        return new AutoValue_ResolvedInputTreeNode<>(externalInput, Lists.<ResolvedInputTreeValueAndChildren>newArrayList());
-    }
-
-    static ResolvedInputTreeNode<CommandWrapperDerivedInput> create(final CommandWrapperDerivedInput derivedInput) {
-        return new AutoValue_ResolvedInputTreeNode<>(derivedInput, Lists.<ResolvedInputTreeValueAndChildren>newArrayList());
-    }
-
-    static ResolvedInputTreeNode<CommandInput> create(final CommandInput commandInput) {
-        return new AutoValue_ResolvedInputTreeNode<>(commandInput, Lists.<ResolvedInputTreeValueAndChildren>newArrayList());
+        return new AutoValue_ResolvedInputTreeNode<>(preresolvedInputTreeNode.input(),
+                Lists.<ResolvedInputTreeValueAndChildren>newArrayList());
     }
 
     @JsonCreator
