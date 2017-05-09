@@ -137,6 +137,7 @@ I want to...
     * assessor (❌ [XNAT-4556](https://issues.xnat.org/browse/XNAT-4556) and  [CS-29](https://issues.xnat.org/browse/CS-29))
     * scan (❌ [CS-8](https://issues.xnat.org/browse/CS-8), may be solved by the XNAT ticket 👆🏼)
     * type of thing altogether, that just aggregates results of all the stuff I ran (❌)
+* create a temporary file for display (i.e. a chart) without saving it. (Perhaps gets saved to a temporary cache that gets regularly purged.) (❌ [CS-51](https://issues.xnat.org/browse/CS-51))
 
 # Containers
 
@@ -216,7 +217,7 @@ Some of the container service functions need to be locked down to only certain X
     * Manage commands (configure project-level defaults, enable/disable on project)
     * View containers launched from a project
 * Functions that are available to all users
-    * Launch commands within a project
+    * Launch commands within a project – as long as the user's CRUD permissions in a project match the CRUD outcomes of the command.
     * GET site-wide command definitions
     * GET configured project commands
 
