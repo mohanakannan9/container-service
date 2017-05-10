@@ -11,19 +11,20 @@ import javax.annotation.Nullable;
 @AutoValue
 public abstract class ResolvedInputValue {
     @JsonProperty("type") public abstract String type();
-    @Nullable
-    @JsonProperty("value") public abstract String value();
-    @JsonIgnore
-    @Nullable public abstract XnatModelObject xnatModelObject();
+    @Nullable @JsonProperty("value") public abstract String value();
+    @Nullable @JsonProperty("value-label") public abstract String valueLabel();
+    @JsonIgnore @Nullable public abstract XnatModelObject xnatModelObject();
     @Nullable @JsonProperty("json-value") public abstract String jsonValue();
 
     @JsonCreator
     public static ResolvedInputValue create(@JsonProperty("type") final String type,
                                             @JsonProperty("value") final String value,
+                                            @JsonProperty("value-label") final String valueLabel,
                                             @JsonProperty("json-value") final String jsonValue) {
         return builder()
                 .type(type)
                 .value(value)
+                .valueLabel(valueLabel)
                 .jsonValue(jsonValue == null ? value : jsonValue)
                 .build();
     }
@@ -36,6 +37,7 @@ public abstract class ResolvedInputValue {
     public static abstract class Builder {
         public abstract Builder type(String type);
         public abstract Builder value(String value);
+        public abstract Builder valueLabel(String valueLabel);
         public abstract Builder xnatModelObject(XnatModelObject xnatModelObject);
         public abstract Builder jsonValue(String jsonValue);
 

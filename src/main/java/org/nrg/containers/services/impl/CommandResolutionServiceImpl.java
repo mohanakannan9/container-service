@@ -557,7 +557,9 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             log.info("Done resolving input \"{}\". Resolved value: \"{}\".", input.name(), resolvedValue);
 
             String jsonValue = resolvedValue;
+            String valueLabel = resolvedValue;
             if (resolvedModelObject != null) {
+                valueLabel = resolvedModelObject.getLabel();
                 try {
                     jsonValue = mapper.writeValueAsString(resolvedModelObject);
                 } catch (JsonProcessingException e) {
@@ -568,6 +570,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             return ResolvedInputValue.builder()
                     .type(input.type())
                     .value(resolvedValue)
+                    .valueLabel(valueLabel)
                     .xnatModelObject(resolvedModelObject)
                     .jsonValue(jsonValue)
                     .build();
@@ -848,7 +851,9 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 final String resolvedValue = resolvedValues.get(i);
                 final XnatModelObject xnatModelObject = resolvedXnatObjects == null ? null : resolvedXnatObjects.get(i);
                 String jsonValue = resolvedValue;
+                String valueLabel = resolvedValue;
                 if (xnatModelObject != null) {
+                    valueLabel = xnatModelObject.getLabel();
                     try {
                         jsonValue = mapper.writeValueAsString(xnatModelObject);
                     } catch (JsonProcessingException e) {
@@ -859,6 +864,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 resolvedInputs.add(ResolvedInputValue.builder()
                         .type(input.type())
                         .value(resolvedValue)
+                        .valueLabel(valueLabel)
                         .xnatModelObject(xnatModelObject)
                         .jsonValue(jsonValue)
                         .build());
@@ -929,6 +935,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             return ResolvedInputValue.builder()
                     .type(input.type())
                     .value(resolvedValue)
+                    .valueLabel(resolvedValue)
                     .jsonValue(resolvedValue)
                     .build();
         }
