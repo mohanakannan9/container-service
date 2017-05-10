@@ -302,26 +302,6 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
 
             final List<ResolvedInputTreeNode<? extends Input>> resolvedInputTrees = resolveInputTrees();
 
-            // TODO this is temporary, until we figure out a better way to store the input trees
-            // Read out all the input trees into Map<String, String>s
-            final List<ResolvedInputTreeNode<? extends Input>> flatTree = Lists.newArrayList();
-            for (final ResolvedInputTreeNode<? extends Input> rootNode : resolvedInputTrees) {
-                flatTree.addAll(flattenTree(rootNode));
-            }
-            final Map<String, String> wrapperInputValues = Maps.newHashMap();
-            final Map<String, String> commandInputValues = Maps.newHashMap();
-            for (final ResolvedInputTreeNode<? extends Input> node : flatTree) {
-                final String value = node.valuesAndChildren().get(0).resolvedValue().value();
-                if (value != null) {
-                    if (node.input() instanceof CommandWrapperInput) {
-                        wrapperInputValues.put(node.input().name(), value);
-                    } else {
-                        commandInputValues.put(node.input().name(), value);
-                    }
-                }
-            }
-
-
             return PartiallyResolvedCommand.builder()
                     .wrapperId(commandWrapper.id())
                     .wrapperName(commandWrapper.name())
@@ -331,8 +311,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                     .commandDescription(command.description())
                     .image(command.image())
                     .rawInputValues(inputValues)
-                    .wrapperInputValues(wrapperInputValues) // TODO remove this property
-                    .commandInputValues(commandInputValues) // TODO remove this property
+                    .resolvedInputTrees(resolvedInputTrees)
                     .build();
         }
 
