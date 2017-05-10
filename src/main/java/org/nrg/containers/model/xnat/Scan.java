@@ -51,6 +51,7 @@ public class Scan extends XnatModelObject {
         this.id = xnatImagescandataI.getId();
         this.xsiType = xnatImagescandataI.getXSIType();
         this.scanType = xnatImagescandataI.getType();
+        this.label = String.format("%s – %s", this.id, this.scanType);
         if (this.xnatImagescandataI instanceof XnatImagescandata) {
             this.directory = ((XnatImagescandata) xnatImagescandataI).deriveScanDir();
         }
