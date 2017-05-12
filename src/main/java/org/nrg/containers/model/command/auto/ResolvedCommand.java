@@ -154,8 +154,7 @@ public abstract class ResolvedCommand {
         @JsonProperty("image") public abstract String image();
         @JsonProperty("type") public abstract String type();
         @JsonProperty("raw-input-values") public abstract ImmutableMap<String, String> rawInputValues();
-        @JsonProperty("wrapper-input-values") public abstract ImmutableMap<String, String> wrapperInputValues();
-        @JsonProperty("command-input-values") public abstract ImmutableMap<String, String> commandInputValues();
+        @JsonProperty("resolved-input-trees") public abstract ImmutableList<ResolvedInputTreeNode<? extends Command.Input>> resolvedInputTrees();
 
         @JsonCreator
         public static PartiallyResolvedCommand create(@JsonProperty("wrapper-id") final Long wrapperId,
@@ -167,8 +166,7 @@ public abstract class ResolvedCommand {
                                                       @JsonProperty("image") final String image,
                                                       @JsonProperty("type") final String type,
                                                       @JsonProperty("raw-input-values") final Map<String, String> rawInputValues,
-                                                      @JsonProperty("wrapper-input-values") final Map<String, String> wrapperInputValues,
-                                                      @JsonProperty("command-input-values") final Map<String, String> commandInputValues) {
+                                                      @JsonProperty("resolved-input-trees") final List<ResolvedInputTreeNode<? extends Command.Input>> resolvedInputTrees) {
             return builder()
                     .wrapperId(wrapperId)
                     .wrapperName(wrapperName)
@@ -179,8 +177,7 @@ public abstract class ResolvedCommand {
                     .image(image)
                     .type(type == null ? CommandEntity.DEFAULT_TYPE.getName() : type)
                     .rawInputValues(rawInputValues == null ? Collections.<String, String>emptyMap() : rawInputValues)
-                    .wrapperInputValues(wrapperInputValues == null ? Collections.<String, String>emptyMap() : wrapperInputValues)
-                    .commandInputValues(commandInputValues == null ? Collections.<String, String>emptyMap() : commandInputValues)
+                    .resolvedInputTrees(resolvedInputTrees == null ? Collections.<ResolvedInputTreeNode<? extends Command.Input>>emptyList() : resolvedInputTrees)
                     .build();
         }
 
@@ -205,16 +202,10 @@ public abstract class ResolvedCommand {
                 rawInputValuesBuilder().put(inputName, inputValue);
                 return this;
             }
-            public abstract Builder wrapperInputValues(Map<String, String> wrapperInputValues);
-            public abstract ImmutableMap.Builder<String, String> wrapperInputValuesBuilder();
-            public Builder addWrapperInputValue(final String inputName, final String inputValue) {
-                wrapperInputValuesBuilder().put(inputName, inputValue);
-                return this;
-            }
-            public abstract Builder commandInputValues(Map<String, String> commandInputValues);
-            public abstract ImmutableMap.Builder<String, String> commandInputValuesBuilder();
-            public Builder addCommandInputValue(final String inputName, final String inputValue) {
-                commandInputValuesBuilder().put(inputName, inputValue);
+            public abstract Builder resolvedInputTrees(List<ResolvedInputTreeNode<? extends Command.Input>> resolvedInputTrees);
+            abstract ImmutableList.Builder<ResolvedInputTreeNode<? extends Command.Input>> resolvedInputTreesBuilder();
+            public Builder addResolvedInputTree(final ResolvedInputTreeNode<? extends Command.Input> root) {
+                resolvedInputTreesBuilder().add(root);
                 return this;
             }
 
