@@ -10,8 +10,10 @@ import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.XapiRequestMapping;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
+import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -23,9 +25,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.List;
 
-import static org.springframework.web.bind.annotation.RequestMethod.DELETE;
-import static org.springframework.web.bind.annotation.RequestMethod.GET;
-import static org.springframework.web.bind.annotation.RequestMethod.POST;
+import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 @XapiRestController
 @RequestMapping("/commandeventmapping")
@@ -46,7 +46,7 @@ public class CommandEventMappingRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(method = GET)
-    @ApiOperation(value = "Get all Commands Event Mappings")
+    @ApiOperation(value = "Get all Commands-Event-Mappings")
     @ResponseBody
     public List<CommandEventMapping> getMappings() {
         return commandEventMappingService.getAll();
@@ -57,6 +57,8 @@ public class CommandEventMappingRestApi extends AbstractXapiRestController {
     public ResponseEntity<CommandEventMapping> createCommand(final @RequestBody CommandEventMapping commandEventMapping)
             throws BadRequestException {
         try {
+            final UserI userI = XDAT.getUserDetails();
+            commandEventMapping.setSubscriptionUserId(userI.getID());
             final CommandEventMapping created = commandEventMappingService.create(commandEventMapping);
             return new ResponseEntity<>(created, HttpStatus.CREATED);
         } catch (NrgRuntimeException e) {
@@ -64,8 +66,9 @@ public class CommandEventMappingRestApi extends AbstractXapiRestController {
         }
     }
 
+
     @XapiRequestMapping(value = {"/{id}"}, method = GET)
-    @ApiOperation(value = "Get a CommandEventMapping")
+    @ApiOperation(value = "Get a Command-Event-Mapping")
     @ResponseBody
     public CommandEventMapping retrieve(final @PathVariable Long id) {
         return commandEventMappingService.retrieve(id);
