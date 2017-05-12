@@ -31,6 +31,7 @@ var XNAT = getObject(XNAT || {});
         undefined,
         launcherMenu = $('#container-launch-menu'),
         rootUrl = XNAT.url.rootUrl,
+        csrfUrl = XNAT.url.csrfUrl,
         projectId = XNAT.data.context.projectID,
         xsiType = XNAT.data.context.xsiType;
 
@@ -113,7 +114,7 @@ var XNAT = getObject(XNAT || {});
                     type: "string",
                     value: null,
                     'user-settable': true,
-                    advanced: false
+                    advanced: true
                 }
             },
             outputs: {
@@ -124,172 +125,10 @@ var XNAT = getObject(XNAT || {});
             }
 
         };
-
         return config;
     };
 
-    /*
-     * Panel form elements for launcher
-     */
-
-    function scanSelector(scanArray){
-        // build a scan object from the array of scans
-        var scanObj = {};
-        scanArray.forEach(function(item){
-            var scanPath = fullScanPath(item.id);
-            scanObj[scanPath] = item.id + ' - ' +item.series_description;
-        });
-        var optionsObj = {
-            label: 'Scan',
-            options: scanObj,
-            description: 'Required',
-            name: 'scan'
-        };
-        return XNAT.ui.panel.select.menu(optionsObj).element;
-    }
-
-    launcher.formInputs = function(config) {
-        var formPanelElements = [];
-
-        function basicConfigInput(name,value,required) {
-            value = (value === undefined || value === null || value == 'null') ? '' : value;
-            var description = (required) ? 'Required' : '';
-            return XNAT.ui.panel.input.text({
-                name: name,
-                value: value,
-                description: description,
-                label: name
-            }).element;
-        }
-
-        function configCheckbox(name,value,outerLabel,innerLabel,condensed){
-
-            var vertSpace = function(condensed) {
-                return (condensed) ? '' : spawn('br.clear');
-            };
-
-            return spawn('div.panel-element', { data: { name: name }}, [
-                spawn('label.element-label', outerLabel),
-                spawn('div.element-wrapper', [
-                    spawn('label', [
-                        spawn('input', { type: 'checkbox', name: name, value: value }),
-                        innerLabel
-                    ])
-                ]),
-                vertSpace(condensed)
-            ]);
-        }
-
-        function booleanCheckbox(name,checked,description,onText,offText){
-            checked = (checked === 'true') ? ' checked' : '';
-            description = description || name;
-
-            return '<div class="panel-element" data-name="'+name+'"><label class="element-label" for="'+name+'">'+name+'</label><div class="element-wrapper"><label><input type="checkbox" value="true" name="'+name+'" '+ checked +' />'+description+'</label></div><br class="clear" /></div>';
-        }
-
-        function hiddenConfigInput(name,value) {
-            return XNAT.ui.input.hidden({
-                name: name,
-                value: value
-            }).element;
-        }
-
-        function staticConfigInput(name,value,text) {
-            return spawn(
-                'div.panel-element', { data: { name: name } }, [
-                    spawn('label.element-label', name),
-                    spawn('div.element-wrapper', text),
-                    XNAT.ui.panel.input.hidden({
-                        name: name,
-                        value: value
-                    }).element,
-                    spawn('br.clear')
-                ]
-            );
-        }
-
-        function staticConfigList(name,list) {
-            var listArray = list.split(',');
-            listArray.forEach(function(item,i){
-                listArray[i] = '<li>'+item+'</li>'
-            });
-            return spawn(
-                'div.panel-element', { data: { name: name } }, [
-                    spawn('label.element-label', name),
-                    spawn('div.element-wrapper', [
-                        spawn('ul',{ style: {
-                            'list-style-type': 'none',
-                            margin: 0,
-                            padding: 0
-                        }},listArray.join(''))
-                    ]),
-                    spawn('br.clear')
-                ]
-            )
-        }
-
-        // determine which type of table to build.
-        if (config.type === 'inputs') {
-            var inputs = config.inputs;
-
-            for (var i in inputs) {
-                var input = inputs[i];
-                // create a panel.input for each input type
-                switch (input.type){
-                    case 'scanSelectOne':
-                        formPanelElements.push(scanSelector(launcher.scanList, input.value));
-                        break;
-                    case 'scanSelectMany':
-                        launcher.scanList.forEach(function(scan,i){
-                            scan.url = fullScanPath(scan.id);
-                            scan.label = scan.id + ' - ' + scan.series_description;
-                            if (i === 0) {
-                                formPanelElements.push(configCheckbox('scan', scan.url, 'scans', scan.label, 'condensed'));
-                            } else if (i < launcher.scanList.length-1){
-                                formPanelElements.push(configCheckbox('scan', scan.url, '', scan.label, 'condensed'));
-                            } else {
-                                formPanelElements.push(configCheckbox('scan', scan.url, '', scan.label ));
-                            }
-                        });
-                        break;
-                    case 'hidden':
-                        formPanelElements.push(hiddenConfigInput(i,input.value));
-                        break;
-                    case 'static':
-                        formPanelElements.push(staticConfigInput(i,input.value,input.value));
-                        break;
-                    case 'staticList':
-                        formPanelElements.push(staticConfigList(i,input.value));
-                        break;
-                    case 'boolean':
-                        if (input['user-settable']) {
-                            formPanelElements.push(booleanCheckbox(i,input.value,input.description));
-                        } else {
-                            formPanelElements.push(hiddenConfigInput(i,input.value));
-                        }
-                        break;
-                    default:
-                        if (input['user-settable']) {
-                            formPanelElements.push(basicConfigInput(i,input.value,input.required));
-                        } else {
-                            formPanelElements.push(hiddenConfigInput(i,input.value));
-                        }
-                }
-            }
-
-        } else if (config.type === 'outputs') {
-            var outputs = config.outputs;
-
-            for (var o in outputs) {
-                var output = outputs[o];
-                formPanelElements.push(hiddenConfigInput(o,output.value));
-            }
-
-        }
-
-        // return spawned panel.
-        return formPanelElements;
-    };
+    
 
 
 
@@ -300,27 +139,42 @@ var XNAT = getObject(XNAT || {});
     launcher.bulkSelectDialog = function(commandId,wrapperId,rootElement){
         // get command definition
         var launcherConfig = launcher.getConfig(commandId,wrapperId),
-            inputs = launcherConfig.inputs,
-            outputs = launcherConfig.outputs;
+            inputs = launcherConfig.inputs.concat(launcherConfig.outputs),
+            advancedInputs = {},
+            normalInputs = {};
 
         var inputList = Object.keys(inputs);
         if ( inputList.find(function(input){ return input === rootElement; }) ) { // if the specified root element matches an input parameter, we can proceed
 
             inputs[rootElement].type = 'scanSelectMany';
 
+            // separate normal inputs from advanced inputs
+            for (var i in inputs) {
+                if (paramObj[i].advanced) {
+                    advancedInputs[i] = paramObj[i];
+                } else {
+                    normalInputs[i] = paramObj[i];
+                }
+            }
+
             // open the template form in a modal
             XNAT.ui.dialog.open({
                 title: 'Set Config Values',
-                content: '<div class="panel"></div>',
+                content: spawn('div.panel'),
                 width: 550,
                 scroll: true,
                 nuke: true,
                 beforeShow: function (obj) {
                     var $panel = obj.$modal.find('.panel');
                     $panel.spawn('p', 'Please specify settings for this container.');
-                    // place input and output form elements into the template
-                    $panel.append(launcher.formInputs({type: 'inputs', inputs: inputs}));
-                    $panel.append(launcher.formInputs({type: 'outputs', outputs: outputs}));
+
+                    // place normal and advanced input form elements into the template
+                    $panel.append(launcher.formInputs(normalInputs));
+
+                    if (Object.keys(advancedInputs).length > 0) {
+                        $panel.spawn('p','Advanced Inputs');
+                        $panel.append(launcher.formInputs(advancedInputs));
+                    }
                 },
                 buttons: [
                     {
@@ -463,8 +317,9 @@ var XNAT = getObject(XNAT || {});
         // the 'root element' should match one of the inputs in the command config object, and overwrite it with the values provided in the 'targets' array
 
         var launcherConfig = launcher.getConfig(commandId,wrapperId),
-            inputs = launcherConfig.inputs,
-            outputs = launcherConfig.outputs;
+            inputs = launcherConfig.inputs.concat(launcherConfig.outputs),
+            normalInputs = {},
+            advancedInputs = {};
 
         var inputList = Object.keys(inputs);
         if ( inputList.find(function(input){ return input === rootElement; }) ) { // if the specified root element matches an input parameter, we can proceed
@@ -482,7 +337,7 @@ var XNAT = getObject(XNAT || {});
 
             XNAT.ui.dialog.open({
                 title: 'Set Container Launch Values for '+targets.length+' scans',
-                content: '<div class="panel"></div>',
+                content: spawn('div.panel'),
                 width: 550,
                 scroll: true,
                 nuke: true,
@@ -497,10 +352,26 @@ var XNAT = getObject(XNAT || {});
                         inputs[rootElement].type="staticList";
                         inputs[rootElement].value=targets.join(',');
 
-                        $panel.append(launcher.formInputs({ type: 'inputs', inputs: inputs }));
-                        $panel.append(launcher.formInputs({ type: 'outputs', outputs: outputs }));
+                        // separate normal inputs from advanced inputs
+                        for (var i in inputs) {
+                            if (paramObj[i].advanced) {
+                                advancedInputs[i] = paramObj[i];
+                            } else {
+                                normalInputs[i] = paramObj[i];
+                            }
+                        }
+
+                        // add normal and advanced form inputs
+                        $panel.append(launcher.formInputs(normalInputs));
+
+                        if (Object.keys(advancedInputs).length > 0) {
+                            $panel.append(launcher.formInputs(advancedInputs));
+                        }
                     } else {
-                        xmodal.alert('What, are you trying to kill me?');
+                        errorHandler({
+                            statusText: 'Bulk Launch Dialog',
+                            responseText: 'Method not yet supported'
+                        });
                     }
                 },
                 buttons: [
