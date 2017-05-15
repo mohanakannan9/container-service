@@ -1,0 +1,55 @@
+{
+    "name": "find",
+    "description": "find all the files and directories in the input mount.",
+    "type": "docker",
+    "version": "1.0",
+    "schema-version": "1.0",
+    "image": "busybox:latest",
+    "command-line": "find /input -type f > /output/files.txt; find /input -type d > /output/dirs.txt",
+    "mounts": [
+        {
+            "name": "input",
+            "writable": false,
+            "path": "/input"
+        },
+        {
+            "name": "output",
+            "writable": true,
+            "path": "/output"
+        }
+    ],
+    "inputs": [],
+    "outputs": [
+        {
+            "name": "outputs",
+            "description": "The files produced by the command.",
+            "mount": "output",
+            "required": true
+        }
+    ],
+    "xnat": [
+        {
+            "name": "find-in-project",
+            "description": "Proof of concept that we can mount an entire project from the archive into a container.",
+            "contexts": ["xnat:projectData"],
+            "external-inputs": [
+                {
+                    "name": "project",
+                    "description": "A project",
+                    "type": "Project",
+                    "required": true,
+                    "provides-files-for-command-mount": "input"
+                }
+            ],
+            "output-handlers": [
+                {
+                    "name": "file-and-dir-lists",
+                    "accepts-command-output": "outputs",
+                    "as-a-child-of-xnat-input": "project",
+                    "type": "Resource",
+                    "label": "FILES_AND_DIRS"
+                }
+            ]
+        }
+    ]
+}
