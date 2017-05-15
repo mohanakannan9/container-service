@@ -313,7 +313,7 @@ public abstract class ResolvedCommand {
     public abstract static class ResolvedCommandMountFiles {
         @JsonProperty("from-xnat-input") public abstract String fromXnatInput();
         @Nullable @JsonProperty("from-uri") public abstract String fromUri();
-        @JsonProperty("root-directory") public abstract String rootDirectory();
+        @Nullable @JsonProperty("root-directory") public abstract String rootDirectory();
         @Nullable @JsonProperty("path") public abstract String path();
 
         public static ResolvedCommandMountFiles create(@JsonProperty("from-xnat-input") final String fromXnatInput,
