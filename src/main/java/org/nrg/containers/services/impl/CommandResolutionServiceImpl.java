@@ -1505,7 +1505,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
 
             log.debug("Search input trees to find inputs that provide files to mounts.");
             Map<String, List<ResolvedInputTreeNode<? extends Input>>> mountSourceInputs = Maps.newHashMap();
-            for (final ResolvedInputTreeNode rootNode : resolvedInputTrees) {
+            for (final ResolvedInputTreeNode<? extends Input> rootNode : resolvedInputTrees) {
                 mountSourceInputs = combineMaps(mountSourceInputs, findMountSourceInputs(rootNode));
             }
 
@@ -1698,14 +1698,14 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                             localDirectory = getBuildDirectory();
                             log.debug("Mount \"{}\" has a root directory and a file. Copying the file from the root directory to build directory.", partiallyResolvedCommandMount.name());
 
-                            // TODO copy the file in "path", relative to the root directory, to the build directory
+                            // TODO CS-54 copy the file in "path", relative to the root directory, to the build directory
                             log.debug("TODO");
                         } else {
                             // The mount is set to "writable".
                             localDirectory = getBuildDirectory();
                             log.debug("Mount \"{}\" has a root directory, and is set to \"writable\". Copying all files from the root directory to build directory.", partiallyResolvedCommandMount.name());
 
-                            // TODO We must copy all files out of the root directory to a build directory.
+                            // TODO CS-54 We must copy all files out of the root directory to a build directory.
                             log.debug("TODO");
                         }
                     } else {
@@ -1716,7 +1716,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 } else if (hasPath) {
                     log.debug("Mount \"{}\" has a file. Copying it to build directory.", partiallyResolvedCommandMount.name());
                     localDirectory = getBuildDirectory();
-                    // TODO copy the file to the build directory
+                    // TODO CS-54 copy the file to the build directory
                     log.debug("TODO");
 
                 } else {
