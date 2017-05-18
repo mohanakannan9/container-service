@@ -11,7 +11,7 @@
  * Flexible script to be used in the UI to launch
  */
 
-console.log('commandUIResolver.js');
+console.log('commandUiResolver.js');
 
 var XNAT = getObject(XNAT || {});
 
@@ -57,7 +57,7 @@ var XNAT = getObject(XNAT || {});
         return (condensed) ? '' : spawn('br.clear');
     };
 
-    selectors.defaultConfigInput = function(opts){
+    var defaultConfigInput = function(opts){
         var name = opts.name,
             value = opts.value,
             label = opts.label,
@@ -85,11 +85,11 @@ var XNAT = getObject(XNAT || {});
             description: description,
             label: label,
             data: dataProps,
-            className: classes.split(' ')
+            className: classes.join(' ')
         }).element;
     };
 
-    selectors.configCheckbox = function(opts){
+    var configCheckbox = function(opts){
         var name = opts.name,
             value = opts.value,
             checked = opts.checked,
@@ -102,9 +102,11 @@ var XNAT = getObject(XNAT || {});
             childOf = opts['parent'],
             classes = ['panel-element panel-input'],
             dataProps = { name: name },
-            disabled = false;
+            disabled = opts.disabled || false,
+            attr = {};
 
-        checked = (checked === 'true') ? ' checked' : '';
+        if (checked === 'true') attr['checked'] = 'checked';
+        if (disabled) attr['disabled'] = 'disabled';
 
         value = (boolean) ? 'true' : value;
 
@@ -118,14 +120,11 @@ var XNAT = getObject(XNAT || {});
             disabled = 'disabled';
         }
 
-        return spawn('div', { className: classes.split(' '), data: dataProps }, [
+        return spawn('div', { className: classes.join(' '), data: dataProps }, [
             spawn('label.element-label', outerLabel),
             spawn('div.element-wrapper', [
                 spawn('label', [
-                    spawn('input', { type: 'checkbox', name: name, value: value, attr: {
-                        'checked': checked,
-                        'disabled': disabled
-                    } }),
+                    spawn('input', { type: 'checkbox', name: name, value: value, attr: attr }),
                     innerLabel
                 ]),
                 helptext(description)
@@ -134,58 +133,46 @@ var XNAT = getObject(XNAT || {});
         ]);
     };
 
-    selectors.hiddenConfigInput = function(opts) {
+    var hiddenConfigInput = function(opts) {
         var name = opts.name,
             value = opts.value,
             childOf = opts.childOf,
             dataProps = {},
-            disabled = false;
-
-        if (childOf) {
-            dataProps['childOf'] = childOf;
-            disabled = 'disabled';
-        }
+            attr = (opts.disabled) ? { 'disabled':'disabled' } : {};
 
         return XNAT.ui.input.hidden({
             name: name,
             value: value,
             data: dataProps,
-            attr: {
-                'disabled': disabled
-            }
+            attr: attr
         }).element;
     };
 
-    selectors.staticConfigInput = function(opts) {
+    var staticConfigInput = function(opts) {
         var name = opts.name,
             value = opts.value,
-            text = opts.description,
             childOf = opts.childOf,
             classes = ['panel-element'],
             dataProps = { name: name },
-            disabled = false;
-
-        if (childOf) {
-            classes.push('hidden');
-            dataProps['childOf'] = childOf;
-            disabled = 'disabled';
-        }
+            attr = (opts.disabled) ? { 'disabled':'disabled' } : {};
 
         return spawn(
-            'div', { className: classes.split(' '), data: dataProps }, [
+            'div', { className: classes.join(' '), data: dataProps }, [
                 spawn('label.element-label', name),
-                spawn('div.element-wrapper', text),
-                XNAT.ui.panel.input.hidden({
+                spawn('div.element-wrapper', { style: { 'word-wrap': 'break-word' } }, value),
+                spawn('input',{
+                    type: 'hidden',
                     name: name,
                     value: value,
-                    attr: { 'disabled': disabled }
-                }).element,
+                    data: dataProps,
+                    attr: attr
+                }),
                 spawn('br.clear')
             ]
         );
     };
 
-    selectors.staticConfigList = function(name,list) {
+    var staticConfigList = function(name,list) {
         var listArray = list.split(',');
         listArray.forEach(function(item,i){
             listArray[i] = '<li>'+item+'</li>'
@@ -205,19 +192,21 @@ var XNAT = getObject(XNAT || {});
         )
     };
 
-    launcher.formInputs = function(inputs) {
+    launcher.formInputs = function(inputs,advanced) {
         var formPanelElements = [];
+        advanced = advanced || false;
 
         for (var i in inputs) {
             var input = inputs[i];
 
             var opts = {
-                name: i,
+                name: input.name || i,
                 label: input.label || i,
                 value: input.value,
-                childOf: input.childOf || false,
+                childOf: input.parent || false,
                 description: input.description || null,
-                required: input.required || false
+                required: input.required || false,
+                disabled: input.disabled || false
             };
             // create a panel.input for each input type
             switch (input.type){
@@ -257,16 +246,20 @@ var XNAT = getObject(XNAT || {});
                     opts.outerLabel = opts.label;
                     opts.innerLabel = input.innerLabel || 'True';
                     opts.checked = (input.value === 'true') ? 'checked' : false;
-                    formPanelElements.push(hiddenConfigInput(opts));
+                    formPanelElements.push(configCheckbox(opts));
                     break;
                 default:
                     formPanelElements.push(defaultConfigInput(opts));
             }
         }
 
-
-        // return spawned panel.
-        return formPanelElements;
+        if (!advanced) {
+            // return just the form elements
+            return formPanelElements;
+        } else {
+            // return a collapsible container containing the form elements
+            return spawn('div.advancedSettings',formPanelElements);
+        }
     };
 
 
