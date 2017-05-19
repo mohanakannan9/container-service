@@ -25,6 +25,7 @@ public class Project extends XnatModelObject {
     @JsonIgnore private XnatProjectdata xnatProjectdata;
     private List<Resource> resources;
     private List<Subject> subjects;
+    private String directory;
 
     public Project() {}
 
@@ -63,6 +64,7 @@ public class Project extends XnatModelObject {
         this.id = xnatProjectdata.getId();
         this.label = xnatProjectdata.getName();
         this.xsiType = xnatProjectdata.getXSIType();
+        this.directory = xnatProjectdata.getRootArchivePath() + "arc001";
 
         this.subjects = Lists.newArrayList();
         if (preload) {
@@ -156,6 +158,14 @@ public class Project extends XnatModelObject {
         this.subjects = subjects;
     }
 
+    public String getDirectory() {
+        return directory;
+    }
+
+    public void setDirectory(final String directory) {
+        this.directory = directory;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
@@ -163,19 +173,21 @@ public class Project extends XnatModelObject {
         if (!super.equals(o)) return false;
         final Project that = (Project) o;
         return Objects.equals(this.xnatProjectdata, that.xnatProjectdata) &&
+                Objects.equals(this.directory, that.directory) &&
                 Objects.equals(this.resources, that.resources) &&
                 Objects.equals(this.subjects, that.subjects);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), xnatProjectdata, resources, subjects);
+        return Objects.hash(super.hashCode(), xnatProjectdata, directory, resources, subjects);
     }
 
 
     @Override
     public String toString() {
         return addParentPropertiesToString(MoreObjects.toStringHelper(this))
+                .add("directory", directory)
                 .add("resources", resources)
                 .add("subjects", subjects)
                 .toString();
