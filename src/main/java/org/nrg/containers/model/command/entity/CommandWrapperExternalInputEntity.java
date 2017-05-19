@@ -35,6 +35,7 @@ public class CommandWrapperExternalInputEntity {
     @JsonProperty("user-settable") private Boolean userSettable = true;
     @JsonProperty("replacement-key") private String rawReplacementKey;
     private boolean required = false;
+    private boolean loadChildren = true;
     private String value;
 
     @Nonnull
@@ -51,6 +52,7 @@ public class CommandWrapperExternalInputEntity {
         commandWrapperInputEntity.userSettable = commandWrapperInput.userSettable();
         commandWrapperInputEntity.rawReplacementKey = commandWrapperInput.rawReplacementKey();
         commandWrapperInputEntity.required = commandWrapperInput.required();
+        commandWrapperInputEntity.loadChildren = commandWrapperInput.loadChildren();
         switch (commandWrapperInput.type()) {
             case "string":
                 commandWrapperInputEntity.type = CommandWrapperInputType.STRING;
@@ -207,6 +209,14 @@ public class CommandWrapperExternalInputEntity {
         this.required = required;
     }
 
+    public boolean getLoadChildren() {
+        return loadChildren;
+    }
+
+    public void setLoadChildren(final boolean loadChildren) {
+        this.loadChildren = loadChildren;
+    }
+
     @Transient
     public String getValue() {
         return value;
@@ -244,6 +254,7 @@ public class CommandWrapperExternalInputEntity {
                 .add("userSettable", userSettable)
                 .add("rawReplacementKey", rawReplacementKey)
                 .add("required", required)
+                .add("loadChildren", loadChildren)
                 .add("value", value)
                 .toString();
     }

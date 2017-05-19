@@ -12,6 +12,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.containers.model.command.auto.Command.Builder;
 import org.nrg.containers.model.command.entity.CommandEntity;
 import org.nrg.containers.model.command.entity.CommandInputEntity;
 import org.nrg.containers.model.command.entity.CommandMountEntity;
@@ -893,6 +894,7 @@ public abstract class Command {
         @Nullable @JsonProperty("provides-value-for-command-input") public abstract String providesValueForCommandInput();
         @Nullable @JsonProperty("provides-files-for-command-mount") public abstract String providesFilesForCommandMount();
         @Nullable @JsonProperty("user-settable") public abstract Boolean userSettable();
+        @JsonProperty("load-children") public abstract boolean loadChildren();
 
         @Nonnull
         List<String> validate() {
@@ -926,7 +928,8 @@ public abstract class Command {
                                                   @JsonProperty("default-value") final String defaultValue,
                                                   @JsonProperty("user-settable") final Boolean userSettable,
                                                   @JsonProperty("replacement-key") final String rawReplacementKey,
-                                                  @JsonProperty("required") final Boolean required) {
+                                                  @JsonProperty("required") final Boolean required,
+                                                  @JsonProperty("load-children") final Boolean loadChildren) {
             return builder()
                     .name(name)
                     .description(description)
@@ -937,7 +940,8 @@ public abstract class Command {
                     .defaultValue(defaultValue)
                     .userSettable(userSettable)
                     .rawReplacementKey(rawReplacementKey)
-                    .required(required == null ? Boolean.FALSE : required)
+                    .required(required == null || required)
+                    .loadChildren(loadChildren == null || loadChildren)
                     .build();
         }
 
@@ -957,7 +961,8 @@ public abstract class Command {
                     .defaultValue(wrapperInput.getDefaultValue())
                     .userSettable(wrapperInput.getUserSettable())
                     .rawReplacementKey(wrapperInput.getRawReplacementKey())
-                    .required(wrapperInput.isRequired() == null ? false : wrapperInput.isRequired())
+                    .required(wrapperInput.isRequired() == null || wrapperInput.isRequired())
+                    .loadChildren(wrapperInput.getLoadChildren())
                     .build();
         }
 
@@ -973,6 +978,7 @@ public abstract class Command {
                     .defaultValue(commandInput.defaultValue())
                     .userSettable(true)
                     .required(commandInput.required())
+                    .loadChildren(false)
                     .build();
         }
 
@@ -981,7 +987,8 @@ public abstract class Command {
                     .id(0L)
                     .name("")
                     .type(CommandWrapperExternalInputEntity.DEFAULT_TYPE.getName())
-                    .required(false);
+                    .required(false)
+                    .loadChildren(true);
         }
 
         public CommandWrapperExternalInput applyConfiguration(final CommandInputConfiguration commandInputConfiguration) {
@@ -992,6 +999,7 @@ public abstract class Command {
                     .providesValueForCommandInput(this.providesValueForCommandInput())
                     .providesFilesForCommandMount(this.providesFilesForCommandMount())
                     .required(this.required())
+                    .loadChildren(this.loadChildren())
                     .defaultValue(commandInputConfiguration.defaultValue())
                     .matcher(commandInputConfiguration.matcher())
                     .userSettable(commandInputConfiguration.userSettable())
@@ -1011,6 +1019,7 @@ public abstract class Command {
             public abstract Builder userSettable(final Boolean userSettable);
             public abstract Builder rawReplacementKey(final String rawReplacementKey);
             public abstract Builder required(final boolean required);
+            public abstract Builder loadChildren(final boolean loadChildren);
 
             public abstract CommandWrapperExternalInput build();
         }
@@ -1033,7 +1042,8 @@ public abstract class Command {
                                                  @JsonProperty("default-value") final String defaultValue,
                                                  @JsonProperty("user-settable") final Boolean userSettable,
                                                  @JsonProperty("replacement-key") final String rawReplacementKey,
-                                                 @JsonProperty("required") final Boolean required) {
+                                                 @JsonProperty("required") final Boolean required,
+                                                 @JsonProperty("load-children") final Boolean loadChildren) {
             return builder()
                     .name(name)
                     .description(description)
@@ -1046,7 +1056,8 @@ public abstract class Command {
                     .defaultValue(defaultValue)
                     .userSettable(userSettable)
                     .rawReplacementKey(rawReplacementKey)
-                    .required(required == null ? Boolean.FALSE : required)
+                    .required(required == null || required)
+                    .loadChildren(loadChildren == null || loadChildren)
                     .build();
         }
 
@@ -1068,7 +1079,8 @@ public abstract class Command {
                     .defaultValue(wrapperInput.getDefaultValue())
                     .userSettable(wrapperInput.getUserSettable())
                     .rawReplacementKey(wrapperInput.getRawReplacementKey())
-                    .required(wrapperInput.isRequired() == null ? false : wrapperInput.isRequired())
+                    .required(wrapperInput.isRequired() == null || wrapperInput.isRequired())
+                    .loadChildren(wrapperInput.getLoadChildren())
                     .build();
         }
 
@@ -1077,7 +1089,8 @@ public abstract class Command {
                     .id(0L)
                     .name("")
                     .type(CommandWrapperDerivedInputEntity.DEFAULT_TYPE.getName())
-                    .required(false);
+                    .required(false)
+                    .loadChildren(true);
         }
 
         public CommandWrapperDerivedInput applyConfiguration(final CommandInputConfiguration commandInputConfiguration) {
@@ -1091,6 +1104,7 @@ public abstract class Command {
                     .providesFilesForCommandMount(this.providesFilesForCommandMount())
                     .rawReplacementKey(this.rawReplacementKey())
                     .required(this.required())
+                    .loadChildren(this.loadChildren())
                     .defaultValue(commandInputConfiguration.defaultValue())
                     .matcher(commandInputConfiguration.matcher())
                     .userSettable(commandInputConfiguration.userSettable())
@@ -1122,6 +1136,7 @@ public abstract class Command {
             public abstract Builder userSettable(final Boolean userSettable);
             public abstract Builder rawReplacementKey(final String rawReplacementKey);
             public abstract Builder required(final boolean required);
+            public abstract Builder loadChildren(final boolean loadChildren);
             public abstract Builder derivedFromXnatInput(final String derivedFromXnatInput);
             public abstract Builder derivedFromXnatObjectProperty(final String derivedFromXnatObjectProperty);
 
