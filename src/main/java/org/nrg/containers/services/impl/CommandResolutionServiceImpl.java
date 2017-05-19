@@ -381,7 +381,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 // This node has a single value, so we can attempt to flatten its children
                 final ResolvedInputTreeValueAndChildren singleValue = resolvedValueAndChildren.get(0);
                 final List<ResolvedInputTreeNode<? extends Input>> children = singleValue.children();
-                if (children != null || !children.isEmpty()) {
+                if (!(children == null || children.isEmpty())) {
                     log.debug("Input \"{}\" has a uniquely resolved value. Adding children.", node.input().name());
                     for (final ResolvedInputTreeNode<? extends Input> child : children) {
                         flatTree.addAll(flattenTree(child));
@@ -899,6 +899,13 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             log.debug("Default value: \"{}\".", input.defaultValue());
             if (input.defaultValue() != null) {
                 resolvedValue = input.defaultValue();
+            }
+
+            // If a value was provided at runtime, use that over the default
+            log.debug("Runtime value: \"{}\"", inputValues.get(input.name()));
+            if (inputValues.containsKey(input.name()) && inputValues.get(input.name()) != null) {
+                log.debug("Setting resolved value to \"{}\".", inputValues.get(input.name()));
+                resolvedValue = inputValues.get(input.name());
             }
 
             log.debug("Provided value: \"{}\".", providedValue);
