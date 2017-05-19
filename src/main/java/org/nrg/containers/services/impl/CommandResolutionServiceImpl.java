@@ -443,10 +443,11 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                         || type.equals(ASSESSOR.getName()) || type.equals(RESOURCE.getName())) {
 
                     final XnatModelObject xnatModelObject;
+                    final boolean preload = input.loadChildren();
                     try {
                         if (type.equals(PROJECT.getName())) {
                             xnatModelObject = resolveXnatObject(resolvedValue, resolvedMatcher,
-                                    Project.class, Project.uriToModelObject(), Project.idToModelObject(userI));
+                                    Project.class, Project.uriToModelObject(preload), Project.idToModelObject(userI, preload));
                         } else if (type.equals(SUBJECT.getName())) {
                             xnatModelObject = resolveXnatObject(resolvedValue, resolvedMatcher,
                                     Subject.class, Subject.uriToModelObject(), Subject.idToModelObject(userI));
