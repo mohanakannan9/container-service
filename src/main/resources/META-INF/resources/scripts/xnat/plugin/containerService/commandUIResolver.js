@@ -258,7 +258,11 @@ var XNAT = getObject(XNAT || {});
             return formPanelElements;
         } else {
             // return a collapsible container containing the form elements
-            return spawn('div.advancedSettings',formPanelElements);
+            return spawn('div.advancedSettings',[
+                spawn('p.advancedSettingsToggle'),
+                spawn('div.advancedSettingsContents',formPanelElements)
+                ]
+            );
         }
     };
 
