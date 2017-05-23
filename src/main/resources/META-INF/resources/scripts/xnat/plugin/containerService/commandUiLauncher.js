@@ -617,7 +617,7 @@ var XNAT = getObject(XNAT || {});
                     className: 'commandLauncher',
                     data: {
                         wrapperid: item['wrapper-id'],
-                        rootElementName: item['external-input-name'],
+                        rootElementName: item['root-element-name'],
                         uri: item['uri'],
                         launcher: item['launcher']
                     }
@@ -642,7 +642,7 @@ var XNAT = getObject(XNAT || {});
         var launcher = item.launcher || "default";
         containerMenuItems[0].submenu.itemdata.push({
             text: item['wrapper-description'],
-            url: 'javascript:openCommandLauncher({ wrapperid:"'+item['wrapper-id']+'", launcher: "'+launcher+'", rootElement: "'+ item['external-input-name'] + '" })'
+            url: 'javascript:openCommandLauncher({ wrapperid:"'+item['wrapper-id']+'", launcher: "'+launcher+'", rootElement: "'+ item['root-element-name'] + '" })'
         });
     };
 
