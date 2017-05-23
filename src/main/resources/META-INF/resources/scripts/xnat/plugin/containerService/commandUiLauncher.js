@@ -676,7 +676,8 @@ var XNAT = getObject(XNAT || {});
         });
 
         // Special case: If this is a session, run a second context check for scans
-        if (XNAT.data.context.isImageSession) {
+        // only support scan-level actions if the new scan table is found. 
+        if (XNAT.data.context.isImageSession && document.getElementById('selectable-table-scans')) {
             var xsiScanType = xsiType.replace('Session','Scan');
 
             XNAT.xhr.getJSON({
