@@ -61,7 +61,8 @@ var XNAT = getObject(XNAT || {});
 
     var containerHostManager,
         undefined,
-        rootUrl = XNAT.url.rootUrl;
+        rootUrl = XNAT.url.rootUrl,
+        csrfUrl = XNAT.url.csrfUrl;
 
     XNAT.plugin =
         getObject(XNAT.plugin || {});
@@ -1133,12 +1134,13 @@ var XNAT = getObject(XNAT || {});
     function configUrl(command,wrapperName,appended){
         appended = isDefined(appended) ? '?' + appended : '';
         if (!command || !wrapperName) return false;
-        return rootUrl('/xapi/commands/'+command+'/wrappers/'+wrapperName+'/config' + appended);
+        return csrfUrl('/xapi/commands/'+command+'/wrappers/'+wrapperName+'/config' + appended);
     }
 
-    function configEnableUrl(command,wrapperName,flag){
-        if (!command || !wrapperName || !flag) return false;
-        return rootUrl('/xapi/commands/'+command+'/wrappers/'+wrapperName+'/' + flag);
+    function configEnableUrl(commandObj,wrapperObj,flag){
+        var command = commandObj.id,
+            wrapperName = wrapperObj.name;
+        return csrfUrl('/xapi/commands/'+command+'/wrappers/'+wrapperName+'/' + flag);
     }
 
     commandConfigManager.getCommands = commandConfigManager.getAll = function(callback){
@@ -1152,6 +1154,25 @@ var XNAT = getObject(XNAT || {});
                     return data;
                 }
                 callback.apply(this, arguments);
+            },
+            fail: function (e) {
+                errorHandler(e);
+            }
+        });
+    };
+
+    commandConfigManager.getEnabledStatus = function(command,wrapper,callback){
+        callback = isFunction(callback) ? callback : function(){};
+        return XNAT.xhr.get({
+            url: configEnableUrl(command,wrapper,'enabled'),
+            success: function(data){
+                if (data) {
+                    return data;
+                }
+                callback.apply(this, arguments);
+            },
+            fail: function(e){
+                errorHandler(e);
             }
         });
     };
@@ -1210,7 +1231,10 @@ var XNAT = getObject(XNAT || {});
         }
 
         function hiddenConfigInput(name,value) {
-            return '<input type="hidden" name="'+name+'" value="'+value+'" />'
+            return XNAT.ui.input.hidden({
+                name: name,
+                value: value
+            }).element;
         }
 
 
@@ -1382,7 +1406,6 @@ var XNAT = getObject(XNAT || {});
                 onclick: function(e){
                     e.preventDefault();
                     configDefinition.dialog(item.id, wrapper.name, false);
-                    console.log('Open Config definition for '+ wrapper.name);
                 }
             }, [['b', text]]);
         }
@@ -1396,13 +1419,18 @@ var XNAT = getObject(XNAT || {});
             }, 'View Command Configuration');
         }
 
-        function enabledCheckbox(item,wrapper){
-            var enabled = !!item.enabled;
+        function enabledCheckbox(command,wrapper){
+            commandConfigManager.getEnabledStatus(command,wrapper).done(function(data){
+                var enabled = data;
+                $('#wrapper-'+wrapper.id+'-enable').prop('checked',enabled);
+            });
+
             var ckbox = spawn('input.config-enabled', {
                 type: 'checkbox',
-                checked: enabled,
-                value: enabled,
-                data: { name: item.name },
+                checked: false,
+                value: 'true',
+                id: 'wrapper-'+wrapper.id+'-enable',
+                data: { name: wrapper.name },
                 onchange: function(){
                     // save the status when clicked
                     var checkbox = this;
@@ -1410,7 +1438,7 @@ var XNAT = getObject(XNAT || {});
                     var enabledFlag = (enabled) ? 'enabled' : 'disabled';
 
                     XNAT.xhr.put({
-                        url: configEnableUrl(item.id,wrapper.name,enabledFlag),
+                        url: configEnableUrl(command,wrapper,enabledFlag),
                         success: function(){
                             var status = (enabled ? ' enabled' : ' disabled');
                             checkbox.value = enabled;
@@ -1425,12 +1453,11 @@ var XNAT = getObject(XNAT || {});
             });
 
             return spawn('div.center', [
-                spawn('label.switchbox|title=' + item.name, [
+                spawn('label.switchbox|title=' + wrapper.name, [
                     ckbox,
                     ['span.switchbox-outer', [['span.switchbox-inner']]]
                 ])
             ]);
-
         }
 
         function deleteConfigButton(item,wrapper){
@@ -1464,25 +1491,16 @@ var XNAT = getObject(XNAT || {});
         commandConfigManager.getAll().done(function(data) {
             if (data) {
                 for (var i = 0, j = data.length; i < j; i++) {
-                    var item = data[i];
-                    if (item.xnat) {
-                        for (var k = 0, l = item.xnat.length; k < l; k++) {
-                            var wrapper = item.xnat[k];
+                    var command = data[i];
+                    if (command.xnat) {
+                        for (var k = 0, l = command.xnat.length; k < l; k++) {
+                            var wrapper = command.xnat[k];
+                            chTable.tr({title: wrapper.name, data: {wrapperid: wrapper.id, commandid: command.id, name: wrapper.name, image: command.image}})
+                                .td([viewLink(command, wrapper, wrapper.description)]).addClass('name')
+                                .td(command.image)
+                                .td([['div', [enabledCheckbox(command,wrapper)]]])
+                                .td([['div.center', [viewConfigButton(command,wrapper), spacer(10), deleteConfigButton(command,wrapper)]]]);
 
-                            XNAT.xhr.get({
-                                url: configEnableUrl(item.id,wrapper.name,'enabled'),
-                                success: function(enabled){
-                                    item.enabled = enabled;
-                                    chTable.tr({title: wrapper.name, data: {id: item.id, name: wrapper.name, image: item.image}})
-                                        .td([viewLink(item, wrapper, wrapper.description)]).addClass('name')
-                                        .td(item.image)
-                                        .td([['div.center', [enabledCheckbox(item,wrapper)]]])
-                                        .td([['div.center', [viewConfigButton(item,wrapper), spacer(10), deleteConfigButton(item,wrapper)]]]);
-                                },
-                                fail: function(e){
-                                    errorHandler(e);
-                                }
-                            });
                         }
                     }
                 }
