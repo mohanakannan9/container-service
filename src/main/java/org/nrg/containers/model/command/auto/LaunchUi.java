@@ -1,6 +1,7 @@
 package org.nrg.containers.model.command.auto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.auto.value.AutoValue;
@@ -216,6 +217,7 @@ public abstract class LaunchUi {
         @JsonProperty("value") public abstract String value();
         @JsonProperty("label") public abstract String label();
 
+        @JsonIgnore
         public boolean isNull() {
             return value().equals(NULL_VALUE) && label().equals(NULL_LABEL);
         }
