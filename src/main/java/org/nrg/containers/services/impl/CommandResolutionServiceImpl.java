@@ -844,13 +844,26 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                     resolvedXnatObjects = Collections.emptyList();
                     resolvedValues = Collections.emptyList();
                 } else {
-                    final List<Resource> childList = matchChildFromParent(
+                    // Try matching the value they gave us against the resource URI.
+                    // That's what the UI will send.
+                    List<Resource> childList = matchChildFromParent(
                             parentJson,
                             valueCouldContainId,
                             "resources",
-                            "id",
+                            "uri",
                             resolvedMatcher,
                             new TypeRef<List<Resource>>() {});
+                    if (childList == null) {
+                        // It is also possible that the value they gave us contains an ID
+                        childList = matchChildFromParent(
+                                parentJson,
+                                valueCouldContainId,
+                                "resources",
+                                "id",
+                                resolvedMatcher,
+                                new TypeRef<List<Resource>>() {
+                                });
+                    }
                     if (childList == null) {
                         resolvedXnatObjects = Collections.emptyList();
                         resolvedValues = Collections.emptyList();
