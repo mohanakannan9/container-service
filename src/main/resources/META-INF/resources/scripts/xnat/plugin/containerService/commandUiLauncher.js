@@ -614,26 +614,28 @@ var XNAT = getObject(XNAT || {});
         }
     ];
 
-    launcher.addMenuItem = function(item,itemSet){
-        itemSet = itemSet || [];
-        itemSet.push(
-            spawn('li', [
-                spawn('a', {
-                    html: item['wrapper-description'],
-                    href: '#!',
-                    className: 'commandLauncher',
-                    data: {
-                        wrapperid: item['wrapper-id'],
-                        rootElementName: item['root-element-name'],
-                        uri: item['uri'],
-                        launcher: item['launcher']
-                    }
-                })
-            ]));
-        return itemSet;
+    launcher.addMenuItem = function(command,commandSet){
+        commandSet = commandSet || [];
+        if (command.enabled){
+            commandSet.push(
+                spawn('li', [
+                    spawn('a', {
+                        html: command['wrapper-description'],
+                        href: '#!',
+                        className: 'commandLauncher',
+                        data: {
+                            wrapperid: command['wrapper-id'],
+                            rootElementName: command['root-element-name'],
+                            uri: command['uri'],
+                            launcher: command['launcher']
+                        }
+                    })
+                ]));
+        }
+        return commandSet;
     };
 
-    launcher.createMenu = function(target,itemSet){
+    launcher.createMenu = function(target,commandSet){
         /*
         var containerMenu = spawn('li.has-submenu',[
             spawn(['a',{ href: '#!', html: 'Run' }]),
@@ -641,23 +643,28 @@ var XNAT = getObject(XNAT || {});
         ]);
         */
 
-        target.append(itemSet);
+        target.append(commandSet);
     };
 
     /* to be replaced when we kill YUI */
-    launcher.addYUIMenuItem = function(item){
-        var launcher = item.launcher || "default";
-        containerMenuItems[0].submenu.itemdata.push({
-            text: item['wrapper-description'],
-            url: 'javascript:openCommandLauncher({ wrapperid:"'+item['wrapper-id']+'", launcher: "'+launcher+'", rootElement: "'+ item['root-element-name'] + '" })'
-        });
+    launcher.addYUIMenuItem = function(command){
+        if (command.enabled) {
+            var launcher = command.launcher || "default";
+            containerMenuItems[0].submenu.itemdata.push({
+                text: command['wrapper-description'],
+                url: 'javascript:openCommandLauncher({ wrapperid:"'+command['wrapper-id']+'", launcher: "'+launcher+'", rootElement: "'+ command['root-element-name'] + '" })',
+                classname: 'enabled' // injects a custom classname onto the surrounding li element.
+            });
+        }
     };
 
     launcher.createYUIMenu = function(target){
         target = target || 'actionsMenu';
         var containerMenu = new YAHOO.widget.Menu('containerMenu', { autosubmenudisplay:true, scrollincrement:5, position:'static' });
         containerMenu.addItems(containerMenuItems);
-        containerMenu.render(target);
+        if (containerMenuItems[0].submenu.itemdata.length > 0) {
+            containerMenu.render(target);
+        }
     };
 
     launcher.init = function() {
@@ -671,7 +678,7 @@ var XNAT = getObject(XNAT || {});
                 } else {
                     var spawnedCommands = [];
                     availableCommands.forEach(function (command) {
-                        launcher.addYUIMenuItem(command,spawnedCommands);
+                        launcher.addYUIMenuItem(command);
                     });
                     launcher.createYUIMenu('actionsMenu',spawnedCommands);
                 }
@@ -705,21 +712,26 @@ var XNAT = getObject(XNAT || {});
                         // add action menu to each scan listing
                         launcher.scanList = XNAT.data.context.scans || [];
                         launcher.scanList.forEach(function(scan){
-                            var spawnedCommands = [];
+                            var scanCommands = [];
                             availableCommands.forEach(function (command) {
                                 command.launcher = 'single-scan';
                                 command.uri = fullScanPath(scan['id']);
-                                launcher.addMenuItem(command,spawnedCommands);
+                                launcher.addMenuItem(command,scanCommands);
                             });
 
-                            var scanActionTarget = $('tr#scan-'+scan['id']).find('.single-scan-actions-menu');
-                            scanActionTarget.append(spawnedCommands).parents('td').find('.inline-actions-menu-toggle').removeClass('hidden');
+                            if (scanCommands.length > 0){
+                                var scanActionTarget = $('tr#scan-'+scan['id']).find('.single-scan-actions-menu');
+                                scanActionTarget.append(scanCommands).parents('td').find('.inline-actions-menu-toggle').removeClass('hidden');
+                            }
                         });
 
-                        // add commands to Bulk Run action menu at the top of the scan table
-                        var menuTarget = $('#scanActionsMenu');
-                        launcher.createMenu(menuTarget,spawnedCommands);
-                        $('.scan-actions-controls').show();
+                        if (spawnedCommands.length > 0) {
+                            // add commands to Bulk Run action menu at the top of the scan table
+                            var menuTarget = $('#scanActionsMenu');
+                            launcher.createMenu(menuTarget,spawnedCommands);
+                            $('.scan-actions-controls').show();
+                            $('#scanTable-run-containers').removeClass('hidden');
+                        }
                     }
                 },
                 fail: function(e) {
