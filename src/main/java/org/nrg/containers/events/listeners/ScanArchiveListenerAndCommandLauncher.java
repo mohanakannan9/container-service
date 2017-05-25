@@ -14,6 +14,11 @@ import org.nrg.containers.model.xnat.Scan;
 import org.nrg.containers.services.CommandEventMappingService;
 import org.nrg.containers.services.ContainerService;
 import org.nrg.framework.exceptions.NotFoundException;
+import org.nrg.framework.services.NrgEventService;
+import org.nrg.xdat.security.services.UserManagementServiceI;
+import org.nrg.xdat.security.user.exceptions.UserInitException;
+import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
+import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,16 +40,19 @@ public class ScanArchiveListenerAndCommandLauncher implements Consumer<Event<Sca
     private ObjectMapper mapper;
     private ContainerService containerService;
     private CommandEventMappingService commandEventMappingService;
+    private UserManagementServiceI userManagementService;
 
     @Autowired
     public ScanArchiveListenerAndCommandLauncher(final EventBus eventBus,
                                                  final ObjectMapper mapper,
                                                  final ContainerService containerService,
-                                                 final CommandEventMappingService commandEventMappingService) {
+                                                 final CommandEventMappingService commandEventMappingService,
+                                                 final UserManagementServiceI userManagementService) {
         eventBus.on(type(ScanArchiveEventToLaunchCommands.class), this);
         this.mapper = mapper;
         this.containerService = containerService;
         this.commandEventMappingService = commandEventMappingService;
+        this.userManagementService = userManagementService;
     }
 
 
@@ -56,39 +64,52 @@ public class ScanArchiveListenerAndCommandLauncher implements Consumer<Event<Sca
         final List<CommandEventMapping> commandEventMappings = commandEventMappingService.findByEventType(EVENT_ID);
 
         if (commandEventMappings != null && !commandEventMappings.isEmpty()) {
+            final Scan scan = scanArchiveEventToLaunchCommands.scan();
+            final String eventProjectId = scanArchiveEventToLaunchCommands.project();
+
             for (CommandEventMapping commandEventMapping: commandEventMappings) {
                 final Long commandId = commandEventMapping.getCommandId();
                 final String wrapperName = commandEventMapping.getXnatCommandWrapperName();
+                final String subscriptionProjectId = commandEventMapping.getProjectId();
 
-                final Map<String, String> inputValues = Maps.newHashMap();
+                if (subscriptionProjectId == null || subscriptionProjectId.isEmpty() || subscriptionProjectId.equals(eventProjectId)) {
 
-                final Scan scan = scanArchiveEventToLaunchCommands.scan();
-                String scanString = scan.getUri();
-                try {
-                    scanString = mapper.writeValueAsString(scan);
-                } catch (JsonProcessingException e) {
-                    log.error(String.format("Could not serialize Scan %s to json.", scan), e);
-                }
-                inputValues.put("scan", scanString);
-                try {
-                    if (log.isInfoEnabled()) {
-                        final String wrapperMessage = StringUtils.isNotBlank(wrapperName) ?
-                                String.format("wrapper \"%s\"", wrapperName) :
-                                "identity wrapper";
-                        final String message = String.format(
-                                "Launching command %s, %s, for user \"%s\".", commandId, wrapperMessage, scanArchiveEventToLaunchCommands.user().getLogin()
-                        );
-                        log.info(message);
-                        if (log.isDebugEnabled()) {
-                            log.debug("Runtime parameter values:");
-                            for (final Map.Entry<String, String> paramEntry : inputValues.entrySet()) {
-                                log.debug(paramEntry.getKey() + ": " + paramEntry.getValue());
+                    final Map<String, String> inputValues = Maps.newHashMap();
+
+                    String scanString = scan.getUri();
+                    try {
+                        scanString = mapper.writeValueAsString(scan);
+                    } catch (JsonProcessingException e) {
+                        log.error(String.format("Could not serialize Scan %s to json.", scan), e);
+                    }
+                    inputValues.put("scan", scanString);
+                    try {
+                        final UserI subscriptionUser = userManagementService.getUser(commandEventMapping.getSubscriptionUserId());
+                        if (log.isInfoEnabled()) {
+                            final String wrapperMessage = StringUtils.isNotBlank(wrapperName) ?
+                                    String.format("wrapper \"%s\"", wrapperName) :
+                                    "identity wrapper";
+                            final String message = String.format(
+                                    "Launching command %s, %s, for user \"%s\" as \"%s\"",
+                                    commandId,
+                                    wrapperMessage,
+                                    scanArchiveEventToLaunchCommands.user().getLogin(),
+                                    subscriptionUser.getLogin()
+                            );
+                            log.info(message);
+                            if (log.isDebugEnabled()) {
+                                log.debug("Runtime parameter values:");
+                                for (final Map.Entry<String, String> paramEntry : inputValues.entrySet()) {
+                                    log.debug(paramEntry.getKey() + ": " + paramEntry.getValue());
+                                }
                             }
                         }
+                        containerService.resolveCommandAndLaunchContainer(commandId, wrapperName, inputValues, subscriptionUser);
+                    } catch (UserNotFoundException | UserInitException e) {
+                        log.error(String.format("Error launching command %d. Could not find or Init subscription owner with ID: %d", commandId, commandEventMapping.getSubscriptionUserId()), e);
+                    } catch (NotFoundException | CommandResolutionException | NoServerPrefException | DockerServerException | ContainerException e) {
+                        log.error("Error launching command " + commandId, e);
                     }
-                    containerService.resolveCommandAndLaunchContainer(commandId, wrapperName, inputValues, scanArchiveEventToLaunchCommands.user());
-                } catch (NotFoundException | CommandResolutionException | NoServerPrefException | DockerServerException | ContainerException e) {
-                    log.error("Error launching command " + commandId, e);
                 }
             }
         }

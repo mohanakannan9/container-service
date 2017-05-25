@@ -79,43 +79,46 @@ public class SessionArchiveListenerAndCommandLauncher implements Consumer<Event<
                 final Long commandId = commandEventMapping.getCommandId();
                 final String wrapperName = commandEventMapping.getXnatCommandWrapperName();
                 final String subscriptionProjectId = commandEventMapping.getProjectId();
-                try {
-                    final UserI subscriptionUser = userManagementService.getUser(commandEventMapping.getSubscriptionUserId());
-                    final String sessionProjectId = session.getProject(subscriptionUser).getId();
-                    // Allow action to run if subscriptionProjectId is null, empty, or matches sessionProjectId
-                    if (subscriptionProjectId == null || subscriptionProjectId.isEmpty() || subscriptionProjectId.equals(sessionProjectId)) {
-                        final Map<String, String> inputValues = Maps.newHashMap();
-                        String sessionString = session.getUri();
-                        try {
-                            sessionString = mapper.writeValueAsString(session);
-                        } catch (JsonProcessingException e) {
-                            log.error(String.format("Could not serialize Session %s to json.", session), e);
-                        }
-                        inputValues.put("session", sessionString);
-                        try {
-                            if (log.isInfoEnabled()) {
-                                final String wrapperMessage = StringUtils.isNotBlank(wrapperName) ?
-                                        String.format("wrapper \"%s\"", wrapperName) :
-                                        "identity wrapper";
-                                final String message = String.format(
-                                        "Launching command %s, %s, for user \"%s\" as \"%s\"", commandId, wrapperMessage, sessionArchivedEvent.user().getLogin(), subscriptionUser);
-                                log.info(message);
-                            }
-                            if (log.isDebugEnabled()) {
-                                log.debug("Runtime parameter values:");
-                                for (final Map.Entry<String, String> paramEntry : inputValues.entrySet()) {
-                                    log.debug(paramEntry.getKey() + ": " + paramEntry.getValue());
-                                }
-                            }
-                            containerService.resolveCommandAndLaunchContainer(commandId, wrapperName, inputValues, subscriptionUser);
-                        } catch (NotFoundException | CommandResolutionException | NoServerPrefException | DockerServerException | ContainerException e) {
-                            log.error("Error launching command " + commandId, e);
-                        }
-                    }
-                } catch (UserNotFoundException | UserInitException e) {
-                    log.error(String.format("Could not find or Init subscription owner with ID: %i", commandEventMapping.getSubscriptionUserId()), e);
-                }
 
+                final String sessionProjectId = sessionArchivedEvent.session().getProject();
+                // Allow action to run if subscriptionProjectId is null, empty, or matches sessionProjectId
+                if (subscriptionProjectId == null || subscriptionProjectId.isEmpty() || subscriptionProjectId.equals(sessionProjectId)) {
+                    final Map<String, String> inputValues = Maps.newHashMap();
+                    String sessionString = session.getUri();
+                    try {
+                        sessionString = mapper.writeValueAsString(session);
+                    } catch (JsonProcessingException e) {
+                        log.error(String.format("Could not serialize Session %s to json.", session), e);
+                    }
+                    inputValues.put("session", sessionString);
+                    try {
+                        final UserI subscriptionUser = userManagementService.getUser(commandEventMapping.getSubscriptionUserId());
+                        if (log.isInfoEnabled()) {
+                            final String wrapperMessage = StringUtils.isNotBlank(wrapperName) ?
+                                    String.format("wrapper \"%s\"", wrapperName) :
+                                    "identity wrapper";
+                            final String message = String.format(
+                                    "Launching command %s, %s, for user \"%s\" as \"%s\"",
+                                    commandId,
+                                    wrapperMessage,
+                                    sessionArchivedEvent.user().getLogin(),
+                                    subscriptionUser.getLogin()
+                            );
+                            log.info(message);
+                        }
+                        if (log.isDebugEnabled()) {
+                            log.debug("Runtime parameter values:");
+                            for (final Map.Entry<String, String> paramEntry : inputValues.entrySet()) {
+                                log.debug(paramEntry.getKey() + ": " + paramEntry.getValue());
+                            }
+                        }
+                        containerService.resolveCommandAndLaunchContainer(commandId, wrapperName, inputValues, subscriptionUser);
+                    } catch (UserNotFoundException | UserInitException e) {
+                        log.error(String.format("Error launching command %d. Could not find or Init subscription owner with ID: %d", commandId, commandEventMapping.getSubscriptionUserId()), e);
+                    } catch (NotFoundException | CommandResolutionException | NoServerPrefException | DockerServerException | ContainerException e) {
+                        log.error("Error launching command " + commandId, e);
+                    }
+                }
             }
         }
     }
