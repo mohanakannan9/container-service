@@ -65,6 +65,9 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -1683,7 +1686,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             final String localDirectory;
             if (filesList != null && filesList.size() > 1) {
                 // We have multiple sources of files. We must copy them into one common location to mount.
-                localDirectory = getBuildDirectory();
+                localDirectory = getBuildDirectory(partiallyResolvedCommandMount);
                 log.debug("Mount \"{}\" has multiple sources of files.", partiallyResolvedCommandMount.name());
 
                 // TODO figure out what to do with multiple sources of files
@@ -1703,14 +1706,14 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                         if (hasPath) {
                             // The source of files also has one or more paths set
 
-                            localDirectory = getBuildDirectory();
+                            localDirectory = getBuildDirectory(partiallyResolvedCommandMount);
                             log.debug("Mount \"{}\" has a root directory and a file. Copying the file from the root directory to build directory.", partiallyResolvedCommandMount.name());
 
                             // TODO CS-54 copy the file in "path", relative to the root directory, to the build directory
                             log.debug("TODO");
                         } else {
                             // The mount is set to "writable".
-                            localDirectory = getBuildDirectory();
+                            localDirectory = getBuildDirectory(partiallyResolvedCommandMount);
                             log.debug("Mount \"{}\" has a root directory, and is set to \"writable\". Copying all files from the root directory to build directory.", partiallyResolvedCommandMount.name());
 
                             // TODO CS-54 We must copy all files out of the root directory to a build directory.
@@ -1723,7 +1726,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                     }
                 } else if (hasPath) {
                     log.debug("Mount \"{}\" has a file. Copying it to build directory.", partiallyResolvedCommandMount.name());
-                    localDirectory = getBuildDirectory();
+                    localDirectory = getBuildDirectory(partiallyResolvedCommandMount);
                     // TODO CS-54 copy the file to the build directory
                     log.debug("TODO");
 
@@ -1735,7 +1738,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
 
             } else {
                 log.debug("Mount \"{}\" has no input files. Ensuring mount is set to \"writable\" and creating new build directory.", partiallyResolvedCommandMount.name());
-                localDirectory = getBuildDirectory();
+                localDirectory = getBuildDirectory(partiallyResolvedCommandMount);
                 if (!partiallyResolvedCommandMount.writable()) {
                     resolvedCommandMountBuilder.writable(true);
                 }
@@ -1873,9 +1876,17 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
         }
     }
 
-    private String getBuildDirectory() {
-        String buildPath = siteConfigPreferences.getBuildPath();
+    private String getBuildDirectory(final PartiallyResolvedCommandMount mount) throws ContainerMountResolutionException {
+        final String rootBuildPath = siteConfigPreferences.getBuildPath();
         final String uuid = UUID.randomUUID().toString();
-        return FilenameUtils.concat(buildPath, uuid);
+        final String buildDir = FilenameUtils.concat(rootBuildPath, uuid);
+        final Path created;
+        try {
+            created = Files.createDirectory(Paths.get(buildDir));
+        } catch (IOException e) {
+            throw new ContainerMountResolutionException("Could not create build directory " + buildDir, mount, e);
+        }
+        created.toFile().setWritable(true);
+        return buildDir;
     }
 }
