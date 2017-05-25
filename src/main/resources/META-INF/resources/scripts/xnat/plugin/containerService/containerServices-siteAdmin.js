@@ -43,9 +43,10 @@ var XNAT = getObject(XNAT || {});
     function errorHandler(e, title){
         console.log(e);
         title = (title) ? 'Error Found: '+ title : 'Error';
+        var errormsg = (e.statusText) ? '<p><strong>Error ' + e.status + ': '+ e.statusText+'</strong></p><p>' + e.responseText + '</p>' : e;
         xmodal.alert({
             title: title,
-            content: '<p><strong>Error ' + e.status + ': '+ e.statusText+'</strong></p><p>' + e.responseText + '</p>',
+            content: errormsg,
             okAction: function () {
                 xmodal.closeAll();
             }
@@ -1382,7 +1383,7 @@ var XNAT = getObject(XNAT || {});
     };
 
 
-    commandConfigManager.table = function(callback){
+    commandConfigManager.table = function(){
 
         // initialize the table - we'll add to it below
         var chTable = XNAT.table({

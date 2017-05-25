@@ -45,6 +45,7 @@ projectCommandProjectPrefs:
             kind: panel.input.switchbox
             id: optIntoSitewideCommands
             value: true
+            checked: false
             label: Enable Site-wide Commands By Default?
             onText: Opt-IN To Enabled Site-wide Commands
             offText: Opt-OUT Of Enabled Site-wide Commands
