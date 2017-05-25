@@ -1,0 +1,19 @@
+
+
+.panel .advancedSettings {
+    border: 1px dashed #aaa;
+    padding: 3px 6px;
+}
+.panel .advancedSettings .advancedSettingsToggle {
+    background-color: #f0f0f0;
+    content: "Advanced Settings";
+    cursor: pointer;
+    display: block;
+}
+.panel .advancedSettings .advancedSettingsContents {
+    display: none;
+}
+
+#containerMenu > .bd {
+    border-top: none;
+}
