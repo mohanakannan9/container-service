@@ -3,13 +3,7 @@ package org.nrg.containers.rest;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.containers.exceptions.BadRequestException;
-import org.nrg.containers.exceptions.CommandInputResolutionException;
-import org.nrg.containers.exceptions.CommandResolutionException;
-import org.nrg.containers.exceptions.CommandValidationException;
-import org.nrg.containers.exceptions.ContainerException;
-import org.nrg.containers.exceptions.DockerServerException;
-import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.exceptions.*;
 import org.nrg.containers.model.command.auto.BulkLaunchReport;
 import org.nrg.containers.model.command.auto.LaunchUi;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
@@ -24,6 +18,9 @@ import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.om.base.auto.AutoXnatProjectdata;
+import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
@@ -32,12 +29,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.*;
 import springfox.documentation.annotations.ApiIgnore;
 
 import java.util.List;
@@ -122,15 +114,24 @@ public class LaunchRestApi extends AbstractXapiRestController {
                                 final @RequestParam Map<String, String> allRequestParams)
             throws NotFoundException, CommandResolutionException {
         log.info("Launch UI requested for project {}, wrapper {}", project, wrapperId);
-        final UserI userI = XDAT.getUserDetails();
-        log.debug("Preparing to pre-resolve command wrapper {} in project {} with inputs {}.", wrapperId, project, allRequestParams);
-        final PartiallyResolvedCommand partiallyResolvedCommand =
-                commandResolutionService.preResolve(project, wrapperId, allRequestParams, userI);
-        log.debug("Done pre-resolving command wrapper {} in project {}.", wrapperId, project);
-        log.debug("Getting project {} configuration for wrapper {}.", project, wrapperId);
-        final CommandConfiguration commandConfiguration = commandService.getProjectConfiguration(project, wrapperId);
-        log.debug("Creating launch UI.");
-        return LaunchUi.create(partiallyResolvedCommand, commandConfiguration);
+
+        final HttpStatus status = canEditProjectOrAdmin(project);
+        if (status != null) {
+            return null;
+        }
+        try {
+            log.debug("Preparing to pre-resolve command wrapper {} in project {} with inputs {}.", wrapperId, project, allRequestParams);
+            final PartiallyResolvedCommand partiallyResolvedCommand =
+                    commandResolutionService.preResolve(project, wrapperId, allRequestParams, getSessionUser());
+            log.debug("Done pre-resolving command wrapper {} in project {}.", wrapperId, project);
+            log.debug("Getting project {} configuration for wrapper {}.", project, wrapperId);
+            final CommandConfiguration commandConfiguration = commandService.getProjectConfiguration(project, wrapperId);
+            log.debug("Creating launch UI.");
+            return LaunchUi.create(partiallyResolvedCommand, commandConfiguration);
+        } catch (Throwable t) {
+            log.error("LaunchRestApi exception:  " + t.toString());
+            return null;
+        }
     }
 
     @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/launch"}, method = GET)
@@ -142,15 +143,25 @@ public class LaunchRestApi extends AbstractXapiRestController {
                                 final @RequestParam Map<String, String> allRequestParams)
             throws NotFoundException, CommandResolutionException {
         log.info("Launch UI requested for project {}, command {}, wrapper {}", project, commandId, wrapperName);
-        final UserI userI = XDAT.getUserDetails();
-        log.debug("Preparing to pre-resolve command {}, wrapper {} in project {} with inputs {}.", commandId, wrapperName, project, allRequestParams);
-        final PartiallyResolvedCommand partiallyResolvedCommand =
-                commandResolutionService.preResolve(project, commandId, wrapperName, allRequestParams, userI);
-        log.debug("Done pre-resolving command {}, wrapper {} in project {}.", commandId, wrapperName, project);
-        log.debug("Getting project {} configuration for command {}, wrapper {}.", project, commandId, wrapperName);
-        final CommandConfiguration commandConfiguration = commandService.getProjectConfiguration(project, commandId, wrapperName);
-        log.debug("Creating launch UI.");
-        return LaunchUi.create(partiallyResolvedCommand, commandConfiguration);
+
+        final HttpStatus status = canEditProjectOrAdmin(project);
+        if (status != null) {
+            return null;
+        }
+        try {
+            final UserI userI = XDAT.getUserDetails();
+            log.debug("Preparing to pre-resolve command {}, wrapper {} in project {} with inputs {}.", commandId, wrapperName, project, allRequestParams);
+            final PartiallyResolvedCommand partiallyResolvedCommand =
+                    commandResolutionService.preResolve(project, commandId, wrapperName, allRequestParams, userI);
+            log.debug("Done pre-resolving command {}, wrapper {} in project {}.", commandId, wrapperName, project);
+            log.debug("Getting project {} configuration for command {}, wrapper {}.", project, commandId, wrapperName);
+            final CommandConfiguration commandConfiguration = commandService.getProjectConfiguration(project, commandId, wrapperName);
+            log.debug("Creating launch UI.");
+            return LaunchUi.create(partiallyResolvedCommand, commandConfiguration);
+        } catch (Throwable t) {
+            log.error("LaunchRestApi exception:  " + t.toString());
+            return null;
+        }
     }
 
     // TODO Remove this. It is only for Swagger demo purposes.
@@ -198,15 +209,25 @@ public class LaunchRestApi extends AbstractXapiRestController {
                                             final @RequestBody Map<String, String> allRequestParams)
             throws NotFoundException, CommandResolutionException {
         log.info("Launch UI requested for project {}, wrapper {}", project, wrapperId);
-        final UserI userI = XDAT.getUserDetails();
-        log.debug("Preparing to pre-resolve command wrapper {} in project {} with inputs {}.", wrapperId, project, allRequestParams);
-        final PartiallyResolvedCommand partiallyResolvedCommand =
-                commandResolutionService.preResolve(project, wrapperId, allRequestParams, userI);
-        log.debug("Done pre-resolving command wrapper {} in project {}.", wrapperId, project);
-        log.debug("Getting project {} configuration for wrapper {}.", project, wrapperId);
-        final CommandConfiguration commandConfiguration = commandService.getProjectConfiguration(project, wrapperId);
-        log.debug("Creating launch UI.");
-        return LaunchUi.create(partiallyResolvedCommand, commandConfiguration);
+
+        final HttpStatus status = canEditProjectOrAdmin(project);
+        if (status != null) {
+            return null;
+        }
+        try {
+            final UserI userI = XDAT.getUserDetails();
+            log.debug("Preparing to pre-resolve command wrapper {} in project {} with inputs {}.", wrapperId, project, allRequestParams);
+            final PartiallyResolvedCommand partiallyResolvedCommand =
+                    commandResolutionService.preResolve(project, wrapperId, allRequestParams, userI);
+            log.debug("Done pre-resolving command wrapper {} in project {}.", wrapperId, project);
+            log.debug("Getting project {} configuration for wrapper {}.", project, wrapperId);
+            final CommandConfiguration commandConfiguration = commandService.getProjectConfiguration(project, wrapperId);
+            log.debug("Creating launch UI.");
+            return LaunchUi.create(partiallyResolvedCommand, commandConfiguration);
+        } catch (Throwable t) {
+            log.error("LaunchRestApi exception:  " + t.toString());
+            return null;
+        }
     }
 
     // TODO Remove this. It is only for Swagger demo purposes.
@@ -219,15 +240,25 @@ public class LaunchRestApi extends AbstractXapiRestController {
                                             final @RequestBody Map<String, String> allRequestParams)
             throws NotFoundException, CommandResolutionException {
         log.info("Launch UI requested for project {}, command {}, wrapper {}", project, commandId, wrapperName);
-        final UserI userI = XDAT.getUserDetails();
-        log.debug("Preparing to pre-resolve command {}, wrapper {} in project {} with inputs {}.", commandId, wrapperName, project, allRequestParams);
-        final PartiallyResolvedCommand partiallyResolvedCommand =
-                commandResolutionService.preResolve(project, commandId, wrapperName, allRequestParams, userI);
-        log.debug("Done pre-resolving command {}, wrapper {} in project {}.", commandId, wrapperName, project);
-        log.debug("Getting project {} configuration for command {}, wrapper {}.", project, commandId, wrapperName);
-        final CommandConfiguration commandConfiguration = commandService.getProjectConfiguration(project, commandId, wrapperName);
-        log.debug("Creating launch UI.");
-        return LaunchUi.create(partiallyResolvedCommand, commandConfiguration);
+
+        final HttpStatus status = canEditProjectOrAdmin(project);
+        if (status != null) {
+            return null;
+        }
+        try {
+            final UserI userI = XDAT.getUserDetails();
+            log.debug("Preparing to pre-resolve command {}, wrapper {} in project {} with inputs {}.", commandId, wrapperName, project, allRequestParams);
+            final PartiallyResolvedCommand partiallyResolvedCommand =
+                    commandResolutionService.preResolve(project, commandId, wrapperName, allRequestParams, userI);
+            log.debug("Done pre-resolving command {}, wrapper {} in project {}.", commandId, wrapperName, project);
+            log.debug("Getting project {} configuration for command {}, wrapper {}.", project, commandId, wrapperName);
+            final CommandConfiguration commandConfiguration = commandService.getProjectConfiguration(project, commandId, wrapperName);
+            log.debug("Creating launch UI.");
+            return LaunchUi.create(partiallyResolvedCommand, commandConfiguration);
+        } catch (Throwable t) {
+            log.error("LaunchRestApi exception:  " + t.toString());
+            return null;
+        }
     }
 
     /*
@@ -297,8 +328,17 @@ public class LaunchRestApi extends AbstractXapiRestController {
                                             final @RequestParam Map<String, String> allRequestParams)
             throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException, ContainerException {
         log.info("Launch requested for command id " + String.valueOf(wrapperId));
-        final ContainerEntity executed = launchContainer(project, wrapperId, allRequestParams);
-        return executed.getContainerId();
+        final HttpStatus status = canEditProjectOrAdmin(project);
+        if (status != null) {
+            return null;
+        }
+        try {
+            final ContainerEntity executed = launchContainer(project, wrapperId, allRequestParams);
+            return executed.getContainerId();
+        } catch (Throwable t) {
+            log.error("LaunchRestApi exception:  " + t.toString());
+            return null;
+        }
     }
 
     @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/launch"}, method = POST, consumes = {JSON})
@@ -309,8 +349,18 @@ public class LaunchRestApi extends AbstractXapiRestController {
                                          final @RequestBody Map<String, String> allRequestParams)
             throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException, ContainerException {
         log.info("Launch requested for command wrapper id " + String.valueOf(wrapperId));
-        final ContainerEntity executed = launchContainer(project, wrapperId, allRequestParams);
-        return executed.getContainerId();
+
+        final HttpStatus status = canEditProjectOrAdmin(project);
+        if (status != null) {
+            return null;
+        }
+        try {
+            final ContainerEntity executed = launchContainer(project, wrapperId, allRequestParams);
+            return executed.getContainerId();
+        } catch (Throwable t) {
+            log.error("LaunchRestApi exception:  " + t.toString());
+            return null;
+        }
     }
 
     private ContainerEntity launchContainer(final String project,
@@ -399,8 +449,19 @@ public class LaunchRestApi extends AbstractXapiRestController {
                                             final @RequestParam Map<String, String> allRequestParams)
             throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException, ContainerException {
         log.info("Launch requested for command {}, wrapper {}", commandId, wrapperName);
-        final ContainerEntity executed = launchContainer(project, commandId, wrapperName, allRequestParams);
-        return executed.getContainerId();
+
+        final HttpStatus status = canEditProjectOrAdmin(project);
+        if (status != null) {
+            return null;
+        }
+        try {
+            final ContainerEntity executed = launchContainer(project, commandId, wrapperName, allRequestParams);
+            return executed.getContainerId();
+        } catch (Throwable t) {
+            log.error("LaunchRestApi exception:  " + t.toString());
+            return null;
+        }
+        
     }
 
     @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/launch"}, method = POST, consumes = {JSON})
@@ -412,8 +473,18 @@ public class LaunchRestApi extends AbstractXapiRestController {
                                          final @RequestBody Map<String, String> allRequestParams)
             throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException, ContainerException {
         log.info("Launch requested for command {}, wrapper {}", commandId, wrapperName);
-        final ContainerEntity executed = launchContainer(project, commandId, wrapperName, allRequestParams);
-        return executed.getContainerId();
+
+        final HttpStatus status = canEditProjectOrAdmin(project);
+        if (status != null) {
+            return null;
+        }
+        try {
+            final ContainerEntity executed = launchContainer(project, commandId, wrapperName, allRequestParams);
+            return executed.getContainerId();
+        } catch (Throwable t) {
+            log.error("LaunchRestApi exception:  " + t.toString());
+            return null;
+        }
     }
 
     private ContainerEntity launchContainer(final String project,
@@ -557,5 +628,28 @@ public class LaunchRestApi extends AbstractXapiRestController {
         }
         log.debug(message);
         return message;
+    }
+
+    /**
+     * Checks if is permitted.
+     *
+     * @param projectId the project ID
+     *
+     * @return the http status
+     */
+    // TODO: Migrate this to the abstract superclass. Can't right now because XDAT doesn't know about XnatProjectdata, etc.
+    protected HttpStatus canEditProjectOrAdmin(String projectId) {
+        final UserI sessionUser = getSessionUser();
+        if (projectId != null) {
+            final XnatProjectdata project = AutoXnatProjectdata.getXnatProjectdatasById(projectId, sessionUser, false);
+            try {
+                return ( Permissions.canEdit(sessionUser, project) || getRoleHolder().isSiteAdmin(sessionUser) ) ? null : HttpStatus.FORBIDDEN;
+            } catch (Exception e) {
+                log.error("Error checking edit status for project", e);
+                return HttpStatus.INTERNAL_SERVER_ERROR;
+            }
+        } else {
+            return isPermitted() == null ? null : HttpStatus.FORBIDDEN;
+        }
     }
 }
