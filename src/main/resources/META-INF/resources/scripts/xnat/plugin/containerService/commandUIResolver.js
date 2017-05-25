@@ -57,13 +57,13 @@ var XNAT = getObject(XNAT || {});
         return (condensed) ? '' : spawn('br.clear');
     };
 
-    var defaultConfigInput = function(opts){
-        var name = opts.name,
-            value = opts.value,
-            label = opts.label,
-            description = opts.description || '',
-            required = opts.required || false,
-            childOf = opts['parent'],
+    var defaultConfigInput = function(input){
+        var name = input.name,
+            value = input.value,
+            label = input.label,
+            description = input.description || '',
+            required = input.required || false,
+            childOf = input['parent'],
             classes = ['panel-input'],
             dataProps = {};
         value = (value === undefined || value === null || value == 'null') ? '' : value;
@@ -89,20 +89,20 @@ var XNAT = getObject(XNAT || {});
         }).element;
     };
 
-    var configCheckbox = function(opts){
-        var name = opts.name,
-            value = opts.value,
-            checked = opts.checked,
-            boolean = opts.boolean,
-            outerLabel = opts.outerLabel,
-            innerLabel = opts.innerLabel,
-            description = opts.description || '',
-            required = opts.required || false,
-            condensed = opts.condensed || false,
-            childOf = opts['parent'],
+    var configCheckbox = function(input){
+        var name = input.name,
+            value = input.value,
+            checked = input.checked,
+            boolean = input.boolean,
+            outerLabel = input.outerLabel,
+            innerLabel = input.innerLabel,
+            description = input.description || '',
+            required = input.required || false,
+            condensed = input.condensed || false,
+            childOf = input['parent'],
             classes = ['panel-element panel-input'],
             dataProps = { name: name },
-            disabled = opts.disabled || false,
+            disabled = input.disabled || false,
             attr = {};
 
         if (checked === 'true') attr['checked'] = 'checked';
@@ -133,12 +133,12 @@ var XNAT = getObject(XNAT || {});
         ]);
     };
 
-    var hiddenConfigInput = function(opts) {
-        var name = opts.name,
-            value = opts.value,
-            childOf = opts.childOf,
+    var hiddenConfigInput = function(input) {
+        var name = input.name,
+            value = input.value,
+            childOf = input['parent'],
             dataProps = {},
-            attr = (opts.disabled) ? { 'disabled':'disabled' } : {};
+            attr = (input.disabled) ? { 'disabled':'disabled' } : {};
 
         return XNAT.ui.input.hidden({
             name: name,
@@ -148,18 +148,19 @@ var XNAT = getObject(XNAT || {});
         }).element;
     };
 
-    var staticConfigInput = function(opts) {
-        var name = opts.name,
-            value = opts.value,
-            childOf = opts.childOf,
+    var staticConfigInput = function(input) {
+        var name = input.name,
+            value = input.value,
+            valueLabel = input.valueLabel,
+            childOf = input['parent'],
             classes = ['panel-element'],
             dataProps = { name: name },
-            attr = (opts.disabled) ? { 'disabled':'disabled' } : {};
+            attr = (input.disabled) ? { 'disabled':'disabled' } : {};
 
         return spawn(
             'div', { className: classes.join(' '), data: dataProps }, [
                 spawn('label.element-label', name),
-                spawn('div.element-wrapper', { style: { 'word-wrap': 'break-word' } }, value),
+                spawn('div.element-wrapper', { style: { 'word-wrap': 'break-word' } }, valueLabel),
                 spawn('input',{
                     type: 'hidden',
                     name: name,
@@ -199,15 +200,6 @@ var XNAT = getObject(XNAT || {});
         for (var i in inputs) {
             var input = inputs[i];
 
-            var opts = {
-                name: input.name || i,
-                label: input.label || i,
-                value: input.value,
-                childOf: input.parent || false,
-                description: input.description || null,
-                required: input.required || false,
-                disabled: input.disabled || false
-            };
             // create a panel.input for each input type
             switch (input.type){
                 case 'scanSelectMany':
@@ -233,23 +225,23 @@ var XNAT = getObject(XNAT || {});
                     });
                     break;
                 case 'hidden':
-                    formPanelElements.push(hiddenConfigInput(opts));
+                    formPanelElements.push(hiddenConfigInput(input));
                     break;
                 case 'static':
-                    formPanelElements.push(staticConfigInput(opts));
+                    formPanelElements.push(staticConfigInput(input));
                     break;
                 case 'staticList':
                     formPanelElements.push(staticConfigList(i,input.value));
                     break;
                 case 'boolean':
-                    opts.boolean = true;
-                    opts.outerLabel = opts.label;
-                    opts.innerLabel = input.innerLabel || 'True';
-                    opts.checked = (input.value === 'true') ? 'checked' : false;
-                    formPanelElements.push(configCheckbox(opts));
+                    input.boolean = true;
+                    input.outerLabel = input.label;
+                    input.innerLabel = input.innerLabel || 'True';
+                    input.checked = (input.value === 'true') ? 'checked' : false;
+                    formPanelElements.push(configCheckbox(input));
                     break;
                 default:
-                    formPanelElements.push(defaultConfigInput(opts));
+                    formPanelElements.push(defaultConfigInput(input));
             }
         }
 

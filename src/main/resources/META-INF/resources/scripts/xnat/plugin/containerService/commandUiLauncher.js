@@ -94,6 +94,10 @@ var XNAT = getObject(XNAT || {});
      ** Launcher Options
      */
 
+    function uiInputBuilder(input){
+        // figure name, type, value and value label
+    }
+
     function launchOneContainer(inputs,rootElement,wrapperId){
         var independentInputs = {},
             childInputs = {},
@@ -120,16 +124,19 @@ var XNAT = getObject(XNAT || {});
                         childInputs[key].name = i;
                         childInputs[key].type = inputs[i].ui[k].type;
                         childInputs[key].value = inputs[i].ui[k].values[0].value || '';
+                        childInputs[key].valueLabel = inputs[i].ui[k].values[0].label || childInputs[key].value;
                     }
 
                 } else if (inputs[i].advanced) {
                     advancedInputs[i] = inputs[i];
                     advancedInputs[i].type = inputs[i].ui.default.type;
-                    advancedInputs[i].value = inputs[i].ui.default.values[0].value || '';
+                    advancedInputs[i].value = inputs[i].ui.default.values[0].value || advancedInputs[i].value;
+                    advancedInputs[i].valueLabel = inputs[i].ui.default.values[0].label || '';
                 } else {
                     independentInputs[i] = inputs[i];
                     independentInputs[i].type = inputs[i].ui.default.type;
-                    independentInputs[i].value = inputs[i].ui.default.values[0].value || '';
+                    independentInputs[i].value = inputs[i].ui.default.values[0].value || independentInputs[i].value;
+                    independentInputs[i].valueLabel = inputs[i].ui.default.values[0].label || '';
                 }
             }
 
