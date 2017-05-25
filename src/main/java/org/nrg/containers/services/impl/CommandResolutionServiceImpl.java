@@ -337,7 +337,10 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             final Map<String, String> wrapperInputValues = Maps.newHashMap();
             final Map<String, String> commandInputValues = Maps.newHashMap();
             for (final ResolvedInputTreeNode<? extends Input> node : flatTree) {
-                final String value = node.valuesAndChildren().get(0).resolvedValue().value();
+                final List<ResolvedInputTreeValueAndChildren> valuesAndChildren = node.valuesAndChildren();
+                final String value = (valuesAndChildren != null && !valuesAndChildren.isEmpty()) ?
+                        valuesAndChildren.get(0).resolvedValue().value() :
+                        null;
                 if (value != null) {
                     if (node.input() instanceof CommandWrapperInput) {
                         wrapperInputValues.put(node.input().name(), value);
