@@ -58,7 +58,7 @@ var XNAT = getObject(XNAT || {});
     };
 
     var defaultConfigInput = function(input){
-        var name = input.name,
+        var name = input.name || input.label,
             value = input.value,
             label = input.label,
             description = input.description || '',
@@ -90,7 +90,7 @@ var XNAT = getObject(XNAT || {});
     };
 
     var configCheckbox = function(input){
-        var name = input.name,
+        var name = input.name || input.outerLabel,
             value = input.value,
             checked = input.checked,
             boolean = input.boolean,
@@ -134,7 +134,7 @@ var XNAT = getObject(XNAT || {});
     };
 
     var hiddenConfigInput = function(input) {
-        var name = input.name,
+        var name = input.name || input.label,
             value = input.value,
             childOf = input['parent'],
             dataProps = {},
@@ -149,7 +149,7 @@ var XNAT = getObject(XNAT || {});
     };
 
     var staticConfigInput = function(input) {
-        var name = input.name,
+        var name = input.name || input.label,
             value = input.value,
             valueLabel = input.valueLabel,
             childOf = input['parent'],
