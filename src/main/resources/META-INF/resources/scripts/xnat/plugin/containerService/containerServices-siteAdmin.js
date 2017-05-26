@@ -622,6 +622,7 @@ var XNAT = getObject(XNAT || {});
         addImage,
         commandListManager,
         commandDefinition,
+        wrapperList,
         imageHubs;
 
     XNAT.plugin.containerService.imageListManager = imageListManager =
@@ -641,6 +642,8 @@ var XNAT = getObject(XNAT || {});
 
     XNAT.plugin.containerService.imageHubs = imageHubs =
         getObject(XNAT.plugin.containerService.imageHubs || {});
+
+    XNAT.plugin.containerService.wrapperList = wrapperList = {};
 
     imageListManager.samples = [
         {
@@ -974,16 +977,16 @@ var XNAT = getObject(XNAT || {});
         commandListManager.getAll(imageName).done(function(data) {
             if (data) {
                 for (var i = 0, j = data.length; i < j; i++) {
-                    var xnatActions = '', item = data[i];
-                    if (item.xnat) {
-                        for (var k = 0, l = item.xnat.length; k < l; k++) {
+                    var xnatActions = '', command = data[i];
+                    if (command.xnat) {
+                        for (var k = 0, l = command.xnat.length; k < l; k++) {
                             if (xnatActions.length > 0) xnatActions += '<br>';
-                            xnatActions += item.xnat[k].description;
-                            if (item.xnat[k].contexts.length > 0) {
-                                var contexts = item.xnat[k].contexts;
+                            xnatActions += command.xnat[k].description;
+                            if (command.xnat[k].contexts.length > 0) {
+                                var contexts = command.xnat[k].contexts;
                                 xnatActions += "<ul>";
-                                contexts.forEach(function(item){
-                                    xnatActions +="<li>"+item+"</li>";
+                                contexts.forEach(function(context){
+                                    xnatActions +="<li>"+context+"</li>";
                                 });
                                 xnatActions += "</ul>";
                             }
@@ -991,12 +994,12 @@ var XNAT = getObject(XNAT || {});
                     } else {
                         xnatActions = 'N/A';
                     }
-                    chTable.tr({title: item.name, data: {id: item.id, name: item.name, image: item.image}})
-                        .td([viewLink(item, item.name)]).addClass('name')
+                    chTable.tr({title: command.name, data: {id: command.id, name: command.name, image: command.image}})
+                        .td([viewLink(command, command.name)]).addClass('name')
                         .td(xnatActions)
                         .td('N/A')
-                        .td(item.version)
-                        .td([['div.center', [viewCommandButton(item), spacer(10), deleteCommandButton(item)]]]);
+                        .td(command.version)
+                        .td([['div.center', [viewCommandButton(command), spacer(10), deleteCommandButton(command)]]]);
                 }
             } else {
                 // create a handler when no command data is returned.
@@ -1571,8 +1574,7 @@ var XNAT = getObject(XNAT || {});
             .th('<b>Command</b>')
             .th('<b>User</b>')
             .th('<b>Date</b>')
-            .th('<b>Input</b>')
-            .th('<b>Output</b>');
+            .th('<b>Project</b>');
 
         function displayDate(timestamp){
             var d = new Date(timestamp);
@@ -1589,34 +1591,63 @@ var XNAT = getObject(XNAT || {});
             }
         }
 
+        function displayProject(mounts){
+            // assume that the first mount of a container is an input from a project. Parse the URI for that mount and return the project ID.
+            var inputMount = mounts[0]['xnat-host-path'];
+            if (inputMount === undefined) return 'unknown';
+
+            inputMount = inputMount.replace('/data/xnat/archive/','');
+            inputMount = inputMount.replace('/data/archive/','');
+            inputMount = inputMount.replace('/REST/archive/','');
+            var inputMountEls = inputMount.split('/');
+            return spawn('a',{ href: '/data/projects/'+ inputMountEls[0] + '?format=html', html: inputMountEls[0] });
+        }
+
         function displayOutput(outputArray){
             var o = outputArray[0];
             return o.label;
         }
 
-        XNAT.xhr.getJSON({
-            url: getCommandHistoryUrl(),
-            fail: function(e){
-                errorHandler(e);
-            },
-            success: function(data){
-                if (data.length > 0) {
-                    data.forEach(function(item){
-                        chTable.tr({title: item['container-id'], id: item['container-id'] })
-                            .td({ addClass: 'left', html: '<b>'+item['id']+'</b>' })
-                            .td(item['docker-image'])
-                            .td('dcm2niix-scan')
-                            .td(item['user-id'])
-                            .td([ displayDate(item['timestamp']) ])
-                            .td([ displayInput(item['rawInputs']) ])
-                            .td([ displayOutput(item['outputs']) ]);
-                    })
-                } else {
-                    chTable.tr()
-                        .td({ colspan: 7, html: "No history entries found" });
-                }
+        commandListManager.getAll().done(function(commands){
+            // populate the list of wrappers
+            commands.forEach(function(command){
+                var wrappers = command.xnat;
+                wrappers.forEach(function(wrapper){
+                    XNAT.plugin.containerService.wrapperList[wrapper.id] = wrapper.description;
+                })
 
-            }
+            });
+
+            XNAT.xhr.getJSON({
+                url: getCommandHistoryUrl(),
+                fail: function(e){
+                    errorHandler(e);
+                },
+                success: function(data){
+                    if (data.length > 0) {
+                        data.sort(function(a,b){
+                            var timestampA = new Date(a.timestamp),
+                                timestampB = new Date(b.timestamp);
+                            return (timestampA > timestampB) ? -1 : 1;
+                        });
+
+                        data.forEach(function(historyEntry){
+                            chTable.tr({title: historyEntry['container-id'], id: historyEntry['container-id'] })
+                                .td({ addClass: 'left', html: '<b>'+historyEntry['id']+'</b>' })
+                                .td(historyEntry['docker-image'])
+                                .td(XNAT.plugin.containerService.wrapperList[historyEntry['xnat-command-wrapper-id']])
+                                .td(historyEntry['user-id'])
+                                .td([ displayDate(historyEntry['timestamp']) ])
+                                .td([ displayProject(historyEntry['mounts']) ])
+                        })
+                    } else {
+                        chTable.tr()
+                            .td({ colspan: 7, html: "No history entries found" });
+                    }
+
+                }
+            });
+
         });
 
         historyTable.$table = $(chTable.table);
