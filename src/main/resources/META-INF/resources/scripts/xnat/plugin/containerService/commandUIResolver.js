@@ -197,6 +197,8 @@ var XNAT = getObject(XNAT || {});
         var formPanelElements = [];
         advanced = advanced || false;
 
+        if (Object.keys(inputs).length === 0) return; // do not render any containing UI elements if there are no inputs in this section.
+
         for (var i in inputs) {
             var input = inputs[i];
 
@@ -250,11 +252,13 @@ var XNAT = getObject(XNAT || {});
             return formPanelElements;
         } else {
             // return a collapsible container containing the form elements
-            return spawn('div.advancedSettings',[
-                spawn('p.advancedSettingsToggle'),
-                spawn('div.advancedSettingsContents',formPanelElements)
-                ]
-            );
+            return spawn('div.advancedSettingsContainer',[
+                spawn('div.advancedSettingsToggle'),
+                spawn('div.advancedSettings',[
+                        spawn('div.advancedSettingsContents',formPanelElements)
+                    ]
+                )
+            ]);
         }
     };
 

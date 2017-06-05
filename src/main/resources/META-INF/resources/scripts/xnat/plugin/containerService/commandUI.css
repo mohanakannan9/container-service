@@ -1,17 +1,32 @@
 
-
-.panel .advancedSettings {
-    border: 1px dashed #aaa;
-    padding: 3px 6px;
+.panel .advancedSettingsContainer {
 }
-.panel .advancedSettings .advancedSettingsToggle {
+.panel .advancedSettingsToggle {
+    border-bottom: 1px solid #ccc;
+    text-align: center;
+}
+.panel .advancedSettingsToggle:before {
     background-color: #f0f0f0;
     content: "Advanced Settings";
+    color: #848484;
     cursor: pointer;
-    display: block;
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 6px;
+    text-transform: uppercase;
+}
+.panel .advancedSettingsToggle.active:before {
+    background-color: #e4efff;
+    color: #4080cc;
+}
+
+.panel .advancedSettings {
 }
 .panel .advancedSettings .advancedSettingsContents {
+    border: solid #ccc;
+    border-width: 0 1px 1px;
     display: none;
+    padding: 18px 0 6px;
 }
 
 #containerMenu > .bd {

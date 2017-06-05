@@ -776,8 +776,14 @@ var XNAT = getObject(XNAT || {});
     });
 
     $(document).on('click','.advancedSettingsToggle',function(){
-        var advancedPanel = $(this).parent('.advancedSettings');
-        advancedPanel.toggle();
+        var advancedPanel = $(this).parent('.advancedSettingsContainer').find('.advancedSettingsContents');
+        if ($(this).hasClass('active')) {
+            $(this).removeClass('active');
+            advancedPanel.slideUp(300);
+        } else {
+            $(this).addClass('active');
+            advancedPanel.slideDown(300);
+        }
     });
 
     launcher.refresh = function(){
