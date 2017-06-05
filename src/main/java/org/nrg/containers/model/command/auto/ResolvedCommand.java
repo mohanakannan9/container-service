@@ -1,17 +1,11 @@
 package org.nrg.containers.model.command.auto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import org.nrg.containers.model.command.auto.Command.CommandInput;
-import org.nrg.containers.model.command.auto.Command.CommandWrapperInput;
-import org.nrg.containers.model.command.auto.ResolvedCommand.Builder;
 import org.nrg.containers.model.command.entity.CommandEntity;
-import org.nrg.containers.model.xnat.XnatModelObject;
 
 import javax.annotation.Nullable;
 import java.util.Collections;
