@@ -72,6 +72,8 @@ dependencies {
     }
     compileAndInclude (group: 'com.spotify', name: 'docker-client', version: vDockerClient) {
         exclude group: "ch.qos.logback"
+        exclude group: "com.fasterxml.jackson.core"
+        exclude group: "com.fasterxml.jackson.datatype"
     }
     compileAndInclude "com.jayway.jsonpath:json-path:2.2.0"
 

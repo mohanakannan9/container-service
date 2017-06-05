@@ -30,7 +30,7 @@
                     "name": "T1-scantype",
                     "description": "scantype of T1 scan",
                     "type": "string",
-                    "default-value": "\"SCANTYPE\", \"OTHER_SCANTYPE\"",
+                    "default-value": "\\\"SCANTYPE\\\", \\\"OTHER_SCANTYPE\\\"",
                     "required": true
                 }
             ],
