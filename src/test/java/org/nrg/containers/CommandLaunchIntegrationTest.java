@@ -20,16 +20,18 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.nrg.containers.config.IntegrationTestConfig;
+import org.nrg.containers.model.command.auto.Command;
+import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.container.entity.ContainerEntityMount;
 import org.nrg.containers.model.container.entity.ContainerEntityOutput;
 import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
-import org.nrg.containers.model.command.auto.Command;
-import org.nrg.containers.model.command.auto.Command.CommandWrapper;
+import org.nrg.containers.model.xnat.Project;
 import org.nrg.containers.model.xnat.Resource;
 import org.nrg.containers.model.xnat.Scan;
 import org.nrg.containers.model.xnat.Session;
 import org.nrg.containers.services.CommandService;
+import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.containers.services.ContainerService;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -43,17 +45,18 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Nullable;
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.when;
@@ -72,6 +75,7 @@ public class CommandLaunchIntegrationTest {
     @Autowired private ObjectMapper mapper;
     @Autowired private CommandService commandService;
     @Autowired private ContainerService containerService;
+    @Autowired private ContainerEntityService containerEntityService;
     @Autowired private AliasTokenService mockAliasTokenService;
     @Autowired private DockerServerPrefsBean mockDockerServerPrefsBean;
     @Autowired private SiteConfigPreferences mockSiteConfigPreferences;
@@ -222,11 +226,8 @@ public class CommandLaunchIntegrationTest {
         assertThat(outputMount, is(not(nullValue())));
         assertThat(outputMount.getContainerPath(), is("/output"));
         final String outputPath = outputMount.getXnatHostPath();
-        final File outputFile = new File(outputPath + "/out.txt");
-        if (!outputFile.canRead()) {
-            fail("Cannot read output file " + outputFile.getAbsolutePath());
-        }
-        final String[] outputFileContents = FileUtils.readFileToString(outputFile).split("\\n");
+
+        final String[] outputFileContents = readFile(outputPath + "/out.txt");
         assertThat(outputFileContents.length, greaterThanOrEqualTo(2));
         assertThat(outputFileContents[0], is("recon-all -s session1 -all"));
 
@@ -239,5 +240,112 @@ public class CommandLaunchIntegrationTest {
 
         }
         assertThat(Lists.newArrayList(outputFileContents[1].split(" ")), is(fakeResourceDirFileNames));
+    }
+
+    @Test
+    public void testProjectMount() throws Exception {
+        final String dir = Resources.getResource("commandLaunchTest").getPath().replace("%20", " ");
+        final String commandJsonFile = dir + "/project-mount-command.json";
+        final String projectJsonFile = dir + "/project.json";
+        final String projectDir = dir + "/project";
+        // final String commandWrapperName = "find-in-project";
+
+        final Command command = mapper.readValue(new File(commandJsonFile), Command.class);
+        final Command commandCreated = commandService.create(command);
+        final CommandWrapper commandWrapper = commandCreated.xnatCommandWrappers().get(0);
+        assertThat(commandWrapper, is(not(nullValue())));
+
+        final Project project = mapper.readValue(new File(projectJsonFile), Project.class);
+        project.setDirectory(projectDir);
+        final String projectJson = mapper.writeValueAsString(project);
+
+        final Map<String, String> runtimeValues = Maps.newHashMap();
+        runtimeValues.put("project", projectJson);
+
+        final ContainerEntity execution = containerService.resolveCommandAndLaunchContainer(commandWrapper.id(), runtimeValues, mockUser);
+        Thread.sleep(1000); // Wait for container to finish
+
+        // Raw inputs
+        assertThat(execution.getRawInputs(), is(runtimeValues));
+
+        // xnat wrapper inputs
+        final Map<String, String> expectedXnatInputValues = Maps.newHashMap();
+        expectedXnatInputValues.put("project", project.getUri());
+        assertThat(execution.getWrapperInputs(), is(expectedXnatInputValues));
+
+        // command inputs
+        final Map<String, String> expectedCommandInputValues = Maps.newHashMap();
+        assertThat(execution.getCommandInputs(), is(expectedCommandInputValues));
+
+        // Outputs by name. We will check the files later.
+        final List<String> outputNames = Lists.transform(execution.getOutputs(), new Function<ContainerEntityOutput, String>() {
+            @Override
+            public String apply(final ContainerEntityOutput output) {
+                return output.getName();
+            }
+        });
+        assertThat(outputNames, contains("outputs"));
+
+        // Environment variables
+        final Map<String, String> expectedEnvironmentVariables = Maps.newHashMap();
+        expectedEnvironmentVariables.put("XNAT_USER", FAKE_ALIAS);
+        expectedEnvironmentVariables.put("XNAT_PASS", FAKE_SECRET);
+        expectedEnvironmentVariables.put("XNAT_HOST", FAKE_HOST);
+        assertThat(execution.getEnvironmentVariables(), is(expectedEnvironmentVariables));
+
+        // mounts
+        final List<ContainerEntityMount> mounts = execution.getMounts();
+        assertThat(mounts, hasSize(2));
+
+        ContainerEntityMount inputMount = null;
+        ContainerEntityMount outputMount = null;
+        for (final ContainerEntityMount mount : mounts) {
+            if (mount.getName().equals("input")) {
+                inputMount = mount;
+            } else if (mount.getName().equals("output")) {
+                outputMount = mount;
+            } else {
+                fail("We should not have a mount with name " + mount.getName());
+            }
+        }
+
+        assertThat(inputMount, is(not(nullValue())));
+        assertThat(inputMount.getContainerPath(), is("/input"));
+        assertThat(inputMount.getXnatHostPath(), is(projectDir));
+
+        assertThat(outputMount, is(not(nullValue())));
+        assertThat(outputMount.getContainerPath(), is("/output"));
+        final String outputPath = outputMount.getXnatHostPath();
+
+        // Read two output files: files.txt and dirs.txt
+        final String[] expectedFilesFileContents = {
+                "/input/project-file.txt",
+                "/input/resource/project-resource-file.txt",
+                "/input/session/resource/session-resource-file.txt",
+                "/input/session/scan/resource/scan-resource-file.txt",
+                "/input/session/scan/scan-file.txt",
+                "/input/session/session-file.txt"
+        };
+        final List<String> filesFileContents = Lists.newArrayList(readFile(outputPath + "/files.txt"));
+        assertThat(filesFileContents, containsInAnyOrder(expectedFilesFileContents));
+
+        final String[] expectedDirsFileContents = {
+                "/input",
+                "/input/resource",
+                "/input/session",
+                "/input/session/resource",
+                "/input/session/scan",
+                "/input/session/scan/resource"
+        };
+        final List<String> dirsFileContents = Lists.newArrayList(readFile(outputPath + "/dirs.txt"));
+        assertThat(dirsFileContents, containsInAnyOrder(expectedDirsFileContents));
+    }
+
+    private String[] readFile(final String outputFilePath) throws IOException {
+        final File outputFile = new File(outputFilePath);
+        if (!outputFile.canRead()) {
+            fail("Cannot read output file " + outputFile.getAbsolutePath());
+        }
+        return FileUtils.readFileToString(outputFile).split("\\n");
     }
 }

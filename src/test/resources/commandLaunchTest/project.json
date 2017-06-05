@@ -1,0 +1,7 @@
+{
+    "id": "project",
+    "type": "Project",
+    "label": "project",
+    "uri": "/projects/project",
+    "xsiType": "xnat:projectData"
+}

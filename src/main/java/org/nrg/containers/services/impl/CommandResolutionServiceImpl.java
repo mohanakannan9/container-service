@@ -91,7 +91,7 @@ import static org.nrg.containers.model.command.entity.CommandWrapperInputType.SU
 
 @Service
 public class CommandResolutionServiceImpl implements CommandResolutionService {
-    private final Logger log = LoggerFactory.getLogger(CommandResolutionService.class);
+    private final Logger log = LoggerFactory.getLogger(CommandResolutionServiceImpl.class);
 
     private final CommandService commandService;
     private final ConfigService configService;
