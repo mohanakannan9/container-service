@@ -529,6 +529,8 @@ var XNAT = getObject(XNAT || {});
     XNAT.plugin.containerService.commandListManager = commandListManager =
         getObject(XNAT.plugin.containerService.commandListManager || {});
 
+    XNAT.plugin.containerService.wrapperList = wrapperList = {};
+
     function getCommandHistoryUrl(appended){
         appended = (appended) ? '?'+appended : '';
         return rootUrl('/xapi/containers' + appended);
@@ -637,8 +639,8 @@ var XNAT = getObject(XNAT || {});
                             return (timestampA > timestampB) ? -1 : 1;
                         });
 
+                        var noHistoryFound = true;
                         data.forEach(function(historyEntry){
-                            var noHistoryFound = true;
 
                             if (checkHistoryForProject(historyEntry['mounts'])) {
                                 var projectId = getProjectId();
@@ -652,13 +654,13 @@ var XNAT = getObject(XNAT || {});
                                     .td([ displayDate(historyEntry['timestamp']) ])
                                     .td([ displayProject(projectId) ]);
                             }
-
-                            if (noHistoryFound) {
-                                chTable.tr()
-                                    .td({ colspan: 7, html: "No history entries found for this project." });
-                            }
-
                         });
+
+                        if (noHistoryFound) {
+                            chTable.tr()
+                                .td({ colspan: 7, html: "No history entries found for this project." });
+                        }
+                        
                     } else {
                         chTable.tr()
                             .td({ colspan: 7, html: "No history entries found" });

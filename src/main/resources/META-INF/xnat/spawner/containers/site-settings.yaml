@@ -223,7 +223,7 @@ sitewideCommandProjectPrefs:
 sitewideCommandHistoryPanel:
     kind: panel
     name: sitewideCommandHistoryPanel
-    label: Site-wide Command Execution Log
+    label: Site-wide Container Execution Log
     footer: false
     contents:
         commandHistoryTableContainer:
