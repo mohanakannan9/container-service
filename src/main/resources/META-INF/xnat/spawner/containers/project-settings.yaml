@@ -51,6 +51,17 @@ projectCommandProjectPrefs:
             offText: Opt-OUT Of Enabled Site-wide Commands
             description: "If set to \"Opt-OUT,\" each project will either have to enable each command individually, or change their project opt-in setting."
 
+projectContainerHistoryPanel:
+    kind: panel
+    name: projectContainerHistoryPanel
+    label: Container Execution Log
+    footer: false
+    contents:
+        projectContainerHistoryTable:
+            tag: div#command-history-container
+            contents: Table will go here
+
+
 projectSettings:
     kind: tabs
     name: projectSettingsPage
@@ -69,3 +80,11 @@ projectSettings:
             contents:
                 ${projectCommandProjectPrefs}
                 ${projectCommandConfigsPanel}
+        projectContainerHistoryTab:
+            kind: tab
+            name: projectContainerHistoryTab
+            label: Container History
+            group: containerServiceProjectTabGroup
+            active: false
+            contents:
+                ${projectContainerHistoryPanel}

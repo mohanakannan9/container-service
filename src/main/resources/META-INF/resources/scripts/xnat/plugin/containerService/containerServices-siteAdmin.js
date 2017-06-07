@@ -1549,7 +1549,7 @@ var XNAT = getObject(XNAT || {});
     var historyTable;
 
     XNAT.plugin.containerService.historyTable = historyTable =
-        getObject(XNAT.plugin.containerService || {});
+        getObject(XNAT.plugin.containerService.historyTable || {});
 
     function getCommandHistoryUrl(appended){
         appended = (appended) ? '?'+appended : '';

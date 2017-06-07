@@ -514,4 +514,173 @@ var XNAT = getObject(XNAT || {});
 
     projCommandConfigManager.init();
 
+    /* =============== *
+     * Command History *
+     * =============== */
+
+    console.log('commandHistory.js');
+
+    var projectHistoryTable,
+        commandListManager;
+
+    XNAT.plugin.containerService.projectHistoryTable = projectHistoryTable =
+        getObject(XNAT.plugin.containerService.projectHistoryTable || {});
+
+    XNAT.plugin.containerService.commandListManager = commandListManager =
+        getObject(XNAT.plugin.containerService.commandListManager || {});
+
+    function getCommandHistoryUrl(appended){
+        appended = (appended) ? '?'+appended : '';
+        return rootUrl('/xapi/containers' + appended);
+    }
+
+    commandListManager.getCommands = commandListManager.getAll = function(imageName,callback){
+        /*
+         if (imageName) {
+         imageName = imageName.split(':')[0]; // remove any tag definition (i.e. ':latest') in the image name
+         imageName = imageName.replace("/","%2F"); // convert slashes in image names to URL-ASCII equivalent
+         }
+         */
+        callback = isFunction(callback) ? callback : function(){};
+        return XNAT.xhr.get({
+            url: (imageName) ? commandUrl('?image='+imageName) : commandUrl(),
+            dataType: 'json',
+            success: function(data){
+                if (data) {
+                    return data;
+                }
+                callback.apply(this, arguments);
+            }
+        });
+    };
+
+    projectHistoryTable.table = function(){
+        // initialize the table - we'll add to it below
+        var chTable = XNAT.table({
+            className: 'sitewide-command-configs xnat-table compact',
+            style: {
+                width: '100%',
+                marginTop: '15px',
+                marginBottom: '15px'
+            }
+        });
+
+        // add table header row
+        chTable.tr()
+            .th({ addClass: 'left', html: '<b>ID</b>' })
+            .th('<b>Image</b>')
+            .th('<b>Command</b>')
+            .th('<b>User</b>')
+            .th('<b>Date</b>')
+            .th('<b>Project</b>');
+
+        function displayDate(timestamp){
+            var d = new Date(timestamp);
+            return d.toISOString().replace('T',' ').replace('Z',' ');
+        }
+
+        function displayInput(inputObj){
+            for (var i in inputObj){
+                if (i=="scan") {
+                    var sessionId = inputObj[i].split('/')[2];
+                    var scanId = inputObj[i].split('/scans/')[1];
+                    return spawn(['a|href='+rootUrl('/data/experiments/'+sessionId), sessionId+': '+scanId ]);
+                }
+            }
+        }
+
+        function checkHistoryForProject(mounts){
+            // assume that the first mount of a container is an input from a project. Parse the URI for that mount and return the project ID.
+            var inputMount = mounts[0]['xnat-host-path'];
+            if (inputMount === undefined) return 'unknown';
+
+            inputMount = inputMount.replace('/data/xnat/archive/','');
+            inputMount = inputMount.replace('/data/archive/','');
+            inputMount = inputMount.replace('/REST/archive/','');
+            var inputMountEls = inputMount.split('/');
+
+            // check for a match with the current projectID
+            var projectId = getProjectId();
+
+            return (inputMountEls[0] === projectId) ? inputMountEls[0] : false;
+        }
+
+        function displayProject(projectId){
+            return spawn('a',{ href: '/data/projects/'+ projectId + '?format=html', html: projectId });
+        }
+
+        function displayOutput(outputArray){
+            var o = outputArray[0];
+            return o.label;
+        }
+
+        commandListManager.getAll().done(function(commands){
+            // populate the list of wrappers
+            commands.forEach(function(command){
+                var wrappers = command.xnat;
+                wrappers.forEach(function(wrapper){
+                    XNAT.plugin.containerService.wrapperList[wrapper.id] = wrapper.description;
+                })
+
+            });
+
+            XNAT.xhr.getJSON({
+                url: getCommandHistoryUrl(),
+                fail: function(e){
+                    errorHandler(e);
+                },
+                success: function(data){
+                    if (data.length > 0) {
+                        data.sort(function(a,b){
+                            var timestampA = new Date(a.timestamp),
+                                timestampB = new Date(b.timestamp);
+                            return (timestampA > timestampB) ? -1 : 1;
+                        });
+
+                        data.forEach(function(historyEntry){
+                            var noHistoryFound = true;
+
+                            if (checkHistoryForProject(historyEntry['mounts'])) {
+                                var projectId = getProjectId();
+                                noHistoryFound = false;
+
+                                chTable.tr({title: historyEntry['container-id'], id: historyEntry['container-id'] })
+                                    .td({ addClass: 'left', html: '<b>'+historyEntry['id']+'</b>' })
+                                    .td(historyEntry['docker-image'])
+                                    .td(XNAT.plugin.containerService.wrapperList[historyEntry['xnat-command-wrapper-id']])
+                                    .td(historyEntry['user-id'])
+                                    .td([ displayDate(historyEntry['timestamp']) ])
+                                    .td([ displayProject(projectId) ]);
+                            }
+
+                            if (noHistoryFound) {
+                                chTable.tr()
+                                    .td({ colspan: 7, html: "No history entries found for this project." });
+                            }
+
+                        });
+                    } else {
+                        chTable.tr()
+                            .td({ colspan: 7, html: "No history entries found" });
+                    }
+
+                }
+            });
+
+        });
+
+        projectHistoryTable.$table = $(chTable.table);
+
+        return chTable.table;
+    };
+
+    projectHistoryTable.init = function(container){
+        var manager = $$(container || '#command-history-container');
+        manager.html('');
+
+        manager.append(projectHistoryTable.table());
+    };
+
+    projectHistoryTable.init();
+
 }));
