@@ -22,8 +22,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
-
+import org.nrg.xdat.security.helpers.Permissions;
+import java.util.ArrayList;
 import java.util.List;
+import org.nrg.xft.security.UserI;
 
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
@@ -49,11 +51,19 @@ public class CommandEventMappingRestApi extends AbstractXapiRestController {
     @ApiOperation(value = "Get all Commands-Event-Mappings")
     @ResponseBody
     public List<CommandEventMapping> getMappings() {
-        return commandEventMappingService.getAll();
+        List<CommandEventMapping> mappings = commandEventMappingService.getAll();
+        List<CommandEventMapping> mappingsCanRead = new ArrayList<CommandEventMapping>();
+        for(CommandEventMapping mapping: mappings){
+            String cProject = mapping.getProjectId();
+            if(Permissions.canReadProject(getSessionUser(), cProject)) {
+                mappingsCanRead.add(mapping);
+            }
+        }
+        return mappingsCanRead;
     }
 
 
-    @XapiRequestMapping(method = POST)
+    @XapiRequestMapping(method = POST, restrictTo = Admin)
     public ResponseEntity<CommandEventMapping> createCommand(final @RequestBody CommandEventMapping commandEventMapping)
             throws BadRequestException {
         try {
@@ -71,10 +81,17 @@ public class CommandEventMappingRestApi extends AbstractXapiRestController {
     @ApiOperation(value = "Get a Command-Event-Mapping")
     @ResponseBody
     public CommandEventMapping retrieve(final @PathVariable Long id) {
-        return commandEventMappingService.retrieve(id);
+        CommandEventMapping mapping = commandEventMappingService.retrieve(id);
+        String cProject = mapping.getProjectId();
+        if(Permissions.canReadProject(getSessionUser(), cProject)) {
+            return commandEventMappingService.retrieve(id);
+        }
+        else{
+            return null;
+        }
     }
 
-    @XapiRequestMapping(value = {"/{id}"}, method = DELETE)
+    @XapiRequestMapping(value = {"/{id}"}, method = DELETE, restrictTo = Admin)
     @ApiOperation(value = "Delete a CommandEventMapping", code = 204)
     public ResponseEntity<String> delete(final @PathVariable Long id) {
         commandEventMappingService.delete(id);
