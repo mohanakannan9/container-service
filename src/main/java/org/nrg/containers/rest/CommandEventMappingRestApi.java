@@ -26,6 +26,7 @@ import org.nrg.xdat.security.helpers.Permissions;
 import java.util.ArrayList;
 import java.util.List;
 import org.nrg.xft.security.UserI;
+import org.apache.commons.lang3.StringUtils;
 
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
@@ -67,6 +68,9 @@ public class CommandEventMappingRestApi extends AbstractXapiRestController {
     public ResponseEntity<CommandEventMapping> createCommand(final @RequestBody CommandEventMapping commandEventMapping)
             throws BadRequestException {
         try {
+            if(StringUtils.isBlank(commandEventMapping.getEventType())){
+                throw new BadRequestException("Event type must be defined and cannot be empty.");
+            }
             final UserI userI = XDAT.getUserDetails();
             commandEventMapping.setSubscriptionUserName(userI.getUsername());
             final CommandEventMapping created = commandEventMappingService.create(commandEventMapping);
