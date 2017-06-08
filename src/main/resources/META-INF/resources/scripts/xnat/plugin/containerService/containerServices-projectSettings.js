@@ -520,8 +520,12 @@ var XNAT = getObject(XNAT || {});
 
     console.log('commandHistory.js');
 
-    var projectHistoryTable,
+    var projectHistory,
+        projectHistoryTable,
         commandListManager;
+
+    XNAT.plugin.containerService.projectHistory = projectHistory =
+        getObject(XNAT.plugin.containerService.projectHistory || {});
 
     XNAT.plugin.containerService.projectHistoryTable = projectHistoryTable =
         getObject(XNAT.plugin.containerService.projectHistoryTable || {});
@@ -558,8 +562,8 @@ var XNAT = getObject(XNAT || {});
 
     projectHistoryTable.table = function(){
         // initialize the table - we'll add to it below
-        var chTable = XNAT.table({
-            className: 'sitewide-command-configs xnat-table compact',
+        var phTable = XNAT.table({
+            className: 'xnat-table compact',
             style: {
                 width: '100%',
                 marginTop: '15px',
@@ -568,13 +572,12 @@ var XNAT = getObject(XNAT || {});
         });
 
         // add table header row
-        chTable.tr()
+        phTable.tr()
             .th({ addClass: 'left', html: '<b>ID</b>' })
             .th('<b>Image</b>')
             .th('<b>Command</b>')
             .th('<b>User</b>')
-            .th('<b>Date</b>')
-            .th('<b>Project</b>');
+            .th('<b>Date</b>');
 
         function displayDate(timestamp){
             var d = new Date(timestamp);
@@ -616,6 +619,15 @@ var XNAT = getObject(XNAT || {});
             return o.label;
         }
 
+        function displayCommandWithPopup(historyEntry){
+            var commandLabel = XNAT.plugin.containerService.wrapperList[historyEntry['xnat-command-wrapper-id']];
+            return spawn ('a',{
+                href: 'javascript:XNAT.plugin.containerService.projectHistoryTable.viewHistory(\''+historyEntry['id']+'\')',
+                title: 'View Full History Entry',
+                html: commandLabel
+            });
+        }
+
         commandListManager.getAll().done(function(commands){
             // populate the list of wrappers
             commands.forEach(function(command){
@@ -646,23 +658,26 @@ var XNAT = getObject(XNAT || {});
                                 var projectId = getProjectId();
                                 noHistoryFound = false;
 
-                                chTable.tr({title: historyEntry['container-id'], id: historyEntry['container-id'] })
+                                // take this whole history object and index it by the container ID.
+                                projectHistory[historyEntry['id']] = historyEntry;
+                                projectHistory[historyEntry['id']]['wrapper-name'] = XNAT.plugin.containerService.wrapperList[historyEntry['xnat-command-wrapper-id']];
+
+                                phTable.tr({title: historyEntry['id'], id: historyEntry['id'] })
                                     .td({ addClass: 'left', html: '<b>'+historyEntry['id']+'</b>' })
                                     .td(historyEntry['docker-image'])
-                                    .td(XNAT.plugin.containerService.wrapperList[historyEntry['xnat-command-wrapper-id']])
+                                    .td([ displayCommandWithPopup(historyEntry) ])
                                     .td(historyEntry['user-id'])
-                                    .td([ displayDate(historyEntry['timestamp']) ])
-                                    .td([ displayProject(projectId) ]);
+                                    .td([ displayDate(historyEntry['timestamp']) ]);
                             }
                         });
 
                         if (noHistoryFound) {
-                            chTable.tr()
+                            phTable.tr()
                                 .td({ colspan: 7, html: "No history entries found for this project." });
                         }
-                        
+
                     } else {
-                        chTable.tr()
+                        phTable.tr()
                             .td({ colspan: 7, html: "No history entries found" });
                     }
 
@@ -671,9 +686,78 @@ var XNAT = getObject(XNAT || {});
 
         });
 
-        projectHistoryTable.$table = $(chTable.table);
+        projectHistoryTable.$table = $(phTable.table);
 
-        return chTable.table;
+        return phTable.table;
+    };
+
+    projectHistoryTable.viewHistory = function(id){
+        if (projectHistory[id]) {
+            var historyEntry = XNAT.plugin.containerService.projectHistory[id];
+
+            // build nice-looking history entry table
+            var pheTable = XNAT.table({
+                className: 'xnat-table compact',
+                style: {
+                    width: '100%',
+                    marginTop: '15px',
+                    marginBottom: '15px'
+                }
+            });
+
+            // add table header row
+            pheTable.tr()
+                .th({ addClass: 'left', html: '<b>Key</b>' })
+                .th({ addClass: 'left', html: '<b>Value</b>' });
+
+            for (var key in historyEntry){
+                var val = historyEntry[key], formattedVal = '';
+                if (Array.isArray(val)) {
+                    var items = [];
+                    val.forEach(function(item){
+                        if (typeof item === 'object') item = JSON.stringify(item);
+                        items.push(spawn('li',[ spawn('code',item) ]));
+                    });
+                    formattedVal = spawn('ul',{ style: { 'list-style-type': 'none', 'padding-left': '0' }}, items);
+                } else if (typeof val === 'object' ) {
+                    formattedVal = spawn('code', JSON.stringify(val));
+                } else if (!val) {
+                    formattedVal = spawn('code','false');
+                } else {
+                    formattedVal = spawn('code',val);
+                }
+
+                pheTable.tr()
+                    .td('<b>'+key+'</b>')
+                    .td([ spawn('div',{ style: { 'word-break': 'break-all','max-width':'600px' }}, formattedVal) ]);
+            }
+
+            // display history
+            XNAT.ui.dialog.open({
+                title: historyEntry['wrapper-name'],
+                width: 800,
+                scroll: true,
+                content: pheTable.table,
+                buttons: [
+                    {
+                        label: 'OK',
+                        isDefault: true,
+                        close: true
+                    }
+                ]
+            });
+        } else {
+            XNAT.ui.dialog.open({
+                content: 'Sorry, could not display this history item.',
+                buttons: [
+                    {
+                        label: 'OK',
+                        isDefault: true,
+                        close: true
+                    }
+                ]
+            });
+        }
     };
 
     projectHistoryTable.init = function(container){
