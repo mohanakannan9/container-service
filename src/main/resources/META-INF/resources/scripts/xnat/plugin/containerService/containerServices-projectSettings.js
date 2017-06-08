@@ -754,7 +754,7 @@ var XNAT = getObject(XNAT || {});
                                 .td( '<b>'+mapping['id']+'</b>' )
                                 .td( mapping['event-type'] )
                                 .td( mapping['xnat-command-wrapper'] )
-                                .td( mapping['subscription-user-id'] )
+                                .td( mapping['subscription-user-name'] )
                                 .td( displayDate(mapping['timestamp']) )
                                 .td( mapping['enabled'] )
                                 .td()
