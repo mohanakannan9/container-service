@@ -58,7 +58,6 @@ public class CommandEventMappingRestApi extends AbstractXapiRestController {
             throws BadRequestException {
         try {
             final UserI userI = XDAT.getUserDetails();
-            commandEventMapping.setSubscriptionUserId(userI.getID());
             commandEventMapping.setSubscriptionUserName(userI.getUsername());
             final CommandEventMapping created = commandEventMappingService.create(commandEventMapping);
             return new ResponseEntity<>(created, HttpStatus.CREATED);

@@ -92,7 +92,7 @@ public class SessionArchiveListenerAndCommandLauncher implements Consumer<Event<
                     }
                     inputValues.put("session", sessionString);
                     try {
-                        final UserI subscriptionUser = userManagementService.getUser(commandEventMapping.getSubscriptionUserId());
+                        final UserI subscriptionUser = userManagementService.getUser(commandEventMapping.getSubscriptionUserName());
                         if (log.isInfoEnabled()) {
                             final String wrapperMessage = StringUtils.isNotBlank(wrapperName) ?
                                     String.format("wrapper \"%s\"", wrapperName) :
@@ -114,7 +114,7 @@ public class SessionArchiveListenerAndCommandLauncher implements Consumer<Event<
                         }
                         containerService.resolveCommandAndLaunchContainer(commandId, wrapperName, inputValues, subscriptionUser);
                     } catch (UserNotFoundException | UserInitException e) {
-                        log.error(String.format("Error launching command %d. Could not find or Init subscription owner with ID: %d", commandId, commandEventMapping.getSubscriptionUserId()), e);
+                        log.error(String.format("Error launching command %d. Could not find or Init subscription owner: %s", commandId, commandEventMapping.getSubscriptionUserName()), e);
                     } catch (NotFoundException | CommandResolutionException | NoServerPrefException | DockerServerException | ContainerException e) {
                         log.error("Error launching command " + commandId, e);
                     }

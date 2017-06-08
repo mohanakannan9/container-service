@@ -14,7 +14,6 @@ import org.nrg.containers.model.xnat.Scan;
 import org.nrg.containers.services.CommandEventMappingService;
 import org.nrg.containers.services.ContainerService;
 import org.nrg.framework.exceptions.NotFoundException;
-import org.nrg.framework.services.NrgEventService;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
@@ -84,7 +83,7 @@ public class ScanArchiveListenerAndCommandLauncher implements Consumer<Event<Sca
                     }
                     inputValues.put("scan", scanString);
                     try {
-                        final UserI subscriptionUser = userManagementService.getUser(commandEventMapping.getSubscriptionUserId());
+                        final UserI subscriptionUser = userManagementService.getUser(commandEventMapping.getSubscriptionUserName());
                         if (log.isInfoEnabled()) {
                             final String wrapperMessage = StringUtils.isNotBlank(wrapperName) ?
                                     String.format("wrapper \"%s\"", wrapperName) :
@@ -106,7 +105,7 @@ public class ScanArchiveListenerAndCommandLauncher implements Consumer<Event<Sca
                         }
                         containerService.resolveCommandAndLaunchContainer(commandId, wrapperName, inputValues, subscriptionUser);
                     } catch (UserNotFoundException | UserInitException e) {
-                        log.error(String.format("Error launching command %d. Could not find or Init subscription owner with ID: %d", commandId, commandEventMapping.getSubscriptionUserId()), e);
+                        log.error(String.format("Error launching command %d. Could not find or Init subscription owner: %s", commandId, commandEventMapping.getSubscriptionUserName()), e);
                     } catch (NotFoundException | CommandResolutionException | NoServerPrefException | DockerServerException | ContainerException e) {
                         log.error("Error launching command " + commandId, e);
                     }

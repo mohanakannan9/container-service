@@ -13,7 +13,6 @@ public class CommandEventMapping extends AbstractHibernateEntity {
     @JsonProperty("command-id") private Long commandId;
     @JsonProperty("xnat-command-wrapper") private String xnatCommandWrapperName;
     @JsonProperty("project") private String projectId;
-    @JsonProperty("subscription-user-id") private Integer subscriptionUserId;
     @JsonProperty("subscription-user-name") private String subscriptionUserName;
 
     public String getEventType() {
@@ -48,13 +47,6 @@ public class CommandEventMapping extends AbstractHibernateEntity {
         this.projectId = projectId;
     }
 
-    public Integer getSubscriptionUserId() {
-        return subscriptionUserId;
-    }
-
-    public void setSubscriptionUserId(Integer id) {
-        subscriptionUserId = id;
-    }
 
     public String getSubscriptionUserName() {
         return subscriptionUserName;
