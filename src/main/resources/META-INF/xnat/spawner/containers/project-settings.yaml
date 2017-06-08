@@ -51,6 +51,16 @@ projectCommandProjectPrefs:
             offText: Opt-OUT Of Enabled Site-wide Commands
             description: "If set to \"Opt-OUT,\" each project will either have to enable each command individually, or change their project opt-in setting."
 
+projectCommandAutomationPanel:
+    kind: panel
+    name: projectCommandAutomationPanel
+    label: Command Automation
+    footer: false
+    contents:
+        projectContainerAutomationTable:
+            tag: div#command-automation-list
+            contents: Table will go here
+
 projectContainerHistoryPanel:
     kind: panel
     name: projectContainerHistoryPanel
@@ -84,6 +94,14 @@ projectSettings:
             contents:
                 ${projectCommandProjectPrefs}
                 ${projectCommandConfigsPanel}
+        commandAutomationTab:
+            kind: tab
+            name: commandAutomationTab
+            label: Automate Commands
+            group: containerServiceProjectTabGroup
+            active: false
+            contents:
+                ${projectCommandAutomationPanel}
         projectContainerHistoryTab:
             kind: tab
             name: projectContainerHistoryTab

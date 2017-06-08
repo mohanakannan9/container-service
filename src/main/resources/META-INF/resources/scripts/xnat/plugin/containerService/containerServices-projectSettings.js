@@ -514,6 +514,132 @@ var XNAT = getObject(XNAT || {});
 
     projCommandConfigManager.init();
 
+    /* ================== *
+     * Command Automation *
+     * ================== */
+
+    console.log('commandAutomation.js');
+
+    var commandAutomation;
+
+    XNAT.plugin.containerService.commandAutomation = commandAutomation =
+        getObject(XNAT.plugin.containerService.commandAutomation || {});
+
+    function getCommandAutomationUrl(appended){
+        appended = (appended) ? '?'+appended : '';
+        return rootUrl('/xapi/commandeventmapping' + appended);
+    }
+    function postCommandAutomationUrl(flag){
+        flag = (flag) ? '/'+flag : ''; // can be used to set 'enabled' or 'disabled' flag
+        return csrfUrl('/xapi/commandeventmapping' + flag);
+    }
+    function commandAutomationIdUrl(id){
+        return csrfUrl('/xapi/commandeventmapping/' + id );
+    }
+
+    commandAutomation.deleteAutomation = function(id){
+        if (!id) return false;
+        XNAT.xhr.delete({
+            url: commandAutomationIdUrl(id),
+            success: function(){
+
+                XNAT.ui.dialog.open({
+                    title: 'Success',
+                    width: 400,
+                    content: 'Successfully deleted command event mapping.',
+                    buttons: [
+                        {
+                            label: 'OK',
+                            isDefault: true,
+                            close: true,
+                            action: function(){
+                                XNAT.plugin.containerService.commandAutomation.init();
+                            }
+                        }
+                    ]
+                })
+            },
+            fail: function(e){
+                errorHandler(e);
+            }
+        })
+    };
+
+    commandAutomation.table = function(){
+        // initialize the table - we'll add to it below
+        var caTable = XNAT.table({
+            className: 'xnat-table compact',
+            style: {
+                width: '100%',
+                marginTop: '15px',
+                marginBottom: '15px'
+            }
+        });
+
+        // add table header row
+        caTable.tr()
+            .th({ addClass: 'left', html: '<b>ID</b>' })
+            .th('<b>Event</b>')
+            .th('<b>Command</b>')
+            .th('<b>Created By</b>')
+            .th('<b>Date Created</b>')
+            .th('<b>Enabled</b>')
+            .th('<b>Action</b>');
+
+        function displayDate(timestamp){
+            var d = new Date(timestamp);
+            return d.toISOString().replace('T',' ').replace('Z',' ');
+        }
+
+        XNAT.xhr.getJSON({
+            url: getCommandAutomationUrl(),
+            fail: function(e){
+                errorHandler(e);
+            },
+            success: function(data){
+                // data returns an array of known command event mappings
+                if (data.length){
+                    var projectAutomations = false;
+                    data.forEach(function(mapping){
+                        if (mapping['project'] === getProjectId()) {
+                            projectAutomations = true;
+                            caTable.tr()
+                                .td( '<b>'+mapping['id']+'</b>' )
+                                .td( mapping['event-type'] )
+                                .td( mapping['xnat-command-wrapper'] )
+                                .td( mapping['subscription-user-id'] )
+                                .td( displayDate(mapping['timestamp']) )
+                                .td( mapping['enabled'] )
+                                .td()
+                        }
+                    });
+
+                    if (!projectAutomations) {
+                        caTable.tr()
+                            .td({ colSpan: '7', html: 'No command automations exist for this project.' });
+                    }
+                } else {
+                    caTable.tr()
+                        .td({ colSpan: '7', html: 'No command event mappings exist for this project.' });
+                }
+            }
+        });
+
+        commandAutomation.$table = $(caTable.table);
+
+        return caTable.table;
+    };
+
+    commandAutomation.init = function(container){
+        // initialize the list of command automations
+        var manager = $$(container || '#command-automation-list');
+        manager.html('');
+
+        manager.append(commandAutomation.table());
+    };
+
+    commandAutomation.init();
+
     /* =============== *
      * Command History *
      * =============== */
