@@ -14,6 +14,7 @@ public class CommandEventMapping extends AbstractHibernateEntity {
     @JsonProperty("xnat-command-wrapper") private String xnatCommandWrapperName;
     @JsonProperty("project") private String projectId;
     @JsonProperty("subscription-user-id") private Integer subscriptionUserId;
+    @JsonProperty("subscription-user-name") private String subscriptionUserName;
 
     public String getEventType() {
         return eventType;
@@ -55,6 +56,14 @@ public class CommandEventMapping extends AbstractHibernateEntity {
         subscriptionUserId = id;
     }
 
+    public String getSubscriptionUserName() {
+        return subscriptionUserName;
+    }
+
+    public void setSubscriptionUserName(String subscriptionUserName) {
+        this.subscriptionUserName = subscriptionUserName;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
@@ -64,12 +73,13 @@ public class CommandEventMapping extends AbstractHibernateEntity {
         return Objects.equals(this.eventType, that.eventType) &&
                 Objects.equals(this.commandId, that.commandId) &&
                 Objects.equals(this.xnatCommandWrapperName, that.xnatCommandWrapperName) &&
-                Objects.equals(this.projectId, that.projectId);
+                Objects.equals(this.projectId, that.projectId) &&
+                Objects.equals(this.subscriptionUserName, that.subscriptionUserName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), eventType, commandId, xnatCommandWrapperName, projectId);
+        return Objects.hash(super.hashCode(), eventType, commandId, xnatCommandWrapperName, projectId, subscriptionUserName);
     }
 
     @Override
@@ -79,6 +89,7 @@ public class CommandEventMapping extends AbstractHibernateEntity {
                 .add("commandId", commandId)
                 .add("xnatCommandWrapper", xnatCommandWrapperName)
                 .add("projectId", projectId)
+                .add("subscriptionUserName", subscriptionUserName)
                 .toString();
     }
 
