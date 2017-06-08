@@ -553,7 +553,7 @@ var XNAT = getObject(XNAT || {});
                             isDefault: true,
                             close: true,
                             action: function(){
-                                XNAT.plugin.containerService.commandAutomation.init();
+                                XNAT.plugin.containerService.commandAutomation.init('refresh');
                             }
                         }
                     ]
@@ -563,6 +563,153 @@ var XNAT = getObject(XNAT || {});
                 errorHandler(e);
             }
         })
+    };
+
+    $(document).on('change','#assignCommandIdToWrapper',function(){
+        var commandId = $(this).find('option:selected').data('command-id');
+        $('#event-command-identifier').val(commandId);
+    });
+
+    commandAutomation.addDialog = function(){
+        // get all commands and wrappers that are known to this project, then open a dialog to allow user to configure an automation.
+        var projectId = getProjectId();
+
+        function eventCommandSelector(name,options,label,description){
+            // receive an array of objects as our list of options
+            if (options.length > 0) {
+                description = (description) ? description : '';
+
+                // build formatted options list to stick into the generated select menu
+                var formattedOptions = [
+                    spawn('option',{ selected: true })
+                ];
+                options.forEach(function(option){
+                    formattedOptions.push(
+                        spawn('option',{
+                            value: option.value,
+                            data: { commandId: option['command-id'] },
+                            html: option.label
+                        } ));
+                });
+
+                var select = spawn('div.panel-element',[
+                    spawn('label.element-label',label),
+                    spawn('div.element-wrapper',[
+                        spawn('label',[
+                            spawn ('select', {
+                                name: name,
+                                id: 'assignCommandIdToWrapper'
+                            }, formattedOptions )
+                        ]),
+                        spawn('div.description',description)
+                    ])
+                ]);
+
+                return select;
+            }
+        }
+
+        projCommandConfigManager.getAll().done(function(data) {
+            if (data.length) {
+
+                // build array of commands that can be selected
+                var projectCommandOptions = [];
+                data.forEach(function(command){
+                    command.xnat.forEach(function(wrapper){
+                        projectCommandOptions.push({
+                            label: wrapper.name,
+                            value: wrapper.name,
+                            'command-id': command.id
+                        });
+                    });
+                });
+
+                var eventOptions = {
+                    'SessionArchived': 'On Session Archive',
+                    'ScanArchived': 'On Scan Archive'
+                };
+
+                if (Object.keys(projectCommandOptions).length > 0) {
+                    XNAT.ui.dialog.open({
+                        title: 'Create Command Automation',
+                        width: 500,
+                        content: '<div class="panel pad20"></div>',
+                        beforeShow: function(obj){
+                            // populate form elements
+                            var panel = obj.$modal.find('.panel');
+                            panel.append( spawn('p','Please enter values for each field.') );
+                            panel.append( XNAT.ui.panel.select.single({
+                                name: 'event-type',
+                                label: 'On Event',
+                                options: eventOptions
+                            }));
+                            panel.append( eventCommandSelector(
+                                'xnat-command-wrapper',
+                                projectCommandOptions,
+                                'Run Command')
+                            );
+                            panel.append( XNAT.ui.panel.input.hidden({
+                                name: 'project',
+                                value: projectId
+                            }));
+                            panel.append( XNAT.ui.panel.input.hidden({
+                                name: 'command-id',
+                                id: 'event-command-identifier'
+                            })); // this will remain without a value until a command wrapper has been selected
+                        },
+                        buttons: [
+                            {
+                                label: 'Create Automation',
+                                isDefault: true,
+                                close: false,
+                                action: function(obj){
+                                    // collect input values, validate them, and post them to the command-event-mapping URI
+                                    var panel = obj.$modal.find('.panel'),
+                                        project = panel.find('input[name=project]').val(),
+                                        command = panel.find('input[name=command-id]').val(),
+                                        wrapper = panel.find('select[name=xnat-command-wrapper]').find('option:selected').val(),
+                                        event = panel.find('select[name=event-type]').find('option:selected').val();
+
+                                    if (project && command && wrapper && event){
+                                        var data = {
+                                            'project': project,
+                                            'command-id': command,
+                                            'xnat-command-wrapper': wrapper,
+                                            'event-type': event
+                                        };
+                                        XNAT.xhr.postJSON({
+                                            url: csrfUrl('/xapi/commandeventmapping'),
+                                            data: JSON.stringify(data),
+                                            success: function(){
+                                                XNAT.ui.banner.top(2000, '<b>Success!</b> Command automation has been added', 'success');
+                                                XNAT.ui.dialog.closeAll();
+                                                XNAT.plugin.containerService.commandAutomation.init('refresh');
+                                            },
+                                            fail: function(e){
+                                                errorHandler(e,'Could not create command automation');
+                                            }
+                                        });
+                                    } else {
+                                        xmodal.alert('Please enter a value for each field');
+                                    }
+                                }
+                            },
+                            {
+                                label: 'Cancel',
+                                isDefault: false,
+                                close: true
+                            }
+                        ]
+                    });
+                } else {
+                    // if no wrappers are identified, fail to launch
+                }
+
+            } else {
+                // if no commands are found, fail to launch
+
+            }
+        });
     };
 
     commandAutomation.table = function(){
@@ -630,15 +777,32 @@ var XNAT = getObject(XNAT || {});
         return caTable.table;
     };
 
-    commandAutomation.init = function(container){
+    commandAutomation.init = function(refresh){
         // initialize the list of command automations
-        var manager = $$(container || '#command-automation-list');
-        manager.html('');
+        var manager = $('#command-automation-list');
+        var $footer = manager.parents('.panel').find('.panel-footer');
 
+        manager.html('');
         manager.append(commandAutomation.table());
+
+        if (!refresh) {
+            var newAutomation = spawn('button.new-command-automation.btn.btn-sm.submit', {
+                html: 'Add New Command Automation',
+                onclick: function(){
+                    commandAutomation.addDialog();
+                }
+            });
+
+            // add the 'add new' button to the panel footer
+            $footer.append(spawn('div.pull-right', [
+                newAutomation
+            ]));
+            $footer.append(spawn('div.clear.clearFix'));
+        }
     };
 
     commandAutomation.init();
+
 
     /* =============== *
      * Command History *
@@ -799,12 +963,12 @@ var XNAT = getObject(XNAT || {});
 
                         if (noHistoryFound) {
                             phTable.tr()
-                                .td({ colspan: 7, html: "No history entries found for this project." });
+                                .td({ colSpan: '7', html: "No history entries found for this project." });
                         }
 
                     } else {
                         phTable.tr()
-                            .td({ colspan: 7, html: "No history entries found" });
+                            .td({ colSpan: '7', html: "No history entries found" });
                     }
 
                 }

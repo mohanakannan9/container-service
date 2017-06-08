@@ -55,9 +55,15 @@ projectCommandAutomationPanel:
     kind: panel
     name: projectCommandAutomationPanel
     label: Command Automation
-    footer: false
     contents:
-        projectContainerAutomationTable:
+        projectCommandAutomationNote:
+            tag: div.message
+            contents:
+                "With this panel, you can set up an automated command execution that will be triggered by an XNAT event, such as an image session being archived."
+        projectCommandAutomationSetup:
+            kind: panel.input.button
+            id:
+        projectCommandAutomationTable:
             tag: div#command-automation-list
             contents: Table will go here
 
