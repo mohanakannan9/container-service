@@ -570,6 +570,22 @@ var XNAT = getObject(XNAT || {});
         $('#event-command-identifier').val(commandId);
     });
 
+    $(document).on('click','.deleteAutomationButton',function(){
+        var automationID = $(this).data('id');
+        if (automationID) {
+            XNAT.xhr.delete({
+                url: commandAutomationIdUrl(automationID),
+                success: function(){
+                    XNAT.ui.banner.top(2000,'Successfully removed command automation from project.','success');
+                    XNAT.plugin.containerService.commandAutomation.init('refresh');
+                },
+                fail: function(e){
+                    errorHandler(e, 'Could not delete command automation');
+                }
+            })
+        }
+    });
+
     commandAutomation.addDialog = function(){
         // get all commands and wrappers that are known to this project, then open a dialog to allow user to configure an automation.
         var projectId = getProjectId();
@@ -738,6 +754,10 @@ var XNAT = getObject(XNAT || {});
             return d.toISOString().replace('T',' ').replace('Z',' ');
         }
 
+        function deleteAutomationButton(id){
+            return spawn('button.deleteAutomationButton',{ data: { id: id }, html: 'Delete' });
+        }
+
         XNAT.xhr.getJSON({
             url: getCommandAutomationUrl(),
             fail: function(e){
@@ -757,7 +777,7 @@ var XNAT = getObject(XNAT || {});
                                 .td( mapping['subscription-user-name'] )
                                 .td( displayDate(mapping['timestamp']) )
                                 .td( mapping['enabled'] )
-                                .td()
+                                .td([ deleteAutomationButton(mapping['id']) ])
                         }
                     });
 
