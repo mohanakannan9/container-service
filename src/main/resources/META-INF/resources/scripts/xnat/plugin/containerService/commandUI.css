@@ -1,11 +1,12 @@
 
-.panel .advancedSettingsContainer {
+.panel .standard-settings {}
+.panel .advanced-settings-container {
 }
-.panel .advancedSettingsToggle {
+.panel .advanced-settings-toggle {
     border-bottom: 1px solid #ccc;
     text-align: center;
 }
-.panel .advancedSettingsToggle:before {
+.panel .advanced-settings-toggle:before {
     background-color: #f0f0f0;
     content: "Advanced Settings";
     color: #848484;
@@ -15,14 +16,11 @@
     padding: 2px 6px;
     text-transform: uppercase;
 }
-.panel .advancedSettingsToggle.active:before {
+.panel .advanced-settings-toggle.active:before {
     background-color: #e4efff;
     color: #4080cc;
 }
-
-.panel .advancedSettings {
-}
-.panel .advancedSettings .advancedSettingsContents {
+.panel .advanced-settings {
     border: solid #ccc;
     border-width: 0 1px 1px;
     display: none;
