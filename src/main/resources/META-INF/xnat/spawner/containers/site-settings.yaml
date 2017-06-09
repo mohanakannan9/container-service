@@ -220,6 +220,22 @@ sitewideCommandProjectPrefs:
             description: >
                 If set to "Opt-OUT," each project will either have to enable each command individually, or change their project opt-in setting.
 
+siteCommandAutomationPanel:
+    kind: panel
+    name: siteCommandAutomationPanel
+    label: Command Automation
+    contents:
+        siteCommandAutomationNote:
+            tag: div.message
+            contents:
+                "With this panel, you can set up an automated command execution that will be triggered by an XNAT event, such as an image session being archived."
+        siteCommandAutomationSetup:
+            kind: panel.input.button
+            id:
+        siteCommandAutomationTable:
+            tag: div#command-automation-admin-list
+            contents: Table will go here
+
 sitewideCommandHistoryPanel:
     kind: panel
     name: sitewideCommandHistoryPanel
@@ -269,6 +285,14 @@ siteSettings:
             contents:
                 ${sitewideCommandProjectPrefs}
                 ${sitewideCommandConfigsPanel}
+        commandAutomationAdminTab:
+            kind: tab
+            name: commandAutomationAdminTab
+            label: Command Automation
+            group: containerServiceTabGroup
+            active: false
+            contents:
+                ${siteCommandAutomationPanel}
         commandHistoryTab:
             kind: tab
             name: commandHistoryTab
