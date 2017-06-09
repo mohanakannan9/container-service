@@ -67,12 +67,14 @@ public abstract class LaunchUi {
                         CommandInputConfiguration.builder().build();
 
         final List<LaunchUiInputValue> valueList = Lists.newArrayList();
+        final List<String> childNames = Lists.newArrayList();
         for (final ResolvedInputTreeValueAndChildren valueAndChildren : node.valuesAndChildren()) {
             final ResolvedInputValue resolvedValue = valueAndChildren.resolvedValue();
             final String value = resolvedValue.value();
 
             // Add all children to the map, using this node's value as their parent value
             for (final ResolvedInputTreeNode<? extends Input> child : valueAndChildren.children()) {
+                childNames.add(child.input().name());
                 addNodesToInputMap(child, commandInput.name(), value, inputConfigurationMap, inputMap);
             }
 
@@ -129,7 +131,8 @@ public abstract class LaunchUi {
                     .description(commandInput.description())
                     .required(inputIsRequired)
                     .advanced(advanced)
-                    .parent(parentName);
+                    .parent(parentName)
+                    .children(childNames);
             inputMap.put(commandInput.name(), uiInputBuilder);
         }
         uiInputBuilder.addUi(parentValue == null ? "default" : parentValue,
@@ -169,6 +172,7 @@ public abstract class LaunchUi {
         @JsonProperty("advanced") public abstract Boolean advanced();
         @JsonProperty("required") public abstract Boolean required();
         @JsonProperty("parent") @Nullable public abstract String parent();
+        @JsonProperty("children") @Nullable public abstract ImmutableList<String> children();
         @JsonProperty("ui") public abstract ImmutableMap<String, LaunchUiInputValuesAndType> ui();
 
         public static Builder builder() {
@@ -182,6 +186,12 @@ public abstract class LaunchUi {
             public abstract Builder advanced(Boolean advanced);
             public abstract Builder required(Boolean required);
             public abstract Builder parent(String parent);
+            public abstract Builder children(List<String> children);
+            abstract ImmutableList.Builder<String> childrenBuilder();
+            public Builder addChild(final String childName) {
+                childrenBuilder().add(childName);
+                return this;
+            }
             public abstract Builder ui(Map<String, LaunchUiInputValuesAndType> ui);
             abstract ImmutableMap.Builder<String, LaunchUiInputValuesAndType> uiBuilder();
             public Builder addUi(final @Nonnull String parentValue,
