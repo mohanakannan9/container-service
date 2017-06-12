@@ -1,5 +1,10 @@
 
-.panel .standard-settings {}
+.panel .standard-settings {
+    margin-bottom: 2em;
+}
+.panel .child-input {
+    padding-bottom: 1em;
+}
 .panel .advanced-settings-container {
 }
 .panel .advanced-settings-toggle {

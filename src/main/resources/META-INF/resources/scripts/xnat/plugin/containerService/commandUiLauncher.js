@@ -111,7 +111,6 @@ var XNAT = getObject(XNAT || {});
             label = input.label,
             description = input.description || '',
             required = input.required || false,
-            childOf = input['parent'],
             classes = ['panel-input'],
             dataProps = {};
         value = (value === undefined || value === null || value == 'null') ? '' : value;
@@ -121,10 +120,6 @@ var XNAT = getObject(XNAT || {});
         if (required) {
             classes.push('required');
             description += ' (Required)';
-        }
-        if (childOf) {
-            classes.push('hidden');
-            dataProps['childOf'] = childOf;
         }
 
         return XNAT.ui.panel.input.text({
@@ -147,11 +142,15 @@ var XNAT = getObject(XNAT || {});
             description = input.description || '',
             required = input.required || false,
             condensed = input.condensed || false,
-            childOf = input['parent'],
             classes = ['panel-element panel-input'],
             dataProps = { name: name },
             disabled = input.disabled || false,
             attr = {};
+
+        if (input.children) {
+            classes.push('parent-element');
+            dataProps['children'] = input.children.join(',');
+        }
 
         if (checked === 'true') attr['checked'] = 'checked';
         if (disabled) attr['disabled'] = 'disabled';
@@ -161,11 +160,6 @@ var XNAT = getObject(XNAT || {});
         if (required) {
             classes.push('required');
             description += ' (Required)';
-        }
-        if (childOf) {
-            classes.push('hidden');
-            dataProps['childOf'] = childOf;
-            disabled = 'disabled';
         }
 
         return spawn('div', { className: classes.join(' '), data: dataProps }, [
@@ -181,10 +175,50 @@ var XNAT = getObject(XNAT || {});
         ]);
     };
 
+    var configRadio = function(input){
+        var name = input.name || input.outerLabel,
+            value = input.value,
+            checked = input.checked,
+            boolean = input.boolean,
+            outerLabel = input.outerLabel,
+            innerLabel = input.innerLabel,
+            description = input.description || '',
+            required = input.required || false,
+            condensed = input.condensed || false,
+            classes = ['panel-element panel-input'],
+            dataProps = { name: name },
+            disabled = input.disabled || false,
+            attr = {};
+
+        if (input.children) {
+            classes.push('parent-element');
+            dataProps['children'] = input.children.join(',');
+        }
+
+        if (checked === 'true') attr['checked'] = 'checked';
+        if (disabled) attr['disabled'] = 'disabled';
+
+        if (required) {
+            classes.push('required');
+            description += ' (Required)';
+        }
+
+        return spawn('div', { className: classes.join(' '), data: dataProps }, [
+            spawn('label.element-label', outerLabel),
+            spawn('div.element-wrapper', [
+                spawn('label', [
+                    spawn('input', { type: 'radio', name: name, value: value, attr: attr }),
+                    innerLabel
+                ]),
+                helptext(description)
+            ]),
+            vertSpace(condensed)
+        ]);
+    };
+
     var hiddenConfigInput = function(input) {
         var name = input.name || input.label,
             value = input.value,
-            childOf = input['parent'],
             dataProps = {},
             attr = (input.disabled) ? { 'disabled':'disabled' } : {};
 
@@ -200,9 +234,8 @@ var XNAT = getObject(XNAT || {});
         var name = input.name || input.label,
             value = input.value,
             valueLabel = input.valueLabel,
-            childOf = input['parent'],
-            classes = ['panel-element'],
             dataProps = { name: name },
+            classes = ['panel-input','panel-element'],
             attr = (input.disabled) ? { 'disabled':'disabled' } : {};
 
         return spawn(
@@ -241,73 +274,65 @@ var XNAT = getObject(XNAT || {});
         )
     };
 
-    launcher.formInputs = function(inputs,advanced) {
+    launcher.formInputs = function(input) {
         var formPanelElements = [];
-        advanced = advanced || false;
 
-        if (Object.keys(inputs).length === 0) return; // do not render any containing UI elements if there are no inputs in this section.
-
-        for (var i in inputs) {
-            var input = inputs[i];
-
-            // create a panel.input for each input type
-            switch (input.type){
-                case 'scanSelectMany':
-                    launcher.scanList.forEach(function(scan,i){
-                        var scanOpts = {
-                            name: 'scan',
-                            value: fullScanPath(scan.id),
-                            innerLabel: scan.id + ' - ' + scan['series_description'],
-                            condensed: true
-                        };
-                        if (i === 0) {
-                            // first
-                            scanOpts.outerLabel = 'scans';
-                            formPanelElements.push(configCheckbox(scanOpts));
-                        } else if (i < launcher.scanList.length-1){
-                            // middle
-                            formPanelElements.push(configCheckbox(scanOpts));
-                        } else {
-                            // last
-                            scanOpts.condensed = false;
-                            formPanelElements.push(configCheckbox(scanOpts));
-                        }
-                    });
-                    break;
-                case 'hidden':
-                    formPanelElements.push(hiddenConfigInput(input));
-                    break;
-                case 'static':
-                    formPanelElements.push(staticConfigInput(input));
-                    break;
-                case 'staticList':
-                    formPanelElements.push(staticConfigList(i,input.value));
-                    break;
-                case 'boolean':
-                    input.boolean = true;
-                    input.outerLabel = input.label;
-                    input.innerLabel = input.innerLabel || 'True';
-                    input.checked = (input.value === 'true') ? 'checked' : false;
-                    formPanelElements.push(configCheckbox(input));
-                    break;
-                default:
-                    formPanelElements.push(defaultConfigInput(input));
-            }
+        // create a panel.input for each input type
+        switch (input.type) {
+            case 'scanSelectMany':
+                launcher.scanList.forEach(function (scan, i) {
+                    var scanOpts = {
+                        name: 'scan',
+                        value: fullScanPath(scan.id),
+                        innerLabel: scan.id + ' - ' + scan['series_description'],
+                        condensed: true
+                    };
+                    if (i === 0) {
+                        // first
+                        scanOpts.outerLabel = 'scans';
+                        formPanelElements.push(configCheckbox(scanOpts));
+                    } else if (i < launcher.scanList.length - 1) {
+                        // middle
+                        formPanelElements.push(configCheckbox(scanOpts));
+                    } else {
+                        // last
+                        scanOpts.condensed = false;
+                        formPanelElements.push(configCheckbox(scanOpts));
+                    }
+                });
+                break;
+            case 'hidden':
+                formPanelElements.push(hiddenConfigInput(input));
+                break;
+            case 'static':
+                formPanelElements.push(staticConfigInput(input));
+                break;
+            case 'staticList':
+                formPanelElements.push(staticConfigList(i, input.value));
+                break;
+            case 'checkbox':
+                input.outerLabel = input.label;
+                input.innerLabel = input.innerLabel || input.value;
+                formPanelElements.push(configCheckbox(input));
+                break;
+            case 'radio':
+                input.outerLabel = input.label;
+                input.innerLabel = input.innerLabel || input.value;
+                formPanelElements.push(configRadio(input));
+                break;
+            case 'boolean':
+                input.boolean = true;
+                input.outerLabel = input.label;
+                input.innerLabel = input.innerLabel || 'True';
+                input.checked = (input.value === 'true') ? 'checked' : false;
+                formPanelElements.push(configCheckbox(input));
+                break;
+            default:
+                formPanelElements.push(defaultConfigInput(input));
         }
 
-        if (!advanced) {
-            // return just the form elements
-            return formPanelElements;
-        } else {
-            // return a collapsible container containing the form elements
-            return spawn('div.advancedSettingsContainer',[
-                spawn('div.advancedSettingsToggle'),
-                spawn('div.advancedSettings',[
-                        spawn('div.advancedSettingsContents',formPanelElements)
-                    ]
-                )
-            ]);
-        }
+        return formPanelElements;
+
     };
 
 
@@ -320,8 +345,9 @@ var XNAT = getObject(XNAT || {});
         var inputList = Object.keys(inputs);
 
         var launcherContent = spawn('div.panel',[
+            spawn('p','Please specify settings for this container.'),
             spawn('div.standard-settings'),
-            spawn('div.advanced-settings-container',[
+            spawn('div.advanced-settings-container.hidden',[
                 spawn('div.advanced-settings-toggle'),
                 spawn('div.advanced-settings')
             ])
@@ -340,9 +366,86 @@ var XNAT = getObject(XNAT || {});
                     var $panel = obj.$modal.find('.panel');
                     var $standardInputContainer = $panel.find('.standard-settings');
                     var $advancedInputContainer = $panel.find('.advanced-settings');
-                    $panel.spawn('p','Please specify settings for this container.');
+
+                    // loop through each input and determine how to display it
+                    // standard inputs with no children -- append the appropriate UI element
+                    // standard inputs with children -- append the UI element and the child element(s) in a child element wrapper
+                    // advanced inputs (that aren't children) -- append the UI element to the advanced input container
+
+                    for (var i in inputs){
+
+                        if (inputs[i].parent === undefined) {
+                            // child inputs that specify a parent get special treatment
+                            inputs[i].type = inputs[i].ui.default.type;
+                            inputs[i].value = inputs[i].ui.default.values[0].value || inputs[i].value;
+                            inputs[i].valueLabel = inputs[i].ui.default.values[0].label || '';
+
+                            if (inputs[i].advanced === undefined || inputs[i].advanced !== true) {
+                                var inputElement = launcher.formInputs(inputs[i]);
+                                $standardInputContainer.append(inputElement);
+
+                                if (inputs[i].children) {
+                                    // child inputs are listed as an array of input ids
+
+                                    var parentInput = inputs[i];
+                                    var children = inputs[i].children;
+
+                                    children.forEach(function(child){
+
+                                        for (var k in inputs[child].ui) {
+                                            // loop through each possible UI instance for all preset values for this child input.
+                                            // append each child input in a special wrapper
+
+                                            if (parentInput.ui[k].values.length === 1) {
+                                                var childInput = inputs[child];
+                                                var classes = ['child-input'];
+                                                childInput.type = childInput.ui[k].type;
+                                                childInput.value = childInput.ui[k].values[0].value;
+                                                childInput.valueLabel = childInput.ui[k].values[0].label;
+                                                if (k !== parentInput.value) {
+                                                    // if a preset value has been defined and does not match the default value of its parent input, then hide and disable this possible input.
+                                                    childInput.disabled = true;
+                                                    classes.push('hidden');
+                                                }
+
+                                                $standardInputContainer.append( spawn('div', { className: classes.join(' '), data: { preset: k }}, launcher.formInputs(childInput)) );
+                                            }
+
+                                            if (parentInput.ui[k].values.length > 1) {
+                                                // if more than one possible preset value is found for a child input,
+                                                // disregard the suggested input type and force a user selection
+                                                // generate a radio input for each possible value
+
+                                                var childInputs = [];
+
+                                                parentInput.ui[k].values.forEach(function(value){
+                                                    var childInput = inputs[child];
+                                                    var classes = ['child-input'];
+                                                    childInput.type = 'radio';
+                                                    childInput.value = childInput.ui[k].values[0].value;
+                                                    childInput.valueLabel = childInput.ui[k].values[0].label;
+                                                    if (k !== parentInput.value) {
+                                                        // if a preset value has been defined and does not match the default value of its parent input, then hide and disable this possible input.
+                                                        childInput.disabled = true;
+                                                        classes.push('hidden');
+                                                    }
+                                                });
+                                            }
 
 
+                                        }
+
+                                    });
+                                }
+                            }
+                            if (inputs[i].advanced) {
+                                var advancedInput = launcher.formInputs(inputs[i]);
+                                $advancedInputContainer.append(advancedInput);
+                                $advancedInputContainer.parents('.advanced-settings-container').removeClass('hidden');
+                            }
+                        }
+
+                    }
 
                 },
                 buttons: [
@@ -966,8 +1069,8 @@ var XNAT = getObject(XNAT || {});
         launcher.open(launcherObj);
     });
 
-    $(document).on('click','.advancedSettingsToggle',function(){
-        var advancedPanel = $(this).parent('.advancedSettingsContainer').find('.advancedSettingsContents');
+    $(document).on('click','.advanced-settings-toggle',function(){
+        var advancedPanel = $(this).parent('.advanced-settings-container').find('.advanced-settings');
         if ($(this).hasClass('active')) {
             $(this).removeClass('active');
             advancedPanel.slideUp(300);
