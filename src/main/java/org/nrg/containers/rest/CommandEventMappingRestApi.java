@@ -27,8 +27,10 @@ import java.util.ArrayList;
 import java.util.List;
 import org.nrg.xft.security.UserI;
 import org.apache.commons.lang3.StringUtils;
-
+import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @XapiRestController
 @RequestMapping("/commandeventmapping")
@@ -37,6 +39,7 @@ public class CommandEventMappingRestApi extends AbstractXapiRestController {
     private static final String JSON = MediaType.APPLICATION_JSON_UTF8_VALUE;
     private static final String TEXT = MediaType.TEXT_PLAIN_VALUE;
     private static final String FORM = MediaType.APPLICATION_FORM_URLENCODED_VALUE;
+    private static final Logger log = LoggerFactory.getLogger(CommandEventMappingRestApi.class);
 
     private CommandEventMappingService commandEventMappingService;
 
@@ -54,11 +57,17 @@ public class CommandEventMappingRestApi extends AbstractXapiRestController {
     public List<CommandEventMapping> getMappings() {
         List<CommandEventMapping> mappings = commandEventMappingService.getAll();
         List<CommandEventMapping> mappingsCanRead = new ArrayList<CommandEventMapping>();
-        for(CommandEventMapping mapping: mappings){
-            String cProject = mapping.getProjectId();
-            if(Permissions.canReadProject(getSessionUser(), cProject)) {
-                mappingsCanRead.add(mapping);
+        try{
+            UserI userObj = getSessionUser();
+            for(CommandEventMapping mapping: mappings){
+                String cProject = mapping.getProjectId();
+                if(Permissions.canReadProject(userObj, cProject)) {
+                    mappingsCanRead.add(mapping);
+                }
             }
+        }
+        catch(Exception e){
+            log.error("", e);
         }
         return mappingsCanRead;
     }
@@ -85,14 +94,18 @@ public class CommandEventMappingRestApi extends AbstractXapiRestController {
     @ApiOperation(value = "Get a Command-Event-Mapping")
     @ResponseBody
     public CommandEventMapping retrieve(final @PathVariable Long id) {
-        CommandEventMapping mapping = commandEventMappingService.retrieve(id);
-        String cProject = mapping.getProjectId();
-        if(Permissions.canReadProject(getSessionUser(), cProject)) {
-            return commandEventMappingService.retrieve(id);
+        try {
+            CommandEventMapping mapping = commandEventMappingService.retrieve(id);
+
+            String cProject = mapping.getProjectId();
+            if (Permissions.canReadProject(getSessionUser(), cProject)) {
+                return commandEventMappingService.retrieve(id);
+            }
         }
-        else{
-            return null;
+        catch(Exception e){
+            log.error("", e);
         }
+        return null;
     }
 
     @XapiRequestMapping(value = {"/{id}"}, method = DELETE, restrictTo = Admin)

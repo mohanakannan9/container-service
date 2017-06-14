@@ -47,7 +47,7 @@ public abstract class BulkLaunchReport {
     }
 
     @AutoValue
-    public static abstract class Success {
+    public static abstract class Success extends Result {
         @JsonProperty("params") public abstract ImmutableMap<String, String> launchParams();
         @JsonProperty("container-id") public abstract String containerId();
 
@@ -63,7 +63,7 @@ public abstract class BulkLaunchReport {
     }
 
     @AutoValue
-    public static abstract class Failure {
+    public static abstract class Failure extends Result{
         @JsonProperty("params") public abstract ImmutableMap<String, String> launchParams();
         @JsonProperty("message") public abstract String message();
 
@@ -76,6 +76,10 @@ public abstract class BulkLaunchReport {
                             ImmutableMap.copyOf(launchParams);
             return new AutoValue_BulkLaunchReport_Failure(launchParamsCopy, message);
         }
+
+    }
+    
+    public static abstract class Result {
 
     }
 }
