@@ -207,6 +207,15 @@ public class CommandRestApi extends AbstractXapiRestController {
         return commandService.available(project, xsiType, userI);
     }
 
+    @XapiRequestMapping(value = {"/commands/available/site"}, params = {"xsiType"}, method = GET)
+    @ResponseBody
+    public List<CommandSummaryForContext> availableCommands(final @RequestParam String xsiType)
+            throws ElementNotFoundException {
+        final UserI userI = XDAT.getUserDetails();
+        //We can permit any user to make this REST call since available should note return any available commands for users without permissions.
+        return commandService.available(xsiType, userI);
+    }
+
     private void checkAdminOrThrow() throws UnauthorizedException {
         UserI userI = getSessionUser();
         if (!getRoleHolder().isSiteAdmin(userI)) {

@@ -47,10 +47,12 @@ public abstract class BulkLaunchReport {
     }
 
     @AutoValue
-    public static abstract class Success extends Result {
-        @JsonProperty("params") public abstract ImmutableMap<String, String> launchParams();
+    public static abstract class Success extends Launch {
         @JsonProperty("container-id") public abstract String containerId();
 
+//        @JsonProperty("command") public abstract String command();
+//        @JsonProperty("wrapper") public abstract String wrapper();
+        
         @JsonCreator
         public static Success create(@JsonProperty("params") final Map<String, String> launchParams,
                                      @JsonProperty("container-id") final @Nonnull String containerId) {
@@ -58,14 +60,41 @@ public abstract class BulkLaunchReport {
                     launchParams == null ?
                             ImmutableMap.<String, String>of() :
                             ImmutableMap.copyOf(launchParams);
-            return new AutoValue_BulkLaunchReport_Success(launchParamsCopy, containerId);
+            return new AutoValue_BulkLaunchReport_Success(launchParamsCopy,"", "", containerId);
+        }
+
+        @JsonCreator
+        public static Success create(@JsonProperty("params") final Map<String, String> launchParams,
+                                     @JsonProperty("container-id") final @Nonnull String containerId,
+                                    @JsonProperty("command") final String command,
+                                     @JsonProperty("wrapper") final String wrapper) {
+            final ImmutableMap<String, String> launchParamsCopy =
+                    launchParams == null ?
+                            ImmutableMap.<String, String>of() :
+                            ImmutableMap.copyOf(launchParams);
+            return new AutoValue_BulkLaunchReport_Success(launchParamsCopy, command, wrapper, containerId);
         }
     }
 
     @AutoValue
-    public static abstract class Failure extends Result{
-        @JsonProperty("params") public abstract ImmutableMap<String, String> launchParams();
+    public static abstract class Failure extends Launch{
+
         @JsonProperty("message") public abstract String message();
+
+//        @JsonProperty("command") public abstract String command();
+//        @JsonProperty("wrapper") public abstract String wrapper();
+
+        @JsonCreator
+        public static Failure create(@JsonProperty("params") final Map<String, String> launchParams,
+                                     @JsonProperty("message") final @Nonnull String message,
+                                     @JsonProperty("command") final String command,
+                                     @JsonProperty("wrapper") final String wrapper) {
+            final ImmutableMap<String, String> launchParamsCopy =
+                    launchParams == null ?
+                            ImmutableMap.<String, String>of() :
+                            ImmutableMap.copyOf(launchParams);
+            return new AutoValue_BulkLaunchReport_Failure(launchParamsCopy, command, wrapper, message);
+        }
 
         @JsonCreator
         public static Failure create(@JsonProperty("params") final Map<String, String> launchParams,
@@ -74,12 +103,14 @@ public abstract class BulkLaunchReport {
                     launchParams == null ?
                             ImmutableMap.<String, String>of() :
                             ImmutableMap.copyOf(launchParams);
-            return new AutoValue_BulkLaunchReport_Failure(launchParamsCopy, message);
+            return new AutoValue_BulkLaunchReport_Failure(launchParamsCopy, "", "", message);
         }
 
     }
     
-    public static abstract class Result {
-
+    public static abstract class Launch {
+        @JsonProperty("params") public abstract ImmutableMap<String, String> launchParams();
+        @JsonProperty("command") public abstract String command();
+        @JsonProperty("wrapper") public abstract String wrapper();
     }
 }

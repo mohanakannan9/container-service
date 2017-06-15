@@ -166,6 +166,11 @@ task fatJar(type: Jar) {
     with jar
 }
 
+sourceSets.main.java {
+    srcDir 'generated'
+    exclude '*/AutoValue.java'
+}
+
 task sourceJar(type: Jar, dependsOn: classes) {
     from sourceSets.main.allSource
 }

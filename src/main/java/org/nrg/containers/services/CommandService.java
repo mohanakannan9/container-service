@@ -70,5 +70,7 @@ public interface CommandService {
     List<CommandSummaryForContext> available(String project,
                                              String xsiType,
                                              UserI userI) throws ElementNotFoundException;
+    List<CommandSummaryForContext> available(String xsiType,
+                                             UserI userI) throws ElementNotFoundException;
 
 }

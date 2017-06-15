@@ -6,8 +6,9 @@ import org.nrg.containers.model.CommandEventMapping;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.springframework.stereotype.Repository;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Repository
 public class CommandEventMappingDao extends AbstractHibernateDAO<CommandEventMapping> {
@@ -20,9 +21,25 @@ public class CommandEventMappingDao extends AbstractHibernateDAO<CommandEventMap
      * @return List of Commands.
      */
     public List<CommandEventMapping> findByEventType(final String eventType) {
+        return findByEventType(eventType, true);
+    }
+
+    /**
+     * Find CommandIds that are configured to run for a given eventType.
+     * If eventType is null, return an emply list.
+     *
+     * @param eventType Find Commands that are triggered by this eventType.
+     * @return List of Commands.
+     */
+    public List<CommandEventMapping> findByEventType(final String eventType, final boolean onlyEnabled) {
         if (eventType == null || StringUtils.isBlank(eventType)) {
             return Lists.newArrayList();
         }
-        return findByProperty("eventType", eventType);
+        Map<String, Object> properties = new HashMap<String, Object>();
+        properties.put("eventType", eventType);
+        if(onlyEnabled){
+            properties.put("enabled", true);
+        }
+        return findByProperties(properties);
     }
 }
