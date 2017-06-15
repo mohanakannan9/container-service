@@ -21,10 +21,11 @@
 
 # Completed
 
-| Title                   | Ticket                                          | Links                                                   | Notes                                                         |
-|:------------------------|:------------------------------------------------|:--------------------------------------------------------|:--------------------------------------------------------------|
-| CONDR_METS lesion atlas | [CS-191](https://issues.xnat.org/browse/CS-191) |                                                         | Not published; see [note on NIL Tools](#a-note-on-nil-tools). |
-| DICOM to NIFTI          |                                                 | [xnat/dcm2niix](https://hub.docker.com/r/xnat/dcm2niix) |                                                               |
+| Title                   | Ticket                                          | Links                                                                                                                                       | Notes                                                         |
+|:------------------------|:------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------|:--------------------------------------------------------------|
+| CONDR_METS lesion atlas | [CS-191](https://issues.xnat.org/browse/CS-191) |                                                                                                                                             | Not published; see [note on NIL Tools](#a-note-on-nil-tools). |
+| DICOM to NIFTI          |                                                 | [xnat/dcm2niix](https://hub.docker.com/r/xnat/dcm2niix)                                                                                     |                                                               |
+| XNAT Populate           |                                                 | [Github](https://github.com/NrgXnat/docker-images/tree/master/xnat-populate) & [Docker Hub](https://hub.docker.com/r/greppy/xnat-populate/) | Meant for dev use only.                                       |
 
 # A Note on NIL Tools
 Many of the existing tools employed in the NRG lab—often as pipelines on CNDA or TIP—rely on tools written by the NeuroImaging Lab (NIL). These tools are not easily containerizable for two reasons:
