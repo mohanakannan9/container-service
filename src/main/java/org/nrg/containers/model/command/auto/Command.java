@@ -178,7 +178,7 @@ public abstract class Command {
                 .schemaVersion(creation.schemaVersion())
                 .infoUrl(creation.infoUrl())
                 .image(creation.image())
-                .type(creation.type())
+                .type(creation.type() == null ? CommandEntity.DEFAULT_TYPE.getName() : creation.type())
                 .index(creation.index())
                 .hash(creation.hash())
                 .workingDirectory(creation.workingDirectory())
