@@ -24,10 +24,12 @@ import org.nrg.containers.model.container.entity.ContainerEntityMount;
 import org.nrg.containers.model.container.entity.ContainerEntityOutput;
 import org.nrg.containers.model.container.entity.ContainerMountFilesEntity;
 import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
+import org.nrg.containers.services.CommandLabelService;
 import org.nrg.containers.services.CommandResolutionService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.containers.services.ContainerService;
+import org.nrg.containers.services.impl.CommandLabelServiceImpl;
 import org.nrg.containers.services.impl.CommandResolutionServiceImpl;
 import org.nrg.containers.services.impl.ContainerServiceImpl;
 import org.nrg.containers.services.impl.HibernateContainerEntityService;
@@ -61,9 +63,9 @@ public class IntegrationTestConfig {
      */
     @Bean
     public DockerControlApi dockerControlApi(final DockerServerPrefsBean containerServerPref,
-                                             final ObjectMapper objectMapper,
+                                             final CommandLabelService commandLabelService,
                                              final NrgEventService eventService) {
-        return new DockerControlApi(containerServerPref, objectMapper, eventService);
+        return new DockerControlApi(containerServerPref, commandLabelService, eventService);
     }
 
     @Bean
@@ -89,6 +91,11 @@ public class IntegrationTestConfig {
     @Bean
     public DockerContainerEventListener containerEventListener(final EventBus eventBus) {
         return new DockerContainerEventListener(eventBus);
+    }
+
+    @Bean
+    public CommandLabelService commandLabelService(final ObjectMapper objectMapper) {
+        return new CommandLabelServiceImpl(objectMapper);
     }
 
     /*
