@@ -5,7 +5,9 @@ import org.mockito.Mockito;
 import org.nrg.containers.api.DockerControlApi;
 import org.nrg.containers.daos.ContainerEntityRepository;
 import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
+import org.nrg.containers.services.CommandLabelService;
 import org.nrg.containers.services.ContainerEntityService;
+import org.nrg.containers.services.impl.CommandLabelServiceImpl;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.beans.AbstractPreferenceBean;
 import org.nrg.prefs.entities.Tool;
@@ -23,9 +25,14 @@ import static org.mockito.Mockito.when;
 public class DockerControlApiTestConfig {
     @Bean
     public DockerControlApi dockerControlApi(final DockerServerPrefsBean containerServerPref,
-                                             final ObjectMapper objectMapper,
+                                             final CommandLabelService commandLabelService,
                                              final NrgEventService eventService) {
-        return new DockerControlApi(containerServerPref, objectMapper, eventService);
+        return new DockerControlApi(containerServerPref, commandLabelService, eventService);
+    }
+
+    @Bean
+    public CommandLabelService commandLabelService(final ObjectMapper objectMapper) {
+        return new CommandLabelServiceImpl(objectMapper);
     }
 
     @Bean

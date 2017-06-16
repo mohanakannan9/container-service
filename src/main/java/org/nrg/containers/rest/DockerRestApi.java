@@ -43,7 +43,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.util.List;
 
-import static org.nrg.containers.helpers.CommandLabelHelper.LABEL_KEY;
+import static org.nrg.containers.services.CommandLabelService.LABEL_KEY;
 import static org.springframework.web.bind.annotation.RequestMethod.DELETE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;

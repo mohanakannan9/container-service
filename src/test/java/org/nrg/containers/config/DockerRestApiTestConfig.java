@@ -6,9 +6,11 @@ import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.api.DockerControlApi;
 import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.rest.DockerRestApi;
+import org.nrg.containers.services.CommandLabelService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.DockerHubService;
 import org.nrg.containers.services.DockerService;
+import org.nrg.containers.services.impl.CommandLabelServiceImpl;
 import org.nrg.containers.services.impl.DockerServiceImpl;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.services.NrgEventService;
@@ -43,8 +45,13 @@ public class DockerRestApiTestConfig extends WebSecurityConfigurerAdapter {
                                        final DockerHubService dockerHubService,
                                        final CommandService commandService,
                                        final DockerServerPrefsBean dockerServerPrefsBean,
-                                       final ObjectMapper objectMapper) {
-        return new DockerServiceImpl(controlApi, dockerHubService, commandService, dockerServerPrefsBean, objectMapper);
+                                       final CommandLabelService commandLabelService) {
+        return new DockerServiceImpl(controlApi, dockerHubService, commandService, dockerServerPrefsBean, commandLabelService);
+    }
+
+    @Bean
+    public CommandLabelService commandLabelService(final ObjectMapper objectMapper) {
+        return new CommandLabelServiceImpl(objectMapper);
     }
 
     @Bean
@@ -59,9 +66,9 @@ public class DockerRestApiTestConfig extends WebSecurityConfigurerAdapter {
 
     @Bean
     public ContainerControlApi mockContainerControlApi(final DockerServerPrefsBean containerServerPref,
-                                                       final ObjectMapper objectMapper,
+                                                       final CommandLabelService commandLabelService,
                                                        final NrgEventService eventService) {
-        final ContainerControlApi controlApi = new DockerControlApi(containerServerPref, objectMapper, eventService);
+        final ContainerControlApi controlApi = new DockerControlApi(containerServerPref, commandLabelService, eventService);
         return Mockito.spy(controlApi);
     }
 

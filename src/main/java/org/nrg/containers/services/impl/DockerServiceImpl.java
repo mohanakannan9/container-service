@@ -1,23 +1,19 @@
 package org.nrg.containers.services.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotUniqueException;
-import org.nrg.containers.helpers.CommandLabelHelper;
-import org.nrg.containers.model.image.docker.DockerImageAndCommandSummary.Builder;
-import org.nrg.containers.model.server.docker.DockerServer;
-import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.dockerhub.DockerHub;
 import org.nrg.containers.model.image.docker.DockerImage;
 import org.nrg.containers.model.image.docker.DockerImageAndCommandSummary;
+import org.nrg.containers.model.server.docker.DockerServer;
+import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
+import org.nrg.containers.services.CommandLabelService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.DockerHubService;
 import org.nrg.containers.services.DockerHubService.DockerHubDeleteDefaultException;
@@ -30,7 +26,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 
@@ -41,20 +36,20 @@ public class DockerServiceImpl implements DockerService {
     private ContainerControlApi controlApi;
     private DockerHubService dockerHubService;
     private CommandService commandService;
-    private DockerServerPrefsBean dockerServerPrefsBean;
-    private ObjectMapper objectMapper;
+    private final DockerServerPrefsBean dockerServerPrefsBean;
+    private final CommandLabelService commandLabelService;
 
     @Autowired
     public DockerServiceImpl(final ContainerControlApi controlApi,
                              final DockerHubService dockerHubService,
                              final CommandService commandService,
                              final DockerServerPrefsBean dockerServerPrefsBean,
-                             final ObjectMapper objectMapper) {
+                             final CommandLabelService commandLabelService) {
         this.controlApi = controlApi;
         this.dockerHubService = dockerHubService;
         this.commandService = commandService;
         this.dockerServerPrefsBean = dockerServerPrefsBean;
-        this.objectMapper = objectMapper;
+        this.commandLabelService = commandLabelService;
     }
 
     @Override
@@ -251,7 +246,7 @@ public class DockerServiceImpl implements DockerService {
                                 .server(server)
                 );
                 commandListsByImageId.put(image.imageId(),
-                        CommandLabelHelper.parseLabels(image, objectMapper)
+                        commandLabelService.parseLabels(image)
                 );
             } else {
                 // If image has no ID, then we will have problems tracking it uniquely.
@@ -360,7 +355,7 @@ public class DockerServiceImpl implements DockerService {
         if (log.isDebugEnabled()) {
             log.debug("Parsing labels for " + imageName);
         }
-        final List<Command> parsed = CommandLabelHelper.parseLabels(imageName, dockerImage, objectMapper);
+        final List<Command> parsed = commandLabelService.parseLabels(imageName, dockerImage);
 
         if (parsed.isEmpty()) {
             log.debug("Did not find any command labels.");

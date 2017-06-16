@@ -1,6 +1,5 @@
 package org.nrg.containers.api;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
@@ -29,9 +28,7 @@ import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.events.model.DockerContainerEvent;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.helpers.CommandLabelHelper;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
-import org.nrg.containers.model.command.auto.ResolvedCommand.PartiallyResolvedCommandMount;
 import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMount;
 import org.nrg.containers.model.container.auto.Container;
 import org.nrg.containers.model.server.docker.DockerServer;
@@ -39,6 +36,7 @@ import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.dockerhub.DockerHub;
 import org.nrg.containers.model.image.docker.DockerImage;
+import org.nrg.containers.services.CommandLabelService;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
@@ -58,22 +56,22 @@ import java.util.Map;
 import static com.spotify.docker.client.DockerClient.EventsParam.since;
 import static com.spotify.docker.client.DockerClient.EventsParam.type;
 import static com.spotify.docker.client.DockerClient.EventsParam.until;
-import static org.nrg.containers.helpers.CommandLabelHelper.LABEL_KEY;
+import static org.nrg.containers.services.CommandLabelService.LABEL_KEY;
 
 @Service
 public class DockerControlApi implements ContainerControlApi {
     private static final Logger log = LoggerFactory.getLogger(DockerControlApi.class);
 
-    private DockerServerPrefsBean containerServerPref;
-    private ObjectMapper objectMapper;
-    private NrgEventService eventService;
+    private final DockerServerPrefsBean containerServerPref;
+    private final CommandLabelService commandLabelService;
+    private final NrgEventService eventService;
 
     @Autowired
     public DockerControlApi(final DockerServerPrefsBean containerServerPref,
-                            final ObjectMapper objectMapper,
+                            final CommandLabelService commandLabelService,
                             final NrgEventService eventService) {
         this.containerServerPref = containerServerPref;
-        this.objectMapper = objectMapper;
+        this.commandLabelService = commandLabelService;
         this.eventService = eventService;
     }
 
@@ -480,7 +478,7 @@ public class DockerControlApi implements ContainerControlApi {
     public List<Command> parseLabels(final String imageName)
             throws DockerServerException, NoServerPrefException, NotFoundException {
         final DockerImage image = getImageById(imageName);
-        return CommandLabelHelper.parseLabels(imageName, image, objectMapper);
+        return commandLabelService.parseLabels(imageName, image);
     }
 
     /**
