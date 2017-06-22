@@ -55,6 +55,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -121,12 +122,12 @@ public class CommandLaunchIntegrationTest {
         // Mock out the prefs bean
         final String defaultHost = "unix:///var/run/docker.sock";
         final String hostEnv = System.getenv("DOCKER_HOST");
-        final String containerHost = StringUtils.isBlank(hostEnv) ? defaultHost : hostEnv;
-
-        final String tlsVerify = System.getenv("DOCKER_TLS_VERIFY");
         final String certPathEnv = System.getenv("DOCKER_CERT_PATH");
+        final String tlsVerify = System.getenv("DOCKER_TLS_VERIFY");
+
+        final boolean useTls = tlsVerify != null && tlsVerify.equals("1");
         final String certPath;
-        if (tlsVerify != null && tlsVerify.equals("1")) {
+        if (useTls) {
             if (StringUtils.isBlank(certPathEnv)) {
                 throw new Exception("Must set DOCKER_CERT_PATH if DOCKER_TLS_VERIFY=1.");
             }
@@ -134,6 +135,21 @@ public class CommandLaunchIntegrationTest {
         } else {
             certPath = "";
         }
+
+        final String containerHost;
+        if (StringUtils.isBlank(hostEnv)) {
+            containerHost = defaultHost;
+        } else {
+            final Pattern tcpShouldBeHttpRe = Pattern.compile("tcp://.*");
+            final java.util.regex.Matcher tcpShouldBeHttpMatch = tcpShouldBeHttpRe.matcher(hostEnv);
+            if (tcpShouldBeHttpMatch.matches()) {
+                // Must switch out tcp:// for either http:// or https://
+                containerHost = hostEnv.replace("tcp://", "http" + (useTls ? "s" : "") + "://");
+            } else {
+                containerHost = hostEnv;
+            }
+        }
+
         when(mockDockerServerPrefsBean.getHost()).thenReturn(containerHost);
         when(mockDockerServerPrefsBean.getCertPath()).thenReturn(certPath);
         when(mockDockerServerPrefsBean.toPojo()).thenCallRealMethod();

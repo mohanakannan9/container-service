@@ -33,6 +33,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.Date;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
@@ -49,8 +50,8 @@ import static org.mockito.Mockito.when;
 public class DockerControlApiTest {
     private static final Logger log = LoggerFactory.getLogger(DockerControlApiTest.class);
 
-    static String CONTAINER_HOST;
-    static String CERT_PATH ;
+    private static String CONTAINER_HOST;
+    private static String CERT_PATH;
 
     private static DockerClient CLIENT;
 
@@ -71,17 +72,30 @@ public class DockerControlApiTest {
 
         final String defaultHost = "unix:///var/run/docker.sock";
         final String hostEnv = System.getenv("DOCKER_HOST");
-        CONTAINER_HOST = StringUtils.isBlank(hostEnv) ? defaultHost : hostEnv;
-
-        final String tlsVerify = System.getenv("DOCKER_TLS_VERIFY");
         final String certPathEnv = System.getenv("DOCKER_CERT_PATH");
-        if (tlsVerify != null && tlsVerify.equals("1")) {
+        final String tlsVerify = System.getenv("DOCKER_TLS_VERIFY");
+
+        final boolean useTls = tlsVerify != null && tlsVerify.equals("1");
+        if (useTls) {
             if (StringUtils.isBlank(certPathEnv)) {
                 throw new Exception("Must set DOCKER_CERT_PATH if DOCKER_TLS_VERIFY=1.");
             }
             CERT_PATH = certPathEnv;
         } else {
             CERT_PATH = "";
+        }
+
+        if (StringUtils.isBlank(hostEnv)) {
+            CONTAINER_HOST = defaultHost;
+        } else {
+            final Pattern tcpShouldBeHttpRe = Pattern.compile("tcp://.*");
+            final java.util.regex.Matcher tcpShouldBeHttpMatch = tcpShouldBeHttpRe.matcher(hostEnv);
+            if (tcpShouldBeHttpMatch.matches()) {
+                // Must switch out tcp:// for either http:// or https://
+                CONTAINER_HOST = hostEnv.replace("tcp://", "http" + (useTls ? "s" : "") + "://");
+            } else {
+                CONTAINER_HOST = hostEnv;
+            }
         }
 
         final Date timeZero = new Date(0L);
