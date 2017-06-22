@@ -36,7 +36,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assume.assumeThat;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -138,12 +137,12 @@ public class DockerServiceIntegrationTest {
         final List<Command> commands = dockerService.saveFromImageLabels(imageName);
         assertThat(commands, hasSize(1));
         final Command command = commands.get(0);
-        assertThat(command.id(), not(eq(0L)));
+        assertThat(command.id(), not(0L));
 
         final List<Command.CommandWrapper> wrappers = command.xnatCommandWrappers();
         assertThat(wrappers.size(), greaterThan(0));
         final Command.CommandWrapper wrapper = wrappers.get(0);
-        assertThat(wrapper.id(), not(eq(0L)));
+        assertThat(wrapper.id(), not(0L));
 
         CLIENT.removeImage(imageName);
     }
