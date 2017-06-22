@@ -5,26 +5,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Function;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import com.google.common.collect.*;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.containers.model.command.auto.Command.Builder;
-import org.nrg.containers.model.command.entity.CommandEntity;
-import org.nrg.containers.model.command.entity.CommandInputEntity;
-import org.nrg.containers.model.command.entity.CommandMountEntity;
-import org.nrg.containers.model.command.entity.CommandOutputEntity;
-import org.nrg.containers.model.command.entity.CommandType;
-import org.nrg.containers.model.command.entity.CommandWrapperDerivedInputEntity;
-import org.nrg.containers.model.command.entity.CommandWrapperExternalInputEntity;
-import org.nrg.containers.model.command.entity.CommandWrapperInputType;
-import org.nrg.containers.model.command.entity.DockerCommandEntity;
-import org.nrg.containers.model.command.entity.CommandWrapperOutputEntity;
-import org.nrg.containers.model.command.entity.CommandWrapperEntity;
-import org.nrg.containers.model.configuration.CommandConfiguration;
+import org.nrg.containers.model.command.entity.*;
 import org.nrg.containers.model.configuration.CommandConfiguration.CommandInputConfiguration;
 import org.nrg.containers.model.configuration.CommandConfiguration.CommandOutputConfiguration;
 
@@ -178,7 +161,37 @@ public abstract class Command {
                 .schemaVersion(creation.schemaVersion())
                 .infoUrl(creation.infoUrl())
                 .image(creation.image())
-                .type(creation.type() == null ? CommandEntity.DEFAULT_TYPE.getName() : creation.type())
+                .type(creation.type())
+                .index(creation.index())
+                .hash(creation.hash())
+                .workingDirectory(creation.workingDirectory())
+                .commandLine(creation.commandLine())
+                .mounts(creation.mounts() == null ? Collections.<CommandMount>emptyList() : creation.mounts())
+                .environmentVariables(creation.environmentVariables() == null ? Collections.<String, String>emptyMap() : creation.environmentVariables())
+                .ports(creation.ports() == null ? Collections.<String, String>emptyMap() : creation.ports())
+                .inputs(creation.inputs() == null ? Collections.<CommandInput>emptyList() : creation.inputs())
+                .outputs(creation.outputs() == null ? Collections.<CommandOutput>emptyList() : creation.outputs())
+                .xnatCommandWrappers(creation.commandWrapperCreations() == null ? Collections.<CommandWrapper>emptyList() :
+                        Lists.transform(creation.commandWrapperCreations(), new Function<CommandWrapperCreation, CommandWrapper>() {
+                            @Override
+                            public CommandWrapper apply(final CommandWrapperCreation input) {
+                                return CommandWrapper.create(input);
+                            }
+                        })
+                )
+                .build();
+    }
+
+    public static Command create(final CommandCreation creation, final String image) {
+        return builder()
+                .name(creation.name())
+                .label(creation.label())
+                .description(creation.description())
+                .version(creation.version())
+                .schemaVersion(creation.schemaVersion())
+                .infoUrl(creation.infoUrl())
+                .image(image)
+                .type(creation.type())
                 .index(creation.index())
                 .hash(creation.hash())
                 .workingDirectory(creation.workingDirectory())
@@ -1243,7 +1256,7 @@ public abstract class Command {
         @JsonProperty("xnat") public abstract ImmutableList<CommandWrapperCreation> commandWrapperCreations();
 
         @JsonCreator
-        static CommandCreation create(@JsonProperty("name") final String name,
+        public static CommandCreation create(@JsonProperty("name") final String name,
                                       @JsonProperty("label") final String label,
                                       @JsonProperty("description") final String description,
                                       @JsonProperty("version") final String version,
@@ -1307,6 +1320,27 @@ public abstract class Command {
                     .schemaVersion(command.schemaVersion())
                     .infoUrl(command.infoUrl())
                     .image(command.image())
+                    .type(command.type())
+                    .workingDirectory(command.workingDirectory())
+                    .commandLine(command.commandLine())
+                    .environmentVariables(command.environmentVariables())
+                    .mounts(command.mounts())
+                    .index(command.index())
+                    .hash(command.hash())
+                    .ports(command.ports())
+                    .outputs(command.outputs());
+        }
+
+        public static ConfiguredCommand.Builder initialize(final Command command, final String image) {
+            return builder()
+                    .id(command.id())
+                    .name(command.name())
+                    .label(command.label())
+                    .description(command.description())
+                    .version(command.version())
+                    .schemaVersion(command.schemaVersion())
+                    .infoUrl(command.infoUrl())
+                    .image(image)
                     .type(command.type())
                     .workingDirectory(command.workingDirectory())
                     .commandLine(command.commandLine())
