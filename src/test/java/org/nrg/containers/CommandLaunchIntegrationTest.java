@@ -94,7 +94,7 @@ public class CommandLaunchIntegrationTest {
     @Autowired private SiteConfigPreferences mockSiteConfigPreferences;
     @Autowired private UserManagementServiceI mockUserManagementServiceI;
 
-    @Rule public TemporaryFolder folder = new TemporaryFolder(new File("/tmp"));
+    @Rule public TemporaryFolder folder = new TemporaryFolder(new File(System.getProperty("user.dir") + "/build"));
 
     @Before
     public void setup() throws Exception {
