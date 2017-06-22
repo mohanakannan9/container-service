@@ -3,6 +3,7 @@ package org.nrg.containers.services;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
 import com.spotify.docker.client.DefaultDockerClient;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -56,8 +57,23 @@ public class DockerServiceIntegrationTest {
     @Before
     public void setup() throws Exception {
         // Mock out the prefs bean
-        final String containerHost = "unix:///var/run/docker.sock";
+        final String defaultHost = "unix:///var/run/docker.sock";
+        final String hostEnv = System.getenv("DOCKER_HOST");
+        final String containerHost = StringUtils.isBlank(hostEnv) ? defaultHost : hostEnv;
+
+        final String tlsVerify = System.getenv("DOCKER_TLS_VERIFY");
+        final String certPathEnv = System.getenv("DOCKER_CERT_PATH");
+        final String certPath;
+        if (tlsVerify != null && tlsVerify.equals("1")) {
+            if (StringUtils.isBlank(certPathEnv)) {
+                throw new Exception("Must set DOCKER_CERT_PATH if DOCKER_TLS_VERIFY=1.");
+            }
+            certPath = certPathEnv;
+        } else {
+            certPath = "";
+        }
         when(mockDockerServerPrefsBean.getHost()).thenReturn(containerHost);
+        when(mockDockerServerPrefsBean.getCertPath()).thenReturn(certPath);
         when(mockDockerServerPrefsBean.toPojo()).thenCallRealMethod();
 
         // Mock the userI
