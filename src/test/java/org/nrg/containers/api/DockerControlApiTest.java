@@ -15,7 +15,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.nrg.containers.config.DockerControlApiTestConfig;
 import org.nrg.containers.events.model.DockerContainerEvent;
@@ -25,35 +24,35 @@ import org.nrg.containers.model.dockerhub.DockerHub;
 import org.nrg.containers.model.image.docker.DockerImage;
 import org.nrg.containers.model.server.docker.DockerServer;
 import org.nrg.framework.scope.EntityId;
-import org.nrg.prefs.beans.AbstractPreferenceBean;
-import org.nrg.prefs.entities.Tool;
 import org.nrg.prefs.services.NrgPreferenceService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-import static org.hamcrest.Matchers.any;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isIn;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assume.assumeThat;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = DockerControlApiTestConfig.class)
 public class DockerControlApiTest {
+    private static final Logger log = LoggerFactory.getLogger(DockerControlApiTest.class);
 
     static String CONTAINER_HOST;
     static String CERT_PATH ;
 
-    private static DockerClient client;
+    private static DockerClient CLIENT;
 
     private static final String BUSYBOX_LATEST = "busybox:latest";
     private static final String ALPINE_LATEST = "alpine:latest";
@@ -101,11 +100,22 @@ public class DockerControlApiTest {
             .setPreferenceValue(Mockito.eq(toolId), Mockito.anyString(), Mockito.anyString());
         when(mockPrefsService.hasPreference(Mockito.eq(toolId), Mockito.anyString())).thenReturn(true);
 
-        client = controlApi.getClient();
+        CLIENT = controlApi.getClient();
+    }
+
+    private boolean canConnectToDocker() {
+        try {
+            return CLIENT.ping().equals("OK");
+        } catch (InterruptedException | DockerException e) {
+            log.warn("Could not connect to docker.", e);
+        }
+        return false;
     }
 
     @Test
     public void testGetServer() throws Exception {
+        assumeThat(canConnectToDocker(), is(true));
+
         final DockerServer server = controlApi.getServer();
         assertThat(server.host(), is(CONTAINER_HOST));
         assertThat(server.certPath(), is(CERT_PATH));
@@ -113,8 +123,10 @@ public class DockerControlApiTest {
 
     @Test
     public void testGetAllImages() throws Exception {
-        client.pull(BUSYBOX_LATEST);
-        client.pull(ALPINE_LATEST);
+        assumeThat(canConnectToDocker(), is(true));
+
+        CLIENT.pull(BUSYBOX_LATEST);
+        CLIENT.pull(ALPINE_LATEST);
         final List<DockerImage> images = controlApi.getAllImages();
 
         final List<String> imageNames = imagesToTags(images);
@@ -161,22 +173,23 @@ public class DockerControlApiTest {
 //    }
 
     @Test
-    public void testPingServer() throws Exception {
-        assertThat(controlApi.pingServer(), is("OK"));
-    }
-
-    @Test
     public void testPingHub() throws Exception {
+        assumeThat(canConnectToDocker(), is(true));
+
         assertThat(controlApi.pingHub(DOCKER_HUB), is("OK"));
     }
 
     @Test
     public void testPullImage() throws Exception {
+        assumeThat(canConnectToDocker(), is(true));
+
         controlApi.pullImage(BUSYBOX_LATEST, DOCKER_HUB);
     }
 
     @Test
     public void testPullPrivateImage() throws Exception {
+        assumeThat(canConnectToDocker(), is(true));
+
         final String privateImageName = "xnattest/private";
         exception.expect(imageNotFoundException(privateImageName));
         controlApi.pullImage(privateImageName, DOCKER_HUB);
@@ -187,10 +200,12 @@ public class DockerControlApiTest {
 
     @Test
     public void testDeleteImage() throws DockerException, InterruptedException, NoServerPrefException, DockerServerException {
-        client.pull(BUSYBOX_NAME);
-        int beforeImageCount = client.listImages().size();
+        assumeThat(canConnectToDocker(), is(true));
+
+        CLIENT.pull(BUSYBOX_NAME);
+        int beforeImageCount = CLIENT.listImages().size();
         controlApi.deleteImageById(BUSYBOX_ID, true);
-        List<com.spotify.docker.client.messages.Image> images = client.listImages();
+        List<com.spotify.docker.client.messages.Image> images = CLIENT.listImages();
         int afterImageCount = images.size();
         assertThat(afterImageCount+1, is(beforeImageCount));
         for(com.spotify.docker.client.messages.Image image:images){
@@ -200,7 +215,9 @@ public class DockerControlApiTest {
 
     @Test(timeout = 10000)
     public void testEventPolling() throws Exception {
-        final Info dockerInfo = client.info();
+        assumeThat(canConnectToDocker(), is(true));
+        
+        final Info dockerInfo = CLIENT.info();
         if (dockerInfo.kernelVersion().contains("moby")) {
             // If we are running docker in the moby VM, then it isn't running natively
             //   on the host machine. Sometimes the clocks on the host and VM can get out
@@ -218,8 +235,8 @@ public class DockerControlApiTest {
                             .autoRemove(true)
                             .build())
                     .build();
-            final ContainerCreation containerCreation = client.createContainer(containerConfig);
-            client.startContainer(containerCreation.id());
+            final ContainerCreation containerCreation = CLIENT.createContainer(containerConfig);
+            CLIENT.startContainer(containerCreation.id());
         }
 
         final Date start = new Date();
@@ -233,8 +250,8 @@ public class DockerControlApiTest {
                 .cmd("sh", "-c", "echo Hello world")
                 .build();
 
-        final ContainerCreation creation = client.createContainer(config);
-        client.startContainer(creation.id());
+        final ContainerCreation creation = CLIENT.createContainer(config);
+        CLIENT.startContainer(creation.id());
 
         Thread.sleep(1000); // Wait to ensure we get some events
         final Date end = new Date();

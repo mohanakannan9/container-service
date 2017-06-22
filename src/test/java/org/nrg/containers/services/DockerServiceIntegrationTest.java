@@ -2,7 +2,8 @@ package org.nrg.containers.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
-import com.spotify.docker.client.DefaultDockerClient;
+import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.exceptions.DockerException;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Rule;
@@ -10,13 +11,15 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.nrg.containers.api.ContainerControlApi;
+import org.nrg.containers.api.DockerControlApi;
 import org.nrg.containers.config.DockerServiceIntegrationTestConfig;
 import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -28,8 +31,10 @@ import java.util.List;
 
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assume.assumeThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -37,6 +42,8 @@ import static org.mockito.Mockito.when;
 @ContextConfiguration(classes = DockerServiceIntegrationTestConfig.class)
 @Transactional
 public class DockerServiceIntegrationTest {
+    private static final Logger log = LoggerFactory.getLogger(DockerServiceIntegrationTest.class);
+
     private UserI mockUser;
 
     private final String FAKE_USER = "mockUser";
@@ -44,9 +51,11 @@ public class DockerServiceIntegrationTest {
     private final String FAKE_SECRET = "secret";
     private final String FAKE_HOST = "mock://url";
 
+    private static DockerClient CLIENT;
+
     @Autowired private ObjectMapper mapper;
     @Autowired private CommandEntityService commandEntityService;
-    @Autowired private ContainerControlApi controlApi;
+    @Autowired private DockerControlApi controlApi;
     @Autowired private DockerService dockerService;
     @Autowired private DockerServerPrefsBean mockDockerServerPrefsBean;
     @Autowired private SiteConfigPreferences mockSiteConfigPreferences;
@@ -88,15 +97,27 @@ public class DockerServiceIntegrationTest {
         when(mockSiteConfigPreferences.getBuildPath()).thenReturn(folder.newFolder().getAbsolutePath()); // transporter makes a directory under build
         when(mockSiteConfigPreferences.getArchivePath()).thenReturn(folder.newFolder().getAbsolutePath()); // container logs get stored under archive
         when(mockSiteConfigPreferences.getProperty("processingUrl", FAKE_HOST)).thenReturn(FAKE_HOST);
+
+        CLIENT = controlApi.getClient();
+    }
+
+    private boolean canConnectToDocker() {
+        try {
+            return CLIENT.ping().equals("OK");
+        } catch (InterruptedException | DockerException e) {
+            log.warn("Could not connect to docker.", e);
+        }
+        return false;
     }
 
     @Test
     public void testSaveCommandFromImageLabels() throws Exception {
+        assumeThat(canConnectToDocker(), is(true));
+
         final String imageName = "xnat/testy-test";
         final String dir = Resources.getResource("dockerServiceIntegrationTest").getPath().replace("%20", " ");
 
-        final DefaultDockerClient client = DefaultDockerClient.fromEnv().build();
-        client.build(Paths.get(dir), imageName);
+        CLIENT.build(Paths.get(dir), imageName);
 
         final List<Command> commands = dockerService.saveFromImageLabels(imageName);
         assertThat(commands, hasSize(1));
@@ -108,6 +129,6 @@ public class DockerServiceIntegrationTest {
         final Command.CommandWrapper wrapper = wrappers.get(0);
         assertThat(wrapper.id(), not(eq(0L)));
 
-        client.removeImage(imageName);
+        CLIENT.removeImage(imageName);
     }
 }

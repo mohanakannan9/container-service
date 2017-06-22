@@ -592,7 +592,7 @@ public class DockerControlApi implements ContainerControlApi {
 
     @VisibleForTesting
     @Nonnull
-    DockerClient getClient() throws NoServerPrefException {
+    public DockerClient getClient() throws NoServerPrefException {
         return getClient(getServer());
     }
 

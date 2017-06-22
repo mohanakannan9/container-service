@@ -12,6 +12,8 @@ import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
 import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
+import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.exceptions.DockerException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
@@ -20,6 +22,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.nrg.containers.api.DockerControlApi;
 import org.nrg.containers.config.IntegrationTestConfig;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
@@ -39,6 +42,8 @@ import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xft.security.UserI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -60,12 +65,15 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeThat;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = IntegrationTestConfig.class)
 @Transactional
 public class CommandLaunchIntegrationTest {
+    private static final Logger log = LoggerFactory.getLogger(CommandLaunchIntegrationTest.class);
+
     private UserI mockUser;
 
     private final String FAKE_USER = "mockUser";
@@ -73,9 +81,12 @@ public class CommandLaunchIntegrationTest {
     private final String FAKE_SECRET = "secret";
     private final String FAKE_HOST = "mock://url";
 
+    private static DockerClient CLIENT;
+
     @Autowired private ObjectMapper mapper;
     @Autowired private CommandService commandService;
     @Autowired private ContainerService containerService;
+    @Autowired private DockerControlApi controlApi;
     @Autowired private ContainerEntityService containerEntityService;
     @Autowired private AliasTokenService mockAliasTokenService;
     @Autowired private DockerServerPrefsBean mockDockerServerPrefsBean;
@@ -145,10 +156,25 @@ public class CommandLaunchIntegrationTest {
         when(mockSiteConfigPreferences.getBuildPath()).thenReturn(folder.newFolder().getAbsolutePath()); // transporter makes a directory under build
         when(mockSiteConfigPreferences.getArchivePath()).thenReturn(folder.newFolder().getAbsolutePath()); // container logs get stored under archive
         when(mockSiteConfigPreferences.getProperty("processingUrl", FAKE_HOST)).thenReturn(FAKE_HOST);
+
+        CLIENT = controlApi.getClient();
+    }
+
+    private boolean canConnectToDocker() {
+        try {
+            return CLIENT.ping().equals("OK");
+        } catch (InterruptedException | DockerException e) {
+            log.warn("Could not connect to docker.", e);
+        }
+        return false;
     }
 
     @Test
     public void testFakeReconAll() throws Exception {
+        assumeThat(canConnectToDocker(), is(true));
+
+        CLIENT.pull("busybox:latest");
+
         final String dir = Resources.getResource("commandLaunchTest").getPath().replace("%20", " ");
         final String commandJsonFile = dir + "/fakeReconAllCommand.json";
         final String sessionJsonFile = dir + "/session.json";
@@ -260,6 +286,8 @@ public class CommandLaunchIntegrationTest {
 
     @Test
     public void testProjectMount() throws Exception {
+        assumeThat(canConnectToDocker(), is(true));
+
         final String dir = Resources.getResource("commandLaunchTest").getPath().replace("%20", " ");
         final String commandJsonFile = dir + "/project-mount-command.json";
         final String projectJsonFile = dir + "/project.json";
