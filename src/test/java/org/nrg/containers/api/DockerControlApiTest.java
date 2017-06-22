@@ -7,6 +7,7 @@ import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
 import com.spotify.docker.client.messages.HostConfig;
 import com.spotify.docker.client.messages.Info;
+import com.spotify.docker.client.messages.Version;
 import org.apache.commons.lang3.StringUtils;
 import org.hamcrest.CustomTypeSafeMatcher;
 import org.hamcrest.Matcher;
@@ -230,6 +231,12 @@ public class DockerControlApiTest {
     @Test(timeout = 10000)
     public void testEventPolling() throws Exception {
         assumeThat(canConnectToDocker(), is(true));
+        log.debug("Starting event polling test.");
+
+        if (log.isDebugEnabled()) {
+            final Version version = CLIENT.version();
+            log.debug("Docker version: {}", version);
+        }
         
         final Info dockerInfo = CLIENT.info();
         if (dockerInfo.kernelVersion().contains("moby")) {
@@ -241,6 +248,7 @@ public class DockerControlApiTest {
             //     docker run --rm --privileged alpine hwclock -s
             // to sync up the clocks. It requires 'privileged' mode, which may cause problems
             // running in a CI environment.
+            log.debug("Synchronizing host and vm clocks.");
             final ContainerConfig containerConfig = ContainerConfig.builder()
                     .image("alpine")
                     .cmd(new String[]{"hwclock", "-s"})
@@ -254,6 +262,7 @@ public class DockerControlApiTest {
         }
 
         final Date start = new Date();
+        log.debug("Start time is {}", start.getTime() / 1000);
         Thread.sleep(1000); // Wait to ensure we get some events
 
         controlApi.pullImage(BUSYBOX_LATEST);
@@ -269,7 +278,9 @@ public class DockerControlApiTest {
 
         Thread.sleep(1000); // Wait to ensure we get some events
         final Date end = new Date();
+        log.debug("End time is {}", end.getTime() / 1000);
 
+        log.debug("Checking for events in the time window.");
         final List<DockerContainerEvent> events = controlApi.getContainerEvents(start, end);
 
         // The fact that we have a list of events and not a timeout failure is already a victory
