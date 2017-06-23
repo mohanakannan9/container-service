@@ -35,7 +35,7 @@ If you want to contribute code, we will be very happy to have it.
 The first thing you should know is that we do almost all of our work on the `dev` branch, or on smaller "feature" branches that come from and merge into `dev`. So if you want to do something with the code, you, too, should start a new branch from `dev`.
 
 1. Fork the repo.
-1. Clone your fork to your local machine, using HTTP (`git clone https://github.com/<you>/container-service.git`) or SSH (`git clone git@github.com:NrgXnat/container-service.git`).
+1. Clone your fork to your local machine, using HTTP (`git clone https://github.com/<you>/container-service.git`) or SSH (`git clone git@github.com:<you>/container-service.git`).
 1. Check out a new branch for your feature, starting from the `dev` branch.
     git checkout -b my-cool-new-feature origin/dev
 1. Commit your work there.
