@@ -3,6 +3,7 @@ package org.nrg.containers.model.xnat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
@@ -28,6 +29,7 @@ public class Session extends XnatModelObject {
     private List<Scan> scans;
     private List<Assessor> assessors;
     private List<Resource> resources;
+    @JsonProperty("project-id") private String projectId;
 
     public Session() {}
 
@@ -65,6 +67,7 @@ public class Session extends XnatModelObject {
         this.id = xnatImagesessiondataI.getId();
         this.label = xnatImagesessiondataI.getLabel();
         this.xsiType = xnatImagesessiondataI.getXSIType();
+        this.projectId = xnatImagesessiondataI.getProject();
 
         this.scans = Lists.newArrayList();
         for (final XnatImagescandataI xnatImagescandataI : xnatImagesessiondataI.getScans_scan()) {
@@ -170,6 +173,14 @@ public class Session extends XnatModelObject {
         this.scans = scans;
     }
 
+    public String getProjectId() {
+        return projectId;
+    }
+
+    public void setProjectId(final String projectId) {
+        this.projectId = projectId;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
@@ -179,12 +190,13 @@ public class Session extends XnatModelObject {
         return Objects.equals(this.xnatImagesessiondataI, that.xnatImagesessiondataI) &&
                 Objects.equals(this.scans, that.scans) &&
                 Objects.equals(this.assessors, that.assessors) &&
-                Objects.equals(this.resources, that.resources);
+                Objects.equals(this.resources, that.resources) &&
+                Objects.equals(this.projectId, that.projectId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), xnatImagesessiondataI, scans, assessors, resources);
+        return Objects.hash(super.hashCode(), xnatImagesessiondataI, scans, assessors, resources, projectId);
     }
 
     @Override
@@ -193,6 +205,7 @@ public class Session extends XnatModelObject {
                 .add("scans", scans)
                 .add("assessors", assessors)
                 .add("resources", resources)
+                .add("projectId", projectId)
                 .toString();
     }
 }
