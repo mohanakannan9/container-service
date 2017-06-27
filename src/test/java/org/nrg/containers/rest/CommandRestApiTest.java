@@ -2,7 +2,6 @@ package org.nrg.containers.rest;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.io.Resources;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -38,6 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.List;
 
 import static org.hamcrest.Matchers.*;
@@ -428,7 +428,7 @@ public class CommandRestApiTest {
 
         final String path = "/commands";
 
-        final String dir = Resources.getResource("ecatHeaderDump").getPath().replace("%20", " ");
+        final String dir = Paths.get(ClassLoader.getSystemResource("ecatHeaderDump").toURI()).toString().replace("%20", " ");
         final String commandJsonFile = dir + "/command.json";
         final Command ecatHeaderDump = mapper.readValue(new File(commandJsonFile), Command.class);
         final String commandJson = mapper.writeValueAsString(ecatHeaderDump);

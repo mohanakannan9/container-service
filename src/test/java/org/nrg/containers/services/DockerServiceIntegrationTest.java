@@ -1,7 +1,6 @@
 package org.nrg.containers.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.io.Resources;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;
 import org.apache.commons.lang3.StringUtils;
@@ -13,8 +12,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.nrg.containers.api.DockerControlApi;
 import org.nrg.containers.config.DockerServiceIntegrationTestConfig;
-import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.model.command.auto.Command;
+import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
@@ -30,10 +29,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assume.assumeThat;
 import static org.mockito.Mockito.when;
@@ -130,7 +126,7 @@ public class DockerServiceIntegrationTest {
         assumeThat(canConnectToDocker(), is(true));
 
         final String imageName = "xnat/testy-test";
-        final String dir = Resources.getResource("dockerServiceIntegrationTest").getPath().replace("%20", " ");
+        final String dir = Paths.get(ClassLoader.getSystemResource("dockerServiceIntegrationTest").toURI()).toString().replace("%20", " ");
 
         CLIENT.build(Paths.get(dir), imageName);
 

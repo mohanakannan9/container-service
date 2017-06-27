@@ -150,7 +150,7 @@ public class JsonPathTest {
         final InnerTestPojo expectedInner = new InnerTestPojo("value", "foo");
         assertThat(documentContext.read("$.outerKey1", new TypeRef<InnerTestPojo>() {}), is(expectedInner));
 
-        final List<String> innerKey = JsonPath.parse(json).read("$.outerKey1[?(@.innerKey2 == 'foo')].innerKey1", new TypeRef<List<String>>() {});
+        final List<String> innerKey = JsonPath.read(json, "$.outerKey1[?(@.innerKey2 == 'foo')].innerKey1");
         assertThat(innerKey, contains("value"));
         final List<InnerTestPojo> actualIndefiniteWPredicate = documentContext.read("$.outerKey1[?(@.innerKey2 == 'foo')]", new TypeRef<List<InnerTestPojo>>(){});
         assertThat(actualIndefiniteWPredicate, contains(expectedInner));

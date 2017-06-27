@@ -5,7 +5,6 @@ import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.google.common.io.Resources;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
@@ -16,6 +15,7 @@ import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -52,18 +52,13 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeThat;
@@ -187,14 +182,15 @@ public class CommandLaunchIntegrationTest {
 
     @Test
     public void testFakeReconAll() throws Exception {
+        assumeThat(SystemUtils.IS_OS_WINDOWS_7, is(false));
         assumeThat(canConnectToDocker(), is(true));
 
         CLIENT.pull("busybox:latest");
 
-        final String dir = Resources.getResource("commandLaunchTest").getPath().replace("%20", " ");
-        final String commandJsonFile = dir + "/fakeReconAllCommand.json";
-        final String sessionJsonFile = dir + "/session.json";
-        final String fakeResourceDir = dir + "/fakeResource";
+        final String dir = Paths.get(ClassLoader.getSystemResource("commandLaunchTest").toURI()).toString().replace("%20", " ");
+        final String commandJsonFile = Paths.get(dir, "/fakeReconAllCommand.json").toString();
+        final String sessionJsonFile = Paths.get(dir, "/session.json").toString();
+        final String fakeResourceDir = Paths.get(dir, "/fakeResource").toString();
         final String commandWrapperName = "recon-all-session";
 
         final Command fakeReconAll = mapper.readValue(new File(commandJsonFile), Command.class);
@@ -308,7 +304,7 @@ public class CommandLaunchIntegrationTest {
     public void testProjectMount() throws Exception {
         assumeThat(canConnectToDocker(), is(true));
 
-        final String dir = Resources.getResource("commandLaunchTest").getPath().replace("%20", " ");
+        final String dir = Paths.get(ClassLoader.getSystemResource("commandLaunchTest").toURI()).toString().replace("%20", " ");
         final String commandJsonFile = dir + "/project-mount-command.json";
         final String projectJsonFile = dir + "/project.json";
         final String projectDir = dir + "/project";
