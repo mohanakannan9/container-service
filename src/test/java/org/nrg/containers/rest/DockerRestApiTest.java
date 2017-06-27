@@ -469,7 +469,7 @@ public class DockerRestApiTest {
 
         final String fakeImageId = "xnat/thisisfake";
 
-        final String resourceDir = Resources.getResource("dockerServiceIntegrationTest").getPath().replace("%20", " ");
+        final String resourceDir = Resources.getResource("dockerRestApiTest").getPath().replace("%20", " ");
         final String commandJsonFile = resourceDir + "/commands.json";
 
         // For some reason Jackson throws an exception when parsing this file. So read it first, then deserialize.
