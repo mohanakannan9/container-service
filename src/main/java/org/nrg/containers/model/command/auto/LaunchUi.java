@@ -2,6 +2,7 @@ package org.nrg.containers.model.command.auto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.auto.value.AutoValue;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 @AutoValue
+@JsonInclude(JsonInclude.Include.ALWAYS)
 public abstract class LaunchUi {
     @JsonProperty("command-id") public abstract long commandId();
     @JsonProperty("command-name") public abstract String commandName();
@@ -166,6 +168,7 @@ public abstract class LaunchUi {
     }
 
     @AutoValue
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     public static abstract class LaunchUiInput {
         @JsonProperty("label") public abstract String label();
         @Nullable @JsonProperty("description") public abstract String description();
@@ -205,6 +208,7 @@ public abstract class LaunchUi {
     }
 
     @AutoValue
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     public static abstract class LaunchUiInputValuesAndType {
         @JsonProperty("values") public abstract ImmutableList<LaunchUiInputValue> values();
         @JsonProperty("type") public abstract UiType type();
@@ -220,6 +224,7 @@ public abstract class LaunchUi {
     }
 
     @AutoValue
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     public static abstract class LaunchUiInputValue {
         private static String NULL_VALUE = "";
         private static String NULL_LABEL = "null";

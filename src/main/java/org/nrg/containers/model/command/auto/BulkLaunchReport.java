@@ -1,6 +1,7 @@
 package org.nrg.containers.model.command.auto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 @AutoValue
+@JsonInclude(JsonInclude.Include.ALWAYS)
 public abstract class BulkLaunchReport {
     @JsonProperty("successes") public abstract ImmutableList<Success> successes();
     @JsonProperty("failures") public abstract ImmutableList<Failure> failures();
@@ -48,6 +50,7 @@ public abstract class BulkLaunchReport {
     }
 
     @AutoValue
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     public static abstract class Success extends Launch {
         @JsonProperty("params") public abstract ImmutableMap<String, String> launchParams();
         @Nullable @JsonProperty("command") public abstract String command();
@@ -80,6 +83,7 @@ public abstract class BulkLaunchReport {
     }
 
     @AutoValue
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     public static abstract class Failure extends Launch{
         @JsonProperty("params") public abstract ImmutableMap<String, String> launchParams();
         @Nullable @JsonProperty("command") public abstract String command();

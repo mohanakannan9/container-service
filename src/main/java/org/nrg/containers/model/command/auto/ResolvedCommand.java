@@ -1,6 +1,7 @@
 package org.nrg.containers.model.command.auto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 @AutoValue
+@JsonInclude(JsonInclude.Include.ALWAYS)
 public abstract class ResolvedCommand {
 
     @JsonProperty("wrapper-id") public abstract Long wrapperId();
@@ -138,6 +140,7 @@ public abstract class ResolvedCommand {
     }
 
     @AutoValue
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     public abstract static class PartiallyResolvedCommand {
         @JsonProperty("wrapper-id") public abstract Long wrapperId();
         @JsonProperty("wrapper-name") public abstract String wrapperName();
@@ -208,6 +211,7 @@ public abstract class ResolvedCommand {
     }
 
     @AutoValue
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     public abstract static class ResolvedCommandMount {
         @JsonProperty("name") public abstract String name();
         @JsonProperty("writable") public abstract Boolean writable();
@@ -262,6 +266,7 @@ public abstract class ResolvedCommand {
     }
 
     @AutoValue
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     public abstract static class PartiallyResolvedCommandMount {
         @JsonProperty("name") public abstract String name();
         @JsonProperty("writable") public abstract Boolean writable();
@@ -310,6 +315,7 @@ public abstract class ResolvedCommand {
     }
 
     @AutoValue
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     public abstract static class ResolvedCommandMountFiles {
         @JsonProperty("from-xnat-input") public abstract String fromXnatInput();
         @Nullable @JsonProperty("from-uri") public abstract String fromUri();
@@ -325,6 +331,7 @@ public abstract class ResolvedCommand {
     }
 
     @AutoValue
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     public abstract static class ResolvedCommandOutput {
         @JsonProperty("name") public abstract String name();
         @JsonProperty("type") public abstract String type();

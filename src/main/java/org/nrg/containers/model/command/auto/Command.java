@@ -2,6 +2,7 @@ package org.nrg.containers.model.command.auto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Function;
@@ -19,6 +20,7 @@ import java.util.Map;
 import java.util.Set;
 
 @AutoValue
+@JsonInclude(JsonInclude.Include.ALWAYS)
 public abstract class Command {
     @JsonProperty("id") public abstract long id();
     @Nullable @JsonProperty("name") public abstract String name();
@@ -479,6 +481,7 @@ public abstract class Command {
     }
 
     @AutoValue
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     public static abstract class CommandMount {
         @JsonIgnore public abstract long id();
         @Nullable @JsonProperty("name") public abstract String name();
@@ -520,6 +523,7 @@ public abstract class Command {
     }
 
     @AutoValue
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     public static abstract class CommandInput extends Input {
         @Nullable @JsonProperty("command-line-flag") public abstract String commandLineFlag();
         @Nullable @JsonProperty("command-line-separator") public abstract String commandLineSeparator();
@@ -629,6 +633,7 @@ public abstract class Command {
     }
 
     @AutoValue
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     public static abstract class CommandOutput {
         @JsonIgnore public abstract long id();
         @Nullable @JsonProperty("name") public abstract String name();
@@ -722,6 +727,7 @@ public abstract class Command {
     }
 
     @AutoValue
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     public static abstract class CommandWrapper {
         @JsonProperty("id") public abstract long id();
         @Nullable @JsonProperty("name") public abstract String name();
@@ -880,6 +886,7 @@ public abstract class Command {
     }
 
     @AutoValue
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     public static abstract class CommandWrapperCreation {
         @Nullable @JsonProperty("name") public abstract String name();
         @Nullable @JsonProperty("description") public abstract String description();
@@ -930,6 +937,7 @@ public abstract class Command {
     }
 
     @AutoValue
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     public static abstract class CommandWrapperExternalInput extends CommandWrapperInput {
         @JsonCreator
         static CommandWrapperExternalInput create(@JsonProperty("name") final String name,
@@ -1039,6 +1047,7 @@ public abstract class Command {
     }
 
     @AutoValue
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     public static abstract class CommandWrapperDerivedInput extends CommandWrapperInput {
         @Nullable @JsonProperty("derived-from-xnat-input") public abstract String derivedFromXnatInput();
         @Nullable @JsonProperty("derived-from-xnat-object-property") public abstract String derivedFromXnatObjectProperty();
@@ -1158,6 +1167,7 @@ public abstract class Command {
     }
 
     @AutoValue
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     public static abstract class CommandWrapperOutput {
         @JsonIgnore public abstract long id();
         @Nullable @JsonProperty("name") public abstract String name();
@@ -1235,6 +1245,7 @@ public abstract class Command {
      * A command with no IDs. Intended to be sent in by a user when creating a new command.
      */
     @AutoValue
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     public static abstract class CommandCreation {
         @Nullable @JsonProperty("name") public abstract String name();
         @Nullable @JsonProperty("label") public abstract String label();
@@ -1289,6 +1300,7 @@ public abstract class Command {
      * A command with project- or site-wide configuration applied. Contains only a single wrapper.
      */
     @AutoValue
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     public static abstract class ConfiguredCommand {
         public abstract long id();
         public abstract String name();

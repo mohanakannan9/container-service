@@ -1,6 +1,7 @@
 package org.nrg.containers.model.server.docker;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
 import org.apache.commons.lang3.StringUtils;
@@ -9,6 +10,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 @AutoValue
+@JsonInclude(JsonInclude.Include.ALWAYS)
 public abstract class DockerServer {
     @JsonProperty("name") public abstract String name();
     @JsonProperty("host") public abstract String host();
