@@ -171,7 +171,7 @@ public class LaunchRestApi extends AbstractXapiRestController {
     @ApiIgnore // Swagger UI does not correctly show this API endpoint
     @ResponseBody
     public BulkLaunchReport.Launch launchCommandWQueryParams(final @PathVariable long wrapperId,
-                                            final @RequestParam Map<String, String> allRequestParams)
+                                                             final @RequestParam Map<String, String> allRequestParams)
             throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException, ContainerException {
         log.info("Launch requested for command id " + String.valueOf(wrapperId));
         return launchContainer(wrapperId, allRequestParams);
@@ -181,14 +181,14 @@ public class LaunchRestApi extends AbstractXapiRestController {
     @ApiOperation(value = "Resolve a command from the variable values in the request body, and launch it")
     @ResponseBody
     public BulkLaunchReport.Launch launchCommandWJsonBody(final @PathVariable long wrapperId,
-                                         final @RequestBody Map<String, String> allRequestParams)
+                                                          final @RequestBody Map<String, String> allRequestParams)
             throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException, ContainerException {
         log.info("Launch requested for command wrapper id " + String.valueOf(wrapperId));
         return launchContainer(wrapperId, allRequestParams);
     }
 
     private BulkLaunchReport.Launch launchContainer(final long wrapperId,
-                                            final Map<String, String> allRequestParams)
+                                                    final Map<String, String> allRequestParams)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, BadRequestException, ContainerException {
         final UserI userI = XDAT.getUserDetails();
         try {
@@ -224,8 +224,8 @@ public class LaunchRestApi extends AbstractXapiRestController {
     @ApiIgnore // Swagger UI does not correctly show this API endpoint
     @ResponseBody
     public BulkLaunchReport.Launch launchCommandWQueryParams(final @PathVariable String project,
-                                            final @PathVariable long wrapperId,
-                                            final @RequestParam Map<String, String> allRequestParams)
+                                                             final @PathVariable long wrapperId,
+                                                             final @RequestParam Map<String, String> allRequestParams)
             throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException, ContainerException {
         log.info("Launch requested for command id " + String.valueOf(wrapperId));
         final HttpStatus status = canEditProjectOrAdmin(project);
@@ -244,8 +244,8 @@ public class LaunchRestApi extends AbstractXapiRestController {
     @ApiOperation(value = "Resolve a command from the variable values in the request body, and launch it")
     @ResponseBody
     public BulkLaunchReport.Launch launchCommandWJsonBody(final @PathVariable String project,
-                                         final @PathVariable long wrapperId,
-                                         final @RequestBody Map<String, String> allRequestParams)
+                                                          final @PathVariable long wrapperId,
+                                                          final @RequestBody Map<String, String> allRequestParams)
             throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException, ContainerException {
         log.info("Launch requested for command wrapper id " + String.valueOf(wrapperId));
 
@@ -262,8 +262,8 @@ public class LaunchRestApi extends AbstractXapiRestController {
     }
 
     private BulkLaunchReport.Launch launchContainer(final String project,
-                                            final long wrapperId,
-                                            final Map<String, String> allRequestParams)
+                                                    final long wrapperId,
+                                                    final Map<String, String> allRequestParams)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, BadRequestException, ContainerException {
         final UserI userI = XDAT.getUserDetails();
         try {
@@ -302,8 +302,8 @@ public class LaunchRestApi extends AbstractXapiRestController {
     @ApiIgnore // Swagger UI does not correctly show this API endpoint
     @ResponseBody
     public BulkLaunchReport.Launch launchCommandWQueryParams(final @PathVariable long commandId,
-                                            final @PathVariable String wrapperName,
-                                            final @RequestParam Map<String, String> allRequestParams)
+                                                             final @PathVariable String wrapperName,
+                                                             final @RequestParam Map<String, String> allRequestParams)
             throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException, ContainerException {
         log.info("Launch requested for command {}, wrapper {}", commandId, wrapperName);
         return launchContainer(commandId, wrapperName, allRequestParams);
@@ -313,16 +313,16 @@ public class LaunchRestApi extends AbstractXapiRestController {
     @ApiOperation(value = "Resolve a command from the variable values in the request body, and launch it")
     @ResponseBody
     public BulkLaunchReport.Launch launchCommandWJsonBody(final @PathVariable long commandId,
-                                         final @PathVariable String wrapperName,
-                                         final @RequestBody Map<String, String> allRequestParams)
+                                                          final @PathVariable String wrapperName,
+                                                          final @RequestBody Map<String, String> allRequestParams)
             throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException, ContainerException {
         log.info("Launch requested for command {}, wrapper {}", commandId, wrapperName);
         return launchContainer(commandId, wrapperName, allRequestParams);
     }
 
     private BulkLaunchReport.Launch launchContainer(final long commandId,
-                                            final String wrapperName,
-                                            final Map<String, String> allRequestParams)
+                                                    final String wrapperName,
+                                                    final Map<String, String> allRequestParams)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, BadRequestException, ContainerException {
         final UserI userI = XDAT.getUserDetails();
         try {
@@ -358,9 +358,9 @@ public class LaunchRestApi extends AbstractXapiRestController {
     @ApiIgnore // Swagger UI does not correctly show this API endpoint
     @ResponseBody
     public BulkLaunchReport.Launch launchCommandWQueryParams(final @PathVariable String project,
-                                            final @PathVariable long commandId,
-                                            final @PathVariable String wrapperName,
-                                            final @RequestParam Map<String, String> allRequestParams)
+                                                             final @PathVariable long commandId,
+                                                             final @PathVariable String wrapperName,
+                                                             final @RequestParam Map<String, String> allRequestParams)
             throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException, ContainerException {
         log.info("Launch requested for command {}, wrapper {}", commandId, wrapperName);
 
@@ -381,9 +381,9 @@ public class LaunchRestApi extends AbstractXapiRestController {
     @ApiOperation(value = "Resolve a command from the variable values in the request body, and launch it")
     @ResponseBody
     public BulkLaunchReport.Launch launchCommandWJsonBody(final @PathVariable String project,
-                                         final @PathVariable long commandId,
-                                         final @PathVariable String wrapperName,
-                                         final @RequestBody Map<String, String> allRequestParams)
+                                                          final @PathVariable long commandId,
+                                                          final @PathVariable String wrapperName,
+                                                          final @RequestBody Map<String, String> allRequestParams)
             throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException, ContainerException {
         log.info("Launch requested for command {}, wrapper {}", commandId, wrapperName);
 
@@ -400,9 +400,9 @@ public class LaunchRestApi extends AbstractXapiRestController {
     }
 
     private BulkLaunchReport.Launch launchContainer(final String project,
-                                            final long commandId,
-                                            final String wrapperName,
-                                            final Map<String, String> allRequestParams)
+                                                    final long commandId,
+                                                    final String wrapperName,
+                                                    final Map<String, String> allRequestParams)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, BadRequestException, ContainerException {
         final UserI userI = XDAT.getUserDetails();
         try {
