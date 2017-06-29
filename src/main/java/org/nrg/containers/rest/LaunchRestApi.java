@@ -167,30 +167,6 @@ public class LaunchRestApi extends AbstractXapiRestController {
     /*
     LAUNCH CONTAINERS
      */
-    @XapiRequestMapping(value = {"/commands/launch"}, method = POST)
-    @ApiOperation(value = "Launch a container from a resolved command")
-    @ResponseBody
-    public BulkLaunchReport.Launch launchContainer(final @RequestBody ResolvedCommand resolvedCommand)
-            throws NoServerPrefException, DockerServerException, ContainerException {
-        final UserI userI = XDAT.getUserDetails();
-        try {
-            final ContainerEntity containerEntity = containerService.launchResolvedCommand(resolvedCommand, userI);
-            if (log.isInfoEnabled()) {
-                if (log.isDebugEnabled()) {
-                    log.debug(containerEntity != null ? containerEntity.toString() : "Container execution object is null.");
-                }
-            }
-            final String containerId = containerEntity.getContainerId() == null ? "null" : containerEntity.getContainerId();
-            return BulkLaunchReport.Success.create(null, containerId, resolvedCommand.commandName(), null);
-        } catch (Exception e){
-            if (log.isInfoEnabled()) {
-                log.error("Launch failed");
-                log.error("Exception: ", e);
-            }
-            return BulkLaunchReport.Failure.create(null, e.getMessage(), resolvedCommand.commandName(), null);
-        }
-    }
-
     @XapiRequestMapping(value = {"/wrappers/{wrapperId}/launch"}, method = POST)
     @ApiIgnore // Swagger UI does not correctly show this API endpoint
     @ResponseBody
