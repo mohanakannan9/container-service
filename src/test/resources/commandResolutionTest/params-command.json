@@ -1,0 +1,59 @@
+{
+    "name": "param-test",
+    "description": "Test resolving params",
+    "type": "docker",
+    "image": "busybox:latest",
+    "command-line": "echo #REQUIRED_NO_FLAG# #REQUIRED_WITH_FLAG# #NOT_REQUIRED#",
+    "inputs": [
+        {
+            "name": "REQUIRED_NO_FLAG",
+            "type": "string",
+            "required": true
+        },
+        {
+            "name": "REQUIRED_WITH_FLAG",
+            "type": "string",
+            "required": true,
+            "command-line-flag": "--flag"
+        },
+        {
+            "name": "NOT_REQUIRED",
+            "type": "string",
+            "required": false
+        }
+    ],
+    "xnat": [
+        {
+            "name": "blank-wrapper",
+            "description": "Test resolving the command by itself",
+            "external-inputs": [],
+            "derived-inputs": [],
+            "output-handlers": []
+        },
+        {
+            "name": "identity-wrapper",
+            "description": "Test resolving the command with wrapper params",
+            "external-inputs": [
+                {
+                    "name": "required-no-flag",
+                    "type": "string",
+                    "required": true,
+                    "provides-value-to-command-input": "REQUIRED_NO_FLAG"
+                },
+                {
+                    "name": "required-with-flag",
+                    "type": "string",
+                    "required": true,
+                    "provides-value-to-command-input": "REQUIRED_WITH_FLAG"
+                },
+                {
+                    "name": "not-required",
+                    "type": "string",
+                    "required": false,
+                    "provides-value-to-command-input": "NOT_REQUIRED"
+                }
+            ],
+            "derived-inputs": []
+        }
+    ]
+}

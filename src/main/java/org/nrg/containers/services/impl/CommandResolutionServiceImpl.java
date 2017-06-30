@@ -71,6 +71,7 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -326,6 +327,16 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             final Map<String, String> resolvedInputValuesByReplacementKey = Maps.newHashMap();
             final List<ResolvedInputTreeNode<? extends Input>> resolvedInputTrees = resolveInputTrees(resolvedInputValuesByReplacementKey);
 
+            log.debug("Checking for missing required inputs.");
+            final List<String> missingRequiredInputs = findMissingRequiredInputs(resolvedInputTrees);
+            if (!missingRequiredInputs.isEmpty()) {
+                throw new CommandResolutionException(
+                        String.format("Missing values for required input%s: %s.",
+                                missingRequiredInputs.size() == 1 ? "" : "s",
+                                StringUtils.join(missingRequiredInputs, ", "))
+                );
+            }
+
             // TODO this is temporary, until we figure out a better way to store the input trees
             // Read out all the input trees into Map<String, String>s
             final List<ResolvedInputTreeNode<? extends Input>> flatTree = Lists.newArrayList();
@@ -341,16 +352,12 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 final String value = (valuesAndChildren != null && !valuesAndChildren.isEmpty()) ?
                         valuesAndChildren.get(0).resolvedValue().value() :
                         null;
-                if (value != null) {
-                    if (node.input() instanceof CommandWrapperInput) {
-                        wrapperInputValues.put(node.input().name(), value);
-                    } else {
-                        commandInputValues.put(node.input().name(), value);
-                    }
+                if (node.input() instanceof CommandWrapperInput) {
+                    wrapperInputValues.put(node.input().name(), value == null ? "null" : value);
+                } else {
+                    commandInputValues.put(node.input().name(), value == null ? "null" : value);
                 }
             }
-
-            // TODO Check that we have all required inputs
 
             final ResolvedCommand resolvedCommand = ResolvedCommand.builder()
                     .wrapperId(commandWrapper.id())
@@ -1116,9 +1123,12 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             if (resolvedValueAndChildren.size() == 1) {
                 // This node has a single value, so we can add it to the map of resolved values by replacement key
                 final ResolvedInputTreeValueAndChildren singleValue = resolvedValueAndChildren.get(0);
-                log.debug("Input \"{}\" has a unique resolved value: \"{}\". Storing by replacement key \"{}\".",
-                        node.input().name(), singleValue.resolvedValue().value(), node.input().replacementKey());
-                resolvedValuesByReplacementKey.put(node.input().replacementKey(), singleValue.resolvedValue().value());
+                log.debug("Input \"{}\" has a unique resolved value: \"{}\".",
+                        node.input().name(), singleValue.resolvedValue().value());
+
+                final String valueNotNull = singleValue.resolvedValue().value() == null ? "" : singleValue.resolvedValue().value();
+                log.debug("Storing value \"{}\" by replacement key \"{}\".", valueNotNull, node.input().replacementKey());
+                resolvedValuesByReplacementKey.put(node.input().replacementKey(), valueNotNull);
 
                 // Recursively check if child values are unique, and bubble up their maps.
                 final List<ResolvedInputTreeNode<? extends Input>> children = singleValue.children();
@@ -1171,14 +1181,64 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
 
             return resolvedValuesByReplacementKey;
         }
+
+        @Nonnull
         private String getValueForCommandLine(final CommandInput input, final String resolvedInputValue) {
+            log.debug("Resolving command-line value.");
+            if (resolvedInputValue == null) {
+                log.debug("Input value is null. Using value \"\" on the command line.");
+                return "";
+            }
             if (StringUtils.isBlank(input.commandLineFlag())) {
+                log.debug("Input flag is null. Using value \"{}\" on the command line.", resolvedInputValue);
                 return resolvedInputValue;
             } else {
-                return input.commandLineFlag() +
+                final String value = input.commandLineFlag() +
                         (input.commandLineSeparator() == null ? " " : input.commandLineSeparator()) +
                         resolvedInputValue;
+                log.debug("Using value \"{}\" on the command line.", value);
+                return value;
             }
+        }
+
+        private List<String> findMissingRequiredInputs(final List<ResolvedInputTreeNode<? extends Input>> resolvedInputTrees) {
+            final List<String> missingRequiredInputNames = Lists.newArrayList();
+            for (final ResolvedInputTreeNode<? extends Input> resolvedRootNode : resolvedInputTrees) {
+                log.debug("Checking for missing required inputs in input tree starting with input \"{}\".", resolvedRootNode.input().name());
+                missingRequiredInputNames.addAll(findMissingRequiredInputs(resolvedRootNode));
+            }
+            return missingRequiredInputNames;
+        }
+
+        private List<String> findMissingRequiredInputs(final ResolvedInputTreeNode<? extends Input> resolvedInputTreeNode) {
+            final List<String> missingRequiredInputNames = Lists.newArrayList();
+
+            final Input input = resolvedInputTreeNode.input();
+            final List<ResolvedInputTreeValueAndChildren> valuesAndChildren = resolvedInputTreeNode.valuesAndChildren();
+
+            boolean hasNonNullValue = false;
+            for (final ResolvedInputTreeValueAndChildren valueAndChildren : valuesAndChildren) {
+                hasNonNullValue = hasNonNullValue || valueAndChildren.resolvedValue().value() != null;
+
+                // While we're looping, check the children as well.
+                for (final ResolvedInputTreeNode<? extends Input> child : valueAndChildren.children()) {
+                    log.debug("Checking child input \"{}\".", child.input().name());
+                    missingRequiredInputNames.addAll(findMissingRequiredInputs(child));
+                }
+            }
+
+            if (input.required()) {
+                if (hasNonNullValue) {
+                    log.debug("Input \"{}\" is required and has a non-null value.", input.name());
+                } else {
+                    log.debug("Input \"{}\" is required and has a null value. Adding to the list.", input.name());
+                    missingRequiredInputNames.add(input.name());
+                }
+            } else {
+                log.debug("Input \"{}\" is not required.", input.name());
+            }
+
+            return missingRequiredInputNames;
         }
 
         @Nullable

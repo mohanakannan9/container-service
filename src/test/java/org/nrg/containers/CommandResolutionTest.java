@@ -17,6 +17,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.config.IntegrationTestConfig;
+import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandInput;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
@@ -52,6 +53,7 @@ import java.util.Set;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -234,6 +236,7 @@ public class CommandResolutionTest {
         // command inputs
         final Map<String, String> expectedCommandInputValues = Maps.newHashMap();
         expectedCommandInputValues.put("whatever", session.getScans().get(0).getId());
+        expectedCommandInputValues.put("file-path", "null");
 
         final CommandWrapper commandWrapper = xnatCommandWrappers.get(commandWrapperName);
         assertThat(commandWrapper, is(not(nullValue())));
@@ -300,6 +303,7 @@ public class CommandResolutionTest {
         // command inputs
         final Map<String, String> expectedCommandInputValues = Maps.newHashMap();
         expectedCommandInputValues.put("whatever", project.getLabel());
+        expectedCommandInputValues.put("file-path", "null");
 
         final CommandWrapper commandWrapper = xnatCommandWrappers.get(commandWrapperName);
         assertThat(commandWrapper, is(not(nullValue())));
@@ -330,6 +334,7 @@ public class CommandResolutionTest {
         // command inputs
         final Map<String, String> expectedCommandInputValues = Maps.newHashMap();
         expectedCommandInputValues.put("whatever", project.getLabel());
+        expectedCommandInputValues.put("file-path", "null");
 
         final CommandWrapper commandWrapper = xnatCommandWrappers.get(commandWrapperName);
         assertThat(commandWrapper, is(not(nullValue())));
@@ -358,6 +363,7 @@ public class CommandResolutionTest {
 
         final Map<String, String> expectedCommandInputValues = Maps.newHashMap();
         expectedCommandInputValues.put("whatever", session.getAssessors().get(0).getLabel());
+        expectedCommandInputValues.put("file-path", "null");
 
         final CommandWrapper commandWrapper = xnatCommandWrappers.get(commandWrapperName);
         assertThat(commandWrapper, is(not(nullValue())));
@@ -472,5 +478,37 @@ public class CommandResolutionTest {
 
         // Outputs
         assertThat(resolvedCommand.outputs().isEmpty(), is(true));
+    }
+
+    @Test
+    public void testRequiredParamNotBlank() throws Exception {
+        final String commandJsonFile = resourceDir + "/params-command.json";
+        final Command tempCommand = mapper.readValue(new File(commandJsonFile), Command.class);
+        final Command command = commandService.create(tempCommand);
+
+        final Map<String, CommandWrapper> commandWrappers = Maps.newHashMap();
+        for (final CommandWrapper commandWrapper : command.xnatCommandWrappers()) {
+            commandWrappers.put(commandWrapper.name(), commandWrapper);
+        }
+
+        final CommandWrapper blankWrapper = commandWrappers.get("blank-wrapper");
+        final Map<String, String> filledRuntimeValues = Maps.newHashMap();
+        filledRuntimeValues.put("REQUIRED_WITH_FLAG", "foo");
+        filledRuntimeValues.put("REQUIRED_NO_FLAG", "bar");
+
+        final ResolvedCommand resolvedCommand = commandResolutionService.resolve(blankWrapper.id(), filledRuntimeValues, mockUser);
+        assertThat(resolvedCommand.commandInputValues(), hasEntry("REQUIRED_WITH_FLAG", "foo"));
+        assertThat(resolvedCommand.commandInputValues(), hasEntry("REQUIRED_NO_FLAG", "bar"));
+        assertThat(resolvedCommand.commandInputValues(), hasEntry("NOT_REQUIRED", "null"));
+        assertThat(resolvedCommand.commandLine(), is("echo bar --flag foo "));
+
+
+        try {
+            final Map<String, String> blankRuntimeValues = Maps.newHashMap();  // Empty map
+            commandResolutionService.resolve(blankWrapper.id(), blankRuntimeValues, mockUser);
+            fail("Command resolution should have failed with missing required parameters.");
+        } catch (CommandResolutionException e) {
+            assertThat(e.getMessage(), is("Missing values for required inputs: REQUIRED_NO_FLAG, REQUIRED_WITH_FLAG."));
+        }
     }
 }
