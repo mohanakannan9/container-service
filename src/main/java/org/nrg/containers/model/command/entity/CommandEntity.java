@@ -15,14 +15,7 @@ import org.nrg.containers.model.command.auto.Command;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.annotation.Nonnull;
-import javax.persistence.CascadeType;
-import javax.persistence.DiscriminatorColumn;
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
-import javax.persistence.OneToMany;
-import javax.persistence.Transient;
+import javax.persistence.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -34,6 +27,9 @@ import java.util.Objects;
 })
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "type")
+@Table(
+        uniqueConstraints = {@UniqueConstraint(columnNames = {"name", "image", "version"})}
+)
 @Audited
 public abstract class CommandEntity extends AbstractHibernateEntity {
     public static CommandType DEFAULT_TYPE = CommandType.DOCKER;
