@@ -164,14 +164,14 @@ public class CommandRestApi extends AbstractXapiRestController {
      */
     @XapiRequestMapping(value = {"/commands/{id}/wrappers"}, method = POST, produces = JSON)
     @ApiOperation(value = "Create a Command Wrapper", code = 201)
-    public ResponseEntity<Long> createWrapper(final @RequestBody CommandWrapper commandWrapper,
+    public ResponseEntity<Long> createWrapper(final @RequestBody Command.CommandWrapperCreation commandWrapperCreation,
                                               final @PathVariable long id)
             throws BadRequestException, CommandValidationException, NotFoundException, UnauthorizedException {
         checkAdminOrThrow();
-        if (commandWrapper == null) {
+        if (commandWrapperCreation == null) {
             throw new BadRequestException("The body of the request must be a CommandWrapper.");
         }
-        final CommandWrapper created = commandService.addWrapper(id, commandWrapper);
+        final CommandWrapper created = commandService.addWrapper(id, CommandWrapper.create(commandWrapperCreation));
         if (created == null) {
             return new ResponseEntity<>(0L, HttpStatus.INTERNAL_SERVER_ERROR);
         }

@@ -756,7 +756,7 @@ public abstract class Command {
                     .build();
         }
 
-        static CommandWrapper create(final CommandWrapperCreation creation) {
+        public static CommandWrapper create(final CommandWrapperCreation creation) {
             return builder()
                     .name(creation.name())
                     .description(creation.description())
