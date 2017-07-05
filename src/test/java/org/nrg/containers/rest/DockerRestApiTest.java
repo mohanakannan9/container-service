@@ -187,7 +187,7 @@ public class DockerRestApiTest {
                 .when(mockContainerControlApi).setServer(MOCK_CONTAINER_SERVER);
 
         mockMvc.perform(request)
-                .andExpect(status().isAccepted());
+                .andExpect(status().isCreated());
 
         verify(mockContainerControlApi, times(1)).setServer(MOCK_CONTAINER_SERVER); // Method has been called once
 

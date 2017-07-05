@@ -89,7 +89,7 @@ public class DockerRestApi extends AbstractXapiRestController {
     @ApiOperation(value = "Set Docker server configuration",
             notes = "Save new Docker server configuration values")
     @ApiResponses({
-            @ApiResponse(code = 202, message = "The Docker server configuration was saved"),
+            @ApiResponse(code = 201, message = "The Docker server configuration was saved"),
             @ApiResponse(code = 400, message = "Must set the \"host\" property in request body"),
             @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "/server", method = POST)
@@ -102,7 +102,7 @@ public class DockerRestApi extends AbstractXapiRestController {
         }
 
         final DockerServer server = dockerService.setServer(dockerServer);
-        return new ResponseEntity<>(mapper.writeValueAsString(server), HttpStatus.ACCEPTED);
+        return new ResponseEntity<>(mapper.writeValueAsString(server), HttpStatus.CREATED);
     }
 
     @XapiRequestMapping(value = "/server/ping", method = GET)
