@@ -10,6 +10,7 @@ import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.XDAT;
 import org.nrg.xapi.rest.AbstractXapiRestController;
+import org.nrg.xdat.security.helpers.AccessLevel;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.util.List;
 
+import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 import static org.springframework.web.bind.annotation.RequestMethod.DELETE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
@@ -47,13 +49,13 @@ public class ContainerRestApi extends AbstractXapiRestController {
         this.containerService = containerService;
     }
 
-    @XapiRequestMapping(method = GET)
+    @XapiRequestMapping(method = GET, restrictTo = Admin)
     @ResponseBody
     public List<ContainerEntity> getAll() {
         return containerEntityService.getAll();
     }
 
-    @XapiRequestMapping(value = "/{id}", method = GET)
+    @XapiRequestMapping(value = "/{id}", method = GET, restrictTo = Admin)
     @ResponseBody
     public ContainerEntity getOne(final @PathVariable Long id) throws NotFoundException {
         final ContainerEntity containerEntity = containerEntityService.retrieve(id);
@@ -63,19 +65,19 @@ public class ContainerRestApi extends AbstractXapiRestController {
         return containerEntity;
     }
 
-    @XapiRequestMapping(value = "/{id}", method = DELETE)
+    @XapiRequestMapping(value = "/{id}", method = DELETE, restrictTo = Admin)
     public ResponseEntity<Void> delete(final @PathVariable Long id) {
         containerEntityService.delete(id);
         return ResponseEntity.noContent().build();
     }
 
-    @XapiRequestMapping(value = "/{id}/finalize", method = POST, produces = JSON)
+    @XapiRequestMapping(value = "/{id}/finalize", method = POST, produces = JSON, restrictTo = Admin)
     public void finalize(final @PathVariable Long id) throws NotFoundException {
         final UserI userI = XDAT.getUserDetails();
         containerService.finalize(id, userI);
     }
 
-    @XapiRequestMapping(value = "/{id}/kill", method = POST)
+    @XapiRequestMapping(value = "/{id}/kill", method = POST, restrictTo = Admin)
     @ResponseBody
     public String kill(final @PathVariable Long id)
             throws NotFoundException, NoServerPrefException, DockerServerException {
