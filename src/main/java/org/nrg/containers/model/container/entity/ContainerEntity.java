@@ -6,7 +6,6 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.envers.Audited;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
@@ -14,7 +13,11 @@ import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMoun
 import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandOutput;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
-import javax.persistence.*;
+import javax.persistence.CascadeType;
+import javax.persistence.ElementCollection;
+import javax.persistence.Entity;
+import javax.persistence.OneToMany;
+import javax.persistence.Transient;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -279,16 +282,6 @@ public class ContainerEntity extends AbstractHibernateEntity {
     @ElementCollection
     public Set<String> getLogPaths() {
         return logPaths;
-    }
-
-    public String getLogPathByFileName(String fileNameToGet) {
-        for(String logPath: logPaths) {
-            String fileName = FilenameUtils.getBaseName(logPath);
-            if(StringUtils.equals(fileName, fileNameToGet)){
-                return logPath;
-            }
-        }
-        return null;
     }
 
     public void setLogPaths(final Set<String> logPaths) {

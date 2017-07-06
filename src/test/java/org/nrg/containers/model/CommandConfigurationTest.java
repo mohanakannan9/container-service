@@ -8,29 +8,27 @@ import org.mockito.Mockito;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.config.CommandConfigurationTestConfig;
-import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.configuration.CommandConfigurationInternal;
 import org.nrg.containers.model.configuration.CommandConfigurationInternal.CommandInputConfiguration;
 import org.nrg.containers.model.configuration.CommandConfigurationInternal.CommandOutputConfiguration;
-import org.nrg.containers.rest.CommandRestApi;
-import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerConfigService;
 import org.nrg.framework.constants.Scope;
-import org.nrg.xdat.security.services.RoleHolder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.*;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.isNotNull;
+import static org.mockito.Matchers.isNull;
 import static org.mockito.Mockito.when;
 import static org.nrg.containers.services.ContainerConfigService.TOOL_ID;
-import static org.nrg.xdat.security.helpers.Users.getUserManagementService;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = CommandConfigurationTestConfig.class)
@@ -39,40 +37,9 @@ public class CommandConfigurationTest {
     private static final long WRAPPER_ID = 12L;
     private static final String PROJECT_NAME = "xyz";
 
-    @Autowired private ConfigService mockConfigService;
     @Autowired private ObjectMapper mapper;
     @Autowired private ContainerConfigService containerConfigService;
-    @Autowired private CommandService commandService;
-    @Autowired private RoleHolder roleHolder;
-
-    @Test
-    public void testNoType() {
-        CommandRestApi api = new CommandRestApi(commandService, getUserManagementService(), roleHolder);
-        try{
-            api.createCommand( null, Command.CommandCreation.create("aaa",
-                    "bbb",
-                    "",
-                    "",
-                    "",
-                    "",
-                    "",
-                    null,
-                    "",
-                    "",
-                    "",
-                    "",
-                    new ArrayList<Command.CommandMount>(),
-                    new HashMap<String, String>(),
-                    new HashMap<String, String>(),
-                    new ArrayList<Command.CommandInput>(),
-                    new ArrayList<Command.CommandOutput>(),
-                    new ArrayList<Command.CommandWrapperCreation>()));
-        }
-        catch(Exception e ){
-         System.out.println("FAILUREEEEEEE"+e.getMessage()+ "    "+e.getStackTrace());
-        }
-        assertThat(containerConfigService, not(nullValue()));
-    }
+    @Autowired private ConfigService mockConfigService;
 
     @Test
     public void testSpringConfiguration() {

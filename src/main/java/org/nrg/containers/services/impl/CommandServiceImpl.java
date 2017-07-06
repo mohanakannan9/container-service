@@ -555,7 +555,8 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     }
 
 
-    private Command toPojo(final CommandEntity commandEntity) {
+    @Nonnull
+    private Command toPojo(@Nonnull final CommandEntity commandEntity) {
         return Command.create(commandEntity);
     }
 
@@ -585,7 +586,8 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
         return CommandWrapperEntity.fromPojo(commandWrapper);
     }
 
-    private CommandWrapper toPojo(final CommandWrapperEntity commandWrapperEntity) {
+    @Nonnull
+    private CommandWrapper toPojo(@Nonnull final CommandWrapperEntity commandWrapperEntity) {
         return CommandWrapper.create(commandWrapperEntity);
     }
 
