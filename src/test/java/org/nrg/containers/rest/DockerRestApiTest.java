@@ -125,7 +125,7 @@ public class DockerRestApiTest {
         when(nonAdmin.getPassword()).thenReturn(nonAdminPassword);
         when(mockRoleService.isSiteAdmin(nonAdmin)).thenReturn(false);
         when(mockUserManagementServiceI.getUser(NON_ADMIN_USERNAME)).thenReturn(nonAdmin);
-        NONADMIN_AUTH = new TestingAuthenticationToken(NON_ADMIN_USERNAME, nonAdminPassword);
+        NONADMIN_AUTH = new TestingAuthenticationToken(nonAdmin, nonAdminPassword);
     }
 
     @Test
