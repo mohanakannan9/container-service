@@ -171,6 +171,11 @@ public abstract class Command {
         return builder.build();
     }
 
+    /**
+     * This method is useful to create a command deserialized from REST.
+     * @param creation An object that looks just like a command but everything can be null.
+     * @return A Command, which is just like a CommandCreation but fewer things can be null.
+     */
     public static Command create(final CommandCreation creation) {
         return builder()
                 .name(creation.name())
@@ -199,6 +204,21 @@ public abstract class Command {
                         })
                 )
                 .build();
+    }
+
+    /**
+     * This method is useful to create a command deserialized from REST
+     * when the user does not want to set the "image" property in the command JSON request body.
+     * @param commandCreation An object that looks just like a command but everything can be null.
+     * @param image The name of the image that should be saved in the command.
+     * @return A Command, which is just like a CommandCreation but fewer things can be null.
+     */
+    public static Command create(final CommandCreation commandCreation, final String image) {
+        final Command command = Command.create(commandCreation);
+        if (StringUtils.isNotBlank(image)) {
+            return command.toBuilder().image(image).build();
+        }
+        return command;
     }
 
     public abstract Builder toBuilder();

@@ -114,15 +114,16 @@ public class CommandRestApi extends AbstractXapiRestController {
 
     @XapiRequestMapping(value = {"/commands"}, method = POST, produces = JSON)
     @ApiOperation(value = "Create a Command", code = 201)
-    public ResponseEntity<Long> createCommand(final @RequestBody Command.CommandCreation command)
+    public ResponseEntity<Long> createCommand(final @RequestParam(value = "image", required=false) String image,
+                                              final @RequestBody Command.CommandCreation command)
             throws BadRequestException, CommandValidationException, UnauthorizedException {
         checkAdminOrThrow();
         // The user may have sent IDs in their command, but we don't want them.
         // We must clean all the IDs before attempting to create.
         // For this, we use the "CommandCreation" object, which has
         // all the properties of a command except for ids.
-        final Command toCreate = Command.create(command);
-        
+        final Command toCreate = Command.create(command, image);
+
         try {
             final Command created = commandService.create(toCreate);
             if (created == null) {
