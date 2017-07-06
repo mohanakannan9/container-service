@@ -38,9 +38,10 @@ public interface ContainerService {
 
     void processEvent(final ContainerEvent event);
 
-    void finalize(final Long containerExecutionId, final UserI userI);
+    void finalize(final String containerId, final UserI userI) throws NotFoundException;
+    void finalize(final ContainerEntity containerEntity, final UserI userI);
     void finalize(final ContainerEntity containerEntity, final UserI userI, final String exitCode);
 
-    String kill(final Long containerExecutionId, final UserI userI)
+    String kill(final String containerId, final UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException;
 }

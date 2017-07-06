@@ -224,8 +224,14 @@ public class ContainerServiceImpl implements ContainerService {
 
     @Override
     @Transactional
-    public void finalize(final Long containerExecutionId, final UserI userI) {
-        final ContainerEntity containerEntity = containerEntityService.retrieve(containerExecutionId);
+    public void finalize(final String containerId, final UserI userI) throws NotFoundException {
+        final ContainerEntity containerEntity = containerEntityService.get(containerId);
+        finalize(containerEntity, userI);
+    }
+
+    @Override
+    @Transactional
+    public void finalize(final ContainerEntity containerEntity, final UserI userI) {
         String exitCode = "x";
         for (final ContainerEntityHistory history : containerEntity.getHistory()) {
             final Matcher exitCodeMatcher = exitCodePattern.matcher(history.getStatus());
@@ -257,16 +263,16 @@ public class ContainerServiceImpl implements ContainerService {
     @Override
     @Nonnull
     @Transactional
-    public String kill(final Long containerExecutionId, final UserI userI)
+    public String kill(final String containerId, final UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException {
         // TODO check user permissions. How?
-        final ContainerEntity containerEntity = containerEntityService.get(containerExecutionId);
+        final ContainerEntity containerEntity = containerEntityService.get(containerId);
 
         containerEntityService.addContainerHistoryItem(containerEntity, ContainerEntityHistory.fromUserAction("Killed", userI.getLogin()));
 
-        final String containerId = containerEntity.getContainerId();
-        containerControlApi.killContainer(containerId);
-        return containerId;
+        final String containerDockerId = containerEntity.getContainerId();
+        containerControlApi.killContainer(containerDockerId);
+        return containerDockerId;
     }
 
     private void handleFailure(final ContainerEntity containerEntity) {

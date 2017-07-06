@@ -57,7 +57,7 @@ public class ContainerRestApi extends AbstractXapiRestController {
 
     @XapiRequestMapping(value = "/{id}", method = GET, restrictTo = Admin)
     @ResponseBody
-    public ContainerEntity getOne(final @PathVariable Long id) throws NotFoundException {
+    public ContainerEntity getOne(final @PathVariable String id) throws NotFoundException {
         final ContainerEntity containerEntity = containerEntityService.retrieve(id);
         if (containerEntity == null) {
             throw new NotFoundException("ContainerExecution " + id + " not found.");
@@ -66,20 +66,20 @@ public class ContainerRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(value = "/{id}", method = DELETE, restrictTo = Admin)
-    public ResponseEntity<Void> delete(final @PathVariable Long id) {
+    public ResponseEntity<Void> delete(final @PathVariable String id) throws NotFoundException {
         containerEntityService.delete(id);
         return ResponseEntity.noContent().build();
     }
 
     @XapiRequestMapping(value = "/{id}/finalize", method = POST, produces = JSON, restrictTo = Admin)
-    public void finalize(final @PathVariable Long id) throws NotFoundException {
+    public void finalize(final @PathVariable String id) throws NotFoundException {
         final UserI userI = XDAT.getUserDetails();
         containerService.finalize(id, userI);
     }
 
     @XapiRequestMapping(value = "/{id}/kill", method = POST, restrictTo = Admin)
     @ResponseBody
-    public String kill(final @PathVariable Long id)
+    public String kill(final @PathVariable String id)
             throws NotFoundException, NoServerPrefException, DockerServerException {
         final UserI userI = XDAT.getUserDetails();
         return containerService.kill(id, userI);

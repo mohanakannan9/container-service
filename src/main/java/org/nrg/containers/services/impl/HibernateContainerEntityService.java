@@ -41,7 +41,13 @@ public class HibernateContainerEntityService
         if (StringUtils.isBlank(containerId)) {
             return null;
         }
-        return getDao().retrieveByContainerId(containerId);
+        try {
+            // This will allow the higher-level API to request the container by database id or docker hash id
+            final Long containerDatabaseId = Long.parseLong(containerId);
+            return retrieve(containerDatabaseId);
+        } catch (NumberFormatException e) {
+            return getDao().retrieveByContainerId(containerId);
+        }
     }
 
     @Override
@@ -52,6 +58,12 @@ public class HibernateContainerEntityService
             throw new NotFoundException("No container with ID " + containerId);
         }
         return containerEntity;
+    }
+
+    @Override
+    public void delete(final String containerId) throws NotFoundException {
+        final ContainerEntity toDelete = get(containerId);
+        delete(toDelete.getId());
     }
 
     @Override
