@@ -31,6 +31,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import springfox.documentation.annotations.ApiIgnore;
 
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 
@@ -170,53 +171,20 @@ public class LaunchRestApi extends AbstractXapiRestController {
     @ApiIgnore // Swagger UI does not correctly show this API endpoint
     @ResponseBody
     public LaunchReport launchCommandWQueryParams(final @PathVariable long wrapperId,
-                                                  final @RequestParam Map<String, String> allRequestParams)
-            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException, ContainerException {
+                                                  final @RequestParam Map<String, String> allRequestParams) {
         log.info("Launch requested for command id " + String.valueOf(wrapperId));
-        return launchContainer(wrapperId, allRequestParams);
+
+        return launchContainer(null, 0L, null, wrapperId, allRequestParams);
     }
 
     @XapiRequestMapping(value = {"/wrappers/{wrapperId}/launch"}, method = POST, consumes = {JSON})
     @ApiOperation(value = "Resolve a command from the variable values in the request body, and launch it")
     @ResponseBody
     public LaunchReport launchCommandWJsonBody(final @PathVariable long wrapperId,
-                                               final @RequestBody Map<String, String> allRequestParams)
-            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException, ContainerException {
+                                               final @RequestBody Map<String, String> allRequestParams) {
         log.info("Launch requested for command wrapper id " + String.valueOf(wrapperId));
-        return launchContainer(wrapperId, allRequestParams);
-    }
 
-    private LaunchReport launchContainer(final long wrapperId,
-                                         final Map<String, String> allRequestParams)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, BadRequestException, ContainerException {
-        final UserI userI = XDAT.getUserDetails();
-        try {
-            final ContainerEntity containerEntity = containerService.resolveCommandAndLaunchContainer(wrapperId, allRequestParams, userI);
-            if (log.isInfoEnabled()) {
-                log.info(String.format("Launched command wrapper id %d. Produced container %d.", wrapperId,
-                        containerEntity != null ? containerEntity.getId() : null));
-                if (log.isDebugEnabled()) {
-                    log.debug(containerEntity != null ? containerEntity.toString() : "Container execution object is null.");
-                }
-            }
-            final String containerId = containerEntity.getContainerId() == null ? "null" : containerEntity.getContainerId();
-            return LaunchReport.Success.create(allRequestParams, containerId, null, ""+wrapperId);
-//        } catch (CommandInputResolutionException e) {
-//            if (e.getValue() == null) {
-//                throw new BadRequestException("Must provide value for input \"" + e.getInput().name() + "\".", e);
-//            } else {
-//                throw new BadRequestException("Input \"" + e.getInput().name() + "\"" +
-//                        " received invalid value \"" + e.getValue() + "\".", e);
-//            }
-//        }
-        } catch (Exception e){
-            if (log.isInfoEnabled()) {
-                log.error("Launch failed for command wrapper id {}.", wrapperId);
-                log.error(mapLogString("Params: ", allRequestParams));
-                log.error("Exception: ", e);
-            }
-            return LaunchReport.Failure.create(allRequestParams, e.getMessage(), null, ""+wrapperId);
-        }
+        return launchContainer(null, 0L, null, wrapperId, allRequestParams);
     }
 
     @XapiRequestMapping(value = {"/projects/{project}/wrapper/{wrapperId}/launch"}, method = POST)
@@ -224,19 +192,15 @@ public class LaunchRestApi extends AbstractXapiRestController {
     @ResponseBody
     public LaunchReport launchCommandWQueryParams(final @PathVariable String project,
                                                   final @PathVariable long wrapperId,
-                                                  final @RequestParam Map<String, String> allRequestParams)
-            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException, ContainerException {
-        log.info("Launch requested for command id " + String.valueOf(wrapperId));
+                                                  final @RequestParam Map<String, String> allRequestParams) {
+        log.info("Launch requested for wrapper id " + String.valueOf(wrapperId));
+
         final HttpStatus status = canEditProjectOrAdmin(project);
         if (status != null) {
             return null;
         }
-        try {
-            return launchContainer(project, wrapperId, allRequestParams);
-        } catch (Throwable t) {
-            log.error("LaunchRestApi exception:  " + t.toString());
-            return null;
-        }
+
+        return launchContainer(project, 0L, null, wrapperId, allRequestParams);
     }
 
     @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/launch"}, method = POST, consumes = {JSON})
@@ -244,54 +208,15 @@ public class LaunchRestApi extends AbstractXapiRestController {
     @ResponseBody
     public LaunchReport launchCommandWJsonBody(final @PathVariable String project,
                                                final @PathVariable long wrapperId,
-                                               final @RequestBody Map<String, String> allRequestParams)
-            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException, ContainerException {
-        log.info("Launch requested for command wrapper id " + String.valueOf(wrapperId));
+                                               final @RequestBody Map<String, String> allRequestParams) {
+        log.info("Launch requested for wrapper id " + String.valueOf(wrapperId));
 
         final HttpStatus status = canEditProjectOrAdmin(project);
         if (status != null) {
             return null;
         }
-        try {
-            return launchContainer(project, wrapperId, allRequestParams);
-        } catch (Throwable t) {
-            log.error("LaunchRestApi exception:  " + t.toString());
-            return null;
-        }
-    }
 
-    private LaunchReport launchContainer(final String project,
-                                         final long wrapperId,
-                                         final Map<String, String> allRequestParams)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, BadRequestException, ContainerException {
-        final UserI userI = XDAT.getUserDetails();
-        try {
-            final ContainerEntity containerEntity = containerService.resolveCommandAndLaunchContainer(project, wrapperId, allRequestParams, userI);
-            if (log.isInfoEnabled()) {
-                log.info(String.format("Launched command wrapper id %d. Produced container %d.", wrapperId,
-                        containerEntity != null ? containerEntity.getId() : null));
-                if (log.isDebugEnabled()) {
-                    log.debug(containerEntity != null ? containerEntity.toString() : "Container execution object is null.");
-                }
-            }
-            final String containerId = containerEntity.getContainerId() == null ? "null" : containerEntity.getContainerId();
-            return LaunchReport.Success.create(allRequestParams, containerId, null, ""+wrapperId);
-//        } catch (CommandInputResolutionException e) {
-//            if (e.getValue() == null) {
-//                throw new BadRequestException("Must provide value for input \"" + e.getInput().name() + "\".", e);
-//            } else {
-//                throw new BadRequestException("Input \"" + e.getInput().name() + "\"" +
-//                        " received invalid value \"" + e.getValue() + "\".", e);
-//            }
-//        }
-        } catch (Exception e){
-            if (log.isInfoEnabled()) {
-                log.error("Launch failed for command wrapper id {}.", wrapperId);
-                log.error(mapLogString("Params: ", allRequestParams));
-                log.error("Exception: ", e);
-            }
-            return LaunchReport.Failure.create(allRequestParams, e.getMessage(), null, ""+wrapperId);
-        }
+        return launchContainer(project, 0L, null, wrapperId, allRequestParams);
     }
 
     /*
@@ -305,7 +230,8 @@ public class LaunchRestApi extends AbstractXapiRestController {
                                                   final @RequestParam Map<String, String> allRequestParams)
             throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException, ContainerException {
         log.info("Launch requested for command {}, wrapper {}", commandId, wrapperName);
-        return launchContainer(commandId, wrapperName, allRequestParams);
+
+        return launchContainer(null, commandId, wrapperName, 0L, allRequestParams);
     }
 
     @XapiRequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/launch"}, method = POST, consumes = {JSON})
@@ -316,41 +242,8 @@ public class LaunchRestApi extends AbstractXapiRestController {
                                                final @RequestBody Map<String, String> allRequestParams)
             throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException, ContainerException {
         log.info("Launch requested for command {}, wrapper {}", commandId, wrapperName);
-        return launchContainer(commandId, wrapperName, allRequestParams);
-    }
 
-    private LaunchReport launchContainer(final long commandId,
-                                         final String wrapperName,
-                                         final Map<String, String> allRequestParams)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, BadRequestException, ContainerException {
-        final UserI userI = XDAT.getUserDetails();
-        try {
-            final ContainerEntity containerEntity = containerService.resolveCommandAndLaunchContainer(commandId, wrapperName, allRequestParams, userI);
-            if (log.isInfoEnabled()) {
-                log.info("Launched command {}, wrapper {}. Produced container {}.", commandId, wrapperName,
-                        containerEntity != null ? containerEntity.getId() : null);
-                if (log.isDebugEnabled()) {
-                    log.debug(containerEntity != null ? containerEntity.toString() : "Container execution object is null.");
-                }
-            }
-            final String containerId = containerEntity.getContainerId() == null ? "null" : containerEntity.getContainerId();
-            return LaunchReport.Success.create(allRequestParams, containerId, null, wrapperName);
-//        } catch (CommandInputResolutionException e) {
-//            if (e.getValue() == null) {
-//                throw new BadRequestException("Must provide value for input \"" + e.getInput().name() + "\".", e);
-//            } else {
-//                throw new BadRequestException("Input \"" + e.getInput().name() + "\"" +
-//                        " received invalid value \"" + e.getValue() + "\".", e);
-//            }
-//        }
-        } catch (Exception e){
-            if (log.isInfoEnabled()) {
-                log.error("Launch failed for command wrapper name {}.", wrapperName);
-                log.error(mapLogString("Params: ", allRequestParams));
-                log.error("Exception: ", e);
-            }
-            return LaunchReport.Failure.create(allRequestParams, e.getMessage(), null, wrapperName);
-        }
+        return launchContainer(null, commandId, wrapperName, 0L, allRequestParams);
     }
 
     @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/launch"}, method = POST)
@@ -359,21 +252,15 @@ public class LaunchRestApi extends AbstractXapiRestController {
     public LaunchReport launchCommandWQueryParams(final @PathVariable String project,
                                                   final @PathVariable long commandId,
                                                   final @PathVariable String wrapperName,
-                                                  final @RequestParam Map<String, String> allRequestParams)
-            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException, ContainerException {
+                                                  final @RequestParam Map<String, String> allRequestParams) {
         log.info("Launch requested for command {}, wrapper {}", commandId, wrapperName);
 
         final HttpStatus status = canEditProjectOrAdmin(project);
         if (status != null) {
             return null;
         }
-        try {
-            return launchContainer(project, commandId, wrapperName, allRequestParams);
-        } catch (Throwable t) {
-            log.error("LaunchRestApi exception:  " + t.toString());
-            return null;
-        }
 
+        return launchContainer(project, commandId, wrapperName, 0L, allRequestParams);
     }
 
     @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/launch"}, method = POST, consumes = {JSON})
@@ -382,30 +269,32 @@ public class LaunchRestApi extends AbstractXapiRestController {
     public LaunchReport launchCommandWJsonBody(final @PathVariable String project,
                                                final @PathVariable long commandId,
                                                final @PathVariable String wrapperName,
-                                               final @RequestBody Map<String, String> allRequestParams)
-            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException, ContainerException {
+                                               final @RequestBody Map<String, String> allRequestParams) {
         log.info("Launch requested for command {}, wrapper {}", commandId, wrapperName);
 
         final HttpStatus status = canEditProjectOrAdmin(project);
         if (status != null) {
             return null;
         }
-        try {
-            return launchContainer(project, commandId, wrapperName, allRequestParams);
-        } catch (Throwable t) {
-            log.error("LaunchRestApi exception:  " + t.toString());
-            return null;
-        }
+
+        return launchContainer(project, commandId, wrapperName, 0L, allRequestParams);
     }
 
-    private LaunchReport launchContainer(final String project,
+    private LaunchReport launchContainer(@Nullable final String project,
                                          final long commandId,
-                                         final String wrapperName,
-                                         final Map<String, String> allRequestParams)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, BadRequestException, ContainerException {
+                                         @Nullable final String wrapperName,
+                                         final long wrapperId,
+                                         final Map<String, String> allRequestParams)  {
         final UserI userI = XDAT.getUserDetails();
         try {
-            final ContainerEntity containerEntity = containerService.resolveCommandAndLaunchContainer(project, commandId, wrapperName, allRequestParams, userI);
+            final ContainerEntity containerEntity =
+                    project == null ?
+                            (commandId == 0L && wrapperName == null ?
+                                    containerService.resolveCommandAndLaunchContainer(wrapperId, allRequestParams, userI) :
+                                    containerService.resolveCommandAndLaunchContainer(commandId, wrapperName, allRequestParams, userI)) :
+                            (commandId == 0L && wrapperName == null ?
+                                    containerService.resolveCommandAndLaunchContainer(project, wrapperId, allRequestParams, userI) :
+                                    containerService.resolveCommandAndLaunchContainer(project, commandId, wrapperName, allRequestParams, userI));
             if (log.isInfoEnabled()) {
                 log.info("Launched command {}, wrapper {}. Produced container {}.", commandId, wrapperName,
                         containerEntity != null ? containerEntity.getId() : null);
@@ -413,23 +302,15 @@ public class LaunchRestApi extends AbstractXapiRestController {
                     log.debug(containerEntity != null ? containerEntity.toString() : "Container execution object is null.");
                 }
             }
-            final String containerId = containerEntity.getContainerId() == null ? "null" : containerEntity.getContainerId();
+            final String containerId = (containerEntity == null || containerEntity.getContainerId() == null) ? "null" : containerEntity.getContainerId();
             return LaunchReport.Success.create(allRequestParams, containerId, ""+commandId, wrapperName);
-//        } catch (CommandInputResolutionException e) {
-//            if (e.getValue() == null) {
-//                throw new BadRequestException("Must provide value for input \"" + e.getInput().name() + "\".", e);
-//            } else {
-//                throw new BadRequestException("Input \"" + e.getInput().name() + "\"" +
-//                        " received invalid value \"" + e.getValue() + "\".", e);
-//            }
-//        }
-        } catch (Exception e) {
+        } catch (Throwable t) {
             if (log.isInfoEnabled()) {
                 log.error("Launch failed for command wrapper name {}.", wrapperName);
                 log.error(mapLogString("Params: ", allRequestParams));
-                log.error("Exception: ", e);
+                log.error("Exception: ", t);
             }
-            return LaunchReport.Failure.create(allRequestParams, e.getMessage(), ""+commandId, wrapperName);
+            return LaunchReport.Failure.create(allRequestParams, t.getMessage(), ""+commandId, wrapperName);
         }
     }
 
@@ -440,8 +321,7 @@ public class LaunchRestApi extends AbstractXapiRestController {
     @ApiOperation(value = "Resolve a command from the variable values in the request body, and launch it")
     @ResponseBody
     public LaunchReport.BulkLaunchReport bulklaunchWJsonBody(final @PathVariable long wrapperId,
-                                                             final @RequestBody List<Map<String, String>> allRequestParams)
-            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException, ContainerException {
+                                                             final @RequestBody List<Map<String, String>> allRequestParams) {
         log.info("Launch requested for command wrapper id " + String.valueOf(wrapperId));
         return bulkLaunch(wrapperId, allRequestParams);
     }
@@ -462,14 +342,28 @@ public class LaunchRestApi extends AbstractXapiRestController {
                 }
 
                 final String containerId = containerEntity.getContainerId() == null ? "null" : containerEntity.getContainerId();
-                reportBuilder.addSuccess(LaunchReport.Success.create(paramsSet, containerId, null, ""+wrapperId));
-            } catch (Exception e) {
-                if (log.isInfoEnabled()) {
+                reportBuilder.addSuccess(
+                        LaunchReport.Success.create(
+                                paramsSet,
+                                containerId,
+                                null,
+                                ""+wrapperId
+                        )
+                );
+            } catch (Throwable t) {
+                if (log.isErrorEnabled()) {
                     log.error("Launch failed for command wrapper id {}.", wrapperId);
                     log.error(mapLogString("Params: ", paramsSet));
-                    log.error("Exception: ", e);
+                    log.error("Exception: ", t);
                 }
-                reportBuilder.addFailure(LaunchReport.Failure.create(paramsSet, (e.getMessage() == null) ? "" : e.getMessage(), null, ""+wrapperId));
+                reportBuilder.addFailure(
+                        LaunchReport.Failure.create(
+                                paramsSet,
+                                t.getMessage() == null ? "" : t.getMessage(),
+                                null,
+                                "" + wrapperId
+                        )
+                );
             }
         }
 
