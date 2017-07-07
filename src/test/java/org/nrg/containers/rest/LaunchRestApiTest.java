@@ -21,8 +21,8 @@ import org.mockito.Mockito;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.config.LaunchRestApiTestConfig;
 import org.nrg.containers.exceptions.CommandResolutionException;
-import org.nrg.containers.model.command.auto.BulkLaunchReport;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
+import org.nrg.containers.model.command.auto.LaunchReport;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.server.docker.DockerServer;
@@ -289,15 +289,15 @@ public class LaunchRestApiTest {
                 .getResponse()
                 .getContentAsString();
 
-        final BulkLaunchReport bulkLaunchReport = mapper.readValue(response, BulkLaunchReport.class);
+        final LaunchReport.BulkLaunchReport bulkLaunchReport = mapper.readValue(response, LaunchReport.BulkLaunchReport.class);
         assertThat(bulkLaunchReport.successes(), hasSize(1));
         assertThat(bulkLaunchReport.failures(), hasSize(1));
 
-        final BulkLaunchReport.Success success = bulkLaunchReport.successes().get(0);
+        final LaunchReport.Success success = bulkLaunchReport.successes().get(0);
         assertThat(success.launchParams(), hasEntry(INPUT_NAME, INPUT_VALUE));
         assertThat(success.containerId(), is(FAKE_CONTAINER_ID));
 
-        final BulkLaunchReport.Failure failure = bulkLaunchReport.failures().get(0);
+        final LaunchReport.Failure failure = bulkLaunchReport.failures().get(0);
         assertThat(failure.launchParams(), hasEntry(INPUT_NAME, badInputValue));
         assertThat(failure.message(), is(exceptionMessage));
     }
