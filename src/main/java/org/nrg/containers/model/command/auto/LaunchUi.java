@@ -22,8 +22,6 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 
-@AutoValue
-@JsonInclude(JsonInclude.Include.ALWAYS)
 public abstract class LaunchUi {
     @JsonProperty("command-id") public abstract long commandId();
     @JsonProperty("command-name") public abstract String commandName();
@@ -33,27 +31,113 @@ public abstract class LaunchUi {
     @JsonProperty("wrapper-description") public abstract String wrapperDescription();
     @JsonProperty("image-name") public abstract String imageName();
     @JsonProperty("image-type") public abstract String imageType();
-    @JsonProperty("inputs") public abstract ImmutableMap<String, LaunchUiInput> inputs();
 
-    public static LaunchUi create(final PartiallyResolvedCommand partiallyResolvedCommand,
-                                  final CommandConfiguration commandConfiguration) {
-        // We have to go through the resolved input trees and get their values into the flat structure needed by the UI.
-        final Map<String, LaunchUiInput.Builder> inputBuilderMap = Maps.newHashMap();
-        for (final ResolvedInputTreeNode<? extends Input> rootNode : partiallyResolvedCommand.resolvedInputTrees()) {
-            addNodesToInputMap(rootNode, null, null, commandConfiguration.inputs(), inputBuilderMap);
+    @AutoValue
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    public static abstract class SingleLaunchUi extends LaunchUi {
+        @JsonProperty("inputs") public abstract ImmutableMap<String, LaunchUiInput> inputs();
+
+        public static SingleLaunchUi create(final PartiallyResolvedCommand partiallyResolvedCommand,
+                                      final CommandConfiguration commandConfiguration) {
+            return builder()
+                    .commandId(partiallyResolvedCommand.commandId())
+                    .commandName(partiallyResolvedCommand.commandName())
+                    .commandDescription(partiallyResolvedCommand.commandDescription())
+                    .wrapperId(partiallyResolvedCommand.wrapperId())
+                    .wrapperName(partiallyResolvedCommand.wrapperName())
+                    .wrapperDescription(partiallyResolvedCommand.wrapperDescription())
+                    .imageName(partiallyResolvedCommand.image())
+                    .imageType(partiallyResolvedCommand.type())
+                    .addInputsFromInputTrees(partiallyResolvedCommand, commandConfiguration)
+                    .build();
         }
 
-        return builder()
-                .commandId(partiallyResolvedCommand.commandId())
-                .commandName(partiallyResolvedCommand.commandName())
-                .commandDescription(partiallyResolvedCommand.commandDescription())
-                .wrapperId(partiallyResolvedCommand.wrapperId())
-                .wrapperName(partiallyResolvedCommand.wrapperName())
-                .wrapperDescription(partiallyResolvedCommand.wrapperDescription())
-                .imageName(partiallyResolvedCommand.image())
-                .imageType(partiallyResolvedCommand.type())
-                .addInputsFromBuilders(inputBuilderMap)
-                .build();
+        public static Builder builder() {
+            return new AutoValue_LaunchUi_SingleLaunchUi.Builder();
+        }
+
+        @AutoValue.Builder
+        public static abstract class Builder {
+
+            public abstract Builder commandId(final long commandId);
+            public abstract Builder commandName(final String commandName);
+            public abstract Builder commandDescription(final String commandDescription);
+            public abstract Builder wrapperId(final long wrapperId);
+            public abstract Builder wrapperName(final String wrapperName);
+            public abstract Builder wrapperDescription(final String wrapperDescription);
+            public abstract Builder imageName(final String imageName);
+            public abstract Builder imageType(final String imageType);
+            public abstract Builder inputs(final Map<String, LaunchUiInput> inputs);
+            abstract ImmutableMap.Builder<String, LaunchUiInput> inputsBuilder();
+            public Builder addInputsFromInputTrees(final PartiallyResolvedCommand partiallyResolvedCommand,
+                                                   final CommandConfiguration commandConfiguration) {
+                // We have to go through the resolved input trees and get their values into the flat structure needed by the UI.
+                final Map<String, LaunchUiInput.Builder> inputBuilderMap = Maps.newHashMap();
+                for (final ResolvedInputTreeNode<? extends Input> rootNode : partiallyResolvedCommand.resolvedInputTrees()) {
+                    addNodesToInputMap(rootNode, null, null, commandConfiguration.inputs(), inputBuilderMap);
+                }
+                for (final Map.Entry<String, LaunchUiInput.Builder> inputBuilderEntry : inputBuilderMap.entrySet()) {
+                    inputsBuilder().put(inputBuilderEntry.getKey(), inputBuilderEntry.getValue().build());
+                }
+                return this;
+            }
+            public abstract SingleLaunchUi build();
+        }
+    }
+
+    @AutoValue
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    public static abstract class BulkLaunchUi extends LaunchUi {
+        @JsonProperty("inputs") public abstract ImmutableList<ImmutableMap<String, LaunchUiInput>> inputs();
+
+        public static BulkLaunchUi.Builder builder(final PartiallyResolvedCommand partiallyResolvedCommand,
+                                                   final CommandConfiguration commandConfiguration) {
+            return builder()
+                    .commandId(partiallyResolvedCommand.commandId())
+                    .commandName(partiallyResolvedCommand.commandName())
+                    .commandDescription(partiallyResolvedCommand.commandDescription())
+                    .wrapperId(partiallyResolvedCommand.wrapperId())
+                    .wrapperName(partiallyResolvedCommand.wrapperName())
+                    .wrapperDescription(partiallyResolvedCommand.wrapperDescription())
+                    .imageName(partiallyResolvedCommand.image())
+                    .imageType(partiallyResolvedCommand.type())
+                    .addInputsFromInputTrees(partiallyResolvedCommand, commandConfiguration);
+        }
+
+        public static Builder builder() {
+            return new AutoValue_LaunchUi_BulkLaunchUi.Builder();
+        }
+
+        @AutoValue.Builder
+        public static abstract class Builder {
+
+            public abstract Builder commandId(final long commandId);
+            public abstract Builder commandName(final String commandName);
+            public abstract Builder commandDescription(final String commandDescription);
+            public abstract Builder wrapperId(final long wrapperId);
+            public abstract Builder wrapperName(final String wrapperName);
+            public abstract Builder wrapperDescription(final String wrapperDescription);
+            public abstract Builder imageName(final String imageName);
+            public abstract Builder imageType(final String imageType);
+            public abstract Builder inputs(final List<ImmutableMap<String, LaunchUiInput>> inputs);
+            abstract ImmutableList.Builder<ImmutableMap<String, LaunchUiInput>> inputsBuilder();
+            public Builder addInputsFromInputTrees(final PartiallyResolvedCommand partiallyResolvedCommand,
+                                                   final CommandConfiguration commandConfiguration) {
+                // We have to go through the resolved input trees and get their values into the flat structure needed by the UI.
+                final Map<String, LaunchUiInput.Builder> inputBuilderMap = Maps.newHashMap();
+                for (final ResolvedInputTreeNode<? extends Input> rootNode : partiallyResolvedCommand.resolvedInputTrees()) {
+                    addNodesToInputMap(rootNode, null, null, commandConfiguration.inputs(), inputBuilderMap);
+                }
+
+                final ImmutableMap.Builder<String, LaunchUiInput> inputBuilder = ImmutableMap.builder();
+                for (final Map.Entry<String, LaunchUiInput.Builder> inputBuilderEntry : inputBuilderMap.entrySet()) {
+                    inputBuilder.put(inputBuilderEntry.getKey(), inputBuilderEntry.getValue().build());
+                }
+                inputsBuilder().add(inputBuilder.build());
+                return this;
+            }
+            public abstract BulkLaunchUi build();
+        }
     }
 
     private static void addNodesToInputMap(final @Nonnull ResolvedInputTreeNode<? extends Input> node,
@@ -139,32 +223,6 @@ public abstract class LaunchUi {
         }
         uiInputBuilder.addUi(parentValue == null ? "default" : parentValue,
                 LaunchUiInputValuesAndType.create(valueList, uiType));
-    }
-
-    public static Builder builder() {
-        return new AutoValue_LaunchUi.Builder();
-    }
-
-    @AutoValue.Builder
-    public static abstract class Builder {
-
-        public abstract Builder commandId(final long commandId);
-        public abstract Builder commandName(final String commandName);
-        public abstract Builder commandDescription(final String commandDescription);
-        public abstract Builder wrapperId(final long wrapperId);
-        public abstract Builder wrapperName(final String wrapperName);
-        public abstract Builder wrapperDescription(final String wrapperDescription);
-        public abstract Builder imageName(final String imageName);
-        public abstract Builder imageType(final String imageType);
-        public abstract Builder inputs(final Map<String, LaunchUiInput> inputs);
-        abstract ImmutableMap.Builder<String, LaunchUiInput> inputsBuilder();
-        public Builder addInputsFromBuilders(final @Nonnull Map<String, LaunchUiInput.Builder> inputBuilders) {
-            for (final Map.Entry<String, LaunchUiInput.Builder> inputBuilderEntry : inputBuilders.entrySet()) {
-                inputsBuilder().put(inputBuilderEntry.getKey(), inputBuilderEntry.getValue().build());
-            }
-            return this;
-        }
-        public abstract LaunchUi build();
     }
 
     @AutoValue
