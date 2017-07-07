@@ -87,6 +87,14 @@ public abstract class LaunchReport {
                 return this;
             }
 
+            public Builder addReport(final @Nonnull LaunchReport report) {
+                if (Success.class.isAssignableFrom(report.getClass())) {
+                    return addSuccess((Success)report);
+                } else {
+                    return addFailure((Failure)report);
+                }
+            }
+
             public abstract BulkLaunchReport build();
         }
     }

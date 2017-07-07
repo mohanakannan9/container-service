@@ -331,62 +331,6 @@ public class LaunchRestApi extends AbstractXapiRestController {
         }
     }
 
-    /*
-    BULK LAUNCH
-     */
-    @XapiRequestMapping(value = {"/wrappers/{wrapperId}/bulklaunch"}, method = POST, consumes = {JSON})
-    @ApiOperation(value = "Resolve a command from the variable values in the request body, and launch it")
-    @ResponseBody
-    public LaunchReport.BulkLaunchReport bulklaunchWJsonBody(final @PathVariable long wrapperId,
-                                                             final @RequestBody List<Map<String, String>> allRequestParams) {
-        log.info("Launch requested for command wrapper id " + String.valueOf(wrapperId));
-        return bulkLaunch(wrapperId, allRequestParams);
-    }
-
-    private LaunchReport.BulkLaunchReport bulkLaunch(final long wrapperId,
-                                                     final List<Map<String, String>> allRequestParams) {
-        final UserI userI = XDAT.getUserDetails();
-
-        final LaunchReport.BulkLaunchReport.Builder reportBuilder = LaunchReport.BulkLaunchReport.builder();
-        for (final Map<String, String> paramsSet : allRequestParams) {
-            try {
-                final ContainerEntity containerEntity = containerService.resolveCommandAndLaunchContainer(wrapperId, paramsSet, userI);
-
-                log.info("Launched command wrapper id {}. Produced container {}.", wrapperId, containerEntity.getId());
-                if (log.isDebugEnabled()) {
-                    log.debug(mapLogString("Params: ", paramsSet));
-                    log.debug(containerEntity.toString());
-                }
-
-                final String containerId = containerEntity.getContainerId() == null ? "null" : containerEntity.getContainerId();
-                reportBuilder.addSuccess(
-                        LaunchReport.Success.create(
-                                paramsSet,
-                                containerId,
-                                null,
-                                ""+wrapperId
-                        )
-                );
-            } catch (Throwable t) {
-                if (log.isErrorEnabled()) {
-                    log.error("Launch failed for command wrapper id {}.", wrapperId);
-                    log.error(mapLogString("Params: ", paramsSet));
-                    log.error("Exception: ", t);
-                }
-                reportBuilder.addFailure(
-                        LaunchReport.Failure.create(
-                                paramsSet,
-                                t.getMessage() == null ? "" : t.getMessage(),
-                                null,
-                                "" + wrapperId
-                        )
-                );
-            }
-        }
-
-        return reportBuilder.build();
-    }
-
     private String mapLogString(final String title, final Map<String, String> map) {
         final StringBuilder messageBuilder = new StringBuilder(title);
         for (Map.Entry<String, String> entry : map.entrySet()) {
@@ -396,6 +340,63 @@ public class LaunchRestApi extends AbstractXapiRestController {
             messageBuilder.append(", ");
         }
         return messageBuilder.substring(0, messageBuilder.length() - 2);
+    }
+
+    /*
+    BULK LAUNCH
+     */
+    @XapiRequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/bulklaunch"}, method = POST, consumes = {JSON})
+    @ApiOperation(value = "Resolve a command from the variable values in the request body, and launch it")
+    @ResponseBody
+    public LaunchReport.BulkLaunchReport bulklaunch(final @PathVariable long commandId,
+                                                    final @PathVariable String wrapperName,
+                                                    final @RequestBody List<Map<String, String>> allRequestParams) {
+        log.info("Launch requested for command {}, wrapper name {}.", commandId, wrapperName);
+        return bulkLaunch(null, commandId, wrapperName, 0L, allRequestParams);
+    }
+
+    @XapiRequestMapping(value = {"/wrappers/{wrapperId}/bulklaunch"}, method = POST, consumes = {JSON})
+    @ApiOperation(value = "Resolve a command from the variable values in the request body, and launch it")
+    @ResponseBody
+    public LaunchReport.BulkLaunchReport bulklaunch(final @PathVariable long wrapperId,
+                                                    final @RequestBody List<Map<String, String>> allRequestParams) {
+        log.info("Launch requested for wrapper id {}.", wrapperId);
+        return bulkLaunch(null, 0L, null, wrapperId, allRequestParams);
+    }
+
+    @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/bulklaunch"}, method = POST, consumes = {JSON})
+    @ApiOperation(value = "Resolve a command from the variable values in the request body, and launch it")
+    @ResponseBody
+    public LaunchReport.BulkLaunchReport bulklaunch(final @PathVariable String project,
+                                                    final @PathVariable long commandId,
+                                                    final @PathVariable String wrapperName,
+                                                    final @RequestBody List<Map<String, String>> allRequestParams) {
+        log.info("Launch requested for command {}, wrapper name {}, project {}.", commandId, wrapperName, project);
+        return bulkLaunch(project, commandId, wrapperName, 0L, allRequestParams);
+    }
+
+    @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/bulklaunch"}, method = POST, consumes = {JSON})
+    @ApiOperation(value = "Resolve a command from the variable values in the request body, and launch it")
+    @ResponseBody
+    public LaunchReport.BulkLaunchReport bulklaunch(final @PathVariable String project,
+                                                    final @PathVariable long wrapperId,
+                                                    final @RequestBody List<Map<String, String>> allRequestParams) {
+        log.info("Launch requested for wrapper id {}, project {}.", wrapperId, project);
+        return bulkLaunch(project, 0L, null, wrapperId, allRequestParams);
+    }
+
+    private LaunchReport.BulkLaunchReport bulkLaunch(final String project,
+                                                     final long commandId,
+                                                     final String wrapperName,
+                                                     final long wrapperId,
+                                                     final List<Map<String, String>> allRequestParams) {
+
+        final LaunchReport.BulkLaunchReport.Builder reportBuilder = LaunchReport.BulkLaunchReport.builder();
+        for (final Map<String, String> paramsSet : allRequestParams) {
+            reportBuilder.addReport(launchContainer(project, commandId, wrapperName, wrapperId, paramsSet));
+        }
+
+        return reportBuilder.build();
     }
 
     /*
