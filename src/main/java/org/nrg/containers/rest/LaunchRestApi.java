@@ -76,15 +76,8 @@ public class LaunchRestApi extends AbstractXapiRestController {
                                 final @RequestParam Map<String, String> allRequestParams)
             throws NotFoundException, CommandResolutionException {
         log.info("Launch UI requested for wrapper {}", wrapperId);
-        final UserI userI = XDAT.getUserDetails();
-        log.debug("Preparing to resolve command wrapper {} with inputs {}.", wrapperId, allRequestParams);
-        final PartiallyResolvedCommand partiallyResolvedCommand =
-                commandResolutionService.preResolve(wrapperId, allRequestParams, userI);
-        log.debug("Done resolving command wrapper {}.", wrapperId);
-        log.debug("Getting site-level configuration for wrapper {}.", wrapperId);
-        final CommandConfiguration commandConfiguration = commandService.getSiteConfiguration(wrapperId);
-        log.debug("Creating launch UI.");
-        return LaunchUi.create(partiallyResolvedCommand, commandConfiguration);
+
+        return getLaunchUi(null, 0L, null, wrapperId, allRequestParams);
     }
 
     @XapiRequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/launch"}, method = GET)
@@ -95,15 +88,8 @@ public class LaunchRestApi extends AbstractXapiRestController {
                                 final @RequestParam Map<String, String> allRequestParams)
             throws NotFoundException, CommandResolutionException {
         log.info("Launch UI requested for command {}, wrapper {}", commandId, wrapperName);
-        final UserI userI = XDAT.getUserDetails();
-        log.debug("Preparing to pre-resolve command {}, wrapper {} with inputs {}.", commandId, wrapperName, allRequestParams);
-        final PartiallyResolvedCommand partiallyResolvedCommand =
-                commandResolutionService.preResolve(commandId, wrapperName, allRequestParams, userI);
-        log.debug("Done pre-resolving command {}, wrapper {}.", commandId, wrapperName);
-        log.debug("Getting site-level configuration for command {}, wrapper {}.", commandId, wrapperName);
-        final CommandConfiguration commandConfiguration = commandService.getSiteConfiguration(commandId, wrapperName);
-        log.debug("Creating launch UI.");
-        return LaunchUi.create(partiallyResolvedCommand, commandConfiguration);
+
+        return getLaunchUi(null, commandId, wrapperName, 0L, allRequestParams);
     }
 
     @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/launch"}, method = GET)
@@ -119,19 +105,8 @@ public class LaunchRestApi extends AbstractXapiRestController {
         if (status != null) {
             return null;
         }
-        try {
-            log.debug("Preparing to pre-resolve command wrapper {} in project {} with inputs {}.", wrapperId, project, allRequestParams);
-            final PartiallyResolvedCommand partiallyResolvedCommand =
-                    commandResolutionService.preResolve(project, wrapperId, allRequestParams, getSessionUser());
-            log.debug("Done pre-resolving command wrapper {} in project {}.", wrapperId, project);
-            log.debug("Getting project {} configuration for wrapper {}.", project, wrapperId);
-            final CommandConfiguration commandConfiguration = commandService.getProjectConfiguration(project, wrapperId);
-            log.debug("Creating launch UI.");
-            return LaunchUi.create(partiallyResolvedCommand, commandConfiguration);
-        } catch (Throwable t) {
-            log.error("LaunchRestApi exception:  " + t.toString());
-            return null;
-        }
+
+        return getLaunchUi(project, 0L, null, wrapperId, allRequestParams);
     }
 
     @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/launch"}, method = GET)
@@ -148,20 +123,62 @@ public class LaunchRestApi extends AbstractXapiRestController {
         if (status != null) {
             return null;
         }
+
+        return getLaunchUi(project, commandId, wrapperName, 0L, allRequestParams);
+    }
+
+    private LaunchUi getLaunchUi(final String project,
+                                 final long commandId,
+                                 final String wrapperName,
+                                 final long wrapperId,
+                                 final Map<String, String> allRequestParams) throws NotFoundException, CommandResolutionException {
         try {
+            log.debug("Preparing to pre-resolve command {}, wrapperName {}, wrapperId {}, in project {} with inputs {}.", commandId, wrapperName, wrapperId, project, allRequestParams);
             final UserI userI = XDAT.getUserDetails();
-            log.debug("Preparing to pre-resolve command {}, wrapper {} in project {} with inputs {}.", commandId, wrapperName, project, allRequestParams);
-            final PartiallyResolvedCommand partiallyResolvedCommand =
-                    commandResolutionService.preResolve(project, commandId, wrapperName, allRequestParams, userI);
-            log.debug("Done pre-resolving command {}, wrapper {} in project {}.", commandId, wrapperName, project);
-            log.debug("Getting project {} configuration for command {}, wrapper {}.", project, commandId, wrapperName);
-            final CommandConfiguration commandConfiguration = commandService.getProjectConfiguration(project, commandId, wrapperName);
+            final PartiallyResolvedCommand partiallyResolvedCommand = preResolve(project, commandId, wrapperName, wrapperId, allRequestParams, userI);
+            log.debug("Done pre-resolving command {}, wrapperName {}, wrapperId {}, in project {}.", commandId, wrapperName, project);
+
+            log.debug("Getting {} configuration for command {}, wrapper name {}, wrapper id {}.", project == null ? "site" : "project " + project, commandId, wrapperName, wrapperId);
+            final CommandConfiguration commandConfiguration = getCommandConfiguration(project, commandId, wrapperName, wrapperId);
+
             log.debug("Creating launch UI.");
             return LaunchUi.create(partiallyResolvedCommand, commandConfiguration);
         } catch (Throwable t) {
-            log.error("LaunchRestApi exception:  " + t.toString());
+            log.error("Error getting launch UI.", t);
+            if (Exception.class.isAssignableFrom(t.getClass())) {
+                // We can re-throw Exceptions, because Spring has methods to catch them.
+                throw t;
+            }
             return null;
         }
+    }
+
+    private PartiallyResolvedCommand preResolve(final String project,
+                                                final long commandId,
+                                                final String wrapperName,
+                                                final long wrapperId,
+                                                final Map<String, String> allRequestParams,
+                                                final UserI userI) throws NotFoundException, CommandResolutionException {
+        return project == null ?
+                (commandId == 0L && wrapperName == null ?
+                        commandResolutionService.preResolve(wrapperId, allRequestParams, userI) :
+                        commandResolutionService.preResolve(commandId, wrapperName, allRequestParams, userI)) :
+                (commandId == 0L && wrapperName == null ?
+                        commandResolutionService.preResolve(project, wrapperId, allRequestParams, userI) :
+                        commandResolutionService.preResolve(project, commandId, wrapperName, allRequestParams, userI));
+    }
+
+    private CommandConfiguration getCommandConfiguration(final String project,
+                                                         final long commandId,
+                                                         final String wrapperName,
+                                                         final long wrapperId) throws NotFoundException {
+        return project == null ?
+                (commandId == 0L && wrapperName == null ?
+                        commandService.getSiteConfiguration(wrapperId) :
+                        commandService.getSiteConfiguration(commandId, wrapperName)) :
+                (commandId == 0L && wrapperName == null ?
+                        commandService.getProjectConfiguration(project, wrapperId) :
+                        commandService.getProjectConfiguration(project, commandId, wrapperName));
     }
 
     /*
