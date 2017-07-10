@@ -504,7 +504,7 @@ var XNAT = getObject(XNAT || {});
                                     xmodal.loading.close();
 
                                     var messageContent = (data.status === 'success') ?
-                                        spawn('p',{ css: { 'word-wrap': 'break-word'}}, 'Container ID: '+data['container-id'] ) :
+                                        spawn('p',{ style: { 'word-wrap': 'break-word'}}, 'Container ID: '+data['container-id'] ) :
                                         spawn('p', data.message);
 
                                     XNAT.ui.dialog.open({
@@ -518,10 +518,35 @@ var XNAT = getObject(XNAT || {});
                                                 action: XNAT.ui.dialog.closeAll()
                                             }
                                         ]
-                                    })
+                                    });
                                 },
                                 fail: function (e) {
-                                    errorHandler(e);
+                                    xmodal.loading.close();
+
+                                    if (e.responseJSON.message) {
+                                        var data = e.responseJSON;
+                                        var messageContent = spawn('div',[
+                                            spawn('p',{ style: { 'font-weight': 'bold' }}, 'Error Message:'),
+                                            spawn('pre.json', data.message),
+                                            spawn('p',{ style: { 'font-weight': 'bold' }}, 'Parameters Submitted To XNAT:'),
+                                            spawn('div', prettifyJSON(data.params))
+                                        ]);
+
+                                        XNAT.ui.dialog.open({
+                                            title: 'Container Launch <span style="text-transform: capitalize">'+data.status+'</span>',
+                                            content: messageContent,
+                                            buttons: [
+                                                {
+                                                    label: 'OK',
+                                                    isDefault: true,
+                                                    close: true,
+                                                    action: XNAT.ui.dialog.closeAll()
+                                                }
+                                            ]
+                                        });
+                                    } else {
+                                        errorHandler(e);
+                                    }
                                 }
                             });
 
