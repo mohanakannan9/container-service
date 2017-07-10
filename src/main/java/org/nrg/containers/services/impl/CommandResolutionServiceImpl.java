@@ -19,6 +19,7 @@ import org.nrg.config.services.ConfigService;
 import org.nrg.containers.exceptions.CommandInputResolutionException;
 import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.ContainerMountResolutionException;
+import org.nrg.containers.exceptions.UnauthorizedException;
 import org.nrg.containers.model.command.auto.Command.CommandInput;
 import org.nrg.containers.model.command.auto.Command.CommandMount;
 import org.nrg.containers.model.command.auto.Command.CommandOutput;
@@ -52,6 +53,7 @@ import org.nrg.containers.services.CommandService;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.URIManager.ArchiveItemURI;
@@ -114,7 +116,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
     public PartiallyResolvedCommand preResolve(final long wrapperId,
                                                final Map<String, String> inputValues,
                                                final UserI userI)
-            throws NotFoundException, CommandResolutionException {
+            throws NotFoundException, CommandResolutionException, UnauthorizedException {
         return preResolve(commandService.getAndConfigure(wrapperId), inputValues, userI);
     }
 
@@ -123,7 +125,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                                                final String wrapperName,
                                                final Map<String, String> inputValues,
                                                final UserI userI)
-            throws NotFoundException, CommandResolutionException {
+            throws NotFoundException, CommandResolutionException, UnauthorizedException {
         return preResolve(commandService.getAndConfigure(commandId, wrapperName), inputValues, userI);
     }
 
@@ -132,7 +134,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                                                final long wrapperId,
                                                final Map<String, String> inputValues,
                                                final UserI userI)
-            throws NotFoundException, CommandResolutionException {
+            throws NotFoundException, CommandResolutionException, UnauthorizedException {
         return preResolve(commandService.getAndConfigure(project, wrapperId), inputValues, userI);
     }
 
@@ -142,12 +144,13 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                                                final String wrapperName,
                                                final Map<String, String> inputValues,
                                                final UserI userI)
-            throws NotFoundException, CommandResolutionException {
+            throws NotFoundException, CommandResolutionException, UnauthorizedException {
         return preResolve(commandService.getAndConfigure(project, commandId, wrapperName), inputValues, userI);
     }
 
     @Override
-    public PartiallyResolvedCommand preResolve(final ConfiguredCommand configuredCommand, final Map<String, String> inputValues, final UserI userI) throws CommandResolutionException {
+    public PartiallyResolvedCommand preResolve(final ConfiguredCommand configuredCommand, final Map<String, String> inputValues, final UserI userI)
+            throws CommandResolutionException, UnauthorizedException {
         final CommandResolutionHelper helper = new CommandResolutionHelper(configuredCommand, inputValues, userI);
         return helper.preResolve();
     }
@@ -157,7 +160,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                                    final String wrapperName,
                                    final Map<String, String> inputValues,
                                    final UserI userI)
-            throws NotFoundException, CommandResolutionException {
+            throws NotFoundException, CommandResolutionException, UnauthorizedException {
         return resolve(commandService.getAndConfigure(commandId, wrapperName), inputValues, userI);
     }
 
@@ -166,7 +169,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
     public ResolvedCommand resolve(final long wrapperId,
                                    final Map<String, String> inputValues,
                                    final UserI userI)
-            throws NotFoundException, CommandResolutionException {
+            throws NotFoundException, CommandResolutionException, UnauthorizedException {
         return resolve(commandService.getAndConfigure(wrapperId), inputValues, userI);
     }
 
@@ -176,7 +179,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                                    final long wrapperId,
                                    final Map<String, String> inputValues,
                                    final UserI userI)
-            throws NotFoundException, CommandResolutionException {
+            throws NotFoundException, CommandResolutionException, UnauthorizedException {
         return resolve(commandService.getAndConfigure(project, wrapperId), inputValues, userI);
     }
 
@@ -186,7 +189,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                                    final String wrapperName,
                                    final Map<String, String> inputValues,
                                    final UserI userI)
-            throws NotFoundException, CommandResolutionException {
+            throws NotFoundException, CommandResolutionException, UnauthorizedException {
         return resolve(commandService.getAndConfigure(project, commandId, wrapperName), inputValues, userI);
     }
 
@@ -219,7 +222,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
     public ResolvedCommand resolve(final ConfiguredCommand configuredCommand,
                                    final Map<String, String> inputValues,
                                    final UserI userI)
-            throws NotFoundException, CommandResolutionException {
+            throws NotFoundException, CommandResolutionException, UnauthorizedException {
         final CommandResolutionHelper helper = new CommandResolutionHelper(configuredCommand, inputValues, userI);
         return helper.resolve();
     }
@@ -272,13 +275,13 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
 
         @Nonnull
         private List<ResolvedInputTreeNode<? extends Input>> resolveInputTrees()
-                throws CommandResolutionException {
+                throws CommandResolutionException, UnauthorizedException {
             return resolveInputTrees(Maps.<String, String>newHashMap());
         }
 
         @Nonnull
         private List<ResolvedInputTreeNode<? extends Input>> resolveInputTrees(final Map<String, String> resolvedValuesByReplacementKey)
-                throws CommandResolutionException {
+                throws CommandResolutionException, UnauthorizedException {
             final List<PreresolvedInputTreeNode<? extends Input>> rootNodes = initializePreresolvedInputTree();
 
             final List<ResolvedInputTreeNode<? extends Input>> resolvedInputTrees = Lists.newArrayList();
@@ -300,7 +303,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
         }
 
         @Nonnull
-        private PartiallyResolvedCommand preResolve() throws CommandResolutionException {
+        private PartiallyResolvedCommand preResolve() throws CommandResolutionException, UnauthorizedException {
             log.info("Resolving command wrapper inputs.");
             log.debug("{}", commandWrapper);
 
@@ -320,7 +323,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
         }
 
         @Nonnull
-        private ResolvedCommand resolve() throws CommandResolutionException {
+        private ResolvedCommand resolve() throws CommandResolutionException, UnauthorizedException {
             log.info("Resolving command.");
             log.debug("{}", command);
 
@@ -414,7 +417,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
         @Nonnull
         private ResolvedInputValue resolveExternalWrapperInput(final CommandWrapperExternalInput input,
                                                                final Map<String, String> resolvedInputValuesByReplacementKey)
-                throws CommandResolutionException {
+                throws CommandResolutionException, UnauthorizedException {
             log.info("Resolving input \"{}\".", input.name());
 
             XnatModelObject resolvedModelObject = null;
@@ -1051,7 +1054,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
         private ResolvedInputTreeNode<? extends Input> resolveNode(final PreresolvedInputTreeNode<? extends Input> preresolvedInputNode,
                                                                    final @Nullable ResolvedInputValue parentValue,
                                                                    final Map<String, String> resolvedInputValuesByReplacementKey)
-                throws CommandResolutionException {
+                throws CommandResolutionException, UnauthorizedException {
             if (log.isDebugEnabled()) {
                 log.debug("Resolving input \"" + preresolvedInputNode.input().name() + "\"" +
                         (parentValue == null ? "" : " for parent value \"" + parentValue.value() + "\"") + ".");
@@ -1307,7 +1310,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                                                                 final @Nonnull Class<T> model,
                                                                 final @Nonnull Function<ArchiveItemURI, T> uriToModelObject,
                                                                 final @Nullable Function<String, T> idToModelObject)
-                throws CommandInputResolutionException {
+                throws CommandInputResolutionException, UnauthorizedException {
             final String modelName = model.getSimpleName();
 
             if (StringUtils.isBlank(value)) {
@@ -1336,6 +1339,21 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                         newModelObject = uriToModelObject.apply((ArchiveItemURI) uri);
                     } catch (Throwable e) {
                         final String message = String.format("Could not instantiate %s with URI %s.", modelName, value);
+                        log.error(message);
+                        throw new CommandInputResolutionException(message, value);
+                    }
+
+                    // TODO This is a workaround for CS-263 and XXX-55. Once XXX-55 is fixed, this can (hopefully) be removed.
+                    try {
+                        if (!Permissions.canRead(userI, ((ArchiveItemURI) uri).getSecurityItem())) {
+                            final String message = String.format("User does not have permission to read %s with URI %s.", modelName, value);
+                            log.error(message);
+                            throw new UnauthorizedException(message);
+                        }
+                    } catch (UnauthorizedException e) {
+                        throw e;
+                    } catch (Exception e) {  // Need to catch this here because Permissions.canRead() can throw whatever
+                        final String message = String.format("Could not verify read permissions for user %s with URI %s.", userI.getLogin(), value);
                         log.error(message);
                         throw new CommandInputResolutionException(message, value);
                     }

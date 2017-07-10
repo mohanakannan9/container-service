@@ -74,7 +74,7 @@ public class LaunchRestApi extends AbstractXapiRestController {
     @ResponseBody
     public LaunchUi getLaunchUi(final @PathVariable long wrapperId,
                                 final @RequestParam Map<String, String> allRequestParams)
-            throws NotFoundException, CommandResolutionException {
+            throws NotFoundException, CommandResolutionException, UnauthorizedException {
         log.info("Launch UI requested for wrapper {}", wrapperId);
 
         return getLaunchUi(null, 0L, null, wrapperId, allRequestParams);
@@ -86,7 +86,7 @@ public class LaunchRestApi extends AbstractXapiRestController {
     public LaunchUi getLaunchUi(final @PathVariable long commandId,
                                 final @PathVariable String wrapperName,
                                 final @RequestParam Map<String, String> allRequestParams)
-            throws NotFoundException, CommandResolutionException {
+            throws NotFoundException, CommandResolutionException, UnauthorizedException {
         log.info("Launch UI requested for command {}, wrapper {}", commandId, wrapperName);
 
         return getLaunchUi(null, commandId, wrapperName, 0L, allRequestParams);
@@ -98,7 +98,7 @@ public class LaunchRestApi extends AbstractXapiRestController {
     public LaunchUi getLaunchUi(final @PathVariable String project,
                                 final @PathVariable long wrapperId,
                                 final @RequestParam Map<String, String> allRequestParams)
-            throws NotFoundException, CommandResolutionException {
+            throws NotFoundException, CommandResolutionException, UnauthorizedException {
         log.info("Launch UI requested for project {}, wrapper {}", project, wrapperId);
 
         final HttpStatus status = canEditProjectOrAdmin(project);
@@ -116,7 +116,7 @@ public class LaunchRestApi extends AbstractXapiRestController {
                                 final @PathVariable long commandId,
                                 final @PathVariable String wrapperName,
                                 final @RequestParam Map<String, String> allRequestParams)
-            throws NotFoundException, CommandResolutionException {
+            throws NotFoundException, CommandResolutionException, UnauthorizedException {
         log.info("Launch UI requested for project {}, command {}, wrapper {}", project, commandId, wrapperName);
 
         final HttpStatus status = canEditProjectOrAdmin(project);
@@ -131,7 +131,8 @@ public class LaunchRestApi extends AbstractXapiRestController {
                                  final long commandId,
                                  final String wrapperName,
                                  final long wrapperId,
-                                 final Map<String, String> allRequestParams) throws NotFoundException, CommandResolutionException {
+                                 final Map<String, String> allRequestParams)
+            throws NotFoundException, CommandResolutionException, UnauthorizedException {
         try {
             log.debug("Preparing to pre-resolve command {}, wrapperName {}, wrapperId {}, in project {} with inputs {}.", commandId, wrapperName, wrapperId, project, allRequestParams);
             final UserI userI = XDAT.getUserDetails();
@@ -158,7 +159,8 @@ public class LaunchRestApi extends AbstractXapiRestController {
                                                 final String wrapperName,
                                                 final long wrapperId,
                                                 final Map<String, String> allRequestParams,
-                                                final UserI userI) throws NotFoundException, CommandResolutionException {
+                                                final UserI userI)
+            throws NotFoundException, CommandResolutionException, UnauthorizedException {
         return project == null ?
                 (commandId == 0L && wrapperName == null ?
                         commandResolutionService.preResolve(wrapperId, allRequestParams, userI) :
@@ -301,7 +303,7 @@ public class LaunchRestApi extends AbstractXapiRestController {
                                          final long commandId,
                                          @Nullable final String wrapperName,
                                          final long wrapperId,
-                                         final Map<String, String> allRequestParams)  {
+                                         final Map<String, String> allRequestParams) {
         final UserI userI = XDAT.getUserDetails();
         try {
             final ContainerEntity containerEntity =

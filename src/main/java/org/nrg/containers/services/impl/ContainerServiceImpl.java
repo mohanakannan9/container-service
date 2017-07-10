@@ -2,19 +2,15 @@ package org.nrg.containers.services.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.events.model.ContainerEvent;
 import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.ContainerException;
-import org.nrg.containers.exceptions.ContainerMountResolutionException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.exceptions.UnauthorizedException;
 import org.nrg.containers.helpers.ContainerFinalizeHelper;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
-import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMount;
-import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMountFiles;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.container.entity.ContainerEntityHistory;
 import org.nrg.containers.services.CommandResolutionService;
@@ -40,12 +36,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Nonnull;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -94,7 +85,7 @@ public class ContainerServiceImpl implements ContainerService {
     public ContainerEntity resolveCommandAndLaunchContainer(final long wrapperId,
                                                             final Map<String, String> inputValues,
                                                             final UserI userI)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException {
+            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException, UnauthorizedException {
         return launchResolvedCommand(commandResolutionService.resolve(wrapperId, inputValues, userI), userI);
     }
 
@@ -104,7 +95,7 @@ public class ContainerServiceImpl implements ContainerService {
                                                             final String wrapperName,
                                                             final Map<String, String> inputValues,
                                                             final UserI userI)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException {
+            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException, UnauthorizedException {
         return launchResolvedCommand(commandResolutionService.resolve(commandId, wrapperName, inputValues, userI), userI);
 
     }
@@ -115,7 +106,7 @@ public class ContainerServiceImpl implements ContainerService {
                                                             final long wrapperId,
                                                             final Map<String, String> inputValues,
                                                             final UserI userI)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException {
+            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException, UnauthorizedException {
         return launchResolvedCommand(commandResolutionService.resolve(project, wrapperId, inputValues, userI), userI);
     }
 
@@ -126,7 +117,7 @@ public class ContainerServiceImpl implements ContainerService {
                                                             final String wrapperName,
                                                             final Map<String, String> inputValues,
                                                             final UserI userI)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException {
+            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException, UnauthorizedException {
         return launchResolvedCommand(commandResolutionService.resolve(project, commandId, wrapperName, inputValues, userI), userI);
 
     }

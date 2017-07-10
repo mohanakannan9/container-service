@@ -9,6 +9,7 @@ import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.exceptions.UnauthorizedException;
 import org.nrg.containers.model.CommandEventMapping;
 import org.nrg.containers.model.xnat.Scan;
 import org.nrg.containers.services.CommandEventMappingService;
@@ -106,7 +107,7 @@ public class ScanArchiveListenerAndCommandLauncher implements Consumer<Event<Sca
                         containerService.resolveCommandAndLaunchContainer(commandId, wrapperName, inputValues, subscriptionUser);
                     } catch (UserNotFoundException | UserInitException e) {
                         log.error(String.format("Error launching command %d. Could not find or Init subscription owner: %s", commandId, commandEventMapping.getSubscriptionUserName()), e);
-                    } catch (NotFoundException | CommandResolutionException | NoServerPrefException | DockerServerException | ContainerException e) {
+                    } catch (NotFoundException | CommandResolutionException | NoServerPrefException | DockerServerException | ContainerException | UnauthorizedException e) {
                         log.error("Error launching command " + commandId, e);
                     }
                 }
