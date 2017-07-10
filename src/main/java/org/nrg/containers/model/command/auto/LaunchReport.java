@@ -13,43 +13,64 @@ import java.util.List;
 import java.util.Map;
 
 public abstract class LaunchReport {
+    @JsonProperty("status") public abstract String status();
     @JsonProperty("params") public abstract ImmutableMap<String, String> launchParams();
-    @Nullable @JsonProperty("command") public abstract String command();
-    @Nullable @JsonProperty("wrapper") public abstract String wrapper();
+    @Nullable @JsonProperty("command-id") public abstract String command();
+    @Nullable @JsonProperty("wrapper-id") public abstract String wrapper();
 
     @AutoValue
     @JsonInclude(JsonInclude.Include.ALWAYS)
     public static abstract class Success extends LaunchReport {
+        private final static String STATUS = "success";
         @JsonProperty("container-id") public abstract String containerId();
 
         @JsonCreator
+        @SuppressWarnings("unused")
+        static Success create(@JsonProperty("status") final String ignoredStatus,
+                              @JsonProperty("params") final Map<String, String> launchParams,
+                              @JsonProperty("container-id") final @Nonnull String containerId,
+                              @JsonProperty("command-id") final String command,
+                              @JsonProperty("wrapper-id") final String wrapper) {
+            return create(launchParams, containerId, command, wrapper);
+        }
+
         public static Success create(@JsonProperty("params") final Map<String, String> launchParams,
                                      @JsonProperty("container-id") final @Nonnull String containerId,
-                                     @JsonProperty("command") final String command,
-                                     @JsonProperty("wrapper") final String wrapper) {
+                                     @JsonProperty("command-id") final String command,
+                                     @JsonProperty("wrapper-id") final String wrapper) {
             final ImmutableMap<String, String> launchParamsCopy =
                     launchParams == null ?
                             ImmutableMap.<String, String>of() :
                             ImmutableMap.copyOf(launchParams);
-            return new AutoValue_LaunchReport_Success(launchParamsCopy, command, wrapper, containerId);
+            return new AutoValue_LaunchReport_Success(STATUS, launchParamsCopy, command, wrapper, containerId);
         }
     }
 
     @AutoValue
     @JsonInclude(JsonInclude.Include.ALWAYS)
     public static abstract class Failure extends LaunchReport {
+        private final static String STATUS = "failure";
         @JsonProperty("message") public abstract String message();
 
         @JsonCreator
+        @SuppressWarnings("unused")
+        static Failure create(@JsonProperty("status") final String ignoredStatus,
+                              @JsonProperty("params") final Map<String, String> launchParams,
+                              @JsonProperty("message") final @Nonnull String message,
+                              @JsonProperty("command-id") final String command,
+                              @JsonProperty("wrapper-id") final String wrapper) {
+            return create(launchParams, message, command, wrapper);
+        }
+
         public static Failure create(@JsonProperty("params") final Map<String, String> launchParams,
                                      @JsonProperty("message") final @Nonnull String message,
-                                     @JsonProperty("command") final String command,
-                                     @JsonProperty("wrapper") final String wrapper) {
+                                     @JsonProperty("command-id") final String command,
+                                     @JsonProperty("wrapper-id") final String wrapper) {
             final ImmutableMap<String, String> launchParamsCopy =
                     launchParams == null ?
                             ImmutableMap.<String, String>of() :
                             ImmutableMap.copyOf(launchParams);
-            return new AutoValue_LaunchReport_Failure(launchParamsCopy, command, wrapper, message);
+            return new AutoValue_LaunchReport_Failure(STATUS, launchParamsCopy, command, wrapper, message);
         }
     }
 
