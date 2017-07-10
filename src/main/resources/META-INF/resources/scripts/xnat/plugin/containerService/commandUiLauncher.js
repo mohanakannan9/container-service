@@ -503,9 +503,13 @@ var XNAT = getObject(XNAT || {});
                                 success: function(data){
                                     xmodal.loading.close();
 
+                                    var messageContent = (data.status === 'success') ?
+                                        spawn('p',{ css: { 'word-wrap': 'break-word'}}, 'Container ID: '+data['container-id'] ) :
+                                        spawn('p', data.message);
+
                                     XNAT.ui.dialog.open({
-                                        title: 'Container Launch Success',
-                                        content: spawn('p',{ css: { 'word-wrap': 'break-word'}}, data ),
+                                        title: 'Container Launch <span style="text-transform: capitalize">'+data.status+'</span>',
+                                        content: messageContent,
                                         buttons: [
                                             {
                                                 label: 'OK',
