@@ -374,7 +374,7 @@ var XNAT = getObject(XNAT || {});
 
                     for (var i in inputs){
 
-                        if (inputs[i].parent === undefined) {
+                        if (!inputs[i].parent || inputs[i].parent === undefined) {
                             // child inputs that specify a parent get special treatment
                             inputs[i].type = inputs[i].ui.default.type;
                             inputs[i].value = inputs[i].ui.default.values[0].value || inputs[i].value;
@@ -392,36 +392,19 @@ var XNAT = getObject(XNAT || {});
 
                                     children.forEach(function(child){
 
+                                        var useDefault = true;
+
                                         for (var k in inputs[child].ui) {
                                             // loop through each possible UI instance for all preset values for this child input.
                                             // append each child input in a special wrapper
 
-                                            if (parentInput.ui[k].values.length === 1) {
-                                                var childInput = inputs[child];
-                                                var classes = ['child-input'];
-                                                childInput.type = childInput.ui[k].type;
-                                                childInput.value = childInput.ui[k].values[0].value;
-                                                childInput.valueLabel = childInput.ui[k].values[0].label;
-                                                if (k !== parentInput.value) {
-                                                    // if a preset value has been defined and does not match the default value of its parent input, then hide and disable this possible input.
-                                                    childInput.disabled = true;
-                                                    classes.push('hidden');
-                                                }
+                                            if (parentInput.ui[k] !== undefined) {
+                                                useDefault = false; // if value-specific definitions are found, don't use the default
 
-                                                $standardInputContainer.append( spawn('div', { className: classes.join(' '), data: { preset: k }}, launcher.formInputs(childInput)) );
-                                            }
-
-                                            if (parentInput.ui[k].values.length > 1) {
-                                                // if more than one possible preset value is found for a child input,
-                                                // disregard the suggested input type and force a user selection
-                                                // generate a radio input for each possible value
-
-                                                var childInputs = [];
-
-                                                parentInput.ui[k].values.forEach(function(value){
+                                                if (parentInput.ui[k].values.length === 1) {
                                                     var childInput = inputs[child];
                                                     var classes = ['child-input'];
-                                                    childInput.type = 'radio';
+                                                    childInput.type = childInput.ui[k].type;
                                                     childInput.value = childInput.ui[k].values[0].value;
                                                     childInput.valueLabel = childInput.ui[k].values[0].label;
                                                     if (k !== parentInput.value) {
@@ -429,9 +412,41 @@ var XNAT = getObject(XNAT || {});
                                                         childInput.disabled = true;
                                                         classes.push('hidden');
                                                     }
-                                                });
+
+                                                    $standardInputContainer.append( spawn('div', { className: classes.join(' '), data: { preset: k }}, launcher.formInputs(childInput)) );
+                                                }
+
+                                                if (parentInput.ui[k].values.length > 1) {
+                                                    // if more than one possible preset value is found for a child input,
+                                                    // disregard the suggested input type and force a user selection
+                                                    // generate a radio input for each possible value
+
+                                                    var childInputs = [];
+
+                                                    parentInput.ui[k].values.forEach(function(value){
+                                                        var childInput = inputs[child];
+                                                        var classes = ['child-input'];
+                                                        childInput.type = 'radio';
+                                                        childInput.value = childInput.ui[k].values[0].value;
+                                                        childInput.valueLabel = childInput.ui[k].values[0].label;
+                                                        if (k !== parentInput.value) {
+                                                            // if a preset value has been defined and does not match the default value of its parent input, then hide and disable this possible input.
+                                                            childInput.disabled = true;
+                                                            classes.push('hidden');
+                                                        }
+                                                    });
+                                                }
                                             }
 
+                                            if (useDefault) {
+                                                // if no value-specific settings are found, use the parent input's default values
+                                                var childInput = inputs[child];
+                                                var classes = ['child-input'];
+                                                childInput.type = childInput.ui[k].type;
+                                                childInput.value = childInput.ui[k].values[0].value;
+                                                childInput.valueLabel = childInput.ui[k].values[0].label;
+                                                $standardInputContainer.append( spawn('div', { className: classes.join(' '), data: { preset: k }}, launcher.formInputs(childInput)) );
+                                            }
 
                                         }
 
