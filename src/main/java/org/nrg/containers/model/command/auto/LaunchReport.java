@@ -1,6 +1,7 @@
 package org.nrg.containers.model.command.auto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
@@ -62,10 +63,10 @@ public abstract class LaunchReport {
             return create(launchParams, message, command, wrapper);
         }
 
-        public static Failure create(@JsonProperty("params") final Map<String, String> launchParams,
-                                     @JsonProperty("message") final @Nonnull String message,
-                                     @JsonProperty("command-id") final String command,
-                                     @JsonProperty("wrapper-id") final String wrapper) {
+        public static Failure create(final Map<String, String> launchParams,
+                                     final @Nonnull String message,
+                                     final String command,
+                                     final String wrapper) {
             final ImmutableMap<String, String> launchParamsCopy =
                     launchParams == null ?
                             ImmutableMap.<String, String>of() :
