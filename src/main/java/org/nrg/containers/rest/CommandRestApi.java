@@ -20,6 +20,8 @@ import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.security.helpers.AccessLevel;
+import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -38,9 +40,12 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.nrg.containers.exceptions.UnauthorizedException;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
+import static org.nrg.xdat.security.helpers.AccessLevel.Read;
 import static org.springframework.web.bind.annotation.RequestMethod.DELETE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
@@ -198,17 +203,19 @@ public class CommandRestApi extends AbstractXapiRestController {
     /*
     AVAILABLE FOR LAUNCHING
      */
-    @XapiRequestMapping(value = {"/commands/available"}, params = {"project", "xsiType"}, method = GET)
+    @XapiRequestMapping(value = {"/commands/available"}, params = {"project", "xsiType"}, method = GET, restrictTo = Read)
     @ResponseBody
     public List<CommandSummaryForContext> availableCommands(final @RequestParam String project,
                                                             final @RequestParam String xsiType)
             throws ElementNotFoundException {
         final UserI userI = XDAT.getUserDetails();
-        //We can permit any user to make this REST call since available should note return any available commands for users without permissions.
-        return commandService.available(project, xsiType, userI);
+
+        return Permissions.canEditProject(userI, project) ?
+                commandService.available(project, xsiType, userI) :
+                Collections.<CommandSummaryForContext>emptyList();
     }
 
-    @XapiRequestMapping(value = {"/commands/available/site"}, params = {"xsiType"}, method = GET)
+    @XapiRequestMapping(value = {"/commands/available/site"}, params = {"xsiType"}, method = GET, restrictTo = Admin)
     @ResponseBody
     public List<CommandSummaryForContext> availableCommands(final @RequestParam String xsiType)
             throws ElementNotFoundException {
@@ -218,10 +225,17 @@ public class CommandRestApi extends AbstractXapiRestController {
     }
 
     private void checkAdminOrThrow() throws UnauthorizedException {
-        UserI userI = getSessionUser();
-        if (!getRoleHolder().isSiteAdmin(userI)) {
+        checkAdminOrThrow(XDAT.getUserDetails());
+    }
+
+    private void checkAdminOrThrow(final UserI userI) throws UnauthorizedException {
+        if (!isAdmin(userI)) {
             throw new UnauthorizedException(String.format("User %s is not an admin.", userI == null ? "" : userI.getLogin()));
         }
+    }
+
+    private boolean isAdmin(final UserI userI) throws UnauthorizedException {
+        return getRoleHolder().isSiteAdmin(userI);
     }
 
     /*

@@ -23,6 +23,8 @@ import org.nrg.containers.services.ContainerConfigService;
 import org.nrg.containers.services.ContainerConfigService.CommandConfigurationException;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xdat.schema.SchemaElement;
+import org.nrg.xdat.security.helpers.Permissions;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.security.UserI;
@@ -550,8 +552,8 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     }
 
     private boolean userCanLaunch(final UserI userI, final String project, final CommandWrapper wrapper) {
-        // TODO How do we know if the user can launch this command wrapper in this project?
-        return true;
+        // TODO How do we know if the user can launch this particular command wrapper in this project?
+        return Permissions.canEditProject(userI, project);
     }
 
 
