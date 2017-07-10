@@ -190,30 +190,27 @@ public class LaunchRestApi extends AbstractXapiRestController {
      */
     @XapiRequestMapping(value = {"/wrappers/{wrapperId}/launch"}, method = POST)
     @ApiIgnore // Swagger UI does not correctly show this API endpoint
-    @ResponseBody
-    public LaunchReport launchCommandWQueryParams(final @PathVariable long wrapperId,
-                                                  final @RequestParam Map<String, String> allRequestParams) {
+    public ResponseEntity<LaunchReport> launchCommandWQueryParams(final @PathVariable long wrapperId,
+                                                                  final @RequestParam Map<String, String> allRequestParams) {
         log.info("Launch requested for command id " + String.valueOf(wrapperId));
 
-        return launchContainer(null, 0L, null, wrapperId, allRequestParams);
+        return returnLaunchReportWithStatus(launchContainer(null, 0L, null, wrapperId, allRequestParams));
     }
 
     @XapiRequestMapping(value = {"/wrappers/{wrapperId}/launch"}, method = POST, consumes = {JSON})
     @ApiOperation(value = "Resolve a command from the variable values in the request body, and launch it")
-    @ResponseBody
-    public LaunchReport launchCommandWJsonBody(final @PathVariable long wrapperId,
-                                               final @RequestBody Map<String, String> allRequestParams) {
+    public ResponseEntity<LaunchReport> launchCommandWJsonBody(final @PathVariable long wrapperId,
+                                                               final @RequestBody Map<String, String> allRequestParams) {
         log.info("Launch requested for command wrapper id " + String.valueOf(wrapperId));
 
-        return launchContainer(null, 0L, null, wrapperId, allRequestParams);
+        return returnLaunchReportWithStatus(launchContainer(null, 0L, null, wrapperId, allRequestParams));
     }
 
     @XapiRequestMapping(value = {"/projects/{project}/wrapper/{wrapperId}/launch"}, method = POST)
     @ApiIgnore // Swagger UI does not correctly show this API endpoint
-    @ResponseBody
-    public LaunchReport launchCommandWQueryParams(final @PathVariable String project,
-                                                  final @PathVariable long wrapperId,
-                                                  final @RequestParam Map<String, String> allRequestParams) {
+    public ResponseEntity<LaunchReport> launchCommandWQueryParams(final @PathVariable String project,
+                                                                  final @PathVariable long wrapperId,
+                                                                  final @RequestParam Map<String, String> allRequestParams) {
         log.info("Launch requested for wrapper id " + String.valueOf(wrapperId));
 
         final HttpStatus status = canEditProjectOrAdmin(project);
@@ -221,15 +218,14 @@ public class LaunchRestApi extends AbstractXapiRestController {
             return null;
         }
 
-        return launchContainer(project, 0L, null, wrapperId, allRequestParams);
+        return returnLaunchReportWithStatus(launchContainer(project, 0L, null, wrapperId, allRequestParams));
     }
 
     @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/launch"}, method = POST, consumes = {JSON})
     @ApiOperation(value = "Resolve a command from the variable values in the request body, and launch it")
-    @ResponseBody
-    public LaunchReport launchCommandWJsonBody(final @PathVariable String project,
-                                               final @PathVariable long wrapperId,
-                                               final @RequestBody Map<String, String> allRequestParams) {
+    public ResponseEntity<LaunchReport> launchCommandWJsonBody(final @PathVariable String project,
+                                                               final @PathVariable long wrapperId,
+                                                               final @RequestBody Map<String, String> allRequestParams) {
         log.info("Launch requested for wrapper id " + String.valueOf(wrapperId));
 
         final HttpStatus status = canEditProjectOrAdmin(project);
@@ -237,7 +233,7 @@ public class LaunchRestApi extends AbstractXapiRestController {
             return null;
         }
 
-        return launchContainer(project, 0L, null, wrapperId, allRequestParams);
+        return returnLaunchReportWithStatus(launchContainer(project, 0L, null, wrapperId, allRequestParams));
     }
 
     /*
@@ -245,7 +241,6 @@ public class LaunchRestApi extends AbstractXapiRestController {
      */
     @XapiRequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/launch"}, method = POST)
     @ApiIgnore // Swagger UI does not correctly show this API endpoint
-    @ResponseBody
     public ResponseEntity<LaunchReport> launchCommandWQueryParams(final @PathVariable long commandId,
                                                                   final @PathVariable String wrapperName,
                                                                   final @RequestParam Map<String, String> allRequestParams)
@@ -345,13 +340,14 @@ public class LaunchRestApi extends AbstractXapiRestController {
     }
 
     private ResponseEntity<LaunchReport> returnLaunchReportWithStatus(final LaunchReport launchReport) {
-        if (Success.class.isAssignableFrom(launchReport.getClass())) {
+        if (launchReport instanceof Success) {
             return ResponseEntity.ok(launchReport);
         } else {
             // TODO It would be better to return different stati for the different exception types.
             // But I don't think I want to throw an exception here, because I want the report to
             // be in the body. So it is what it is.
             return ResponseEntity.status(500).body(launchReport);
+            // return new ResponseEntity<>(launchReport, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
