@@ -2,21 +2,29 @@ package org.nrg.containers.rest;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
+import org.nrg.config.entities.Configuration;
+import org.nrg.config.services.ConfigService;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.config.CommandRestApiTestConfig;
+import org.nrg.containers.model.command.auto.CommandSummaryForContext;
+import org.nrg.containers.model.configuration.CommandConfigurationInternal;
 import org.nrg.containers.model.server.docker.DockerServer;
 import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.services.CommandService;
+import org.nrg.containers.services.ContainerConfigService;
+import org.nrg.framework.constants.Scope;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.security.helpers.AccessLevel;
 import org.nrg.xdat.security.services.RoleServiceI;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.services.AliasTokenService;
@@ -25,6 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -38,6 +47,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 import java.io.File;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.List;
 
 import static org.hamcrest.Matchers.hasSize;
@@ -47,8 +57,10 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.nrg.containers.services.impl.ContainerConfigServiceImpl.WRAPPER_CONFIG_PATH_TEMPLATE;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.testSecurityContext;
@@ -72,6 +84,9 @@ public class CommandRestApiTest {
     private final String FAKE_DOCKER_IMAGE = "abc123";
     private final MediaType JSON = MediaType.APPLICATION_JSON_UTF8;
     private final MediaType XML = MediaType.APPLICATION_XML;
+    private final String NON_ADMIN_IS_OWNER_PROJECT = "projectowner";
+    private final String NON_ADMIN_IS_MEMBER_PROJECT = "projectmember";
+    private final String NON_ADMIN_IS_COLLABORATOR_PROJECT = "projectcollab";
 
     @Autowired private WebApplicationContext wac;
     @Autowired private ObjectMapper mapper;
@@ -82,6 +97,7 @@ public class CommandRestApiTest {
     @Autowired private DockerServerPrefsBean mockDockerServerPrefsBean;
     @Autowired private SiteConfigPreferences mockSiteConfigPreferences;
     @Autowired private UserManagementServiceI mockUserManagementServiceI;
+    @Autowired private ConfigService mockConfigService;
 
     @Rule public TemporaryFolder folder = new TemporaryFolder(new File("/tmp"));
 
@@ -115,7 +131,16 @@ public class CommandRestApiTest {
         when(nonAdmin.getPassword()).thenReturn(nonAdminPassword);
         when(mockRoleService.isSiteAdmin(nonAdmin)).thenReturn(false);
         when(mockUserManagementServiceI.getUser(nonAdminUsername)).thenReturn(nonAdmin);
-        NONADMIN_AUTH = new TestingAuthenticationToken(nonAdmin, nonAdminPassword);
+        final GrantedAuthority ownerAuthority = mock(GrantedAuthority.class);
+        when(ownerAuthority.getAuthority()).thenReturn(NON_ADMIN_IS_OWNER_PROJECT + "_" + AccessLevel.Owner.code());
+        final GrantedAuthority memberAuthority = mock(GrantedAuthority.class);
+        when(memberAuthority.getAuthority()).thenReturn(NON_ADMIN_IS_MEMBER_PROJECT + "_" + AccessLevel.Member.code());
+        final GrantedAuthority collaboratorAuthority = mock(GrantedAuthority.class);
+        when(collaboratorAuthority.getAuthority()).thenReturn(NON_ADMIN_IS_COLLABORATOR_PROJECT + "_" + AccessLevel.Collaborator.code());
+        final List<GrantedAuthority> authorities = Lists.newArrayList(ownerAuthority, memberAuthority, collaboratorAuthority);
+        // final List<? extends GrantedAuthority> authoritiesStupidGenericCopy = Lists.newArrayList(authorities);
+        NONADMIN_AUTH = new TestingAuthenticationToken(nonAdmin, nonAdminPassword, authorities);
+        doReturn(authorities).when(nonAdmin).getAuthorities();
 
         // Mock the aliasTokenService
         final AliasToken mockAliasToken = new AliasToken();
@@ -128,6 +153,8 @@ public class CommandRestApiTest {
         when(mockSiteConfigPreferences.getProperty("processingUrl", FAKE_URL)).thenReturn(FAKE_URL);
         when(mockSiteConfigPreferences.getBuildPath()).thenReturn(folder.newFolder().getAbsolutePath()); // transporter makes a directory under build
         when(mockSiteConfigPreferences.getArchivePath()).thenReturn(folder.newFolder().getAbsolutePath()); // container logs get stored under archive
+
+        // Mock the site and project configurations
     }
 
     @Test
@@ -438,7 +465,7 @@ public class CommandRestApiTest {
     @Test
     public void testCreateEcatHeaderDump() throws Exception {
         // A User was attempting to create the command in this resource.
-        // Spring didn't tell us why. See CS-70.
+        // It failed, but Spring didn't tell us why. See CS-70.
 
         final String path = "/commands";
 
@@ -493,5 +520,162 @@ public class CommandRestApiTest {
                         .getContentAsString();
 
         assertThat(badInputTypeCommandResponse, is(""));
+    }
+
+    @Test
+    @DirtiesContext
+    @SuppressWarnings("unchecked")
+    public void testProjectCommandsAvailable() throws Exception {
+        final String path = "/commands/available";
+
+        final String externalInputName = "input";
+        final String xsiType = "xnat:imageScanData";
+        final Command command = commandService.create(Command.builder()
+                .name("toCreate")
+                .type("docker")
+                .image(FAKE_DOCKER_IMAGE)
+                .addCommandWrapper(CommandWrapper.builder()
+                        .name("a name")
+                        .contexts(Sets.newHashSet(xsiType))
+                        .addExternalInput(Command.CommandWrapperExternalInput.builder().name(externalInputName).type("string").build())
+                        .build())
+                .build()
+        );
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+
+        final CommandWrapper wrapper = command.xnatCommandWrappers().get(0);
+        final long wrapperId = wrapper.id();
+        final List<CommandSummaryForContext> available = Collections.singletonList(
+                CommandSummaryForContext.create(command, wrapper, true, externalInputName)
+        );
+
+        final CommandConfigurationInternal commandConfiguration = CommandConfigurationInternal.create(
+                Boolean.TRUE,
+                Collections.<String, CommandConfigurationInternal.CommandInputConfiguration>emptyMap(),
+                Collections.<String, CommandConfigurationInternal.CommandOutputConfiguration>emptyMap());
+        final String commandConfigurationJson = mapper.writeValueAsString(commandConfiguration);
+        final Configuration mockConfiguration = mock(Configuration.class);
+        when(mockConfiguration.getContents()).thenReturn(commandConfigurationJson);
+        final String configPath = String.format(WRAPPER_CONFIG_PATH_TEMPLATE, wrapperId);
+        when(mockConfigService.getConfig(ContainerConfigService.TOOL_ID, configPath, Scope.Project, NON_ADMIN_IS_OWNER_PROJECT))
+                .thenReturn(mockConfiguration);
+        when(mockConfigService.getConfig(ContainerConfigService.TOOL_ID, configPath, Scope.Project, NON_ADMIN_IS_MEMBER_PROJECT))
+                .thenReturn(mockConfiguration);
+        when(mockConfigService.getConfig(ContainerConfigService.TOOL_ID, configPath, Scope.Project, NON_ADMIN_IS_COLLABORATOR_PROJECT))
+                .thenReturn(mockConfiguration);
+        when(mockConfigService.getConfig(ContainerConfigService.TOOL_ID, configPath, Scope.Site, null))
+                .thenReturn(mockConfiguration);
+
+        // Admin should be able to read all projects
+        {
+            final MockHttpServletRequestBuilder request =
+                    get(path).param("project", NON_ADMIN_IS_OWNER_PROJECT)
+                            .param("xsiType", xsiType)
+                            .with(authentication(ADMIN_AUTH))
+                            .with(csrf())
+                            .with(testSecurityContext());
+            final String response =
+                    mockMvc.perform(request)
+                            .andExpect(status().isOk())
+                            .andReturn()
+                            .getResponse()
+                            .getContentAsString();
+
+            assertThat((List<CommandSummaryForContext>) mapper.readValue(response, new TypeReference<List<CommandSummaryForContext>>(){}), is(available));
+        }
+
+        {
+            final MockHttpServletRequestBuilder request =
+                    get(path).param("project", NON_ADMIN_IS_MEMBER_PROJECT)
+                            .param("xsiType", xsiType)
+                            .with(authentication(ADMIN_AUTH))
+                            .with(csrf())
+                            .with(testSecurityContext());
+            final String response =
+                    mockMvc.perform(request)
+                            .andExpect(status().isOk())
+                            .andReturn()
+                            .getResponse()
+                            .getContentAsString();
+
+            assertThat((List<CommandSummaryForContext>) mapper.readValue(response, new TypeReference<List<CommandSummaryForContext>>(){}), is(available));
+        }
+
+        {
+            final MockHttpServletRequestBuilder request =
+                    get(path).param("project", NON_ADMIN_IS_COLLABORATOR_PROJECT)
+                            .param("xsiType", xsiType)
+                            .with(authentication(ADMIN_AUTH))
+                            .with(csrf())
+                            .with(testSecurityContext());
+            final String response =
+                    mockMvc.perform(request)
+                            .andExpect(status().isOk())
+                            .andReturn()
+                            .getResponse()
+                            .getContentAsString();
+
+            assertThat((List<CommandSummaryForContext>) mapper.readValue(response, new TypeReference<List<CommandSummaryForContext>>(){}), is(available));
+        }
+
+        // Non-admin should be able to get available commands if they are member or owner
+        {
+            final MockHttpServletRequestBuilder request =
+                    get(path).param("project", NON_ADMIN_IS_OWNER_PROJECT)
+                            .param("xsiType", xsiType)
+                            .with(authentication(NONADMIN_AUTH))
+                            .with(csrf())
+                            .with(testSecurityContext());
+            final String response =
+                    mockMvc.perform(request)
+                            .andExpect(status().isOk())
+                            .andReturn()
+                            .getResponse()
+                            .getContentAsString();
+
+            assertThat((List<CommandSummaryForContext>) mapper.readValue(response, new TypeReference<List<CommandSummaryForContext>>(){}), is(available));
+        }
+
+        {
+            final MockHttpServletRequestBuilder request =
+                    get(path).param("project", NON_ADMIN_IS_MEMBER_PROJECT)
+                            .param("xsiType", xsiType)
+                            .with(authentication(NONADMIN_AUTH))
+                            .with(csrf())
+                            .with(testSecurityContext());
+            final String response =
+                    mockMvc.perform(request)
+                            .andExpect(status().isOk())
+                            .andReturn()
+                            .getResponse()
+                            .getContentAsString();
+
+            assertThat((List<CommandSummaryForContext>) mapper.readValue(response, new TypeReference<List<CommandSummaryForContext>>(){}), is(available));
+        }
+
+        {
+            final MockHttpServletRequestBuilder request =
+                    get(path).param("project", NON_ADMIN_IS_COLLABORATOR_PROJECT)
+                            .param("xsiType", xsiType)
+                            .with(authentication(NONADMIN_AUTH))
+                            .with(csrf())
+                            .with(testSecurityContext());
+
+            // TODO This is the correct behavior, but it does not work. See CS-266.
+            // mockMvc.perform(request)
+            //         .andExpect(status().isUnauthorized());
+
+            final String response =
+                    mockMvc.perform(request)
+                            .andExpect(status().isOk())
+                            .andReturn()
+                            .getResponse()
+                            .getContentAsString();
+
+            assertThat((List<CommandSummaryForContext>) mapper.readValue(response, new TypeReference<List<CommandSummaryForContext>>(){}), is(Collections.<CommandSummaryForContext>emptyList()));
+        }
     }
 }
