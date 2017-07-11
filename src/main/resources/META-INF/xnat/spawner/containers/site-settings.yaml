@@ -22,18 +22,23 @@ dockerSetupPanel:
                     contents:
                         pad:
                             tag: div.pad20top
+                        name:
+                            kind: panel.input.text
+                            id: name
+                            name: name
+                            label: Host Name
+                            validation: not-empty
                         host:
                             kind: panel.input.text
-                            id: host-name
+                            id: host
                             name: host
-                            label: Host Name
+                            label: Host Path
                             validation: not-empty
                         certPath:
                             kind: panel.input.text
                             id: cert-path
                             name: certPath
                             label: "Certificate Path"
-                            className: hidden
         containerHostTable:
             tag: "div#container-host-manager"
         csStylesheet:

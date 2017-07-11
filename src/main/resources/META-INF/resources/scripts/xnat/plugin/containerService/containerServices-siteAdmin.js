@@ -74,13 +74,6 @@ var XNAT = getObject(XNAT || {});
     XNAT.plugin.containerService.containerHostManager = containerHostManager =
         getObject(XNAT.plugin.containerService.containerHostManager || {});
 
-    containerHostManager.samples = [
-        {
-            "host": "unix:///var/run/docker.sock",
-            "cert-path": ""
-        }
-    ];
-
     function containerHostUrl(appended){
         appended = isDefined(appended) ? '/' + appended : '';
         return rootUrl('/xapi/docker/server' + appended);
@@ -101,15 +94,14 @@ var XNAT = getObject(XNAT || {});
 
     // dialog to create/edit hosts
     containerHostManager.dialog = function(item, isNew){
-        var tmpl = $('#container-host-editor-template');
-        var doWhat = !item ? 'New' : 'Edit';
-        isNew = firstDefined(isNew, doWhat === 'New');
+        var tmpl = $('#container-host-editor-template'),
+            doWhat = (isNew) ? 'Create' : 'Edit';
         item = item || {};
         xmodal.open({
             title: doWhat + ' Container Server Host',
             template: tmpl.clone(),
-            width: 350,
-            height: 250,
+            width: 450,
+            height: 300,
             scroll: false,
             padding: '0',
             beforeShow: function(obj){
@@ -124,43 +116,59 @@ var XNAT = getObject(XNAT || {});
                 // the form panel is 'containerHostTemplate' in site-admin-element.yaml
                 var $form = obj.$modal.find('form');
                 var $host = $form.find('input[name=host]');
-                $form.submitJSON({
-                    method: isNew ? 'POST' : 'PUT',
-                    url: isNew ? containerHostUrl() : containerHostUrl(item.id),
-                    validate: function(){
-
-                        $form.find(':input').removeClass('invalid');
-
-                        var errors = 0;
-                        var errorMsg = 'Errors were found with the following fields: <ul>';
-
-                        [$host].forEach(function($el){
-                            var el = $el[0];
-                            if (!el.value) {
-                                errors++;
-                                errorMsg += '<li><b>' + el.title + '</b> is required.</li>';
-                                $el.addClass('invalid');
-                            }
-                        });
-
-                        errorMsg += '</ul>';
-
-                        if (errors > 0) {
-                            xmodal.message('Errors Found', errorMsg, { height: 300 });
+                if (isNew) {
+                    xmodal.confirm({
+                        height: 220,
+                        scroll: false,
+                        content: "<p>This will replace your existing host definition. Are you sure you want to do this?</p>"+
+                            "<p><strong>This action cannot be undone.</strong></p>",
+                        okAction: function(){
+                            submitHostEditor($form,$host);
                         }
-
-                        return errors === 0;
-
-                    },
-                    success: function(){
-                        containerHostManager.refreshTable();
-                        xmodal.close(obj.$modal);
-                        XNAT.ui.banner.top(2000, 'Saved.', 'success')
-                    }
-                });
+                    })
+                } else {
+                    submitHostEditor($form,$host);
+                }
             }
         });
     };
+
+    function submitHostEditor($form,$host){
+        $form.submitJSON({
+            method: 'POST',
+            url: containerHostUrl(),
+            validate: function(){
+
+                $form.find(':input').removeClass('invalid');
+
+                var errors = 0;
+                var errorMsg = 'Errors were found with the following fields: <ul>';
+
+                [$host].forEach(function($el){
+                    var el = $el[0];
+                    if (!el.value) {
+                        errors++;
+                        errorMsg += '<li><b>' + el.title + '</b> is required.</li>';
+                        $el.addClass('invalid');
+                    }
+                });
+
+                errorMsg += '</ul>';
+
+                if (errors > 0) {
+                    xmodal.message('Errors Found', errorMsg, { height: 300 });
+                }
+
+                return errors === 0;
+
+            },
+            success: function(){
+                containerHostManager.refreshTable();
+                xmodal.closeAll();
+                XNAT.ui.banner.top(2000, 'Saved.', 'success')
+            }
+        });
+    }
 
     // create table for Container Hosts
     containerHostManager.table = function(container, callback){
@@ -177,8 +185,8 @@ var XNAT = getObject(XNAT || {});
 
         // add table header row
         chTable.tr()
-            .th({ addClass: 'left', html: '<b>Host</b>' })
-            .th('<b>Server Type</b>')
+            .th({ addClass: 'left', html: '<b>Host Name</b>' })
+            .th('<b>Host Path</b>')
             .th('<b>Default</b>')
             .th('<b>Actions</b>');
 
@@ -260,9 +268,9 @@ var XNAT = getObject(XNAT || {});
         containerHostManager.getAll().done(function(data){
             data = [].concat(data);
             data.forEach(function(item){
-                chTable.tr({ title: item.host, data: { id: item.id, host: item.host, certPath: item.certPath}})
-                    .td([editLink(item, item.host)]).addClass('host')
-                    .td([['div.center', ['Docker']]])
+                chTable.tr({ title: item.name, data: { id: item.id, host: item.host, certPath: item.certPath}})
+                    .td([editLink(item, item.name)]).addClass('host')
+                    .td([['div.center', [item.host]]])
                     .td([['div.center', [defaultToggle(item)]]])
                     .td([['div.center', [editButton(item), spacer(10), deleteButton(item)]]]);
             });
