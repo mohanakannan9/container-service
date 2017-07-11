@@ -660,7 +660,7 @@ var XNAT = getObject(XNAT || {});
 
     function commandUrl(appended){
         appended = isDefined(appended) ? appended : '';
-        return rootUrl('/xapi/commands' + appended);
+        return csrfUrl('/xapi/commands' + appended);
     }
 
     function imagePullUrl(appended,hubId){
@@ -815,7 +815,7 @@ var XNAT = getObject(XNAT || {});
     };
 
     // create a read-only code editor dialog to view a command definition
-    commandDefinition.dialog = function(commandDef,newCommand){
+    commandDefinition.dialog = function(commandDef,newCommand,imageName){
         var _source,_editor;
         if (!newCommand) {
             commandDef = commandDef || {};
@@ -851,7 +851,7 @@ var XNAT = getObject(XNAT || {});
             });
 
             _editor.openEditor({
-                title: 'Add New Command',
+                title: 'Add New Command to '+imageName,
                 classes: 'plugin-json',
                 buttons: {
                     save: {
@@ -859,6 +859,8 @@ var XNAT = getObject(XNAT || {});
                         action: function(){
                             var editorContent = _editor.getValue().code;
                             // editorContent = JSON.stringify(editorContent).replace(/\r?\n|\r/g,' ');
+
+                            var url = (imageName) ? commandUrl('?image='+imageName) : commandUrl();
 
                             XNAT.xhr.postJSON({
                                 url: commandUrl(),
@@ -1045,12 +1047,14 @@ var XNAT = getObject(XNAT || {});
     imageListManager.init = function(container){
         var $manager = $$(container||'div#image-list-container');
 
-        var newCommand = spawn('button.new-command.btn.sm', {
-            html: 'Add New Command',
-            onclick: function(){
-                commandDefinition.dialog(null,true); // opens the command code editor dialog with "new command" set to true
-            }
-        });
+        function newCommandButton(image) {
+            return spawn('button.btn.sm',{
+                html: 'Add New Command',
+                onclick: function(){
+                    commandDefinition.dialog(null,true,image.tags[0])
+                }
+            });
+        }
 
         function deleteImageButton(image) {
             return spawn('button.btn.sm',{
@@ -1088,9 +1092,18 @@ var XNAT = getObject(XNAT || {});
                 for (var i=0, j=data.length; i<j; i++) {
                     var imageInfo = data[i];
                     $manager.append(spawn('div.imageContainer',[
-                        ['h3.imageTitle',[imageInfo.tags[0], ['span.pull-right',[ deleteImageButton(imageInfo) ]]]],
-                        ['div.imageCommandList',[commandListManager.table(imageInfo.tags[0])]],
-                        ['div',[ newCommand ]]
+                        spawn('h3.imageTitle',[
+                            imageInfo.tags[0],
+                            spawn( 'span.pull-right',[
+                                deleteImageButton(imageInfo)
+                            ]),
+                            spawn( 'span.pull-right.pad10h',[
+                                newCommandButton(imageInfo)
+                            ])
+                        ]),
+                        spawn('div.imageCommandList',[
+                            commandListManager.table(imageInfo.tags[0])
+                        ])
                     ]));
                 }
             } else {
@@ -1937,14 +1950,19 @@ var XNAT = getObject(XNAT || {});
 
         function displayProject(mounts){
             // assume that the first mount of a container is an input from a project. Parse the URI for that mount and return the project ID.
-            var inputMount = mounts[0]['xnat-host-path'];
-            if (inputMount === undefined) return 'unknown';
+            if (mounts.length) {
+                var inputMount = mounts[0]['xnat-host-path'];
+                if (inputMount === undefined) return 'unknown';
 
-            inputMount = inputMount.replace('/data/xnat/archive/','');
-            inputMount = inputMount.replace('/data/archive/','');
-            inputMount = inputMount.replace('/REST/archive/','');
-            var inputMountEls = inputMount.split('/');
-            return spawn('a',{ href: '/data/projects/'+ inputMountEls[0] + '?format=html', html: inputMountEls[0] });
+                inputMount = inputMount.replace('/data/xnat/archive/','');
+                inputMount = inputMount.replace('/data/archive/','');
+                inputMount = inputMount.replace('/REST/archive/','');
+                var inputMountEls = inputMount.split('/');
+                return spawn('a',{ href: '/data/projects/'+ inputMountEls[0] + '?format=html', html: inputMountEls[0] });
+            } else {
+                return 'unknown';
+            }
+
         }
 
         function displayOutput(outputArray){
