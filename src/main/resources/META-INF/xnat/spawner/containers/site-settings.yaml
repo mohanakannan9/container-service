@@ -70,8 +70,8 @@ imageHostsPanel:
                             contents:
                                 id:
                                     kind: panel.input.hidden
-                                    id: id
-                                    name: hubId
+                                    id: hub-id
+                                    name: id
                                 name:
                                     kind: panel.input.text
                                     id: hub-name

@@ -347,14 +347,6 @@ var XNAT = getObject(XNAT || {});
     XNAT.plugin.containerService.imageHostManager = imageHostManager =
         getObject(XNAT.plugin.containerService.imageHostManager || {});
 
-    imageHostManager.samples = [
-        {
-            "name": "Docker Hub",
-            "url": "https://hub.docker.com",
-            "enabled": true
-        }
-    ];
-
     function imageHostUrl(isDefault,appended){
         appended = isDefined(appended) ? '/' + appended : '';
         if (isDefault) {
@@ -380,8 +372,8 @@ var XNAT = getObject(XNAT || {});
     // dialog to create/edit hosts
     imageHostManager.dialog = function(item, isNew){
         var tmpl = $('#image-host-editor-template');
-        var doWhat = !item ? 'New' : 'Edit';
-        isNew = firstDefined(isNew, doWhat === 'New');
+        isNew = isNew || false;
+        var doWhat = (isNew) ? 'Create' : 'Edit';
         item = item || {};
         xmodal.open({
             title: doWhat + ' Image Hub',
@@ -406,7 +398,7 @@ var XNAT = getObject(XNAT || {});
                 var isDefault = $form.find('input[name=default]').val();
                 $form.submitJSON({
                     method: 'POST',
-                    url: (isNew) ? containerHostUrl(isDefault) : containerHostUrl(isDefault,item.id),
+                    url: (isNew) ? imageHostUrl(isDefault) : imageHostUrl(isDefault,item.id),
                     validate: function(){
 
                         $form.find(':input').removeClass('invalid');
