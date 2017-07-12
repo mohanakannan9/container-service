@@ -40,16 +40,28 @@ var XNAT = getObject(XNAT || {});
         })
     }
 
-    function errorHandler(e, title){
+    function errorHandler(e, title, closeAll){
         console.log(e);
         title = (title) ? 'Error Found: '+ title : 'Error';
+        closeAll = (closeAll === undefined) ? true : closeAll;
         var errormsg = (e.statusText) ? '<p><strong>Error ' + e.status + ': '+ e.statusText+'</strong></p><p>' + e.responseText + '</p>' : e;
-        xmodal.alert({
+        XNAT.dialog.open({
+            width: 450,
             title: title,
             content: errormsg,
-            okAction: function () {
-                xmodal.closeAll();
-            }
+            buttons: [
+                {
+                    label: 'OK',
+                    isDefault: true,
+                    close: true,
+                    action: function(){
+                        if (closeAll) {
+                            xmodal.closeAll();
+
+                        }
+                    }
+                }
+            ]
         });
     }
 
@@ -872,7 +884,7 @@ var XNAT = getObject(XNAT || {});
                                     XNAT.ui.banner.top(2000, 'Command definition saved.', 'success');
                                 },
                                 fail: function(e){
-                                    errorHandler(e, 'Could Not Save');
+                                    errorHandler(e, 'Could Not Save', false);
                                 }
                             });
                         }
@@ -1141,12 +1153,6 @@ var XNAT = getObject(XNAT || {});
     XNAT.plugin.containerService.configDefinition = configDefinition =
         getObject(XNAT.plugin.containerService.configDefinition || {});
 
-    /* duplicate - delete
-    function commandUrl(appended){
-        appended = isDefined(appended) ? appended : '';
-        return rootUrl('/xapi/commands' + appended);
-    }
-    */
 
     function configUrl(command,wrapperName,appended){
         appended = isDefined(appended) ? '?' + appended : '';
@@ -1402,7 +1408,7 @@ var XNAT = getObject(XNAT || {});
     commandConfigManager.table = function(){
 
         // initialize the table - we'll add to it below
-        var chTable = XNAT.table({
+        var ccmTable = XNAT.table({
             className: 'sitewide-command-configs xnat-table',
             style: {
                 width: '100%',
@@ -1412,7 +1418,7 @@ var XNAT = getObject(XNAT || {});
         });
 
         // add table header row
-        chTable.tr()
+        ccmTable.tr()
             .th({ addClass: 'left', html: '<b>XNAT Command Label</b>' })
             .th('<b>Container</b>')
             .th('<b>Enabled</b>')
@@ -1512,9 +1518,9 @@ var XNAT = getObject(XNAT || {});
                     if (command.xnat) {
                         for (var k = 0, l = command.xnat.length; k < l; k++) {
                             var wrapper = command.xnat[k];
-                            chTable.tr({title: wrapper.name, data: {wrapperid: wrapper.id, commandid: command.id, name: wrapper.name, image: command.image}})
+                            ccmTable.tr({title: wrapper.name, data: {wrapperid: wrapper.id, commandid: command.id, name: wrapper.name, image: command.image}})
                                 .td([viewLink(command, wrapper, wrapper.description)]).addClass('name')
-                                .td(command.image)
+                                .td([['span.truncate.truncate200', command.image ]])
                                 .td([['div', [enabledCheckbox(command,wrapper)]]])
                                 .td([['div.center', [viewConfigButton(command,wrapper), spacer(10), deleteConfigButton(command,wrapper)]]]);
 
@@ -1523,14 +1529,14 @@ var XNAT = getObject(XNAT || {});
                 }
             } else {
                 // create a handler when no command data is returned.
-                chTable.tr({title: 'No command config data found'})
+                ccmTable.tr({title: 'No command config data found'})
                     .td({colSpan: '5', html: 'No XNAT-enabled Commands Found'});
             }
         });
 
-        commandConfigManager.$table = $(chTable.table);
+        commandConfigManager.$table = $(ccmTable.table);
 
-        return chTable.table;
+        return ccmTable.table;
     };
     
     commandConfigManager.refresh = commandConfigManager.refreshTable = function(container){
