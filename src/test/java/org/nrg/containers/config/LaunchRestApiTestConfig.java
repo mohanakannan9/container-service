@@ -1,6 +1,5 @@
 package org.nrg.containers.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.mockito.Mockito;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
@@ -8,6 +7,7 @@ import org.nrg.containers.rest.LaunchRestApi;
 import org.nrg.containers.services.CommandResolutionService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerEntityService;
+import org.nrg.containers.services.ContainerFinalizeService;
 import org.nrg.containers.services.ContainerService;
 import org.nrg.containers.services.impl.ContainerServiceImpl;
 import org.nrg.framework.services.ContextService;
@@ -44,27 +44,25 @@ public class LaunchRestApiTestConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public ContainerService containerService(final CommandService commandService,
-                                             final ContainerControlApi containerControlApi,
+    public ContainerService containerService(final ContainerControlApi containerControlApi,
                                              final ContainerEntityService containerEntityService,
                                              final CommandResolutionService commandResolutionService,
                                              final AliasTokenService aliasTokenService,
                                              final SiteConfigPreferences siteConfigPreferences,
-                                             final TransportService transportService,
-                                             final PermissionsServiceI permissionsService,
-                                             final CatalogService catalogService,
-                                             final ObjectMapper mapper) {
-        final ContainerService containerService =
-                new ContainerServiceImpl(commandService, containerControlApi, containerEntityService,
-                        commandResolutionService, aliasTokenService, siteConfigPreferences,
-                        transportService, catalogService, mapper);
-        ((ContainerServiceImpl)containerService).setPermissionsService(permissionsService);
-        return containerService;
+                                             final ContainerFinalizeService containerFinalizeService) {
+        return new ContainerServiceImpl(containerControlApi, containerEntityService,
+                commandResolutionService, aliasTokenService, siteConfigPreferences,
+                containerFinalizeService);
     }
 
     @Bean
     public CommandResolutionService commandResolutionService() {
         return Mockito.mock(CommandResolutionService.class);
+    }
+
+    @Bean
+    public ContainerFinalizeService mockContainerFinalizeService() {
+        return Mockito.mock(ContainerFinalizeService.class);
     }
 
     @Bean

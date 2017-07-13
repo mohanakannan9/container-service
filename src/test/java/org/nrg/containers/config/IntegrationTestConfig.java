@@ -28,9 +28,11 @@ import org.nrg.containers.services.CommandLabelService;
 import org.nrg.containers.services.CommandResolutionService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerEntityService;
+import org.nrg.containers.services.ContainerFinalizeService;
 import org.nrg.containers.services.ContainerService;
 import org.nrg.containers.services.impl.CommandLabelServiceImpl;
 import org.nrg.containers.services.impl.CommandResolutionServiceImpl;
+import org.nrg.containers.services.impl.ContainerFinalizeServiceImpl;
 import org.nrg.containers.services.impl.ContainerServiceImpl;
 import org.nrg.containers.services.impl.HibernateContainerEntityService;
 import org.nrg.framework.services.NrgEventService;
@@ -102,22 +104,15 @@ public class IntegrationTestConfig {
     Container launch Service and dependencies
      */
     @Bean
-    public ContainerService containerService(final CommandService commandService,
-                                             final ContainerControlApi containerControlApi,
+    public ContainerService containerService(final ContainerControlApi containerControlApi,
                                              final ContainerEntityService containerEntityService,
                                              final CommandResolutionService commandResolutionService,
                                              final AliasTokenService aliasTokenService,
                                              final SiteConfigPreferences siteConfigPreferences,
-                                             final TransportService transportService,
-                                             final PermissionsServiceI permissionsService,
-                                             final CatalogService catalogService,
-                                             final ObjectMapper mapper) {
-        final ContainerService containerService =
-                new ContainerServiceImpl(commandService, containerControlApi, containerEntityService,
+                                             final ContainerFinalizeService containerFinalizeService) {
+        return new ContainerServiceImpl(containerControlApi, containerEntityService,
                         commandResolutionService, aliasTokenService, siteConfigPreferences,
-                        transportService, catalogService, mapper);
-        ((ContainerServiceImpl)containerService).setPermissionsService(permissionsService);
-        return containerService;
+                        containerFinalizeService);
     }
 
     @Bean
@@ -126,6 +121,15 @@ public class IntegrationTestConfig {
                                                              final SiteConfigPreferences siteConfigPreferences,
                                                              final ObjectMapper objectMapper) {
         return new CommandResolutionServiceImpl(commandService, configService, siteConfigPreferences, objectMapper);
+    }
+
+    @Bean
+    public ContainerFinalizeService containerFinalizeService(final ContainerControlApi containerControlApi,
+                                                             final SiteConfigPreferences siteConfigPreferences,
+                                                             final TransportService transportService,
+                                                             final CatalogService catalogService,
+                                                             final PermissionsServiceI permissionsService) {
+        return new ContainerFinalizeServiceImpl(containerControlApi, siteConfigPreferences, transportService, catalogService, permissionsService);
     }
 
     @Bean
