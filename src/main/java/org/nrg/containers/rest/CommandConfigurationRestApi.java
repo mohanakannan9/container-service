@@ -3,7 +3,12 @@ package org.nrg.containers.rest;
 import io.swagger.annotations.Api;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.exceptions.ConfigServiceException;
-import org.nrg.containers.exceptions.*;
+import org.nrg.containers.exceptions.BadRequestException;
+import org.nrg.containers.exceptions.CommandResolutionException;
+import org.nrg.containers.exceptions.CommandValidationException;
+import org.nrg.containers.exceptions.ContainerException;
+import org.nrg.containers.exceptions.DockerServerException;
+import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.configuration.CommandConfiguration;
 import org.nrg.containers.model.settings.ContainerServiceSettings;
 import org.nrg.containers.services.CommandService;
@@ -26,9 +31,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
-import static org.springframework.web.bind.annotation.RequestMethod.*;
+import static org.springframework.web.bind.annotation.RequestMethod.DELETE;
+import static org.springframework.web.bind.annotation.RequestMethod.GET;
+import static org.springframework.web.bind.annotation.RequestMethod.POST;
+import static org.springframework.web.bind.annotation.RequestMethod.PUT;
 
 @XapiRestController
 @Api("Command Configuration API for XNAT Container service")

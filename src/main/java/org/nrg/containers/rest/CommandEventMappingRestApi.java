@@ -32,7 +32,10 @@ import java.util.Date;
 import java.util.List;
 
 import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
-import static org.springframework.web.bind.annotation.RequestMethod.*;
+import static org.springframework.web.bind.annotation.RequestMethod.DELETE;
+import static org.springframework.web.bind.annotation.RequestMethod.GET;
+import static org.springframework.web.bind.annotation.RequestMethod.POST;
+import static org.springframework.web.bind.annotation.RequestMethod.PUT;
 
 @XapiRestController
 @RequestMapping("/commandeventmapping")
