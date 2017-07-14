@@ -6,10 +6,12 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.action.ClientException;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.exceptions.UnauthorizedException;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.container.entity.ContainerEntityMount;
 import org.nrg.containers.model.container.entity.ContainerEntityOutput;
@@ -199,6 +201,11 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
             for (final ContainerEntityOutput output: containerEntity.getOutputs()) {
                 try {
                     output.setCreated(uploadOutput(output));
+                } catch (UnauthorizedException e) {
+                    log.error("Cannot upload files for command output " + output.getName() + ". " + e.getMessage());
+                    if (output.isRequired()) {
+                        failedRequiredOutputs.add(e);
+                    }
                 } catch (ContainerException | RuntimeException e) {
                     log.error("Cannot upload files for command output " + output.getName(), e);
                     if (output.isRequired()) {
@@ -211,7 +218,7 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
             return failedRequiredOutputs;
         }
 
-        private String uploadOutput(final ContainerEntityOutput output) throws ContainerException {
+        private String uploadOutput(final ContainerEntityOutput output) throws ContainerException, UnauthorizedException {
             if (log.isInfoEnabled()) {
                 log.info(String.format(prefix + "Uploading output \"%s\".", output.getName()));
             }
@@ -271,6 +278,8 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
                     if (StringUtils.isBlank(createdUri)) {
                         createdUri = parentUri + "/resources/" + resourcecatalog.getLabel();
                     }
+                } catch (ClientException e) {
+                    throw new UnauthorizedException(prefix + "User does not have permissions to upload files to " + parentUri + ".", e);
                 } catch (Exception e) {
                     throw new ContainerException(prefix + "Could not upload files to resource.", e);
                 }
