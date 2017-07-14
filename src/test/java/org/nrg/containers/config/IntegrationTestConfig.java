@@ -35,6 +35,7 @@ import org.nrg.containers.services.impl.CommandResolutionServiceImpl;
 import org.nrg.containers.services.impl.ContainerFinalizeServiceImpl;
 import org.nrg.containers.services.impl.ContainerServiceImpl;
 import org.nrg.containers.services.impl.HibernateContainerEntityService;
+import org.nrg.framework.services.ContextService;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.transporter.TransportService;
 import org.nrg.transporter.TransportServiceImpl;
@@ -43,6 +44,7 @@ import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xnat.services.archive.CatalogService;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -160,6 +162,13 @@ public class IntegrationTestConfig {
     @Bean
     public CatalogService catalogService() {
         return Mockito.mock(CatalogService.class);
+    }
+
+    @Bean
+    public ContextService contextService(final ApplicationContext applicationContext) {
+        final ContextService contextService = new ContextService();
+        contextService.setApplicationContext(applicationContext);
+        return contextService;
     }
 
     /*
