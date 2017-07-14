@@ -302,6 +302,7 @@ public class LaunchRestApiTest {
         assertThat(failure.message(), is(exceptionMessage));
     }
 
+    @SuppressWarnings("unchecked")
     private ArgumentMatcher<Map<String, String>> isMapWithEntry(final String key, final String value) {
         return new ArgumentMatcher<Map<String, String>>() {
             @Override
