@@ -18,6 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.exceptions.CommandInputResolutionException;
 import org.nrg.containers.exceptions.CommandResolutionException;
+import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.ContainerMountResolutionException;
 import org.nrg.containers.exceptions.UnauthorizedException;
 import org.nrg.containers.model.command.auto.Command.CommandInput;
@@ -58,6 +59,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.URIManager.ArchiveItemURI;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
+import org.nrg.xnat.turbine.utils.ArchivableItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -373,7 +375,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                     .rawInputValues(inputValues)
                     .wrapperInputValues(wrapperInputValues) // TODO remove this property
                     .commandInputValues(commandInputValues) // TODO remove this property
-                    .outputs(resolveOutputs(resolvedInputValuesByReplacementKey))
+                    .outputs(resolveOutputs(resolvedInputTrees, resolvedInputValuesByReplacementKey))
                     .commandLine(resolveCommandLine(resolvedInputTrees))
                     .environmentVariables(resolveEnvironmentVariables(resolvedInputValuesByReplacementKey))
                     .workingDirectory(resolveWorkingDirectory(resolvedInputValuesByReplacementKey))
@@ -1423,7 +1425,8 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
         }
 
         @Nonnull
-        private List<ResolvedCommandOutput> resolveOutputs(final Map<String, String> resolvedInputValuesByReplacementKey)
+        private List<ResolvedCommandOutput> resolveOutputs(final List<ResolvedInputTreeNode<? extends Input>> resolvedInputTrees,
+                                                           final Map<String, String> resolvedInputValuesByReplacementKey)
                 throws CommandResolutionException {
             log.info("Resolving command outputs.");
             final List<ResolvedCommandOutput> resolvedOutputs = Lists.newArrayList();
@@ -1449,6 +1452,70 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 }
                 log.debug("Found Output Handler \"{}\" for Command output \"{}\".", commandOutputHandler.name(), commandOutput.name());
 
+                // Fail fast: if we will not be able to create the output, either throw or log that now and don't try later.
+                // First check that the handler input has a unique value
+                final ResolvedInputValue parentInputResolvedValue = getInputValueByName(commandOutputHandler.xnatInputName(), resolvedInputTrees);
+                if (parentInputResolvedValue == null) {
+                    final String message = String.format("Cannot resolve output \"%s\". " +
+                                    "Input \"%s\" is supposed to handle the output, but it does not have a uniquely resolved value. " +
+                                    "Either there is no value, or there are multiple values." +
+                                    "(We can't loop over input values yet, so the latter is an error as much as the former.)",
+                            commandOutput.name(), commandOutputHandler.xnatInputName());
+                    if (Boolean.TRUE.equals(commandOutput.required())) {
+                        throw new CommandResolutionException(message);
+                    } else {
+                        log.error("Skipping output \"{}\".", commandOutput.name());
+                        log.error(message);
+                        continue;
+                    }
+                }
+
+                // Next check that the handler input's value is an XNAT object
+                final String parentValue = parentInputResolvedValue.value() != null ? parentInputResolvedValue.value() : "";
+                URIManager.DataURIA uri = null;
+                try {
+                    uri = UriParserUtils.parseURI(parentValue.startsWith("/archive") ? parentValue : "/archive" + parentValue);
+                } catch (MalformedURLException ignored) {
+                    // ignored
+                }
+
+                if (uri == null || !(uri instanceof ArchiveItemURI)) {
+                    final String message = String.format("Cannot resolve output \"%s\". " +
+                                    "Input \"%s\" is supposed to handle the output, but it does not have an XNAT object value.",
+                            commandOutput.name(), commandOutputHandler.xnatInputName());
+                    if (Boolean.TRUE.equals(commandOutput.required())) {
+                        throw new CommandResolutionException(message);
+                    } else {
+                        log.error("Skipping output \"{}\".", commandOutput.name());
+                        log.error(message);
+                        continue;
+                    }
+                }
+
+                // Next check that the user has edit permissions on the handler input's XNAT object
+                final URIManager.ArchiveItemURI resourceURI = (URIManager.ArchiveItemURI) uri;
+                final ArchivableItem item = resourceURI.getSecurityItem();
+                boolean canEdit;
+                try {
+                    canEdit = Permissions.canEdit(userI, item);
+                } catch (Exception ignored) {
+                    canEdit = false;
+                }
+                if (!canEdit) {
+                    final String message = String.format("Cannot resolve output \"%s\". " +
+                                    "Input \"%s\" is supposed to handle the output, but user \"%s\" does not have permission " +
+                                    "to edit the XNAT object \"%s\".",
+                            commandOutput.name(), commandOutputHandler.xnatInputName(),
+                            userI.getLogin(), parentValue);
+                    if (Boolean.TRUE.equals(commandOutput.required())) {
+                        throw new CommandResolutionException(message);
+                    } else {
+                        log.error("Skipping output \"{}\".", commandOutput.name());
+                        log.error(message);
+                        continue;
+                    }
+                }
+
                 final ResolvedCommandOutput resolvedOutput = ResolvedCommandOutput.builder()
                         .name(commandOutput.name())
                         .required(commandOutput.required())
@@ -1459,8 +1526,6 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                         .path(resolveTemplate(commandOutput.path(), resolvedInputValuesByReplacementKey))
                         .label(resolveTemplate(commandOutputHandler.label(), resolvedInputValuesByReplacementKey))
                         .build();
-
-                // TODO Anything else needed to resolve an output?
 
                 log.debug("Adding resolved output \"{}\" to resolved command.", resolvedOutput.name());
 
@@ -1954,6 +2019,47 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 log.debug("No jsonpath substring found.");
             }
             return stringThatMayContainJsonpathSubstring;
+        }
+
+        @Nullable
+        private ResolvedInputValue getInputValueByName(final String name, final List<ResolvedInputTreeNode<? extends Input>> resolvedInputTrees) {
+            for (final ResolvedInputTreeNode<? extends Input> root : resolvedInputTrees) {
+                log.debug("Looking for input {} on input tree rooted on input {}.", name, root.input().name());
+                final ResolvedInputValue resolvedInputValue = getInputValueByName(name, root);
+
+                if (resolvedInputValue != null) {
+                    return resolvedInputValue;
+                }
+            }
+
+            log.debug("Did not find unique value for input {}.", name);
+            return null;
+        }
+
+        @Nullable
+        private ResolvedInputValue getInputValueByName(final String name, final ResolvedInputTreeNode<? extends Input> resolvedInputTreeNode) {
+            log.debug("Checking input node with input \"{}\".", resolvedInputTreeNode.input().name());
+            final List<ResolvedInputTreeValueAndChildren> valuesAndChildren = resolvedInputTreeNode.valuesAndChildren();
+            if (valuesAndChildren.size() != 1) {
+                log.debug("Input \"{}\" does not have a uniquely resolved value. There is no hope of its children having unique values. Returning null.", resolvedInputTreeNode.input().name());
+                return null;
+            }
+
+            log.debug("Input \"{}\" has a uniquely resolved value.", resolvedInputTreeNode.input().name());
+            final ResolvedInputTreeValueAndChildren valueAndChildren = valuesAndChildren.get(0);
+            if (resolvedInputTreeNode.input().name() != null && resolvedInputTreeNode.input().name().equals(name)) {
+                log.debug("Found target input \"{}\".", name);
+                return valueAndChildren.resolvedValue();
+            } else {
+                log.debug("Input \"{}\" not found. Checking children.", name);
+                for (final ResolvedInputTreeNode<? extends Input> child : valueAndChildren.children()) {
+                    final ResolvedInputValue resolvedInputValue = getInputValueByName(name, child);
+                    if (resolvedInputValue != null) {
+                        return resolvedInputValue;
+                    }
+                }
+            }
+            return null;
         }
     }
 

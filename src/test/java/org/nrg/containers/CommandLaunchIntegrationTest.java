@@ -21,7 +21,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 import org.nrg.containers.api.DockerControlApi;
 import org.nrg.containers.config.IntegrationTestConfig;
 import org.nrg.containers.model.command.auto.Command;
@@ -39,9 +38,18 @@ import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.containers.services.ContainerService;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.helpers.uri.UriParserUtils;
+import org.nrg.xnat.helpers.uri.archive.impl.ExptURI;
+import org.nrg.xnat.helpers.uri.archive.impl.ProjURI;
+import org.nrg.xnat.turbine.utils.ArchivableItem;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,9 +76,14 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeThat;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mock;
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
+import static org.powermock.api.mockito.PowerMockito.when;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+@RunWith(PowerMockRunner.class)
+@PowerMockRunnerDelegate(SpringJUnit4ClassRunner.class)
+@PrepareForTest(UriParserUtils.class)
+@PowerMockIgnore({"org.apache.*", "java.*", "javax.*"})
 @ContextConfiguration(classes = IntegrationTestConfig.class)
 @Transactional
 public class CommandLaunchIntegrationTest {
@@ -94,6 +107,7 @@ public class CommandLaunchIntegrationTest {
     @Autowired private DockerServerPrefsBean mockDockerServerPrefsBean;
     @Autowired private SiteConfigPreferences mockSiteConfigPreferences;
     @Autowired private UserManagementServiceI mockUserManagementServiceI;
+    @Autowired private PermissionsServiceI mockPermissionsServiceI;
 
     @Rule public TemporaryFolder folder = new TemporaryFolder(new File(System.getProperty("user.dir") + "/build"));
 
@@ -156,11 +170,15 @@ public class CommandLaunchIntegrationTest {
         when(mockDockerServerPrefsBean.toPojo()).thenCallRealMethod();
 
         // Mock the userI
-        mockUser = Mockito.mock(UserI.class);
+        mockUser = mock(UserI.class);
         when(mockUser.getLogin()).thenReturn(FAKE_USER);
 
         // Mock the user management service
         when(mockUserManagementServiceI.getUser(FAKE_USER)).thenReturn(mockUser);
+
+        // Mock UriParserUtils using PowerMock. This allows us to mock out
+        // the responses to its static method parseURI().
+        mockStatic(UriParserUtils.class);
 
         // Mock the aliasTokenService
         final AliasToken mockAliasToken = new AliasToken();
@@ -216,6 +234,11 @@ public class CommandLaunchIntegrationTest {
         final Resource resource = scan.getResources().get(0);
         resource.setDirectory(fakeResourceDir);
         final String sessionJson = mapper.writeValueAsString(session);
+        final ArchivableItem mockProjectItem = mock(ArchivableItem.class);
+        final ProjURI mockUriObject = mock(ProjURI.class);
+        when(UriParserUtils.parseURI("/archive" + session.getUri())).thenReturn(mockUriObject);
+        when(mockUriObject.getSecurityItem()).thenReturn(mockProjectItem);
+        when(mockPermissionsServiceI.canEdit(mockUser, mockProjectItem)).thenReturn(Boolean.TRUE);
 
         final String t1Scantype = "T1_TEST_SCANTYPE";
 
@@ -324,6 +347,13 @@ public class CommandLaunchIntegrationTest {
         final Project project = mapper.readValue(new File(projectJsonFile), Project.class);
         project.setDirectory(projectDir);
         final String projectJson = mapper.writeValueAsString(project);
+
+        // Create the mock objects we will need in order to verify permissions
+        final ArchivableItem mockProjectItem = mock(ArchivableItem.class);
+        final ExptURI mockUriObject = mock(ExptURI.class);
+        when(UriParserUtils.parseURI("/archive" + project.getUri())).thenReturn(mockUriObject);
+        when(mockUriObject.getSecurityItem()).thenReturn(mockProjectItem);
+        when(mockPermissionsServiceI.canEdit(mockUser, mockProjectItem)).thenReturn(Boolean.TRUE);
 
         final Map<String, String> runtimeValues = Maps.newHashMap();
         runtimeValues.put("project", projectJson);

@@ -31,6 +31,7 @@ def vHibernate = '4.3.11.Final'
 def vJackson = '2.6.5'
 def vSlf4j = '1.7.21'
 def vJunit = '4.12'
+def vPowerMock = '1.7.0'
 
 repositories {
     mavenLocal()
@@ -53,6 +54,9 @@ repositories {
 // Use this configuration to put dependencies into the fat jar
 configurations {
     compile.extendsFrom(compileAndInclude)
+}
+configurations.all {
+    resolutionStrategy.force 'org.mockito:mockito-core:1.+'
 }
 //// Possibly add annotation processor dependencies  to IntelliJ
 //idea {
@@ -147,6 +151,8 @@ dependencies {
     testCompile "com.google.code.gson:gson:2.6.2"
     testCompile "org.json:json:20160810"
     testCompile "org.apache.commons:commons-dbcp2:2.1.1"
+    testCompile "org.powermock:powermock-module-junit4:${vPowerMock}"
+    testCompile "org.powermock:powermock-api-mockito:${vPowerMock}"
 }
 
 task unitTest( type: Test ) {
