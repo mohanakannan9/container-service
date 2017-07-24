@@ -30,7 +30,7 @@ import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMount;
-import org.nrg.containers.model.container.auto.Container;
+import org.nrg.containers.model.container.auto.ContainerMessage;
 import org.nrg.containers.model.server.docker.DockerServer;
 import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.model.command.auto.Command;
@@ -487,7 +487,7 @@ public class DockerControlApi implements ContainerControlApi {
      * @return Container objects stored on docker server
      **/
     @Override
-    public List<Container> getAllContainers() throws NoServerPrefException, DockerServerException {
+    public List<ContainerMessage> getAllContainers() throws NoServerPrefException, DockerServerException {
         return getContainers(null);
     }
 
@@ -498,7 +498,7 @@ public class DockerControlApi implements ContainerControlApi {
      * @return Container objects stored on docker server meeting the query parameters
      **/
     @Override
-    public List<Container> getContainers(final Map<String, String> params)
+    public List<ContainerMessage> getContainers(final Map<String, String> params)
         throws NoServerPrefException, DockerServerException {
         List<com.spotify.docker.client.messages.Container> containerList;
 
@@ -519,10 +519,10 @@ public class DockerControlApi implements ContainerControlApi {
             throw new DockerServerException(e);
         }
         return Lists.newArrayList(
-                Lists.transform(containerList, new Function<com.spotify.docker.client.messages.Container, Container>() {
+                Lists.transform(containerList, new Function<com.spotify.docker.client.messages.Container, ContainerMessage>() {
                     @Override
                     @Nullable
-                    public Container apply(final @Nullable com.spotify.docker.client.messages.Container container) {
+                    public ContainerMessage apply(final @Nullable com.spotify.docker.client.messages.Container container) {
                         return spotifyToNrg(container);
                     }
                 })
@@ -537,9 +537,9 @@ public class DockerControlApi implements ContainerControlApi {
      **/
     @Override
     @Nonnull
-    public Container getContainer(final String id)
+    public ContainerMessage getContainer(final String id)
         throws NotFoundException, NoServerPrefException, DockerServerException {
-        final Container container = spotifyToNrg(_getContainer(id));
+        final ContainerMessage container = spotifyToNrg(_getContainer(id));
         if (container != null) {
             return container;
         }
@@ -565,7 +565,7 @@ public class DockerControlApi implements ContainerControlApi {
     @Override
     public String getContainerStatus(final String id)
         throws NotFoundException, NoServerPrefException, DockerServerException {
-        final Container container = getContainer(id);
+        final ContainerMessage container = getContainer(id);
 
         return container.status();
     }
@@ -729,8 +729,8 @@ public class DockerControlApi implements ContainerControlApi {
      * @return NRG Container object
      **/
     @Nullable
-    private Container spotifyToNrg(final @Nullable com.spotify.docker.client.messages.Container dockerContainer) {
-        return dockerContainer == null ? null : Container.create(dockerContainer.id(), dockerContainer.status());
+    private ContainerMessage spotifyToNrg(final @Nullable com.spotify.docker.client.messages.Container dockerContainer) {
+        return dockerContainer == null ? null : ContainerMessage.create(dockerContainer.id(), dockerContainer.status());
     }
 
     /**
@@ -740,8 +740,8 @@ public class DockerControlApi implements ContainerControlApi {
      * @return NRG Container object
      **/
     @Nullable
-    private Container spotifyToNrg(final @Nullable com.spotify.docker.client.messages.ContainerInfo dockerContainer) {
-        return dockerContainer == null ? null : Container.create(
+    private ContainerMessage spotifyToNrg(final @Nullable com.spotify.docker.client.messages.ContainerInfo dockerContainer) {
+        return dockerContainer == null ? null : ContainerMessage.create(
                 dockerContainer.id(),
                 dockerContainer.state().running() ? "Running" :
                         dockerContainer.state().paused() ? "Paused" :

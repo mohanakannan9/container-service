@@ -25,9 +25,8 @@ import org.nrg.containers.api.DockerControlApi;
 import org.nrg.containers.config.IntegrationTestConfig;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
-import org.nrg.containers.model.container.entity.ContainerEntity;
-import org.nrg.containers.model.container.entity.ContainerEntityMount;
-import org.nrg.containers.model.container.entity.ContainerEntityOutput;
+import org.nrg.containers.model.container.auto.Container;
+import org.nrg.containers.model.container.auto.Container.ContainerMount;
 import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.model.xnat.Project;
 import org.nrg.containers.model.xnat.Resource;
@@ -246,7 +245,7 @@ public class CommandLaunchIntegrationTest {
         runtimeValues.put("session", sessionJson);
         runtimeValues.put("T1-scantype", t1Scantype);
 
-        final ContainerEntity execution = containerService.resolveCommandAndLaunchContainer(commandWrapper.id(), runtimeValues, mockUser);
+        final Container execution = containerService.resolveCommandAndLaunchContainer(commandWrapper.id(), runtimeValues, mockUser);
         Thread.sleep(1000); // Wait for container to finish
 
         // Raw inputs
@@ -270,11 +269,11 @@ public class CommandLaunchIntegrationTest {
         // Outputs
         // assertTrue(resolvedCommand.getOutputs().isEmpty());
 
-        final List<String> outputNames = Lists.transform(execution.getOutputs(), new Function<ContainerEntityOutput, String>() {
+        final List<String> outputNames = Lists.transform(execution.outputs(), new Function<Container.ContainerOutput, String>() {
             @Nullable
             @Override
-            public String apply(@Nullable final ContainerEntityOutput output) {
-                return output == null ? "" : output.getName();
+            public String apply(@Nullable final Container.ContainerOutput output) {
+                return output == null ? "" : output.name();
             }
         });
         assertThat(outputNames, contains("data", "text-file"));
@@ -284,31 +283,31 @@ public class CommandLaunchIntegrationTest {
         expectedEnvironmentVariables.put("XNAT_USER", FAKE_ALIAS);
         expectedEnvironmentVariables.put("XNAT_PASS", FAKE_SECRET);
         expectedEnvironmentVariables.put("XNAT_HOST", FAKE_HOST);
-        assertThat(execution.getEnvironmentVariables(), is(expectedEnvironmentVariables));
+        assertThat(execution.environmentVariables(), is(expectedEnvironmentVariables));
 
 
-        final List<ContainerEntityMount> mounts = execution.getMounts();
+        final List<ContainerMount> mounts = execution.mounts();
         assertThat(mounts, hasSize(2));
 
-        ContainerEntityMount inputMount = null;
-        ContainerEntityMount outputMount = null;
-        for (final ContainerEntityMount mount : mounts) {
-            if (mount.getName().equals("input")) {
+        ContainerMount inputMount = null;
+        ContainerMount outputMount = null;
+        for (final ContainerMount mount : mounts) {
+            if (mount.name().equals("input")) {
                 inputMount = mount;
-            } else if (mount.getName().equals("output")) {
+            } else if (mount.name().equals("output")) {
                 outputMount = mount;
             } else {
-                fail("We should not have a mount with name " + mount.getName());
+                fail("We should not have a mount with name " + mount.name());
             }
         }
 
         assertThat(inputMount, is(not(nullValue())));
-        assertThat(inputMount.getContainerPath(), is("/input"));
-        assertThat(inputMount.getXnatHostPath(), is(fakeResourceDir));
+        assertThat(inputMount.containerPath(), is("/input"));
+        assertThat(inputMount.xnatHostPath(), is(fakeResourceDir));
 
         assertThat(outputMount, is(not(nullValue())));
-        assertThat(outputMount.getContainerPath(), is("/output"));
-        final String outputPath = outputMount.getXnatHostPath();
+        assertThat(outputMount.containerPath(), is("/output"));
+        final String outputPath = outputMount.xnatHostPath();
 
         try {
             final String[] outputFileContents = readFile(outputPath + "/out.txt");
@@ -358,7 +357,7 @@ public class CommandLaunchIntegrationTest {
         final Map<String, String> runtimeValues = Maps.newHashMap();
         runtimeValues.put("project", projectJson);
 
-        final ContainerEntity execution = containerService.resolveCommandAndLaunchContainer(commandWrapper.id(), runtimeValues, mockUser);
+        final Container execution = containerService.resolveCommandAndLaunchContainer(commandWrapper.id(), runtimeValues, mockUser);
         Thread.sleep(1000); // Wait for container to finish
 
         // Raw inputs
@@ -374,10 +373,10 @@ public class CommandLaunchIntegrationTest {
         assertThat(execution.getCommandInputs(), is(expectedCommandInputValues));
 
         // Outputs by name. We will check the files later.
-        final List<String> outputNames = Lists.transform(execution.getOutputs(), new Function<ContainerEntityOutput, String>() {
+        final List<String> outputNames = Lists.transform(execution.outputs(), new Function<Container.ContainerOutput, String>() {
             @Override
-            public String apply(final ContainerEntityOutput output) {
-                return output.getName();
+            public String apply(final Container.ContainerOutput output) {
+                return output.name();
             }
         });
         assertThat(outputNames, contains("outputs"));
@@ -387,31 +386,31 @@ public class CommandLaunchIntegrationTest {
         expectedEnvironmentVariables.put("XNAT_USER", FAKE_ALIAS);
         expectedEnvironmentVariables.put("XNAT_PASS", FAKE_SECRET);
         expectedEnvironmentVariables.put("XNAT_HOST", FAKE_HOST);
-        assertThat(execution.getEnvironmentVariables(), is(expectedEnvironmentVariables));
+        assertThat(execution.environmentVariables(), is(expectedEnvironmentVariables));
 
         // mounts
-        final List<ContainerEntityMount> mounts = execution.getMounts();
+        final List<ContainerMount> mounts = execution.mounts();
         assertThat(mounts, hasSize(2));
 
-        ContainerEntityMount inputMount = null;
-        ContainerEntityMount outputMount = null;
-        for (final ContainerEntityMount mount : mounts) {
-            if (mount.getName().equals("input")) {
+        ContainerMount inputMount = null;
+        ContainerMount outputMount = null;
+        for (final ContainerMount mount : mounts) {
+            if (mount.name().equals("input")) {
                 inputMount = mount;
-            } else if (mount.getName().equals("output")) {
+            } else if (mount.name().equals("output")) {
                 outputMount = mount;
             } else {
-                fail("We should not have a mount with name " + mount.getName());
+                fail("We should not have a mount with name " + mount.name());
             }
         }
 
         assertThat(inputMount, is(not(nullValue())));
-        assertThat(inputMount.getContainerPath(), is("/input"));
-        assertThat(inputMount.getXnatHostPath(), is(projectDir));
+        assertThat(inputMount.containerPath(), is("/input"));
+        assertThat(inputMount.xnatHostPath(), is(projectDir));
 
         assertThat(outputMount, is(not(nullValue())));
-        assertThat(outputMount.getContainerPath(), is("/output"));
-        final String outputPath = outputMount.getXnatHostPath();
+        assertThat(outputMount.containerPath(), is("/output"));
+        final String outputPath = outputMount.xnatHostPath();
 
         try {
             // Read two output files: files.txt and dirs.txt
@@ -441,6 +440,7 @@ public class CommandLaunchIntegrationTest {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private String[] readFile(final String outputFilePath) throws IOException {
         final File outputFile = new File(outputFilePath);
         if (!outputFile.canRead()) {

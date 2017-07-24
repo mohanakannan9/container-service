@@ -15,6 +15,7 @@ import org.nrg.containers.model.command.auto.LaunchReport.Success;
 import org.nrg.containers.model.command.auto.LaunchUi;
 import org.nrg.containers.model.command.auto.ResolvedCommand.PartiallyResolvedCommand;
 import org.nrg.containers.model.configuration.CommandConfiguration;
+import org.nrg.containers.model.container.auto.Container;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.services.CommandResolutionService;
 import org.nrg.containers.services.CommandService;
@@ -312,7 +313,7 @@ public class LaunchRestApi extends AbstractXapiRestController {
                                          final Map<String, String> allRequestParams) {
         final UserI userI = XDAT.getUserDetails();
         try {
-            final ContainerEntity containerEntity =
+            final Container container =
                     project == null ?
                             (commandId == 0L && wrapperName == null ?
                                     containerService.resolveCommandAndLaunchContainer(wrapperId, allRequestParams, userI) :
@@ -322,12 +323,12 @@ public class LaunchRestApi extends AbstractXapiRestController {
                                     containerService.resolveCommandAndLaunchContainer(project, commandId, wrapperName, allRequestParams, userI));
             if (log.isInfoEnabled()) {
                 log.info("Launched command {}, wrapper {}. Produced container {}.", commandId, wrapperName,
-                        containerEntity != null ? containerEntity.getId() : null);
+                        container != null ? container.databaseId() : null);
                 if (log.isDebugEnabled()) {
-                    log.debug(containerEntity != null ? containerEntity.toString() : "Container execution object is null.");
+                    log.debug(container != null ? container.toString() : "Container execution object is null.");
                 }
             }
-            final String containerId = (containerEntity == null || containerEntity.getContainerId() == null) ? "null" : containerEntity.getContainerId();
+            final String containerId = (container == null || container.containerId() == null) ? "null" : container.containerId();
             return LaunchReport.Success.create(allRequestParams, containerId, ""+commandId, wrapperName);
         } catch (Throwable t) {
             if (log.isInfoEnabled()) {

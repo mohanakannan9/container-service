@@ -1,7 +1,11 @@
 package org.nrg.containers.rest;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.model.container.auto.Container;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.containers.services.ContainerService;
@@ -24,7 +28,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
+import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Map;
 
 import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 import static org.springframework.web.bind.annotation.RequestMethod.DELETE;
@@ -37,37 +43,35 @@ public class ContainerRestApi extends AbstractXapiRestController {
     private static final String JSON = MediaType.APPLICATION_JSON_UTF8_VALUE;
 
     private ContainerService containerService;
-    private ContainerEntityService containerEntityService;
 
     @Autowired
-    public ContainerRestApi(final ContainerEntityService containerEntityService,
-                            final ContainerService containerService,
+    public ContainerRestApi(final ContainerService containerService,
                             final UserManagementServiceI userManagementService,
                             final RoleHolder roleHolder) {
         super(userManagementService, roleHolder);
-        this.containerEntityService = containerEntityService;
         this.containerService = containerService;
     }
 
     @XapiRequestMapping(method = GET, restrictTo = Admin)
     @ResponseBody
-    public List<ContainerEntity> getAll() {
-        return containerEntityService.getAll();
+    public List<Container> getAll() {
+        return Lists.transform(containerService.getAll(), new Function<Container, Container>() {
+            @Override
+            public Container apply(final Container input) {
+                return scrubPasswordEnv(input);
+            }
+        });
     }
 
     @XapiRequestMapping(value = "/{id}", method = GET, restrictTo = Admin)
     @ResponseBody
-    public ContainerEntity getOne(final @PathVariable String id) throws NotFoundException {
-        final ContainerEntity containerEntity = containerEntityService.retrieve(id);
-        if (containerEntity == null) {
-            throw new NotFoundException("ContainerExecution " + id + " not found.");
-        }
-        return containerEntity;
+    public Container get(final @PathVariable String id) throws NotFoundException {
+        return scrubPasswordEnv(containerService.get(id));
     }
 
     @XapiRequestMapping(value = "/{id}", method = DELETE, restrictTo = Admin)
     public ResponseEntity<Void> delete(final @PathVariable String id) throws NotFoundException {
-        containerEntityService.delete(id);
+        containerService.delete(id);
         return ResponseEntity.noContent().build();
     }
 
@@ -83,6 +87,15 @@ public class ContainerRestApi extends AbstractXapiRestController {
             throws NotFoundException, NoServerPrefException, DockerServerException {
         final UserI userI = XDAT.getUserDetails();
         return containerService.kill(id, userI);
+    }
+
+    private Container scrubPasswordEnv(final Container container) {
+        final Map<String, String> scrubbedEnvironmentVariables = Maps.newHashMap();
+        for (final Map.Entry<String, String> env : container.environmentVariables().entrySet()) {
+            scrubbedEnvironmentVariables.put(env.getKey(),
+                    env.getKey().equals("XNAT_PASS") ? "******" : env.getValue());
+        }
+        return container.toBuilder().environmentVariables(scrubbedEnvironmentVariables).build();
     }
 
     @ResponseStatus(value = HttpStatus.NOT_FOUND)

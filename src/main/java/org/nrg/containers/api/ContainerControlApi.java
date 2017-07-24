@@ -6,7 +6,7 @@ import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.command.auto.Command;
-import org.nrg.containers.model.container.auto.Container;
+import org.nrg.containers.model.container.auto.ContainerMessage;
 import org.nrg.containers.model.dockerhub.DockerHub;
 import org.nrg.containers.model.image.docker.DockerImage;
 import org.nrg.containers.model.server.docker.DockerServer;
@@ -48,9 +48,9 @@ public interface ContainerControlApi {
     List<Command> parseLabels(final String imageName)
             throws DockerServerException, NoServerPrefException, NotFoundException;
 
-    List<Container> getAllContainers() throws NoServerPrefException, DockerServerException;
-    List<Container> getContainers(final Map<String, String> params) throws NoServerPrefException, DockerServerException;
-    Container getContainer(final String id) throws NotFoundException, NoServerPrefException, DockerServerException;
+    List<ContainerMessage> getAllContainers() throws NoServerPrefException, DockerServerException;
+    List<ContainerMessage> getContainers(final Map<String, String> params) throws NoServerPrefException, DockerServerException;
+    ContainerMessage getContainer(final String id) throws NotFoundException, NoServerPrefException, DockerServerException;
     String getContainerStatus(final String id) throws NotFoundException, NoServerPrefException, DockerServerException;
     String getContainerStdoutLog(String id) throws NoServerPrefException, DockerServerException;
     String getContainerStderrLog(String id) throws NoServerPrefException, DockerServerException;

@@ -1,6 +1,8 @@
 package org.nrg.containers.services.impl;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Function;
+import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -12,9 +14,9 @@ import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.UnauthorizedException;
-import org.nrg.containers.model.container.entity.ContainerEntity;
-import org.nrg.containers.model.container.entity.ContainerEntityMount;
-import org.nrg.containers.model.container.entity.ContainerEntityOutput;
+import org.nrg.containers.model.container.auto.Container;
+import org.nrg.containers.model.container.auto.Container.ContainerMount;
+import org.nrg.containers.model.container.auto.Container.ContainerOutput;
 import org.nrg.containers.services.ContainerFinalizeService;
 import org.nrg.transporter.TransportService;
 import org.nrg.xdat.om.XnatResourcecatalog;
@@ -31,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -89,68 +92,76 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
     }
 
     @Override
-    public void finalizeContainer(final ContainerEntity containerEntity, final UserI userI, final String exitCode) {
+    public Container finalizeContainer(final Container toFinalize, final UserI userI, final String exitCode) {
         final ContainerFinalizeHelper helper =
-                new ContainerFinalizeHelper(containerEntity, userI, exitCode);
-        helper.finalizeContainer();
+                new ContainerFinalizeHelper(toFinalize, userI, exitCode);
+        return helper.finalizeContainer();
     }
 
     private class ContainerFinalizeHelper {
 
-        private ContainerEntity containerEntity;
+        private Container toFinalize;
         private UserI userI;
         private String exitCode;
 
-        private Map<String, ContainerEntityMount> untransportedMounts;
-        private Map<String, ContainerEntityMount> transportedMounts;
+        private Map<String, ContainerMount> untransportedMounts;
+        private Map<String, ContainerMount> transportedMounts;
 
         private String prefix;
 
-        private ContainerFinalizeHelper(final ContainerEntity containerEntity,
+        private ContainerFinalizeHelper(final Container toFinalize,
                                         final UserI userI,
                                         final String exitCode) {
-            this.containerEntity = containerEntity;
+            this.toFinalize = toFinalize;
             this.userI = userI;
             this.exitCode = exitCode;
 
             untransportedMounts = Maps.newHashMap();
             transportedMounts = Maps.newHashMap();
 
-            prefix = "Container " + containerEntity.getId() + ": ";
+            prefix = "Container " + toFinalize.databaseId() + ": ";
         }
 
-        private void finalizeContainer() {
-            containerEntity.addLogPaths(uploadLogs());
+        private Container finalizeContainer() {
+            final Container.Builder finalizedContainerBuilder = toFinalize.toBuilder();
+            finalizedContainerBuilder.logPaths(uploadLogs());
 
             // TODO Add some stuff with status code. "x" means "don't know", "0" success, greater than 0 failure.
 
-            if (containerEntity.getOutputs() != null) {
-                if (containerEntity.getMounts() != null) {
-                    for (final ContainerEntityMount mountOut : containerEntity.getMounts()) {
-                        untransportedMounts.put(mountOut.getName(), mountOut);
-                    }
-                }
-
-                final List<Exception> failedRequiredOutputs = uploadOutputs();
-                if (!failedRequiredOutputs.isEmpty()) {
-                    // TODO this means a required output was not uploaded. Mark the execution as "failed" with an appropriate status message.
-                }
+            for (final ContainerMount mountOut : toFinalize.mounts()) {
+                untransportedMounts.put(mountOut.name(), mountOut);
             }
+
+            final OutputsAndExceptions outputsAndExceptions = uploadOutputs();
+            final List<Exception> failedRequiredOutputs = outputsAndExceptions.exceptions;
+            if (!failedRequiredOutputs.isEmpty()) {
+                finalizedContainerBuilder.addHistoryItem(Container.ContainerHistory.fromSystem("Failed",
+                        "Failed to upload required outputs.\n" + Joiner.on("\n").join(Lists.transform(failedRequiredOutputs, new Function<Exception, String>() {
+                            @Override
+                            public String apply(final Exception input) {
+                                return input.getMessage();
+                            }
+                        }))))
+                        .outputs(outputsAndExceptions.outputs);
+            } else {
+                finalizedContainerBuilder.outputs(outputsAndExceptions.outputs);  // Overwrite any existing outputs
+            }
+            return finalizedContainerBuilder.build();
         }
 
-        private Set<String> uploadLogs() {
+        private List<String> uploadLogs() {
             log.info(prefix + "Getting logs.");
-            final Set<String> logPaths = Sets.newHashSet();
+            final List<String> logPaths = Lists.newArrayList();
 
             String stdoutLogStr = "";
             String stderrLogStr = "";
             try {
-                stdoutLogStr = containerControlApi.getContainerStdoutLog(containerEntity.getContainerId());
+                stdoutLogStr = containerControlApi.getContainerStdoutLog(toFinalize.containerId());
             } catch (DockerServerException | NoServerPrefException e) {
                 log.error(prefix + "Could not get logs.", e);
             }
             try {
-                stderrLogStr = containerControlApi.getContainerStderrLog(containerEntity.getContainerId());
+                stderrLogStr = containerControlApi.getContainerStderrLog(toFinalize.containerId());
             } catch (DockerServerException | NoServerPrefException e) {
                 log.error(prefix + "Could not get logs.", e);
             }
@@ -194,78 +205,75 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
             return logPaths;
         }
 
-        private List<Exception> uploadOutputs() {
+        private OutputsAndExceptions uploadOutputs() {
             log.info(prefix + "Uploading outputs.");
 
-            final List<Exception> failedRequiredOutputs = Lists.newArrayList();
-            for (final ContainerEntityOutput output: containerEntity.getOutputs()) {
+            final List<ContainerOutput> outputs = Lists.newArrayList();
+            final List<Exception> exceptions = Lists.newArrayList();
+            for (final ContainerOutput nonUploadedOuput: toFinalize.outputs()) {
                 try {
-                    output.setCreated(uploadOutput(output));
-                } catch (UnauthorizedException e) {
-                    log.error("Cannot upload files for command output " + output.getName() + ". " + e.getMessage());
-                    if (output.isRequired()) {
-                        failedRequiredOutputs.add(e);
+                    outputs.add(uploadOutput(nonUploadedOuput));
+                } catch (UnauthorizedException | ContainerException | RuntimeException e) {
+                    log.error("Cannot upload files for command output " + nonUploadedOuput.name(), e);
+                    if (nonUploadedOuput.required()) {
+                        exceptions.add(e);
                     }
-                } catch (ContainerException | RuntimeException e) {
-                    log.error("Cannot upload files for command output " + output.getName(), e);
-                    if (output.isRequired()) {
-                        failedRequiredOutputs.add(e);
-                    }
+                    outputs.add(nonUploadedOuput);
                 }
             }
 
             log.info(prefix + "Done uploading outputs.");
-            return failedRequiredOutputs;
+            return new OutputsAndExceptions(outputs, exceptions);
         }
 
-        private String uploadOutput(final ContainerEntityOutput output) throws ContainerException, UnauthorizedException {
+        private ContainerOutput uploadOutput(final ContainerOutput output) throws ContainerException, UnauthorizedException {
             if (log.isInfoEnabled()) {
-                log.info(String.format(prefix + "Uploading output \"%s\".", output.getName()));
+                log.info(String.format(prefix + "Uploading output \"%s\".", output.name()));
             }
             if (log.isDebugEnabled()) {
                 log.debug(output.toString());
             }
 
-            final String mountName = output.getMount();
-            final ContainerEntityMount mount = getMount(mountName);
+            final String mountName = output.mount();
+            final ContainerMount mount = getMount(mountName);
             if (mount == null) {
                 throw new ContainerException(String.format(prefix + "Mount \"%s\" does not exist.", mountName));
             }
 
             if (log.isDebugEnabled()) {
-                log.debug(String.format(prefix + "Output files are provided by mount \"%s\": %s", mount.getName(), mount));
+                log.debug(String.format(prefix + "Output files are provided by mount \"%s\": %s", mount.name(), mount));
             }
 
-            final String mountXnatHostPath = mount.getXnatHostPath();
+            final String mountXnatHostPath = mount.xnatHostPath();
             if (StringUtils.isBlank(mountXnatHostPath)) {
-                throw new ContainerException(String.format(prefix + "Cannot upload output \"%s\". Mount \"%s\" has a blank path to the files on the XNAT machine.", output.getName(), mount.getName()));
+                throw new ContainerException(String.format(prefix + "Cannot upload output \"%s\". Mount \"%s\" has a blank path to the files on the XNAT machine.", output.name(), mount.name()));
             }
 
-            final String relativeFilePath = output.getPath() != null ? output.getPath() : "";
+            final String relativeFilePath = output.path() != null ? output.path() : "";
             final String filePath = StringUtils.isBlank(relativeFilePath) ? mountXnatHostPath :
                     FilenameUtils.concat(mountXnatHostPath, relativeFilePath);
-            final String globMatcher = output.getGlob() != null ? output.getGlob() : "";
+            final String globMatcher = output.glob() != null ? output.glob() : "";
 
             final List<File> toUpload = matchGlob(filePath, globMatcher);
             if (toUpload == null || toUpload.size() == 0) {
-                if (output.isRequired()) {
-                    throw new ContainerException(String.format(prefix + "Nothing to upload for output \"%s\". Mount \"%s\" has no files.", output.getName(), mount.getName()));
+                if (output.required()) {
+                    throw new ContainerException(String.format(prefix + "Nothing to upload for output \"%s\". Mount \"%s\" has no files.", output.name(), mount.name()));
                 }
-                return "";
+                return output;
             }
 
-            final String label = StringUtils.isNotBlank(output.getLabel()) ? output.getLabel() : mountName;
+            final String label = StringUtils.isNotBlank(output.label()) ? output.label() : mountName;
 
-            String parentUri = getWrapperInputValue(output.getHandledByXnatCommandInput());
+            String parentUri = getWrapperInputValue(output.handledByWrapperInput());
             if (parentUri == null) {
-                throw new ContainerException(String.format(prefix + "Cannot upload output \"%s\". Could not instantiate object from input \"%s\".", output.getName(), output.getHandledByXnatCommandInput()));
+                throw new ContainerException(String.format(prefix + "Cannot upload output \"%s\". Could not instantiate object from input \"%s\".", output.name(), output.handledByWrapperInput()));
             }
             if (!parentUri.startsWith("/archive")) {
                 parentUri = "/archive" + parentUri;
             }
 
             String createdUri = null;
-            final String type = output.getType();
+            final String type = output.type();
             if (type.equals(RESOURCE.getName())) {
                 if (log.isDebugEnabled()) {
                     final String template = prefix + "Inserting file resource.\n\tuser: %s\n\tparentUri: %s\n\tlabel: %s\n\ttoUpload: %s";
@@ -330,11 +338,11 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
             }
 
 
-            log.info(String.format(prefix + "Done uploading output \"%s\". URI of created output: %s", output.getName(), createdUri));
-            return createdUri;
+            log.info(String.format(prefix + "Done uploading output \"%s\". URI of created output: %s", output.name(), createdUri));
+            return output.toBuilder().created(createdUri).build();
         }
 
-        private ContainerEntityMount getMount(final String mountName) throws ContainerException {
+        private ContainerMount getMount(final String mountName) throws ContainerException {
             // If mount has been transported, we're done
             if (transportedMounts.containsKey(mountName)) {
                 return transportedMounts.get(mountName);
@@ -345,12 +353,12 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
                 if (log.isDebugEnabled()) {
                     log.debug(String.format(prefix + "Transporting mount \"%s\".", mountName));
                 }
-                final ContainerEntityMount mountToTransport = untransportedMounts.get(mountName);
+                ContainerMount mountToTransport = untransportedMounts.get(mountName);
 
-                if (StringUtils.isBlank(mountToTransport.getXnatHostPath())) {
-                    final Path pathOnExecutionMachine = Paths.get(mountToTransport.getContainerHostPath());
+                if (StringUtils.isBlank(mountToTransport.xnatHostPath())) {
+                    final Path pathOnExecutionMachine = Paths.get(mountToTransport.containerHostPath());
                     final Path pathOnXnatMachine = transportService.transport("", pathOnExecutionMachine); // TODO this currently does nothing
-                    mountToTransport.setXnatHostPath(pathOnXnatMachine.toAbsolutePath().toString());
+                    mountToTransport = mountToTransport.toBuilder().xnatHostPath(pathOnXnatMachine.toAbsolutePath().toString()).build();
                 } else {
                     // TODO add transporter method to transport from specified source path to specified destination path
                     // transporter.transport(sourceMachineName, mountToTransport.getContainerHostPath(), mountToTransport.getXnatHostPath());
@@ -372,7 +380,7 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
                 log.debug(String.format(prefix + "Getting URI for input \"%s\".", inputName));
             }
 
-            final Map<String, String> wrapperInputs = containerEntity.getWrapperInputs();
+            final Map<String, String> wrapperInputs = toFinalize.getWrapperInputs();
             if (!wrapperInputs.containsKey(inputName)) {
                 if (log.isDebugEnabled()) {
                     log.debug(String.format(prefix + "No input found with name \"%s\". Input name set: %s", inputName, wrapperInputs.keySet()));
@@ -387,6 +395,17 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
             final File rootDir = new File(rootPath);
             final File[] files = rootDir.listFiles();
             return files == null ? Lists.<File>newArrayList() : Arrays.asList(files);
+        }
+    }
+
+    private static class OutputsAndExceptions {
+        List<ContainerOutput> outputs;
+        List<Exception> exceptions;
+
+        OutputsAndExceptions(final List<ContainerOutput> outputs,
+                             final List<Exception> exceptions) {
+            this.outputs = outputs;
+            this.exceptions = exceptions;
         }
     }
 }
