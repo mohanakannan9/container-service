@@ -1,6 +1,7 @@
 package org.nrg.containers.model.container.auto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Function;
@@ -26,7 +27,7 @@ import java.util.Map;
 
 @AutoValue
 public abstract class Container {
-    @JsonProperty("database-id") public abstract long databaseId();
+    @JsonProperty("id") public abstract long databaseId();
     @JsonProperty("command-id") public abstract long commandId();
     @JsonProperty("wrapper-id") public abstract long wrapperId();
     @JsonProperty("container-id") public abstract String containerId();
@@ -42,7 +43,7 @@ public abstract class Container {
     @JsonProperty("log-paths") public abstract ImmutableList<String> logPaths();
 
     @JsonCreator
-    public static Container create(@JsonProperty("database-id") final long databaseId,
+    public static Container create(@JsonProperty("id") final long databaseId,
                                    @JsonProperty("command-id") final long commandId,
                                    @JsonProperty("wrapper-id") final long wrapperId,
                                    @JsonProperty("container-id") final String containerId,
@@ -141,14 +142,17 @@ public abstract class Container {
         return inputs;
     }
 
+    @JsonIgnore
     public Map<String, String> getCommandInputs() {
         return getInputs(ContainerInputType.COMMAND);
     }
 
+    @JsonIgnore
     public Map<String, String> getWrapperInputs() {
         return getInputs(ContainerInputType.WRAPPER);
     }
 
+    @JsonIgnore
     public Map<String, String> getRawInputs() {
         return getInputs(ContainerInputType.RAW);
     }
@@ -211,7 +215,7 @@ public abstract class Container {
 
     @AutoValue
     public static abstract class ContainerMount {
-        @JsonProperty("database-id") public abstract long databaseId();
+        @JsonProperty("id") public abstract long databaseId();
         @JsonProperty("name") public abstract String name();
         @JsonProperty("writable") public abstract boolean writable();
         @JsonProperty("xnat-host-path") public abstract String xnatHostPath();
@@ -220,7 +224,7 @@ public abstract class Container {
         @JsonProperty("input-files") public abstract ImmutableList<ContainerMountFiles> inputFiles();
 
         @JsonCreator
-        public static ContainerMount create(@JsonProperty("database-id") final long databaseId,
+        public static ContainerMount create(@JsonProperty("id") final long databaseId,
                                             @JsonProperty("name") final String name,
                                             @JsonProperty("writable") final boolean writable,
                                             @JsonProperty("xnat-host-path") final String xnatHostPath,
@@ -279,14 +283,14 @@ public abstract class Container {
 
     @AutoValue
     public static abstract class ContainerMountFiles {
-        @JsonProperty("database-id") public abstract long databaseId();
+        @JsonProperty("id") public abstract long databaseId();
         @JsonProperty("from-xnat-input") public abstract String fromXnatInput();
         @Nullable @JsonProperty("from-uri") public abstract String fromUri();
         @JsonProperty("root-directory") public abstract String rootDirectory();
         @Nullable @JsonProperty("path") public abstract String path();
 
         @JsonCreator
-        public static ContainerMountFiles create(@JsonProperty("database-id") final long databaseId,
+        public static ContainerMountFiles create(@JsonProperty("id") final long databaseId,
                                                  @JsonProperty("from-xnat-input") final String fromXnatInput,
                                                  @JsonProperty("from-uri") final String fromUri,
                                                  @JsonProperty("root-directory") final String rootDirectory,
@@ -302,13 +306,13 @@ public abstract class Container {
 
     @AutoValue
     public static abstract class ContainerInput {
-        @JsonProperty("database-id") public abstract long databaseId();
+        @JsonProperty("id") public abstract long databaseId();
         @JsonProperty("type") public abstract ContainerInputType type();
         @JsonProperty("name") public abstract String name();
         @JsonProperty("value") public abstract String value();
 
         @JsonCreator
-        public static ContainerInput create(@JsonProperty("database-id") final long databaseId,
+        public static ContainerInput create(@JsonProperty("id") final long databaseId,
                                             @JsonProperty("type") final ContainerInputType type,
                                             @JsonProperty("name") final String name,
                                             @JsonProperty("value") final String value) {
@@ -322,7 +326,7 @@ public abstract class Container {
 
     @AutoValue
     public static abstract class ContainerOutput {
-        @JsonProperty("database-id") public abstract long databaseId();
+        @JsonProperty("id") public abstract long databaseId();
         @JsonProperty("name") public abstract String name();
         @JsonProperty("type") public abstract String type();
         @JsonProperty("required") public abstract Boolean required();
@@ -334,7 +338,7 @@ public abstract class Container {
         @JsonProperty("handled-by-wrapper-input") public abstract String handledByWrapperInput();
 
         @JsonCreator
-        public static ContainerOutput create(@JsonProperty("database-id") final long databaseId,
+        public static ContainerOutput create(@JsonProperty("id") final long databaseId,
                                              @JsonProperty("name") final String name,
                                              @JsonProperty("type") final String type,
                                              @JsonProperty("required") final Boolean required,
@@ -389,7 +393,7 @@ public abstract class Container {
 
     @AutoValue
     public static abstract class ContainerHistory {
-        @Nullable @JsonProperty("database-id") public abstract Long databaseId();
+        @Nullable @JsonProperty("id") public abstract Long databaseId();
         @JsonProperty("status") public abstract String status();
         @JsonProperty("entity-type") public abstract String entityType();
         @Nullable @JsonProperty("entity-id") public abstract String entityId();
@@ -398,7 +402,7 @@ public abstract class Container {
         @Nullable @JsonProperty("message") public abstract String message();
 
         @JsonCreator
-        public static ContainerHistory create(@JsonProperty("database-id") final long databaseId,
+        public static ContainerHistory create(@JsonProperty("id") final long databaseId,
                                               @JsonProperty("status") final String status,
                                               @JsonProperty("entity-type") final String entityType,
                                               @JsonProperty("entity-id") final String entityId,
