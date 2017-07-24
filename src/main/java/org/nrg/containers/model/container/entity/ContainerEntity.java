@@ -11,6 +11,7 @@ import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMount;
 import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandOutput;
 import org.nrg.containers.model.container.ContainerInputType;
+import org.nrg.containers.model.container.auto.Container;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.CascadeType;
@@ -72,6 +73,53 @@ public class ContainerEntity extends AbstractHibernateEntity {
                 })
         ));
         setLogPaths(null);
+    }
+
+    public static ContainerEntity fromPojo(final Container containerPojo) {
+        final ContainerEntity containerEntity = new ContainerEntity();
+        containerEntity.setId(containerPojo.databaseId());
+        containerEntity.setCommandId(containerPojo.commandId());
+        containerEntity.setXnatCommandWrapperId(containerPojo.wrapperId());
+        containerEntity.setContainerId(containerPojo.containerId());
+        containerEntity.setUserId(containerPojo.userId());
+        containerEntity.setDockerImage(containerPojo.dockerImage());
+        containerEntity.setCommandLine(containerPojo.commandLine());
+        containerEntity.setEnvironmentVariables(containerPojo.environmentVariables());
+        containerEntity.setLogPaths(containerPojo.logPaths());
+        containerEntity.setMounts(Lists.newArrayList(Lists.transform(
+                containerPojo.mounts(), new Function<Container.ContainerMount, ContainerEntityMount>() {
+                    @Override
+                    public ContainerEntityMount apply(final Container.ContainerMount input) {
+                        return ContainerEntityMount.fromPojo(input);
+                    }
+                }))
+        );
+        containerEntity.setInputs(Lists.newArrayList(Lists.transform(
+                containerPojo.inputs(), new Function<Container.ContainerInput, ContainerEntityInput>() {
+                    @Override
+                    public ContainerEntityInput apply(final Container.ContainerInput input) {
+                        return ContainerEntityInput.fromPojo(input);
+                    }
+                }))
+        );
+        containerEntity.setOutputs(Lists.newArrayList(Lists.transform(
+                containerPojo.outputs(), new Function<Container.ContainerOutput, ContainerEntityOutput>() {
+                    @Override
+                    public ContainerEntityOutput apply(final Container.ContainerOutput input) {
+                        return ContainerEntityOutput.fromPojo(input);
+                    }
+                }))
+        );
+        containerEntity.setHistory(Lists.newArrayList(Lists.transform(
+                containerPojo.history(), new Function<Container.ContainerHistory, ContainerEntityHistory>() {
+                    @Override
+                    public ContainerEntityHistory apply(final Container.ContainerHistory input) {
+                        return ContainerEntityHistory.fromPojo(input);
+                    }
+                }))
+        );
+
+        return containerEntity;
     }
 
     public long getCommandId() {

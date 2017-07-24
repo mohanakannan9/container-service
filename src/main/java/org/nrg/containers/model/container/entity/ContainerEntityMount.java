@@ -10,7 +10,9 @@ import org.hibernate.envers.Audited;
 import org.nrg.containers.model.command.auto.ResolvedCommand.PartiallyResolvedCommandMount;
 import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMount;
 import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMountFiles;
+import org.nrg.containers.model.container.auto.Container;
 
+import javax.annotation.Nullable;
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -52,6 +54,24 @@ public class ContainerEntityMount implements Serializable {
                     }
                 })
         ));
+    }
+
+    public static ContainerEntityMount fromPojo(final Container.ContainerMount containerMountPojo) {
+        final ContainerEntityMount containerEntityMount = new ContainerEntityMount();
+        containerEntityMount.setId(containerMountPojo.databaseId());
+        containerEntityMount.setName(containerMountPojo.name());
+        containerEntityMount.setWritable(containerMountPojo.writable());
+        containerEntityMount.setXnatHostPath(containerMountPojo.xnatHostPath());
+        containerEntityMount.setContainerHostPath(containerMountPojo.containerHostPath());
+        containerEntityMount.setInputFiles(
+                Lists.newArrayList(Lists.transform(containerMountPojo.inputFiles(),
+                        new Function<Container.ContainerMountFiles, ContainerMountFilesEntity>() {
+                    @Override
+                    public ContainerMountFilesEntity apply(final Container.ContainerMountFiles input) {
+                        return ContainerMountFilesEntity.create(input);
+                    }
+                })));
+        return containerEntityMount;
     }
 
     @Id

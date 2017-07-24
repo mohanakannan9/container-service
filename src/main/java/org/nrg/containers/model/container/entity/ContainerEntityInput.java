@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
 import org.hibernate.envers.Audited;
 import org.nrg.containers.model.container.ContainerInputType;
+import org.nrg.containers.model.container.auto.Container;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -48,6 +49,15 @@ public class ContainerEntityInput {
         input.name = name;
         input.value = value;
         return input;
+    }
+
+    public static ContainerEntityInput fromPojo(final Container.ContainerInput containerInputPojo) {
+        final ContainerEntityInput containerEntityInput = new ContainerEntityInput();
+        containerEntityInput.setId(containerInputPojo.databaseId());
+        containerEntityInput.setType(containerInputPojo.type());
+        containerEntityInput.setName(containerInputPojo.name());
+        containerEntityInput.setValue(containerInputPojo.value());
+        return containerEntityInput;
     }
 
     @Id

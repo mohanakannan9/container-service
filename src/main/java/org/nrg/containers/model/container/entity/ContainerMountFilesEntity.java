@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import org.hibernate.envers.Audited;
 import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMountFiles;
+import org.nrg.containers.model.container.auto.Container;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -32,6 +33,16 @@ public class ContainerMountFilesEntity {
         this.fromUri = resolvedCommandMountFiles.fromUri();
         this.rootDirectory = resolvedCommandMountFiles.rootDirectory();
         this.path = resolvedCommandMountFiles.path();
+    }
+
+    public static ContainerMountFilesEntity create(final Container.ContainerMountFiles containerMountFilesPojo) {
+        final ContainerMountFilesEntity containerMountFilesEntity = new ContainerMountFilesEntity();
+        containerMountFilesEntity.setId(containerMountFilesPojo.databaseId());
+        containerMountFilesEntity.setFromXnatInput(containerMountFilesPojo.fromXnatInput());
+        containerMountFilesEntity.setFromUri(containerMountFilesPojo.fromUri());
+        containerMountFilesEntity.setRootDirectory(containerMountFilesPojo.rootDirectory());
+        containerMountFilesEntity.setPath(containerMountFilesPojo.path());
+        return containerMountFilesEntity;
     }
 
     @Id

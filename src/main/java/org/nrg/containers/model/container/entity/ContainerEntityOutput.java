@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
 import org.hibernate.envers.Audited;
 import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandOutput;
+import org.nrg.containers.model.container.auto.Container;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -41,6 +42,21 @@ public class ContainerEntityOutput implements Serializable {
         this.label = resolvedCommandOutput.label();
         this.type = resolvedCommandOutput.type();
         this.handledByXnatCommandInput = resolvedCommandOutput.handledByXnatCommandInput();
+    }
+
+    public static ContainerEntityOutput fromPojo(final Container.ContainerOutput containerOutputPojo) {
+        final ContainerEntityOutput containerEntityOutput = new ContainerEntityOutput();
+        containerEntityOutput.setId(containerOutputPojo.databaseId());
+        containerEntityOutput.setName(containerOutputPojo.name());
+        containerEntityOutput.setType(containerOutputPojo.type());
+        containerEntityOutput.setRequired(containerOutputPojo.required());
+        containerEntityOutput.setMount(containerOutputPojo.mount());
+        containerEntityOutput.setPath(containerOutputPojo.path());
+        containerEntityOutput.setGlob(containerOutputPojo.glob());
+        containerEntityOutput.setLabel(containerOutputPojo.label());
+        containerEntityOutput.setCreated(containerOutputPojo.created());
+        containerEntityOutput.setHandledByXnatCommandInput(containerOutputPojo.handledByWrapperInput());
+        return containerEntityOutput;
     }
 
     @Id
