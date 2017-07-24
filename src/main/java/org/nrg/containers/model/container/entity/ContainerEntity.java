@@ -5,12 +5,12 @@ import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.envers.Audited;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMount;
 import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandOutput;
+import org.nrg.containers.model.container.ContainerInputType;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.CascadeType;
@@ -18,7 +18,6 @@ import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.OneToMany;
 import javax.persistence.Transient;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -176,32 +175,32 @@ public class ContainerEntity extends AbstractHibernateEntity {
 
     @Transient
     public Map<String, String> getRawInputs() {
-        return getInputs(ContainerEntityInput.Type.RAW);
+        return getInputs(ContainerInputType.RAW);
     }
 
     public void addRawInputs(final Map<String, String> rawInputValues) {
-        addInputs(ContainerEntityInput.Type.RAW, rawInputValues);
+        addInputs(ContainerInputType.RAW, rawInputValues);
     }
 
     @Transient
     public Map<String, String> getWrapperInputs() {
-        return getInputs(ContainerEntityInput.Type.WRAPPER);
+        return getInputs(ContainerInputType.WRAPPER);
     }
 
     public void addWrapperInputs(final Map<String, String> xnatInputValues) {
-        addInputs(ContainerEntityInput.Type.WRAPPER, xnatInputValues);
+        addInputs(ContainerInputType.WRAPPER, xnatInputValues);
     }
 
     @Transient
     public Map<String, String> getCommandInputs() {
-        return getInputs(ContainerEntityInput.Type.COMMAND);
+        return getInputs(ContainerInputType.COMMAND);
     }
 
     public void addCommandInputs(final Map<String, String> commandInputValues) {
-        addInputs(ContainerEntityInput.Type.COMMAND, commandInputValues);
+        addInputs(ContainerInputType.COMMAND, commandInputValues);
     }
 
-    private Map<String, String> getInputs(final ContainerEntityInput.Type type) {
+    private Map<String, String> getInputs(final ContainerInputType type) {
         if (this.inputs == null) {
             return null;
         }
@@ -214,7 +213,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
         return inputs;
     }
 
-    private void addInputs(final ContainerEntityInput.Type type,
+    private void addInputs(final ContainerInputType type,
                            final Map<String, String> inputs) {
         if (inputs == null) {
             return;
