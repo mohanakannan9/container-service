@@ -7,6 +7,9 @@ import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import org.nrg.containers.events.model.ContainerEvent;
+import org.nrg.containers.events.model.DockerContainerEvent;
 import org.nrg.containers.model.container.ContainerInputType;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.container.entity.ContainerEntityHistory;
@@ -30,6 +33,7 @@ public abstract class Container {
     @JsonProperty("user-id") public abstract String userId();
     @JsonProperty("docker-image") public abstract String dockerImage();
     @JsonProperty("command-line") public abstract String commandLine();
+    @Nullable @JsonProperty("working-directory") public abstract String workingDirectory();
     @JsonProperty("env") public abstract ImmutableMap<String, String> environmentVariables();
     @JsonProperty("mounts") public abstract ImmutableList<ContainerMount> mounts();
     @JsonProperty("inputs") public abstract ImmutableList<ContainerInput> inputs();
@@ -45,6 +49,7 @@ public abstract class Container {
                                    @JsonProperty("user-id") final String userId,
                                    @JsonProperty("docker-image") final String dockerImage,
                                    @JsonProperty("command-line") final String commandLine,
+                                   @JsonProperty("working-directory") final String workingDirectory,
                                    @JsonProperty("env") final Map<String, String> environmentVariables,
                                    @JsonProperty("mounts") final List<ContainerMount> mounts,
                                    @JsonProperty("inputs") final List<ContainerInput> inputs,
@@ -60,6 +65,7 @@ public abstract class Container {
                 .userId(userId)
                 .dockerImage(dockerImage)
                 .commandLine(commandLine)
+                .workingDirectory(workingDirectory)
                 .environmentVariables(environmentVariables == null ? Collections.<String, String>emptyMap() : environmentVariables)
                 .mounts(mounts == null ? Collections.<ContainerMount>emptyList() : mounts)
                 .inputs(inputs == null ? Collections.<ContainerInput>emptyList() : inputs)
@@ -123,6 +129,30 @@ public abstract class Container {
         return new AutoValue_Container.Builder();
     }
 
+    public abstract Builder toBuilder();
+
+    private Map<String, String> getInputs(final ContainerInputType type) {
+        final Map<String, String> inputs = Maps.newHashMap();
+        for (final ContainerInput input : inputs()) {
+            if (input.type() == type) {
+                inputs.put(input.name(), input.value());
+            }
+        }
+        return inputs;
+    }
+
+    public Map<String, String> getCommandInputs() {
+        return getInputs(ContainerInputType.COMMAND);
+    }
+
+    public Map<String, String> getWrapperInputs() {
+        return getInputs(ContainerInputType.WRAPPER);
+    }
+
+    public Map<String, String> getRawInputs() {
+        return getInputs(ContainerInputType.RAW);
+    }
+
     @AutoValue.Builder
     public static abstract class Builder {
         public abstract Builder databaseId(long databaseId);
@@ -132,6 +162,7 @@ public abstract class Container {
         public abstract Builder userId(String userId);
         public abstract Builder dockerImage(String dockerImage);
         public abstract Builder commandLine(String commandLine);
+        public abstract Builder workingDirectory(String workingDirectory);
 
         public abstract Builder environmentVariables(Map<String, String> environmentVariables);
         abstract ImmutableMap.Builder<String, String> environmentVariablesBuilder();
@@ -196,11 +227,15 @@ public abstract class Container {
                                             @JsonProperty("container-host-path") final String containerHostPath,
                                             @JsonProperty("container-path") final String containerPath,
                                             @JsonProperty("input-files") final List<ContainerMountFiles> inputFiles) {
-            final ImmutableList<ContainerMountFiles> inputFilesCopy = inputFiles == null ?
-                    ImmutableList.<ContainerMountFiles>of() :
-                    ImmutableList.copyOf(inputFiles);
-            return new AutoValue_Container_ContainerMount(databaseId, name, writable, xnatHostPath,
-                    containerHostPath, containerPath, inputFilesCopy);
+            return builder()
+                    .databaseId(databaseId)
+                    .name(name)
+                    .writable(writable)
+                    .xnatHostPath(xnatHostPath)
+                    .containerHostPath(containerHostPath)
+                    .containerPath(containerPath)
+                    .inputFiles(inputFiles == null ? Collections.<ContainerMountFiles>emptyList() : inputFiles)
+                    .build();
         }
 
         public static ContainerMount create(final ContainerEntityMount containerEntityMount) {
@@ -215,6 +250,31 @@ public abstract class Container {
                     containerEntityMount.getXnatHostPath(), containerEntityMount.getContainerHostPath(),
                     containerEntityMount.getContainerPath(), containerMountFiles);
         }
+
+        public static Builder builder() {
+            return new AutoValue_Container_ContainerMount.Builder();
+        }
+
+        public abstract Builder toBuilder();
+
+        @AutoValue.Builder
+        public static abstract class Builder {
+            public abstract Builder databaseId(long databaseId);
+            public abstract Builder name(String name);
+            public abstract Builder writable(boolean writable);
+            public abstract Builder xnatHostPath(String xnatHostPath);
+            public abstract Builder containerHostPath(String containerHostPath);
+            public abstract Builder containerPath(String containerPath);
+
+            public abstract Builder inputFiles(List<ContainerMountFiles> inputFiles);
+            abstract ImmutableList.Builder<ContainerMountFiles> inputFilesBuilder();
+            public Builder addInputFiles(final ContainerMountFiles inputFiles) {
+                inputFilesBuilder().add(inputFiles);
+                return this;
+            }
+
+            public abstract ContainerMount build();
+        }
     }
 
     @AutoValue
@@ -223,7 +283,7 @@ public abstract class Container {
         @JsonProperty("from-xnat-input") public abstract String fromXnatInput();
         @Nullable @JsonProperty("from-uri") public abstract String fromUri();
         @JsonProperty("root-directory") public abstract String rootDirectory();
-        @JsonProperty("path") public abstract String path();
+        @Nullable @JsonProperty("path") public abstract String path();
 
         @JsonCreator
         public static ContainerMountFiles create(@JsonProperty("database-id") final long databaseId,
@@ -270,7 +330,7 @@ public abstract class Container {
         @Nullable @JsonProperty("path") public abstract String path();
         @Nullable @JsonProperty("glob") public abstract String glob();
         @JsonProperty("label") public abstract String label();
-        @JsonProperty("created") public abstract String created();
+        @Nullable @JsonProperty("created") public abstract String created();
         @JsonProperty("handled-by-wrapper-input") public abstract String handledByWrapperInput();
 
         @JsonCreator
@@ -284,7 +344,18 @@ public abstract class Container {
                                              @JsonProperty("label") final String label,
                                              @JsonProperty("created") final String created,
                                              @JsonProperty("handled-by-wrapper-input") final String handledByWrapperInput) {
-            return new AutoValue_Container_ContainerOutput(databaseId, name, type, required, mount, path, glob, label, created, handledByWrapperInput);
+            return builder()
+                    .databaseId(databaseId)
+                    .name(name)
+                    .type(type)
+                    .required(required)
+                    .mount(mount)
+                    .path(path)
+                    .glob(glob)
+                    .label(label)
+                    .created(created)
+                    .handledByWrapperInput(handledByWrapperInput)
+                    .build();
         }
 
         public static ContainerOutput create(final ContainerEntityOutput containerEntityOutput) {
@@ -292,16 +363,39 @@ public abstract class Container {
                     containerEntityOutput.getMount(), containerEntityOutput.getPath(), containerEntityOutput.getGlob(),
                     containerEntityOutput.getLabel(), containerEntityOutput.getCreated(), containerEntityOutput.getHandledByXnatCommandInput());
         }
+
+        public static Builder builder() {
+            return new AutoValue_Container_ContainerOutput.Builder();
+        }
+
+        public abstract Builder toBuilder();
+
+        @AutoValue.Builder
+        public static abstract class Builder {
+            public abstract Builder databaseId(long databaseId);
+            public abstract Builder name(String name);
+            public abstract Builder type(String type);
+            public abstract Builder required(Boolean required);
+            public abstract Builder mount(String mount);
+            public abstract Builder path(String path);
+            public abstract Builder glob(String glob);
+            public abstract Builder label(String label);
+            public abstract Builder created(String created);
+            public abstract Builder handledByWrapperInput(String handledByWrapperInput);
+
+            public abstract ContainerOutput build();
+        }
     }
 
     @AutoValue
     public static abstract class ContainerHistory {
-        @JsonProperty("database-id") public abstract long databaseId();
+        @Nullable @JsonProperty("database-id") public abstract Long databaseId();
         @JsonProperty("status") public abstract String status();
         @JsonProperty("entity-type") public abstract String entityType();
-        @JsonProperty("entity-id") public abstract String entityId();
+        @Nullable @JsonProperty("entity-id") public abstract String entityId();
         @JsonProperty("time-recorded") public abstract Date timeRecorded();
-        @JsonProperty("external-timestamp") public abstract String externalTimestamp();
+        @Nullable @JsonProperty("external-timestamp") public abstract String externalTimestamp();
+        @Nullable @JsonProperty("message") public abstract String message();
 
         @JsonCreator
         public static ContainerHistory create(@JsonProperty("database-id") final long databaseId,
@@ -309,13 +403,71 @@ public abstract class Container {
                                               @JsonProperty("entity-type") final String entityType,
                                               @JsonProperty("entity-id") final String entityId,
                                               @JsonProperty("time-recorded") final Date timeRecorded,
-                                              @JsonProperty("external-timestamp") final String externalTimestamp) {
-            return new AutoValue_Container_ContainerHistory(databaseId, status, entityType, entityId, timeRecorded, externalTimestamp);
+                                              @JsonProperty("external-timestamp") final String externalTimestamp,
+                                              @JsonProperty("message") final String message) {
+            return builder()
+                    .databaseId(databaseId)
+                    .status(status)
+                    .entityType(entityType)
+                    .entityId(entityId)
+                    .timeRecorded(timeRecorded)
+                    .externalTimestamp(externalTimestamp)
+                    .build();
         }
 
         public static ContainerHistory create(final ContainerEntityHistory containerEntityHistory) {
             return create(containerEntityHistory.getId(), containerEntityHistory.getStatus(), containerEntityHistory.getEntityType(),
-                    containerEntityHistory.getEntityId(), containerEntityHistory.getTimeRecorded(), containerEntityHistory.getExternalTimestamp());
+                    containerEntityHistory.getEntityId(), containerEntityHistory.getTimeRecorded(), containerEntityHistory.getExternalTimestamp(), null);
+        }
+
+        public static ContainerHistory fromContainerEvent(final ContainerEvent containerEvent) {
+            return builder()
+                    .status(containerEvent.getStatus())
+                    .entityType("event")
+                    .entityId(null)
+                    .timeRecorded(new Date())
+                    .externalTimestamp(containerEvent instanceof DockerContainerEvent ? String.valueOf(((DockerContainerEvent)containerEvent).getTimeNano()) : null)
+                    .message(null)
+                    .build();
+        }
+
+        public static ContainerHistory fromSystem(final String status,
+                                                  final String message) {
+            return builder()
+                    .status(status)
+                    .entityType("system")
+                    .entityId(null)
+                    .timeRecorded(new Date())
+                    .externalTimestamp(null)
+                    .message(message)
+                    .build();
+        }
+
+        public static ContainerHistory fromUserAction(final String status, final String username) {
+            return builder()
+                    .status(status)
+                    .entityType("user")
+                    .entityId(username)
+                    .timeRecorded(new Date())
+                    .externalTimestamp(null)
+                    .message(null)
+                    .build();
+        }
+
+        public static Builder builder() {
+            return new AutoValue_Container_ContainerHistory.Builder();
+        }
+
+        @AutoValue.Builder
+        public static abstract class Builder {
+            public abstract Builder databaseId(Long databaseId);
+            public abstract Builder status(String status);
+            public abstract Builder entityType(String entityType);
+            public abstract Builder entityId(String entityId);
+            public abstract Builder timeRecorded(Date timeRecorded);
+            public abstract Builder externalTimestamp(String externalTimestamp);
+            public abstract Builder message(String message);
+            public abstract ContainerHistory build();
         }
     }
 }

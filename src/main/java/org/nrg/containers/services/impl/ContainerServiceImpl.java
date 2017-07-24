@@ -1,5 +1,7 @@
 package org.nrg.containers.services.impl;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.events.model.ContainerEvent;
 import org.nrg.containers.exceptions.CommandResolutionException;
@@ -8,6 +10,8 @@ import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.UnauthorizedException;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
+import org.nrg.containers.model.container.auto.Container;
+import org.nrg.containers.model.container.auto.Container.ContainerHistory;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.container.entity.ContainerEntityHistory;
 import org.nrg.containers.services.CommandResolutionService;
@@ -26,9 +30,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -63,20 +67,70 @@ public class ContainerServiceImpl implements ContainerService {
     }
 
     @Override
+    public List<Container> getAll() {
+        return toPojo(containerEntityService.getAll());
+    }
+
+    @Override
+    public Container save(final ResolvedCommand resolvedCommand, final String containerId, final UserI userI) {
+        return toPojo(containerEntityService.save(resolvedCommand, containerId, userI));
+    }
+
+    @Override
+    public Container retrieve(final String containerId) {
+        return toPojo(containerEntityService.retrieve(containerId));
+    }
+
+    @Override
+    public Container retrieve(final long id) {
+        return toPojo(containerEntityService.retrieve(id));
+    }
+
+    @Override
+    public Container get(final long id) throws NotFoundException {
+        return toPojo(containerEntityService.get(id));
+    }
+
+    @Override
+    public Container get(final String containerId) throws NotFoundException {
+        return toPojo(containerEntityService.get(containerId));
+    }
+
+    @Override
+    public void delete(final long id) throws NotFoundException {
+        containerEntityService.delete(id);
+    }
+
+    @Override
+    public void delete(final String containerId) throws NotFoundException {
+        containerEntityService.delete(containerId);
+    }
+
+    @Override
+    public Container addContainerEventToHistory(final ContainerEvent containerEvent) {
+        return toPojo(containerEntityService.addContainerEventToHistory(containerEvent));
+    }
+
+    @Override
+    public ContainerHistory addContainerHistoryItem(final Container container, final ContainerHistory history) {
+        return toPojo(containerEntityService.addContainerHistoryItem(fromPojo(container), fromPojo(history)));
+    }
+
+    @Override
     @Nonnull
-    public ContainerEntity resolveCommandAndLaunchContainer(final long wrapperId,
-                                                            final Map<String, String> inputValues,
-                                                            final UserI userI)
+    public Container resolveCommandAndLaunchContainer(final long wrapperId,
+                                                      final Map<String, String> inputValues,
+                                                      final UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException, UnauthorizedException {
         return launchResolvedCommand(commandResolutionService.resolve(wrapperId, inputValues, userI), userI);
     }
 
     @Override
     @Nonnull
-    public ContainerEntity resolveCommandAndLaunchContainer(final long commandId,
-                                                            final String wrapperName,
-                                                            final Map<String, String> inputValues,
-                                                            final UserI userI)
+    public Container resolveCommandAndLaunchContainer(final long commandId,
+                                                      final String wrapperName,
+                                                      final Map<String, String> inputValues,
+                                                      final UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException, UnauthorizedException {
         return launchResolvedCommand(commandResolutionService.resolve(commandId, wrapperName, inputValues, userI), userI);
 
@@ -84,21 +138,21 @@ public class ContainerServiceImpl implements ContainerService {
 
     @Override
     @Nonnull
-    public ContainerEntity resolveCommandAndLaunchContainer(final String project,
-                                                            final long wrapperId,
-                                                            final Map<String, String> inputValues,
-                                                            final UserI userI)
+    public Container resolveCommandAndLaunchContainer(final String project,
+                                                      final long wrapperId,
+                                                      final Map<String, String> inputValues,
+                                                      final UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException, UnauthorizedException {
         return launchResolvedCommand(commandResolutionService.resolve(project, wrapperId, inputValues, userI), userI);
     }
 
     @Override
     @Nonnull
-    public ContainerEntity resolveCommandAndLaunchContainer(final String project,
-                                                            final long commandId,
-                                                            final String wrapperName,
-                                                            final Map<String, String> inputValues,
-                                                            final UserI userI)
+    public Container resolveCommandAndLaunchContainer(final String project,
+                                                      final long commandId,
+                                                      final String wrapperName,
+                                                      final Map<String, String> inputValues,
+                                                      final UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException, UnauthorizedException {
         return launchResolvedCommand(commandResolutionService.resolve(project, commandId, wrapperName, inputValues, userI), userI);
 
@@ -106,8 +160,8 @@ public class ContainerServiceImpl implements ContainerService {
 
     @Override
     @Nonnull
-    public ContainerEntity launchResolvedCommand(final ResolvedCommand resolvedCommand,
-                                                 final UserI userI)
+    public Container launchResolvedCommand(final ResolvedCommand resolvedCommand,
+                                           final UserI userI)
             throws NoServerPrefException, DockerServerException, ContainerException, UnsupportedOperationException {
         if (resolvedCommand.type().equals(DOCKER.getName())) {
             return launchResolvedDockerCommand(resolvedCommand, userI);
@@ -117,8 +171,8 @@ public class ContainerServiceImpl implements ContainerService {
     }
 
     @Nonnull
-    private ContainerEntity launchResolvedDockerCommand(final ResolvedCommand resolvedCommand,
-                                                        final UserI userI)
+    private Container launchResolvedDockerCommand(final ResolvedCommand resolvedCommand,
+                                                  final UserI userI)
             throws NoServerPrefException, DockerServerException, ContainerException {
         log.info("Preparing to launch resolved command.");
         final ResolvedCommand preparedToLaunch = prepareToLaunch(resolvedCommand, userI);
@@ -127,19 +181,18 @@ public class ContainerServiceImpl implements ContainerService {
         final String containerId = containerControlApi.createContainer(preparedToLaunch);
 
         log.info("Recording container launch.");
-        final ContainerEntity containerEntity = containerEntityService.save(preparedToLaunch, containerId, userI);
-        containerEntityService.addContainerHistoryItem(containerEntity, ContainerEntityHistory.fromUserAction("Created", userI.getLogin()));
+        final Container container = save(preparedToLaunch, containerId, userI);
 
         log.info("Starting container.");
         try {
             containerControlApi.startContainer(containerId);
         } catch (DockerServerException e) {
-            containerEntityService.addContainerHistoryItem(containerEntity, ContainerEntityHistory.fromSystem("Did not start"));
-            handleFailure(containerEntity);
+            addContainerHistoryItem(container, ContainerHistory.fromSystem("Failed", "Did not start." + e.getMessage()));
+            handleFailure(container);
             throw new ContainerException("Failed to start");
         }
 
-        return containerEntity;
+        return container;
     }
 
     @Nonnull
@@ -162,12 +215,11 @@ public class ContainerServiceImpl implements ContainerService {
 
 
     @Override
-    @Transactional
     public void processEvent(final ContainerEvent event) {
         if (log.isDebugEnabled()) {
             log.debug("Processing container event");
         }
-        final ContainerEntity execution = containerEntityService.addContainerEventToHistory(event);
+        final Container execution = addContainerEventToHistory(event);
 
 
         // execution will be null if either we aren't tracking the container
@@ -179,7 +231,7 @@ public class ContainerServiceImpl implements ContainerService {
             if (exitCodeMatcher.matches()) {
                 log.debug("Container is dead. Finalizing.");
                 final String exitCode = exitCodeMatcher.group(1);
-                final String userLogin = execution.getUserId();
+                final String userLogin = execution.userId();
                 try {
                     final UserI userI = Users.getUser(userLogin);
                     finalize(execution, userI, exitCode);
@@ -196,59 +248,84 @@ public class ContainerServiceImpl implements ContainerService {
     }
 
     @Override
-    @Transactional
     public void finalize(final String containerId, final UserI userI) throws NotFoundException {
-        final ContainerEntity containerEntity = containerEntityService.get(containerId);
-        finalize(containerEntity, userI);
+        finalize(get(containerId), userI);
     }
 
     @Override
-    @Transactional
-    public void finalize(final ContainerEntity containerEntity, final UserI userI) {
+    public void finalize(final Container container, final UserI userI) {
         String exitCode = "x";
-        for (final ContainerEntityHistory history : containerEntity.getHistory()) {
-            final Matcher exitCodeMatcher = exitCodePattern.matcher(history.getStatus());
+        for (final ContainerHistory history : container.history()) {
+            final Matcher exitCodeMatcher = exitCodePattern.matcher(history.status());
             if (exitCodeMatcher.matches()) {
                 exitCode = exitCodeMatcher.group(1);
             }
         }
-        finalize(containerEntity, userI, exitCode);
+        finalize(container, userI, exitCode);
     }
 
     @Override
-    @Transactional
-    public void finalize(final ContainerEntity containerEntity, final UserI userI, final String exitCode) {
+    public void finalize(final Container container, final UserI userI, final String exitCode) {
         if (log.isInfoEnabled()) {
-            log.info(String.format("Finalizing ContainerExecution %s for container %s", containerEntity.getId(), containerEntity.getContainerId()));
+            log.info(String.format("Finalizing ContainerExecution %s for container %s", container.databaseId(), container.containerId()));
         }
 
-        containerFinalizeService.finalizeContainer(containerEntity, userI, exitCode);
+        final Container finalized = containerFinalizeService.finalizeContainer(container, userI, exitCode);
 
         if (log.isInfoEnabled()) {
-            log.info(String.format("Done uploading for ContainerExecution %s. Now saving information about created outputs.", containerEntity.getId()));
+            log.info(String.format("Done uploading for ContainerExecution %s. Now saving information about created outputs.", container.databaseId()));
         }
-        containerEntityService.update(containerEntity);
+        containerEntityService.update(fromPojo(finalized));
         if (log.isDebugEnabled()) {
-            log.debug("Done saving outputs for Container " + String.valueOf(containerEntity.getId()));
+            log.debug("Done saving outputs for Container " + String.valueOf(container.databaseId()));
         }
     }
 
     @Override
     @Nonnull
-    @Transactional
     public String kill(final String containerId, final UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException {
         // TODO check user permissions. How?
-        final ContainerEntity containerEntity = containerEntityService.get(containerId);
+        final Container container = get(containerId);
 
-        containerEntityService.addContainerHistoryItem(containerEntity, ContainerEntityHistory.fromUserAction("Killed", userI.getLogin()));
+        addContainerHistoryItem(container, ContainerHistory.fromUserAction("Killed", userI.getLogin()));
 
-        final String containerDockerId = containerEntity.getContainerId();
+        final String containerDockerId = container.containerId();
         containerControlApi.killContainer(containerDockerId);
         return containerDockerId;
     }
 
-    private void handleFailure(final ContainerEntity containerEntity) {
+    private void handleFailure(final Container container) {
         // TODO handle failure
+    }
+
+    @Nonnull
+    private Container toPojo(@Nonnull final ContainerEntity containerEntity) {
+        return Container.create(containerEntity);
+    }
+
+    @Nonnull
+    private List<Container> toPojo(@Nonnull final List<ContainerEntity> containerEntityList) {
+        return Lists.newArrayList(Lists.transform(containerEntityList, new Function<ContainerEntity, Container>() {
+            @Override
+            public Container apply(final ContainerEntity input) {
+                return toPojo(input);
+            }
+        }));
+    }
+
+    @Nonnull
+    private ContainerHistory toPojo(@Nonnull final ContainerEntityHistory containerEntityHistory) {
+        return ContainerHistory.create(containerEntityHistory);
+    }
+
+    @Nonnull
+    private ContainerEntity fromPojo(@Nonnull final Container container) {
+        return ContainerEntity.fromPojo(container);
+    }
+
+    @Nonnull
+    private ContainerEntityHistory fromPojo(@Nonnull final ContainerHistory containerHistory) {
+        return ContainerEntityHistory.fromPojo(containerHistory);
     }
 }

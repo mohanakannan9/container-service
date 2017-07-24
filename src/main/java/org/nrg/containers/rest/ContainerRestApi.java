@@ -2,6 +2,7 @@ package org.nrg.containers.rest;
 
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.model.container.auto.Container;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.containers.services.ContainerService;
@@ -37,37 +38,30 @@ public class ContainerRestApi extends AbstractXapiRestController {
     private static final String JSON = MediaType.APPLICATION_JSON_UTF8_VALUE;
 
     private ContainerService containerService;
-    private ContainerEntityService containerEntityService;
 
     @Autowired
-    public ContainerRestApi(final ContainerEntityService containerEntityService,
-                            final ContainerService containerService,
+    public ContainerRestApi(final ContainerService containerService,
                             final UserManagementServiceI userManagementService,
                             final RoleHolder roleHolder) {
         super(userManagementService, roleHolder);
-        this.containerEntityService = containerEntityService;
         this.containerService = containerService;
     }
 
     @XapiRequestMapping(method = GET, restrictTo = Admin)
     @ResponseBody
-    public List<ContainerEntity> getAll() {
-        return containerEntityService.getAll();
+    public List<Container> getAll() {
+        return containerService.getAll();
     }
 
     @XapiRequestMapping(value = "/{id}", method = GET, restrictTo = Admin)
     @ResponseBody
-    public ContainerEntity getOne(final @PathVariable String id) throws NotFoundException {
-        final ContainerEntity containerEntity = containerEntityService.retrieve(id);
-        if (containerEntity == null) {
-            throw new NotFoundException("ContainerExecution " + id + " not found.");
-        }
-        return containerEntity;
+    public Container get(final @PathVariable String id) throws NotFoundException {
+        return containerService.get(id);
     }
 
     @XapiRequestMapping(value = "/{id}", method = DELETE, restrictTo = Admin)
     public ResponseEntity<Void> delete(final @PathVariable String id) throws NotFoundException {
-        containerEntityService.delete(id);
+        containerService.delete(id);
         return ResponseEntity.noContent().build();
     }
 

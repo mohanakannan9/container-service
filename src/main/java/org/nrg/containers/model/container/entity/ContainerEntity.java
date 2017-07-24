@@ -31,6 +31,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
     @JsonProperty("xnat-command-wrapper-id") private long xnatCommandWrapperId;
     @JsonProperty("docker-image") private String dockerImage;
     @JsonProperty("command-line") private String commandLine;
+    @JsonProperty("working-directory") private String workingDirectory;
     @JsonProperty("env") private Map<String, String> environmentVariables = Maps.newHashMap();
     @JsonProperty("mounts") private List<ContainerEntityMount> mounts = Lists.newArrayList();
     @JsonProperty("container-id") private String containerId;
@@ -52,6 +53,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
         this.xnatCommandWrapperId = resolvedCommand.wrapperId();
         this.dockerImage = resolvedCommand.image();
         this.commandLine = resolvedCommand.commandLine();
+        this.workingDirectory = resolvedCommand.workingDirectory();
         setEnvironmentVariables(resolvedCommand.environmentVariables());
         setMounts(Lists.newArrayList(
                 Lists.transform(resolvedCommand.mounts(), new Function<ResolvedCommandMount, ContainerEntityMount>() {
@@ -84,6 +86,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
         containerEntity.setUserId(containerPojo.userId());
         containerEntity.setDockerImage(containerPojo.dockerImage());
         containerEntity.setCommandLine(containerPojo.commandLine());
+        containerEntity.setWorkingDirectory(containerPojo.workingDirectory());
         containerEntity.setEnvironmentVariables(containerPojo.environmentVariables());
         containerEntity.setLogPaths(containerPojo.logPaths());
         containerEntity.setMounts(Lists.newArrayList(Lists.transform(
@@ -152,6 +155,14 @@ public class ContainerEntity extends AbstractHibernateEntity {
 
     public void setCommandLine(final String commandLine) {
         this.commandLine = commandLine;
+    }
+
+    public String getWorkingDirectory() {
+        return workingDirectory;
+    }
+
+    public void setWorkingDirectory(final String workingDirectory) {
+        this.workingDirectory = workingDirectory;
     }
 
     @ElementCollection

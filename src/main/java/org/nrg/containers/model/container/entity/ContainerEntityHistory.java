@@ -62,7 +62,7 @@ public class ContainerEntityHistory {
 
     public static ContainerEntityHistory fromPojo(final Container.ContainerHistory containerHistoryPojo) {
         final ContainerEntityHistory containerEntityHistory = new ContainerEntityHistory();
-        containerEntityHistory.setId(containerHistoryPojo.databaseId());
+        containerEntityHistory.setId(containerHistoryPojo.databaseId() == null ? 0L : containerHistoryPojo.databaseId());
         containerEntityHistory.setStatus(containerHistoryPojo.status());
         containerEntityHistory.setEntityType(containerHistoryPojo.entityType());
         containerEntityHistory.setEntityId(containerHistoryPojo.entityId());
