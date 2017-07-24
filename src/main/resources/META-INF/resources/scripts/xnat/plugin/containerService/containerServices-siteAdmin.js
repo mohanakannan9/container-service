@@ -325,7 +325,7 @@ var XNAT = getObject(XNAT || {});
             newReceiver
         ]));
         $footer.append(spawn('div.clear.clearFix'));
-        
+
 
         return {
             element: $manager[0],
@@ -1538,7 +1538,7 @@ var XNAT = getObject(XNAT || {});
 
         return ccmTable.table;
     };
-    
+
     commandConfigManager.refresh = commandConfigManager.refreshTable = function(container){
         var $manager = $$(container||'div#command-config-list-container');
 
@@ -1898,8 +1898,8 @@ var XNAT = getObject(XNAT || {});
     };
 
     commandAutomationAdmin.init();
-    
-    
+
+
 /* =============== *
  * Command History *
  * =============== */
@@ -1977,7 +1977,7 @@ var XNAT = getObject(XNAT || {});
         }
 
         function displayCommandWithPopup(historyEntry){
-            var commandLabel = XNAT.plugin.containerService.wrapperList[historyEntry['xnat-command-wrapper-id']];
+            var commandLabel = XNAT.plugin.containerService.wrapperList[historyEntry['wrapper-id']];
             return spawn ('a',{
                 href: 'javascript:XNAT.plugin.containerService.historyTable.viewHistory(\''+historyEntry['id']+'\')',
                 title: 'View Full History Entry',
@@ -2003,21 +2003,26 @@ var XNAT = getObject(XNAT || {});
                 success: function(data){
                     if (data.length > 0) {
                         data.sort(function(a,b){
-                            var timestampA = new Date(a.timestamp),
-                                timestampB = new Date(b.timestamp);
-                            return (timestampA > timestampB) ? -1 : 1;
+                            return (a.id < b.id) ? -1 : 1;
                         });
 
                         data.forEach(function(historyEntry){
                             containerHistory[historyEntry['id']] = historyEntry;
-                            containerHistory[historyEntry['id']]['wrapper-name'] = XNAT.plugin.containerService.wrapperList[historyEntry['xnat-command-wrapper-id']];
+                            containerHistory[historyEntry['id']]['wrapper-name'] = XNAT.plugin.containerService.wrapperList[historyEntry['wrapper-id']];
+
+                            var timestamp = 0;
+                            historyEntry['history'].forEach(function(h){
+                                if(h['status'] == 'Created') {
+                                    timestamp = h['time-recorded'];
+                                }
+                            })
 
                             chTable.tr({title: historyEntry['id'], id: historyEntry['id'] })
                                 .td({ addClass: 'left', html: '<b>'+historyEntry['id']+'</b>' })
                                 .td(historyEntry['docker-image'])
                                 .td([ displayCommandWithPopup(historyEntry) ])
                                 .td(historyEntry['user-id'])
-                                .td([ displayDate(historyEntry['timestamp']) ])
+                                .td([ displayDate(timestamp) ])
                                 .td([ displayProject(historyEntry['mounts']) ]);
                         });
                     } else {
