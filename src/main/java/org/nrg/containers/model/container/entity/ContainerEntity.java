@@ -18,6 +18,7 @@ import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.OneToMany;
 import javax.persistence.Transient;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -34,10 +35,10 @@ public class ContainerEntity extends AbstractHibernateEntity {
     @JsonProperty("mounts") private List<ContainerEntityMount> mounts = Lists.newArrayList();
     @JsonProperty("container-id") private String containerId;
     @JsonProperty("user-id") private String userId;
-    private Set<ContainerEntityInput> inputs;
+    private List<ContainerEntityInput> inputs;
     private List<ContainerEntityOutput> outputs;
     private List<ContainerEntityHistory> history = Lists.newArrayList();
-    @JsonProperty("log-paths") private Set<String> logPaths;
+    @JsonProperty("log-paths") private List<String> logPaths;
 
     public ContainerEntity() {}
 
@@ -148,13 +149,13 @@ public class ContainerEntity extends AbstractHibernateEntity {
     }
 
     @OneToMany(mappedBy = "containerEntity", cascade = CascadeType.ALL, orphanRemoval = true)
-    public Set<ContainerEntityInput> getInputs() {
+    public List<ContainerEntityInput> getInputs() {
         return inputs;
     }
 
-    public void setInputs(final Set<ContainerEntityInput> inputs) {
+    public void setInputs(final List<ContainerEntityInput> inputs) {
         this.inputs = inputs == null ?
-                Sets.<ContainerEntityInput>newHashSet() :
+                Lists.<ContainerEntityInput>newArrayList() :
                 inputs;
         for (final ContainerEntityInput input : this.inputs) {
             input.setContainerEntity(this);
@@ -168,7 +169,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
         input.setContainerEntity(this);
 
         if (this.inputs == null) {
-            this.inputs = Sets.newHashSet();
+            this.inputs = Lists.newArrayList();
         }
         this.inputs.add(input);
     }
@@ -280,11 +281,11 @@ public class ContainerEntity extends AbstractHibernateEntity {
     }
 
     @ElementCollection
-    public Set<String> getLogPaths() {
+    public List<String> getLogPaths() {
         return logPaths;
     }
 
-    public void setLogPaths(final Set<String> logPaths) {
+    public void setLogPaths(final List<String> logPaths) {
         this.logPaths = logPaths;
     }
 
@@ -295,7 +296,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
         }
 
         if (this.logPaths == null) {
-            this.logPaths = Sets.newHashSet();
+            this.logPaths = Lists.newArrayList();
         }
         this.logPaths.add(logPath);
     }
