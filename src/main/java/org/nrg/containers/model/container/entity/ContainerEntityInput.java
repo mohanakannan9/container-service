@@ -3,6 +3,8 @@ package org.nrg.containers.model.container.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
 import org.hibernate.envers.Audited;
+import org.nrg.containers.model.container.ContainerInputType;
+import org.nrg.containers.model.container.auto.Container;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -19,7 +21,7 @@ import java.util.Objects;
 public class ContainerEntityInput {
     private long id;
     @JsonIgnore private ContainerEntity containerEntity;
-    @Enumerated(EnumType.STRING) private Type type;
+    @Enumerated(EnumType.STRING) private ContainerInputType type;
     private String name;
     private String value;
 
@@ -27,7 +29,7 @@ public class ContainerEntityInput {
 
     public static ContainerEntityInput raw(final String name, final String value) {
         final ContainerEntityInput input = new ContainerEntityInput();
-        input.type = Type.RAW;
+        input.type = ContainerInputType.RAW;
         input.name = name;
         input.value = value;
         return input;
@@ -35,7 +37,7 @@ public class ContainerEntityInput {
 
     public static ContainerEntityInput wrapper(final String name, final String value) {
         final ContainerEntityInput input = new ContainerEntityInput();
-        input.type = Type.WRAPPER;
+        input.type = ContainerInputType.WRAPPER;
         input.name = name;
         input.value = value;
         return input;
@@ -43,10 +45,19 @@ public class ContainerEntityInput {
 
     public static ContainerEntityInput command(final String name, final String value) {
         final ContainerEntityInput input = new ContainerEntityInput();
-        input.type = Type.COMMAND;
+        input.type = ContainerInputType.COMMAND;
         input.name = name;
         input.value = value;
         return input;
+    }
+
+    public static ContainerEntityInput fromPojo(final Container.ContainerInput containerInputPojo) {
+        final ContainerEntityInput containerEntityInput = new ContainerEntityInput();
+        containerEntityInput.setId(containerInputPojo.databaseId());
+        containerEntityInput.setType(containerInputPojo.type());
+        containerEntityInput.setName(containerInputPojo.name());
+        containerEntityInput.setValue(containerInputPojo.value());
+        return containerEntityInput;
     }
 
     @Id
@@ -68,11 +79,11 @@ public class ContainerEntityInput {
         this.containerEntity = containerEntity;
     }
 
-    public Type getType() {
+    public ContainerInputType getType() {
         return type;
     }
 
-    public void setType(final Type type) {
+    public void setType(final ContainerInputType type) {
         this.type = type;
     }
 
@@ -119,9 +130,4 @@ public class ContainerEntityInput {
                 .toString();
     }
 
-    public enum Type {
-        RAW,
-        WRAPPER,
-        COMMAND
-    }
 }

@@ -1,6 +1,5 @@
 package org.nrg.containers.api;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
@@ -29,15 +28,15 @@ import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.events.model.DockerContainerEvent;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.helpers.CommandLabelHelper;
-import org.nrg.containers.model.container.auto.Container;
-import org.nrg.containers.model.container.entity.ContainerEntityMount;
+import org.nrg.containers.model.command.auto.ResolvedCommand;
+import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMount;
+import org.nrg.containers.model.container.auto.ContainerMessage;
 import org.nrg.containers.model.server.docker.DockerServer;
 import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
-import org.nrg.containers.model.ResolvedDockerCommand;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.dockerhub.DockerHub;
 import org.nrg.containers.model.image.docker.DockerImage;
+import org.nrg.containers.services.CommandLabelService;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
@@ -49,7 +48,6 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.file.Paths;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -58,22 +56,22 @@ import java.util.Map;
 import static com.spotify.docker.client.DockerClient.EventsParam.since;
 import static com.spotify.docker.client.DockerClient.EventsParam.type;
 import static com.spotify.docker.client.DockerClient.EventsParam.until;
-import static org.nrg.containers.helpers.CommandLabelHelper.LABEL_KEY;
+import static org.nrg.containers.services.CommandLabelService.LABEL_KEY;
 
 @Service
 public class DockerControlApi implements ContainerControlApi {
     private static final Logger log = LoggerFactory.getLogger(DockerControlApi.class);
 
-    private DockerServerPrefsBean containerServerPref;
-    private ObjectMapper objectMapper;
-    private NrgEventService eventService;
+    private final DockerServerPrefsBean containerServerPref;
+    private final CommandLabelService commandLabelService;
+    private final NrgEventService eventService;
 
     @Autowired
     public DockerControlApi(final DockerServerPrefsBean containerServerPref,
-                            final ObjectMapper objectMapper,
+                            final CommandLabelService commandLabelService,
                             final NrgEventService eventService) {
         this.containerServerPref = containerServerPref;
-        this.objectMapper = objectMapper;
+        this.commandLabelService = commandLabelService;
         this.eventService = eventService;
     }
 
@@ -253,30 +251,30 @@ public class DockerControlApi implements ContainerControlApi {
     /**
      * Launch image on Docker server
      *
-     * @param resolvedDockerCommand A ResolvedDockerCommand. All templates are resolved, all mount paths exist.
+     * @param resolvedCommand A ResolvedDockerCommand. All templates are resolved, all mount paths exist.
      * @return ID of created Container
      **/
     @Override
-    public String createContainer(final ResolvedDockerCommand resolvedDockerCommand)
+    public String createContainer(final ResolvedCommand resolvedCommand)
             throws NoServerPrefException, DockerServerException, ContainerException {
 
         final List<String> bindMounts = Lists.newArrayList();
-        for (final ContainerEntityMount mount : resolvedDockerCommand.getMounts()) {
+        for (final ResolvedCommandMount mount : resolvedCommand.mounts()) {
             bindMounts.add(mount.toBindMountString());
         }
         final List<String> environmentVariables = Lists.newArrayList();
-        for (final Map.Entry<String, String> env : resolvedDockerCommand.getEnvironmentVariables().entrySet()) {
+        for (final Map.Entry<String, String> env : resolvedCommand.environmentVariables().entrySet()) {
             environmentVariables.add(StringUtils.join(new String[] {env.getKey(), env.getValue()}, "="));
         }
 
         return createContainer(getServer(),
-                resolvedDockerCommand.getImage(),
-                resolvedDockerCommand.getCommandLine(),
+                resolvedCommand.image(),
+                resolvedCommand.commandLine(),
                 bindMounts,
                 environmentVariables,
-                resolvedDockerCommand.getPorts(),
-                StringUtils.isNotBlank(resolvedDockerCommand.getWorkingDirectory()) ?
-                        resolvedDockerCommand.getWorkingDirectory() :
+                resolvedCommand.ports(),
+                StringUtils.isNotBlank(resolvedCommand.workingDirectory()) ?
+                        resolvedCommand.workingDirectory() :
                         null
         );
     }
@@ -480,7 +478,7 @@ public class DockerControlApi implements ContainerControlApi {
     public List<Command> parseLabels(final String imageName)
             throws DockerServerException, NoServerPrefException, NotFoundException {
         final DockerImage image = getImageById(imageName);
-        return CommandLabelHelper.parseLabels(imageName, image, objectMapper);
+        return commandLabelService.parseLabels(imageName, image);
     }
 
     /**
@@ -489,7 +487,7 @@ public class DockerControlApi implements ContainerControlApi {
      * @return Container objects stored on docker server
      **/
     @Override
-    public List<Container> getAllContainers() throws NoServerPrefException, DockerServerException {
+    public List<ContainerMessage> getAllContainers() throws NoServerPrefException, DockerServerException {
         return getContainers(null);
     }
 
@@ -500,7 +498,7 @@ public class DockerControlApi implements ContainerControlApi {
      * @return Container objects stored on docker server meeting the query parameters
      **/
     @Override
-    public List<Container> getContainers(final Map<String, String> params)
+    public List<ContainerMessage> getContainers(final Map<String, String> params)
         throws NoServerPrefException, DockerServerException {
         List<com.spotify.docker.client.messages.Container> containerList;
 
@@ -521,10 +519,10 @@ public class DockerControlApi implements ContainerControlApi {
             throw new DockerServerException(e);
         }
         return Lists.newArrayList(
-                Lists.transform(containerList, new Function<com.spotify.docker.client.messages.Container, Container>() {
+                Lists.transform(containerList, new Function<com.spotify.docker.client.messages.Container, ContainerMessage>() {
                     @Override
                     @Nullable
-                    public Container apply(final @Nullable com.spotify.docker.client.messages.Container container) {
+                    public ContainerMessage apply(final @Nullable com.spotify.docker.client.messages.Container container) {
                         return spotifyToNrg(container);
                     }
                 })
@@ -539,9 +537,9 @@ public class DockerControlApi implements ContainerControlApi {
      **/
     @Override
     @Nonnull
-    public Container getContainer(final String id)
+    public ContainerMessage getContainer(final String id)
         throws NotFoundException, NoServerPrefException, DockerServerException {
-        final Container container = spotifyToNrg(_getContainer(id));
+        final ContainerMessage container = spotifyToNrg(_getContainer(id));
         if (container != null) {
             return container;
         }
@@ -567,7 +565,7 @@ public class DockerControlApi implements ContainerControlApi {
     @Override
     public String getContainerStatus(final String id)
         throws NotFoundException, NoServerPrefException, DockerServerException {
-        final Container container = getContainer(id);
+        final ContainerMessage container = getContainer(id);
 
         return container.status();
     }
@@ -594,7 +592,7 @@ public class DockerControlApi implements ContainerControlApi {
 
     @VisibleForTesting
     @Nonnull
-    DockerClient getClient() throws NoServerPrefException {
+    public DockerClient getClient() throws NoServerPrefException {
         return getClient(getServer());
     }
 
@@ -731,8 +729,8 @@ public class DockerControlApi implements ContainerControlApi {
      * @return NRG Container object
      **/
     @Nullable
-    private Container spotifyToNrg(final @Nullable com.spotify.docker.client.messages.Container dockerContainer) {
-        return dockerContainer == null ? null : Container.create(dockerContainer.id(), dockerContainer.status());
+    private ContainerMessage spotifyToNrg(final @Nullable com.spotify.docker.client.messages.Container dockerContainer) {
+        return dockerContainer == null ? null : ContainerMessage.create(dockerContainer.id(), dockerContainer.status());
     }
 
     /**
@@ -742,8 +740,8 @@ public class DockerControlApi implements ContainerControlApi {
      * @return NRG Container object
      **/
     @Nullable
-    private Container spotifyToNrg(final @Nullable com.spotify.docker.client.messages.ContainerInfo dockerContainer) {
-        return dockerContainer == null ? null : Container.create(
+    private ContainerMessage spotifyToNrg(final @Nullable com.spotify.docker.client.messages.ContainerInfo dockerContainer) {
+        return dockerContainer == null ? null : ContainerMessage.create(
                 dockerContainer.id(),
                 dockerContainer.state().running() ? "Running" :
                         dockerContainer.state().paused() ? "Paused" :

@@ -1,16 +1,14 @@
 package org.nrg.containers.model.image.docker;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.containers.helpers.CommandLabelHelper;
-import org.nrg.containers.model.command.entity.CommandEntity;
 import org.nrg.containers.model.command.auto.Command;
+import org.nrg.containers.model.command.entity.CommandEntity;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -20,6 +18,7 @@ import java.util.List;
 import java.util.Set;
 
 @AutoValue
+@JsonInclude(JsonInclude.Include.ALWAYS)
 public abstract class DockerImageAndCommandSummary {
     @Nullable @JsonProperty("image-id") public abstract String imageId();
     @Nullable @JsonProperty("server") public abstract String server();

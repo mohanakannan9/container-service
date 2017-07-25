@@ -3,6 +3,7 @@ package org.nrg.containers.model.xnat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
@@ -28,6 +29,7 @@ public class Subject extends XnatModelObject {
     @JsonIgnore private XnatSubjectdataI xnatSubjectdataI;
     private List<Session> sessions;
     private List<Resource> resources;
+    @JsonProperty("project-id") private String projectId;
 
     public Subject() {}
 
@@ -62,6 +64,7 @@ public class Subject extends XnatModelObject {
         this.id = xnatSubjectdataI.getId();
         this.label = xnatSubjectdataI.getLabel();
         this.xsiType = xnatSubjectdataI.getXSIType();
+        this.projectId = xnatSubjectdataI.getProject();
 
         this.sessions = Lists.newArrayList();
         for (final XnatExperimentdataI xnatExperimentdataI : xnatSubjectdataI.getExperiments_experiment()) {
@@ -78,7 +81,7 @@ public class Subject extends XnatModelObject {
         }
     }
 
-    public static Function<URIManager.ArchiveItemURI, Subject> uriToModelObjectFunction() {
+    public static Function<URIManager.ArchiveItemURI, Subject> uriToModelObject() {
         return new Function<URIManager.ArchiveItemURI, Subject>() {
             @Nullable
             @Override
@@ -93,7 +96,7 @@ public class Subject extends XnatModelObject {
         };
     }
 
-    public static Function<String, Subject> stringToModelObjectFunction(final UserI userI) {
+    public static Function<String, Subject> idToModelObject(final UserI userI) {
         return new Function<String, Subject>() {
             @Nullable
             @Override
@@ -145,6 +148,14 @@ public class Subject extends XnatModelObject {
         this.resources = resources;
     }
 
+    public String getProjectId() {
+        return projectId;
+    }
+
+    public void setProjectId(final String projectId) {
+        this.projectId = projectId;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
@@ -153,12 +164,13 @@ public class Subject extends XnatModelObject {
         final Subject that = (Subject) o;
         return Objects.equals(this.xnatSubjectdataI, that.xnatSubjectdataI) &&
                 Objects.equals(this.sessions, that.sessions) &&
-                Objects.equals(this.resources, that.resources);
+                Objects.equals(this.resources, that.resources) &&
+                Objects.equals(this.projectId, that.projectId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), xnatSubjectdataI, sessions, resources);
+        return Objects.hash(super.hashCode(), xnatSubjectdataI, sessions, resources, projectId);
     }
 
     @Override
@@ -166,6 +178,7 @@ public class Subject extends XnatModelObject {
         return addParentPropertiesToString(MoreObjects.toStringHelper(this))
                 .add("sessions", sessions)
                 .add("resources", resources)
+                .add("projectId", projectId)
                 .toString();
     }
 }

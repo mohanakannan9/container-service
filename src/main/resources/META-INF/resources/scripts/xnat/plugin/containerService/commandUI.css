@@ -1,0 +1,37 @@
+
+.panel .standard-settings {
+    margin-bottom: 2em;
+}
+.panel .child-input {
+    padding-bottom: 1em;
+}
+.panel .advanced-settings-container {
+}
+.panel .advanced-settings-toggle {
+    border-bottom: 1px solid #ccc;
+    text-align: center;
+}
+.panel .advanced-settings-toggle:before {
+    background-color: #f0f0f0;
+    content: "Advanced Settings";
+    color: #848484;
+    cursor: pointer;
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 6px;
+    text-transform: uppercase;
+}
+.panel .advanced-settings-toggle.active:before {
+    background-color: #e4efff;
+    color: #4080cc;
+}
+.panel .advanced-settings {
+    border: solid #ccc;
+    border-width: 0 1px 1px;
+    display: none;
+    padding: 18px 0 6px;
+}
+
+#containerMenu > .bd {
+    border-top: none;
+}

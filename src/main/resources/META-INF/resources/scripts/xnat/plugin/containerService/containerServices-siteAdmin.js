@@ -40,15 +40,28 @@ var XNAT = getObject(XNAT || {});
         })
     }
 
-    function errorHandler(e, title){
+    function errorHandler(e, title, closeAll){
         console.log(e);
         title = (title) ? 'Error Found: '+ title : 'Error';
-        xmodal.alert({
+        closeAll = (closeAll === undefined) ? true : closeAll;
+        var errormsg = (e.statusText) ? '<p><strong>Error ' + e.status + ': '+ e.statusText+'</strong></p><p>' + e.responseText + '</p>' : e;
+        XNAT.dialog.open({
+            width: 450,
             title: title,
-            content: '<p><strong>Error ' + e.status + ': '+ e.statusText+'</strong></p><p>' + e.responseText + '</p>',
-            okAction: function () {
-                xmodal.closeAll();
-            }
+            content: errormsg,
+            buttons: [
+                {
+                    label: 'OK',
+                    isDefault: true,
+                    close: true,
+                    action: function(){
+                        if (closeAll) {
+                            xmodal.closeAll();
+
+                        }
+                    }
+                }
+            ]
         });
     }
 
@@ -61,7 +74,8 @@ var XNAT = getObject(XNAT || {});
 
     var containerHostManager,
         undefined,
-        rootUrl = XNAT.url.rootUrl;
+        rootUrl = XNAT.url.rootUrl,
+        csrfUrl = XNAT.url.csrfUrl;
 
     XNAT.plugin =
         getObject(XNAT.plugin || {});
@@ -71,13 +85,6 @@ var XNAT = getObject(XNAT || {});
 
     XNAT.plugin.containerService.containerHostManager = containerHostManager =
         getObject(XNAT.plugin.containerService.containerHostManager || {});
-
-    containerHostManager.samples = [
-        {
-            "host": "unix:///var/run/docker.sock",
-            "cert-path": ""
-        }
-    ];
 
     function containerHostUrl(appended){
         appended = isDefined(appended) ? '/' + appended : '';
@@ -99,15 +106,14 @@ var XNAT = getObject(XNAT || {});
 
     // dialog to create/edit hosts
     containerHostManager.dialog = function(item, isNew){
-        var tmpl = $('#container-host-editor-template');
-        var doWhat = !item ? 'New' : 'Edit';
-        isNew = firstDefined(isNew, doWhat === 'New');
+        var tmpl = $('#container-host-editor-template'),
+            doWhat = (isNew) ? 'Create' : 'Edit';
         item = item || {};
         xmodal.open({
             title: doWhat + ' Container Server Host',
             template: tmpl.clone(),
-            width: 350,
-            height: 250,
+            width: 450,
+            height: 300,
             scroll: false,
             padding: '0',
             beforeShow: function(obj){
@@ -122,43 +128,59 @@ var XNAT = getObject(XNAT || {});
                 // the form panel is 'containerHostTemplate' in site-admin-element.yaml
                 var $form = obj.$modal.find('form');
                 var $host = $form.find('input[name=host]');
-                $form.submitJSON({
-                    method: isNew ? 'POST' : 'PUT',
-                    url: isNew ? containerHostUrl() : containerHostUrl(item.id),
-                    validate: function(){
-
-                        $form.find(':input').removeClass('invalid');
-
-                        var errors = 0;
-                        var errorMsg = 'Errors were found with the following fields: <ul>';
-
-                        [$host].forEach(function($el){
-                            var el = $el[0];
-                            if (!el.value) {
-                                errors++;
-                                errorMsg += '<li><b>' + el.title + '</b> is required.</li>';
-                                $el.addClass('invalid');
-                            }
-                        });
-
-                        errorMsg += '</ul>';
-
-                        if (errors > 0) {
-                            xmodal.message('Errors Found', errorMsg, { height: 300 });
+                if (isNew) {
+                    xmodal.confirm({
+                        height: 220,
+                        scroll: false,
+                        content: "<p>This will replace your existing host definition. Are you sure you want to do this?</p>"+
+                            "<p><strong>This action cannot be undone.</strong></p>",
+                        okAction: function(){
+                            submitHostEditor($form,$host);
                         }
-
-                        return errors === 0;
-
-                    },
-                    success: function(){
-                        containerHostManager.refreshTable();
-                        xmodal.close(obj.$modal);
-                        XNAT.ui.banner.top(2000, 'Saved.', 'success')
-                    }
-                });
+                    })
+                } else {
+                    submitHostEditor($form,$host);
+                }
             }
         });
     };
+
+    function submitHostEditor($form,$host){
+        $form.submitJSON({
+            method: 'POST',
+            url: containerHostUrl(),
+            validate: function(){
+
+                $form.find(':input').removeClass('invalid');
+
+                var errors = 0;
+                var errorMsg = 'Errors were found with the following fields: <ul>';
+
+                [$host].forEach(function($el){
+                    var el = $el[0];
+                    if (!el.value) {
+                        errors++;
+                        errorMsg += '<li><b>' + el.title + '</b> is required.</li>';
+                        $el.addClass('invalid');
+                    }
+                });
+
+                errorMsg += '</ul>';
+
+                if (errors > 0) {
+                    xmodal.message('Errors Found', errorMsg, { height: 300 });
+                }
+
+                return errors === 0;
+
+            },
+            success: function(){
+                containerHostManager.refreshTable();
+                xmodal.closeAll();
+                XNAT.ui.banner.top(2000, 'Saved.', 'success')
+            }
+        });
+    }
 
     // create table for Container Hosts
     containerHostManager.table = function(container, callback){
@@ -175,8 +197,8 @@ var XNAT = getObject(XNAT || {});
 
         // add table header row
         chTable.tr()
-            .th({ addClass: 'left', html: '<b>Host</b>' })
-            .th('<b>Server Type</b>')
+            .th({ addClass: 'left', html: '<b>Host Name</b>' })
+            .th('<b>Host Path</b>')
             .th('<b>Default</b>')
             .th('<b>Actions</b>');
 
@@ -258,9 +280,9 @@ var XNAT = getObject(XNAT || {});
         containerHostManager.getAll().done(function(data){
             data = [].concat(data);
             data.forEach(function(item){
-                chTable.tr({ title: item.host, data: { id: item.id, host: item.host, certPath: item.certPath}})
-                    .td([editLink(item, item.host)]).addClass('host')
-                    .td([['div.center', ['Docker']]])
+                chTable.tr({ title: item.name, data: { id: item.id, host: item.host, certPath: item.certPath}})
+                    .td([editLink(item, item.name)]).addClass('host')
+                    .td([['div.center', [item.host]]])
                     .td([['div.center', [defaultToggle(item)]]])
                     .td([['div.center', [editButton(item), spacer(10), deleteButton(item)]]]);
             });
@@ -303,7 +325,7 @@ var XNAT = getObject(XNAT || {});
             newReceiver
         ]));
         $footer.append(spawn('div.clear.clearFix'));
-        
+
 
         return {
             element: $manager[0],
@@ -337,14 +359,6 @@ var XNAT = getObject(XNAT || {});
     XNAT.plugin.containerService.imageHostManager = imageHostManager =
         getObject(XNAT.plugin.containerService.imageHostManager || {});
 
-    imageHostManager.samples = [
-        {
-            "name": "Docker Hub",
-            "url": "https://hub.docker.com",
-            "enabled": true
-        }
-    ];
-
     function imageHostUrl(isDefault,appended){
         appended = isDefined(appended) ? '/' + appended : '';
         if (isDefault) {
@@ -370,8 +384,8 @@ var XNAT = getObject(XNAT || {});
     // dialog to create/edit hosts
     imageHostManager.dialog = function(item, isNew){
         var tmpl = $('#image-host-editor-template');
-        var doWhat = !item ? 'New' : 'Edit';
-        isNew = firstDefined(isNew, doWhat === 'New');
+        isNew = isNew || false;
+        var doWhat = (isNew) ? 'Create' : 'Edit';
         item = item || {};
         xmodal.open({
             title: doWhat + ' Image Hub',
@@ -396,7 +410,7 @@ var XNAT = getObject(XNAT || {});
                 var isDefault = $form.find('input[name=default]').val();
                 $form.submitJSON({
                     method: 'POST',
-                    url: (isNew) ? containerHostUrl(isDefault) : containerHostUrl(isDefault,item.id),
+                    url: (isNew) ? imageHostUrl(isDefault) : imageHostUrl(isDefault,item.id),
                     validate: function(){
 
                         $form.find(':input').removeClass('invalid');
@@ -620,6 +634,7 @@ var XNAT = getObject(XNAT || {});
         addImage,
         commandListManager,
         commandDefinition,
+        wrapperList,
         imageHubs;
 
     XNAT.plugin.containerService.imageListManager = imageListManager =
@@ -640,6 +655,8 @@ var XNAT = getObject(XNAT || {});
     XNAT.plugin.containerService.imageHubs = imageHubs =
         getObject(XNAT.plugin.containerService.imageHubs || {});
 
+    XNAT.plugin.containerService.wrapperList = wrapperList = {};
+
     imageListManager.samples = [
         {
             "label": "Docker Hub",
@@ -655,7 +672,7 @@ var XNAT = getObject(XNAT || {});
 
     function commandUrl(appended){
         appended = isDefined(appended) ? appended : '';
-        return rootUrl('/xapi/commands' + appended);
+        return csrfUrl('/xapi/commands' + appended);
     }
 
     function imagePullUrl(appended,hubId){
@@ -810,7 +827,7 @@ var XNAT = getObject(XNAT || {});
     };
 
     // create a read-only code editor dialog to view a command definition
-    commandDefinition.dialog = function(commandDef,newCommand){
+    commandDefinition.dialog = function(commandDef,newCommand,imageName){
         var _source,_editor;
         if (!newCommand) {
             commandDef = commandDef || {};
@@ -821,7 +838,7 @@ var XNAT = getObject(XNAT || {});
                 language: 'json'
             });
 
-            _source.openEditor({
+            _editor.openEditor({
                 title: commandDef.name,
                 classes: 'plugin-json',
                 footerContent: '(read-only)',
@@ -839,14 +856,14 @@ var XNAT = getObject(XNAT || {});
                 }
             });
         } else {
-            _source = spawn('textarea', null);
+            _source = spawn('textarea', '{}');
 
             _editor = XNAT.app.codeEditor.init(_source, {
                 language: 'json'
             });
 
             _editor.openEditor({
-                title: 'Add New Command',
+                title: 'Add New Command to '+imageName,
                 classes: 'plugin-json',
                 buttons: {
                     save: {
@@ -854,6 +871,8 @@ var XNAT = getObject(XNAT || {});
                         action: function(){
                             var editorContent = _editor.getValue().code;
                             // editorContent = JSON.stringify(editorContent).replace(/\r?\n|\r/g,' ');
+
+                            var url = (imageName) ? commandUrl('?image='+imageName) : commandUrl();
 
                             XNAT.xhr.postJSON({
                                 url: commandUrl(),
@@ -865,7 +884,7 @@ var XNAT = getObject(XNAT || {});
                                     XNAT.ui.banner.top(2000, 'Command definition saved.', 'success');
                                 },
                                 fail: function(e){
-                                    errorHandler(e, 'Could Not Save');
+                                    errorHandler(e, 'Could Not Save', false);
                                 }
                             });
                         }
@@ -972,16 +991,16 @@ var XNAT = getObject(XNAT || {});
         commandListManager.getAll(imageName).done(function(data) {
             if (data) {
                 for (var i = 0, j = data.length; i < j; i++) {
-                    var xnatActions = '', item = data[i];
-                    if (item.xnat) {
-                        for (var k = 0, l = item.xnat.length; k < l; k++) {
+                    var xnatActions = '', command = data[i];
+                    if (command.xnat) {
+                        for (var k = 0, l = command.xnat.length; k < l; k++) {
                             if (xnatActions.length > 0) xnatActions += '<br>';
-                            xnatActions += item.xnat[k].description;
-                            if (item.xnat[k].contexts.length > 0) {
-                                var contexts = item.xnat[k].contexts;
+                            xnatActions += command.xnat[k].description;
+                            if (command.xnat[k].contexts.length > 0) {
+                                var contexts = command.xnat[k].contexts;
                                 xnatActions += "<ul>";
-                                contexts.forEach(function(item){
-                                    xnatActions +="<li>"+item+"</li>";
+                                contexts.forEach(function(context){
+                                    xnatActions +="<li>"+context+"</li>";
                                 });
                                 xnatActions += "</ul>";
                             }
@@ -989,12 +1008,12 @@ var XNAT = getObject(XNAT || {});
                     } else {
                         xnatActions = 'N/A';
                     }
-                    chTable.tr({title: item.name, data: {id: item.id, name: item.name, image: item.image}})
-                        .td([viewLink(item, item.name)]).addClass('name')
+                    chTable.tr({title: command.name, data: {id: command.id, name: command.name, image: command.image}})
+                        .td([viewLink(command, command.name)]).addClass('name')
                         .td(xnatActions)
                         .td('N/A')
-                        .td(item.version)
-                        .td([['div.center', [viewCommandButton(item), spacer(10), deleteCommandButton(item)]]]);
+                        .td(command.version)
+                        .td([['div.center', [viewCommandButton(command), spacer(10), deleteCommandButton(command)]]]);
                 }
             } else {
                 // create a handler when no command data is returned.
@@ -1040,12 +1059,14 @@ var XNAT = getObject(XNAT || {});
     imageListManager.init = function(container){
         var $manager = $$(container||'div#image-list-container');
 
-        var newCommand = spawn('button.new-command.btn.sm', {
-            html: 'Add New Command',
-            onclick: function(){
-                commandDefinition.dialog(null,true); // opens the command code editor dialog with "new command" set to true
-            }
-        });
+        function newCommandButton(image) {
+            return spawn('button.btn.sm',{
+                html: 'Add New Command',
+                onclick: function(){
+                    commandDefinition.dialog(null,true,image.tags[0])
+                }
+            });
+        }
 
         function deleteImageButton(image) {
             return spawn('button.btn.sm',{
@@ -1083,9 +1104,18 @@ var XNAT = getObject(XNAT || {});
                 for (var i=0, j=data.length; i<j; i++) {
                     var imageInfo = data[i];
                     $manager.append(spawn('div.imageContainer',[
-                        ['h3.imageTitle',[imageInfo.tags[0], ['span.pull-right',[ deleteImageButton(imageInfo) ]]]],
-                        ['div.imageCommandList',[commandListManager.table(imageInfo.tags[0])]],
-                        ['div',[ newCommand ]]
+                        spawn('h3.imageTitle',[
+                            imageInfo.tags[0],
+                            spawn( 'span.pull-right',[
+                                deleteImageButton(imageInfo)
+                            ]),
+                            spawn( 'span.pull-right.pad10h',[
+                                newCommandButton(imageInfo)
+                            ])
+                        ]),
+                        spawn('div.imageCommandList',[
+                            commandListManager.table(imageInfo.tags[0])
+                        ])
                     ]));
                 }
             } else {
@@ -1123,22 +1153,17 @@ var XNAT = getObject(XNAT || {});
     XNAT.plugin.containerService.configDefinition = configDefinition =
         getObject(XNAT.plugin.containerService.configDefinition || {});
 
-    /* duplicate - delete
-    function commandUrl(appended){
-        appended = isDefined(appended) ? appended : '';
-        return rootUrl('/xapi/commands' + appended);
-    }
-    */
 
     function configUrl(command,wrapperName,appended){
         appended = isDefined(appended) ? '?' + appended : '';
         if (!command || !wrapperName) return false;
-        return rootUrl('/xapi/commands/'+command+'/wrappers/'+wrapperName+'/config' + appended);
+        return csrfUrl('/xapi/commands/'+command+'/wrappers/'+wrapperName+'/config' + appended);
     }
 
-    function configEnableUrl(command,wrapperName,flag){
-        if (!command || !wrapperName || !flag) return false;
-        return rootUrl('/xapi/commands/'+command+'/wrappers/'+wrapperName+'/' + flag);
+    function configEnableUrl(commandObj,wrapperObj,flag){
+        var command = commandObj.id,
+            wrapperName = wrapperObj.name;
+        return csrfUrl('/xapi/commands/'+command+'/wrappers/'+wrapperName+'/' + flag);
     }
 
     commandConfigManager.getCommands = commandConfigManager.getAll = function(callback){
@@ -1152,6 +1177,25 @@ var XNAT = getObject(XNAT || {});
                     return data;
                 }
                 callback.apply(this, arguments);
+            },
+            fail: function (e) {
+                errorHandler(e);
+            }
+        });
+    };
+
+    commandConfigManager.getEnabledStatus = function(command,wrapper,callback){
+        callback = isFunction(callback) ? callback : function(){};
+        return XNAT.xhr.get({
+            url: configEnableUrl(command,wrapper,'enabled'),
+            success: function(data){
+                if (data) {
+                    return data;
+                }
+                callback.apply(this, arguments);
+            },
+            fail: function(e){
+                errorHandler(e);
             }
         });
     };
@@ -1210,7 +1254,10 @@ var XNAT = getObject(XNAT || {});
         }
 
         function hiddenConfigInput(name,value) {
-            return '<input type="hidden" name="'+name+'" value="'+value+'" />'
+            return XNAT.ui.input.hidden({
+                name: name,
+                value: value
+            }).element;
         }
 
 
@@ -1358,10 +1405,10 @@ var XNAT = getObject(XNAT || {});
     };
 
 
-    commandConfigManager.table = function(callback){
+    commandConfigManager.table = function(){
 
         // initialize the table - we'll add to it below
-        var chTable = XNAT.table({
+        var ccmTable = XNAT.table({
             className: 'sitewide-command-configs xnat-table',
             style: {
                 width: '100%',
@@ -1371,7 +1418,7 @@ var XNAT = getObject(XNAT || {});
         });
 
         // add table header row
-        chTable.tr()
+        ccmTable.tr()
             .th({ addClass: 'left', html: '<b>XNAT Command Label</b>' })
             .th('<b>Container</b>')
             .th('<b>Enabled</b>')
@@ -1382,7 +1429,6 @@ var XNAT = getObject(XNAT || {});
                 onclick: function(e){
                     e.preventDefault();
                     configDefinition.dialog(item.id, wrapper.name, false);
-                    console.log('Open Config definition for '+ wrapper.name);
                 }
             }, [['b', text]]);
         }
@@ -1396,13 +1442,18 @@ var XNAT = getObject(XNAT || {});
             }, 'View Command Configuration');
         }
 
-        function enabledCheckbox(item,wrapper){
-            var enabled = !!item.enabled;
+        function enabledCheckbox(command,wrapper){
+            commandConfigManager.getEnabledStatus(command,wrapper).done(function(data){
+                var enabled = data;
+                $('#wrapper-'+wrapper.id+'-enable').prop('checked',enabled);
+            });
+
             var ckbox = spawn('input.config-enabled', {
                 type: 'checkbox',
-                checked: enabled,
-                value: enabled,
-                data: { name: item.name },
+                checked: false,
+                value: 'true',
+                id: 'wrapper-'+wrapper.id+'-enable',
+                data: { name: wrapper.name },
                 onchange: function(){
                     // save the status when clicked
                     var checkbox = this;
@@ -1410,7 +1461,7 @@ var XNAT = getObject(XNAT || {});
                     var enabledFlag = (enabled) ? 'enabled' : 'disabled';
 
                     XNAT.xhr.put({
-                        url: configEnableUrl(item.id,wrapper.name,enabledFlag),
+                        url: configEnableUrl(command,wrapper,enabledFlag),
                         success: function(){
                             var status = (enabled ? ' enabled' : ' disabled');
                             checkbox.value = enabled;
@@ -1425,12 +1476,11 @@ var XNAT = getObject(XNAT || {});
             });
 
             return spawn('div.center', [
-                spawn('label.switchbox|title=' + item.name, [
+                spawn('label.switchbox|title=' + wrapper.name, [
                     ckbox,
                     ['span.switchbox-outer', [['span.switchbox-inner']]]
                 ])
             ]);
-
         }
 
         function deleteConfigButton(item,wrapper){
@@ -1464,40 +1514,31 @@ var XNAT = getObject(XNAT || {});
         commandConfigManager.getAll().done(function(data) {
             if (data) {
                 for (var i = 0, j = data.length; i < j; i++) {
-                    var item = data[i];
-                    if (item.xnat) {
-                        for (var k = 0, l = item.xnat.length; k < l; k++) {
-                            var wrapper = item.xnat[k];
+                    var command = data[i];
+                    if (command.xnat) {
+                        for (var k = 0, l = command.xnat.length; k < l; k++) {
+                            var wrapper = command.xnat[k];
+                            ccmTable.tr({title: wrapper.name, data: {wrapperid: wrapper.id, commandid: command.id, name: wrapper.name, image: command.image}})
+                                .td([viewLink(command, wrapper, wrapper.description)]).addClass('name')
+                                .td([['span.truncate.truncate200', command.image ]])
+                                .td([['div', [enabledCheckbox(command,wrapper)]]])
+                                .td([['div.center', [viewConfigButton(command,wrapper), spacer(10), deleteConfigButton(command,wrapper)]]]);
 
-                            XNAT.xhr.get({
-                                url: configEnableUrl(item.id,wrapper.name,'enabled'),
-                                success: function(enabled){
-                                    item.enabled = enabled;
-                                    chTable.tr({title: wrapper.name, data: {id: item.id, name: wrapper.name, image: item.image}})
-                                        .td([viewLink(item, wrapper, wrapper.description)]).addClass('name')
-                                        .td(item.image)
-                                        .td([['div.center', [enabledCheckbox(item,wrapper)]]])
-                                        .td([['div.center', [viewConfigButton(item,wrapper), spacer(10), deleteConfigButton(item,wrapper)]]]);
-                                },
-                                fail: function(e){
-                                    errorHandler(e);
-                                }
-                            });
                         }
                     }
                 }
             } else {
                 // create a handler when no command data is returned.
-                chTable.tr({title: 'No command config data found'})
+                ccmTable.tr({title: 'No command config data found'})
                     .td({colSpan: '5', html: 'No XNAT-enabled Commands Found'});
             }
         });
 
-        commandConfigManager.$table = $(chTable.table);
+        commandConfigManager.$table = $(ccmTable.table);
 
-        return chTable.table;
+        return ccmTable.table;
     };
-    
+
     commandConfigManager.refresh = commandConfigManager.refreshTable = function(container){
         var $manager = $$(container||'div#command-config-list-container');
 
@@ -1514,20 +1555,364 @@ var XNAT = getObject(XNAT || {});
     };
 
     commandConfigManager.init();
-    
-    
-    
-    
+
+
+
+    /* ================================= *
+     * Command Automation Administration *
+     * ================================= */
+
+    console.log('commandAutomationAdmin.js');
+
+    var commandAutomationAdmin, projectList;
+
+    XNAT.plugin.containerService.commandAutomation = commandAutomationAdmin =
+        getObject(XNAT.plugin.containerService.commandAutomation || {});
+
+    XNAT.plugin.containerService.projectList = projectList = [];
+
+    function getProjectListUrl(){
+        return rootUrl('/data/projects?format=json');
+    }
+    function getCommandAutomationUrl(appended){
+        appended = (appended) ? '?'+appended : '';
+        return rootUrl('/xapi/commandeventmapping' + appended);
+    }
+    function postCommandAutomationUrl(flag){
+        flag = (flag) ? '/'+flag : ''; // can be used to set 'enabled' or 'disabled' flag
+        return csrfUrl('/xapi/commandeventmapping' + flag);
+    }
+    function commandAutomationIdUrl(id){
+        return csrfUrl('/xapi/commandeventmapping/' + id );
+    }
+
+    commandAutomationAdmin.getProjects = function(callback){
+        callback = isFunction(callback) ? callback : function(){};
+
+        return XNAT.xhr.getJSON({
+            url: getProjectListUrl(),
+            success: function(data){
+                if (data){
+                    projectList = data.ResultSet.Result;
+                    return projectList;
+                }
+                callback.apply(this, arguments);
+            },
+            fail: function(e){
+                errorHandler(e,'Could not get project list.');
+            }
+        });
+    };
+
+    commandAutomationAdmin.deleteAutomation = function(id){
+        if (!id) return false;
+        XNAT.xhr.delete({
+            url: commandAutomationIdUrl(id),
+            success: function(){
+
+                XNAT.ui.dialog.open({
+                    title: 'Success',
+                    width: 400,
+                    content: 'Successfully deleted command event mapping.',
+                    buttons: [
+                        {
+                            label: 'OK',
+                            isDefault: true,
+                            close: true,
+                            action: function(){
+                                XNAT.plugin.containerService.commandAutomation.init('refresh');
+                            }
+                        }
+                    ]
+                })
+            },
+            fail: function(e){
+                errorHandler(e);
+            }
+        })
+    };
+
+    $(document).on('change','#assignCommandIdToWrapper',function(){
+        var commandId = $(this).find('option:selected').data('command-id');
+        $('#event-command-identifier').val(commandId);
+    });
+
+    $(document).on('click','.deleteAutomationButton',function(){
+        var automationID = $(this).data('id');
+        if (automationID) {
+            XNAT.xhr.delete({
+                url: commandAutomationIdUrl(automationID),
+                success: function(){
+                    XNAT.ui.banner.top(2000,'Successfully removed command automation from project.','success');
+                    XNAT.plugin.containerService.commandAutomation.init('refresh');
+                },
+                fail: function(e){
+                    errorHandler(e, 'Could not delete command automation');
+                }
+            })
+        }
+    });
+
+    commandAutomationAdmin.addDialog = function(){
+        // get all commands and wrappers, then open a dialog to allow user to configure an automation.
+
+        function projectSelector(name,label){
+            name = (name) ? name : 'project';
+            label = (label) ? label : 'For Project';
+            var projectOptions = {};
+
+            // build options object for standard XNAT panel select
+            projectList.forEach(function(project){
+                projectOptions[project.ID] = project['secondary_ID'];
+            });
+
+            return XNAT.ui.panel.select.single({
+                name: name,
+                label: label,
+                options: projectOptions
+            });
+        }
+
+        function eventCommandSelector(name,options,label,description){
+            // receive an array of objects as our list of options
+            if (options.length > 0) {
+                description = (description) ? description : '';
+
+                // build formatted options list to stick into the generated select menu
+                var formattedOptions = [
+                    spawn('option',{ selected: true })
+                ];
+                options.forEach(function(option){
+                    formattedOptions.push(
+                        spawn('option',{
+                            value: option.value,
+                            data: { commandId: option['command-id'] },
+                            html: option.label
+                        } ));
+                });
+
+                var select = spawn('div.panel-element',[
+                    spawn('label.element-label',label),
+                    spawn('div.element-wrapper',[
+                        spawn('label',[
+                            spawn ('select', {
+                                name: name,
+                                id: 'assignCommandIdToWrapper'
+                            }, formattedOptions )
+                        ]),
+                        spawn('div.description',description)
+                    ])
+                ]);
+
+                return select;
+            }
+        }
+
+        commandConfigManager.getAll().done(function(data) {
+            if (data.length && projectList.length) {
+
+                // build array of commands that can be selected
+                var commandOptions = [];
+                data.forEach(function(command){
+                    command.xnat.forEach(function(wrapper){
+                        commandOptions.push({
+                            label: wrapper.name,
+                            value: wrapper.name,
+                            'command-id': command.id
+                        });
+                    });
+                });
+
+                var eventOptions = {
+                    'SessionArchived': 'On Session Archive',
+                    'ScanArchived': 'On Scan Archive'
+                };
+
+                if (Object.keys(commandOptions).length > 0) {
+                    XNAT.ui.dialog.open({
+                        title: 'Create Command Automation',
+                        width: 500,
+                        content: '<div class="panel pad20"></div>',
+                        beforeShow: function(obj){
+                            // populate form elements
+                            var panel = obj.$modal.find('.panel');
+                            panel.append( spawn('p','Please enter values for each field.') );
+                            panel.append( projectSelector() );
+                            panel.append( XNAT.ui.panel.select.single({
+                                name: 'event-type',
+                                label: 'On Event',
+                                options: eventOptions
+                            }));
+                            panel.append( eventCommandSelector(
+                                'xnat-command-wrapper',
+                                commandOptions,
+                                'Run Command')
+                            );
+                            panel.append( XNAT.ui.panel.input.hidden({
+                                name: 'command-id',
+                                id: 'event-command-identifier'
+                            })); // this will remain without a value until a command wrapper has been selected
+                        },
+                        buttons: [
+                            {
+                                label: 'Create Automation',
+                                isDefault: true,
+                                close: false,
+                                action: function(obj){
+                                    // collect input values, validate them, and post them to the command-event-mapping URI
+                                    var panel = obj.$modal.find('.panel'),
+                                        project = panel.find('select[name=project]').find('option:selected').val(),
+                                        command = panel.find('input[name=command-id]').val(),
+                                        wrapper = panel.find('select[name=xnat-command-wrapper]').find('option:selected').val(),
+                                        event = panel.find('select[name=event-type]').find('option:selected').val();
+
+                                    if (project && command && wrapper && event){
+                                        var data = {
+                                            'project': project,
+                                            'command-id': command,
+                                            'xnat-command-wrapper': wrapper,
+                                            'event-type': event
+                                        };
+                                        XNAT.xhr.postJSON({
+                                            url: csrfUrl('/xapi/commandeventmapping'),
+                                            data: JSON.stringify(data),
+                                            success: function(){
+                                                XNAT.ui.banner.top(2000, '<b>Success!</b> Command automation has been added', 'success');
+                                                XNAT.ui.dialog.closeAll();
+                                                XNAT.plugin.containerService.commandAutomation.init('refresh');
+                                            },
+                                            fail: function(e){
+                                                errorHandler(e,'Could not create command automation');
+                                            }
+                                        });
+                                    } else {
+                                        console.log(project,command,wrapper,event);
+                                        xmodal.alert('Please enter a value for each field');
+                                    }
+                                }
+                            },
+                            {
+                                label: 'Cancel',
+                                isDefault: false,
+                                close: true
+                            }
+                        ]
+                    });
+                } else {
+                    // if no wrappers are identified, fail to launch
+                }
+
+            } else {
+                // if no commands are found, fail to launch
+                errorHandler({},'Could not add a command. Check the command list.');
+
+            }
+        });
+    };
+
+    commandAutomationAdmin.table = function(){
+        // initialize the table - we'll add to it below
+        var caTable = XNAT.table({
+            className: 'xnat-table compact',
+            style: {
+                width: '100%',
+                marginTop: '15px',
+                marginBottom: '15px'
+            }
+        });
+
+        // add table header row
+        caTable.tr()
+            .th({ addClass: 'left', html: '<b>ID</b>' })
+            .th('<b>Project</b>')
+            .th('<b>Event</b>')
+            .th('<b>Command</b>')
+            .th('<b>Created By</b>')
+            .th('<b>Enabled</b>')
+            .th('<b>Action</b>');
+
+        function displayDate(timestamp){
+            var d = new Date(timestamp);
+            return d.toISOString().replace('T',' ').replace('Z',' ');
+        }
+
+        function deleteAutomationButton(id){
+            return spawn('button.deleteAutomationButton',{ data: { id: id }, html: 'Delete' });
+        }
+
+        XNAT.xhr.getJSON({
+            url: getCommandAutomationUrl(),
+            fail: function(e){
+                errorHandler(e);
+            },
+            success: function(data){
+                // data returns an array of known command event mappings
+                if (data.length){
+                    data.forEach(function(mapping){
+                        caTable.tr()
+                            .td( '<b>'+mapping['id']+'</b>' )
+                            .td( mapping['project'] )
+                            .td( mapping['event-type'] )
+                            .td( mapping['xnat-command-wrapper'] )
+                            .td( mapping['subscription-user-name'] )
+                            .td( mapping['enabled'] )
+                            .td([ deleteAutomationButton(mapping['id']) ])
+                    });
+
+                } else {
+                    caTable.tr()
+                        .td({ colSpan: '7', html: 'No command event mappings exist for this project.' });
+                }
+            }
+        });
+
+        commandAutomationAdmin.$table = $(caTable.table);
+
+        return caTable.table;
+    };
+
+    commandAutomationAdmin.init = function(refresh){
+        // initialize the list of command automations
+        var manager = $('#command-automation-admin-list');
+        var $footer = manager.parents('.panel').find('.panel-footer');
+
+        manager.html('');
+        manager.append(commandAutomationAdmin.table());
+
+        if (!refresh) {
+            commandAutomationAdmin.getProjects().done(function(){
+                var newAutomation = spawn('button.new-command-automation.btn.btn-sm.submit', {
+                    html: 'Add New Command Automation',
+                    onclick: function(){
+                        commandAutomationAdmin.addDialog();
+                    }
+                });
+
+                // add the 'add new' button to the panel footer
+                $footer.append(spawn('div.pull-right', [
+                    newAutomation
+                ]));
+                $footer.append(spawn('div.clear.clearFix'));
+            });
+        }
+    };
+
+    commandAutomationAdmin.init();
+
+
 /* =============== *
  * Command History *
  * =============== */
 
     console.log('commandHistory.js');
 
-    var historyTable;
+    var historyTable, containerHistory;
 
     XNAT.plugin.containerService.historyTable = historyTable =
-        getObject(XNAT.plugin.containerService || {});
+        getObject(XNAT.plugin.containerService.historyTable || {});
+
+    XNAT.plugin.containerService.containerHistory = containerHistory =
+        getObject(XNAT.plugin.containerService.containerHistory || {});
 
     function getCommandHistoryUrl(appended){
         appended = (appended) ? '?'+appended : '';
@@ -1552,8 +1937,7 @@ var XNAT = getObject(XNAT || {});
             .th('<b>Command</b>')
             .th('<b>User</b>')
             .th('<b>Date</b>')
-            .th('<b>Input</b>')
-            .th('<b>Output</b>');
+            .th('<b>Project</b>');
 
         function displayDate(timestamp){
             var d = new Date(timestamp);
@@ -1570,39 +1954,159 @@ var XNAT = getObject(XNAT || {});
             }
         }
 
+        function displayProject(mounts){
+            // assume that the first mount of a container is an input from a project. Parse the URI for that mount and return the project ID.
+            if (mounts.length) {
+                var inputMount = mounts[0]['xnat-host-path'];
+                if (inputMount === undefined) return 'unknown';
+
+                inputMount = inputMount.replace('/data/xnat/archive/','');
+                inputMount = inputMount.replace('/data/archive/','');
+                inputMount = inputMount.replace('/REST/archive/','');
+                var inputMountEls = inputMount.split('/');
+                return spawn('a',{ href: '/data/projects/'+ inputMountEls[0] + '?format=html', html: inputMountEls[0] });
+            } else {
+                return 'unknown';
+            }
+
+        }
+
         function displayOutput(outputArray){
             var o = outputArray[0];
             return o.label;
         }
 
-        XNAT.xhr.getJSON({
-            url: getCommandHistoryUrl(),
-            fail: function(e){
-                errorHandler(e);
-            },
-            success: function(data){
-                if (data.length > 0) {
-                    data.forEach(function(item){
-                        chTable.tr({title: item['container-id'], id: item['container-id'] })
-                            .td({ addClass: 'left', html: '<b>'+item['id']+'</b>' })
-                            .td(item['docker-image'])
-                            .td('dcm2niix-scan')
-                            .td(item['user-id'])
-                            .td([ displayDate(item['timestamp']) ])
-                            .td([ displayInput(item['rawInputs']) ])
-                            .td([ displayOutput(item['outputs']) ]);
-                    })
-                } else {
-                    chTable.tr()
-                        .td({ colspan: 7, html: "No history entries found" });
-                }
+        function displayCommandWithPopup(historyEntry){
+            var commandLabel = XNAT.plugin.containerService.wrapperList[historyEntry['wrapper-id']];
+            return spawn ('a',{
+                href: 'javascript:XNAT.plugin.containerService.historyTable.viewHistory(\''+historyEntry['id']+'\')',
+                title: 'View Full History Entry',
+                html: commandLabel
+            });
+        }
 
-            }
+        commandListManager.getAll().done(function(commands){
+            // populate the list of wrappers
+            commands.forEach(function(command){
+                var wrappers = command.xnat;
+                wrappers.forEach(function(wrapper){
+                    XNAT.plugin.containerService.wrapperList[wrapper.id] = wrapper.description;
+                })
+
+            });
+
+            XNAT.xhr.getJSON({
+                url: getCommandHistoryUrl(),
+                fail: function(e){
+                    errorHandler(e);
+                },
+                success: function(data){
+                    if (data.length > 0) {
+                        data.sort(function(a,b){
+                            return (a.id < b.id) ? -1 : 1;
+                        });
+
+                        data.forEach(function(historyEntry){
+                            containerHistory[historyEntry['id']] = historyEntry;
+                            containerHistory[historyEntry['id']]['wrapper-name'] = XNAT.plugin.containerService.wrapperList[historyEntry['wrapper-id']];
+
+                            var timestamp = 0;
+                            historyEntry['history'].forEach(function(h){
+                                if(h['status'] == 'Created') {
+                                    timestamp = h['time-recorded'];
+                                }
+                            })
+
+                            chTable.tr({title: historyEntry['id'], id: historyEntry['id'] })
+                                .td({ addClass: 'left', html: '<b>'+historyEntry['id']+'</b>' })
+                                .td(historyEntry['docker-image'])
+                                .td([ displayCommandWithPopup(historyEntry) ])
+                                .td(historyEntry['user-id'])
+                                .td([ displayDate(timestamp) ])
+                                .td([ displayProject(historyEntry['mounts']) ]);
+                        });
+                    } else {
+                        chTable.tr()
+                            .td({ colspan: 7, html: "No history entries found" });
+                    }
+
+                }
+            });
+
         });
 
         historyTable.$table = $(chTable.table);
 
         return chTable.table;
+    };
+
+    historyTable.viewHistory = function(id){
+        if (containerHistory[id]) {
+            var historyEntry = XNAT.plugin.containerService.containerHistory[id];
+
+            // build nice-looking history entry table
+            var pheTable = XNAT.table({
+                className: 'xnat-table compact',
+                style: {
+                    width: '100%',
+                    marginTop: '15px',
+                    marginBottom: '15px'
+                }
+            });
+
+            // add table header row
+            pheTable.tr()
+                .th({ addClass: 'left', html: '<b>Key</b>' })
+                .th({ addClass: 'left', html: '<b>Value</b>' });
+
+            for (var key in historyEntry){
+                var val = historyEntry[key], formattedVal = '';
+                if (Array.isArray(val)) {
+                    var items = [];
+                    val.forEach(function(item){
+                        if (typeof item === 'object') item = JSON.stringify(item);
+                        items.push(spawn('li',[ spawn('code',item) ]));
+                    });
+                    formattedVal = spawn('ul',{ style: { 'list-style-type': 'none', 'padding-left': '0' }}, items);
+                } else if (typeof val === 'object' ) {
+                    formattedVal = spawn('code', JSON.stringify(val));
+                } else if (!val) {
+                    formattedVal = spawn('code','false');
+                } else {
+                    formattedVal = spawn('code',val);
+                }
+
+                pheTable.tr()
+                    .td('<b>'+key+'</b>')
+                    .td([ spawn('div',{ style: { 'word-break': 'break-all','max-width':'600px' }}, formattedVal) ]);
+            }
+
+            // display history
+            XNAT.ui.dialog.open({
+                title: historyEntry['wrapper-name'],
+                width: 800,
+                scroll: true,
+                content: pheTable.table,
+                buttons: [
+                    {
+                        label: 'OK',
+                        isDefault: true,
+                        close: true
+                    }
+                ]
+            });
+        } else {
+            XNAT.ui.dialog.open({
+                content: 'Sorry, could not display this history item.',
+                buttons: [
+                    {
+                        label: 'OK',
+                        isDefault: true,
+                        close: true
+                    }
+                ]
+            });
+        }
     };
 
     historyTable.init = function(container){

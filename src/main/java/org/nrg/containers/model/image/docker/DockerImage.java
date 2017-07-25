@@ -1,6 +1,7 @@
 package org.nrg.containers.model.image.docker;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
@@ -18,6 +19,7 @@ import java.util.Map;
 
 @AutoValue
 @ApiModel(description = "Properties that define an image.")
+@JsonInclude(JsonInclude.Include.ALWAYS)
 public abstract class DockerImage {
 
     @Nullable @JsonProperty("image-id") public abstract String imageId();

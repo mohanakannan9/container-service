@@ -20,6 +20,8 @@ import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.security.helpers.AccessLevel;
+import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -36,10 +38,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.nrg.containers.exceptions.UnauthorizedException;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
+import static org.nrg.xdat.security.helpers.AccessLevel.Read;
 import static org.springframework.web.bind.annotation.RequestMethod.DELETE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
@@ -113,11 +119,18 @@ public class CommandRestApi extends AbstractXapiRestController {
 
     @XapiRequestMapping(value = {"/commands"}, method = POST, produces = JSON)
     @ApiOperation(value = "Create a Command", code = 201)
-    public ResponseEntity<Long> createCommand(final @RequestBody Command command)
-            throws BadRequestException, CommandValidationException {
+    public ResponseEntity<Long> createCommand(final @RequestParam(value = "image", required=false) String image,
+                                              final @RequestBody Command.CommandCreation command)
+            throws BadRequestException, CommandValidationException, UnauthorizedException {
+        checkAdminOrThrow();
+        // The user may have sent IDs in their command, but we don't want them.
+        // We must clean all the IDs before attempting to create.
+        // For this, we use the "CommandCreation" object, which has
+        // all the properties of a command except for ids.
+        final Command toCreate = Command.create(command, image);
 
         try {
-            final Command created = commandService.create(command);
+            final Command created = commandService.create(toCreate);
             if (created == null) {
                 return new ResponseEntity<>(0L, HttpStatus.INTERNAL_SERVER_ERROR);
             }
@@ -132,14 +145,16 @@ public class CommandRestApi extends AbstractXapiRestController {
     @ResponseBody
     public ResponseEntity<Void> updateCommand(final @RequestBody Command command,
                                               final @PathVariable long id)
-            throws NotFoundException, CommandValidationException {
+            throws NotFoundException, CommandValidationException, UnauthorizedException {
+        checkAdminOrThrow();
         commandService.update(command.id() == id ? command : command.toBuilder().id(id).build());
         return ResponseEntity.ok().build();
     }
 
     @XapiRequestMapping(value = {"/commands/{id}"}, method = DELETE)
     @ApiOperation(value = "Delete a Command", code = 204)
-    public ResponseEntity<Void> delete(final @PathVariable long id) {
+    public ResponseEntity<Void> delete(final @PathVariable long id) throws UnauthorizedException {
+        checkAdminOrThrow();
         commandService.delete(id);
         return ResponseEntity.noContent().build();
     }
@@ -149,13 +164,14 @@ public class CommandRestApi extends AbstractXapiRestController {
      */
     @XapiRequestMapping(value = {"/commands/{id}/wrappers"}, method = POST, produces = JSON)
     @ApiOperation(value = "Create a Command Wrapper", code = 201)
-    public ResponseEntity<Long> createWrapper(final @RequestBody CommandWrapper commandWrapper,
+    public ResponseEntity<Long> createWrapper(final @RequestBody Command.CommandWrapperCreation commandWrapperCreation,
                                               final @PathVariable long id)
-            throws BadRequestException, CommandValidationException, NotFoundException {
-        if (commandWrapper == null) {
+            throws BadRequestException, CommandValidationException, NotFoundException, UnauthorizedException {
+        checkAdminOrThrow();
+        if (commandWrapperCreation == null) {
             throw new BadRequestException("The body of the request must be a CommandWrapper.");
         }
-        final CommandWrapper created = commandService.addWrapper(id, commandWrapper);
+        final CommandWrapper created = commandService.addWrapper(id, CommandWrapper.create(commandWrapperCreation));
         if (created == null) {
             return new ResponseEntity<>(0L, HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -168,33 +184,59 @@ public class CommandRestApi extends AbstractXapiRestController {
     public ResponseEntity<Void> updateWrapper(final @RequestBody CommandWrapper commandWrapper,
                                               final @PathVariable long commandId,
                                               final @PathVariable long wrapperId)
-            throws NotFoundException, CommandValidationException {
-        commandService.update(commandId,
+            throws NotFoundException, CommandValidationException, UnauthorizedException {
+        checkAdminOrThrow();
+        commandService.updateWrapper(commandId,
                 commandWrapper.id() == wrapperId ? commandWrapper : commandWrapper.toBuilder().id(wrapperId).build());
         return ResponseEntity.ok().build();
     }
 
-    @XapiRequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperId}"}, method = DELETE)
+    @XapiRequestMapping(value = {"/wrappers/{wrapperId}"}, method = DELETE)
     @ApiOperation(value = "Delete a Command", code = 204)
-    public ResponseEntity<Void> delete(final @PathVariable long commandId,
-                                       final @PathVariable long wrapperId)
-            throws NotFoundException {
-        commandService.delete(commandId, wrapperId);
+    public ResponseEntity<Void> deleteWrapper(final @PathVariable long wrapperId)
+            throws NotFoundException, UnauthorizedException {
+        checkAdminOrThrow();
+        commandService.deleteWrapper(wrapperId);
         return ResponseEntity.noContent().build();
     }
 
     /*
     AVAILABLE FOR LAUNCHING
      */
-    @XapiRequestMapping(value = {"/commands/available"}, params = {"project", "xsiType"})
+    @XapiRequestMapping(value = {"/commands/available"}, params = {"project", "xsiType"}, method = GET, restrictTo = Read)
     @ResponseBody
     public List<CommandSummaryForContext> availableCommands(final @RequestParam String project,
                                                             final @RequestParam String xsiType)
             throws ElementNotFoundException {
         final UserI userI = XDAT.getUserDetails();
-        return commandService.available(project, xsiType, userI);
+
+        return Permissions.canEditProject(userI, project) ?
+                commandService.available(project, xsiType, userI) :
+                Collections.<CommandSummaryForContext>emptyList();
     }
 
+    @XapiRequestMapping(value = {"/commands/available/site"}, params = {"xsiType"}, method = GET, restrictTo = Admin)
+    @ResponseBody
+    public List<CommandSummaryForContext> availableCommands(final @RequestParam String xsiType)
+            throws ElementNotFoundException {
+        final UserI userI = XDAT.getUserDetails();
+        //We can permit any user to make this REST call since available should note return any available commands for users without permissions.
+        return commandService.available(xsiType, userI);
+    }
+
+    private void checkAdminOrThrow() throws UnauthorizedException {
+        checkAdminOrThrow(XDAT.getUserDetails());
+    }
+
+    private void checkAdminOrThrow(final UserI userI) throws UnauthorizedException {
+        if (!isAdmin(userI)) {
+            throw new UnauthorizedException(String.format("User %s is not an admin.", userI == null ? "" : userI.getLogin()));
+        }
+    }
+
+    private boolean isAdmin(final UserI userI) throws UnauthorizedException {
+        return getRoleHolder().isSiteAdmin(userI);
+    }
 
     /*
     EXCEPTION HANDLING

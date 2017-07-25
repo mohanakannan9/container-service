@@ -2,7 +2,6 @@ package org.nrg.containers.model;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.io.Resources;
 import org.hamcrest.CustomTypeSafeMatcher;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
@@ -24,7 +23,6 @@ import org.nrg.containers.model.command.entity.CommandWrapperInputType;
 import org.nrg.containers.model.command.entity.CommandWrapperOutputEntity;
 import org.nrg.containers.model.command.entity.DockerCommandEntity;
 import org.nrg.containers.services.CommandEntityService;
-import org.nrg.framework.exceptions.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
@@ -33,6 +31,7 @@ import org.springframework.test.context.transaction.TestTransaction;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.List;
 
 import static org.hamcrest.Matchers.contains;
@@ -40,7 +39,6 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.isIn;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
@@ -327,7 +325,7 @@ public class CommandEntityTest {
 
         final CommandWrapperEntity createdWrapper = created.getCommandWrapperEntities().get(0);
         final long wrapperId = createdWrapper.getId();
-        assertThat(commandEntityService.retrieve(created, wrapperId), is(createdWrapper));
+        assertThat(commandEntityService.retrieveWrapper(wrapperId), is(createdWrapper));
 
         assertThat(Command.create(created).validate(), is(Matchers.<String>emptyIterable()));
     }
@@ -449,43 +447,23 @@ public class CommandEntityTest {
         TestTransaction.end();
         TestTransaction.start();
 
-        final long commandId = created.getId();
         final long wrapperId = created.getCommandWrapperEntities().get(0).getId();
-        commandEntityService.delete(commandId, wrapperId);
+        commandEntityService.deleteWrapper(wrapperId);
 
         TestTransaction.flagForCommit();
         TestTransaction.end();
         TestTransaction.start();
 
-        assertThat(commandEntityService.retrieve(commandId, wrapperId), is(nullValue()));
+        assertThat(commandEntityService.retrieveWrapper(wrapperId), is(nullValue()));
     }
 
     @Test
     public void testCreateEcatHeaderDump() throws Exception {
         // A User was attempting to create the command in this resource.
         // Spring didn't tell us why. See CS-70.
-        final String dir = Resources.getResource("ecatHeaderDump").getPath().replace("%20", " ");
+        final String dir = Paths.get(ClassLoader.getSystemResource("ecatHeaderDump").toURI()).toString().replace("%20", " ");
         final String commandJsonFile = dir + "/command.json";
         final CommandEntity ecatHeaderDump = mapper.readValue(new File(commandJsonFile), CommandEntity.class);
         commandEntityService.create(ecatHeaderDump);
-    }
-
-    @Test
-    @DirtiesContext
-    public void testAssertPairExists() throws Exception {
-        final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
-        commandEntityService.create(commandEntity);
-
-        TestTransaction.flagForCommit();
-        TestTransaction.end();
-        TestTransaction.start();
-
-        commandEntityService.assertPairExists(commandEntity.getId(), XNAT_COMMAND_WRAPPER_NAME);
-
-        final String fakeWrapperName = "blargle";
-        expectedException.expect(NotFoundException.class);
-        expectedException.expectMessage("Command " + String.valueOf(commandEntity.getId()) +
-                " has no wrapper " + fakeWrapperName);
-        commandEntityService.assertPairExists(commandEntity.getId(), fakeWrapperName);
     }
 }

@@ -23,6 +23,8 @@ import org.nrg.containers.services.ContainerConfigService;
 import org.nrg.containers.services.ContainerConfigService.CommandConfigurationException;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xdat.schema.SchemaElement;
+import org.nrg.xdat.security.helpers.Permissions;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.security.UserI;
@@ -87,6 +89,12 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     public Command create(@Nonnull final Command command) throws CommandValidationException {
         final List<String> errors = command.validate();
         if (!errors.isEmpty()) {
+            final StringBuilder sb = new StringBuilder("Cannot create command. Validation failed. Errors:");
+            for (final String error : errors) {
+                sb.append("\n\t");
+                sb.append(error);
+            }
+            log.error(sb.toString());
             throw new CommandValidationException(errors);
         }
         return toPojo(commandEntityService.create(fromPojo(command)));
@@ -135,7 +143,7 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
         final Command command = retrieve(id);
         if (command != null) {
             for (final CommandWrapper commandWrapper : command.xnatCommandWrappers()) {
-                containerConfigService.deleteAllConfiguration(id, commandWrapper.name());
+                containerConfigService.deleteAllConfiguration(commandWrapper.id());
             }
 
             commandEntityService.delete(id);
@@ -184,22 +192,34 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
 
     @Override
     @Nullable
-    public CommandWrapper retrieve(final long commandId, final long wrapperId) {
-        return toPojo(commandEntityService.retrieve(commandId, wrapperId));
+    public CommandWrapper retrieveWrapper(final long wrapperId) {
+        return toPojo(commandEntityService.retrieveWrapper(wrapperId));
+    }
+
+    @Override
+    @Nullable
+    public CommandWrapper retrieveWrapper(final long commandId, final String wrapperName) {
+        return toPojo(commandEntityService.retrieveWrapper(commandId, wrapperName));
     }
 
     @Override
     @Nonnull
-    public CommandWrapper get(final long commandId, final long wrapperId) throws NotFoundException {
-        return toPojo(commandEntityService.get(commandId, wrapperId));
+    public CommandWrapper getWrapper(final long wrapperId) throws NotFoundException {
+        return toPojo(commandEntityService.getWrapper(wrapperId));
+    }
+
+    @Override
+    @Nonnull
+    public CommandWrapper getWrapper(final long commandId, final String wrapperName) throws NotFoundException {
+        return toPojo(commandEntityService.getWrapper(commandId, wrapperName));
     }
 
     @Override
     @Nonnull
     @Transactional
-    public CommandWrapper update(final long commandId, final @Nonnull CommandWrapper toUpdate) throws CommandValidationException, NotFoundException {
+    public CommandWrapper updateWrapper(final long commandId, final @Nonnull CommandWrapper toUpdate) throws CommandValidationException, NotFoundException {
         final CommandEntity commandEntity = commandEntityService.get(commandId);
-        final CommandWrapperEntity template = commandEntityService.get(commandEntity, toUpdate.id());
+        final CommandWrapperEntity template = commandEntityService.getWrapper(toUpdate.id());
         final CommandWrapper updated = toPojo(commandEntityService.update(template.update(toUpdate)));
 
         final List<String> errors = toPojo(commandEntity).validate();
@@ -211,106 +231,190 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
 
     @Override
     @Transactional
-    public void delete(final long commandId, final long wrapperId) {
-        commandEntityService.delete(commandId, wrapperId);
+    public void deleteWrapper(final long wrapperId) {
+        commandEntityService.deleteWrapper(wrapperId);
+    }
+
+    @Override
+    public void configureForSite(final CommandConfiguration commandConfiguration, final long wrapperId, final boolean enable, final String username, final String reason)
+            throws CommandConfigurationException, NotFoundException {
+        // If the "enable" param is true, we enable the configuration.
+        // Otherwise, we leave the existing "enabled" setting alone (even if it is null).
+        // We will never change "enabled" to "false" here.
+        final Boolean enabledStatusToSet = enable ? Boolean.TRUE : isEnabledForSite(wrapperId);
+        containerConfigService.configureForSite(
+                CommandConfigurationInternal.create(enabledStatusToSet, commandConfiguration),
+                wrapperId, username, reason);
     }
 
     @Override
     public void configureForSite(final CommandConfiguration commandConfiguration, final long commandId, final String wrapperName, final boolean enable, final String username, final String reason)
             throws CommandConfigurationException, NotFoundException {
-        assertPairExists(commandId, wrapperName);
+        configureForSite(commandConfiguration, getWrapperId(commandId, wrapperName), enable, username, reason);
+    }
+
+    @Override
+    public void configureForProject(final CommandConfiguration commandConfiguration, final String project, final long wrapperId, final boolean enable, final String username, final String reason) throws CommandConfigurationException, NotFoundException {
         // If the "enable" param is true, we enable the configuration.
         // Otherwise, we leave the existing "enabled" setting alone (even if it is null).
         // We will never change "enabled" to "false" here.
-        final Boolean enabledStatusToSet = enable ? Boolean.TRUE : isEnabledForSite(commandId, wrapperName);
-        containerConfigService.configureForSite(
+        final Boolean enabledStatusToSet = enable ? Boolean.TRUE : isEnabledForProject(project, wrapperId);
+        containerConfigService.configureForProject(
                 CommandConfigurationInternal.create(enabledStatusToSet, commandConfiguration),
-                commandId, wrapperName, username, reason);
+                project, wrapperId, username, reason);
     }
 
     @Override
     public void configureForProject(final CommandConfiguration commandConfiguration, final String project, final long commandId, final String wrapperName, final boolean enable, final String username, final String reason) throws CommandConfigurationException, NotFoundException {
-        assertPairExists(commandId, wrapperName);
-
-        // If the "enable" param is true, we enable the configuration.
-        // Otherwise, we leave the existing "enabled" setting alone (even if it is null).
-        // We will never change "enabled" to "false" here.
-        final Boolean enabledStatusToSet = enable ? Boolean.TRUE : isEnabledForProject(project, commandId, wrapperName);
-        containerConfigService.configureForProject(
-                CommandConfigurationInternal.create(enabledStatusToSet, commandConfiguration),
-                project, commandId, wrapperName, username, reason);
+        configureForProject(commandConfiguration, project, getWrapperId(commandId, wrapperName), enable, username, reason);
     }
 
     @Override
-    @Nullable
+    @Nonnull
+    public CommandConfiguration getSiteConfiguration(final long wrapperId) throws NotFoundException {
+        final CommandConfigurationInternal commandConfigurationInternal = containerConfigService.getSiteConfiguration(wrapperId);
+        final Command command = getCommandWithOneWrapper(wrapperId);
+        final CommandWrapper commandWrapper = command.xnatCommandWrappers().get(0);
+        return CommandConfiguration.create(command, commandWrapper, commandConfigurationInternal);
+    }
+
+    @Override
+    @Nonnull
     public CommandConfiguration getSiteConfiguration(final long commandId, final String wrapperName) throws NotFoundException {
-        assertPairExists(commandId, wrapperName);
-        final CommandConfigurationInternal commandConfigurationInternal = containerConfigService.getSiteConfiguration(commandId, wrapperName);
-        return CommandConfiguration.create(get(commandId), commandConfigurationInternal, wrapperName);
+        return getSiteConfiguration(getWrapperId(commandId, wrapperName));
     }
 
     @Override
-    @Nullable
+    @Nonnull
+    public CommandConfiguration getProjectConfiguration(final String project, final long wrapperId) throws NotFoundException {
+        final CommandConfigurationInternal commandConfigurationInternal = containerConfigService.getProjectConfiguration(project, wrapperId);
+        final Command command = getCommandWithOneWrapper(wrapperId);
+        final CommandWrapper commandWrapper = command.xnatCommandWrappers().get(0);
+        return CommandConfiguration.create(command, commandWrapper, commandConfigurationInternal);
+    }
+
+    @Override
+    @Nonnull
     public CommandConfiguration getProjectConfiguration(final String project, final long commandId, final String wrapperName) throws NotFoundException {
-        assertPairExists(commandId, wrapperName);
-        final CommandConfigurationInternal commandConfigurationInternal = containerConfigService.getProjectConfiguration(project, commandId, wrapperName);
-        return CommandConfiguration.create(get(commandId), commandConfigurationInternal, wrapperName);
+        return getProjectConfiguration(project, getWrapperId(commandId, wrapperName));
     }
 
     @Override
-    public void deleteSiteConfiguration(final long commandId, final String wrapperName, final String username) throws CommandConfigurationException {
-        containerConfigService.deleteSiteConfiguration(commandId, wrapperName, username);
+    @Nonnull
+    public Command.ConfiguredCommand getAndConfigure(final long wrapperId) throws NotFoundException {
+        final CommandConfiguration commandConfiguration = getSiteConfiguration(wrapperId);
+        final Command command = getCommandWithOneWrapper(wrapperId);
+        return commandConfiguration.apply(command);
     }
 
     @Override
-    public void deleteProjectConfiguration(final String project, final long commandId, final String wrapperName, final String username) throws CommandConfigurationException {
-        containerConfigService.deleteProjectConfiguration(project, commandId, wrapperName, username);
+    @Nonnull
+    public Command.ConfiguredCommand getAndConfigure(final long commandId, final String wrapperName) throws NotFoundException {
+        return getAndConfigure(getWrapperId(commandId, wrapperName));
     }
 
     @Override
-    public void deleteAllConfiguration(final long commandId, final String wrapperName) {
-        containerConfigService.deleteAllConfiguration(commandId, wrapperName);
+    @Nonnull
+    public Command.ConfiguredCommand getAndConfigure(final String project, final long wrapperId) throws NotFoundException {
+        final CommandConfiguration commandConfiguration = getProjectConfiguration(project, wrapperId);
+        final Command command = getCommandWithOneWrapper(wrapperId);
+        return commandConfiguration.apply(command);
     }
 
     @Override
-    public void deleteAllConfiguration(final long commandId) {
-        containerConfigService.deleteAllConfiguration(commandId);
+    @Nonnull
+    public Command.ConfiguredCommand getAndConfigure(final String project, final long commandId, final String wrapperName) throws NotFoundException {
+        return getAndConfigure(project, getWrapperId(commandId, wrapperName));
+    }
+
+    @Override
+    public void deleteSiteConfiguration(final long wrapperId, final String username) throws CommandConfigurationException {
+        containerConfigService.deleteSiteConfiguration(wrapperId, username);
+    }
+
+    @Override
+    public void deleteSiteConfiguration(final long commandId, final String wrapperName, final String username) throws CommandConfigurationException, NotFoundException {
+        containerConfigService.deleteSiteConfiguration(getWrapperId(commandId, wrapperName), username);
+    }
+
+    @Override
+    public void deleteProjectConfiguration(final String project, final long wrapperId, final String username) throws CommandConfigurationException, NotFoundException {
+        containerConfigService.deleteProjectConfiguration(project, wrapperId, username);
+    }
+
+    @Override
+    public void deleteProjectConfiguration(final String project, final long commandId, final String wrapperName, final String username) throws CommandConfigurationException, NotFoundException {
+        containerConfigService.deleteProjectConfiguration(project, getWrapperId(commandId, wrapperName), username);
+    }
+
+    @Override
+    public void deleteAllConfiguration(final long commandId, final String wrapperName) throws NotFoundException {
+        containerConfigService.deleteAllConfiguration(getWrapperId(commandId, wrapperName));
+    }
+
+    @Override
+    public void deleteAllConfiguration(final long wrapperId) {
+        containerConfigService.deleteAllConfiguration(wrapperId);
+    }
+
+    @Override
+    public void enableForSite(final long wrapperId, final String username, final String reason) throws CommandConfigurationException, NotFoundException {
+        containerConfigService.enableForSite(wrapperId, username, reason);
     }
 
     @Override
     public void enableForSite(final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException, NotFoundException {
-        assertPairExists(commandId, wrapperName);
-        containerConfigService.enableForSite(commandId, wrapperName, username, reason);
+        containerConfigService.enableForSite(getWrapperId(commandId, wrapperName), username, reason);
+    }
+
+    @Override
+    public void disableForSite(final long wrapperId, final String username, final String reason) throws CommandConfigurationException, NotFoundException {
+        containerConfigService.disableForSite(wrapperId, username, reason);
     }
 
     @Override
     public void disableForSite(final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException, NotFoundException {
-        assertPairExists(commandId, wrapperName);
-        containerConfigService.disableForSite(commandId, wrapperName, username, reason);
+        containerConfigService.disableForSite(getWrapperId(commandId, wrapperName), username, reason);
+    }
+
+    @Override
+    public boolean isEnabledForSite(final long wrapperId) throws NotFoundException {
+        return containerConfigService.isEnabledForSite(wrapperId);
     }
 
     @Override
     public boolean isEnabledForSite(final long commandId, final String wrapperName) throws NotFoundException {
-        assertPairExists(commandId, wrapperName);
-        return containerConfigService.isEnabledForSite(commandId, wrapperName);
+        return containerConfigService.isEnabledForSite(getWrapperId(commandId, wrapperName));
+    }
+
+    @Override
+    public void enableForProject(final String project, final long wrapperId, final String username, final String reason) throws CommandConfigurationException, NotFoundException {
+        containerConfigService.enableForProject(project, wrapperId, username, reason);
     }
 
     @Override
     public void enableForProject(final String project, final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException, NotFoundException {
-        assertPairExists(commandId, wrapperName);
-        containerConfigService.enableForProject(project, commandId, wrapperName, username, reason);
+        containerConfigService.enableForProject(project, getWrapperId(commandId, wrapperName), username, reason);
+    }
+
+    @Override
+    public void disableForProject(final String project, final long wrapperId, final String username, final String reason) throws CommandConfigurationException, NotFoundException {
+        containerConfigService.disableForProject(project, wrapperId, username, reason);
     }
 
     @Override
     public void disableForProject(final String project, final long commandId, final String wrapperName, final String username, final String reason) throws CommandConfigurationException, NotFoundException {
-        assertPairExists(commandId, wrapperName);
-        containerConfigService.disableForProject(project, commandId, wrapperName, username, reason);
+        containerConfigService.disableForProject(project, getWrapperId(commandId, wrapperName), username, reason);
+    }
+
+    @Override
+    public boolean isEnabledForProject(final String project, final long wrapperId) throws NotFoundException {
+        return containerConfigService.isEnabledForProject(project, wrapperId);
     }
 
     @Override
     public boolean isEnabledForProject(final String project, final long commandId, final String wrapperName) throws NotFoundException {
-        assertPairExists(commandId, wrapperName);
-        return containerConfigService.isEnabledForProject(project, commandId, wrapperName);
+        return containerConfigService.isEnabledForProject(project, getWrapperId(commandId, wrapperName));
     }
 
     @Override
@@ -322,16 +426,67 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
 
         for (final Command command : getAll()) {
             for (final CommandWrapper wrapper : command.xnatCommandWrappers()) {
+
+                // Can only launch if the user gave us an xsiType that matches
+                // one of the wrapper's contexts
                 if (!xsiTypesMatch(xsiType, wrapper.contexts())) {
                     continue;
                 }
 
+                // Can only launch if this user has permission
                 if (!userCanLaunch(userI, project, wrapper)) {
                     continue;
                 }
 
+                // Can only launch with a single external input
+                // It seems iffy to me to bake this into the code, but I don't know a way around it.
+                // We don't have any UI right now where a user can sensibly launch
+                //   on two completely unconnected objects.
+                final String externalInputName;
+                if (wrapper.externalInputs().size() == 1) {
+                    externalInputName = wrapper.externalInputs().get(0).name();
+                } else {
+                    continue;
+                }
+
                 available.add(CommandSummaryForContext.create(command, wrapper,
-                        containerConfigService.isEnabledForProject(project, command.id(), wrapper.name())));
+                        containerConfigService.isEnabledForProject(project, wrapper.id()),
+                        externalInputName));
+            }
+        }
+
+        return available;
+    }
+
+    @Override
+    @Nonnull
+    public List<CommandSummaryForContext> available(final String xsiType,
+                                                    final UserI userI) throws ElementNotFoundException {
+        final List<CommandSummaryForContext> available = new ArrayList<>();
+
+        for (final Command command : getAll()) {
+            for (final CommandWrapper wrapper : command.xnatCommandWrappers()) {
+
+                // Can only launch if the user gave us an xsiType that matches
+                // one of the wrapper's contexts
+                if (!xsiTypesMatch(xsiType, wrapper.contexts())) {
+                    continue;
+                }
+
+                // Can only launch with a single external input
+                // It seems iffy to me to bake this into the code, but I don't know a way around it.
+                // We don't have any UI right now where a user can sensibly launch
+                //   on two completely unconnected objects.
+                final String externalInputName;
+                if (wrapper.externalInputs().size() == 1) {
+                    externalInputName = wrapper.externalInputs().get(0).name();
+                } else {
+                    continue;
+                }
+
+                available.add(CommandSummaryForContext.create(command, wrapper,
+                        containerConfigService.isEnabledForSite(wrapper.id()),
+                        externalInputName));
             }
         }
 
@@ -397,8 +552,8 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     }
 
     private boolean userCanLaunch(final UserI userI, final String project, final CommandWrapper wrapper) {
-        // TODO How do we know if the user can launch this command wrapper in this project?
-        return true;
+        // TODO How do we know if the user can launch this particular command wrapper in this project?
+        return Permissions.canEditProject(userI, project);
     }
 
 
@@ -438,8 +593,22 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
         return CommandWrapper.create(commandWrapperEntity);
     }
 
-    private void assertPairExists(final long commandId, final String wrapperName) throws NotFoundException {
-        commandEntityService.assertPairExists(commandId, wrapperName);
+    private long getWrapperId(final long commandId, final String wrapperName) throws NotFoundException {
+        return commandEntityService.getWrapperId(commandId, wrapperName);
+    }
+
+    @Nonnull
+    private Command getCommandWithOneWrapper(final long wrapperId) throws NotFoundException {
+        final CommandEntity commandEntity = commandEntityService.getCommandByWrapperId(wrapperId);final List<CommandWrapperEntity> listWithOneWrapper = Lists.newArrayList();
+        for (final CommandWrapperEntity wrapper : commandEntity.getCommandWrapperEntities()) {
+            if (wrapper.getId() == wrapperId) {
+                listWithOneWrapper.add(wrapper);
+                break;
+            }
+        }
+        commandEntity.setCommandWrapperEntities(listWithOneWrapper);
+        return toPojo(commandEntity);
+
     }
 
     private static class XsiTypePair {

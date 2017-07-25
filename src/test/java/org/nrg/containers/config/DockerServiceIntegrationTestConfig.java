@@ -1,9 +1,9 @@
 package org.nrg.containers.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.mockito.Mockito;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
+import org.nrg.containers.services.CommandLabelService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.DockerHubService;
 import org.nrg.containers.services.DockerService;
@@ -22,8 +22,8 @@ public class DockerServiceIntegrationTestConfig {
                                        final DockerHubService dockerHubService,
                                        final CommandService commandService,
                                        final DockerServerPrefsBean dockerServerPrefsBean,
-                                       final ObjectMapper objectMapper) {
-        return new DockerServiceImpl(controlApi, dockerHubService, commandService, dockerServerPrefsBean, objectMapper);
+                                       final CommandLabelService commandLabelService) {
+        return new DockerServiceImpl(controlApi, dockerHubService, commandService, dockerServerPrefsBean, commandLabelService);
     }
 
     @Bean

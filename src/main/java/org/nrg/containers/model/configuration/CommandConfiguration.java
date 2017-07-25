@@ -8,7 +8,14 @@ import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import org.nrg.containers.model.command.auto.Command;
+import org.nrg.containers.model.command.auto.Command.CommandInput;
+import org.nrg.containers.model.command.auto.Command.CommandWrapper;
+import org.nrg.containers.model.command.auto.Command.CommandWrapperDerivedInput;
+import org.nrg.containers.model.command.auto.Command.CommandWrapperExternalInput;
+import org.nrg.containers.model.command.auto.Command.CommandWrapperOutput;
+import org.nrg.containers.model.command.auto.Command.ConfiguredCommand;
 import org.nrg.containers.model.configuration.CommandConfiguration.Builder;
+import org.nrg.containers.model.configuration.CommandConfigurationInternal.CommandInputConfiguration;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -32,38 +39,33 @@ public abstract class CommandConfiguration {
     }
 
     public static CommandConfiguration create(final @Nonnull Command command,
-                                              final @Nonnull CommandConfigurationInternal commandConfigurationInternal,
-                                              final String wrapperName) {
+                                              final @Nonnull CommandWrapper commandWrapper,
+                                              final @Nullable CommandConfigurationInternal commandConfigurationInternal) {
         Builder builder = builder();
         final Set<String> handledCommandInputs = Sets.newHashSet();
 
         final Map<String, CommandConfigurationInternal.CommandInputConfiguration> configuredInputs
-                = commandConfigurationInternal.inputs();
+                = commandConfigurationInternal == null ?
+                        Collections.<String, CommandConfigurationInternal.CommandInputConfiguration>emptyMap() :
+                        commandConfigurationInternal.inputs();
         final Map<String, CommandConfigurationInternal.CommandOutputConfiguration> configuredOutputs
-                = commandConfigurationInternal.outputs();
+                = commandConfigurationInternal == null ?
+                        Collections.<String, CommandConfigurationInternal.CommandOutputConfiguration>emptyMap() :
+                        commandConfigurationInternal.outputs();
 
-        Command.CommandWrapper commandWrapper = null;
-        for (final Command.CommandWrapper commandWrapperLoop : command.xnatCommandWrappers()) {
-            if (commandWrapperLoop.name().equals(wrapperName)) {
-                commandWrapper = commandWrapperLoop;
-                break;
-            }
+        for (final Command.CommandWrapperExternalInput externalInput : commandWrapper.externalInputs()) {
+            builder = builder.addInput(externalInput.name(),
+                    CommandInputConfiguration.create(externalInput, configuredInputs.get(externalInput.name())));
+            handledCommandInputs.add(externalInput.providesValueForCommandInput());
         }
-        if (commandWrapper != null) {
-            for (final Command.CommandWrapperExternalInput externalInput : commandWrapper.externalInputs()) {
-                builder = builder.addInput(externalInput.name(),
-                        CommandInputConfiguration.create(externalInput, configuredInputs.get(externalInput.name())));
-                handledCommandInputs.add(externalInput.providesValueForCommandInput());
-            }
-            for (final Command.CommandWrapperDerivedInput derivedInput : commandWrapper.derivedInputs()) {
-                builder = builder.addInput(derivedInput.name(),
-                        CommandInputConfiguration.create(derivedInput, configuredInputs.get(derivedInput.name())));
-                handledCommandInputs.add(derivedInput.providesValueForCommandInput());
-            }
-            for (final Command.CommandWrapperOutput wrapperOutput : commandWrapper.outputHandlers()) {
-                builder = builder.addOutput(wrapperOutput.name(),
-                        CommandOutputConfiguration.create(wrapperOutput, configuredOutputs.get(wrapperOutput.name())));
-            }
+        for (final Command.CommandWrapperDerivedInput derivedInput : commandWrapper.derivedInputs()) {
+            builder = builder.addInput(derivedInput.name(),
+                    CommandInputConfiguration.create(derivedInput, configuredInputs.get(derivedInput.name())));
+            handledCommandInputs.add(derivedInput.providesValueForCommandInput());
+        }
+        for (final Command.CommandWrapperOutput wrapperOutput : commandWrapper.outputHandlers()) {
+            builder = builder.addOutput(wrapperOutput.name(),
+                    CommandOutputConfiguration.create(wrapperOutput, configuredOutputs.get(wrapperOutput.name())));
         }
 
         for (final Command.CommandInput commandInput : command.inputs()) {
@@ -108,6 +110,7 @@ public abstract class CommandConfiguration {
         @Nullable @JsonProperty("matcher") public abstract String matcher();
         @Nullable @JsonProperty("user-settable") public abstract Boolean userSettable();
         @Nullable @JsonProperty("advanced") public abstract Boolean advanced();
+        @Nullable @JsonProperty("required") public abstract Boolean required();
 
         @JsonCreator
         static CommandInputConfiguration create(@JsonProperty("description") final String description,
@@ -115,7 +118,8 @@ public abstract class CommandConfiguration {
                                                 @JsonProperty("default-value") final String defaultValue,
                                                 @JsonProperty("matcher") final String matcher,
                                                 @JsonProperty("user-settable") final Boolean userSettable,
-                                                @JsonProperty("advanced") final Boolean advanced) {
+                                                @JsonProperty("advanced") final Boolean advanced,
+                                                @JsonProperty("required") final Boolean required) {
             return builder()
                     .description(description)
                     .type(type)
@@ -123,6 +127,7 @@ public abstract class CommandConfiguration {
                     .matcher(matcher)
                     .userSettable(userSettable)
                     .advanced(advanced)
+                    .required(required)
                     .build();
         }
 
@@ -132,7 +137,8 @@ public abstract class CommandConfiguration {
                     .description(commandInput.description())
                     .type(commandInput.type())
                     .defaultValue(commandInput.defaultValue())
-                    .matcher(commandInput.matcher());
+                    .matcher(commandInput.matcher())
+                    .required(commandInput.required());
 
             if (commandInputConfiguration != null) {
                 // Set those things that the command input does not have, even if they are null
@@ -193,6 +199,7 @@ public abstract class CommandConfiguration {
             public abstract Builder matcher(final String matcher);
             public abstract Builder userSettable(final Boolean userSettable);
             public abstract Builder advanced(final Boolean advanced);
+            public abstract Builder required(final Boolean required);
 
             public abstract CommandInputConfiguration build();
         }
@@ -239,5 +246,57 @@ public abstract class CommandConfiguration {
 
             public abstract CommandOutputConfiguration build();
         }
+    }
+
+    @Nonnull
+    public ConfiguredCommand apply(final Command commandWithOneWrapper) {
+        // Initialize the command builder copy
+        final ConfiguredCommand.Builder commandBuilder = ConfiguredCommand.initialize(commandWithOneWrapper);
+
+        // Things we need to apply configuration to:
+        // command inputs
+        // wrapper inputs
+        // wrapper outputs
+
+        for (final CommandInput commandInput : commandWithOneWrapper.inputs()) {
+            commandBuilder.addInput(
+                    this.inputs().containsKey(commandInput.name()) ?
+                            commandInput.applyConfiguration(this.inputs().get(commandInput.name())) :
+                            commandInput
+            );
+        }
+
+        final CommandWrapper originalCommandWrapper = commandWithOneWrapper.xnatCommandWrappers().get(0);
+        final CommandWrapper.Builder commandWrapperBuilder = CommandWrapper.builder()
+                .id(originalCommandWrapper.id())
+                .name(originalCommandWrapper.name())
+                .description(originalCommandWrapper.description())
+                .contexts(originalCommandWrapper.contexts());
+
+        for (final CommandWrapperExternalInput externalInput : originalCommandWrapper.externalInputs()) {
+            commandWrapperBuilder.addExternalInput(
+                    this.inputs().containsKey(externalInput.name()) ?
+                            externalInput.applyConfiguration(this.inputs().get(externalInput.name())) :
+                            externalInput
+            );
+        }
+
+        for (final CommandWrapperDerivedInput derivedInput : originalCommandWrapper.derivedInputs()) {
+            commandWrapperBuilder.addDerivedInput(
+                    this.inputs().containsKey(derivedInput.name()) ?
+                            derivedInput.applyConfiguration(this.inputs().get(derivedInput.name())) :
+                            derivedInput
+            );
+        }
+
+        for (final CommandWrapperOutput output : originalCommandWrapper.outputHandlers()) {
+            commandWrapperBuilder.addOutputHandler(
+                    this.outputs().containsKey(output.name()) ?
+                            output.applyConfiguration(this.outputs().get(output.name())) :
+                            output
+            );
+        }
+
+        return commandBuilder.wrapper(commandWrapperBuilder.build()).build();
     }
 }

@@ -1,6 +1,7 @@
 package org.nrg.containers.model.settings;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
 import org.nrg.containers.services.impl.ContainerConfigServiceImpl;
@@ -8,6 +9,7 @@ import org.nrg.containers.services.impl.ContainerConfigServiceImpl;
 import javax.annotation.Nullable;
 
 @AutoValue
+@JsonInclude(JsonInclude.Include.ALWAYS)
 public abstract class ContainerServiceSettings {
 
     @JsonProperty("optInToSiteCommands") public abstract Boolean optInToSiteCommands();

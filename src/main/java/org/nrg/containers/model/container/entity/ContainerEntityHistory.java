@@ -5,6 +5,7 @@ import com.google.common.base.MoreObjects;
 import org.hibernate.envers.Audited;
 import org.nrg.containers.events.model.ContainerEvent;
 import org.nrg.containers.events.model.DockerContainerEvent;
+import org.nrg.containers.model.container.auto.Container;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -57,6 +58,17 @@ public class ContainerEntityHistory {
         history.entityId = username;
         history.timeRecorded = new Date();
         return history;
+    }
+
+    public static ContainerEntityHistory fromPojo(final Container.ContainerHistory containerHistoryPojo) {
+        final ContainerEntityHistory containerEntityHistory = new ContainerEntityHistory();
+        containerEntityHistory.setId(containerHistoryPojo.databaseId() == null ? 0L : containerHistoryPojo.databaseId());
+        containerEntityHistory.setStatus(containerHistoryPojo.status());
+        containerEntityHistory.setEntityType(containerHistoryPojo.entityType());
+        containerEntityHistory.setEntityId(containerHistoryPojo.entityId());
+        containerEntityHistory.setTimeRecorded(containerHistoryPojo.timeRecorded());
+        containerEntityHistory.setExternalTimestamp(containerHistoryPojo.externalTimestamp());
+        return containerEntityHistory;
     }
 
     @Id

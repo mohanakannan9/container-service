@@ -10,5 +10,5 @@ import java.util.List;
 public interface CommandEventMappingService extends BaseHibernateService<CommandEventMapping> {
 
     List<CommandEventMapping> findByEventType(String eventType);
-
+    List<CommandEventMapping> findByEventType(String eventType, boolean onlyEnabled);
 }

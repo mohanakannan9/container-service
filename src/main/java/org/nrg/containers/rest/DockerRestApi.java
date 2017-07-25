@@ -6,6 +6,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.containers.exceptions.BadRequestException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotUniqueException;
@@ -43,7 +44,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.util.List;
 
-import static org.nrg.containers.helpers.CommandLabelHelper.LABEL_KEY;
+import static org.nrg.containers.services.CommandLabelService.LABEL_KEY;
 import static org.springframework.web.bind.annotation.RequestMethod.DELETE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
@@ -108,28 +109,24 @@ public class DockerRestApi extends AbstractXapiRestController {
     @ResponseBody
     public String pingServer()
             throws NoServerPrefException, DockerServerException, UnauthorizedException {
-        checkGetOrThrow();
         return dockerService.pingServer();
     }
 
     @XapiRequestMapping(value = "/hubs", method = GET)
     @ResponseBody
     public List<DockerHub> getHubs() throws UnauthorizedException {
-        checkGetOrThrow();
         return dockerService.getHubs();
     }
 
     @XapiRequestMapping(value = "/hubs/{id:" + ID_REGEX + "}", method = GET)
     @ResponseBody
     public DockerHub getHub(final @PathVariable long id) throws NotFoundException, UnauthorizedException {
-        checkGetOrThrow();
         return dockerService.getHub(id);
     }
 
     @XapiRequestMapping(value = "/hubs/{name:" + NAME_REGEX + "}", method = GET)
     @ResponseBody
     public DockerHub getHub(final @PathVariable String name) throws NotFoundException, NotUniqueException, UnauthorizedException {
-        checkGetOrThrow();
         return dockerService.getHub(name);
     }
 
@@ -195,7 +192,6 @@ public class DockerRestApi extends AbstractXapiRestController {
                           final @RequestParam(value = "username", required = false) String username,
                           final @RequestParam(value = "password", required = false) String password)
             throws NoServerPrefException, DockerServerException, NotFoundException, UnauthorizedException {
-        checkGetOrThrow();
         return dockerService.pingHub(id, username, password);
     }
 
@@ -205,7 +201,6 @@ public class DockerRestApi extends AbstractXapiRestController {
                           final @RequestParam(value = "username", required = false) String username,
                           final @RequestParam(value = "password", required = false) String password)
             throws NoServerPrefException, DockerServerException, NotFoundException, NotUniqueException, UnauthorizedException {
-        checkGetOrThrow();
         return dockerService.pingHub(name, username, password);
     }
 
@@ -215,8 +210,9 @@ public class DockerRestApi extends AbstractXapiRestController {
                                  final @RequestParam(value = "save-commands", defaultValue = "true") Boolean saveCommands,
                                  final @RequestParam(value = "username", required = false) String username,
                                  final @RequestParam(value = "password", required = false) String password)
-            throws DockerServerException, NotFoundException, NoServerPrefException, UnauthorizedException {
+            throws DockerServerException, NotFoundException, NoServerPrefException, UnauthorizedException, BadRequestException {
         checkCreateOrThrow();
+        checkImageOrThrow(image);
         dockerService.pullFromHub(id, image, saveCommands, username, password);
     }
 
@@ -226,8 +222,9 @@ public class DockerRestApi extends AbstractXapiRestController {
                                  final @RequestParam(value = "save-commands", defaultValue = "true") Boolean saveCommands,
                                  final @RequestParam(value = "username", required = false) String username,
                                  final @RequestParam(value = "password", required = false) String password)
-            throws DockerServerException, NotFoundException, NoServerPrefException, UnauthorizedException, NotUniqueException {
+            throws DockerServerException, NotFoundException, NoServerPrefException, UnauthorizedException, NotUniqueException, BadRequestException {
         checkCreateOrThrow();
+        checkImageOrThrow(image);
         dockerService.pullFromHub(name, image, saveCommands, username, password);
     }
 
@@ -235,8 +232,9 @@ public class DockerRestApi extends AbstractXapiRestController {
     public void pullImageFromDefaultHub(final @RequestParam(value = "image") String image,
                                         final @RequestParam(value = "save-commands", defaultValue = "true")
                                                 Boolean saveCommands)
-            throws DockerServerException, NotFoundException, NoServerPrefException, UnauthorizedException {
+            throws DockerServerException, NotFoundException, NoServerPrefException, UnauthorizedException, BadRequestException {
         checkCreateOrThrow();
+        checkImageOrThrow(image);
         dockerService.pullFromHub(image, saveCommands);
     }
 
@@ -249,7 +247,6 @@ public class DockerRestApi extends AbstractXapiRestController {
     @ResponseBody
     public List<DockerImage> getImages()
             throws NoServerPrefException, DockerServerException, UnauthorizedException {
-        checkGetOrThrow();
         return dockerService.getImages();
     }
 
@@ -258,7 +255,6 @@ public class DockerRestApi extends AbstractXapiRestController {
     @ResponseBody
     public List<DockerImageAndCommandSummary> getImageSummaries()
             throws NoServerPrefException, DockerServerException, UnauthorizedException {
-        checkGetOrThrow();
         return dockerService.getImageSummaries();
     }
 
@@ -273,7 +269,6 @@ public class DockerRestApi extends AbstractXapiRestController {
     @ResponseBody
     public DockerImage getImage(final @PathVariable("id") String id)
             throws NoServerPrefException, NotFoundException, UnauthorizedException {
-        checkGetOrThrow();
         return dockerService.getImage(id);
     }
 
@@ -334,7 +329,13 @@ public class DockerRestApi extends AbstractXapiRestController {
 
     private void checkCreateOrThrow(final UserI userI) throws UnauthorizedException {
         if (!isAdmin(userI)) {
-            throw new UnauthorizedException(String.format("User %s cannot create.", userI == null ? "" : userI.getLogin()));
+            throw new UnauthorizedException(String.format("User %s is not an admin.", userI == null ? "" : userI.getLogin()));
+        }
+    }
+
+    private void checkImageOrThrow(final String image) throws BadRequestException {
+        if (!image.contains("/")) {
+            throw new BadRequestException(String.format("Cannot pull an image by ID."));
         }
     }
 

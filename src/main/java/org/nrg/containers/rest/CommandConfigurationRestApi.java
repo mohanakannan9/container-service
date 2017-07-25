@@ -16,9 +16,12 @@ import org.nrg.containers.services.ContainerConfigService;
 import org.nrg.containers.services.ContainerConfigService.CommandConfigurationException;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NotFoundException;
+import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.XDAT;
-import org.nrg.xapi.rest.AbstractXapiRestController;
+import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.om.base.auto.AutoXnatProjectdata;
+import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
@@ -74,8 +77,26 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
                                                     final @RequestParam(required = false) String reason)
             throws CommandConfigurationException, NotFoundException {
         final UserI userI = XDAT.getUserDetails();
-        // TODO Check: can user create?
+        final HttpStatus status = isAdminUser();
+        if (status != null) {
+            return new ResponseEntity<>(status);
+        }
         commandService.configureForSite(commandConfiguration, commandId, wrapperName, enable, userI.getLogin(), reason);
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @XapiRequestMapping(value = {"/wrappers/{wrapperId}/config"}, method = POST)
+    public ResponseEntity<Void> createConfiguration(final @RequestBody CommandConfiguration commandConfiguration,
+                                                    final @PathVariable long wrapperId,
+                                                    final @RequestParam(required = false, defaultValue = "true") boolean enable,
+                                                    final @RequestParam(required = false) String reason)
+            throws CommandConfigurationException, NotFoundException {
+        final UserI userI = XDAT.getUserDetails();
+        final HttpStatus status = isAdminUser();
+        if (status != null) {
+            return new ResponseEntity<>(status);
+        }
+        commandService.configureForSite(commandConfiguration, wrapperId, enable, userI.getLogin(), reason);
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
@@ -84,19 +105,46 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     @ResponseBody
     public CommandConfiguration getConfiguration(final @PathVariable long commandId,
                                                  final @PathVariable String wrapperName) throws NotFoundException {
-        // TODO Check: can user read?
-        // final UserI userI = XDAT.getUserDetails();
+        final HttpStatus status = isAdminUser();
+        if (status != null) {
+            return null;
+        }
         return commandService.getSiteConfiguration(commandId, wrapperName);
+    }
+
+    @XapiRequestMapping(value = {"/wrappers/{wrapperId}/config"}, method = GET)
+    @ResponseBody
+    public CommandConfiguration getConfiguration(final @PathVariable long wrapperId) throws NotFoundException {
+        final HttpStatus status = isAdminUser();
+        if (status != null) {
+            return null;
+        }
+        return commandService.getSiteConfiguration(wrapperId);
     }
 
     // Delete configuration for site + command wrapper
     @XapiRequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/config"}, method = DELETE)
     public ResponseEntity<Void> deleteConfiguration(final @PathVariable long commandId,
                                                     final @PathVariable String wrapperName)
-            throws CommandConfigurationException {
-        // TODO Check: can user delete?
+            throws CommandConfigurationException, NotFoundException {
+        final HttpStatus status = isAdminUser();
+        if (status != null) {
+            return new ResponseEntity<>(status);
+        }
         final UserI userI = XDAT.getUserDetails();
         commandService.deleteSiteConfiguration(commandId, wrapperName, userI.getLogin());
+        return ResponseEntity.noContent().build();
+    }
+
+    @XapiRequestMapping(value = {"/wrappers/{wrapperId}/config"}, method = DELETE)
+    public ResponseEntity<Void> deleteConfiguration(final @PathVariable long wrapperId)
+            throws CommandConfigurationException, NotFoundException {
+        final HttpStatus status = isAdminUser();
+        if (status != null) {
+            return new ResponseEntity<>(status);
+        }
+        final UserI userI = XDAT.getUserDetails();
+        commandService.deleteSiteConfiguration(wrapperId, userI.getLogin());
         return ResponseEntity.noContent().build();
     }
 
@@ -110,8 +158,27 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
                                                     final @RequestParam(required = false) String reason)
             throws CommandConfigurationException, NotFoundException {
         final UserI userI = XDAT.getUserDetails();
-        // TODO Check: can user create?
+        final HttpStatus status = isProjectOwnerOrAdmin(project);
+        if (status != null) {
+            return new ResponseEntity<>(status);
+        }
         commandService.configureForProject(commandConfiguration, project, commandId, wrapperName, enable, userI.getLogin(), reason);
+        return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/config"}, method = POST)
+    public ResponseEntity<Void> createConfiguration(final @RequestBody CommandConfiguration commandConfiguration,
+                                                    final @PathVariable String project,
+                                                    final @PathVariable long wrapperId,
+                                                    final @RequestParam(required = false, defaultValue = "true") boolean enable,
+                                                    final @RequestParam(required = false) String reason)
+            throws CommandConfigurationException, NotFoundException {
+        final UserI userI = XDAT.getUserDetails();
+        final HttpStatus status = isProjectOwnerOrAdmin(project);
+        if (status != null) {
+            return new ResponseEntity<>(status);
+        }
+        commandService.configureForProject(commandConfiguration, project, wrapperId, enable, userI.getLogin(), reason);
         return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
@@ -121,9 +188,22 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     public CommandConfiguration getConfiguration(final @PathVariable String project,
                                                  final @PathVariable long commandId,
                                                  final @PathVariable String wrapperName) throws NotFoundException {
-        // TODO Check: can user read?
-        // final UserI userI = XDAT.getUserDetails();
+        final HttpStatus status = canReadProjectOrAdmin(project);
+        if (status != null) {
+            return null;
+        }
         return commandService.getProjectConfiguration(project, commandId, wrapperName);
+    }
+
+    @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/config"}, method = GET)
+    @ResponseBody
+    public CommandConfiguration getConfiguration(final @PathVariable String project,
+                                                 final @PathVariable long wrapperId) throws NotFoundException {
+        final HttpStatus status = canReadProjectOrAdmin(project);
+        if (status != null) {
+            return null;
+        }
+        return commandService.getProjectConfiguration(project, wrapperId);
     }
 
     // Delete configuration for project + command wrapper
@@ -131,10 +211,26 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     public ResponseEntity<Void> deleteConfiguration(final @PathVariable String project,
                                                     final @PathVariable long commandId,
                                                     final @PathVariable String wrapperName)
-            throws CommandConfigurationException {
-        // TODO Check: can user delete?
+            throws CommandConfigurationException, NotFoundException {
+        final HttpStatus status = isProjectOwnerOrAdmin(project);
+        if (status != null) {
+            return new ResponseEntity<>(status);
+        }
         final UserI userI = XDAT.getUserDetails();
         commandService.deleteProjectConfiguration(project, commandId, wrapperName, userI.getLogin());
+        return ResponseEntity.noContent().build();
+    }
+
+    @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/config"}, method = DELETE)
+    public ResponseEntity<Void> deleteConfiguration(final @PathVariable String project,
+                                                    final @PathVariable long wrapperId)
+            throws CommandConfigurationException, NotFoundException {
+        final HttpStatus status = isProjectOwnerOrAdmin(project);
+        if (status != null) {
+            return new ResponseEntity<>(status);
+        }
+        final UserI userI = XDAT.getUserDetails();
+        commandService.deleteProjectConfiguration(project, wrapperId, userI.getLogin());
         return ResponseEntity.noContent().build();
     }
 
@@ -142,11 +238,26 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     ENABLE/DISABLE
      */
     @XapiRequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/enabled"}, method = GET)
-    public ResponseEntity<Boolean> isConfigurationEnabled(final @PathVariable long commandId,
-                                                          final @PathVariable String wrapperName)
+    @ResponseBody
+    public Boolean isConfigurationEnabled(final @PathVariable long commandId,
+                                          final @PathVariable String wrapperName)
             throws CommandConfigurationException, NotFoundException {
-        // TODO Check: can user create?
-        return ResponseEntity.ok(commandService.isEnabledForSite(commandId, wrapperName));
+        final HttpStatus status = isAdminUser();
+        if (status != null) {
+            return false;
+        }
+        return commandService.isEnabledForSite(commandId, wrapperName);
+    }
+
+    @XapiRequestMapping(value = {"/wrappers/{wrapperId}/enabled"}, method = GET)
+    @ResponseBody
+    public Boolean isConfigurationEnabled(final @PathVariable long wrapperId)
+            throws CommandConfigurationException, NotFoundException {
+        final HttpStatus status = isAdminUser();
+        if (status != null) {
+            return false;
+        }
+        return commandService.isEnabledForSite(wrapperId);
     }
 
     @XapiRequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/enabled"}, method = PUT)
@@ -155,8 +266,24 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
                                                     final @RequestParam(required = false) String reason)
             throws CommandConfigurationException, NotFoundException {
         final UserI userI = XDAT.getUserDetails();
-        // TODO Check: can user create?
+        final HttpStatus status = isAdminUser();
+        if (status != null) {
+            return new ResponseEntity<>(status);
+        }
         commandService.enableForSite(commandId, wrapperName, userI.getLogin(), reason);
+        return ResponseEntity.ok().build();
+    }
+
+    @XapiRequestMapping(value = {"/wrappers/{wrapperId}/enabled"}, method = PUT)
+    public ResponseEntity<Void> enableConfiguration(final @PathVariable long wrapperId,
+                                                    final @RequestParam(required = false) String reason)
+            throws CommandConfigurationException, NotFoundException {
+        final UserI userI = XDAT.getUserDetails();
+        final HttpStatus status = isAdminUser();
+        if (status != null) {
+            return new ResponseEntity<>(status);
+        }
+        commandService.enableForSite(wrapperId, userI.getLogin(), reason);
         return ResponseEntity.ok().build();
     }
 
@@ -166,18 +293,50 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
                                                      final @RequestParam(required = false) String reason)
             throws CommandConfigurationException, NotFoundException {
         final UserI userI = XDAT.getUserDetails();
-        // TODO Check: can user create?
+        final HttpStatus status = isAdminUser();
+        if (status != null) {
+            return new ResponseEntity<>(status);
+        }
         commandService.disableForSite(commandId, wrapperName, userI.getLogin(), reason);
         return ResponseEntity.ok().build();
     }
 
-    @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/enabled"}, method = GET)
-    public ResponseEntity<Boolean> isConfigurationEnabled(final @PathVariable String project,
-                                                          final @PathVariable long commandId,
-                                                          final @PathVariable String wrapperName)
+    @XapiRequestMapping(value = {"/wrappers/{wrapperId}/disabled"}, method = PUT)
+    public ResponseEntity<Void> disableConfiguration(final @PathVariable long wrapperId,
+                                                     final @RequestParam(required = false) String reason)
             throws CommandConfigurationException, NotFoundException {
-        // TODO Check: can user create?
-        return ResponseEntity.ok(commandService.isEnabledForProject(project, commandId, wrapperName));
+        final UserI userI = XDAT.getUserDetails();
+        final HttpStatus status = isAdminUser();
+        if (status != null) {
+            return new ResponseEntity<>(status);
+        }
+        commandService.disableForSite(wrapperId, userI.getLogin(), reason);
+        return ResponseEntity.ok().build();
+    }
+
+    @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/enabled"}, method = GET)
+    @ResponseBody
+    public Boolean isConfigurationEnabled(final @PathVariable String project,
+                                          final @PathVariable long commandId,
+                                          final @PathVariable String wrapperName)
+            throws CommandConfigurationException, NotFoundException {
+        final HttpStatus status = canReadProjectOrAdmin(project);
+        if (status != null) {
+            return false;
+        }
+        return commandService.isEnabledForProject(project, commandId, wrapperName);
+    }
+
+    @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/enabled"}, method = GET)
+    @ResponseBody
+    public Boolean isConfigurationEnabled(final @PathVariable String project,
+                                          final @PathVariable long wrapperId)
+            throws CommandConfigurationException, NotFoundException {
+        final HttpStatus status = canReadProjectOrAdmin(project);
+        if (status != null) {
+            return false;
+        }
+        return commandService.isEnabledForProject(project, wrapperId);
     }
 
     @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/enabled"}, method = PUT)
@@ -187,8 +346,25 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
                                                     final @RequestParam(required = false) String reason)
             throws CommandConfigurationException, NotFoundException {
         final UserI userI = XDAT.getUserDetails();
-        // TODO Check: can user create?
+        final HttpStatus status = isProjectOwnerOrAdmin(project);
+        if (status != null) {
+            return new ResponseEntity<>(status);
+        }
         commandService.enableForProject(project, commandId, wrapperName, userI.getLogin(), reason);
+        return ResponseEntity.ok().build();
+    }
+
+    @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/enabled"}, method = PUT)
+    public ResponseEntity<Void> enableConfiguration(final @PathVariable String project,
+                                                    final @PathVariable long wrapperId,
+                                                    final @RequestParam(required = false) String reason)
+            throws CommandConfigurationException, NotFoundException {
+        final UserI userI = XDAT.getUserDetails();
+        final HttpStatus status = isProjectOwnerOrAdmin(project);
+        if (status != null) {
+            return new ResponseEntity<>(status);
+        }
+        commandService.enableForProject(project, wrapperId, userI.getLogin(), reason);
         return ResponseEntity.ok().build();
     }
 
@@ -199,8 +375,25 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
                                                      final @RequestParam(required = false) String reason)
             throws CommandConfigurationException, NotFoundException {
         final UserI userI = XDAT.getUserDetails();
-        // TODO Check: can user create?
+        final HttpStatus status = isProjectOwnerOrAdmin(project);
+        if (status != null) {
+            return new ResponseEntity<>(status);
+        }
         commandService.disableForProject(project, commandId, wrapperName, userI.getLogin(), reason);
+        return ResponseEntity.ok().build();
+    }
+
+    @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/disabled"}, method = PUT)
+    public ResponseEntity<Void> disableConfiguration(final @PathVariable String project,
+                                                     final @PathVariable long wrapperId,
+                                                     final @RequestParam(required = false) String reason)
+            throws CommandConfigurationException, NotFoundException {
+        final UserI userI = XDAT.getUserDetails();
+        final HttpStatus status = isProjectOwnerOrAdmin(project);
+        if (status != null) {
+            return new ResponseEntity<>(status);
+        }
+        commandService.disableForProject(project, wrapperId, userI.getLogin(), reason);
         return ResponseEntity.ok().build();
     }
 
@@ -218,7 +411,10 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     public Boolean allEnabled()
             throws ConfigServiceException {
         final UserI userI = XDAT.getUserDetails();
-        // TODO Check: can user edit?
+        final HttpStatus status = isAdminUser();
+        if (status != null) {
+            return false;
+        }
         return containerConfigService.getAllEnabled();
     }
 
@@ -226,7 +422,10 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     public ResponseEntity<Void> enableAll(final @RequestParam(required = false) String reason)
             throws ConfigServiceException {
         final UserI userI = XDAT.getUserDetails();
-        // TODO Check: can user edit?
+        final HttpStatus status = isAdminUser();
+        if (status != null) {
+            return new ResponseEntity<>(status);
+        }
         containerConfigService.enableAll(userI.getLogin(), reason);
         return ResponseEntity.ok().build();
     }
@@ -235,7 +434,10 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     public ResponseEntity<Void> disableAll(final @RequestParam(required = false) String reason)
             throws ConfigServiceException {
         final UserI userI = XDAT.getUserDetails();
-        // TODO Check: can user edit?
+        final HttpStatus status = isAdminUser();
+        if (status != null) {
+            return new ResponseEntity<>(status);
+        }
         containerConfigService.disableAll(userI.getLogin(), reason);
         return ResponseEntity.ok().build();
     }
@@ -246,7 +448,10 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     public ResponseEntity<Void> deleteAllEnabledSetting(final @RequestParam(required = false) String reason)
             throws ConfigServiceException {
         final UserI userI = XDAT.getUserDetails();
-        // TODO Check: can user edit?
+        final HttpStatus status = isAdminUser();
+        if (status != null) {
+            return new ResponseEntity<>(status);
+        }
         containerConfigService.deleteAllEnabledSetting(userI.getLogin(), reason);
         return ResponseEntity.noContent().build();
     }
@@ -256,7 +461,10 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     public Boolean allEnabled(final @PathVariable String project)
             throws ConfigServiceException {
         final UserI userI = XDAT.getUserDetails();
-        // TODO Check: can user edit?
+        final HttpStatus status = canReadProjectOrAdmin(project);
+        if (status != null) {
+            return false;
+        }
         return containerConfigService.getAllEnabled(project);
     }
 
@@ -265,7 +473,10 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
                                           final @RequestParam(required = false) String reason)
             throws ConfigServiceException {
         final UserI userI = XDAT.getUserDetails();
-        // TODO Check: can user edit?
+        final HttpStatus status = isProjectOwnerOrAdmin(project);
+        if (status != null) {
+            return new ResponseEntity<>(status);
+        }
         containerConfigService.enableAll(project, userI.getLogin(), reason);
         return ResponseEntity.ok().build();
     }
@@ -275,7 +486,10 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
                                            final @RequestParam(required = false) String reason)
             throws ConfigServiceException {
         final UserI userI = XDAT.getUserDetails();
-        // TODO Check: can user edit?
+        final HttpStatus status = isProjectOwnerOrAdmin(project);
+        if (status != null) {
+            return new ResponseEntity<>(status);
+        }
         containerConfigService.disableAll(project, userI.getLogin(), reason);
         return ResponseEntity.ok().build();
     }
@@ -287,7 +501,10 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
                                                         final @RequestParam(required = false) String reason)
             throws ConfigServiceException {
         final UserI userI = XDAT.getUserDetails();
-        // TODO Check: can user edit?
+        final HttpStatus status = isProjectOwnerOrAdmin(project);
+        if (status != null) {
+            return new ResponseEntity<>(status);
+        }
         containerConfigService.deleteAllEnabledSetting(project, userI.getLogin(), reason);
         return ResponseEntity.noContent().build();
     }
@@ -361,5 +578,61 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
         }
         log.debug(message);
         return message;
+    }
+
+    /**
+     * Checks if is permitted.
+     *
+     * @param projectId the project ID
+     *
+     * @return the http status
+     */
+    // TODO: Migrate this to the abstract superclass. Can't right now because XDAT doesn't know about XnatProjectdata, etc.
+    private HttpStatus canReadProjectOrAdmin(String projectId) {
+        final UserI sessionUser = getSessionUser();
+        if (projectId != null) {
+            final XnatProjectdata project = AutoXnatProjectdata.getXnatProjectdatasById(projectId, sessionUser, false);
+            try {
+                return ( Permissions.canRead(sessionUser, project) || getRoleHolder().isSiteAdmin(sessionUser) ) ? null : HttpStatus.FORBIDDEN;
+            } catch (Exception e) {
+                log.error("Error checking read status for project", e);
+                return HttpStatus.INTERNAL_SERVER_ERROR;
+            }
+        } else {
+            return isPermitted() == null ? null : HttpStatus.FORBIDDEN;
+        }
+    }
+
+    /**
+     * Checks if user is owner.
+     *
+     * @param projectId the project ID
+     *
+     * @return the http status
+     */
+    // TODO: Migrate this to the abstract superclass. Can't right now because XDAT doesn't know about XnatProjectdata, etc.
+    private HttpStatus isProjectOwnerOrAdmin(String projectId) {
+        final UserI sessionUser = getSessionUser();
+        if (projectId != null) {
+            final XnatProjectdata project = AutoXnatProjectdata.getXnatProjectdatasById(projectId, sessionUser, false);
+            try {
+                return ( Permissions.isProjectOwner(sessionUser, projectId) || getRoleHolder().isSiteAdmin(sessionUser) ) ? null : HttpStatus.FORBIDDEN;
+            } catch (Exception e) {
+                log.error("Error checking read status for project", e);
+                return HttpStatus.INTERNAL_SERVER_ERROR;
+            }
+        } else {
+            return isPermitted() == null ? null : HttpStatus.FORBIDDEN;
+        }
+    }
+
+    private HttpStatus isAdminUser() {
+        final UserI sessionUser = getSessionUser();
+        try {
+            return getRoleHolder().isSiteAdmin(sessionUser) ? null : HttpStatus.FORBIDDEN;
+        } catch (Exception e) {
+            log.error("Error checking whether admin is project owner", e);
+            return HttpStatus.INTERNAL_SERVER_ERROR;
+        }
     }
 }

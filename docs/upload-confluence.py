@@ -4,22 +4,26 @@
 Upload a Confluence-formatted HTML document to the XNAT Wiki. Currently for updating only. To create a new post, do it in the web interface first.
 
 Usage:
-    upload-confluence.py <username> <password> <postId> <file>
+    upload-confluence.py [-i <postId>] <username> <password> <file> [<message>]...
     upload-confluence.py (-h | --help)
     upload-confluence.py --version
 
 Options:
     -h --help   Show the usage
     --version   Show the version
+    -i <postId> The ID of an existing post on the Wiki. If not supplied, the script will
+                attempt to find the post ID as a comment on the first line of the post document, as
+                <!-- id: <postId> -->
     <username>  XNAT wiki username
     <password>  XNAT wiki password
-    <file>      HTML file. Possibly generated from Markdown source by md2confluencehtml.sh.
-    <postId>    The ID of an existing post on the Wiki.
+    <file>      Confluence-HTML file. Possibly generated from Markdown source by md2confluencehtml.sh.
+    <message>   The rest of the arguments will be used as the edit message when posting the document.
 
 """
 
 import requests
 import os
+import re
 import sys
 import json
 from docopt import docopt
@@ -30,8 +34,22 @@ version = "1.0"
 args = docopt(__doc__, version=version)
 username = args['<username>']
 password = args['<password>']
-postId = args['<postId>']
+postId = args.get('<postId>')
 filepath = args['<file>']
+messageList = args.get('<message>')
+
+if not postId:
+    with open(filepath) as f:
+        firstline = f.readline()
+        m = re.match('<!--.*id: *(.+?) *-->', firstline)
+        if not m or not m.group(1):
+            sys.exit("ERROR: No post id. Please pass a post ID argument or include it as a comment in the file, matching regex <!--.*[iI][dD]: *(.+?) *-->")
+        postId = m.group(1)
+
+if not messageList:
+    message = "Posting from update-confluence.py"
+else:
+    message = " ".join(messageList)
 
 s = requests.Session()
 s.auth = (username, password)
@@ -71,7 +89,7 @@ newPostJson = {
     },
     "version": {
         "number": previousVersionNumber + 1,
-        "message": "Posting from update-confluence.py"
+        "message": message
     }
 }
 

@@ -5,7 +5,7 @@ import org.nrg.containers.daos.ContainerEntityRepository;
 import org.nrg.containers.events.model.ContainerEvent;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.container.entity.ContainerEntityHistory;
-import org.nrg.containers.model.ResolvedCommand;
+import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
@@ -32,7 +32,9 @@ public class HibernateContainerEntityService
                                 final UserI userI) {
         final ContainerEntity createdContainer = new ContainerEntity(resolvedCommand, containerId, userI.getLogin());
         log.debug("Creating ContainerEntity for container with id " + containerId);
-        return create(createdContainer);
+        final ContainerEntity created = create(createdContainer);
+        addContainerHistoryItem(created, ContainerEntityHistory.fromUserAction("Created", userI.getLogin()));
+        return created;
     }
 
     @Override
@@ -41,7 +43,13 @@ public class HibernateContainerEntityService
         if (StringUtils.isBlank(containerId)) {
             return null;
         }
-        return getDao().retrieveByContainerId(containerId);
+        try {
+            // This will allow the higher-level API to request the container by database id or docker hash id
+            final Long containerDatabaseId = Long.parseLong(containerId);
+            return retrieve(containerDatabaseId);
+        } catch (NumberFormatException e) {
+            return getDao().retrieveByContainerId(containerId);
+        }
     }
 
     @Override
@@ -52,6 +60,12 @@ public class HibernateContainerEntityService
             throw new NotFoundException("No container with ID " + containerId);
         }
         return containerEntity;
+    }
+
+    @Override
+    public void delete(final String containerId) throws NotFoundException {
+        final ContainerEntity toDelete = get(containerId);
+        delete(toDelete.getId());
     }
 
     @Override

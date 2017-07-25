@@ -42,7 +42,7 @@ public class SessionTransferredListener implements Consumer<Event<WorkflowStatus
             try {
                 final UserI user = Users.getUser(wfsEvent.getUserId());
                 final XnatImagesessiondata session = XnatImagesessiondata.getXnatImagesessiondatasById(wfsEvent.getEntityId(), user, true);
-                eventService.triggerEvent(new SessionArchiveEvent(session, user));
+                eventService.triggerEvent(SessionArchiveEvent.create(session, user));
             } catch (UserNotFoundException e) {
                 log.warn("The specified user was not found: {}", wfsEvent.getUserId());
             } catch (UserInitException e) {

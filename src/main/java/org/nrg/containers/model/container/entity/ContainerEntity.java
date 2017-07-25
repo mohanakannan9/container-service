@@ -1,13 +1,17 @@
 package org.nrg.containers.model.container.entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.envers.Audited;
-import org.nrg.containers.model.ResolvedCommand;
+import org.nrg.containers.model.command.auto.ResolvedCommand;
+import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMount;
+import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandOutput;
+import org.nrg.containers.model.container.ContainerInputType;
+import org.nrg.containers.model.container.auto.Container;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.CascadeType;
@@ -27,14 +31,15 @@ public class ContainerEntity extends AbstractHibernateEntity {
     @JsonProperty("xnat-command-wrapper-id") private long xnatCommandWrapperId;
     @JsonProperty("docker-image") private String dockerImage;
     @JsonProperty("command-line") private String commandLine;
+    @JsonProperty("working-directory") private String workingDirectory;
     @JsonProperty("env") private Map<String, String> environmentVariables = Maps.newHashMap();
     @JsonProperty("mounts") private List<ContainerEntityMount> mounts = Lists.newArrayList();
     @JsonProperty("container-id") private String containerId;
     @JsonProperty("user-id") private String userId;
-    private Set<ContainerEntityInput> inputs;
+    private List<ContainerEntityInput> inputs;
     private List<ContainerEntityOutput> outputs;
     private List<ContainerEntityHistory> history = Lists.newArrayList();
-    @JsonProperty("log-paths") private Set<String> logPaths;
+    @JsonProperty("log-paths") private List<String> logPaths;
 
     public ContainerEntity() {}
 
@@ -44,17 +49,80 @@ public class ContainerEntity extends AbstractHibernateEntity {
         this.containerId = containerId;
         this.userId = userId;
 
-        this.commandId = resolvedCommand.getCommandId();
-        this.xnatCommandWrapperId = resolvedCommand.getXnatCommandWrapperId();
-        this.dockerImage = resolvedCommand.getImage();
-        this.commandLine = resolvedCommand.getCommandLine();
-        setEnvironmentVariables(resolvedCommand.getEnvironmentVariables());
-        setMounts(resolvedCommand.getMounts());
-        addRawInputs(resolvedCommand.getRawInputValues());
-        addWrapperInputs(resolvedCommand.getXnatInputValues());
-        addCommandInputs(resolvedCommand.getCommandInputValues());
-        setOutputs(resolvedCommand.getOutputs());
+        this.commandId = resolvedCommand.commandId();
+        this.xnatCommandWrapperId = resolvedCommand.wrapperId();
+        this.dockerImage = resolvedCommand.image();
+        this.commandLine = resolvedCommand.commandLine();
+        this.workingDirectory = resolvedCommand.workingDirectory();
+        setEnvironmentVariables(resolvedCommand.environmentVariables());
+        setMounts(Lists.newArrayList(
+                Lists.transform(resolvedCommand.mounts(), new Function<ResolvedCommandMount, ContainerEntityMount>() {
+                    @Override
+                    public ContainerEntityMount apply(final ResolvedCommandMount resolvedCommandMount) {
+                        return new ContainerEntityMount(resolvedCommandMount);
+                    }
+                })
+        ));
+        addRawInputs(resolvedCommand.rawInputValues());
+        addWrapperInputs(resolvedCommand.wrapperInputValues());
+        addCommandInputs(resolvedCommand.commandInputValues());
+        setOutputs(Lists.newArrayList(
+                Lists.transform(resolvedCommand.outputs(), new Function<ResolvedCommandOutput, ContainerEntityOutput>() {
+                    @Override
+                    public ContainerEntityOutput apply(final ResolvedCommandOutput resolvedCommandOutput) {
+                        return new ContainerEntityOutput(resolvedCommandOutput);
+                    }
+                })
+        ));
         setLogPaths(null);
+    }
+
+    public static ContainerEntity fromPojo(final Container containerPojo) {
+        final ContainerEntity containerEntity = new ContainerEntity();
+        containerEntity.setId(containerPojo.databaseId());
+        containerEntity.setCommandId(containerPojo.commandId());
+        containerEntity.setXnatCommandWrapperId(containerPojo.wrapperId());
+        containerEntity.setContainerId(containerPojo.containerId());
+        containerEntity.setUserId(containerPojo.userId());
+        containerEntity.setDockerImage(containerPojo.dockerImage());
+        containerEntity.setCommandLine(containerPojo.commandLine());
+        containerEntity.setWorkingDirectory(containerPojo.workingDirectory());
+        containerEntity.setEnvironmentVariables(containerPojo.environmentVariables());
+        containerEntity.setLogPaths(containerPojo.logPaths());
+        containerEntity.setMounts(Lists.newArrayList(Lists.transform(
+                containerPojo.mounts(), new Function<Container.ContainerMount, ContainerEntityMount>() {
+                    @Override
+                    public ContainerEntityMount apply(final Container.ContainerMount input) {
+                        return ContainerEntityMount.fromPojo(input);
+                    }
+                }))
+        );
+        containerEntity.setInputs(Lists.newArrayList(Lists.transform(
+                containerPojo.inputs(), new Function<Container.ContainerInput, ContainerEntityInput>() {
+                    @Override
+                    public ContainerEntityInput apply(final Container.ContainerInput input) {
+                        return ContainerEntityInput.fromPojo(input);
+                    }
+                }))
+        );
+        containerEntity.setOutputs(Lists.newArrayList(Lists.transform(
+                containerPojo.outputs(), new Function<Container.ContainerOutput, ContainerEntityOutput>() {
+                    @Override
+                    public ContainerEntityOutput apply(final Container.ContainerOutput input) {
+                        return ContainerEntityOutput.fromPojo(input);
+                    }
+                }))
+        );
+        containerEntity.setHistory(Lists.newArrayList(Lists.transform(
+                containerPojo.history(), new Function<Container.ContainerHistory, ContainerEntityHistory>() {
+                    @Override
+                    public ContainerEntityHistory apply(final Container.ContainerHistory input) {
+                        return ContainerEntityHistory.fromPojo(input);
+                    }
+                }))
+        );
+
+        return containerEntity;
     }
 
     public long getCommandId() {
@@ -87,6 +155,14 @@ public class ContainerEntity extends AbstractHibernateEntity {
 
     public void setCommandLine(final String commandLine) {
         this.commandLine = commandLine;
+    }
+
+    public String getWorkingDirectory() {
+        return workingDirectory;
+    }
+
+    public void setWorkingDirectory(final String workingDirectory) {
+        this.workingDirectory = workingDirectory;
     }
 
     @ElementCollection
@@ -131,13 +207,13 @@ public class ContainerEntity extends AbstractHibernateEntity {
     }
 
     @OneToMany(mappedBy = "containerEntity", cascade = CascadeType.ALL, orphanRemoval = true)
-    public Set<ContainerEntityInput> getInputs() {
+    public List<ContainerEntityInput> getInputs() {
         return inputs;
     }
 
-    public void setInputs(final Set<ContainerEntityInput> inputs) {
+    public void setInputs(final List<ContainerEntityInput> inputs) {
         this.inputs = inputs == null ?
-                Sets.<ContainerEntityInput>newHashSet() :
+                Lists.<ContainerEntityInput>newArrayList() :
                 inputs;
         for (final ContainerEntityInput input : this.inputs) {
             input.setContainerEntity(this);
@@ -151,39 +227,39 @@ public class ContainerEntity extends AbstractHibernateEntity {
         input.setContainerEntity(this);
 
         if (this.inputs == null) {
-            this.inputs = Sets.newHashSet();
+            this.inputs = Lists.newArrayList();
         }
         this.inputs.add(input);
     }
 
     @Transient
     public Map<String, String> getRawInputs() {
-        return getInputs(ContainerEntityInput.Type.RAW);
+        return getInputs(ContainerInputType.RAW);
     }
 
     public void addRawInputs(final Map<String, String> rawInputValues) {
-        addInputs(ContainerEntityInput.Type.RAW, rawInputValues);
+        addInputs(ContainerInputType.RAW, rawInputValues);
     }
 
     @Transient
     public Map<String, String> getWrapperInputs() {
-        return getInputs(ContainerEntityInput.Type.WRAPPER);
+        return getInputs(ContainerInputType.WRAPPER);
     }
 
     public void addWrapperInputs(final Map<String, String> xnatInputValues) {
-        addInputs(ContainerEntityInput.Type.WRAPPER, xnatInputValues);
+        addInputs(ContainerInputType.WRAPPER, xnatInputValues);
     }
 
     @Transient
     public Map<String, String> getCommandInputs() {
-        return getInputs(ContainerEntityInput.Type.COMMAND);
+        return getInputs(ContainerInputType.COMMAND);
     }
 
     public void addCommandInputs(final Map<String, String> commandInputValues) {
-        addInputs(ContainerEntityInput.Type.COMMAND, commandInputValues);
+        addInputs(ContainerInputType.COMMAND, commandInputValues);
     }
 
-    private Map<String, String> getInputs(final ContainerEntityInput.Type type) {
+    private Map<String, String> getInputs(final ContainerInputType type) {
         if (this.inputs == null) {
             return null;
         }
@@ -196,7 +272,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
         return inputs;
     }
 
-    private void addInputs(final ContainerEntityInput.Type type,
+    private void addInputs(final ContainerInputType type,
                            final Map<String, String> inputs) {
         if (inputs == null) {
             return;
@@ -263,11 +339,11 @@ public class ContainerEntity extends AbstractHibernateEntity {
     }
 
     @ElementCollection
-    public Set<String> getLogPaths() {
+    public List<String> getLogPaths() {
         return logPaths;
     }
 
-    public void setLogPaths(final Set<String> logPaths) {
+    public void setLogPaths(final List<String> logPaths) {
         this.logPaths = logPaths;
     }
 
@@ -278,7 +354,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
         }
 
         if (this.logPaths == null) {
-            this.logPaths = Sets.newHashSet();
+            this.logPaths = Lists.newArrayList();
         }
         this.logPaths.add(logPath);
     }
@@ -312,7 +388,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
         return MoreObjects.toStringHelper(this)
                 .add("containerId", containerId)
                 .add("commandId", commandId)
-                .add("xnatCommandWrapperId", xnatCommandWrapperId)
+                .add("wrapperId", xnatCommandWrapperId)
                 .add("dockerImage", dockerImage)
                 .add("commandLine", commandLine)
                 .add("environmentVariables", environmentVariables)

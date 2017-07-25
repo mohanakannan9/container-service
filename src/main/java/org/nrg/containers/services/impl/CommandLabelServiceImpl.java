@@ -1,32 +1,44 @@
-package org.nrg.containers.helpers;
+package org.nrg.containers.services.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.entity.CommandType;
 import org.nrg.containers.model.image.docker.DockerImage;
-import org.nrg.containers.model.command.auto.Command;
+import org.nrg.containers.services.CommandLabelService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-public class CommandLabelHelper {
-    private static final Logger log = LoggerFactory.getLogger(CommandLabelHelper.class);
+@Service
+public class CommandLabelServiceImpl implements CommandLabelService {
+    private static final Logger log = LoggerFactory.getLogger(CommandLabelService.class);
 
-    public static final String LABEL_KEY = "org.nrg.commands";
+    private final ObjectMapper objectMapper;
 
-    @Nonnull
-    public static List<Command> parseLabels(final DockerImage dockerImage, final ObjectMapper objectMapper) {
-        return parseLabels(null, dockerImage, objectMapper);
+    @Autowired
+    public CommandLabelServiceImpl(final ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
     }
 
+    @Override
     @Nonnull
-    public static List<Command> parseLabels(final String imageName, final @Nonnull DockerImage dockerImage, final ObjectMapper objectMapper) {
+    public List<Command> parseLabels(final @Nonnull DockerImage dockerImage) {
+        return parseLabels(null, dockerImage);
+    }
+
+    @Override
+    @Nonnull
+    public List<Command> parseLabels(final @Nullable String imageName, final @Nonnull DockerImage dockerImage) {
         final List<Command> commandsToReturn = Lists.newArrayList();
         final Map<String, String> labels = dockerImage.labels();
         if (labels == null || labels.isEmpty() || !labels.containsKey(LABEL_KEY)) {
