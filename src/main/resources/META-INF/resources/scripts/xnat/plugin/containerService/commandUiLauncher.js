@@ -443,8 +443,12 @@ var XNAT = getObject(XNAT || {});
                                                 var childInput = inputs[child];
                                                 var classes = ['child-input'];
                                                 childInput.type = childInput.ui[k].type;
-                                                childInput.value = childInput.ui[k].values[0].value;
-                                                childInput.valueLabel = childInput.ui[k].values[0].label;
+                                                if (childInput.ui[k].values.length) {
+                                                    childInput.value = childInput.ui[k].values[0].value;
+                                                    childInput.valueLabel = childInput.ui[k].values[0].label;
+                                                } else {
+                                                    childInput.value = childInput.valueLabel = '';
+                                                }
                                                 $standardInputContainer.append( spawn('div', { className: classes.join(' '), data: { preset: k }}, launcher.formInputs(childInput)) );
                                             }
 

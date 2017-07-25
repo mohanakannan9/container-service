@@ -53,11 +53,16 @@ public class ContainerEntityInput {
 
     public static ContainerEntityInput fromPojo(final Container.ContainerInput containerInputPojo) {
         final ContainerEntityInput containerEntityInput = new ContainerEntityInput();
-        containerEntityInput.setId(containerInputPojo.databaseId());
-        containerEntityInput.setType(containerInputPojo.type());
-        containerEntityInput.setName(containerInputPojo.name());
-        containerEntityInput.setValue(containerInputPojo.value());
+        containerEntityInput.update(containerInputPojo);
         return containerEntityInput;
+    }
+
+    public ContainerEntityInput update(final Container.ContainerInput containerInputPojo) {
+        this.setId(containerInputPojo.databaseId());
+        this.setType(containerInputPojo.type());
+        this.setName(containerInputPojo.name());
+        this.setValue(containerInputPojo.value());
+        return this;
     }
 
     @Id

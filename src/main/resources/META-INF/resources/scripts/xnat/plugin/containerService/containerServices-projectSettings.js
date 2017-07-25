@@ -797,7 +797,7 @@ var XNAT = getObject(XNAT || {});
         return caTable.table;
     };
 
-    commandAutomation.init = function(refresh){
+    commandAutomation.init = function(refresh,isAdmin){
         // initialize the list of command automations
         var manager = $('#command-automation-list');
         var $footer = manager.parents('.panel').find('.panel-footer');
@@ -805,20 +805,32 @@ var XNAT = getObject(XNAT || {});
         manager.html('');
         manager.append(commandAutomation.table());
 
-        if (!refresh) {
-            var newAutomation = spawn('button.new-command-automation.btn.btn-sm.submit', {
-                html: 'Add New Command Automation',
-                onclick: function(){
-                    commandAutomation.addDialog();
-                }
-            });
+        var isAdmin; // check current user's admin status by checking the JSP page variable PAGE.username
+        XNAT.xhr.getJSON({
+            url: '/xapi/users/' + PAGE.username + '/roles',
+            success: function (userRoles) {
+                isAdmin = userRoles.find(function(role){ return role ==='Administrator' });
+                if (!refresh && isAdmin !== undefined) {
+                    var newAutomation = spawn('button.new-command-automation.btn.btn-sm.submit', {
+                        html: 'Add New Command Automation',
+                        onclick: function(){
+                            commandAutomation.addDialog();
+                        }
+                    });
 
-            // add the 'add new' button to the panel footer
-            $footer.append(spawn('div.pull-right', [
-                newAutomation
-            ]));
-            $footer.append(spawn('div.clear.clearFix'));
-        }
+                    // add the 'add new' button to the panel footer
+                    $footer.append(spawn('div.pull-right', [
+                        newAutomation
+                    ]));
+                    $footer.append(spawn('div.clear.clearFix'));
+                }
+            },
+            fail: function (e) {
+                errorHandler(e);
+            }
+        });
+
+
     };
 
     commandAutomation.init();

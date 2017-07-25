@@ -1,5 +1,7 @@
 package org.nrg.containers.rest;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.apache.commons.lang3.StringUtils;
@@ -86,8 +88,8 @@ public class LaunchRestApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = {"/wrappers/{wrapperId}/launch"}, method = GET)
     @ApiIgnore // Swagger UI does not correctly show this API endpoint
     @ResponseBody
-    public LaunchUi getLaunchUi(final @PathVariable long wrapperId,
-                                final @RequestParam Map<String, String> allRequestParams)
+    public LaunchUi.SingleLaunchUi getLaunchUi(final @PathVariable long wrapperId,
+                                               final @RequestParam Map<String, String> allRequestParams)
             throws NotFoundException, CommandResolutionException, UnauthorizedException {
         log.info("Launch UI requested for wrapper {}", wrapperId);
 
@@ -97,9 +99,9 @@ public class LaunchRestApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/launch"}, method = GET)
     @ApiIgnore // Swagger UI does not correctly show this API endpoint
     @ResponseBody
-    public LaunchUi getLaunchUi(final @PathVariable long commandId,
-                                final @PathVariable String wrapperName,
-                                final @RequestParam Map<String, String> allRequestParams)
+    public LaunchUi.SingleLaunchUi getLaunchUi(final @PathVariable long commandId,
+                                               final @PathVariable String wrapperName,
+                                               final @RequestParam Map<String, String> allRequestParams)
             throws NotFoundException, CommandResolutionException, UnauthorizedException {
         log.info("Launch UI requested for command {}, wrapper {}", commandId, wrapperName);
 
@@ -109,9 +111,9 @@ public class LaunchRestApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/launch"}, method = GET)
     @ApiIgnore // Swagger UI does not correctly show this API endpoint
     @ResponseBody
-    public LaunchUi getLaunchUi(final @PathVariable String project,
-                                final @PathVariable long wrapperId,
-                                final @RequestParam Map<String, String> allRequestParams)
+    public LaunchUi.SingleLaunchUi getLaunchUi(final @PathVariable String project,
+                                               final @PathVariable long wrapperId,
+                                               final @RequestParam Map<String, String> allRequestParams)
             throws NotFoundException, CommandResolutionException, UnauthorizedException {
         log.info("Launch UI requested for project {}, wrapper {}", project, wrapperId);
 
@@ -126,10 +128,10 @@ public class LaunchRestApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/launch"}, method = GET)
     @ApiIgnore // Swagger UI does not correctly show this API endpoint
     @ResponseBody
-    public LaunchUi getLaunchUi(final @PathVariable String project,
-                                final @PathVariable long commandId,
-                                final @PathVariable String wrapperName,
-                                final @RequestParam Map<String, String> allRequestParams)
+    public LaunchUi.SingleLaunchUi getLaunchUi(final @PathVariable String project,
+                                               final @PathVariable long commandId,
+                                               final @PathVariable String wrapperName,
+                                               final @RequestParam Map<String, String> allRequestParams)
             throws NotFoundException, CommandResolutionException, UnauthorizedException {
         log.info("Launch UI requested for project {}, command {}, wrapper {}", project, commandId, wrapperName);
 
@@ -141,23 +143,23 @@ public class LaunchRestApi extends AbstractXapiRestController {
         return getLaunchUi(project, commandId, wrapperName, 0L, allRequestParams);
     }
 
-    private LaunchUi getLaunchUi(final String project,
-                                 final long commandId,
-                                 final String wrapperName,
-                                 final long wrapperId,
-                                 final Map<String, String> allRequestParams)
+    private LaunchUi.SingleLaunchUi getLaunchUi(final String project,
+                                                final long commandId,
+                                                final String wrapperName,
+                                                final long wrapperId,
+                                                final Map<String, String> allRequestParams)
             throws NotFoundException, CommandResolutionException, UnauthorizedException {
+        log.debug("Getting {} configuration for command {}, wrapper name {}, wrapper id {}.", project == null ? "site" : "project " + project, commandId, wrapperName, wrapperId);
+        final CommandConfiguration commandConfiguration = getCommandConfiguration(project, commandId, wrapperName, wrapperId);
         try {
             log.debug("Preparing to pre-resolve command {}, wrapperName {}, wrapperId {}, in project {} with inputs {}.", commandId, wrapperName, wrapperId, project, allRequestParams);
             final UserI userI = XDAT.getUserDetails();
             final PartiallyResolvedCommand partiallyResolvedCommand = preResolve(project, commandId, wrapperName, wrapperId, allRequestParams, userI);
             log.debug("Done pre-resolving command {}, wrapperName {}, wrapperId {}, in project {}.", commandId, wrapperName, project);
 
-            log.debug("Getting {} configuration for command {}, wrapper name {}, wrapper id {}.", project == null ? "site" : "project " + project, commandId, wrapperName, wrapperId);
-            final CommandConfiguration commandConfiguration = getCommandConfiguration(project, commandId, wrapperName, wrapperId);
 
             log.debug("Creating launch UI.");
-            return LaunchUi.create(partiallyResolvedCommand, commandConfiguration);
+            return LaunchUi.SingleLaunchUi.create(partiallyResolvedCommand, commandConfiguration);
         } catch (Throwable t) {
             log.error("Error getting launch UI.", t);
             if (Exception.class.isAssignableFrom(t.getClass())) {
@@ -195,6 +197,126 @@ public class LaunchRestApi extends AbstractXapiRestController {
                 (commandId == 0L && wrapperName == null ?
                         commandService.getProjectConfiguration(project, wrapperId) :
                         commandService.getProjectConfiguration(project, commandId, wrapperName));
+    }
+
+    /*
+    BULK LAUNCH UI
+     */
+    @XapiRequestMapping(value = {"/wrappers/{wrapperId}/bulklaunch"}, method = GET)
+    @ApiIgnore // Swagger UI does not correctly show this API endpoint
+    @ResponseBody
+    public LaunchUi.BulkLaunchUi getBulkLaunchUi(final @PathVariable long wrapperId,
+                                                 final @RequestParam Map<String, String> allRequestParams)
+            throws NotFoundException, CommandResolutionException, UnauthorizedException {
+        log.info("Launch UI requested for wrapper {}", wrapperId);
+
+        return getBulkLaunchUi(null, 0L, null, wrapperId, allRequestParams);
+    }
+
+    @XapiRequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/bulklaunch"}, method = GET)
+    @ApiIgnore // Swagger UI does not correctly show this API endpoint
+    @ResponseBody
+    public LaunchUi.BulkLaunchUi getBulkLaunchUi(final @PathVariable long commandId,
+                                                 final @PathVariable String wrapperName,
+                                                 final @RequestParam Map<String, String> allRequestParams)
+            throws NotFoundException, CommandResolutionException, UnauthorizedException {
+        log.info("Bulk Launch UI requested for command {}, wrapper {}", commandId, wrapperName);
+
+        return getBulkLaunchUi(null, commandId, wrapperName, 0L, allRequestParams);
+    }
+
+    @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/bulklaunch"}, method = GET)
+    @ApiIgnore // Swagger UI does not correctly show this API endpoint
+    @ResponseBody
+    public LaunchUi.BulkLaunchUi getBulkLaunchUi(final @PathVariable String project,
+                                                 final @PathVariable long wrapperId,
+                                                 final @RequestParam Map<String, String> allRequestParams)
+            throws NotFoundException, CommandResolutionException, UnauthorizedException {
+        log.info("Launch UI requested for project {}, wrapper {}", project, wrapperId);
+
+        final HttpStatus status = canEditProjectOrAdmin(project);
+        if (status != null) {
+            return null;
+        }
+
+        return getBulkLaunchUi(project, 0L, null, wrapperId, allRequestParams);
+    }
+
+    @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/bulklaunch"}, method = GET)
+    @ApiIgnore // Swagger UI does not correctly show this API endpoint
+    @ResponseBody
+    public LaunchUi.BulkLaunchUi getBulkLaunchUi(final @PathVariable String project,
+                                                 final @PathVariable long commandId,
+                                                 final @PathVariable String wrapperName,
+                                                 final @RequestParam Map<String, String> allRequestParams)
+            throws NotFoundException, CommandResolutionException, UnauthorizedException {
+        log.info("Launch UI requested for project {}, command {}, wrapper {}", project, commandId, wrapperName);
+
+        final HttpStatus status = canEditProjectOrAdmin(project);
+        if (status != null) {
+            return null;
+        }
+
+        return getBulkLaunchUi(project, commandId, wrapperName, 0L, allRequestParams);
+    }
+
+    private LaunchUi.BulkLaunchUi getBulkLaunchUi(final String project,
+                                                  final long commandId,
+                                                  final String wrapperName,
+                                                  final long wrapperId,
+                                                  final Map<String, String> allRequestParams)
+            throws NotFoundException, CommandResolutionException, UnauthorizedException {
+
+        final List<Map<String, String>> paramsMapList = Lists.newArrayList();
+        paramsMapList.add(Maps.<String, String>newHashMap());
+        for (final Map.Entry<String, String> param : allRequestParams.entrySet()) {
+            final String[] splitValue = StringUtils.split(param.getValue(), ",");
+            if (splitValue.length > 1) {
+                // The param is a CSV. We must add each value in the CSV to each param map in the list.
+                final List<Map<String, String>> paramsMapListCopy = Lists.newArrayList(paramsMapList);
+                paramsMapList.clear();
+                for (final Map<String, String> paramsMap : paramsMapListCopy) {
+                    for (final String value : splitValue) {
+                        final Map<String, String> paramsMapCopy = Maps.newHashMap(paramsMap);
+                        paramsMapCopy.put(param.getKey(), value);
+                        paramsMapList.add(paramsMapCopy);
+                    }
+                }
+            } else {
+                // The param was not a CSV, so add it to all the maps in the list
+                for (final Map<String, String> paramsMap : paramsMapList) {
+                    paramsMap.put(param.getKey(), param.getValue());
+                }
+            }
+        }
+
+        try {
+            log.debug("Getting {} configuration for command {}, wrapper name {}, wrapper id {}.", project == null ? "site" : "project " + project, commandId, wrapperName, wrapperId);
+            final CommandConfiguration commandConfiguration = getCommandConfiguration(project, commandId, wrapperName, wrapperId);
+
+            final UserI userI = XDAT.getUserDetails();
+
+            LaunchUi.BulkLaunchUi.Builder bulkLaunchUiBuilder = null;
+            for (final Map<String, String> paramsMap : paramsMapList) {
+                log.debug("Preparing to pre-resolve command {}, wrapperName {}, wrapperId {}, in project {} with inputs {}.", commandId, wrapperName, wrapperId, project, paramsMap);
+                final PartiallyResolvedCommand partiallyResolvedCommand = preResolve(project, commandId, wrapperName, wrapperId, paramsMap, userI);
+                log.debug("Done pre-resolving command {}, wrapperName {}, wrapperId {}, in project {}.", commandId, wrapperName, project);
+
+                bulkLaunchUiBuilder = bulkLaunchUiBuilder == null ?
+                        LaunchUi.BulkLaunchUi.builder(partiallyResolvedCommand, commandConfiguration) :
+                        bulkLaunchUiBuilder.addInputsFromInputTrees(partiallyResolvedCommand, commandConfiguration);
+            }
+
+            log.debug("Creating launch UI.");
+            return bulkLaunchUiBuilder == null ? null : bulkLaunchUiBuilder.build();
+        } catch (Throwable t) {
+            log.error("Error getting launch UI.", t);
+            if (Exception.class.isAssignableFrom(t.getClass())) {
+                // We can re-throw Exceptions, because Spring has methods to catch them.
+                throw t;
+            }
+            return null;
+        }
     }
 
     /*

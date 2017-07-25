@@ -35,14 +35,19 @@ public class ContainerMountFilesEntity {
         this.path = resolvedCommandMountFiles.path();
     }
 
-    public static ContainerMountFilesEntity create(final Container.ContainerMountFiles containerMountFilesPojo) {
+    public static ContainerMountFilesEntity fromPojo(final Container.ContainerMountFiles containerMountFilesPojo) {
         final ContainerMountFilesEntity containerMountFilesEntity = new ContainerMountFilesEntity();
-        containerMountFilesEntity.setId(containerMountFilesPojo.databaseId());
-        containerMountFilesEntity.setFromXnatInput(containerMountFilesPojo.fromXnatInput());
-        containerMountFilesEntity.setFromUri(containerMountFilesPojo.fromUri());
-        containerMountFilesEntity.setRootDirectory(containerMountFilesPojo.rootDirectory());
-        containerMountFilesEntity.setPath(containerMountFilesPojo.path());
+        containerMountFilesEntity.update(containerMountFilesPojo);
         return containerMountFilesEntity;
+    }
+
+    public ContainerMountFilesEntity update(final Container.ContainerMountFiles containerMountFilesPojo) {
+        this.setId(containerMountFilesPojo.databaseId());
+        this.setFromXnatInput(containerMountFilesPojo.fromXnatInput());
+        this.setFromUri(containerMountFilesPojo.fromUri());
+        this.setRootDirectory(containerMountFilesPojo.rootDirectory());
+        this.setPath(containerMountFilesPojo.path());
+        return this;
     }
 
     @Id

@@ -79,17 +79,22 @@ public class ContainerEntity extends AbstractHibernateEntity {
 
     public static ContainerEntity fromPojo(final Container containerPojo) {
         final ContainerEntity containerEntity = new ContainerEntity();
-        containerEntity.setId(containerPojo.databaseId());
-        containerEntity.setCommandId(containerPojo.commandId());
-        containerEntity.setXnatCommandWrapperId(containerPojo.wrapperId());
-        containerEntity.setContainerId(containerPojo.containerId());
-        containerEntity.setUserId(containerPojo.userId());
-        containerEntity.setDockerImage(containerPojo.dockerImage());
-        containerEntity.setCommandLine(containerPojo.commandLine());
-        containerEntity.setWorkingDirectory(containerPojo.workingDirectory());
-        containerEntity.setEnvironmentVariables(containerPojo.environmentVariables());
-        containerEntity.setLogPaths(containerPojo.logPaths());
-        containerEntity.setMounts(Lists.newArrayList(Lists.transform(
+        containerEntity.update(containerPojo);
+        return containerEntity;
+    }
+
+    public ContainerEntity update(final Container containerPojo) {
+        this.setId(containerPojo.databaseId());
+        this.setCommandId(containerPojo.commandId());
+        this.setXnatCommandWrapperId(containerPojo.wrapperId());
+        this.setContainerId(containerPojo.containerId());
+        this.setUserId(containerPojo.userId());
+        this.setDockerImage(containerPojo.dockerImage());
+        this.setCommandLine(containerPojo.commandLine());
+        this.setWorkingDirectory(containerPojo.workingDirectory());
+        this.setEnvironmentVariables(containerPojo.environmentVariables());
+        this.setLogPaths(containerPojo.logPaths());
+        this.setMounts(Lists.newArrayList(Lists.transform(
                 containerPojo.mounts(), new Function<Container.ContainerMount, ContainerEntityMount>() {
                     @Override
                     public ContainerEntityMount apply(final Container.ContainerMount input) {
@@ -97,7 +102,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
                     }
                 }))
         );
-        containerEntity.setInputs(Lists.newArrayList(Lists.transform(
+        this.setInputs(Lists.newArrayList(Lists.transform(
                 containerPojo.inputs(), new Function<Container.ContainerInput, ContainerEntityInput>() {
                     @Override
                     public ContainerEntityInput apply(final Container.ContainerInput input) {
@@ -105,7 +110,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
                     }
                 }))
         );
-        containerEntity.setOutputs(Lists.newArrayList(Lists.transform(
+        this.setOutputs(Lists.newArrayList(Lists.transform(
                 containerPojo.outputs(), new Function<Container.ContainerOutput, ContainerEntityOutput>() {
                     @Override
                     public ContainerEntityOutput apply(final Container.ContainerOutput input) {
@@ -113,7 +118,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
                     }
                 }))
         );
-        containerEntity.setHistory(Lists.newArrayList(Lists.transform(
+        this.setHistory(Lists.newArrayList(Lists.transform(
                 containerPojo.history(), new Function<Container.ContainerHistory, ContainerEntityHistory>() {
                     @Override
                     public ContainerEntityHistory apply(final Container.ContainerHistory input) {
@@ -122,7 +127,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
                 }))
         );
 
-        return containerEntity;
+        return this;
     }
 
     public long getCommandId() {
