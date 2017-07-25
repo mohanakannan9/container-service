@@ -62,13 +62,18 @@ public class ContainerEntityHistory {
 
     public static ContainerEntityHistory fromPojo(final Container.ContainerHistory containerHistoryPojo) {
         final ContainerEntityHistory containerEntityHistory = new ContainerEntityHistory();
-        containerEntityHistory.setId(containerHistoryPojo.databaseId() == null ? 0L : containerHistoryPojo.databaseId());
-        containerEntityHistory.setStatus(containerHistoryPojo.status());
-        containerEntityHistory.setEntityType(containerHistoryPojo.entityType());
-        containerEntityHistory.setEntityId(containerHistoryPojo.entityId());
-        containerEntityHistory.setTimeRecorded(containerHistoryPojo.timeRecorded());
-        containerEntityHistory.setExternalTimestamp(containerHistoryPojo.externalTimestamp());
+        containerEntityHistory.update(containerHistoryPojo);
         return containerEntityHistory;
+    }
+
+    public ContainerEntityHistory update(final Container.ContainerHistory containerHistoryPojo) {
+        this.setId(containerHistoryPojo.databaseId() == null ? 0L : containerHistoryPojo.databaseId());
+        this.setStatus(containerHistoryPojo.status());
+        this.setEntityType(containerHistoryPojo.entityType());
+        this.setEntityId(containerHistoryPojo.entityId());
+        this.setTimeRecorded(containerHistoryPojo.timeRecorded());
+        this.setExternalTimestamp(containerHistoryPojo.externalTimestamp());
+        return this;
     }
 
     @Id

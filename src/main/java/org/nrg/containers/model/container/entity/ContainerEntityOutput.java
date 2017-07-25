@@ -46,17 +46,22 @@ public class ContainerEntityOutput implements Serializable {
 
     public static ContainerEntityOutput fromPojo(final Container.ContainerOutput containerOutputPojo) {
         final ContainerEntityOutput containerEntityOutput = new ContainerEntityOutput();
-        containerEntityOutput.setId(containerOutputPojo.databaseId());
-        containerEntityOutput.setName(containerOutputPojo.name());
-        containerEntityOutput.setType(containerOutputPojo.type());
-        containerEntityOutput.setRequired(containerOutputPojo.required());
-        containerEntityOutput.setMount(containerOutputPojo.mount());
-        containerEntityOutput.setPath(containerOutputPojo.path());
-        containerEntityOutput.setGlob(containerOutputPojo.glob());
-        containerEntityOutput.setLabel(containerOutputPojo.label());
-        containerEntityOutput.setCreated(containerOutputPojo.created());
-        containerEntityOutput.setHandledByXnatCommandInput(containerOutputPojo.handledByWrapperInput());
+        containerEntityOutput.update(containerOutputPojo);
         return containerEntityOutput;
+    }
+
+    public ContainerEntityOutput update(final Container.ContainerOutput containerOutputPojo) {
+        this.setId(containerOutputPojo.databaseId());
+        this.setName(containerOutputPojo.name());
+        this.setType(containerOutputPojo.type());
+        this.setRequired(containerOutputPojo.required());
+        this.setMount(containerOutputPojo.mount());
+        this.setPath(containerOutputPojo.path());
+        this.setGlob(containerOutputPojo.glob());
+        this.setLabel(containerOutputPojo.label());
+        this.setCreated(containerOutputPojo.created());
+        this.setHandledByXnatCommandInput(containerOutputPojo.handledByWrapperInput());
+        return this;
     }
 
     @Id

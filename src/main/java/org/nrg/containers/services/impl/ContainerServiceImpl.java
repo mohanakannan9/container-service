@@ -321,7 +321,8 @@ public class ContainerServiceImpl implements ContainerService {
 
     @Nonnull
     private ContainerEntity fromPojo(@Nonnull final Container container) {
-        return ContainerEntity.fromPojo(container);
+        final ContainerEntity template = containerEntityService.retrieve(container.databaseId());
+        return template == null ? ContainerEntity.fromPojo(container) : template.update(container);
     }
 
     @Nonnull
