@@ -76,8 +76,13 @@ var XNAT = getObject(XNAT || {});
     function containerLaunchUrl(wrapperId){
         return csrfUrl('/xapi/wrappers/'+wrapperId+'/launch');
     }
-    function bulkLaunchUrl(wrapperId){
-        return csrfUrl('/xapi/wrappers/'+wrapperId+'/bulklaunch');
+    function bulkLaunchUrl(wrapperId,rootElements){
+        // array of root elements can be provided
+        if (rootElements) {
+            return csrfUrl('/xapi/wrappers/'+wrapperId+'/bulklaunch?'+rootElements)
+        } else {
+            return csrfUrl('/xapi/wrappers/'+wrapperId+'/bulklaunch');
+        }
     }
     function sessionUrl(){
         var sessionId = (XNAT.data.context.isImageSession) ? XNAT.data.context.ID : null;
@@ -87,7 +92,7 @@ var XNAT = getObject(XNAT || {});
     function fullScanPath(scanId){
         var sessionId = (XNAT.data.context.isImageSession) ? XNAT.data.context.ID : null;
         if (!sessionId) return false;
-        return '/experiments/'+sessionId+'/scans/'+scanId;
+        return '/archive/experiments/'+sessionId+'/scans/'+scanId;
     }
 
     /*
@@ -917,22 +922,21 @@ var XNAT = getObject(XNAT || {});
         // the 'root element' should match one of the inputs in the command config object, and overwrite it with the values provided in the 'targets' array
 
         if (!targets || targets.length === 0) return false;
-
-        var rootElementValue = targets[0]; // assume that the first target value passed will be representative of all target values for the purposes of generating a UI.
+        var targetObj = rootElement + '=' + targets.toString();
 
         xmodal.loading.open({ title: 'Configuring Container Launcher' });
         XNAT.xhr.getJSON({
-            url: getLauncherUI(wrapperId,rootElement,rootElementValue),
+            url: '/xapi/wrappers/'+wrapperId+'/bulklaunch?'+targetObj,
             fail: function(e){
                 xmodal.loading.close();
                 errorHandler({
                     statusText: e.statusText,
-                    responseText: 'Could not launch UI with value: "'+rootElementValue+'" for root element: "'+rootElement+'".'
+                    responseText: 'Could not launch UI with value(s): "'+targets.toString()+'" for root element: "'+rootElement+'".'
                 });
             },
             success: function(data){
                 xmodal.loading.close();
-                var inputs = data.inputs;
+                var inputs = data.inputs[0];
                 launchManyContainers(inputs,rootElement,wrapperId,targets);
             }
         });
