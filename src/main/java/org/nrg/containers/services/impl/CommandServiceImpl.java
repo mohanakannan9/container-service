@@ -24,7 +24,6 @@ import org.nrg.containers.services.ContainerConfigService.CommandConfigurationEx
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.helpers.Permissions;
-import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.security.UserI;
@@ -109,7 +108,8 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     @Override
     @Nullable
     public Command retrieve(final long id) {
-        return toPojo(commandEntityService.retrieve(id));
+        final CommandEntity commandEntity = commandEntityService.retrieve(id);
+        return commandEntity == null ? null : toPojo(commandEntity);
     }
 
     @Override
@@ -193,13 +193,15 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     @Override
     @Nullable
     public CommandWrapper retrieveWrapper(final long wrapperId) {
-        return toPojo(commandEntityService.retrieveWrapper(wrapperId));
+        final CommandWrapperEntity commandWrapperEntity = commandEntityService.retrieveWrapper(wrapperId);
+        return commandWrapperEntity == null ? null : toPojo(commandWrapperEntity);
     }
 
     @Override
     @Nullable
     public CommandWrapper retrieveWrapper(final long commandId, final String wrapperName) {
-        return toPojo(commandEntityService.retrieveWrapper(commandId, wrapperName));
+        final CommandWrapperEntity commandWrapperEntity = commandEntityService.retrieveWrapper(commandId, wrapperName);
+        return commandWrapperEntity == null ? null : toPojo(commandWrapperEntity);
     }
 
     @Override

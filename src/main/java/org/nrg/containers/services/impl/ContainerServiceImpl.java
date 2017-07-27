@@ -32,6 +32,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -77,21 +78,27 @@ public class ContainerServiceImpl implements ContainerService {
     }
 
     @Override
+    @Nullable
     public Container retrieve(final String containerId) {
-        return toPojo(containerEntityService.retrieve(containerId));
+        final ContainerEntity containerEntity = containerEntityService.retrieve(containerId);
+        return containerEntity == null ? null : toPojo(containerEntity);
     }
 
     @Override
+    @Nullable
     public Container retrieve(final long id) {
-        return toPojo(containerEntityService.retrieve(id));
+        final ContainerEntity containerEntity = containerEntityService.retrieve(id);
+        return containerEntity == null ? null : toPojo(containerEntity);
     }
 
     @Override
+    @Nonnull
     public Container get(final long id) throws NotFoundException {
         return toPojo(containerEntityService.get(id));
     }
 
     @Override
+    @Nonnull
     public Container get(final String containerId) throws NotFoundException {
         return toPojo(containerEntityService.get(containerId));
     }
@@ -107,13 +114,17 @@ public class ContainerServiceImpl implements ContainerService {
     }
 
     @Override
+    @Nullable
     public Container addContainerEventToHistory(final ContainerEvent containerEvent) {
-        return toPojo(containerEntityService.addContainerEventToHistory(containerEvent));
+        final ContainerEntity containerEntity = containerEntityService.addContainerEventToHistory(containerEvent);
+        return containerEntity == null ? null : toPojo(containerEntity);
     }
 
     @Override
+    @Nullable
     public ContainerHistory addContainerHistoryItem(final Container container, final ContainerHistory history) {
-        return toPojo(containerEntityService.addContainerHistoryItem(fromPojo(container), fromPojo(history)));
+        final ContainerEntityHistory containerEntityHistoryItem = containerEntityService.addContainerHistoryItem(fromPojo(container), fromPojo(history));
+        return containerEntityHistoryItem == null ? null : toPojo(containerEntityHistoryItem);
     }
 
     @Override

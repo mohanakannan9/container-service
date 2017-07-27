@@ -10,6 +10,7 @@ Not yet released
 
 ### Bugfixes
 
+* Add some additional null checks to services
 
 ## 1.0-alpha.3-hotfix
 [Released 2017-07-25](https://github.com/NrgXnat/container-service/releases/tag/v1.0-alpha.3-hotfix).
