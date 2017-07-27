@@ -157,6 +157,16 @@ public abstract class Container {
         return getInputs(ContainerInputType.RAW);
     }
 
+    @JsonIgnore
+    public String getLogPath(final String filename) {
+        for (final String path : logPaths()) {
+            if (path.endsWith(filename)) {
+                return path;
+            }
+        }
+        return null;
+    }
+
     @AutoValue.Builder
     public static abstract class Builder {
         public abstract Builder databaseId(long databaseId);
