@@ -31,6 +31,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
+import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -112,20 +113,39 @@ public class ContainerRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(value = "/{containerId}/logs", method = GET, restrictTo = Admin)
-    @ResponseBody
-    public ResponseEntity<ZipOutputStream> getLogs(final @PathVariable String containerId)
+    public void getLogs(final @PathVariable String containerId,
+                                                   final HttpServletResponse response)
             throws IOException, InsufficientPrivilegesException, NoServerPrefException, DockerServerException, NotFoundException {
         UserI userI = XDAT.getUserDetails();
 
         final Map<String, InputStream> logStreams = containerService.getLogStreams(containerId);
-        final ZipOutputStream zipOutputStream = createZipFromStreams(logStreams);
 
-        return zipOutputStream == null ?
-                new ResponseEntity<ZipOutputStream>(HttpStatus.INTERNAL_SERVER_ERROR) :
-                ResponseEntity.<ZipOutputStream>ok()
-                        .header(HttpHeaders.CONTENT_DISPOSITION, getAttachmentDisposition(containerId, "zip"))
-                        .header(HttpHeaders.CONTENT_TYPE, ZIP)
-                        .body(zipOutputStream);
+        try(final ZipOutputStream zipStream = new ZipOutputStream(response.getOutputStream()) ) {
+            for(final String streamName : logStreams.keySet()){
+                final InputStream inputStream = logStreams.get(streamName);
+                final ZipEntry entry = new ZipEntry(streamName);
+                try {
+                    zipStream.putNextEntry(entry);
+
+                    byte[] readBuffer = new byte[2048];
+                    int amountRead;
+
+                    while ((amountRead = inputStream.read(readBuffer)) > 0) {
+                        zipStream.write(readBuffer, 0, amountRead);
+                    }
+                } catch (IOException e) {
+                    log.error("There was a problem writing %s to the zip. " + e.getMessage(), streamName);
+                }
+            }
+
+            response.setStatus(HttpStatus.OK.value());
+            response.setHeader(HttpHeaders.CONTENT_DISPOSITION, getAttachmentDisposition(containerId, "zip"));
+            response.setHeader(HttpHeaders.CONTENT_TYPE, ZIP);
+        } catch (IOException e) {
+            log.error("There was a problem opening the zip stream.", e);
+        }
+
+        response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
     }
 
     @XapiRequestMapping(value = "/{containerId}/logs/{file}", method = GET, restrictTo = Admin)
@@ -151,34 +171,6 @@ public class ContainerRestApi extends AbstractXapiRestController {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
-    }
-
-    private ZipOutputStream createZipFromStreams(Map<String, InputStream> streams) {
-        try(final ZipOutputStream zipStream = new ZipOutputStream(new ByteArrayOutputStream()) ) {
-
-            for(final String streamName : streams.keySet()){
-                final InputStream inputStream = streams.get(streamName);
-                final ZipEntry entry = new ZipEntry(streamName);
-                try {
-                    zipStream.putNextEntry(entry);
-
-                    byte[] readBuffer = new byte[2048];
-                    int amountRead;
-
-                    while ((amountRead = inputStream.read(readBuffer)) > 0) {
-                        zipStream.write(readBuffer, 0, amountRead);
-                    }
-                } catch (IOException e) {
-                    log.error("There was a problem writing %s to the zip. " + e.getMessage(), streamName);
-                }
-            }
-
-            return zipStream;
-        } catch (IOException e) {
-            log.error("There was a problem opening the zip stream.", e);
-        }
-
-        return null;
     }
 
     private static String getAttachmentDisposition(final String name, final String extension) {
