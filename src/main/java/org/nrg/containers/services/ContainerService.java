@@ -8,8 +8,6 @@ import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.UnauthorizedException;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.container.auto.Container;
-import org.nrg.containers.model.container.entity.ContainerEntity;
-import org.nrg.containers.model.container.entity.ContainerEntityHistory;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xft.security.UserI;
 
@@ -17,6 +15,10 @@ import java.util.List;
 import java.util.Map;
 
 public interface ContainerService {
+    String STDOUT_LOG_NAME = "stdout.log";
+    String STDERR_LOG_NAME = "stderr.log";
+    String[] LOG_NAMES = new String[] {STDOUT_LOG_NAME, STDERR_LOG_NAME};
+
     Container save(final ResolvedCommand resolvedCommand,
                    final String containerId,
                    final UserI userI);

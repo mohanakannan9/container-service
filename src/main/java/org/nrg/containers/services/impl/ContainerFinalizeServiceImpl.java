@@ -5,7 +5,6 @@ import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
@@ -18,6 +17,7 @@ import org.nrg.containers.model.container.auto.Container;
 import org.nrg.containers.model.container.auto.Container.ContainerMount;
 import org.nrg.containers.model.container.auto.Container.ContainerOutput;
 import org.nrg.containers.services.ContainerFinalizeService;
+import org.nrg.containers.services.ContainerService;
 import org.nrg.transporter.TransportService;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -33,7 +33,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Nullable;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -42,7 +41,6 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static org.nrg.containers.model.command.entity.CommandWrapperOutputEntity.Type.ASSESSOR;
 import static org.nrg.containers.model.command.entity.CommandWrapperOutputEntity.Type.RESOURCE;
@@ -181,7 +179,7 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
 
                     if (StringUtils.isNotBlank(stdoutLogStr)) {
                         log.debug("Saving stdout");
-                        final File stdoutFile = new File(destination, "stdout.log");
+                        final File stdoutFile = new File(destination, ContainerService.STDOUT_LOG_NAME);
                         FileUtils.OutputToFile(stdoutLogStr, stdoutFile.getAbsolutePath());
                         logPaths.add(stdoutFile.getAbsolutePath());
                     } else {
@@ -190,7 +188,7 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
 
                     if (StringUtils.isNotBlank(stderrLogStr)) {
                         log.debug("Saving stderr");
-                        final File stderrFile = new File(destination, "stderr.log");
+                        final File stderrFile = new File(destination, ContainerService.STDERR_LOG_NAME);
                         FileUtils.OutputToFile(stderrLogStr, stderrFile.getAbsolutePath());
                         logPaths.add(stderrFile.getAbsolutePath());
                     } else {
