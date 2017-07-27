@@ -1,6 +1,7 @@
 package org.nrg.containers.services.impl;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.hibernate.exception.ConstraintViolationException;
 import org.nrg.containers.daos.CommandEntityRepository;
 import org.nrg.containers.model.command.entity.CommandEntity;
@@ -34,8 +35,21 @@ public class HibernateCommandEntityService extends AbstractHibernateEntityServic
     }
 
     @Override
+    public void throwExceptionIfCommandExists(final CommandEntity commandEntity) throws NrgServiceRuntimeException {
+        final Map<String, Object> properties = Maps.newHashMap();
+        properties.put("name", commandEntity.getName());
+        properties.put("image", commandEntity.getImage());
+        properties.put("version", commandEntity.getVersion());
+        final List<CommandEntity> existingCommandsThatMatch = findByProperties(properties);
+        if(existingCommandsThatMatch.size() > 0){
+            throw new NrgServiceRuntimeException("This command duplicates a command already in the database.");
+        }
+    }
+
+    @Override
     @Nonnull
     public CommandEntity create(@Nonnull final CommandEntity commandEntity) throws NrgRuntimeException {
+        throwExceptionIfCommandExists(commandEntity);
         try {
             if (log.isDebugEnabled()) {
                 log.debug("Saving command " + commandEntity.getName());
@@ -47,7 +61,7 @@ public class HibernateCommandEntityService extends AbstractHibernateEntityServic
             }
             return super.create(commandEntity);
         } catch (ConstraintViolationException e) {
-            throw new NrgServiceRuntimeException("This command duplicates a command already in the database.", e);
+            throw new NrgServiceRuntimeException("This command duplicates a command already in the database.", e);//Though throwExceptionIfCommandExists should have prevented creation from even being attempted.
         }
     }
 

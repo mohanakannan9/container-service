@@ -7,6 +7,7 @@ Not yet released
 ### Features
 
 * Added Changelog
+* Check if command exists before saving, rather than catching exception when it fails to save.
 
 ### Bugfixes
 

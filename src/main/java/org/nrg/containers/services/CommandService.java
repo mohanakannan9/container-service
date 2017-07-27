@@ -8,6 +8,7 @@ import org.nrg.containers.model.command.auto.CommandSummaryForContext;
 import org.nrg.containers.model.configuration.CommandConfiguration;
 import org.nrg.containers.services.ContainerConfigService.CommandConfigurationException;
 import org.nrg.framework.exceptions.NotFoundException;
+import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.security.UserI;
 
@@ -73,4 +74,5 @@ public interface CommandService {
     List<CommandSummaryForContext> available(String xsiType,
                                              UserI userI) throws ElementNotFoundException;
 
+    void throwExceptionIfCommandExists(Command command) throws NrgRuntimeException;
 }

@@ -22,6 +22,7 @@ import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerConfigService;
 import org.nrg.containers.services.ContainerConfigService.CommandConfigurationException;
 import org.nrg.framework.exceptions.NotFoundException;
+import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -493,6 +494,11 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
         }
 
         return available;
+    }
+
+    @Override
+    public void throwExceptionIfCommandExists(@Nonnull Command command) throws NrgRuntimeException {
+        commandEntityService.throwExceptionIfCommandExists(fromPojo(command));
     }
 
     // Cache the pairs of (parent, child) xsiType relationships.
