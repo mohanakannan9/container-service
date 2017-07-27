@@ -1105,7 +1105,7 @@ var XNAT = getObject(XNAT || {});
                     var imageInfo = data[i];
                     $manager.append(spawn('div.imageContainer',[
                         spawn('h3.imageTitle',[
-                            imageInfo.tags[0],
+                            (imageInfo.tags[0])=="<none>:<none>"?imageInfo['image-id']:imageInfo.tags[0],
                             spawn( 'span.pull-right',[
                                 deleteImageButton(imageInfo)
                             ]),

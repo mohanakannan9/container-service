@@ -12,6 +12,9 @@ Not yet released
 ### Bugfixes
 
 * Add some additional null checks to services
+* [CS-177][] Fix for untagged images showing as ':' in UI
+
+[CS-177]: https://issues.xnat.org/browse/CS-177
 
 ## 1.0-alpha.3-hotfix
 [Released 2017-07-25](https://github.com/NrgXnat/container-service/releases/tag/v1.0-alpha.3-hotfix).
