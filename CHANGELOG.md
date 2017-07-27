@@ -8,6 +8,9 @@ Not yet released
 
 * Added Changelog
 * Check if command exists before saving, rather than catching exception when it fails to save.
+* [CS-205][] Add `/containers/{id}/logs` and `/containers/{id}/logs/{stdout|stderr}` APIs to fetch container logs.
+
+[CS-205]: https://issues.xnat.org/browse/CS-205
 
 ### Bugfixes
 
