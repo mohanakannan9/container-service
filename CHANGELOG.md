@@ -16,15 +16,16 @@ Not yet released
 
 ### Features
 
-* Add REST API to support bulk container launch UI ([CS-242][])
+* [CS-242][] Add REST API to support bulk container launch UI
 * Add resiliency to launcher if no default value is provided for a child input
 
+[CS-242]: https://issues.xnat.org/browse/CS-242
+
 ### Bugfixes
-* Hide “Create Automation” button from project owners if they do not have admin privileges. Depends on [XNAT-5044](https://issues.xnat.org/browse/XNAT-5044) change. ([CS-257][])
+* [CS-257][] Hide “Create Automation” button from project owners if they do not have admin privileges. Depends on [XNAT-5044](https://issues.xnat.org/browse/XNAT-5044) change.
 * Fix: container -> container entity should use existing entity in db if it exists
 * Fix: Initialize container entity when retrieving by container id
 
-[CS-242]: https://issues.xnat.org/browse/CS-242
 [CS-257]: https://issues.xnat.org/browse/CS-257
 
 ## 1.0-alpha.3
