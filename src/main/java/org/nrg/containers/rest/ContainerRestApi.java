@@ -3,22 +3,25 @@ package org.nrg.containers.rest;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import io.swagger.annotations.ApiParam;
+import org.apache.commons.io.IOUtils;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.container.auto.Container;
-import org.nrg.containers.model.container.entity.ContainerEntity;
-import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.containers.services.ContainerService;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NotFoundException;
+import org.nrg.xapi.exceptions.InsufficientPrivilegesException;
+import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.XDAT;
-import org.nrg.xapi.rest.AbstractXapiRestController;
-import org.nrg.xdat.security.helpers.AccessLevel;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -28,9 +31,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
-import javax.annotation.Nullable;
+import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import static org.nrg.xdat.security.helpers.AccessLevel.Admin;
 import static org.springframework.web.bind.annotation.RequestMethod.DELETE;
@@ -40,7 +49,12 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 @XapiRestController
 @RequestMapping(value = "/containers")
 public class ContainerRestApi extends AbstractXapiRestController {
+    private static final Logger log = LoggerFactory.getLogger(ContainerRestApi.class);
+
     private static final String JSON = MediaType.APPLICATION_JSON_UTF8_VALUE;
+    private static final String TEXT = MediaType.TEXT_PLAIN_VALUE;
+    private static final String ZIP = "application/zip";
+    private static final String ATTACHMENT_DISPOSITION = "attachment; filename=\"%s.%s\"";
 
     private ContainerService containerService;
 
@@ -96,6 +110,71 @@ public class ContainerRestApi extends AbstractXapiRestController {
                     env.getKey().equals("XNAT_PASS") ? "******" : env.getValue());
         }
         return container.toBuilder().environmentVariables(scrubbedEnvironmentVariables).build();
+    }
+
+    @XapiRequestMapping(value = "/{containerId}/logs", method = GET, restrictTo = Admin)
+    public void getLogs(final @PathVariable String containerId,
+                                                   final HttpServletResponse response)
+            throws IOException, InsufficientPrivilegesException, NoServerPrefException, DockerServerException, NotFoundException {
+        UserI userI = XDAT.getUserDetails();
+
+        final Map<String, InputStream> logStreams = containerService.getLogStreams(containerId);
+
+        try(final ZipOutputStream zipStream = new ZipOutputStream(response.getOutputStream()) ) {
+            for(final String streamName : logStreams.keySet()){
+                final InputStream inputStream = logStreams.get(streamName);
+                final ZipEntry entry = new ZipEntry(streamName);
+                try {
+                    zipStream.putNextEntry(entry);
+
+                    byte[] readBuffer = new byte[2048];
+                    int amountRead;
+
+                    while ((amountRead = inputStream.read(readBuffer)) > 0) {
+                        zipStream.write(readBuffer, 0, amountRead);
+                    }
+                } catch (IOException e) {
+                    log.error("There was a problem writing %s to the zip. " + e.getMessage(), streamName);
+                }
+            }
+
+            response.setStatus(HttpStatus.OK.value());
+            response.setHeader(HttpHeaders.CONTENT_DISPOSITION, getAttachmentDisposition(containerId, "zip"));
+            response.setHeader(HttpHeaders.CONTENT_TYPE, ZIP);
+        } catch (IOException e) {
+            log.error("There was a problem opening the zip stream.", e);
+        }
+
+        response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+    }
+
+    @XapiRequestMapping(value = "/{containerId}/logs/{file}", method = GET, restrictTo = Admin)
+    @ResponseBody
+    public ResponseEntity<String> getLog(final @PathVariable String containerId,
+                                         final @PathVariable @ApiParam(allowableValues = "stdout, stderr") String file)
+            throws NoServerPrefException, DockerServerException, NotFoundException {
+        UserI userI = XDAT.getUserDetails();
+
+        final InputStream logStream = containerService.getLogStream(containerId, file);
+        final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        byte[] buffer = new byte[1024];
+        int length;
+        try {
+            while ((length = logStream.read(buffer)) != -1) {
+                byteArrayOutputStream.write(buffer, 0, length);
+            }
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, getAttachmentDisposition(containerId + "-" + file, "log"))
+                    .header(HttpHeaders.CONTENT_TYPE, TEXT)
+                    .body(byteArrayOutputStream.toString(StandardCharsets.UTF_8.name()));
+        } catch (IOException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+    }
+
+    private static String getAttachmentDisposition(final String name, final String extension) {
+        return String.format(ATTACHMENT_DISPOSITION, name, extension);
     }
 
     @ResponseStatus(value = HttpStatus.NOT_FOUND)

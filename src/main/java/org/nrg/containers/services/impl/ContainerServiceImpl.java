@@ -2,6 +2,9 @@ package org.nrg.containers.services.impl;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.tools.ant.filters.StringInputStream;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.events.model.ContainerEvent;
 import org.nrg.containers.exceptions.CommandResolutionException;
@@ -33,6 +36,10 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -304,6 +311,72 @@ public class ContainerServiceImpl implements ContainerService {
         final String containerDockerId = container.containerId();
         containerControlApi.killContainer(containerDockerId);
         return containerDockerId;
+    }
+
+    @Override
+    @Nonnull
+    public Map<String, InputStream> getLogStreams(final long id)
+            throws NotFoundException, NoServerPrefException, DockerServerException {
+        return getLogStreams(get(id));
+    }
+
+    @Override
+    @Nonnull
+    public Map<String, InputStream> getLogStreams(final String containerId)
+            throws NotFoundException, NoServerPrefException, DockerServerException {
+        return getLogStreams(get(containerId));
+    }
+
+    @Nonnull
+    private Map<String, InputStream> getLogStreams(final Container container)
+            throws NotFoundException, NoServerPrefException, DockerServerException {
+        final Map<String, InputStream> logStreams = Maps.newHashMap();
+        for (final String logName : ContainerService.LOG_NAMES) {
+            final InputStream logStream = getLogStream(container, logName);
+            if (logStream != null) {
+                logStreams.put(logName, logStream);
+            }
+        }
+        return logStreams;
+    }
+
+    @Override
+    @Nullable
+    public InputStream getLogStream(final long id, final String logFileName)
+            throws NotFoundException, NoServerPrefException, DockerServerException {
+        return getLogStream(get(id), logFileName);
+    }
+
+    @Override
+    @Nullable
+    public InputStream getLogStream(final String containerId, final String logFileName)
+            throws NotFoundException, NoServerPrefException, DockerServerException {
+        return getLogStream(get(containerId), logFileName);
+    }
+
+    @Nullable
+    private InputStream getLogStream(final Container container, final String logFileName)
+            throws NoServerPrefException, DockerServerException {
+        final String logPath = container.getLogPath(logFileName);
+        if (StringUtils.isBlank(logPath)) {
+            // If log path is blank, that means we have not yet saved the logs from docker. Go fetch them now.
+            if (ContainerService.STDOUT_LOG_NAME.contains(logFileName)) {
+                return new ByteArrayInputStream(containerControlApi.getContainerStdoutLog(container.containerId()).getBytes());
+            } else if (ContainerService.STDERR_LOG_NAME.contains(logFileName)) {
+                return new ByteArrayInputStream(containerControlApi.getContainerStderrLog(container.containerId()).getBytes());
+            } else {
+                return null;
+            }
+        } else {
+            // If log path is not blank, that means we have saved the logs to a file. Read it now.
+            try {
+                return new FileInputStream(logPath);
+            } catch (FileNotFoundException e) {
+                log.error("Container %s log file %s not found. Path: %s", container.databaseId(), logFileName, logPath);
+            }
+        }
+
+        return null;
     }
 
     private void handleFailure(final Container container) {

@@ -8,15 +8,18 @@ import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.UnauthorizedException;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.container.auto.Container;
-import org.nrg.containers.model.container.entity.ContainerEntity;
-import org.nrg.containers.model.container.entity.ContainerEntityHistory;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xft.security.UserI;
 
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
 public interface ContainerService {
+    String STDOUT_LOG_NAME = "stdout.log";
+    String STDERR_LOG_NAME = "stderr.log";
+    String[] LOG_NAMES = new String[] {STDOUT_LOG_NAME, STDERR_LOG_NAME};
+
     Container save(final ResolvedCommand resolvedCommand,
                    final String containerId,
                    final UserI userI);
@@ -64,4 +67,9 @@ public interface ContainerService {
 
     String kill(final String containerId, final UserI userI)
             throws NoServerPrefException, DockerServerException, NotFoundException;
+
+    Map<String, InputStream> getLogStreams(long id) throws NotFoundException, NoServerPrefException, DockerServerException;
+    Map<String, InputStream> getLogStreams(String containerId) throws NotFoundException, NoServerPrefException, DockerServerException;
+    InputStream getLogStream(long id, String logFileName) throws NotFoundException, NoServerPrefException, DockerServerException;
+    InputStream getLogStream(String containerId, String logFileName) throws NotFoundException, NoServerPrefException, DockerServerException;
 }

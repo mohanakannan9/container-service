@@ -5,7 +5,6 @@ import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import org.apache.commons.lang3.StringUtils;
 import org.hibernate.envers.Audited;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMount;
@@ -22,7 +21,6 @@ import javax.persistence.Transient;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 @Entity
 @Audited
@@ -350,29 +348,6 @@ public class ContainerEntity extends AbstractHibernateEntity {
 
     public void setLogPaths(final List<String> logPaths) {
         this.logPaths = logPaths;
-    }
-
-    @Transient
-    public void addLogPath(final String logPath) {
-        if (StringUtils.isBlank(logPath)) {
-            return;
-        }
-
-        if (this.logPaths == null) {
-            this.logPaths = Lists.newArrayList();
-        }
-        this.logPaths.add(logPath);
-    }
-
-    @Transient
-    public void addLogPaths(final Set<String> logPaths) {
-        if (logPaths == null || logPaths.isEmpty()) {
-            return;
-        }
-
-        for (final String logPath : logPaths) {
-            addLogPath(logPath);
-        }
     }
 
     @Override
