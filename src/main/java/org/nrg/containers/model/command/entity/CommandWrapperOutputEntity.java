@@ -29,7 +29,7 @@ public class CommandWrapperOutputEntity {
     @JsonIgnore private CommandWrapperEntity commandWrapperEntity;
     private String name;
     @JsonProperty("accepts-command-output") private String commandOutputName;
-    @JsonProperty("as-a-child-of-xnat-input") private String xnatInputName;
+    @JsonProperty("as-a-child-of-wrapper-input") private String wrapperInputName;
     private Type type;
     private String label;
 
@@ -38,7 +38,7 @@ public class CommandWrapperOutputEntity {
         commandWrapperOutputEntity.id = commandWrapperOutput.id();
         commandWrapperOutputEntity.name = commandWrapperOutput.name();
         commandWrapperOutputEntity.commandOutputName = commandWrapperOutput.commandOutputName();
-        commandWrapperOutputEntity.xnatInputName = commandWrapperOutput.xnatInputName();
+        commandWrapperOutputEntity.wrapperInputName = commandWrapperOutput.wrapperInputName();
         commandWrapperOutputEntity.label = commandWrapperOutput.label();
 
         switch (commandWrapperOutput.type()) {
@@ -98,12 +98,12 @@ public class CommandWrapperOutputEntity {
         this.commandOutputName = commandOutputName;
     }
 
-    public String getXnatInputName() {
-        return xnatInputName;
+    public String getWrapperInputName() {
+        return wrapperInputName;
     }
 
-    public void setXnatInputName(final String xnatInputName) {
-        this.xnatInputName = xnatInputName;
+    public void setWrapperInputName(final String xnatInputName) {
+        this.wrapperInputName = xnatInputName;
     }
 
     public String getLabel() {
@@ -134,7 +134,7 @@ public class CommandWrapperOutputEntity {
                 .add("id", id)
                 .add("name", name)
                 .add("commandOutputName", commandOutputName)
-                .add("xnatInputName", xnatInputName)
+                .add("wrapperInputName", wrapperInputName)
                 .add("type", type)
                 .add("label", label)
                 .toString();

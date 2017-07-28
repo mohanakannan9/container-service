@@ -14,8 +14,6 @@ import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import java.util.Objects;
 
-import static org.nrg.containers.model.command.auto.Command.CommandWrapperInput;
-
 @Entity
 @Audited
 public class ContainerMountFilesEntity {
@@ -29,7 +27,7 @@ public class ContainerMountFilesEntity {
     public ContainerMountFilesEntity() {}
 
     public ContainerMountFilesEntity(final ResolvedCommandMountFiles resolvedCommandMountFiles) {
-        this.fromXnatInput = resolvedCommandMountFiles.fromXnatInput();
+        this.fromXnatInput = resolvedCommandMountFiles.fromWrapperInput();
         this.fromUri = resolvedCommandMountFiles.fromUri();
         this.rootDirectory = resolvedCommandMountFiles.rootDirectory();
         this.path = resolvedCommandMountFiles.path();
@@ -122,7 +120,7 @@ public class ContainerMountFilesEntity {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("id", id)
-                .add("fromXnatInput", fromXnatInput)
+                .add("fromWrapperInput", fromXnatInput)
                 .add("fromUri", fromUri)
                 .add("rootDirectory", rootDirectory)
                 .add("path", path)

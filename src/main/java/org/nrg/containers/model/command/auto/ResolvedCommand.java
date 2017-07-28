@@ -317,16 +317,16 @@ public abstract class ResolvedCommand {
     @AutoValue
     @JsonInclude(JsonInclude.Include.ALWAYS)
     public abstract static class ResolvedCommandMountFiles {
-        @JsonProperty("from-xnat-input") public abstract String fromXnatInput();
+        @JsonProperty("from-wrapper-input") public abstract String fromWrapperInput();
         @Nullable @JsonProperty("from-uri") public abstract String fromUri();
         @Nullable @JsonProperty("root-directory") public abstract String rootDirectory();
         @Nullable @JsonProperty("path") public abstract String path();
 
-        public static ResolvedCommandMountFiles create(@JsonProperty("from-xnat-input") final String fromXnatInput,
+        public static ResolvedCommandMountFiles create(@JsonProperty("from-wrapper-input") final String fromWrapperInput,
                                                        @JsonProperty("from-uri") final String fromUri,
                                                        @JsonProperty("root-directory") final String rootDirectory,
                                                        @JsonProperty("path") final String path) {
-            return new AutoValue_ResolvedCommand_ResolvedCommandMountFiles(fromXnatInput, fromUri, rootDirectory, path);
+            return new AutoValue_ResolvedCommand_ResolvedCommandMountFiles(fromWrapperInput, fromUri, rootDirectory, path);
         }
     }
 
@@ -340,7 +340,7 @@ public abstract class ResolvedCommand {
         @Nullable @JsonProperty("path") public abstract String path();
         @Nullable @JsonProperty("glob") public abstract String glob();
         @JsonProperty("label") public abstract String label();
-        @JsonProperty("handled-by-xnat-command-input") public abstract String handledByXnatCommandInput();
+        @JsonProperty("handled-by-wrapper-input") public abstract String handledByWrapperInput();
 
         @JsonCreator
         public static ResolvedCommandOutput create(@JsonProperty("name") final String name,
@@ -350,7 +350,7 @@ public abstract class ResolvedCommand {
                                                    @JsonProperty("path") final String path,
                                                    @JsonProperty("glob") final String glob,
                                                    @JsonProperty("label") final String label,
-                                                   @JsonProperty("handled-by-xnat-command-input") final String xnatInputName) {
+                                                   @JsonProperty("handled-by-wrapper-input") final String wrapperInputName) {
             return builder()
                     .name(name)
                     .type(type)
@@ -359,7 +359,7 @@ public abstract class ResolvedCommand {
                     .path(path)
                     .glob(glob)
                     .label(label)
-                    .handledByXnatCommandInput(xnatInputName)
+                    .handledByWrapperInput(wrapperInputName)
                     .build();
         }
 
@@ -376,7 +376,7 @@ public abstract class ResolvedCommand {
             public abstract Builder path(String path);
             public abstract Builder glob(String glob);
             public abstract Builder label(String label);
-            public abstract Builder handledByXnatCommandInput(String handledByXnatCommandInput);
+            public abstract Builder handledByWrapperInput(String handledByWrapperInput);
 
             public abstract ResolvedCommandOutput build();
         }

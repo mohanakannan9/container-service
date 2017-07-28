@@ -26,7 +26,7 @@ import java.util.Objects;
 @Audited
 public class ContainerEntity extends AbstractHibernateEntity {
     @JsonProperty("command-id") private long commandId;
-    @JsonProperty("xnat-command-wrapper-id") private long xnatCommandWrapperId;
+    @JsonProperty("wrapper-id") private long wrapperId;
     @JsonProperty("docker-image") private String dockerImage;
     @JsonProperty("command-line") private String commandLine;
     @JsonProperty("working-directory") private String workingDirectory;
@@ -48,7 +48,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
         this.userId = userId;
 
         this.commandId = resolvedCommand.commandId();
-        this.xnatCommandWrapperId = resolvedCommand.wrapperId();
+        this.wrapperId = resolvedCommand.wrapperId();
         this.dockerImage = resolvedCommand.image();
         this.commandLine = resolvedCommand.commandLine();
         this.workingDirectory = resolvedCommand.workingDirectory();
@@ -84,7 +84,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
     public ContainerEntity update(final Container containerPojo) {
         this.setId(containerPojo.databaseId());
         this.setCommandId(containerPojo.commandId());
-        this.setXnatCommandWrapperId(containerPojo.wrapperId());
+        this.setWrapperId(containerPojo.wrapperId());
         this.setContainerId(containerPojo.containerId());
         this.setUserId(containerPojo.userId());
         this.setDockerImage(containerPojo.dockerImage());
@@ -136,12 +136,12 @@ public class ContainerEntity extends AbstractHibernateEntity {
         this.commandId = commandId;
     }
 
-    public long getXnatCommandWrapperId() {
-        return xnatCommandWrapperId;
+    public long getWrapperId() {
+        return wrapperId;
     }
 
-    public void setXnatCommandWrapperId(final long xnatCommandWrapperId) {
-        this.xnatCommandWrapperId = xnatCommandWrapperId;
+    public void setWrapperId(final long xnatCommandWrapperId) {
+        this.wrapperId = xnatCommandWrapperId;
     }
 
     public String getDockerImage() {
@@ -368,7 +368,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
         return MoreObjects.toStringHelper(this)
                 .add("containerId", containerId)
                 .add("commandId", commandId)
-                .add("wrapperId", xnatCommandWrapperId)
+                .add("wrapperId", wrapperId)
                 .add("dockerImage", dockerImage)
                 .add("commandLine", commandLine)
                 .add("environmentVariables", environmentVariables)

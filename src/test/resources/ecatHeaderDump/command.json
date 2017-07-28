@@ -45,14 +45,14 @@
                     "name": "scan-ecats",
                     "description": "The scan's ecat resource",
                     "type": "Resource",
-                    "derived-from-xnat-input": "scan",
+                    "derived-from-wrapper-input": "scan",
                     "matcher": "@.label == 'ECAT'"
                 },
                 {
                     "name": "scan-ecat-file",
                     "description": "The scan's ecat resource's files",
                     "type": "File[]",
-                    "derived-from-xnat-input": "scan-ecats",
+                    "derived-from-wrapper-input": "scan-ecats",
                     "matcher": "@.name =~ /.*v/",
                     "provides-files-for-command-mount": "ecat-in"
                 }
@@ -61,7 +61,7 @@
                 {
                     "name": "headerdump-resource",
                     "accepts-command-output": "dump-out",
-                    "as-a-child-of-xnat-input": "scan",
+                    "as-a-child-of-wrapper-input": "scan",
                     "type": "Resource",
                     "label": "HEADERDUMP"
                 }

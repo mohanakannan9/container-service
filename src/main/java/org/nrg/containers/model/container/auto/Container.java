@@ -80,7 +80,7 @@ public abstract class Container {
         return builder()
                 .databaseId(containerEntity.getId())
                 .commandId(containerEntity.getCommandId())
-                .wrapperId(containerEntity.getXnatCommandWrapperId())
+                .wrapperId(containerEntity.getWrapperId())
                 .containerId(containerEntity.getContainerId())
                 .userId(containerEntity.getUserId())
                 .dockerImage(containerEntity.getDockerImage())

@@ -92,7 +92,7 @@ If you want XNAT to execute your docker image, you will need a Command. The Comm
                         "replacement-key": "",
                         "provides-value-for-command-input": "",
                         "provides-files-for-command-mount": "",
-                        "derived-from-xnat-input": "",
+                        "derived-from-wrapper-input": "",
                         "derived-from-xnat-object-property": ""
                     }
                 ],
@@ -101,7 +101,7 @@ If you want XNAT to execute your docker image, you will need a Command. The Comm
                         "name": "",
                         "type": "",
                         "accepts-command-output": "",
-                        "as-a-child-of-xnat-input": "",
+                        "as-a-child-of-wrapper-input": "",
                         "label": ""
                     }
                 ]
@@ -172,13 +172,13 @@ If you want XNAT to execute your docker image, you will need a Command. The Comm
         - **replacement-key** - A shorthand way to refer to this input's value elsewhere in the command. Default: the input's name bracketed by "#"; e.g. for an input named "foo" the default replacement-key is "#foo#".
         - **provides-value-for-command-input** - The name of a Command Input, which will receive its value from this input.
         - **provides-files-for-command-mount** - The name of a Command Mount, which will receive files from this input.
-        - **derived-from-xnat-input** - Name of an XNAT input which is a "parent" to this input.
+        - **derived-from-wrapper-input** - Name of an XNAT input which is a "parent" to this input.
         - **derived-from-xnat-object-property** - Name of an XNAT input which is a "parent" to this input.
     - **output-handlers** - A list of [XNAT output handlers](#xnat-output-handling). You use these to instruct the container service how and where to upload your container's outputs.
         - **name**
         - **type** - The type of object that will be created in XNAT. Currently only `"Resource"` is accepted.
         - **accepts-command-output** - The name of a [command output](#command-outputs) whose files will be handled.
-        - **as-a-child-of-xnat-input** - The name of an [XNAT input](#xnat-inputs)—either external or derived—that refers to an XNAT object. The output files will be uploaded as a new child of that object.
+        - **as-a-child-of-wrapper-input** - The name of an [XNAT input](#xnat-inputs)—either external or derived—that refers to an XNAT object. The output files will be uploaded as a new child of that object.
         - **label** - The label of the new Resource that will be created from these files.
 
 

@@ -88,7 +88,7 @@ public class CommandEntityTest {
     private static final String XNAT_COMMAND_WRAPPER_DERIVED_INPUT = "{" +
             "\"name\": \"" + DERIVED_INPUT_NAME + "\"" +
             ", \"type\": \"string\"" +
-            ", \"derived-from-xnat-input\": \"" + EXTERNAL_INPUT_NAME + "\"" +
+            ", \"derived-from-wrapper-input\": \"" + EXTERNAL_INPUT_NAME + "\"" +
             ", \"derived-from-xnat-object-property\": \"" + XNAT_OBJECT_PROPERTY + "\"" +
             ", \"provides-value-for-command-input\": \"" + STRING_INPUT_NAME + "\"" +
             "}";
@@ -98,7 +98,7 @@ public class CommandEntityTest {
     private static final String XNAT_COMMAND_WRAPPER_OUTPUT_HANDLER = "{" +
             "\"type\": \"Resource\"" +
             ", \"accepts-command-output\": \"" + COMMAND_OUTPUT_NAME + "\"" +
-            ", \"as-a-child-of-xnat-input\": \"" + EXTERNAL_INPUT_NAME + "\"" +
+            ", \"as-a-child-of-wrapper-input\": \"" + EXTERNAL_INPUT_NAME + "\"" +
             ", \"label\": \"" + OUTPUT_HANDLER_LABEL + "\"" +
             ", \"name\": \"" + OUTPUT_HANDLER_NAME + "\"" +
             "}";
@@ -226,7 +226,7 @@ public class CommandEntityTest {
     }
 
     @Test
-    public void testDeserializeXnatCommandInputsAndOutputs() throws Exception {
+    public void testDeserializeWrapperInputsAndOutputs() throws Exception {
         final CommandWrapperExternalInputEntity externalInput = mapper.readValue(XNAT_COMMAND_WRAPPER_EXTERNAL_INPUT, CommandWrapperExternalInputEntity.class);
         assertThat(externalInput.getName(), is(EXTERNAL_INPUT_NAME));
         assertThat(externalInput.getType(), is(CommandWrapperInputType.SESSION));
@@ -238,7 +238,7 @@ public class CommandEntityTest {
         final CommandWrapperDerivedInputEntity derivedInput = mapper.readValue(XNAT_COMMAND_WRAPPER_DERIVED_INPUT, CommandWrapperDerivedInputEntity.class);
         assertThat(derivedInput.getName(), is(DERIVED_INPUT_NAME));
         assertThat(derivedInput.getType(), is(CommandWrapperInputType.STRING));
-        assertThat(derivedInput.getDerivedFromXnatInput(), is(EXTERNAL_INPUT_NAME));
+        assertThat(derivedInput.getDerivedFromWrapperInput(), is(EXTERNAL_INPUT_NAME));
         assertThat(derivedInput.getDerivedFromXnatObjectProperty(), is(XNAT_OBJECT_PROPERTY));
         assertThat(derivedInput.getProvidesValueForCommandInput(), is(STRING_INPUT_NAME));
         assertThat(derivedInput.getDefaultValue(), is(nullValue()));
@@ -247,7 +247,7 @@ public class CommandEntityTest {
 
         final CommandWrapperOutputEntity output = mapper.readValue(XNAT_COMMAND_WRAPPER_OUTPUT_HANDLER, CommandWrapperOutputEntity.class);
         assertThat(output.getType(), is(CommandWrapperOutputEntity.Type.RESOURCE));
-        assertThat(output.getXnatInputName(), is(EXTERNAL_INPUT_NAME));
+        assertThat(output.getWrapperInputName(), is(EXTERNAL_INPUT_NAME));
         assertThat(output.getCommandOutputName(), is(COMMAND_OUTPUT_NAME));
         assertThat(output.getLabel(), is(OUTPUT_HANDLER_LABEL));
         assertThat(output.getName(), is(OUTPUT_HANDLER_NAME));
