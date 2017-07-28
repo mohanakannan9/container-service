@@ -140,8 +140,8 @@ public class ContainerEntity extends AbstractHibernateEntity {
         return wrapperId;
     }
 
-    public void setWrapperId(final long xnatCommandWrapperId) {
-        this.wrapperId = xnatCommandWrapperId;
+    public void setWrapperId(final long wrapperId) {
+        this.wrapperId = wrapperId;
     }
 
     public String getDockerImage() {
