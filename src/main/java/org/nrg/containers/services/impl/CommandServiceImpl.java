@@ -607,7 +607,8 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
 
     @Nonnull
     private Command getCommandWithOneWrapper(final long wrapperId) throws NotFoundException {
-        final CommandEntity commandEntity = commandEntityService.getCommandByWrapperId(wrapperId);final List<CommandWrapperEntity> listWithOneWrapper = Lists.newArrayList();
+        final CommandEntity commandEntity = commandEntityService.getCommandByWrapperId(wrapperId);
+        final List<CommandWrapperEntity> listWithOneWrapper = Lists.newArrayList();
         for (final CommandWrapperEntity wrapper : commandEntity.getCommandWrapperEntities()) {
             if (wrapper.getId() == wrapperId) {
                 listWithOneWrapper.add(wrapper);
