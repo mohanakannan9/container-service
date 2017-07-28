@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0-alpha.4
+## 1.0
 
 Not yet released
 
