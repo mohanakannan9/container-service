@@ -65,6 +65,7 @@ public class ContainerEntityMount implements Serializable {
         this.setWritable(containerMountPojo.writable());
         this.setXnatHostPath(containerMountPojo.xnatHostPath());
         this.setContainerHostPath(containerMountPojo.containerHostPath());
+        this.setContainerPath(containerMountPojo.containerPath());
         this.setInputFiles(
                 Lists.newArrayList(Lists.transform(containerMountPojo.inputFiles(),
                         new Function<Container.ContainerMountFiles, ContainerMountFilesEntity>() {
