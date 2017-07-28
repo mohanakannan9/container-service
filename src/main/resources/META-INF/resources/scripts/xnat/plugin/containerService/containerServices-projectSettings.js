@@ -1089,6 +1089,6 @@ var XNAT = getObject(XNAT || {});
         manager.append(projectHistoryTable.table());
     };
 
-    projectHistoryTable.init();
+    // projectHistoryTable.init();
 
 }));
