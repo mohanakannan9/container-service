@@ -12,6 +12,8 @@ Not yet released
 * Rename wrapper input properties to remove "xnat":
     * `derived-from-xnat-input` -> `derived-from-wrapper-input`
     * `as-a-child-of-xnat-input` -> `as-a-child-of-wrapper-input`
+* "Create docker server" API returns 201 on success, not 202.
+* Add "directory" property to Session and Assessor model objects
 
 [CS-205]: https://issues.xnat.org/browse/CS-205
 
@@ -20,6 +22,8 @@ Not yet released
 * Add some additional null checks to services
 * [CS-177][] Fix for untagged images showing as ':' in UI
 * [CS-276][] Correctly track command and wrapper identifiers in LaunchReport
+* Could not read containers from db. Broken by 3385972b.
+* Wrapper database tables were broken after 7b9a9a28.
 
 [CS-177]: https://issues.xnat.org/browse/CS-177
 [CS-276]: https://issues.xnat.org/browse/CS-276
