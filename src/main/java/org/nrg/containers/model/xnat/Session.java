@@ -12,12 +12,14 @@ import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatImageassessordataI;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.model.XnatImagesessiondataI;
+import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.AssessedURII;
+import org.nrg.xnat.helpers.uri.archive.ExperimentURII;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -100,6 +102,13 @@ public class Session extends XnatModelObject {
                     if (imageSession != null &&
                             XnatImagesessiondata.class.isAssignableFrom(imageSession.getClass())) {
                         return new Session((AssessedURII) uri);
+                    }
+                } else if (uri != null &&
+                        ExperimentURII.class.isAssignableFrom(uri.getClass())) {
+                    final XnatExperimentdata experimentdata = ((ExperimentURII) uri).getExperiment();
+                    if (experimentdata != null &&
+                            XnatImagesessiondataI.class.isAssignableFrom(experimentdata.getClass())) {
+                        return new Session((XnatImagesessiondataI) experimentdata);
                     }
                 }
 
