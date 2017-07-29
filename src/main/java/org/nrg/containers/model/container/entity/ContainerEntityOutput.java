@@ -41,7 +41,7 @@ public class ContainerEntityOutput implements Serializable {
         this.glob = resolvedCommandOutput.glob();
         this.label = resolvedCommandOutput.label();
         this.type = resolvedCommandOutput.type();
-        this.handledByXnatCommandInput = resolvedCommandOutput.handledByXnatCommandInput();
+        this.handledByXnatCommandInput = resolvedCommandOutput.handledByWrapperInput();
     }
 
     public static ContainerEntityOutput fromPojo(final Container.ContainerOutput containerOutputPojo) {

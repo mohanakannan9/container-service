@@ -80,7 +80,7 @@ public abstract class Container {
         return builder()
                 .databaseId(containerEntity.getId())
                 .commandId(containerEntity.getCommandId())
-                .wrapperId(containerEntity.getXnatCommandWrapperId())
+                .wrapperId(containerEntity.getWrapperId())
                 .containerId(containerEntity.getContainerId())
                 .userId(containerEntity.getUserId())
                 .dockerImage(containerEntity.getDockerImage())
@@ -155,6 +155,16 @@ public abstract class Container {
     @JsonIgnore
     public Map<String, String> getRawInputs() {
         return getInputs(ContainerInputType.RAW);
+    }
+
+    @JsonIgnore
+    public String getLogPath(final String filename) {
+        for (final String path : logPaths()) {
+            if (path.endsWith(filename)) {
+                return path;
+            }
+        }
+        return null;
     }
 
     @AutoValue.Builder

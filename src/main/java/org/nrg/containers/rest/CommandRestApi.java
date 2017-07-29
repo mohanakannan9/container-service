@@ -10,6 +10,7 @@ import org.nrg.containers.exceptions.CommandValidationException;
 import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.exceptions.UnauthorizedException;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.model.command.auto.CommandSummaryForContext;
@@ -20,7 +21,6 @@ import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.security.helpers.AccessLevel;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
@@ -38,7 +38,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
-import org.nrg.containers.exceptions.UnauthorizedException;
 
 import java.util.Collections;
 import java.util.List;
@@ -128,7 +127,11 @@ public class CommandRestApi extends AbstractXapiRestController {
         // For this, we use the "CommandCreation" object, which has
         // all the properties of a command except for ids.
         final Command toCreate = Command.create(command, image);
-
+        try {
+            commandService.throwExceptionIfCommandExists(toCreate);
+        } catch (NrgRuntimeException e) {
+            throw new BadRequestException(e);
+        }
         try {
             final Command created = commandService.create(toCreate);
             if (created == null) {
@@ -145,8 +148,13 @@ public class CommandRestApi extends AbstractXapiRestController {
     @ResponseBody
     public ResponseEntity<Void> updateCommand(final @RequestBody Command command,
                                               final @PathVariable long id)
-            throws NotFoundException, CommandValidationException, UnauthorizedException {
+            throws NotFoundException, CommandValidationException, UnauthorizedException, BadRequestException {
         checkAdminOrThrow();
+        try {
+            commandService.throwExceptionIfCommandExists(command);
+        } catch (NrgRuntimeException e) {
+            throw new BadRequestException(e);
+        }
         commandService.update(command.id() == id ? command : command.toBuilder().id(id).build());
         return ResponseEntity.ok().build();
     }

@@ -3,6 +3,7 @@ package org.nrg.containers.services;
 import org.nrg.containers.model.command.entity.CommandEntity;
 import org.nrg.containers.model.command.entity.CommandWrapperEntity;
 import org.nrg.framework.exceptions.NotFoundException;
+import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
 
 import java.util.List;
@@ -22,4 +23,6 @@ public interface CommandEntityService extends BaseHibernateService<CommandEntity
     long getWrapperId(long commandId, String wrapperName) throws NotFoundException;
 
     CommandEntity getCommandByWrapperId(long wrapperId) throws NotFoundException;
+
+    void throwExceptionIfCommandExists(CommandEntity commandEntity) throws NrgRuntimeException;
 }

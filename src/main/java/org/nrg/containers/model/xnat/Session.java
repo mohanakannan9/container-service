@@ -12,12 +12,15 @@ import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatImageassessordataI;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.model.XnatImagesessiondataI;
+import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatResourcecatalog;
+import org.nrg.xdat.om.base.BaseXnatExperimentdata.UnknownPrimaryProjectException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.AssessedURII;
+import org.nrg.xnat.helpers.uri.archive.ExperimentURII;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -30,6 +33,7 @@ public class Session extends XnatModelObject {
     private List<Assessor> assessors;
     private List<Resource> resources;
     @JsonProperty("project-id") private String projectId;
+    private String directory;
 
     public Session() {}
 
@@ -69,6 +73,15 @@ public class Session extends XnatModelObject {
         this.xsiType = xnatImagesessiondataI.getXSIType();
         this.projectId = xnatImagesessiondataI.getProject();
 
+        this.directory = null;
+        try {
+            this.directory = XnatImagesessiondata.class.isAssignableFrom(xnatImagesessiondataI.getClass()) ?
+                    ((XnatImagesessiondata) xnatImagesessiondataI).getArchivePath(rootArchivePath) :
+                    null;
+        } catch (UnknownPrimaryProjectException e) {
+            // ignored, I guess?
+        }
+
         this.scans = Lists.newArrayList();
         for (final XnatImagescandataI xnatImagescandataI : xnatImagesessiondataI.getScans_scan()) {
             this.scans.add(new Scan(xnatImagescandataI, this.uri, rootArchivePath));
@@ -100,6 +113,13 @@ public class Session extends XnatModelObject {
                     if (imageSession != null &&
                             XnatImagesessiondata.class.isAssignableFrom(imageSession.getClass())) {
                         return new Session((AssessedURII) uri);
+                    }
+                } else if (uri != null &&
+                        ExperimentURII.class.isAssignableFrom(uri.getClass())) {
+                    final XnatExperimentdata experimentdata = ((ExperimentURII) uri).getExperiment();
+                    if (experimentdata != null &&
+                            XnatImagesessiondataI.class.isAssignableFrom(experimentdata.getClass())) {
+                        return new Session((XnatImagesessiondataI) experimentdata);
                     }
                 }
 
@@ -181,6 +201,14 @@ public class Session extends XnatModelObject {
         this.projectId = projectId;
     }
 
+    public String getDirectory() {
+        return directory;
+    }
+
+    public void setDirectory(final String directory) {
+        this.directory = directory;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
@@ -191,12 +219,13 @@ public class Session extends XnatModelObject {
                 Objects.equals(this.scans, that.scans) &&
                 Objects.equals(this.assessors, that.assessors) &&
                 Objects.equals(this.resources, that.resources) &&
-                Objects.equals(this.projectId, that.projectId);
+                Objects.equals(this.projectId, that.projectId) &&
+                Objects.equals(this.directory, that.directory);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), xnatImagesessiondataI, scans, assessors, resources, projectId);
+        return Objects.hash(super.hashCode(), xnatImagesessiondataI, scans, assessors, resources, projectId, directory);
     }
 
     @Override
@@ -206,6 +235,7 @@ public class Session extends XnatModelObject {
                 .add("assessors", assessors)
                 .add("resources", resources)
                 .add("projectId", projectId)
+                .add("directory", directory)
                 .toString();
     }
 }

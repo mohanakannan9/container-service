@@ -67,20 +67,6 @@ projectCommandAutomationPanel:
             tag: div#command-automation-list
             contents: Table will go here
 
-projectContainerHistoryPanel:
-    kind: panel
-    name: projectContainerHistoryPanel
-    label: Container Launch History
-    footer: false
-    contents:
-        projectContainerHistoryHeader:
-            tag: p
-            contents:
-                "This table lists all successful container launches. It does not necessarily correspond to successful executions. If a container in this list launched but did not succeed, check the log entry file."
-        projectContainerHistoryTable:
-            tag: div#command-history-container
-            contents: Table will go here
-
 
 projectSettings:
     kind: tabs
@@ -108,11 +94,3 @@ projectSettings:
             active: false
             contents:
                 ${projectCommandAutomationPanel}
-        projectContainerHistoryTab:
-            kind: tab
-            name: projectContainerHistoryTab
-            label: Container History
-            group: containerServiceProjectTabGroup
-            active: false
-            contents:
-                ${projectContainerHistoryPanel}

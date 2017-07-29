@@ -13,7 +13,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.containers.model.command.auto.Command.Builder;
 import org.nrg.containers.model.command.entity.CommandEntity;
 import org.nrg.containers.model.command.entity.CommandInputEntity;
 import org.nrg.containers.model.command.entity.CommandMountEntity;
@@ -25,7 +24,6 @@ import org.nrg.containers.model.command.entity.CommandWrapperInputType;
 import org.nrg.containers.model.command.entity.DockerCommandEntity;
 import org.nrg.containers.model.command.entity.CommandWrapperOutputEntity;
 import org.nrg.containers.model.command.entity.CommandWrapperEntity;
-import org.nrg.containers.model.configuration.CommandConfiguration;
 import org.nrg.containers.model.configuration.CommandConfiguration.CommandInputConfiguration;
 import org.nrg.containers.model.configuration.CommandConfiguration.CommandOutputConfiguration;
 
@@ -355,11 +353,11 @@ public abstract class Command {
                     wrapperInputNames.add(derived.name());
                 }
 
-                if (derived.name().equals(derived.derivedFromXnatInput())) {
+                if (derived.name().equals(derived.derivedFromWrapperInput())) {
                     errors.add(wrapperName + "derived input \"" + derived.name() + "\" is derived from itself.");
                 }
-                if (!wrapperInputNames.contains(derived.derivedFromXnatInput())) {
-                    errors.add(wrapperName + "derived input \"" + derived.name() + "\" is derived from an unknown XNAT input \"" + derived.derivedFromXnatInput() + "\". Known inputs: " + StringUtils.join(wrapperInputNames, ", "));
+                if (!wrapperInputNames.contains(derived.derivedFromWrapperInput())) {
+                    errors.add(wrapperName + "derived input \"" + derived.name() + "\" is derived from an unknown XNAT input \"" + derived.derivedFromWrapperInput() + "\". Known inputs: " + StringUtils.join(wrapperInputNames, ", "));
                 }
 
                 if (!inputErrors.isEmpty()) {
@@ -386,8 +384,8 @@ public abstract class Command {
                     handledOutputs.add(output.commandOutputName());
                 }
 
-                if (!wrapperInputNames.contains(output.xnatInputName())) {
-                    errors.add(wrapperName + "output handler refers to unknown XNAT input \"" + output.xnatInputName() + "\". Known inputs: " + knownWrapperInputs + ".");
+                if (!wrapperInputNames.contains(output.wrapperInputName())) {
+                    errors.add(wrapperName + "output handler refers to unknown XNAT input \"" + output.wrapperInputName() + "\". Known inputs: " + knownWrapperInputs + ".");
                 }
 
                 if (!outputErrors.isEmpty()) {
@@ -1056,14 +1054,14 @@ public abstract class Command {
     @AutoValue
     @JsonInclude(JsonInclude.Include.ALWAYS)
     public static abstract class CommandWrapperDerivedInput extends CommandWrapperInput {
-        @Nullable @JsonProperty("derived-from-xnat-input") public abstract String derivedFromXnatInput();
+        @Nullable @JsonProperty("derived-from-wrapper-input") public abstract String derivedFromWrapperInput();
         @Nullable @JsonProperty("derived-from-xnat-object-property") public abstract String derivedFromXnatObjectProperty();
 
         @JsonCreator
         static CommandWrapperDerivedInput create(@JsonProperty("name") final String name,
                                                  @JsonProperty("description") final String description,
                                                  @JsonProperty("type") final String type,
-                                                 @JsonProperty("derived-from-xnat-input") final String derivedFromXnatInput,
+                                                 @JsonProperty("derived-from-wrapper-input") final String derivedFromWrapperInput,
                                                  @JsonProperty("derived-from-xnat-object-property") final String derivedFromXnatObjectProperty,
                                                  @JsonProperty("matcher") final String matcher,
                                                  @JsonProperty("provides-value-for-command-input") final String providesValueForCommandInput,
@@ -1077,7 +1075,7 @@ public abstract class Command {
                     .name(name)
                     .description(description)
                     .type(type == null ? CommandWrapperDerivedInputEntity.DEFAULT_TYPE.getName() : type)
-                    .derivedFromXnatInput(derivedFromXnatInput)
+                    .derivedFromWrapperInput(derivedFromWrapperInput)
                     .derivedFromXnatObjectProperty(derivedFromXnatObjectProperty)
                     .matcher(matcher)
                     .providesValueForCommandInput(providesValueForCommandInput)
@@ -1100,7 +1098,7 @@ public abstract class Command {
                     .name(wrapperInput.getName())
                     .description(wrapperInput.getDescription())
                     .type(wrapperInput.getType().getName())
-                    .derivedFromXnatInput(wrapperInput.getDerivedFromXnatInput())
+                    .derivedFromWrapperInput(wrapperInput.getDerivedFromWrapperInput())
                     .derivedFromXnatObjectProperty(wrapperInput.getDerivedFromXnatObjectProperty())
                     .matcher(wrapperInput.getMatcher())
                     .providesValueForCommandInput(wrapperInput.getProvidesValueForCommandInput())
@@ -1127,7 +1125,7 @@ public abstract class Command {
                     .id(this.id())
                     .name(this.name())
                     .type(this.type())
-                    .derivedFromXnatInput(this.derivedFromXnatInput())
+                    .derivedFromWrapperInput(this.derivedFromWrapperInput())
                     .derivedFromXnatObjectProperty(this.derivedFromXnatObjectProperty())
                     .providesValueForCommandInput(this.providesValueForCommandInput())
                     .providesFilesForCommandMount(this.providesFilesForCommandMount())
@@ -1145,8 +1143,8 @@ public abstract class Command {
             // Derived inputs have all the same constraints as external inputs, plus more
             final List<String> errors = super.validate();
 
-            if (StringUtils.isBlank(derivedFromXnatInput())) {
-                errors.add("Command wrapper input \"" + name() + "\" - \"derived-from-xnat-input\" cannot be blank.");
+            if (StringUtils.isBlank(derivedFromWrapperInput())) {
+                errors.add("Command wrapper input \"" + name() + "\" - property \"derived-from-wrapper-input\" cannot be blank.");
             }
 
             return errors;
@@ -1166,7 +1164,7 @@ public abstract class Command {
             public abstract Builder rawReplacementKey(final String rawReplacementKey);
             public abstract Builder required(final boolean required);
             public abstract Builder loadChildren(final boolean loadChildren);
-            public abstract Builder derivedFromXnatInput(final String derivedFromXnatInput);
+            public abstract Builder derivedFromWrapperInput(final String derivedFromWrapperInput);
             public abstract Builder derivedFromXnatObjectProperty(final String derivedFromXnatObjectProperty);
 
             public abstract CommandWrapperDerivedInput build();
@@ -1179,21 +1177,21 @@ public abstract class Command {
         @JsonIgnore public abstract long id();
         @Nullable @JsonProperty("name") public abstract String name();
         @Nullable @JsonProperty("accepts-command-output") public abstract String commandOutputName();
-        @Nullable @JsonProperty("as-a-child-of-xnat-input") public abstract String xnatInputName();
+        @Nullable @JsonProperty("as-a-child-of-wrapper-input") public abstract String wrapperInputName();
         @JsonProperty("type") public abstract String type();
         @Nullable @JsonProperty("label") public abstract String label();
 
         @JsonCreator
         static CommandWrapperOutput create(@JsonProperty("name") final String name,
                                            @JsonProperty("accepts-command-output") final String commandOutputName,
-                                           @JsonProperty("as-a-child-of-xnat-input") final String xnatInputName,
+                                           @JsonProperty("as-a-child-of-wrapper-input") final String wrapperInputName,
                                            @JsonProperty("type") final String type,
                                            @JsonProperty("label") final String label) {
             return create(
                     0L,
                     name,
                     commandOutputName,
-                    xnatInputName,
+                    wrapperInputName,
                     type == null ? CommandWrapperOutputEntity.DEFAULT_TYPE.getName() : type,
                     label);
         }
@@ -1217,11 +1215,11 @@ public abstract class Command {
             if (wrapperOutput == null) {
                 return null;
             }
-            return create(wrapperOutput.getId(), wrapperOutput.getName(), wrapperOutput.getCommandOutputName(), wrapperOutput.getXnatInputName(), wrapperOutput.getType().getName(), wrapperOutput.getLabel());
+            return create(wrapperOutput.getId(), wrapperOutput.getName(), wrapperOutput.getCommandOutputName(), wrapperOutput.getWrapperInputName(), wrapperOutput.getType().getName(), wrapperOutput.getLabel());
         }
 
         public CommandWrapperOutput applyConfiguration(final CommandOutputConfiguration commandOutputConfiguration) {
-            return create(this.id(), this.name(), this.commandOutputName(), this.xnatInputName(), this.type(),
+            return create(this.id(), this.name(), this.commandOutputName(), this.wrapperInputName(), this.type(),
                     commandOutputConfiguration.label());
         }
 
@@ -1234,10 +1232,10 @@ public abstract class Command {
             }
 
             if (StringUtils.isBlank(commandOutputName())) {
-                errors.add("Command wrapper output \"" + name() + "\" - command output name cannot be blank.");
+                errors.add("Command wrapper output \"" + name() + "\" - property \"accepts-command-output\" cannot be blank.");
             }
-            if (StringUtils.isBlank(xnatInputName())) {
-                errors.add("Command wrapper output \"" + name() + "\" - xnat input name cannot be blank.");
+            if (StringUtils.isBlank(wrapperInputName())) {
+                errors.add("Command wrapper output \"" + name() + "\" - property \"as-a-child-of-wrapper-input\" cannot be blank.");
             }
             final List<String> types = CommandWrapperOutputEntity.Type.names();
             if (!types.contains(type())) {

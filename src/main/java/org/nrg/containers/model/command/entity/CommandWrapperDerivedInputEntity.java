@@ -37,12 +37,12 @@ public class CommandWrapperDerivedInputEntity {
     private boolean loadChildren = true;
     private String value;
 
-    @JsonProperty("derived-from-xnat-input") private String derivedFromXnatInput;
+    @JsonProperty("derived-from-wrapper-input") private String derivedFromWrapperInput;
     @JsonProperty("derived-from-xnat-object-property") private String derivedFromXnatObjectProperty;
 
     public static CommandWrapperDerivedInputEntity fromPojo(final Command.CommandWrapperDerivedInput commandWrapperInput) {
         final CommandWrapperDerivedInputEntity commandWrapperInputEntity = new CommandWrapperDerivedInputEntity();
-        commandWrapperInputEntity.derivedFromXnatInput = commandWrapperInput.derivedFromXnatInput();
+        commandWrapperInputEntity.derivedFromWrapperInput = commandWrapperInput.derivedFromWrapperInput();
         commandWrapperInputEntity.derivedFromXnatObjectProperty = commandWrapperInput.derivedFromXnatObjectProperty();
         commandWrapperInputEntity.id = commandWrapperInput.id();
         commandWrapperInputEntity.name = commandWrapperInput.name();
@@ -120,12 +120,12 @@ public class CommandWrapperDerivedInputEntity {
         this.commandWrapperEntity = commandWrapperEntity;
     }
 
-    public String getDerivedFromXnatInput() {
-        return derivedFromXnatInput;
+    public String getDerivedFromWrapperInput() {
+        return derivedFromWrapperInput;
     }
 
-    public void setDerivedFromXnatInput(final String derivedFromXnatInput) {
-        this.derivedFromXnatInput = derivedFromXnatInput;
+    public void setDerivedFromWrapperInput(final String derivedFromXnatInput) {
+        this.derivedFromWrapperInput = derivedFromXnatInput;
     }
 
     public String getDerivedFromXnatObjectProperty() {
@@ -267,7 +267,7 @@ public class CommandWrapperDerivedInputEntity {
                 .add("name", name)
                 .add("description", description)
                 .add("type", type)
-                .add("derivedFromXnatInput", derivedFromXnatInput)
+                .add("derivedFromWrapperInput", derivedFromWrapperInput)
                 .add("derivedFromXnatObjectProperty", derivedFromXnatObjectProperty)
                 .add("matcher", matcher)
                 .add("providesValueForCommandInput", providesValueForCommandInput)

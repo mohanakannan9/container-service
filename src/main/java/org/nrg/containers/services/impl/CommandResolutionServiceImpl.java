@@ -1017,7 +1017,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             }
             for (final CommandWrapperDerivedInput input : commandWrapper.derivedInputs()) {
                 // Derived inputs must have a non-blank parent name
-                final String parentName = input.derivedFromXnatInput();
+                final String parentName = input.derivedFromWrapperInput();
                 if (StringUtils.isBlank(parentName)) {
                     // This is unlikely to happen. This should be caught by command validation.
                     final String message = String.format("Derived input \"%s\" needs a parent.", input);
@@ -1320,7 +1320,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
         }
 
         @Nullable
-        private <T extends XnatModelObject> T resolveXnatObject(final @Nonnull String value,
+        private <T extends XnatModelObject> T resolveXnatObject(final @Nullable String value,
                                                                 final @Nullable String matcher,
                                                                 final @Nonnull Class<T> model,
                                                                 final @Nonnull Function<ArchiveItemURI, T> uriToModelObject,
@@ -1387,12 +1387,15 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             }
 
             if (newModelObject == null) {
+                log.debug("All attempts have failed. The {} object is null.", modelName);
                 return null;
             }
+            log.debug("Successfully instantiated a {}.", modelName);
 
             T aMatch = null;
             if (StringUtils.isNotBlank(matcher)) {
                 // To apply the JSONPath matcher, we have to serialize our object to JSON.
+                log.debug("Serializing {} to JSON to apply matcher.", modelName);
                 String newModelObjectJson = null;
                 try {
                     newModelObjectJson = mapper.writeValueAsString(newModelObject);
@@ -1419,7 +1422,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                         // that one object in it.
                         aMatch = doMatch.get(0);
                     } else {
-                        log.debug("Object did not match matcher \"{}\".", modelName, matcher);
+                        log.debug("{} did not match matcher \"{}\".", modelName, matcher);
                     }
                 }
             } else {
@@ -1467,13 +1470,13 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
 
                 // Fail fast: if we will not be able to create the output, either throw or log that now and don't try later.
                 // First check that the handler input has a unique value
-                final ResolvedInputValue parentInputResolvedValue = getInputValueByName(commandOutputHandler.xnatInputName(), resolvedInputTrees);
+                final ResolvedInputValue parentInputResolvedValue = getInputValueByName(commandOutputHandler.wrapperInputName(), resolvedInputTrees);
                 if (parentInputResolvedValue == null) {
                     final String message = String.format("Cannot resolve output \"%s\". " +
                                     "Input \"%s\" is supposed to handle the output, but it does not have a uniquely resolved value. " +
                                     "Either there is no value, or there are multiple values." +
                                     "(We can't loop over input values yet, so the latter is an error as much as the former.)",
-                            commandOutput.name(), commandOutputHandler.xnatInputName());
+                            commandOutput.name(), commandOutputHandler.wrapperInputName());
                     if (Boolean.TRUE.equals(commandOutput.required())) {
                         throw new CommandResolutionException(message);
                     } else {
@@ -1495,7 +1498,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 if (uri == null || !(uri instanceof ArchiveItemURI)) {
                     final String message = String.format("Cannot resolve output \"%s\". " +
                                     "Input \"%s\" is supposed to handle the output, but it does not have an XNAT object value.",
-                            commandOutput.name(), commandOutputHandler.xnatInputName());
+                            commandOutput.name(), commandOutputHandler.wrapperInputName());
                     if (Boolean.TRUE.equals(commandOutput.required())) {
                         throw new CommandResolutionException(message);
                     } else {
@@ -1518,7 +1521,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                     final String message = String.format("Cannot resolve output \"%s\". " +
                                     "Input \"%s\" is supposed to handle the output, but user \"%s\" does not have permission " +
                                     "to edit the XNAT object \"%s\".",
-                            commandOutput.name(), commandOutputHandler.xnatInputName(),
+                            commandOutput.name(), commandOutputHandler.wrapperInputName(),
                             userI.getLogin(), parentValue);
                     if (Boolean.TRUE.equals(commandOutput.required())) {
                         throw new CommandResolutionException(message);
@@ -1535,7 +1538,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                         .mount(commandOutput.mount())
                         .glob(commandOutput.glob())
                         .type(commandOutputHandler.type())
-                        .handledByXnatCommandInput(commandOutputHandler.xnatInputName())
+                        .handledByWrapperInput(commandOutputHandler.wrapperInputName())
                         .path(resolveTemplate(commandOutput.path(), resolvedInputValuesByReplacementKey))
                         .label(resolveTemplate(commandOutputHandler.label(), resolvedInputValuesByReplacementKey))
                         .build();

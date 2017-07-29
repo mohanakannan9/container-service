@@ -38,21 +38,21 @@
                 {
                     "name": "scan",
                     "type": "Scan",
-                    "derived-from-xnat-input": "session",
+                    "derived-from-wrapper-input": "session",
                     "matcher": "@.scan-type in [#T1-scantype#]",
                     "required": true
                 },
                 {
                     "name": "dicom",
                     "type": "Resource",
-                    "derived-from-xnat-input": "scan",
+                    "derived-from-wrapper-input": "scan",
                     "matcher": "@.label == 'DICOM'",
                     "required": true
                 },
                 {
                     "name": "scan-id",
                     "type": "string",
-                    "derived-from-xnat-input": "scan",
+                    "derived-from-wrapper-input": "scan",
                     "derived-from-xnat-object-property": "id",
                     "provides-value-for-command-input": "whatever",
                     "required": true
@@ -76,28 +76,28 @@
                     "name": "a resource",
                     "description": "an input that takes a resource",
                     "type": "Resource",
-                    "derived-from-xnat-input": "a scan",
+                    "derived-from-wrapper-input": "a scan",
                     "required": true
                 },
                 {
                     "name": "a file",
                     "description": "a file",
                     "type": "File",
-                    "derived-from-xnat-input": "a resource",
+                    "derived-from-wrapper-input": "a resource",
                     "required": "true",
                     "provides-value-for-command-input": "file-path"
                 },
                 {
                     "name": "a file path",
                     "type": "string",
-                    "derived-from-xnat-input": "a file",
+                    "derived-from-wrapper-input": "a file",
                     "provides-value-for-command-input": "file-path",
                     "derived-from-xnat-object-property": "path"
                 },
                 {
                     "name": "scan-id",
                     "type": "string",
-                    "derived-from-xnat-input": "a scan",
+                    "derived-from-wrapper-input": "a scan",
                     "derived-from-xnat-object-property": "id",
                     "provides-value-for-command-input": "whatever",
                     "required": true
@@ -119,7 +119,7 @@
                 {
                     "name": "project-label",
                     "type": "string",
-                    "derived-from-xnat-input": "project",
+                    "derived-from-wrapper-input": "project",
                     "derived-from-xnat-object-property": "label",
                     "provides-value-for-command-input": "whatever",
                     "required": true
@@ -142,13 +142,13 @@
                     "name": "subject",
                     "type": "Subject",
                     "description": "a subject under the project",
-                    "derived-from-xnat-input": "project",
+                    "derived-from-wrapper-input": "project",
                     "required": true
                 },
                 {
                     "name": "project-label",
                     "type": "string",
-                    "derived-from-xnat-input": "project",
+                    "derived-from-wrapper-input": "project",
                     "derived-from-xnat-object-property": "label",
                     "provides-value-for-command-input": "whatever",
                     "required": true
@@ -169,13 +169,13 @@
                 {
                     "name": "assessor",
                     "type": "Assessor",
-                    "derived-from-xnat-input": "session",
+                    "derived-from-wrapper-input": "session",
                     "required": true
                 },
                 {
                     "name": "assessor-label",
                     "type": "string",
-                    "derived-from-xnat-input": "assessor",
+                    "derived-from-wrapper-input": "assessor",
                     "derived-from-xnat-object-property": "label",
                     "provides-value-for-command-input": "whatever",
                     "required": true

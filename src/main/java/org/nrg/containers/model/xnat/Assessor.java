@@ -11,6 +11,7 @@ import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatImageassessordataI;
 import org.nrg.xdat.om.XnatImageassessordata;
 import org.nrg.xdat.om.XnatResourcecatalog;
+import org.nrg.xdat.om.base.BaseXnatExperimentdata.UnknownPrimaryProjectException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
@@ -25,6 +26,7 @@ import java.util.Objects;
 public class Assessor extends XnatModelObject {
     @JsonIgnore private XnatImageassessordataI xnatImageassessordataI;
     private List<Resource> resources;
+    private String directory;
 
     public Assessor() {}
 
@@ -52,6 +54,14 @@ public class Assessor extends XnatModelObject {
         this.id = xnatImageassessordataI.getId();
         this.label = xnatImageassessordataI.getLabel();
         this.xsiType = xnatImageassessordataI.getXSIType();
+        this.directory = null;
+        try {
+            this.directory = XnatImageassessordata.class.isAssignableFrom(xnatImageassessordataI.getClass()) ?
+                    ((XnatImageassessordata) xnatImageassessordataI).getArchiveRootPath() :
+                    null;
+        } catch (UnknownPrimaryProjectException e) {
+            // ignored, I guess?
+        }
 
         this.resources = Lists.newArrayList();
         for (final XnatAbstractresourceI xnatAbstractresourceI : xnatImageassessordataI.getResources_resource()) {
@@ -125,6 +135,14 @@ public class Assessor extends XnatModelObject {
 
     public void setResources(final List<Resource> resources) {
         this.resources = resources;
+    }
+
+    public String getDirectory() {
+        return directory;
+    }
+
+    public void setDirectory(final String directory) {
+        this.directory = directory;
     }
 
     @Override

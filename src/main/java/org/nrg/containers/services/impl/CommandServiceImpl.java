@@ -22,9 +22,9 @@ import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerConfigService;
 import org.nrg.containers.services.ContainerConfigService.CommandConfigurationException;
 import org.nrg.framework.exceptions.NotFoundException;
+import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.helpers.Permissions;
-import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.security.UserI;
@@ -109,7 +109,8 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     @Override
     @Nullable
     public Command retrieve(final long id) {
-        return toPojo(commandEntityService.retrieve(id));
+        final CommandEntity commandEntity = commandEntityService.retrieve(id);
+        return commandEntity == null ? null : toPojo(commandEntity);
     }
 
     @Override
@@ -193,13 +194,15 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     @Override
     @Nullable
     public CommandWrapper retrieveWrapper(final long wrapperId) {
-        return toPojo(commandEntityService.retrieveWrapper(wrapperId));
+        final CommandWrapperEntity commandWrapperEntity = commandEntityService.retrieveWrapper(wrapperId);
+        return commandWrapperEntity == null ? null : toPojo(commandWrapperEntity);
     }
 
     @Override
     @Nullable
     public CommandWrapper retrieveWrapper(final long commandId, final String wrapperName) {
-        return toPojo(commandEntityService.retrieveWrapper(commandId, wrapperName));
+        final CommandWrapperEntity commandWrapperEntity = commandEntityService.retrieveWrapper(commandId, wrapperName);
+        return commandWrapperEntity == null ? null : toPojo(commandWrapperEntity);
     }
 
     @Override
@@ -493,6 +496,11 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
         return available;
     }
 
+    @Override
+    public void throwExceptionIfCommandExists(@Nonnull Command command) throws NrgRuntimeException {
+        commandEntityService.throwExceptionIfCommandExists(fromPojo(command));
+    }
+
     // Cache the pairs of (parent, child) xsiType relationships.
     // If child is descended from parent, return true. Else return false.
     private Map<XsiTypePair, Boolean> xsiTypePairCache = new HashMap<>();
@@ -599,7 +607,8 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
 
     @Nonnull
     private Command getCommandWithOneWrapper(final long wrapperId) throws NotFoundException {
-        final CommandEntity commandEntity = commandEntityService.getCommandByWrapperId(wrapperId);final List<CommandWrapperEntity> listWithOneWrapper = Lists.newArrayList();
+        final CommandEntity commandEntity = commandEntityService.getCommandByWrapperId(wrapperId);
+        final List<CommandWrapperEntity> listWithOneWrapper = Lists.newArrayList();
         for (final CommandWrapperEntity wrapper : commandEntity.getCommandWrapperEntities()) {
             if (wrapper.getId() == wrapperId) {
                 listWithOneWrapper.add(wrapper);

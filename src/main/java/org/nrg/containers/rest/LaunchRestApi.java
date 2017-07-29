@@ -18,7 +18,6 @@ import org.nrg.containers.model.command.auto.LaunchUi;
 import org.nrg.containers.model.command.auto.ResolvedCommand.PartiallyResolvedCommand;
 import org.nrg.containers.model.configuration.CommandConfiguration;
 import org.nrg.containers.model.container.auto.Container;
-import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.services.CommandResolutionService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerService;
@@ -451,14 +450,14 @@ public class LaunchRestApi extends AbstractXapiRestController {
                 }
             }
             final String containerId = (container == null || container.containerId() == null) ? "null" : container.containerId();
-            return LaunchReport.Success.create(allRequestParams, containerId, ""+commandId, wrapperName);
+            return LaunchReport.Success.create(allRequestParams, containerId, commandId, wrapperId, wrapperName);
         } catch (Throwable t) {
             if (log.isInfoEnabled()) {
                 log.error("Launch failed for command wrapper name {}.", wrapperName);
                 log.error(mapLogString("Params: ", allRequestParams));
                 log.error("Exception: ", t);
             }
-            return LaunchReport.Failure.create(allRequestParams, t.getMessage(), ""+commandId, wrapperName);
+            return LaunchReport.Failure.create(allRequestParams, t.getMessage(), commandId, wrapperId, wrapperName);
         }
     }
 
