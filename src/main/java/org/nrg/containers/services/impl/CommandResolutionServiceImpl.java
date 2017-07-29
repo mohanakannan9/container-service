@@ -1320,7 +1320,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
         }
 
         @Nullable
-        private <T extends XnatModelObject> T resolveXnatObject(final @Nonnull String value,
+        private <T extends XnatModelObject> T resolveXnatObject(final @Nullable String value,
                                                                 final @Nullable String matcher,
                                                                 final @Nonnull Class<T> model,
                                                                 final @Nonnull Function<ArchiveItemURI, T> uriToModelObject,
@@ -1387,12 +1387,15 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             }
 
             if (newModelObject == null) {
+                log.debug("All attempts have failed. The {} object is null.", modelName);
                 return null;
             }
+            log.debug("Successfully instantiated a {}.", modelName);
 
             T aMatch = null;
             if (StringUtils.isNotBlank(matcher)) {
                 // To apply the JSONPath matcher, we have to serialize our object to JSON.
+                log.debug("Serializing {} to JSON to apply matcher.", modelName);
                 String newModelObjectJson = null;
                 try {
                     newModelObjectJson = mapper.writeValueAsString(newModelObject);
@@ -1419,7 +1422,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                         // that one object in it.
                         aMatch = doMatch.get(0);
                     } else {
-                        log.debug("Object did not match matcher \"{}\".", modelName, matcher);
+                        log.debug("{} did not match matcher \"{}\".", modelName, matcher);
                     }
                 }
             } else {
