@@ -770,6 +770,8 @@ var XNAT = getObject(XNAT || {});
                             option += '>'+item.name+'</option>';
                             $hubSelect.prop('disabled',false).append(option);
                         });
+                    } else {
+                        $hubSelect.parents('.panel-element').hide();
                     }
                 });
             },
