@@ -633,7 +633,7 @@ var XNAT = getObject(XNAT || {});
                                 $advancedInputContainer = $panel.find('.advanced-settings');
 
                             for (var i in inputs) {
-                                if (!inputs[i].parent || inputs[i].parent === undefined) {
+                                if ((!inputs[i].parent || inputs[i].parent === undefined) && i !== rootElement) {
                                     // child inputs that specify a parent get special treatment
                                     inputs[i].type = inputs[i].ui.default.type;
                                     inputs[i].value = inputs[i].ui.default.values[0].value || inputs[i].value;
