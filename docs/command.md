@@ -1,4 +1,4 @@
-
+<!-- id: 31785434 -->
 If you want XNAT to execute your docker image, you will need a Command. The Command is a collection of properties that describe your docker image, and which XNAT can read to understand what your image is and how to run it:
 
 * What kind of image is it? (Currently only docker images are supported.)
