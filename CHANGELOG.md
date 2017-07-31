@@ -5,7 +5,7 @@
 Not yet released.
 
 ### Features
-
+* Change launch report format. Now instead of showing either wrapper ID or command ID + wrapper name (depending on which API you used to launch the container), the launch report always shows wrapper ID and command ID. The IDs are now formatted as integers, not strings.
 
 ### Bugfixes
 
