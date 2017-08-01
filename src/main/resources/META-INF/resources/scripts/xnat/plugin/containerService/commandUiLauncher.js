@@ -621,7 +621,7 @@ var XNAT = getObject(XNAT || {});
                         if (k===0) {
                             // on first iteration, create all user-settable inputs
 
-                            $panel.append(spawn('div',{ className: 'bulk-master inputs-'+k },[
+                            $panel.append(spawn('div',{ className: 'bulk-master bulk-inputs inputs-'+k },[
                                 spawn('div.standard-settings'),
                                 spawn('div.advanced-settings-container.hidden',[
                                     spawn('div.advanced-settings-toggle'),
@@ -633,9 +633,10 @@ var XNAT = getObject(XNAT || {});
                                 $advancedInputContainer = $panel.find('.advanced-settings');
 
                             for (var i in inputs) {
-                                if ((!inputs[i].parent || inputs[i].parent === undefined) && i !== rootElement) {
-                                    // child inputs that specify a parent get special treatment
-                                    inputs[i].type = inputs[i].ui.default.type;
+                                // child inputs that specify a parent get special treatment
+                                if ((!inputs[i].parent || inputs[i].parent === undefined)) {
+                                    // don't display the root element input again ... it has already been listed.
+                                    inputs[i].type = (i === rootElement) ? 'hidden' : inputs[i].ui.default.type;
                                     inputs[i].value = inputs[i].ui.default.values[0].value || inputs[i].value;
                                     inputs[i].valueLabel = inputs[i].ui.default.values[0].label || '';
 
@@ -704,7 +705,7 @@ var XNAT = getObject(XNAT || {});
 
                         } else {
                             // on 2nd - nth inputs, simply create hidden inputs whose values will be toggled by user changes to first set of inputs
-                            $panel.append(spawn('div',{ className: 'bulk-inputs inputs-'+k }));
+                            $panel.append(spawn('div',{ className: 'bulk-controls bulk-inputs inputs-'+k }));
                             var $bulkInputContainer = $panel.find('.inputs-'+k);
 
                             for (var i in inputs) {
@@ -773,46 +774,85 @@ var XNAT = getObject(XNAT || {});
                         close: false,
                         action: function(obj){
                             var $panel = obj.$modal.find('.panel'),
-                                targetData = {};
+                                bulkData = [];
 
-                            // gather form input values
-                            targetData[rootElement] = $panel.find('input[name='+rootElement+']').val();
+                            $panel.find('.bulk-inputs').each(function(){
+                                // iterate over each set of inputs and add an object of inputs and values to the bulkData array
+                                var targetData = {},
+                                    $thisPanel = $(this);
 
-                            $panel.find('input').not(':disabled').not('[type=checkbox]').not('[type=radio]').not('[name='+rootElement+']').each(function(){
-                                // get the name and value from each text element and add it to our data to post
-                                var key = $(this).prop('name');
-                                targetData[key] = $(this).val();
+                                // gather form input values
+                                targetData[rootElement] = $thisPanel.find('input[name='+rootElement+']').val();
+
+                                $thisPanel.find('input').not(':disabled').not('[type=checkbox]').not('[type=radio]').not('[name='+rootElement+']').each(function(){
+                                    // get the name and value from each text element and add it to our data to post
+                                    var key = $(this).prop('name');
+                                    targetData[key] = $(this).val();
+                                });
+
+                                $thisPanel.find('input[type=checkbox]').not(':disabled').each(function(){
+                                    var key = $(this).prop('name');
+                                    var val = ($(this).is(':checked')) ? $(this).val() : false;
+                                    targetData[key] = val;
+                                });
+
+                                $thisPanel.find('select').not(':disabled').each(function(){
+                                    var key = $(this).prop('name');
+                                    var val = $(this).find('option:selected').val();
+                                    targetData[key] = val;
+                                });
+
+                                bulkData.push(targetData);
                             });
 
-                            $panel.find('input[type=checkbox]').not(':disabled').each(function(){
-                                var key = $(this).prop('name');
-                                var val = ($(this).is(':checked')) ? $(this).val() : false;
-                                targetData[key] = val;
-                            });
 
-                            $panel.find('select').not(':disabled').each(function(){
-                                var key = $(this).prop('name');
-                                var val = $(this).find('option:selected').val();
-                                targetData[key] = val;
-                            });
-
-                            var dataToPost = targetData;
+                            var dataToPost = bulkData;
 
                             xmodal.loading.open({ title: 'Launching Container...' });
 
                             XNAT.xhr.postJSON({
-                                url: containerLaunchUrl(wrapperId),
+                                url: bulkLaunchUrl(wrapperId),
                                 data: JSON.stringify(dataToPost),
                                 success: function(data){
                                     xmodal.loading.close();
 
-                                    var messageContent = (data.status === 'success') ?
-                                        spawn('p',{ style: { 'word-wrap': 'break-word'}}, 'Container ID: '+data['container-id'] ) :
-                                        spawn('p', data.message);
+                                    // bulk launch success returns two arrays -- containers that successfully launched, and containers that failed to launch
+                                    var messageContent = [],
+                                        totalLaunchAttempts = data.successes.concat(data.failures).length;
+                                    if (data.failures.length > 0) {
+                                        messageContent.push( spawn('div.message',data.successes.length + ' of '+totalLaunchAttempts+' containers successfully launched.') );
+                                    } else if(data.successes.length > 0) {
+                                        messageContent.push( spawn('div.success','All containers successfully launched.') );
+                                    } else {
+                                        errorHandler({
+                                            statusText: 'Something went wrong. No containers were launched.'
+                                        });
+                                    }
+
+                                    if (data.successes.length > 0) {
+                                        messageContent.push( spawn('h3',{'style': {'margin-top': '2em' }},'Successful Container Launches') );
+
+                                        data.successes.forEach(function(success){
+                                            messageContent.push( spawn('p',[
+                                                spawn('strong','Container ID: '),
+                                                spawn('span',success['container-id'])
+                                            ]) );
+                                            messageContent.push( spawn('div',prettifyJSON(success.params)) );
+                                        });
+                                    }
+
+                                    if (data.failures.length > 0){
+                                        messageContent.push( spawn('h3',{'style': {'margin-top': '2em' }},'Failed Container Launches') );
+                                        data.failures.forEach(function(failure){
+                                            messageContent.push( spawn('p',{ style: { 'font-weight': 'bold' }}, 'Error Message:') );
+                                            messageContent.push( spawn('pre.json', failure.message) );
+                                            messageContent.push( spawn('div',prettifyJSON(failure.params)) );
+                                        });
+                                    }
 
                                     XNAT.ui.dialog.open({
-                                        title: 'Container Launch <span style="text-transform: capitalize">'+data.status+'</span>',
-                                        content: messageContent,
+                                        title: 'Container Launch Success',
+                                        content: spawn('div', messageContent ),
                                         buttons: [
                                             {
                                                 label: 'OK',
@@ -876,12 +916,11 @@ var XNAT = getObject(XNAT || {});
     $(document).on('change','.bulk-master input',function(){
         var name = $(this).prop('name');
         if ($(this).prop('type') === 'checkbox' && !$(this).is(':checked')) {
-            $('.bulk-inputs').find('input[name='+name+']').val('false');
+            $('.bulk-controls').find('input[name='+name+']').val('false');
         } else {
             var changedVal = $(this).val();
-            $('.bulk-inputs').find('input[name='+name+']').val(changedVal);
+            $('.bulk-controls').find('input[name='+name+']').val(changedVal);
         }
-
     });
 
     launcher.defaultLauncher = function(wrapperId,rootElement,rootElementValue){
