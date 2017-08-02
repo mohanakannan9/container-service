@@ -1168,6 +1168,10 @@ var XNAT = getObject(XNAT || {});
         return csrfUrl('/xapi/commands/'+command+'/wrappers/'+wrapperName+'/' + flag);
     }
 
+    function siteConfigUrl(){
+        return csrfUrl('/xapi/siteConfig');
+    }
+
     commandConfigManager.getCommands = commandConfigManager.getAll = function(callback){
 
         callback = isFunction(callback) ? callback : function(){};
@@ -1540,6 +1544,24 @@ var XNAT = getObject(XNAT || {});
 
         return ccmTable.table;
     };
+
+    // auto-save to site-wide opt-in preference on click of the switchbox.
+    $('#opt-into-sitewide-commands').on('change',function(){
+        var optIn = $(this).prop('checked');
+        var paramToPut = JSON.stringify({ optIntoSitewideCommands: optIn });
+        XNAT.xhr.post({
+            url: siteConfigUrl(),
+            data: paramToPut,
+            dataType: 'json',
+            contentType: 'application/json',
+            success: function(){
+                XNAT.ui.banner.top(1000, '<b>Success: </b> Default Project Opt-in Preference Setting set to <b>' + optIn + '</b>.', 'success');
+            },
+            fail: function(e){
+                errorHandler(e,'Could not set site-wide project preference for command opt-in');
+            }
+        })
+    });
 
     commandConfigManager.refresh = commandConfigManager.refreshTable = function(container){
         var $manager = $$(container||'div#command-config-list-container');
