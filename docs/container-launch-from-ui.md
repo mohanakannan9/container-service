@@ -1,13 +1,26 @@
 
-When a user wants to use the container service to launch a container from a command, they have a REST API endpoint to do so:
+# Launch a Container
+When a user wants to use the container service to launch a container from a command, we provide REST API endpoints to do so:
 
-    POST /xapi/commands/{id}/wrappers/{id or name}/launch
-    Header: Content-type: application/json
-    Body: {"paramName": "paramValue", ...}
+    Request (one of)
+        POST /xapi/commands/{id}/wrappers/{name}/launch
+        POST /xapi/wrappers/{id}/launch
+        POST /xapi/projects/{project}/commands/{id}/wrappers/{name}/launch
+        POST /xapi/projects/{project}/wrappers/{id}/launch
+    Headers
+        Content-type: application/json
+    Body
+        {"paramName": "paramValue", ...}
 
-This endpoint is the best way to go directly from zero to launching a container. But it isn't very usable by anyone because it requires a lot of foreknowledge. The user must know the IDs of the command and command wrapper, all the parameters that must be supplied, and all the appropriate values to give those parameters.
+The different APIs can be used for very slightly different purposes. The `/projects/{project}` APIs are suited for launching containers within the context of a project, which means the project-specific configuration will be used. The non-project APIs will use the site-wide configuration.
 
-Clearly, we need a simpler way to launch containers. Users should be expected to know as little as possible about what they want to launch, and the UI can help them through the process as much as possible. There should be a multi-stage process a user can step through to launch a container on some appropriate object in the XNAT model: project, subject, experiment, etc.
+These endpoints are the fastest way to go directly from zero to launching a container. But they aren't very usable by anyone but expert users because they require complete foreknowledge. The user must know
+
+* either the ID of the command + name of the command wrapper or the ID of the wrapper,
+* which of the container's parameters must be supplied at runtime, and
+* all the appropriate values to give those parameters.
+
+Clearly, there should be a simpler way to launch containers. Users should be required to know as little as possible about what they want to launch, and the UI can help them through the process as much as possible. There should be a multi-stage process a user can step through to launch a container on some appropriate object in the XNAT model: project, subject, experiment, etc.
 
 This document outlines this multi-stage flow.
 
@@ -15,12 +28,11 @@ This document outlines this multi-stage flow.
 The assumption behind this set of APIs is that the UI will make one request for one XNAT object. When the UI requests a list of commands that can be launched *here*, or requests a launch UI with an ID, there will be one single XNAT object that the *here* and the ID refer to. This implies two things, one on the UI side and one on the command/wrapper definition side:
 
 1. As the user navigates around the XNAT UI, there will often be more than one object loaded on a page. For instance, on an image session page obviously the XNAT image session object is loaded. But also all of the session's scans, resources, and assessors are loaded. Since each request for commands to launch must have only a single object, this implies that many separate requests can be made on each page load.
-2. The command wrapper's `external-inputs` are the entry points where XNAT objects can be inserted. The properties of those objects are pulled out by the `derived-inputs`, into the underlying command's `inputs`, and ultimately provide the files and command line string needed to launch a container. However, while the `external-inputs` may contain an unbounded list of XNAT objects, only those command wrappers with a single external input will be launchable through the UI. The front end code can only request a launch UI for a single object, and the back end will interpret that as the wrapper's external input. If the wrapper has more than one external input, then there is no way for the back end to know which input corresponds to this object, or how to satisfy the other inputs.
+2. The command wrapper's `external-inputs` are the entry points where XNAT objects can be inserted so their files and properties can be used to launch a container. The properties of those XNAT objects can be pulled out by the `derived-inputs`, into the underlying command's `inputs`, and ultimately provide the files and command line string needed to launch a container. However, while in general the `external-inputs` may contain an unbounded list of XNAT objects, only those command wrappers with a single external input will be launchable through the UI. The front end code can only request a launch UI for a single object, and the back end will interpret that as the wrapper's external input. If the wrapper has more than one external input, then there is no way for the back end to know which input corresponds to this object, or how to satisfy the other inputs.
 
+# UI Step 1: What can I launch here?
 
-# What can I launch here?
-
-This is the first step in the launch flow. As a user is clicking around XNAT, looking at various pages, in the background the UI could be loading information from the container service about the possible containers that could be launched on whatever the user sees at this moment. This API should be fairly lightweight in terms of time and data— the backend should just retrieve some information and send it back, without "thinking" too much about the results—because the UI will presumably make a lot of requests to this endpoint that the user doesn't care about and which will just be wasted.
+This is the first step in the launch flow. As a user is clicking around XNAT, looking at various pages, in the background the UI will load information from the container service about the possible containers that could be launched on whatever the user sees at this moment. This API is fairly lightweight in terms of time and data—the backend should just retrieve some information and send it back, without "thinking" too much about the results—because the UI will presumably make a lot of requests to this endpoint that the user doesn't care about and which will just be wasted.
 
 The purpose is to have a small baseline of information that the user can use to advance to the next stage of the flow if they choose to, but which has not wasted too much time or bandwidth if they aren't interested.
 
@@ -29,22 +41,17 @@ The purpose is to have a small baseline of information that the user can use to 
 
 The API is very simple. This is intended to be used by the UI pretty much everywhere, just swapping out the contextual query parameters.
 
-    GET /xapi/commands/available
+    Request
+        GET /xapi/commands/available
 
 ### Query Params
 The UI will need to provide query parameters on that request defining the "`context`", i.e. what XNAT object the user is "looking at", or the XNAT object on which they might want to launch a container. On a given page there may be several objects for which the UI would need to make these requests. For instance, on an image session page, the UI may want to request "What can I launch on this image session?" but also request "What can I launch on this scan?" for each scan under the session.
-
-Some query params will be required on each request, and others could optionally be provided under particular circumstances. I haven't nailed down exactly what parameters are in either the required or optional set, but here is my current thinking:
 
 Required params:
 
 * *`xsiType`* - The XSI type of the object. E.g. `xnat:mrSessionData`,
     `xnat:projectData`, `xnat:ctScanData`.
 * *`project`* - The ID of the project in which the request is being made.
-
-Optional params
-
-* ... Can't think of any right now.
 
 I considered requiring a unique identifier for the particular object, but I do not think that should be necessary. Any object-specific processing would be too heavy for this particular API. The request can, I think, be as simple as "What can I launch on an 'xnat:fooBarData' in project 'XYZ'?"
 
@@ -56,111 +63,206 @@ When this request is made, the container service backend will use the params to 
     * explicitly enabled/disabled on the project,
     * whether the project allows launching commands that aren't explicitly enabled,
     * whether the user has permissions to launch commands on this project
-* "What can be launched on this object?" - Each command wrapper's `wrapperContext` list contains XSI types on which the wrapper can be launched. We can check whether the XSI type from the request is in the list for each command wrapper. However, we must also check "child types"; if the request comes in with an XSI type `"xnat:mrSessionData"` and a command wrapper's `wrapperContext` contains `"xnat:imageSessionData"`, that must be considered a match because `"xnat:mrSessionData"` **is** an `"xnat:imageSessionData"`.
-
-These two filters are independent, and could be applied in either order. I'm not sure which should be applied first. Both are well-suited to being cached; we could cache high-level API functions that loop over all commands—"what can launch on project `"XYZ"`?", "what can launch on an `"xnat:fooBarData"`?"—or lower-level API functions that operate on a single command wrapper—"can wrapper `"Bar"` be launched on project `"XYZ"`?", "can wrapper `"Bar"` be launched on an `"xnat:foBarData"`?" I guess I will experiment and see if either ordering is demonstrably slower or faster.
+* "What can be launched on this object?" - Each command wrapper's `context` list contains XSI types on which the wrapper can be launched. We can check whether the XSI type from the request is in the list for each command wrapper. However, we must also check "child types"; if the request comes in with an XSI type `"xnat:mrSessionData"` and a command wrapper's `context` contains `"xnat:imageSessionData"`, that must be considered a match because `"xnat:mrSessionData"` **is** an `"xnat:imageSessionData"`.
 
 ## Response
 
-An array of objects, each containing summary information about a single command wrapper that can be used to launch a container. I.e., an array of the form:
+An array of objects, each containing summary information about a single command + wrapper pair that can be used to launch a container. I.e., an array of the form:
 
     [
       {
           "command-id": 0,
           "command-name": "foo",
+          "command-description": "A foo command",
           "wrapper-id": 0,
           "wrapper-name": "bar",
+          "wrapper-description": "A foo that bars",
           "enabled": true,
           "image-name": "xnat/foo",
           "image-type": "docker",
-          "external-input-name": "alpha"
+          "root-element-name": "alpha"
       },
       {
           "command-id": 1,
           "command-name": "boo",
+          "command-description": "A scary ghost command!",
           "wrapper-id": 12,
           "wrapper-name": "berry",
+          "wrapper-description": "A breakfast cereal for children. See https://en.wikipedia.org/wiki/Monster_cereals.",
           "enabled": false,
           "image-name": "xnat/bar",
           "image-type": "singularity",
-          "external-input-name": "omega"
+          "root-element-name": "omega"
       },
       ...
     ]
 
-# Create a Launch UI
+Most of the entries here are self-explanitory; the only one that bears explanation is `"root-element-name"`. The value of this field is the name of the wrapper's sole external input. (Recall that, if a wrapper has more than one external input, it will not be considered available to launch from the UI. [See note.](#caveat)) It is called the "root element" here because it can be used as the root of a tree of inputs, each deriving their value from some property of this input or one of its descendant inputs. Later, when a request is made to [get a launch UI](#create-a-launch-ui), the name used here will be used as a key, and will be given a value which is the ID of some XNAT object.
 
-Once a user clicks some button or submits some form or whatever saying "Yes, I would like to launch command wrapper `foo-sandwich`", the UI initiates the next step in the launch flow. At this stage it knows a particular command wrapper the user wants to launch on a particular XNAT object. It will need to request more information from the container service, which it will use to render the launch UI.
+# UI Step 2: Create a Launch UI
+
+Once a user clicks a button saying "Launch container `foo-bar`" and signals their intent to launch a container, the UI initiates the next step in the launch flow. At this stage it knows which particular command wrapper the user wants to launch, and which particular XNAT object they wish to use as an input. The UI will need to request more information from the container service, which it will use to render the launch UI.
 
 ## Request
 
 ### REST Endpoint
 
-This is another simple `GET`.
+This is another simple `GET`. Most often, the user will be within some project context, and the UI will request the API:
 
-    GET /xapi/commands/{id}/wrappers/{id or name}/launch
+    GET /xapi/projects/{project}/commands/{id}/wrappers/{name}/launch
+
+Alternatively, if the wrapper ID is known, this API can be used:
+
+    GET /xapi/projects/{project}/wrappers/{id}/launch
+
+Those APIs will use any project-level configuration that exists. This allows each project to customize the default parameters of the command and wrapper to suit their data.
+
+If, instead, one wishes to eschew the project-level configuration and use only the site-wide configuration, one can request one of
+
+    GET /xapi/commands/{id}/wrappers/{name}/launch
+
+or
+
+    GET /xapi/wrappers/{id}/launch
+
 
 ### Query Params
 
-Required params:
+The query parameters should contain a value for whichever wrapper parameter was listed as `"root-element-name"` on the [commands available](#what-can-i-launch-here) response.
 
-* *`id`* - The unique identifier of the XNAT object on which the container will be launched
+The best practice for these values is to use REST-style identifiers. This means that, instead of using an object's ID as the parameter value (say `XNAT_E00001` for a session) you would use the REST path (`/experiments/XNAT_E00001`). While that isn't strictly necessary for objects like project, subjects, and sessions, it is necessary for scans and resources which do not have globally unique identifiers.
+
+#### Examples
+
+    Request
+        GET /xapi/commands/available
+    Params
+        project: foo
+        xsiType: xnat:imageSessionData
+
+    Response
+        [{..., "wrapper-id": 1, ..., "root-element-name": "a-parameter", ...}]
+
+    Request
+        GET /xapi/projects/foo/wrappers/1/launch
+    Params
+        a-parameter: /experiments/XNAT_E00001
+
+    Request
+        GET /xapi/commands/available
+    Params
+        project: foo
+        xsiType: xnat:imageScanData
+
+    Response
+        [{..., "wrapper-id": 2, ..., "root-element-name": "input-scan", ...}]
+
+    Request
+        GET /xapi/projects/foo/wrappers/2/launch
+    Params
+        input-scan: /experiments/XNAT_E00001/scans/1
 
 ## Backend Processing
 
-The backend will do what I call the "pre-launch". This involves going through all the command and command wrapper inputs, and using the provided XNAT objects' properties to stick values into the inputs.
+The backend will do what I call the "pre-launch". This involves going through all the command and command wrapper inputs, and using the provided XNAT object's properties to stick values into the inputs.
 
 Assumptions:
 
 * If any command wrapper inputs are `required`, and are not one of the "simple" types—string, boolean, number—and we can't derive some value for them given the context we have, then we can return an error.
 * There can be inputs with multiple potential matches. This will not be considered a failure, as the user will have a chance to resolve the ambiguity in the launch UI.
 
-TODO: Expand this section.
+Command resolution is a topic that deserves its own documentation, but that has not yet been written.
 
 ## Response
 
-The response will contain information that the UI can parse and can use to drive the creation of a container launch UI. This object is very vague in my mind right now.
+The object that gets returned has summary information about the container to be launched, and a flattened version of the resolved parent-child input value tree. (There will eventually be a full document about command resolution and the input value tree, but currently there is not.)
 
-* It will probably contain all the same information in the initial "What commands can I launch here?" response.
-* It will also contain information about each parameter that will be used to launch the container. This can include things like:
-    * Name
-    * Description
-    * Value - pre-filled with either a default or a context-specific XNAT object ID
-    * Type - I'm not sure about this. On the backend I track types like string, boolean, number, but also XNAT object types like project, subject, session, scan, etc. I don't know if the UI will find those types useful or not.
+At the top level, the object is pretty simple. But there are several nested object types that can appear; they will each get their own section below.
 
-I have a lot of unanswered questions about this object. Let's use an example command wrapper that has one external input—a session—and two derived inputs—a scan under the session and a resource under the scan.
+    {
+        "command-id": 0,
+        "command-name": "",
+        "command-description": "",
+        "wrapper-id": 0,
+        "wrapper-name": "",
+        "wrapper-description": "",
+        "image-name": "",
+        "image-type": "",  // Currently only "docker"
+        "inputs": {
+            "an input name": LaunchUiInput,
+            "a different input name": LaunchUiInput
+        }
+    }
 
-* There will be a need to signal to the UI "there are multiple potential matches for this parameter, and the user must select one". Using the example, this would be if multiple scans on the session match whatever input matcher was defined on the command wrapper. If multiple scans could possibly be used but only one is allowed, the user will need to pick one.
-* There will be a need to signal that input choices are connected. Selecting a particular option for one input may constrain the options for another input, even to the point of determining the other input down to one unique option. Going back to the example, once the user has selected a scan, then the resource input should only show the resources under that particular scan. The user should not be able to select a resource from any scan other than the one they just selected. And what's more, it may well be that given the choice of a particular scan, only one resource matches the input matcher. That input would be fully determined, the one remaining resource option should be automatically selected, and the user doesn't need to choose any resource at all.
+`LaunchUiInput` contains information about which input is this one's parent (if any) and which are this one's children (if any).
 
-TODO: Detail the structure of the object.
+    {
+        "label": "",
+        "description": "",
+        "advanced": "",
+        "required": "",
+        "parent": "",  // The name of this input's parent input
+        "children": [""],  // The names of this input's children
+        "ui": {
+            "a parent value": LaunchUiInputValuesAndType,
+            "another parent value": LaunchUiInputValuesAndType
+        }
+
+    }
+
+`LaunchUiInputValuesAndType`:
+
+    {
+        "values": ["a value", "another value"]
+        "type": one of "default", "text", "number", "boolean", "select", "hidden", or "static"
+    }
+
+The reason this object is complex is that the relationship between values get a little hairy. For a given input it is not sufficient to list all the possible input values it can take. We have to list those values that are allowed _given that the input's parent takes a particular value_.
+
+Let's go through an example. Consider an input `A` which is a `Session`, and a child input `B` which is a `Scan`. Let's say `A` can take on two different values `/experiments/XNAT_E00001` and `/experiments/XNAT_E00002`. Now what about `B`'s values? In general, `B` might take on different possible values which depend on the value of `A`. So if `A`'s value is `/experiments/XNAT_E00001` then `B` might be `/experiments/XNAT_E00001/scans/1` or `/experiments/XNAT_E00001/scans/2`; if `A`'s value is `/experiments/XNAT_E00002` then `B` can only take the values `/experiments/XNAT_E00002/scans/1` or `/experiments/XNAT_E00002/scans/2`.
+
+We need the list of `LaunchUiInput` objects to express this complex relationship between parent value and child values. We don't want the UI to allow the user to select value `/experiments/XNAT_E00001` for input `A` and `/experiments/XNAT_E00002/scans/1` for input `B`. Those values refer to unrelated objects and aren't valid together. When the user selects a value for `A`, they should see only those values for `B` that are valid given the previous selection.
 
 ## UI
 
-The front end will need to parse through the response and use it to generate a UI that can launch a container.
+The UI parses the object and displays it to the user.
 
-TODO: A lot.
-
-# Launch a Container
+# UI Step 3: Launch a Container
 
 At this stage, the user has filled out a form with all the command's parameters and reviewed them. When the user submits the launch, the UI will POST that form. The backend will use it to launch a container.
 
 ## Request
 
-Something like
+The request to launch the container is identical to what was detailed above. Except that the user doesn't have to memorize all the IDs and parameters, because all that information was given to them step-by-step by the APIs.
 
-    POST /xapi/commands/{id}/wrappers/{id or name}/launch
-    Header: Content-type: application/json
-    Body: {"paramName": "paramValue", ...}
+    Request (one of...)
+        POST /xapi/commands/{id}/wrappers/{id}/launch
+        POST /xapi/wrappers/{id}/launch
+        POST /xapi/projects/{project}/commands/{id}/wrappers/{id}/launch
+        POST /xapi/projects/{project}/wrappers/{id}/launch
+    Headers
+        Content-type: application/json
+    Body
+        {"paramName": "paramValue", ...}
 
-This looks very similar, if not identical, to the launching API that we already have. That would not be optimal, because we would have to re-do all the effort that we did in the "pre-launch" phase. So how is this different? Something to think about.
+This looks very similar to the API to get the launch UI. The difference is that this API uses a `POST` rather than a `GET`. As such, the params can be formatted in JSON in the body of the request, rather than in the query params. (Though, full disclosure, if you don't want to use JSON you can put the param names and values into the query params on this `POST` request instead of in the body. That would make it even more similar to the `GET`.)
 
 ## Backend Processing
 
-At this point we have already done the first part of the as-currently-coded command resolution process: deriving the wrapper inputs from the XNAT objects. That is the "pre-resolution", and it was done in the last section when deriving the launch UI. Now we can accept the user's input and continue with the rest of the resolution: using the submitted values to satisfy the command's inputs, and fill out all the required launch items (command-line string, mounts, mounted files, environment variables, etc.).
-
-The existing code to do this can, I think, stay mostly intact.
+At this point we have already done the initial "pre-resolution" part of command resolution process: deriving the wrapper inputs from the XNAT objects. Now we can accept the user's final input values and continue with the rest of the resolution: using the submitted values to satisfy the command's inputs, and fill out all the required launch items (command-line string, mounts, mounted files, environment variables, etc.).
 
 ## Response
 
-The current REST API for launching a container just returns the container ID. I will continue doing that for now. But I would be open to changing that and returning whatever information the UI wants to display.
+The launch report contains a summary of what was launched and whether the launch was successful. If it was successful, the report contains the ID of the docker container that was launched; if not, it contains the error message that was received from docker or generated inside the container service during the resolution and launch process.
+
+    {
+        "command-id": 0,
+        "wrapper-id": 0,
+        "wrapper-name": "",  // Note that this may be blank if you requested the launch using only the wrapper ID
+        "params": {
+            "some-param-name": "some-param-value"
+        },
+        "status": "success" or "failure",
+        "container-id": "a long hash",  // if "status" is "success"
+        "message": "an error message"  // if "status" is "failure"
+    }
