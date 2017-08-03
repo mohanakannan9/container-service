@@ -6,6 +6,9 @@ Not yet released.
 
 ### Features
 * Change launch report format. Now instead of showing either wrapper ID or command ID + wrapper name (depending on which API you used to launch the container), the launch report always shows wrapper ID and command ID. The IDs are now formatted as integers, not strings.
+* [CS-288][] Project enabled API now returns an object with project enabled boolean, project name, and command enabled boolean.
+
+[CS-288]: https://issues.xnat.org/browse/CS-288
 
 ### Bugfixes
 

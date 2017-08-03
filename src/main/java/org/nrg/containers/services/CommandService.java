@@ -6,6 +6,7 @@ import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.model.command.auto.Command.ConfiguredCommand;
 import org.nrg.containers.model.command.auto.CommandSummaryForContext;
 import org.nrg.containers.model.configuration.CommandConfiguration;
+import org.nrg.containers.model.configuration.ProjectEnabledReport;
 import org.nrg.containers.services.ContainerConfigService.CommandConfigurationException;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.exceptions.NrgRuntimeException;
@@ -67,6 +68,8 @@ public interface CommandService {
     void disableForProject(String project, long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException, NotFoundException;
     boolean isEnabledForProject(String project, long wrapperId) throws NotFoundException;
     boolean isEnabledForProject(String project, long commandId, String wrapperName) throws NotFoundException;
+    ProjectEnabledReport isEnabledForProjectAsReport(String project, long wrapperId) throws NotFoundException;
+    ProjectEnabledReport isEnabledForProjectAsReport(String project, long commandId, String wrapperName) throws NotFoundException;
 
     List<CommandSummaryForContext> available(String project,
                                              String xsiType,

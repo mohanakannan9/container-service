@@ -10,6 +10,7 @@ import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.configuration.CommandConfiguration;
+import org.nrg.containers.model.configuration.ProjectEnabledReport;
 import org.nrg.containers.model.settings.ContainerServiceSettings;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerConfigService;
@@ -315,28 +316,27 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/enabled"}, method = GET)
-    @ResponseBody
-    public Boolean isConfigurationEnabled(final @PathVariable String project,
-                                          final @PathVariable long commandId,
-                                          final @PathVariable String wrapperName)
+    public ResponseEntity<ProjectEnabledReport> isConfigurationEnabled(final @PathVariable String project,
+                                                                       final @PathVariable long commandId,
+                                                                       final @PathVariable String wrapperName)
             throws CommandConfigurationException, NotFoundException {
         final HttpStatus status = canReadProjectOrAdmin(project);
         if (status != null) {
-            return false;
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
-        return commandService.isEnabledForProject(project, commandId, wrapperName);
+        return ResponseEntity.ok(commandService.isEnabledForProjectAsReport(project, commandId, wrapperName));
     }
 
     @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/enabled"}, method = GET)
     @ResponseBody
-    public Boolean isConfigurationEnabled(final @PathVariable String project,
-                                          final @PathVariable long wrapperId)
+    public ResponseEntity<ProjectEnabledReport> isConfigurationEnabled(final @PathVariable String project,
+                                                                       final @PathVariable long wrapperId)
             throws CommandConfigurationException, NotFoundException {
         final HttpStatus status = canReadProjectOrAdmin(project);
         if (status != null) {
-            return false;
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
-        return commandService.isEnabledForProject(project, wrapperId);
+        return ResponseEntity.ok(commandService.isEnabledForProjectAsReport(project, wrapperId));
     }
 
     @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/enabled"}, method = PUT)
