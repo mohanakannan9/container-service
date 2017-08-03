@@ -1428,7 +1428,7 @@ var XNAT = getObject(XNAT || {});
             .th({ addClass: 'left', html: '<b>XNAT Command Label</b>' })
             .th('<b>Container</b>')
             .th('<b>Enabled</b>')
-            .th('<b>Actions</b>');
+            .th({ width: 150, html: '<b>Actions</b>' });
 
         function viewLink(item, wrapper, text){
             return spawn('a.link|href=#!', {
@@ -1445,7 +1445,7 @@ var XNAT = getObject(XNAT || {});
                     e.preventDefault();
                     configDefinition.dialog(item.id, wrapper.name, false);
                 }
-            }, 'View Command Configuration');
+            }, 'View');
         }
 
         function enabledCheckbox(command,wrapper){
@@ -1454,7 +1454,7 @@ var XNAT = getObject(XNAT || {});
                 $('#wrapper-'+wrapper.id+'-enable').prop('checked',enabled);
             });
 
-            var ckbox = spawn('input.config-enabled', {
+            var ckbox = spawn('input.config-enabled.wrapper-enable', {
                 type: 'checkbox',
                 checked: false,
                 value: 'true',
@@ -1472,17 +1472,48 @@ var XNAT = getObject(XNAT || {});
                             var status = (enabled ? ' enabled' : ' disabled');
                             checkbox.value = enabled;
                             XNAT.ui.banner.top(1000, '<b>' + wrapper.name+ '</b> ' + status, 'success');
-                            console.log(wrapper.name + status)
                         },
                         fail: function(e){
                             errorHandler(e);
                         }
                     });
+
+                    commandConfigManager.setMasterEnableSwitch();
                 }
             });
 
             return spawn('div.center', [
                 spawn('label.switchbox|title=' + wrapper.name, [
+                    ckbox,
+                    ['span.switchbox-outer', [['span.switchbox-inner']]]
+                ])
+            ]);
+        }
+
+        function masterCommandCheckbox(){
+
+            var ckbox = spawn('input.config-enabled', {
+                type: 'checkbox',
+                checked: false,
+                value: 'true',
+                id: 'wrapper-all-enable',
+                onchange: function(){
+                    // save the status when clicked
+                    var checkbox = this;
+                    enabled = checkbox.checked;
+                    var enabledFlag = (enabled) ? 'enabled' : 'disabled';
+
+                    // iterate through each command toggle and set it to 'enabled' or 'disabled' depending on the user's click
+                    $('.wrapper-enable').each(function(){
+                        var status = ($(this).is(':checked')) ? 'enabled' : 'disabled';
+                        if (status !== enabledFlag) $(this).click();
+                    });
+                    XNAT.ui.banner.top(2000, 'All commands <b>'+enabledFlag+'</b>.', 'success');
+                }
+            });
+
+            return spawn('div.center', [
+                spawn('label.switchbox|title=enable-all', [
                     ckbox,
                     ['span.switchbox-outer', [['span.switchbox-inner']]]
                 ])
@@ -1517,6 +1548,11 @@ var XNAT = getObject(XNAT || {});
             }, 'Delete');
         }
 
+        ccmTable.tr({ 'style': { 'background-color': '#f3f3f3' }})
+            .td({className: 'name', html: 'Enable / Disable All Commands', colSpan: 2 })
+            .td([['div',[masterCommandCheckbox()]]])
+            .td();
+
         commandConfigManager.getAll().done(function(data) {
             if (data) {
                 for (var i = 0, j = data.length; i < j; i++) {
@@ -1529,7 +1565,6 @@ var XNAT = getObject(XNAT || {});
                                 .td([['span.truncate.truncate200', command.image ]])
                                 .td([['div', [enabledCheckbox(command,wrapper)]]])
                                 .td([['div.center', [viewConfigButton(command,wrapper), spacer(10), deleteConfigButton(command,wrapper)]]]);
-
                         }
                     }
                 }
@@ -1543,6 +1578,23 @@ var XNAT = getObject(XNAT || {});
         commandConfigManager.$table = $(ccmTable.table);
 
         return ccmTable.table;
+    };
+
+    // examine all command toggles and set master switch to "ON" if all are checked
+    commandConfigManager.setMasterEnableSwitch = function(){
+        var allEnabled = true;
+        $('.wrapper-enable').each(function(){
+            if (!$(this).is(':checked')) {
+                allEnabled = false;
+                return false;
+            }
+        });
+
+        if (allEnabled) {
+            $('#wrapper-all-enable').prop('checked','checked');
+        } else {
+            $('#wrapper-all-enable').prop('checked',false);
+        }
     };
 
     // auto-save to site-wide opt-in preference on click of the switchbox.
@@ -1576,10 +1628,11 @@ var XNAT = getObject(XNAT || {});
         commandConfigManager.container = $manager;
 
         $manager.append(commandConfigManager.table());
+
+        commandConfigManager.setMasterEnableSwitch();
     };
 
     commandConfigManager.init();
-
 
 
     /* ================================= *
