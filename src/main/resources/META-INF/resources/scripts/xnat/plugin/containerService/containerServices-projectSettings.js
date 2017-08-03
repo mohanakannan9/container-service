@@ -99,7 +99,13 @@ var XNAT = getObject(XNAT || {});
         return csrfUrl('/xapi/commands/'+commandId+'/wrappers/'+wrapperName+'/config' + appended);
     }
 
-    function configEnableUrl(commandId,wrapperName,flag){
+    function sitewideConfigEnableUrl(commandObj,wrapperObj,flag){
+        var command = commandObj.id,
+            wrapperName = wrapperObj.name;
+        return csrfUrl('/xapi/commands/'+command+'/wrappers/'+wrapperName+'/' + flag);
+    }
+
+    function projConfigEnableUrl(commandId,wrapperName,flag){
         if (!commandId || !wrapperName || !flag) return false;
         var projectId = getProjectId();
         return csrfUrl('/xapi/projects/'+projectId+'/commands/'+commandId+'/wrappers/'+wrapperName+'/' + flag);
@@ -145,7 +151,7 @@ var XNAT = getObject(XNAT || {});
     projCommandConfigManager.getEnabledStatus = function(command,wrapper,callback){
         callback = isFunction(callback) ? callback : function(){};
         return XNAT.xhr.get({
-            url: configEnableUrl(command.id,wrapper.name,'enabled'),
+            url: projConfigEnableUrl(command.id,wrapper.name,'enabled'),
             success: function(data){
                 if (data) {
                     return data;
@@ -167,12 +173,13 @@ var XNAT = getObject(XNAT || {});
             data: paramToPut,
             dataType: 'json',
             success: function(){
-                XNAT.ui.banner.top(1000, '<b>Success: </b> Site-wide Command Opt-in Setting set to <b>' + optIn + '</b>.', 'success');
+                XNAT.ui.banner.top(1000, 'Site-wide Command Opt-in Setting set to <b>' + optIn + '</b>.', 'success');
+                if (optIn) projCommandConfigManager.importSiteWideEnabledStatus();
             },
             fail: function(e){
                 xmodal.alert({title: 'Error', content: e.statusText });
             }
-        })
+        });
     });
 
 
@@ -412,7 +419,7 @@ var XNAT = getObject(XNAT || {});
                     e.preventDefault();
                     projConfigDefinition.dialog(command.id, wrapper.name, false);
                 }
-            }, 'View Command Configuration');
+            }, 'Set Input Defaults');
         }
 
         function enabledCheckbox(command,wrapper){
@@ -427,7 +434,7 @@ var XNAT = getObject(XNAT || {});
                 checked: false,
                 value: 'true',
                 id: 'wrapper-'+wrapper.id+'-enable',
-                data: { name: wrapper.name },
+                data: { wrappername: wrapper.name, commandid: command.id },
                 onchange: function(){
                     // save the status when clicked
                     var checkbox = this;
@@ -435,7 +442,7 @@ var XNAT = getObject(XNAT || {});
                     var enabledFlag = (enabled) ? 'enabled' : 'disabled';
 
                     XNAT.xhr.put({
-                        url: configEnableUrl(command.id,wrapper.name,enabledFlag),
+                        url: projConfigEnableUrl(command.id,wrapper.name,enabledFlag),
                         success: function(){
                             var status = (enabled ? ' enabled' : ' disabled');
                             checkbox.value = enabled;
@@ -529,6 +536,28 @@ var XNAT = getObject(XNAT || {});
         } else {
             $('#wrapper-all-enable').prop('checked',false);
         }
+    };
+
+    projCommandConfigManager.importSiteWideEnabledStatus = function(){
+        $('.wrapper-enable').each(function(){
+            // check current status and site-wide setting, then reconcile differences.
+            // For now, do not disable a command in the project if it is not enabled in the site
+
+            var $toggle = $(this),
+                projStatus = ($toggle.is(':checked')) ? 'enabled' : 'disabled';
+            XNAT.xhr.getJSON({
+                url: sitewideConfigEnableUrl({ id: $toggle.data('commandid')} , { name: $toggle.data('wrappername') }, 'enabled'),
+                success: function(status){
+                    if (projStatus === 'disabled' && status) {
+                        $toggle.click();
+                        projCommandConfigManager.setMasterEnableSwitch();
+                    }
+                },
+                fail: function(e){
+                    errorHandler(e, 'Could not import site-wide setting for '+$(this).data('wrappername'));
+                }
+            })
+        });
     };
 
     projCommandConfigManager.init = function(container){
