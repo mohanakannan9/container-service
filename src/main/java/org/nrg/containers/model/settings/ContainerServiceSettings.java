@@ -4,9 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
-import org.nrg.containers.services.impl.ContainerConfigServiceImpl;
-
-import javax.annotation.Nullable;
+import org.nrg.containers.services.ContainerConfigService;
 
 @AutoValue
 @JsonInclude(JsonInclude.Include.ALWAYS)
@@ -14,14 +12,12 @@ public abstract class ContainerServiceSettings {
 
     @JsonProperty("optInToSiteCommands") public abstract Boolean optInToSiteCommands();
 
-    @Nullable
-    @JsonProperty("allCommandsEnabled") public abstract Boolean allCommandsEnabled();
-
     @JsonCreator
-    public static ContainerServiceSettings create(@JsonProperty("optInToSiteCommands") final Boolean optInToSiteCommands,
-                                                  @JsonProperty("allCommandsEnabled") final Boolean allCommandsEnabled) {
+    public static ContainerServiceSettings create(@JsonProperty("optInToSiteCommands") final Boolean optInToSiteCommands) {
         return new AutoValue_ContainerServiceSettings(
-                optInToSiteCommands == null ? ContainerConfigServiceImpl.OPT_IN_DEFAULT_VALUE : optInToSiteCommands,
-                allCommandsEnabled);
+                optInToSiteCommands == null ?
+                        ContainerConfigService.OPT_IN_DEFAULT_VALUE :
+                        optInToSiteCommands
+        );
     }
 }

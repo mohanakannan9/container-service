@@ -6,6 +6,10 @@ import org.nrg.containers.model.settings.ContainerServiceSettings;
 
 public interface ContainerConfigService {
     String TOOL_ID = "container-service";
+    String DEFAULT_DOCKER_HUB_PATH = "default-docker-hub-id";
+    String WRAPPER_CONFIG_PATH_TEMPLATE = "wrapper-%d";
+    String OPT_IN_PATH = "opt-in-to-site-commands";
+    boolean OPT_IN_DEFAULT_VALUE = false;
 
     long getDefaultDockerHubId();
     void setDefaultDockerHubId(long hubId, String username, String reason);
@@ -39,15 +43,6 @@ public interface ContainerConfigService {
     void optInToSiteCommands(String project, String username, String reason) throws ConfigServiceException;
     void optOutOfSiteCommands(String project, String username, String reason) throws ConfigServiceException;
     void deleteOptInToSiteCommandsSetting(String project, String username, String reason) throws ConfigServiceException;
-
-    Boolean getAllEnabled();
-    void enableAll(String username, String reason) throws ConfigServiceException;
-    void disableAll(String username, String reason) throws ConfigServiceException;
-    void deleteAllEnabledSetting(String username, String reason) throws ConfigServiceException;
-    Boolean getAllEnabled(String project);
-    void enableAll(String project, String username, String reason) throws ConfigServiceException;
-    void disableAll(String project, String username, String reason) throws ConfigServiceException;
-    void deleteAllEnabledSetting(String project, String username, String reason) throws ConfigServiceException;
 
     class CommandConfigurationException extends Exception {
         public CommandConfigurationException(final String message, final Throwable e) {
