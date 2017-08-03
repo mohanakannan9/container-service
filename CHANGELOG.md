@@ -13,9 +13,9 @@ Not yet released.
 ### Bugfixes
 
 * [CS-289][] Mounting a session no longer mounts the project
+* Mark command and wrapper descriptions in LaunchUi as Nullable. This prevents a potential bug that I haven't yet seen.
 
 [CS-289]: https://issues.xnat.org/browse/CS-289
-
 
 ## 1.0
 

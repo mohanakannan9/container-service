@@ -233,7 +233,7 @@ public abstract class LaunchUi {
         @JsonProperty("advanced") public abstract Boolean advanced();
         @JsonProperty("required") public abstract Boolean required();
         @Nullable @JsonProperty("parent") public abstract String parent();
-        @Nullable @JsonProperty("children") public abstract ImmutableList<String> children();
+        @JsonProperty("children") public abstract ImmutableList<String> children();
         @JsonProperty("ui") public abstract ImmutableMap<String, LaunchUiInputValuesAndType> ui();
 
         public static Builder builder() {
