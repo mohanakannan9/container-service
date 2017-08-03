@@ -20,3 +20,13 @@
     display: inline-block;
     width: 30%;
 }
+
+/* enhancement to core XNAT switchbox style. Will be committed back into core code. */
+label.switchbox.disabled {
+    cursor: not-allowed;
+}
+label.switchbox.disabled > input + .switchbox-outer {
+    background: #f3f3f3;
+    border-color: #d3d3d3;
+    box-shadow: none;
+}

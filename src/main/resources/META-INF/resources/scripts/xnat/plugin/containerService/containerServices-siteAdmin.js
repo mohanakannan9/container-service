@@ -1430,6 +1430,12 @@ var XNAT = getObject(XNAT || {});
             .th('<b>Enabled</b>')
             .th({ width: 150, html: '<b>Actions</b>' });
 
+        // add master switch
+        ccmTable.tr({ 'style': { 'background-color': '#f3f3f3' }})
+            .td({className: 'name', html: 'Enable / Disable All Commands', colSpan: 2 })
+            .td([['div',[masterCommandCheckbox()]]])
+            .td();
+
         function viewLink(item, wrapper, text){
             return spawn('a.link|href=#!', {
                 onclick: function(e){
@@ -1452,6 +1458,7 @@ var XNAT = getObject(XNAT || {});
             commandConfigManager.getEnabledStatus(command,wrapper).done(function(data){
                 var enabled = data;
                 $('#wrapper-'+wrapper.id+'-enable').prop('checked',enabled);
+                commandConfigManager.setMasterEnableSwitch();
             });
 
             var ckbox = spawn('input.config-enabled.wrapper-enable', {
@@ -1548,11 +1555,6 @@ var XNAT = getObject(XNAT || {});
             }, 'Delete');
         }
 
-        ccmTable.tr({ 'style': { 'background-color': '#f3f3f3' }})
-            .td({className: 'name', html: 'Enable / Disable All Commands', colSpan: 2 })
-            .td([['div',[masterCommandCheckbox()]]])
-            .td();
-
         commandConfigManager.getAll().done(function(data) {
             if (data) {
                 for (var i = 0, j = data.length; i < j; i++) {
@@ -1620,6 +1622,7 @@ var XNAT = getObject(XNAT || {});
 
         $manager.html('');
         $manager.append(commandConfigManager.table());
+        commandConfigManager.setMasterEnableSwitch();
     };
 
     commandConfigManager.init = function(container){
@@ -1628,12 +1631,9 @@ var XNAT = getObject(XNAT || {});
         commandConfigManager.container = $manager;
 
         $manager.append(commandConfigManager.table());
-
-        commandConfigManager.setMasterEnableSwitch();
     };
 
     commandConfigManager.init();
-
 
     /* ================================= *
      * Command Automation Administration *
