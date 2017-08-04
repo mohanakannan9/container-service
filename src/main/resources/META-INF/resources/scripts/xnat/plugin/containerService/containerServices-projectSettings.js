@@ -424,8 +424,17 @@ var XNAT = getObject(XNAT || {});
 
         function enabledCheckbox(command,wrapper){
             projCommandConfigManager.getEnabledStatus(command,wrapper).done(function(data){
-                var enabled = data;
+                var enabled = data['enabled-for-site'] && data['enabled-for-project'];
                 $('#wrapper-'+wrapper.id+'-enable').prop('checked',enabled);
+
+                if (data['enabled-for-site'] === false) {
+                    // if a command has been disabled at the site-wide level, don't allow user to toggle it.
+                    // disable the input, and add a 'disabled' class to the input controller
+                    // or, remove the input and controller entirely.  
+                    $('#wrapper-'+wrapper.id+'-enable').prop('disabled','disabled')
+                        .parents('.switchbox').addClass('disabled').hide()
+                        .parent('div').html(spawn('span',{ 'style': { 'color': '#808080' }},'disabled'));
+                }
                 projCommandConfigManager.setMasterEnableSwitch();
             });
 
