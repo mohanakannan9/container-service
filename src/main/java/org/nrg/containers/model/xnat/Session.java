@@ -17,6 +17,7 @@ import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata.UnknownPrimaryProjectException;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.AssessedURII;
@@ -73,12 +74,9 @@ public class Session extends XnatModelObject {
         this.xsiType = xnatImagesessiondataI.getXSIType();
         this.projectId = xnatImagesessiondataI.getProject();
 
-        this.directory = null;
         try {
-            this.directory = XnatImagesessiondata.class.isAssignableFrom(xnatImagesessiondataI.getClass()) ?
-                    ((XnatImagesessiondata) xnatImagesessiondataI).getArchivePath(rootArchivePath) :
-                    null;
-        } catch (UnknownPrimaryProjectException e) {
+            this.directory = ((XnatExperimentdata) xnatImagesessiondataI).getCurrentSessionFolder(true);
+        } catch (UnknownPrimaryProjectException | InvalidArchiveStructure e) {
             // ignored, I guess?
         }
 

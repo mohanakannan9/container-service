@@ -12,6 +12,10 @@ Not yet released.
 
 ### Bugfixes
 
+* [CS-289][] Mounting a session no longer mounts the project
+
+[CS-289]: https://issues.xnat.org/browse/CS-289
+
 
 ## 1.0
 

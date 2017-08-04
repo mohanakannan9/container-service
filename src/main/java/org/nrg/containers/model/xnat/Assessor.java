@@ -9,10 +9,12 @@ import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatImageassessordataI;
+import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImageassessordata;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata.UnknownPrimaryProjectException;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.AssessorURII;
@@ -56,10 +58,11 @@ public class Assessor extends XnatModelObject {
         this.xsiType = xnatImageassessordataI.getXSIType();
         this.directory = null;
         try {
-            this.directory = XnatImageassessordata.class.isAssignableFrom(xnatImageassessordataI.getClass()) ?
-                    ((XnatImageassessordata) xnatImageassessordataI).getArchiveRootPath() :
-                    null;
-        } catch (UnknownPrimaryProjectException e) {
+            // TODO
+            // I don't know if this will return the correct directory for the assessor,
+            // or if it will give us the directory of the parent session
+            this.directory = ((XnatImageassessordata) xnatImageassessordataI).getCurrentArchiveFolder();
+        } catch (UnknownPrimaryProjectException | InvalidArchiveStructure e) {
             // ignored, I guess?
         }
 
