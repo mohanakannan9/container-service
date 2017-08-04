@@ -6,12 +6,10 @@ Not yet released.
 
 ### Features
 
-* Integrated UI container launcher controls with the [Selectable Table plugin](https://bitbucket.org/xnatdev/selectable-table-plugin) to allow users to run containers on individual scans or multiple selected scans in bulk. 
-
-* Added master controls in the Admin UI and Project Settings UI to enable and disable all available commands for individual projects and at the site-wide level. 
+* Integrated UI container launcher controls with the [Selectable Table plugin](https://bitbucket.org/xnatdev/selectable-table-plugin) to allow users to run containers on individual scans or multiple selected scans in bulk.
+* Added master controls in the Admin UI and Project Settings UI to enable and disable all available commands for individual projects and at the site-wide level.
 * [CS-286][] Remove unused enable-all/disable-all APIs
 * [CS-288][] Project enabled API now returns an object with project enabled boolean, project name, and command enabled boolean.
-
 * Change launch report format. Now instead of showing either wrapper ID or command ID + wrapper name (depending on which API you used to launch the container), the launch report always shows wrapper ID and command ID. The IDs are now formatted as integers, not strings.
 
 [CS-286]: https://issues.xnat.org/browse/CS-286
