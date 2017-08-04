@@ -148,11 +148,11 @@ If you want XNAT to execute your docker image, you will need a Command. The Comm
     - **mount** - The name of a mount, which must be defined in this command and must have type "output", into which your container wrote whatever file(s) you intend to upload.
     - **path** - The relative path within a mount at which output files can be found. Value can be templatized with input replacement keys.
     - **glob** - A glob-style matcher for the files to upload. If `"glob"` is blank, then all files found at relative path `"path"` within the mount will be uploaded.
-- **xnat** - A list of [XNAT Command Wrappers](#xnat-command-wrapper), in which you can define how to pull files and properties from XNAT objects into your containers, and upload the containers' outputs back. See the [XNAT Command Wrappers](#xnat-command-wrapper) section below for more.
+- **xnat** - A list of XNAT Command Wrappers, or just "Wrappers" for short, in which you can define how to pull files and properties from XNAT objects into your containers, and upload the containers' outputs back.
     - **name** - A user-friendly name. Example: "dcm2niix on a scan".
     - **description** - A longer description of what this command wrapper does: What XNAT object(s) does it take as inputs? How does it use those to fill the command's inputs? Where does it upload the command's outputs?
     - **contexts** - A list of [XNAT data types](https://wiki.xnat.org/display/XNAT17/Understanding+the+XNAT+Data+Model) on which this command wrapper can be run. If none are provided, the list of contexts is populated from the data types of the external inputs.
-    - **external-inputs** - A List of Inputs to the Command Wrapper that will come in when a launch is requested. See [XNAT Inputs](#xnat-inputs) for more.
+    - **external-inputs** - A List of Inputs to the Command Wrapper that will come in when a launch is requested. See [Wrapper Inputs](#wrapper-inputs) for more.
         - **name**
         - **description**
         - **type** - One of the basic types (string, boolean, number, file) or the XNAT object types (Project, Subject, Session, Scan, Assessor, Resource, Config). See the section on [input types](#input-types) below for more.
@@ -162,23 +162,23 @@ If you want XNAT to execute your docker image, you will need a Command. The Comm
         - **replacement-key** - A shorthand way to refer to this input's value elsewhere in the command. Default: the input's name bracketed by "#"; e.g. for an input named "foo" the default replacement-key is "#foo#".
         - **provides-value-for-command-input** - The name of a Command Input, which will receive its value from this input.
         - **provides-files-for-command-mount** - The name of a Command Mount, which will receive files from this input.
-    - **derived-inputs** - A List of Inputs to the Command Wrapper that will not come in from outside, but instead will be derived from other inputs as parents or children. See [XNAT Inputs](#xnat-inputs) for more.
+    - **derived-inputs** - A List of Inputs to the Command Wrapper that will not come in from outside, but instead will be derived from other inputs as parents or children. See [Wrapper Inputs](#wrapper-inputs) for more.
         - **name**
         - **description**
-        - **type** - One of the basic types (string, boolean, number, file) or the XNAT object types (Project, Subject, Session, Scan, Assessor, Resource, Config). See the section on [input types](#input-types) below for more.
+        - **type** - One of the basic types (string, boolean, number) or the XNAT object types (Project, Subject, Session, Scan, Assessor, Resource, Config, File, File[], Directory). See the section on [input types](#input-types) below for more.
         - **matcher** - A [JSONPath filter](#jsonpath-filters) used to determine if an input value is valid or not. For instance, if the parent input is a `Session`, and this input is a `Scan`, we can make sure that this input only matches scans with a DICOM resource by setting the matcher to `"DICOM" in @.resources[*].label`, or only matches scans of a certain type by setting the matcher to `@.scan-type == "MPRAGE"`.
         - **default-value**
         - **user-settable** - true/false. Should this Input be exposed to users who are launching via a UI? See the section [User-settable or not?](#user-settable-or-not) for the use-cases where one might want to set this to "false".
         - **replacement-key** - A shorthand way to refer to this input's value elsewhere in the command. Default: the input's name bracketed by "#"; e.g. for an input named "foo" the default replacement-key is "#foo#".
         - **provides-value-for-command-input** - The name of a Command Input, which will receive its value from this input.
         - **provides-files-for-command-mount** - The name of a Command Mount, which will receive files from this input.
-        - **derived-from-wrapper-input** - Name of an XNAT input which is a "parent" to this input.
-        - **derived-from-xnat-object-property** - Name of an XNAT input which is a "parent" to this input.
-    - **output-handlers** - A list of [XNAT output handlers](#xnat-output-handling). You use these to instruct the container service how and where to upload your container's outputs.
+        - **derived-from-wrapper-input** - Name of a Wrapper input which is a "parent" to this input. See [Deriving values](#deriving-values).
+        - **derived-from-xnat-object-property** - Property of an XNAT object that will be used for the value of this input. See [Deriving values](#deriving-values).
+    - **output-handlers** - A list of [output handlers](#output-handling). You use these to instruct the container service how and where to upload your container's outputs.
         - **name**
         - **type** - The type of object that will be created in XNAT. Currently only `"Resource"` is accepted.
         - **accepts-command-output** - The name of a [command output](#command-outputs) whose files will be handled.
-        - **as-a-child-of-wrapper-input** - The name of an [XNAT input](#xnat-inputs)—either external or derived—that refers to an XNAT object. The output files will be uploaded as a new child of that object.
+        - **as-a-child-of-wrapper-input** - The name of a [wrapper input](#wrapper-inputs)—either external or derived—that refers to an XNAT object. The output files will be uploaded as a new child of that object.
         - **label** - The label of the new Resource that will be created from these files.
 
 
@@ -196,7 +196,7 @@ A little more detail on the `writable` flag: Mounts that are referenced by [comm
 A mount can be used for both an input and an output. That means the input files will be copied into the directory before launch, and the same directory will be searched for output files upon container completion. If you aren't careful, the input files will be re-uploaded along with the output files. The `output.path` and `output.glob` properties can be carefully crafted to avoid this effect.
 
 ### Getting files into a mount
-Define an [XNAT input](#xnat-inputs) for the kind of object that will provide the files you need. Typically this will be a `Resource`, but that resource input will almost certainly need to be derived from some higher-level input object like a `Session` or a `Scan`. On the input that provides the files, set the mount's name as the value of the `"provides-files-for-command-mount"` property.
+Define a [wrapper input](#wrapper-inputs) for the kind of object that will provide the files you need. Typically this will be a `Resource`, but that resource input will almost certainly need to be derived from some higher-level input object like a `Session` or a `Scan`. On the input that provides the files, set the mount's name as the value of the `"provides-files-for-command-mount"` property.
 
 More info to come.
 
@@ -212,12 +212,77 @@ What information does your container need?
 
 Command Inputs allow you define what information needs to be provided in order to launch your container: files, command-line arguments, environment variables, etc. If you need some bit of information to be variable and set at launch time, it should be a command input.
 
-## XNAT Inputs
+## Wrapper Inputs
 How do you get information from XNAT into your Command's inputs?
 
 At the level of command inputs, it does not necessarily matter where the runtime values come from. They could in principle come from some XNAT object, or from a user's input, or from some other contextual information.
 
 The XNAT inputs—i.e. the `command.xnat.external-inputs` and `command.xnat.derived-inputs` objects—give you a way to tell XNAT how to use XNAT objects—their properties, files, and hierarchical relationships—to provide values to the Command inputs.
+
+### Deriving values
+If you have a `derived` wrapper input, it can derive its value from a parent wrapper input.
+
+Info dump:
+
+* The parent can either be an `external` input or another `derived` input. But it must be an input on the same wrapper, not on the command or a different wrapper.
+* The `type` of the parent input must be one of the XNAT object types: `Project`, `Subject`, `Session`, `Scan`, `Assessor`, or `Resource`.
+* If the `type` of the child input is also an XNAT type, it must obey the usual XNAT hierarchy.
+    * `Project` -> `Subject`
+    * `Subject` -> `Session`
+    * `Session` -> `Scan`
+    * `Session` -> `Assessor`
+    * Any of `Project`, `Subject`, `Session`, `Scan`, or `Assessor` -> `Resource`
+* `Subject` parents cannot have children of type `Directory`. All the other XNAT types can.
+* If the child type is not one of the XNAT types—e.g. `string` or `number`—you can derive the value by specifying the property on the parent object that you want to pull out using the input's `derived-from-xnat-object-property` field. For a list of the properties you can use, see [XNAT object properties](#xnat-object-properties).
+
+### XNAT object properties
+
+A list of all the properties for all the XNAT object types:
+
+* `Project`
+    * `id`
+    * `label`
+    * `xsiType`
+    * `uri`
+    * `directory`
+* `Subject`
+    * `id`
+    * `label`
+    * `xsiType`
+    * `uri`
+    * `project-id`
+* `Session`
+    * `id`
+    * `label`
+    * `xsiType`
+    * `uri`
+    * `directory`
+    * `project-id`
+* `Scan`
+    * `id`
+    * `label`
+    * `xsiType`
+    * `uri`
+    * `directory`
+    * `integer-id`
+    * `scan-type`
+* `Assessor`
+    * `id`
+    * `label`
+    * `xsiType`
+    * `uri`
+    * `directory`
+* `Resource`
+    * `id`
+    * `label`
+    * `xsiType`
+    * `uri`
+    * `directory`
+    * `integer-id`
+
+This initial list is small. There are many more properties that could be added over time.
+
+**Note**: The `uri` property is the REST-style identifier of the object. For instance, a project's URI will be `/projects/{projectId}`, subject's may be `/subjects/{subjectId}` or `/projects/{project}/subjects/{subjectLabel}`, etc.
 
 ## User-settable or not?
 When a user brings up a user interface to launch a container using a Command, they will see some appropriate interface element for each Command input and external XNAT Wrapper input. These interface elements give the user a chance to change the input values before launching the container. If, for some reason, this is not appropriate for a particular input, and users should not be allowed to change the default value, the input can be defined with the property `user-settable=false`. When the user brings up an interface to launch a container, they will see the input and its value but will not be able to change it.
@@ -226,18 +291,26 @@ The more common use-case for this parameter is in XNAT-project-specific settings
 
 ## Input Types
 
-Command input types: string, boolean, number, file, file[]
+Command input types: string, boolean, number
 
-XNAT Wrapper input types: string, boolean, number, file, file[], Project, Subject, Session, Scan, Assessor, Resource, Config
+XNAT Wrapper input types: string, boolean, number, Directory, File, File[], Project, Subject, Session, Scan, Assessor, Resource, Config
 
-More info to come.
+**Note**: Some inputs are possible to make but aren't currently functional.
+
+* `number` inputs should be validated that they are within a range, or that they are in fact numbers and not strings. But currently they are not. They are treated the same as `string` inputs.
+* `Directory`, `File`, and `File[]` inputs are possible to make, but the files the refer to cannot be mounted.
+* `Config` inputs are intended to pull their values from the XNAT Config Service. They currently do not.
+
+**Note** A `Project` input is kind of a bad idea to use on its own. (Probably `Subject` too.) The performance is really very bad. The entire project, all its subjects, all their sessions, all their scans, and all the resources and files on every one of those things all get loaded into memory and stored in an object. It takes a long time!
+
+If you want to use a `Project` input, you should set the property `"load-children"` on the input to `false`. That will prevent the entire project from being loaded. But, on the other hand, it will prevent you from deriving any child inputs from the `Project` input. So only use if you need to derive some property from the `Project` itself.
 
 # Outputs
 
 ## Command Outputs
 If you want your container to produce files that get imported into XNAT, you need to define one or more output objects. You need to define where the files can be found (which output mount they are in, and what is the path within that mount) and where the new to-be-created object will live within XNAT. For the latter, you provide the name of an input, which must be an XNAT object type; the output files will be a new child of that parent input.
 
-## XNAT Output Handling
+## Output Handling
 More info to come.
 
 # Template Strings
