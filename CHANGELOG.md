@@ -5,6 +5,7 @@
 Not yet released.
 
 ### Features
+
 * Change launch report format. Now instead of showing either wrapper ID or command ID + wrapper name (depending on which API you used to launch the container), the launch report always shows wrapper ID and command ID. The IDs are now formatted as integers, not strings.
 * [CS-286][] Remove unused enable-all/disable-all APIs
 * [CS-288][] Project enabled API now returns an object with project enabled boolean, project name, and command enabled boolean.
@@ -14,9 +15,11 @@ Not yet released.
 
 ### Bugfixes
 
+* [CS-282][] (Not actually fixed yet.) The existing (unused) `/container-service/settings` API has been removed. This clears the way for the API to be refactored in the next version.
 * [CS-289][] Mounting a session no longer mounts the project
 * Mark command and wrapper descriptions in LaunchUi as Nullable. This prevents a potential bug that I haven't yet seen.
 
+[CS-282]: https://issues.xnat.org/browse/CS-282
 [CS-289]: https://issues.xnat.org/browse/CS-289
 
 ## 1.0

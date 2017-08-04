@@ -400,11 +400,11 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     /*
     SETTINGS
      */
-    @XapiRequestMapping(value = {"/container-service/settings"}, method = GET)
-    @ResponseBody
-    public ContainerServiceSettings getSettings() {
-        return containerConfigService.getSettings();
-    }
+    // @XapiRequestMapping(value = {"/container-service/settings"}, method = GET)
+    // @ResponseBody
+    // public ContainerServiceSettings getSettings() {
+    //     return containerConfigService.getSettings();
+    // }
 
 
 
