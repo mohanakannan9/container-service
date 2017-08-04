@@ -1,5 +1,5 @@
-<span class="dropdown dropdown-sm data-table-action disabled hidden">
-    <button id="scanTable-run-containers">
+<span class="dropdown dropdown-sm data-table-action disabled hidden" id="scanTable-run-containers">
+    <button>
         <span class="dropdown-label">Run Container</span>
     </button>
     <ul class="dropdown-menu" id="scanActionsMenu"></ul>
