@@ -10,6 +10,7 @@ import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.configuration.CommandConfiguration;
+import org.nrg.containers.model.configuration.ProjectEnabledReport;
 import org.nrg.containers.model.settings.ContainerServiceSettings;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerConfigService;
@@ -315,28 +316,27 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/enabled"}, method = GET)
-    @ResponseBody
-    public Boolean isConfigurationEnabled(final @PathVariable String project,
-                                          final @PathVariable long commandId,
-                                          final @PathVariable String wrapperName)
+    public ResponseEntity<ProjectEnabledReport> isConfigurationEnabled(final @PathVariable String project,
+                                                                       final @PathVariable long commandId,
+                                                                       final @PathVariable String wrapperName)
             throws CommandConfigurationException, NotFoundException {
         final HttpStatus status = canReadProjectOrAdmin(project);
         if (status != null) {
-            return false;
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
-        return commandService.isEnabledForProject(project, commandId, wrapperName);
+        return ResponseEntity.ok(commandService.isEnabledForProjectAsReport(project, commandId, wrapperName));
     }
 
     @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/enabled"}, method = GET)
     @ResponseBody
-    public Boolean isConfigurationEnabled(final @PathVariable String project,
-                                          final @PathVariable long wrapperId)
+    public ResponseEntity<ProjectEnabledReport> isConfigurationEnabled(final @PathVariable String project,
+                                                                       final @PathVariable long wrapperId)
             throws CommandConfigurationException, NotFoundException {
         final HttpStatus status = canReadProjectOrAdmin(project);
         if (status != null) {
-            return false;
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
-        return commandService.isEnabledForProject(project, wrapperId);
+        return ResponseEntity.ok(commandService.isEnabledForProjectAsReport(project, wrapperId));
     }
 
     @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/enabled"}, method = PUT)
@@ -400,114 +400,14 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     /*
     SETTINGS
      */
-    @XapiRequestMapping(value = {"/container-service/settings"}, method = GET)
-    @ResponseBody
-    public ContainerServiceSettings getSettings() {
-        return containerConfigService.getSettings();
-    }
+    // @XapiRequestMapping(value = {"/container-service/settings"}, method = GET)
+    // @ResponseBody
+    // public ContainerServiceSettings getSettings() {
+    //     return containerConfigService.getSettings();
+    // }
 
-    @XapiRequestMapping(value = {"/container-service/settings/all-enabled"}, method = GET)
-    @ResponseBody
-    public Boolean allEnabled()
-            throws ConfigServiceException {
-        final UserI userI = XDAT.getUserDetails();
-        final HttpStatus status = isAdminUser();
-        if (status != null) {
-            return false;
-        }
-        return containerConfigService.getAllEnabled();
-    }
 
-    @XapiRequestMapping(value = {"/container-service/settings/enable-all"}, method = PUT)
-    public ResponseEntity<Void> enableAll(final @RequestParam(required = false) String reason)
-            throws ConfigServiceException {
-        final UserI userI = XDAT.getUserDetails();
-        final HttpStatus status = isAdminUser();
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
-        containerConfigService.enableAll(userI.getLogin(), reason);
-        return ResponseEntity.ok().build();
-    }
 
-    @XapiRequestMapping(value = {"/container-service/settings/disable-all"}, method = PUT)
-    public ResponseEntity<Void> disableAll(final @RequestParam(required = false) String reason)
-            throws ConfigServiceException {
-        final UserI userI = XDAT.getUserDetails();
-        final HttpStatus status = isAdminUser();
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
-        containerConfigService.disableAll(userI.getLogin(), reason);
-        return ResponseEntity.ok().build();
-    }
-
-    @XapiRequestMapping(value = {"/container-service/settings/enable-all",
-                             "/container-service/settings/disable-all"},
-            method = DELETE)
-    public ResponseEntity<Void> deleteAllEnabledSetting(final @RequestParam(required = false) String reason)
-            throws ConfigServiceException {
-        final UserI userI = XDAT.getUserDetails();
-        final HttpStatus status = isAdminUser();
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
-        containerConfigService.deleteAllEnabledSetting(userI.getLogin(), reason);
-        return ResponseEntity.noContent().build();
-    }
-
-    @XapiRequestMapping(value = {"/projects/{project}/container-service/settings/all-enabled"}, method = GET)
-    @ResponseBody
-    public Boolean allEnabled(final @PathVariable String project)
-            throws ConfigServiceException {
-        final UserI userI = XDAT.getUserDetails();
-        final HttpStatus status = canReadProjectOrAdmin(project);
-        if (status != null) {
-            return false;
-        }
-        return containerConfigService.getAllEnabled(project);
-    }
-
-    @XapiRequestMapping(value = {"/projects/{project}/container-service/settings/enable-all"}, method = PUT)
-    public ResponseEntity<Void> enableAll(final @PathVariable String project,
-                                          final @RequestParam(required = false) String reason)
-            throws ConfigServiceException {
-        final UserI userI = XDAT.getUserDetails();
-        final HttpStatus status = isProjectOwnerOrAdmin(project);
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
-        containerConfigService.enableAll(project, userI.getLogin(), reason);
-        return ResponseEntity.ok().build();
-    }
-
-    @XapiRequestMapping(value = {"/projects/{project}/container-service/settings/disable-all"}, method = PUT)
-    public ResponseEntity<Void> disableAll(final @PathVariable String project,
-                                           final @RequestParam(required = false) String reason)
-            throws ConfigServiceException {
-        final UserI userI = XDAT.getUserDetails();
-        final HttpStatus status = isProjectOwnerOrAdmin(project);
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
-        containerConfigService.disableAll(project, userI.getLogin(), reason);
-        return ResponseEntity.ok().build();
-    }
-
-    @XapiRequestMapping(value = {"/projects/{project}/container-service/settings/enable-all",
-                             "/projects/{project}/container-service/settings/disable-all"},
-            method = DELETE)
-    public ResponseEntity<Void> deleteAllEnabledSetting(final @PathVariable String project,
-                                                        final @RequestParam(required = false) String reason)
-            throws ConfigServiceException {
-        final UserI userI = XDAT.getUserDetails();
-        final HttpStatus status = isProjectOwnerOrAdmin(project);
-        if (status != null) {
-            return new ResponseEntity<>(status);
-        }
-        containerConfigService.deleteAllEnabledSetting(project, userI.getLogin(), reason);
-        return ResponseEntity.noContent().build();
-    }
 
     // all above but for projects
 

@@ -17,6 +17,7 @@ import org.nrg.containers.model.command.entity.CommandWrapperEntity;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.model.configuration.CommandConfigurationInternal;
+import org.nrg.containers.model.configuration.ProjectEnabledReport;
 import org.nrg.containers.services.CommandEntityService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerConfigService;
@@ -418,6 +419,20 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     @Override
     public boolean isEnabledForProject(final String project, final long commandId, final String wrapperName) throws NotFoundException {
         return containerConfigService.isEnabledForProject(project, getWrapperId(commandId, wrapperName));
+    }
+
+    @Override
+    public ProjectEnabledReport isEnabledForProjectAsReport(final String project, final long wrapperId) throws NotFoundException {
+        final boolean isEnabledForSite = isEnabledForSite(wrapperId);
+        final boolean isEnabledForProject = isEnabledForProject(project, wrapperId);
+        return ProjectEnabledReport.create(isEnabledForSite, isEnabledForProject, project);
+    }
+
+    @Override
+    public ProjectEnabledReport isEnabledForProjectAsReport(final String project, final long commandId, final String wrapperName) throws NotFoundException {
+        final boolean isEnabledForSite = isEnabledForSite(commandId, wrapperName);
+        final boolean isEnabledForProject = isEnabledForProject(project, commandId, wrapperName);
+        return ProjectEnabledReport.create(isEnabledForSite, isEnabledForProject, project);
     }
 
     @Override

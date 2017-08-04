@@ -443,21 +443,21 @@ public class LaunchRestApi extends AbstractXapiRestController {
                                     containerService.resolveCommandAndLaunchContainer(project, wrapperId, allRequestParams, userI) :
                                     containerService.resolveCommandAndLaunchContainer(project, commandId, wrapperName, allRequestParams, userI));
             if (log.isInfoEnabled()) {
-                log.info("Launched command {}, wrapper {}. Produced container {}.", commandId, wrapperName,
+                log.info("Launched command {}, wrapper {} {}. Produced container {}.", commandId, wrapperId, wrapperName,
                         container != null ? container.databaseId() : null);
                 if (log.isDebugEnabled()) {
                     log.debug(container != null ? container.toString() : "Container execution object is null.");
                 }
             }
-            final String containerId = (container == null || container.containerId() == null) ? "null" : container.containerId();
-            return LaunchReport.Success.create(allRequestParams, containerId, commandId, wrapperId, wrapperName);
+
+            return LaunchReport.Success.create(container);
         } catch (Throwable t) {
             if (log.isInfoEnabled()) {
                 log.error("Launch failed for command wrapper name {}.", wrapperName);
                 log.error(mapLogString("Params: ", allRequestParams));
                 log.error("Exception: ", t);
             }
-            return LaunchReport.Failure.create(allRequestParams, t.getMessage(), commandId, wrapperId, wrapperName);
+            return LaunchReport.Failure.create(t.getMessage(), allRequestParams, commandId, wrapperId);
         }
     }
 

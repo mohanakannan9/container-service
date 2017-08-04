@@ -23,12 +23,12 @@ import java.util.List;
 import java.util.Map;
 
 public abstract class LaunchUi {
-    @JsonProperty("command-id") public abstract long commandId();
+    @JsonProperty("command-id") public abstract Long commandId();
     @JsonProperty("command-name") public abstract String commandName();
-    @JsonProperty("command-description") public abstract String commandDescription();
-    @JsonProperty("wrapper-id") public abstract long wrapperId();
+    @Nullable @JsonProperty("command-description") public abstract String commandDescription();
+    @JsonProperty("wrapper-id") public abstract Long wrapperId();
     @JsonProperty("wrapper-name") public abstract String wrapperName();
-    @JsonProperty("wrapper-description") public abstract String wrapperDescription();
+    @Nullable @JsonProperty("wrapper-description") public abstract String wrapperDescription();
     @JsonProperty("image-name") public abstract String imageName();
     @JsonProperty("image-type") public abstract String imageType();
 
@@ -38,7 +38,7 @@ public abstract class LaunchUi {
         @JsonProperty("inputs") public abstract ImmutableMap<String, LaunchUiInput> inputs();
 
         public static SingleLaunchUi create(final PartiallyResolvedCommand partiallyResolvedCommand,
-                                      final CommandConfiguration commandConfiguration) {
+                                            final CommandConfiguration commandConfiguration) {
             return builder()
                     .commandId(partiallyResolvedCommand.commandId())
                     .commandName(partiallyResolvedCommand.commandName())
@@ -59,15 +59,15 @@ public abstract class LaunchUi {
         @AutoValue.Builder
         public static abstract class Builder {
 
-            public abstract Builder commandId(final long commandId);
-            public abstract Builder commandName(final String commandName);
-            public abstract Builder commandDescription(final String commandDescription);
-            public abstract Builder wrapperId(final long wrapperId);
-            public abstract Builder wrapperName(final String wrapperName);
-            public abstract Builder wrapperDescription(final String wrapperDescription);
-            public abstract Builder imageName(final String imageName);
-            public abstract Builder imageType(final String imageType);
-            public abstract Builder inputs(final Map<String, LaunchUiInput> inputs);
+            public abstract Builder commandId(Long commandId);
+            public abstract Builder commandName(String commandName);
+            public abstract Builder commandDescription(String commandDescription);
+            public abstract Builder wrapperId(Long wrapperId);
+            public abstract Builder wrapperName(String wrapperName);
+            public abstract Builder wrapperDescription(String wrapperDescription);
+            public abstract Builder imageName(String imageName);
+            public abstract Builder imageType(String imageType);
+            public abstract Builder inputs(Map<String, LaunchUiInput> inputs);
             abstract ImmutableMap.Builder<String, LaunchUiInput> inputsBuilder();
             public Builder addInputsFromInputTrees(final PartiallyResolvedCommand partiallyResolvedCommand,
                                                    final CommandConfiguration commandConfiguration) {
@@ -111,15 +111,15 @@ public abstract class LaunchUi {
         @AutoValue.Builder
         public static abstract class Builder {
 
-            public abstract Builder commandId(final long commandId);
-            public abstract Builder commandName(final String commandName);
-            public abstract Builder commandDescription(final String commandDescription);
-            public abstract Builder wrapperId(final long wrapperId);
-            public abstract Builder wrapperName(final String wrapperName);
-            public abstract Builder wrapperDescription(final String wrapperDescription);
-            public abstract Builder imageName(final String imageName);
-            public abstract Builder imageType(final String imageType);
-            public abstract Builder inputs(final List<ImmutableMap<String, LaunchUiInput>> inputs);
+            public abstract Builder commandId(Long commandId);
+            public abstract Builder commandName(String commandName);
+            public abstract Builder commandDescription(String commandDescription);
+            public abstract Builder wrapperId(Long wrapperId);
+            public abstract Builder wrapperName(String wrapperName);
+            public abstract Builder wrapperDescription(String wrapperDescription);
+            public abstract Builder imageName(String imageName);
+            public abstract Builder imageType(String imageType);
+            public abstract Builder inputs(List<ImmutableMap<String, LaunchUiInput>> inputs);
             abstract ImmutableList.Builder<ImmutableMap<String, LaunchUiInput>> inputsBuilder();
             public Builder addInputsFromInputTrees(final PartiallyResolvedCommand partiallyResolvedCommand,
                                                    final CommandConfiguration commandConfiguration) {
@@ -232,8 +232,8 @@ public abstract class LaunchUi {
         @Nullable @JsonProperty("description") public abstract String description();
         @JsonProperty("advanced") public abstract Boolean advanced();
         @JsonProperty("required") public abstract Boolean required();
-        @JsonProperty("parent") @Nullable public abstract String parent();
-        @JsonProperty("children") @Nullable public abstract ImmutableList<String> children();
+        @Nullable @JsonProperty("parent") public abstract String parent();
+        @JsonProperty("children") public abstract ImmutableList<String> children();
         @JsonProperty("ui") public abstract ImmutableMap<String, LaunchUiInputValuesAndType> ui();
 
         public static Builder builder() {

@@ -19,7 +19,6 @@ import org.nrg.containers.model.configuration.CommandConfiguration;
 import org.nrg.containers.model.configuration.CommandConfigurationInternal;
 import org.nrg.containers.services.CommandEntityService;
 import org.nrg.containers.services.ContainerConfigService;
-import org.nrg.containers.services.impl.ContainerConfigServiceImpl;
 import org.nrg.framework.constants.Scope;
 import org.nrg.xdat.security.services.RoleServiceI;
 import org.nrg.xdat.security.services.UserManagementServiceI;
@@ -158,7 +157,7 @@ public class CommandConfigurationRestApiTest {
         // mockConfigDisabled = mock(Configuration.class);
         // when(mockConfigDisabled.getContents()).thenReturn(commandConfigurationInternalDisabledJson);
 
-        configPath = String.format(ContainerConfigServiceImpl.WRAPPER_CONFIG_PATH_TEMPLATE, wrapperId);
+        configPath = String.format(ContainerConfigService.WRAPPER_CONFIG_PATH_TEMPLATE, wrapperId);
 
         // REST paths
         final String siteConfigRestPathTemplate = "/commands/%d/wrappers/%s/config";

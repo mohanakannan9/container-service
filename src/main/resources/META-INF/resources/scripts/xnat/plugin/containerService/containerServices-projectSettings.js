@@ -99,7 +99,13 @@ var XNAT = getObject(XNAT || {});
         return csrfUrl('/xapi/commands/'+commandId+'/wrappers/'+wrapperName+'/config' + appended);
     }
 
-    function configEnableUrl(commandId,wrapperName,flag){
+    function sitewideConfigEnableUrl(commandObj,wrapperObj,flag){
+        var command = commandObj.id,
+            wrapperName = wrapperObj.name;
+        return csrfUrl('/xapi/commands/'+command+'/wrappers/'+wrapperName+'/' + flag);
+    }
+
+    function projConfigEnableUrl(commandId,wrapperName,flag){
         if (!commandId || !wrapperName || !flag) return false;
         var projectId = getProjectId();
         return csrfUrl('/xapi/projects/'+projectId+'/commands/'+commandId+'/wrappers/'+wrapperName+'/' + flag);
@@ -145,7 +151,7 @@ var XNAT = getObject(XNAT || {});
     projCommandConfigManager.getEnabledStatus = function(command,wrapper,callback){
         callback = isFunction(callback) ? callback : function(){};
         return XNAT.xhr.get({
-            url: configEnableUrl(command.id,wrapper.name,'enabled'),
+            url: projConfigEnableUrl(command.id,wrapper.name,'enabled'),
             success: function(data){
                 if (data) {
                     return data;
@@ -167,19 +173,20 @@ var XNAT = getObject(XNAT || {});
             data: paramToPut,
             dataType: 'json',
             success: function(){
-                XNAT.ui.banner.top(1000, '<b>Success: </b> Site-wide Command Opt-in Setting set to <b>' + optIn + '</b>.', 'success');
+                XNAT.ui.banner.top(1000, 'Site-wide Command Opt-in Setting set to <b>' + optIn + '</b>.', 'success');
+                if (optIn) projCommandConfigManager.importSiteWideEnabledStatus();
             },
             fail: function(e){
                 xmodal.alert({title: 'Error', content: e.statusText });
             }
-        })
+        });
     });
 
 
     projConfigDefinition.table = function(config) {
 
         // initialize the table - we'll add to it below
-        var chTable = XNAT.table({
+        var pcdTable = XNAT.table({
             className: 'command-config-definition xnat-table '+config.type,
             style: {
                 width: '100%',
@@ -227,7 +234,7 @@ var XNAT = getObject(XNAT || {});
             var inputs = config.inputs;
 
             // add table header row
-            chTable.tr()
+            pcdTable.tr()
                 .th({ addClass: 'left', html: '<b>Input</b>' })
                 .th('<b>Default Value</b>')
                 .th('<b>Matcher Value</b>')
@@ -236,7 +243,7 @@ var XNAT = getObject(XNAT || {});
 
             for (i in inputs) {
                 var input = inputs[i];
-                chTable.tr({ data: { input: i }, className: 'input' })
+                pcdTable.tr({ data: { input: i }, className: 'input' })
                     .td( { data: { key: 'key' }, addClass: 'left'}, i )
                     .td( { data: { key: 'property', property: 'default-value' }}, basicConfigInput('defaultVal',input['default-value']) )
                     .td( { data: { key: 'property', property: 'matcher' }}, basicConfigInput('matcher',input['matcher']) )
@@ -248,24 +255,23 @@ var XNAT = getObject(XNAT || {});
             var outputs = config.outputs;
 
             // add table header row
-            chTable.tr()
+            pcdTable.tr()
                 .th({ addClass: 'left', html: '<b>Output</b>' })
                 .th({ addClass: 'left', width: '75%', html: '<b>Label</b>' });
 
             for (o in outputs) {
                 var output = outputs[o];
-                chTable.tr({ data: { output: o }, className: 'output' })
+                pcdTable.tr({ data: { output: o }, className: 'output' })
                     .td( { data: { key: 'key' }, addClass: 'left'}, o )
                     .td( { data: { key: 'property', property: 'label' }}, basicConfigInput('label',output['label']) );
             }
 
         }
 
-        projConfigDefinition.$table = $(chTable.table);
+        projConfigDefinition.$table = $(pcdTable.table);
 
-        return chTable.table;
+        return pcdTable.table;
     };
-
 
     projConfigDefinition.dialog = function(commandId,wrapperName){
         // get command definition
@@ -371,7 +377,7 @@ var XNAT = getObject(XNAT || {});
     projCommandConfigManager.table = function(config){
 
         // initialize the table - we'll add to it below
-        var chTable = XNAT.table({
+        var pccmTable = XNAT.table({
             className: 'xnat-table '+config.className,
             style: {
                 width: '100%',
@@ -382,19 +388,29 @@ var XNAT = getObject(XNAT || {});
         });
 
         // add table header row
-        chTable.tr()
+        pccmTable.tr()
             .th({ addClass: 'left', html: '<b>XNAT Command Label</b>' })
             .th('<b>Container</b>')
             .th('<b>Enabled</b>')
             .th('<b>Actions</b>');
 
+        // add master switch
+        pccmTable.tr({ 'style': { 'background-color': '#f3f3f3' }})
+            .td( {className: 'name', colSpan: 2 }, 'Enable / Disable All Commands' )
+            .td([ spawn('div',[ masterCommandCheckbox() ]) ])
+            .td();
+
         function viewLink(command, wrapper, text){
-            return spawn('a.link|href=#!', {
-                onclick: function(e){
-                    e.preventDefault();
-                    projConfigDefinition.dialog(command.id, wrapper.name, false);
-                }
-            }, [['b', text]]);
+            return spawn(
+                'a.link|href=#!',
+                {
+                    onclick: function(e){
+                        e.preventDefault();
+                        projConfigDefinition.dialog(command.id, wrapper.name, false);
+                    }
+                },
+                spawn('b', text)
+            );
         }
 
         function viewConfigButton(command,wrapper){
@@ -403,21 +419,31 @@ var XNAT = getObject(XNAT || {});
                     e.preventDefault();
                     projConfigDefinition.dialog(command.id, wrapper.name, false);
                 }
-            }, 'View Command Configuration');
+            }, 'Set Input Defaults');
         }
 
         function enabledCheckbox(command,wrapper){
             projCommandConfigManager.getEnabledStatus(command,wrapper).done(function(data){
-                var enabled = data;
+                var enabled = data['enabled-for-site'] && data['enabled-for-project'];
                 $('#wrapper-'+wrapper.id+'-enable').prop('checked',enabled);
+
+                if (data['enabled-for-site'] === false) {
+                    // if a command has been disabled at the site-wide level, don't allow user to toggle it.
+                    // disable the input, and add a 'disabled' class to the input controller
+                    // or, remove the input and controller entirely.  
+                    $('#wrapper-'+wrapper.id+'-enable').prop('disabled','disabled')
+                        .parents('.switchbox').addClass('disabled').hide()
+                        .parent('div').html(spawn('span',{ 'style': { 'color': '#808080' }},'disabled'));
+                }
+                projCommandConfigManager.setMasterEnableSwitch();
             });
 
-            var ckbox = spawn('input.config-enabled', {
+            var ckbox = spawn('input.config-enabled.wrapper-enable', {
                 type: 'checkbox',
                 checked: false,
                 value: 'true',
                 id: 'wrapper-'+wrapper.id+'-enable',
-                data: { name: wrapper.name },
+                data: { wrappername: wrapper.name, commandid: command.id },
                 onchange: function(){
                     // save the status when clicked
                     var checkbox = this;
@@ -425,13 +451,15 @@ var XNAT = getObject(XNAT || {});
                     var enabledFlag = (enabled) ? 'enabled' : 'disabled';
 
                     XNAT.xhr.put({
-                        url: configEnableUrl(command.id,wrapper.name,enabledFlag),
+                        url: projConfigEnableUrl(command.id,wrapper.name,enabledFlag),
                         success: function(){
                             var status = (enabled ? ' enabled' : ' disabled');
                             checkbox.value = enabled;
                             XNAT.ui.banner.top(1000, '<b>' + wrapper.name+ '</b> ' + status, 'success');
                         }
                     });
+
+                    projCommandConfigManager.setMasterEnableSwitch();
                 }
             });
 
@@ -441,7 +469,36 @@ var XNAT = getObject(XNAT || {});
                     ['span.switchbox-outer', [['span.switchbox-inner']]]
                 ])
             ]);
+        }
 
+        function masterCommandCheckbox(){
+
+            var ckbox = spawn('input.config-enabled', {
+                type: 'checkbox',
+                checked: false,
+                value: 'true',
+                id: 'wrapper-all-enable',
+                onchange: function(){
+                    // save the status when clicked
+                    var checkbox = this;
+                    enabled = checkbox.checked;
+                    var enabledFlag = (enabled) ? 'enabled' : 'disabled';
+
+                    // iterate through each command toggle and set it to 'enabled' or 'disabled' depending on the user's click
+                    $('.wrapper-enable').each(function(){
+                        var status = ($(this).is(':checked')) ? 'enabled' : 'disabled';
+                        if (status !== enabledFlag) $(this).click();
+                    });
+                    XNAT.ui.banner.top(2000, 'All commands <b>'+enabledFlag+'</b>.', 'success');
+                }
+            });
+
+            return spawn('div.center', [
+                spawn('label.switchbox|title=enable-all', [
+                    ckbox,
+                    ['span.switchbox-outer', [['span.switchbox-inner']]]
+                ])
+            ]);
         }
 
         projCommandConfigManager.getAll().done(function(data) {
@@ -452,7 +509,7 @@ var XNAT = getObject(XNAT || {});
                         for (var k = 0, l = command.xnat.length; k < l; k++) {
                             var wrapper = command.xnat[k];
 
-                            chTable.tr({title: wrapper.name, data: {id: wrapper.id, name: wrapper.name, image: command.image}})
+                            pccmTable.tr({title: wrapper.name, data: {id: wrapper.id, name: wrapper.name, image: command.image}})
                                 .td([viewLink(command, wrapper, wrapper.description)]).addClass('name')
                                 .td(command.image)
                                 .td([['div.center', [enabledCheckbox(command,wrapper)]]])
@@ -463,14 +520,53 @@ var XNAT = getObject(XNAT || {});
                 }
             } else {
                 // create a handler when no command data is returned.
-                chTable.tr({title: 'No command config data found'})
+                pccmTable.tr({title: 'No command config data found'})
                     .td({colSpan: '5', html: 'No XNAT-enabled Commands Found'});
             }
         });
 
-        projCommandConfigManager.$table = $(chTable.table);
+        projCommandConfigManager.$table = $(pccmTable.table);
 
-        return chTable.table;
+        return pccmTable.table;
+    };
+
+    // examine all command toggles and set master switch to "ON" if all are checked
+    projCommandConfigManager.setMasterEnableSwitch = function(){
+        var allEnabled = true;
+        $('.wrapper-enable').each(function(){
+            if (!$(this).is(':checked')) {
+                allEnabled = false;
+                return false;
+            }
+        });
+
+        if (allEnabled) {
+            $('#wrapper-all-enable').prop('checked','checked');
+        } else {
+            $('#wrapper-all-enable').prop('checked',false);
+        }
+    };
+
+    projCommandConfigManager.importSiteWideEnabledStatus = function(){
+        $('.wrapper-enable').each(function(){
+            // check current status and site-wide setting, then reconcile differences.
+            // For now, do not disable a command in the project if it is not enabled in the site
+
+            var $toggle = $(this),
+                projStatus = ($toggle.is(':checked')) ? 'enabled' : 'disabled';
+            XNAT.xhr.getJSON({
+                url: sitewideConfigEnableUrl({ id: $toggle.data('commandid')} , { name: $toggle.data('wrappername') }, 'enabled'),
+                success: function(status){
+                    if (projStatus === 'disabled' && status) {
+                        $toggle.click();
+                        projCommandConfigManager.setMasterEnableSwitch();
+                    }
+                },
+                fail: function(e){
+                    errorHandler(e, 'Could not import site-wide setting for '+$(this).data('wrappername'));
+                }
+            })
+        });
     };
 
     projCommandConfigManager.init = function(container){
@@ -480,7 +576,6 @@ var XNAT = getObject(XNAT || {});
 
         $manager.append(projCommandConfigManager.table({id: 'sitewide-commands', className: '', type: 'sitewide' }));
         $manager.append(projCommandConfigManager.table({id: 'project-commands', className: 'hidden', type: 'project' }));
-
 
         // set value of opt-in controller based on project config
         $('#optIntoSitewideCommands').prop('checked',false);

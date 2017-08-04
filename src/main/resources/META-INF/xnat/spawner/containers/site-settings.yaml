@@ -203,12 +203,10 @@ sitewideCommandConfigsPanel:
                     footer: false
 
 sitewideCommandProjectPrefs:
-    kind: panel.form
+    kind: panel
     name: sitewideCommandProjectPrefs
     label: Site-wide Preferences for Project Command Use
-    method: POST
-    contentType: JSON
-    url: /xapi/siteConfig
+    footer: false
     contents:
         sitewideCommandProjectPrefsDesc:
             tag: "p"

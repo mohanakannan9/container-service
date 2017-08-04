@@ -97,6 +97,14 @@ print "Uploading new post..."
 r = s.put(url, json=newPostJson)
 if not r.ok:
     print "Upload failed"
+    try:
+        rj = r.json()
+        if rj.get("statusCode"):
+            print "CODE: %s" % rj.get("statusCode")
+        if rj.get("message"):
+            print "ERROR: %s" % rj.get("message")
+    except:
+        print "ERROR: %s" % r.text
     r.raise_for_status()
 
 print "Done"

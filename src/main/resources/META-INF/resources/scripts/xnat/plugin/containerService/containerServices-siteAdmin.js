@@ -770,6 +770,8 @@ var XNAT = getObject(XNAT || {});
                             option += '>'+item.name+'</option>';
                             $hubSelect.prop('disabled',false).append(option);
                         });
+                    } else {
+                        $hubSelect.parents('.panel-element').hide();
                     }
                 });
             },
@@ -1166,6 +1168,10 @@ var XNAT = getObject(XNAT || {});
         return csrfUrl('/xapi/commands/'+command+'/wrappers/'+wrapperName+'/' + flag);
     }
 
+    function siteConfigUrl(){
+        return csrfUrl('/xapi/siteConfig');
+    }
+
     commandConfigManager.getCommands = commandConfigManager.getAll = function(callback){
 
         callback = isFunction(callback) ? callback : function(){};
@@ -1422,7 +1428,13 @@ var XNAT = getObject(XNAT || {});
             .th({ addClass: 'left', html: '<b>XNAT Command Label</b>' })
             .th('<b>Container</b>')
             .th('<b>Enabled</b>')
-            .th('<b>Actions</b>');
+            .th({ width: 150, html: '<b>Actions</b>' });
+
+        // add master switch
+        ccmTable.tr({ 'style': { 'background-color': '#f3f3f3' }})
+            .td({className: 'name', html: 'Enable / Disable All Commands', colSpan: 2 })
+            .td([['div',[masterCommandCheckbox()]]])
+            .td();
 
         function viewLink(item, wrapper, text){
             return spawn('a.link|href=#!', {
@@ -1439,16 +1451,17 @@ var XNAT = getObject(XNAT || {});
                     e.preventDefault();
                     configDefinition.dialog(item.id, wrapper.name, false);
                 }
-            }, 'View Command Configuration');
+            }, 'View');
         }
 
         function enabledCheckbox(command,wrapper){
             commandConfigManager.getEnabledStatus(command,wrapper).done(function(data){
                 var enabled = data;
                 $('#wrapper-'+wrapper.id+'-enable').prop('checked',enabled);
+                commandConfigManager.setMasterEnableSwitch();
             });
 
-            var ckbox = spawn('input.config-enabled', {
+            var ckbox = spawn('input.config-enabled.wrapper-enable', {
                 type: 'checkbox',
                 checked: false,
                 value: 'true',
@@ -1466,17 +1479,48 @@ var XNAT = getObject(XNAT || {});
                             var status = (enabled ? ' enabled' : ' disabled');
                             checkbox.value = enabled;
                             XNAT.ui.banner.top(1000, '<b>' + wrapper.name+ '</b> ' + status, 'success');
-                            console.log(wrapper.name + status)
                         },
                         fail: function(e){
                             errorHandler(e);
                         }
                     });
+
+                    commandConfigManager.setMasterEnableSwitch();
                 }
             });
 
             return spawn('div.center', [
                 spawn('label.switchbox|title=' + wrapper.name, [
+                    ckbox,
+                    ['span.switchbox-outer', [['span.switchbox-inner']]]
+                ])
+            ]);
+        }
+
+        function masterCommandCheckbox(){
+
+            var ckbox = spawn('input.config-enabled', {
+                type: 'checkbox',
+                checked: false,
+                value: 'true',
+                id: 'wrapper-all-enable',
+                onchange: function(){
+                    // save the status when clicked
+                    var checkbox = this;
+                    enabled = checkbox.checked;
+                    var enabledFlag = (enabled) ? 'enabled' : 'disabled';
+
+                    // iterate through each command toggle and set it to 'enabled' or 'disabled' depending on the user's click
+                    $('.wrapper-enable').each(function(){
+                        var status = ($(this).is(':checked')) ? 'enabled' : 'disabled';
+                        if (status !== enabledFlag) $(this).click();
+                    });
+                    XNAT.ui.banner.top(2000, 'All commands <b>'+enabledFlag+'</b>.', 'success');
+                }
+            });
+
+            return spawn('div.center', [
+                spawn('label.switchbox|title=enable-all', [
                     ckbox,
                     ['span.switchbox-outer', [['span.switchbox-inner']]]
                 ])
@@ -1523,7 +1567,6 @@ var XNAT = getObject(XNAT || {});
                                 .td([['span.truncate.truncate200', command.image ]])
                                 .td([['div', [enabledCheckbox(command,wrapper)]]])
                                 .td([['div.center', [viewConfigButton(command,wrapper), spacer(10), deleteConfigButton(command,wrapper)]]]);
-
                         }
                     }
                 }
@@ -1539,11 +1582,47 @@ var XNAT = getObject(XNAT || {});
         return ccmTable.table;
     };
 
+    // examine all command toggles and set master switch to "ON" if all are checked
+    commandConfigManager.setMasterEnableSwitch = function(){
+        var allEnabled = true;
+        $('.wrapper-enable').each(function(){
+            if (!$(this).is(':checked')) {
+                allEnabled = false;
+                return false;
+            }
+        });
+
+        if (allEnabled) {
+            $('#wrapper-all-enable').prop('checked','checked');
+        } else {
+            $('#wrapper-all-enable').prop('checked',false);
+        }
+    };
+
+    // auto-save to site-wide opt-in preference on click of the switchbox.
+    $('#opt-into-sitewide-commands').on('change',function(){
+        var optIn = $(this).prop('checked');
+        var paramToPut = JSON.stringify({ optIntoSitewideCommands: optIn });
+        XNAT.xhr.post({
+            url: siteConfigUrl(),
+            data: paramToPut,
+            dataType: 'json',
+            contentType: 'application/json',
+            success: function(){
+                XNAT.ui.banner.top(1000, '<b>Success: </b> Default Project Opt-in Preference Setting set to <b>' + optIn + '</b>.', 'success');
+            },
+            fail: function(e){
+                errorHandler(e,'Could not set site-wide project preference for command opt-in');
+            }
+        })
+    });
+
     commandConfigManager.refresh = commandConfigManager.refreshTable = function(container){
         var $manager = $$(container||'div#command-config-list-container');
 
         $manager.html('');
         $manager.append(commandConfigManager.table());
+        commandConfigManager.setMasterEnableSwitch();
     };
 
     commandConfigManager.init = function(container){
@@ -1555,8 +1634,6 @@ var XNAT = getObject(XNAT || {});
     };
 
     commandConfigManager.init();
-
-
 
     /* ================================= *
      * Command Automation Administration *

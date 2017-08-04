@@ -76,8 +76,13 @@ var XNAT = getObject(XNAT || {});
     function containerLaunchUrl(wrapperId){
         return csrfUrl('/xapi/wrappers/'+wrapperId+'/launch');
     }
-    function bulkLaunchUrl(wrapperId){
-        return csrfUrl('/xapi/wrappers/'+wrapperId+'/bulklaunch');
+    function bulkLaunchUrl(wrapperId,rootElements){
+        // array of root elements can be provided
+        if (rootElements) {
+            return csrfUrl('/xapi/wrappers/'+wrapperId+'/bulklaunch?'+rootElements)
+        } else {
+            return csrfUrl('/xapi/wrappers/'+wrapperId+'/bulklaunch');
+        }
     }
     function sessionUrl(){
         var sessionId = (XNAT.data.context.isImageSession) ? XNAT.data.context.ID : null;
@@ -87,7 +92,7 @@ var XNAT = getObject(XNAT || {});
     function fullScanPath(scanId){
         var sessionId = (XNAT.data.context.isImageSession) ? XNAT.data.context.ID : null;
         if (!sessionId) return false;
-        return '/experiments/'+sessionId+'/scans/'+scanId;
+        return '/archive/experiments/'+sessionId+'/scans/'+scanId;
     }
 
     /*
@@ -308,7 +313,7 @@ var XNAT = getObject(XNAT || {});
                 formPanelElements.push(staticConfigInput(input));
                 break;
             case 'staticList':
-                formPanelElements.push(staticConfigList(i, input.value));
+                formPanelElements.push(staticConfigList(input.name, input.value));
                 break;
             case 'checkbox':
                 input.outerLabel = input.label;
@@ -571,128 +576,283 @@ var XNAT = getObject(XNAT || {});
         }
     }
 
-    function launchManyContainers(inputs,rootElement,wrapperId,targets){
-        var independentInputs = {},
-            childInputs = {},
-            advancedInputs = {};
+    function launchManyContainers(inputArray,rootElement,wrapperId,targets){
+        /* In a bulk launcher, a list of input objects will be passed to the launcher.
+         * The launcher should consider the target elements to be static
+         * (i.e. once selected and sent to the bulk launcher, the user shouldn't be re-selecting them)
+         * Also, any child elements of the root element should also be set to their default values.
+         * Users should be able to set other inputs in bulk for all selected root elements
+         * If there are child elements of non-root inputs, they will be treated as standard inputs so they can be bulk-settable
+         * After the user makes their selections, a bulk object is assembled from the inputs and sent to the bulk launcher
+         */
 
-        var inputList = Object.keys(inputs);
+        var inputList = Object.keys(inputArray[0]);
+
+        var launcherContent = spawn('div.panel',[
+            spawn('p','Please specify settings for this container.'),
+            spawn('div.target-list')
+        ]);
 
         if ( inputList.find(function(input){ return input === rootElement; }) ) { // if the specified root element matches an input parameter, we can proceed
 
-            for (var i in inputs){
-                if (inputs[i].parent) {
-                    // iterate through each possible value and create a new hidden, disabled input
-                    // when a parent input value is detected, the appropriate child input will be enabled
-                    var parentInput = inputs[inputs[i].parent];
-
-                    for (var k in inputs[i].ui) {
-                        var key = i+'-'+k;
-                        childInputs[key] = inputs[i];
-                        if (parentInput.ui.default.type !== 'static' && parentInput.ui.default.type !== 'hidden') {
-                            // if parent inputs can be set by the user, disable each possible child input until the user sets a value for that parent input.
-                            childInputs[key].disabled = true;
-                            childInputs[key].hidden = true;
-                        }
-                        childInputs[key].name = i;
-                        childInputs[key].type = inputs[i].ui[k].type;
-                        childInputs[key].value = inputs[i].ui[k].values[0].value || '';
-                    }
-
-                } else if (inputs[i].advanced) {
-                    advancedInputs[i] = inputs[i];
-                    advancedInputs[i].type = inputs[i].ui.default.type;
-                    advancedInputs[i].value = inputs[i].ui.default.values[0].value || '';
-                } else {
-                    independentInputs[i] = inputs[i];
-                    independentInputs[i].type = inputs[i].ui.default.type;
-                    independentInputs[i].value = inputs[i].ui.default.values[0].value || '';
-                }
-            }
-
             XNAT.ui.dialog.open({
-                title: 'Set Container Launch Values for '+targets.length+' '+rootElement+'(s)',
-                content: spawn('div.panel'),
+                title: 'Set Container Launch Values',
+                content: launcherContent,
                 width: 550,
                 scroll: true,
-                nuke: true,
                 beforeShow: function(obj){
-                    var $panel = obj.$modal.find('.panel');
-                    $panel.spawn('p','Select settings to be applied to each item in your list.');
+                    var $panel = obj.$modal.find('.panel'),
+                        $targetListContainer = $panel.find('.target-list');
 
-                    // overwrite defaults for root element input in config object. Display a list of targets with no input. We will break this out later.
-                    inputs[rootElement].type="staticList";
-                    inputs[rootElement].value=targets.join(',');
+                    // display root elements first
+                    var targetList = launcher.formInputs({ name: rootElement, type: 'staticList', value: targets.toString() });
+                    $targetListContainer.append(targetList);
 
-                    // add inputs
-                    $panel.append(launcher.formInputs(independentInputs));
-                    $panel.append(launcher.formInputs(childInputs));
-                    $panel.append(launcher.formInputs(advancedInputs,true));
+                    // loop through each input and determine how to display it
+                    // root element -- create hidden inputs
+                    // child element of root element -- create hidden inputs
+                    // standard inputs with no children -- append the appropriate UI element
+                    // standard inputs with children -- append the UI element and the child element(s) in a child element wrapper
+                    // advanced inputs (that aren't children) -- append the UI element to the advanced input container
+
+                    inputArray.forEach(function(inputs,k){
+                        // iterate through each list of inputs.
+
+                        if (k===0) {
+                            // on first iteration, create all user-settable inputs
+
+                            $panel.append(spawn('div',{ className: 'bulk-master bulk-inputs inputs-'+k },[
+                                spawn('div.standard-settings'),
+                                spawn('div.advanced-settings-container.hidden',[
+                                    spawn('div.advanced-settings-toggle'),
+                                    spawn('div.advanced-settings')
+                                ])
+                            ]));
+
+                            var $standardInputContainer = $panel.find('.standard-settings'),
+                                $advancedInputContainer = $panel.find('.advanced-settings');
+
+                            for (var i in inputs) {
+                                // child inputs that specify a parent get special treatment
+                                if ((!inputs[i].parent || inputs[i].parent === undefined)) {
+                                    // don't display the root element input again ... it has already been listed.
+                                    inputs[i].type = (i === rootElement) ? 'hidden' : inputs[i].ui.default.type;
+                                    inputs[i].value = inputs[i].ui.default.values[0].value || inputs[i].value;
+                                    inputs[i].valueLabel = inputs[i].ui.default.values[0].label || '';
+
+                                    if (inputs[i].advanced === undefined || inputs[i].advanced !== true) {
+                                        var inputElement = launcher.formInputs(inputs[i]);
+                                        $standardInputContainer.append(inputElement);
+
+                                        if (inputs[i].children) {
+                                            // child inputs are listed as an array of input ids
+
+                                            var parentInput = inputs[i];
+                                            var children = inputs[i].children;
+
+                                            children.forEach(function(child){
+
+                                                var useDefault = true;
+
+                                                for (var k in inputs[child].ui) {
+                                                    // loop through each possible UI instance for all preset values for this child input.
+                                                    // append each child input in a special wrapper
+
+                                                    if (parentInput.ui[k] !== undefined) {
+                                                        useDefault = false; // if value-specific definitions are found, don't use the default
+
+                                                        var childInput = inputs[child];
+                                                        var classes = ['child-input'];
+                                                        childInput.type = 'hidden';
+                                                        childInput.value = childInput.ui[k].values[0].value;
+                                                        childInput.valueLabel = childInput.ui[k].values[0].label;
+                                                        if (k !== parentInput.value) {
+                                                            // if a preset value has been defined and does not match the default value of its parent input, then hide and disable this possible input.
+                                                            childInput.disabled = true;
+                                                            classes.push('hidden');
+                                                        }
+                                                        $standardInputContainer.append( spawn('div', { className: classes.join(' '), data: { preset: k }}, launcher.formInputs(childInput)) );
+                                                    }
+
+                                                    if (useDefault) {
+                                                        // if no value-specific settings are found, use the parent input's default values
+                                                        var childInput = inputs[child];
+                                                        var classes = ['child-input'];
+                                                        childInput.type = 'hidden';
+                                                        if (childInput.ui[k].values.length) {
+                                                            childInput.value = childInput.ui[k].values[0].value;
+                                                            childInput.valueLabel = childInput.ui[k].values[0].label;
+                                                        } else {
+                                                            childInput.value = childInput.valueLabel = '';
+                                                        }
+                                                        $standardInputContainer.append( spawn('div', { className: classes.join(' '), data: { preset: k }}, launcher.formInputs(childInput)) );
+                                                    }
+
+                                                }
+
+                                            });
+                                        }
+                                    }
+                                    if (inputs[i].advanced) {
+                                        var advancedInput = launcher.formInputs(inputs[i]);
+                                        $advancedInputContainer.append(advancedInput);
+                                        $advancedInputContainer.parents('.advanced-settings-container').removeClass('hidden');
+                                    }
+                                }
+
+                            }
+
+
+                        } else {
+                            // on 2nd - nth inputs, simply create hidden inputs whose values will be toggled by user changes to first set of inputs
+                            $panel.append(spawn('div',{ className: 'bulk-controls bulk-inputs inputs-'+k }));
+                            var $bulkInputContainer = $panel.find('.inputs-'+k);
+
+                            for (var i in inputs) {
+                                if (!inputs[i].parent || inputs[i].parent === undefined) {
+                                    // child inputs that specify a parent get special treatment
+                                    inputs[i].type = 'hidden';
+                                    inputs[i].value = inputs[i].ui.default.values[0].value || inputs[i].value;
+
+                                    var inputElement = launcher.formInputs(inputs[i]);
+                                    $bulkInputContainer.append(inputElement);
+
+                                    if (inputs[i].children) {
+                                        // child inputs are listed as an array of input ids
+
+                                        var parentInput = inputs[i];
+                                        var children = inputs[i].children;
+
+                                        children.forEach(function(child){
+
+                                            var useDefault = true;
+
+                                            for (var k in inputs[child].ui) {
+                                                // loop through each possible UI instance for all preset values for this child input.
+                                                // append each child input in a special wrapper
+
+                                                if (parentInput.ui[k] !== undefined) {
+                                                    useDefault = false; // if value-specific definitions are found, don't use the default
+
+                                                    var childInput = inputs[child];
+                                                    childInput.type = 'hidden';
+                                                    childInput.value = childInput.ui[k].values[0].value;
+                                                    if (k !== parentInput.value) {
+                                                        // if a preset value has been defined and does not match the default value of its parent input, then hide and disable this possible input.
+                                                        childInput.disabled = true;
+                                                    }
+                                                    $bulkInputContainer.append( launcher.formInputs(childInput) );
+                                                }
+
+                                                if (useDefault) {
+                                                    // if no value-specific settings are found, use the parent input's default values
+                                                    var childInput = inputs[child];
+                                                    childInput.type = 'hidden';
+                                                    if (childInput.ui[k].values.length) {
+                                                        childInput.value = childInput.ui[k].values[0].value;
+                                                    } else {
+                                                        childInput.value = '';
+                                                    }
+                                                    $bulkInputContainer.append( launcher.formInputs(childInput) );
+                                                }
+                                            }
+                                        });
+                                    }
+                                }
+
+                            }
+
+                        }
+
+                    });
+
                 },
                 buttons: [
                     {
-                        label: 'Run Container(s)',
-                        close: false,
+                        label: 'Run Container',
                         isDefault: true,
+                        close: false,
                         action: function(obj){
-                            xmodal.loading.open({ title: "Attempting to launch containers..." });
-
                             var $panel = obj.$modal.find('.panel'),
-                                dataToPost = [];
+                                bulkData = [];
 
-                            targets.forEach(function(target){ // iterate over each item in the list of selected items to run container on
-                                var targetData = {};
-                                targetData[rootElement] = target;
+                            $panel.find('.bulk-inputs').each(function(){
+                                // iterate over each set of inputs and add an object of inputs and values to the bulkData array
+                                var targetData = {},
+                                    $thisPanel = $(this);
 
-                                $panel.find('input').not('[type=checkbox]').not('[type=radio]').not('[name='+rootElement+']').each(function(){
+                                // gather form input values
+                                targetData[rootElement] = $thisPanel.find('input[name='+rootElement+']').val();
+
+                                $thisPanel.find('input').not(':disabled').not('[type=checkbox]').not('[type=radio]').not('[name='+rootElement+']').each(function(){
                                     // get the name and value from each text element and add it to our data to post
                                     var key = $(this).prop('name');
                                     targetData[key] = $(this).val();
                                 });
 
-                                $panel.find('input[type=checkbox]').each(function(){
+                                $thisPanel.find('input[type=checkbox]').not(':disabled').each(function(){
                                     var key = $(this).prop('name');
                                     var val = ($(this).is(':checked')) ? $(this).val() : false;
                                     targetData[key] = val;
                                 });
 
-                                $panel.find('select').each(function(){
+                                $thisPanel.find('select').not(':disabled').each(function(){
                                     var key = $(this).prop('name');
                                     var val = $(this).find('option:selected').val();
                                     targetData[key] = val;
                                 });
 
-                                dataToPost.push(targetData);
+                                bulkData.push(targetData);
                             });
 
+
+                            var dataToPost = bulkData;
+
+                            xmodal.loading.open({ title: 'Launching Container...' });
+
                             XNAT.xhr.postJSON({
-                                url: '/xapi/wrappers/'+wrapperId+'/bulklaunch',
+                                url: bulkLaunchUrl(wrapperId),
                                 data: JSON.stringify(dataToPost),
                                 success: function(data){
                                     xmodal.loading.close();
 
-                                    var successRecord = '',
-                                        failureRecord = '';
-
-                                    if (data.successes.length > 0) {
-                                        successRecord += '<p>Successfully launched containers on: </p><ul>';
-                                        data.successes.forEach(function(success){
-                                            successRecord += '<li>'+success.params[rootElement]+'</li>';
+                                    // bulk launch success returns two arrays -- containers that successfully launched, and containers that failed to launch
+                                    var messageContent = [],
+                                        totalLaunchAttempts = data.successes.concat(data.failures).length;
+                                    if (data.failures.length > 0) {
+                                        messageContent.push( spawn('div.message',data.successes.length + ' of '+totalLaunchAttempts+' containers successfully launched.') );
+                                    } else if(data.successes.length > 0) {
+                                        messageContent.push( spawn('div.success','All containers successfully launched.') );
+                                    } else {
+                                        errorHandler({
+                                            statusText: 'Something went wrong. No containers were launched.'
                                         });
-                                        successRecord += '</ul>';
                                     }
 
-                                    if (data.failures.length > 0) {
-                                        failureRecord += '<p>Failed to launch containers on: </p><ul>';
-                                        data.failures.forEach(function(failure){
-                                            failureRecord += '<li>'+failure.params[rootElement]+'</li>';
+                                    if (data.successes.length > 0) {
+                                        messageContent.push( spawn('h3',{'style': {'margin-top': '2em' }},'Successful Container Launches') );
+
+                                        data.successes.forEach(function(success){
+                                            messageContent.push( spawn('p',[
+                                                spawn('strong','Container ID: '),
+                                                spawn('span',success['container-id'])
+                                            ]) );
+                                            messageContent.push( spawn('div',prettifyJSON(success.params)) );
                                         });
-                                        failureRecord += '</ul>';
+                                    }
+
+                                    if (data.failures.length > 0){
+                                        messageContent.push( spawn('h3',{'style': {'margin-top': '2em' }},'Failed Container Launches') );
+                                        data.failures.forEach(function(failure){
+                                            messageContent.push( spawn('p',{ style: { 'font-weight': 'bold' }}, 'Error Message:') );
+                                            messageContent.push( spawn('pre.json', failure.message) );
+                                            messageContent.push( spawn('div',prettifyJSON(failure.params)) );
+                                        });
                                     }
 
                                     XNAT.ui.dialog.open({
-                                        title: 'Container Launch Record',
-                                        content: successRecord + failureRecord,
+                                        title: 'Container Launch Success',
+                                        content: spawn('div', messageContent ),
                                         buttons: [
                                             {
                                                 label: 'OK',
@@ -701,12 +861,38 @@ var XNAT = getObject(XNAT || {});
                                                 action: XNAT.ui.dialog.closeAll()
                                             }
                                         ]
-                                    })
+                                    });
                                 },
-                                fail: function(e){
-                                    errorHandler(e);
+                                fail: function (e) {
+                                    xmodal.loading.close();
+
+                                    if (e.responseJSON.message) {
+                                        var data = e.responseJSON;
+                                        var messageContent = spawn('div',[
+                                            spawn('p',{ style: { 'font-weight': 'bold' }}, 'Error Message:'),
+                                            spawn('pre.json', data.message),
+                                            spawn('p',{ style: { 'font-weight': 'bold' }}, 'Parameters Submitted To XNAT:'),
+                                            spawn('div', prettifyJSON(data.params))
+                                        ]);
+
+                                        XNAT.ui.dialog.open({
+                                            title: 'Container Launch <span style="text-transform: capitalize">'+data.status+'</span>',
+                                            content: messageContent,
+                                            buttons: [
+                                                {
+                                                    label: 'OK',
+                                                    isDefault: true,
+                                                    close: true,
+                                                    action: XNAT.ui.dialog.closeAll()
+                                                }
+                                            ]
+                                        });
+                                    } else {
+                                        errorHandler(e);
+                                    }
                                 }
-                            })
+                            });
+
                         }
                     },
                     {
@@ -717,6 +903,7 @@ var XNAT = getObject(XNAT || {});
                 ]
             });
 
+
         } else {
             errorHandler({
                 statusText: 'Root element mismatch',
@@ -724,6 +911,17 @@ var XNAT = getObject(XNAT || {});
             });
         }
     }
+
+    // for bulk launching, apply any user-updated value to all matching inputs
+    $(document).on('change','.bulk-master input',function(){
+        var name = $(this).prop('name');
+        if ($(this).prop('type') === 'checkbox' && !$(this).is(':checked')) {
+            $('.bulk-controls').find('input[name='+name+']').val('false');
+        } else {
+            var changedVal = $(this).val();
+            $('.bulk-controls').find('input[name='+name+']').val(changedVal);
+        }
+    });
 
     launcher.defaultLauncher = function(wrapperId,rootElement,rootElementValue){
         rootElementValue = rootElementValue || XNAT.data.context.ID; // if no value is provided, assume that the current page context provides the value.
@@ -917,17 +1115,16 @@ var XNAT = getObject(XNAT || {});
         // the 'root element' should match one of the inputs in the command config object, and overwrite it with the values provided in the 'targets' array
 
         if (!targets || targets.length === 0) return false;
-
-        var rootElementValue = targets[0]; // assume that the first target value passed will be representative of all target values for the purposes of generating a UI.
+        var targetObj = rootElement + '=' + targets.toString();
 
         xmodal.loading.open({ title: 'Configuring Container Launcher' });
         XNAT.xhr.getJSON({
-            url: getLauncherUI(wrapperId,rootElement,rootElementValue),
+            url: '/xapi/wrappers/'+wrapperId+'/bulklaunch?'+targetObj,
             fail: function(e){
                 xmodal.loading.close();
                 errorHandler({
                     statusText: e.statusText,
-                    responseText: 'Could not launch UI with value: "'+rootElementValue+'" for root element: "'+rootElement+'".'
+                    responseText: 'Could not launch UI with value(s): "'+targets.toString()+'" for root element: "'+rootElement+'".'
                 });
             },
             success: function(data){

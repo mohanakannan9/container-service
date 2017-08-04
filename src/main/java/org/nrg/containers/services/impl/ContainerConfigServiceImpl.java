@@ -23,12 +23,6 @@ import java.io.IOException;
 public class ContainerConfigServiceImpl implements ContainerConfigService {
     private static final Logger log = LoggerFactory.getLogger(ContainerConfigService.class);
 
-    public static final String DEFAULT_DOCKER_HUB_PATH = "default-docker-hub-id";
-    public static final String WRAPPER_CONFIG_PATH_TEMPLATE = "wrapper-%d";
-    public static final String OPT_IN_PATH = "opt-in-to-site-commands";
-    public static final boolean OPT_IN_DEFAULT_VALUE = false;
-    public static final String ALL_ENABLED_PATH = "all-commands-enabled";
-
     private final ConfigService configService;
     private final ObjectMapper mapper;
 
@@ -108,13 +102,13 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
     @Override
     @Nonnull
     public ContainerServiceSettings getSettings() {
-        return ContainerServiceSettings.create(getOptInToSiteCommands(), getAllEnabled());
+        return ContainerServiceSettings.create(getOptInToSiteCommands());
     }
 
     @Override
     @Nonnull
     public ContainerServiceSettings getSettings(final String project) {
-        return ContainerServiceSettings.create(getOptInToSiteCommands(project), getAllEnabled(project));
+        return ContainerServiceSettings.create(getOptInToSiteCommands(project));
     }
 
     @Override
@@ -140,7 +134,7 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
 
     private void setOptInToSiteCommands(final boolean optInDefault, final String username, final String reason) throws ConfigServiceException {
         configService.replaceConfig(username, reason,
-                TOOL_ID, ALL_ENABLED_PATH,
+                TOOL_ID, OPT_IN_PATH,
                 String.valueOf(optInDefault),
                 Scope.Site, null);
     }
@@ -168,64 +162,8 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
 
     private void setOptInToSiteCommands(final boolean optIn, final String project, final String username, final String reason) throws ConfigServiceException {
         configService.replaceConfig(username, reason,
-                TOOL_ID, ALL_ENABLED_PATH,
+                TOOL_ID, OPT_IN_PATH,
                 String.valueOf(optIn),
-                Scope.Project, project);
-    }
-
-    @Override
-    @Nullable
-    public Boolean getAllEnabled() {
-        return parseBooleanConfig(configService.getConfig(TOOL_ID, ALL_ENABLED_PATH, Scope.Site, null));
-    }
-
-    @Override
-    public void enableAll(final String username, final String reason) throws ConfigServiceException {
-        setAllEnabled(true, username, reason);
-    }
-
-    @Override
-    public void disableAll(final String username, final String reason) throws ConfigServiceException {
-        setAllEnabled(false, username, reason);
-    }
-
-    @Override
-    public void deleteAllEnabledSetting(final String username, final String reason) throws ConfigServiceException {
-        setAllEnabled(null, username, reason);
-    }
-
-    private void setAllEnabled(final Boolean allEnabled, final String username, final String reason) throws ConfigServiceException {
-        configService.replaceConfig(username, reason,
-                TOOL_ID, ALL_ENABLED_PATH,
-                allEnabled == null ? null : String.valueOf(allEnabled),
-                Scope.Site, null);
-    }
-
-    @Override
-    @Nullable
-    public Boolean getAllEnabled(final String project) {
-        return parseBooleanConfig(configService.getConfig(TOOL_ID, ALL_ENABLED_PATH, Scope.Project, project));
-    }
-
-    @Override
-    public void enableAll(final String project, final String username, final String reason) throws ConfigServiceException {
-        setAllEnabled(true, project, username, reason);
-    }
-
-    @Override
-    public void disableAll(final String project, final String username, final String reason) throws ConfigServiceException {
-        setAllEnabled(false, project, username, reason);
-    }
-
-    @Override
-    public void deleteAllEnabledSetting(final String project, final String username, final String reason) throws ConfigServiceException {
-        setAllEnabled(null, project, username, reason);
-    }
-
-    private void setAllEnabled(final Boolean allEnabled, final String project, final String username, final String reason) throws ConfigServiceException {
-        configService.replaceConfig(username, reason,
-                TOOL_ID, ALL_ENABLED_PATH,
-                allEnabled == null ? null : String.valueOf(allEnabled),
                 Scope.Project, project);
     }
 

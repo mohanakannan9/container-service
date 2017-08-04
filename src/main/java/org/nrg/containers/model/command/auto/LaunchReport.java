@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import org.nrg.containers.model.container.auto.Container;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -16,9 +17,8 @@ import java.util.Map;
 public abstract class LaunchReport {
     @JsonProperty("status") public abstract String status();
     @JsonProperty("params") public abstract ImmutableMap<String, String> launchParams();
-    @Nullable @JsonProperty("command-id") public abstract String commandId();
-    @Nullable @JsonProperty("wrapper-id") public abstract String wrapperId();
-    @Nullable @JsonProperty("wrapper-name") public abstract String wrapperName();
+    @Nullable @JsonProperty("command-id") public abstract Long commandId();
+    @Nullable @JsonProperty("wrapper-id") public abstract Long wrapperId();
 
     @AutoValue
     @JsonInclude(JsonInclude.Include.ALWAYS)
@@ -28,39 +28,29 @@ public abstract class LaunchReport {
 
         @JsonCreator
         @SuppressWarnings("unused")
-        static Success create(@JsonProperty("status") final String ignoredStatus,
+        static Success create(@JsonProperty("container-id") final @Nonnull String containerId,
+                              @JsonProperty("status") final String ignoredStatus,
                               @JsonProperty("params") final Map<String, String> launchParams,
-                              @JsonProperty("container-id") final @Nonnull String containerId,
-                              @JsonProperty("command-id") final String commandId,
-                              @JsonProperty("wrapper-id") final String wrapperId,
-                              @JsonProperty("wrapper-name") final String wrapperName) {
-            return create(launchParams, containerId, commandId, wrapperId, wrapperName);
+                              @JsonProperty("command-id") final Long commandId,
+                              @JsonProperty("wrapper-id") final Long wrapperId) {
+            return create(containerId, launchParams, commandId, wrapperId);
         }
 
-        public static Success create(final Map<String, String> launchParams,
-                                     final @Nonnull String containerId,
-                                     final long commandId,
-                                     final long wrapperId,
-                                     final String wrapperName) {
+        public static Success create(final @Nonnull Container container) {
+            final Long commandId = container.commandId() == 0L ? null : container.commandId();
+            final Long wrapperId = container.wrapperId() == 0L ? null : container.wrapperId();
+            return create(container.containerId(), container.getRawInputs(), commandId, wrapperId);
+        }
+
+        public static Success create(final @Nonnull String containerId,
+                                     final Map<String, String> launchParams,
+                                     final Long commandIdString,
+                                     final Long wrapperIdString) {
             final ImmutableMap<String, String> launchParamsCopy =
                     launchParams == null ?
                             ImmutableMap.<String, String>of() :
                             ImmutableMap.copyOf(launchParams);
-            final String commandIdString = commandId == 0L ? null : String.valueOf(commandId);
-            final String wrapperIdString = wrapperId == 0L ? null : String.valueOf(wrapperId);
-            return create(launchParamsCopy, containerId, commandIdString, wrapperIdString, wrapperName);
-        }
-
-        public static Success create(final Map<String, String> launchParams,
-                                     final @Nonnull String containerId,
-                                     final String commandIdString,
-                                     final String wrapperIdString,
-                                     final String wrapperName) {
-            final ImmutableMap<String, String> launchParamsCopy =
-                    launchParams == null ?
-                            ImmutableMap.<String, String>of() :
-                            ImmutableMap.copyOf(launchParams);
-            return new AutoValue_LaunchReport_Success(STATUS, launchParamsCopy, commandIdString, wrapperIdString, wrapperName, containerId);
+            return new AutoValue_LaunchReport_Success(STATUS, launchParamsCopy, commandIdString, wrapperIdString, containerId);
         }
     }
 
@@ -72,35 +62,32 @@ public abstract class LaunchReport {
 
         @JsonCreator
         @SuppressWarnings("unused")
-        static Failure create(@JsonProperty("status") final String ignoredStatus,
+        static Failure create(@JsonProperty("message") final @Nonnull String message,
+                              @JsonProperty("status") final String ignoredStatus,
                               @JsonProperty("params") final Map<String, String> launchParams,
-                              @JsonProperty("message") final @Nonnull String message,
-                              @JsonProperty("command-id") final String commandId,
-                              @JsonProperty("wrapper-id") final String wrapperId,
-                              @JsonProperty("wrapper-name") final String wrapperName) {
-            return create(launchParams, message, commandId, wrapperId, wrapperName);
+                              @JsonProperty("command-id") final Long commandId,
+                              @JsonProperty("wrapper-id") final Long wrapperId) {
+            return create(message, launchParams, commandId, wrapperId);
         }
 
-        public static Failure create(final Map<String, String> launchParams,
-                                     final @Nonnull String message,
+        public static Failure create(final @Nonnull String message,
+                                     final Map<String, String> launchParams,
                                      final long commandId,
-                                     final long wrapperId,
-                                     final String wrapperName) {
-            final String commandIdString = commandId == 0L ? null : String.valueOf(commandId);
-            final String wrapperIdString = wrapperId == 0L ? null : String.valueOf(wrapperId);
-            return create(launchParams, message, commandIdString, wrapperIdString, wrapperName);
+                                     final long wrapperId) {
+            final Long commandIdCopy = commandId == 0L ? null : commandId;
+            final Long wrapperIdCopy = wrapperId == 0L ? null : wrapperId;
+            return create(message, launchParams, commandIdCopy, wrapperIdCopy);
         }
 
-        public static Failure create(final Map<String, String> launchParams,
-                                     final @Nonnull String message,
-                                     final String commandIdString,
-                                     final String wrapperIdString,
-                                     final String wrapperName) {
+        public static Failure create(final @Nonnull String message,
+                                     final Map<String, String> launchParams,
+                                     final Long commandId,
+                                     final Long wrapperId) {
             final ImmutableMap<String, String> launchParamsCopy =
                     launchParams == null ?
                             ImmutableMap.<String, String>of() :
                             ImmutableMap.copyOf(launchParams);
-            return new AutoValue_LaunchReport_Failure(STATUS, launchParamsCopy, commandIdString, wrapperIdString, wrapperName, message);
+            return new AutoValue_LaunchReport_Failure(STATUS, launchParamsCopy, commandId, wrapperId, message);
         }
     }
 

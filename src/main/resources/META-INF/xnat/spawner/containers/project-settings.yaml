@@ -27,6 +27,9 @@ projectCommandConfigsPanel:
         projCommandConfigScript:
 #           tag: script|src="/scripts/xnat/plugin/containerService/containerServices-projectSettings.js"
             tag: script|src="~/scripts/xnat/plugin/containerService/containerServices-projectSettings.js"
+        projCommandStylesheet:
+        #   tag: link|rel="stylesheet"|type="text/css"|href="/scripts/xnat/plugin/containerService/containerConfig.css"
+            tag: link|rel="stylesheet"|type="text/css"|href="~/scripts/xnat/plugin/containerService/containerConfig.css"
 
 projectCommandProjectPrefs:
     kind: panel
