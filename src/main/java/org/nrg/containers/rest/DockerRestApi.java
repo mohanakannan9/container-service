@@ -135,11 +135,10 @@ public class DockerRestApi extends AbstractXapiRestController {
                                                final @RequestParam(value = "reason", defaultValue = "User request") String reason)
             throws NrgServiceRuntimeException {
         final UserI userI = XDAT.getUserDetails();
-        if (!setDefault) {
-            return new ResponseEntity<>(dockerService.createHub(hub), HttpStatus.CREATED);
-        } else {
-            return new ResponseEntity<>(dockerService.createHubAndSetDefault(hub, userI.getUsername(), reason), HttpStatus.CREATED);
-        }
+        final DockerHub created = setDefault ?
+                dockerService.createHubAndSetDefault(hub, userI.getUsername(), reason) :
+                dockerService.createHub(hub);
+        return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 
     @XapiRequestMapping(value = "/hubs/{id:" + ID_REGEX + "}", method = POST, restrictTo = Admin)
