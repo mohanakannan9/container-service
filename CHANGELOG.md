@@ -6,7 +6,10 @@ Not yet released.
 
 ### Features
 
-* Ping server on `GET /docker/server`
+* Ping server on `GET /docker/server` and create
+* [CS-111][] Ping hub on /xapi/hubs operations
+
+[CS-111]: https://issues.xnat.org/browse/CS-111
 
 ### Bugfixes
 

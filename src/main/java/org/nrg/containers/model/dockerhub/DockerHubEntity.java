@@ -13,11 +13,11 @@ public class DockerHubEntity extends AbstractHibernateEntity {
     private String name;
     private String url;
 
-    public static DockerHubEntity fromPojo(final DockerHub pojo) {
+    public static DockerHubEntity fromPojo(final DockerHubBase.DockerHub pojo) {
         return fromPojoWithTemplate(pojo, new DockerHubEntity());
     }
 
-    public static DockerHubEntity fromPojoWithTemplate(final DockerHub pojo, final DockerHubEntity template) {
+    public static DockerHubEntity fromPojoWithTemplate(final DockerHubBase.DockerHub pojo, final DockerHubEntity template) {
         if (template == null) {
             return fromPojo(pojo);
         }
@@ -27,8 +27,8 @@ public class DockerHubEntity extends AbstractHibernateEntity {
         return template;
     }
 
-    public DockerHub toPojo(final long defaultId) {
-        return DockerHub.create(this.getId(), this.name, this.url, this.getId() == defaultId);
+    public DockerHubBase.DockerHub toPojo(final long defaultId) {
+        return DockerHubBase.DockerHub.create(this.getId(), this.name, this.url, this.getId() == defaultId);
     }
 
     @Column(unique = true)

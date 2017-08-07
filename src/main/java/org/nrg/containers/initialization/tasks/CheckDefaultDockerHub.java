@@ -1,6 +1,6 @@
 package org.nrg.containers.initialization.tasks;
 
-import org.nrg.containers.model.dockerhub.DockerHub;
+import org.nrg.containers.model.dockerhub.DockerHubBase;
 import org.nrg.containers.services.DockerHubService;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.initialization.tasks.AbstractInitializingTask;
@@ -34,13 +34,13 @@ public class CheckDefaultDockerHub extends AbstractInitializingTask {
     protected void callImpl() throws InitializingTaskException {
 
         log.debug("Checking if any docker hubs exist in database.");
-        final List<DockerHub> hubs = dockerHubService.getHubs();
+        final List<DockerHubBase.DockerHub> hubs = dockerHubService.getHubs();
         final boolean anyHubsInDb = !(hubs == null || hubs.isEmpty());
         final boolean oneHubInDb = (anyHubsInDb && hubs.size() == 1); // This is just to make the debug message nicer
         log.debug("{} hub{} exist{} in db.", anyHubsInDb ? hubs.size() : "No", oneHubInDb ? "" : "s", oneHubInDb ? "s" : "");
         if (!anyHubsInDb) {
             log.info("Initializing database with public docker hub.");
-            setDefault(dockerHubService.create(DockerHub.DEFAULT));
+            setDefault(dockerHubService.create(DockerHubBase.DockerHub.DEFAULT));
             log.debug("All is well.");
             return;
         }
@@ -49,8 +49,8 @@ public class CheckDefaultDockerHub extends AbstractInitializingTask {
         final long defaultDockerHubId = dockerHubService.getDefaultHubId();
         final boolean defaultDefined = !(defaultDockerHubId == 0L);
         if (defaultDefined) {
-            DockerHub existingDefault = null;
-            for (final DockerHub dockerHub : hubs) {
+            DockerHubBase.DockerHub existingDefault = null;
+            for (final DockerHubBase.DockerHub dockerHub : hubs) {
                 if (dockerHub.id() == defaultDockerHubId) {
                     existingDefault = dockerHub;
                     break;
@@ -69,12 +69,12 @@ public class CheckDefaultDockerHub extends AbstractInitializingTask {
         }
     }
 
-    private void setDefault(final DockerHub dockerHub) {
+    private void setDefault(final DockerHubBase.DockerHub dockerHub) {
         log.info("Setting docker hub {}: \"{}\" as \"default\".", dockerHub.id(), dockerHub.name());
         dockerHubService.setDefault(dockerHub, siteConfigPreferences.getPrimaryAdminUsername(), "Setting default docker hub during site initialization.");
     }
 
-    private void setFirstHubAsDefault(final List<DockerHub> hubs) {
+    private void setFirstHubAsDefault(final List<DockerHubBase.DockerHub> hubs) {
         log.info("Selecting first hub in database to set as \"default\".");
         setDefault(hubs.get(0));
     }

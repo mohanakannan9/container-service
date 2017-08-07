@@ -5,7 +5,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.config.DockerHubEntityTestConfig;
-import org.nrg.containers.model.dockerhub.DockerHub;
+import org.nrg.containers.model.dockerhub.DockerHubBase;
 import org.nrg.containers.model.dockerhub.DockerHubEntity;
 import org.nrg.containers.services.DockerHubService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,8 +44,8 @@ public class DockerHubEntityTest {
                 ", \"url\": \"http://localhost\"" +
                 ", \"default\": false" +
                 "}";
-        final DockerHub hubToCreate = mapper.readValue(hubToCreateJson, DockerHub.class);
-        final DockerHub created = dockerHubService.create(hubToCreate);
+        final DockerHubBase.DockerHub hubToCreate = mapper.readValue(hubToCreateJson, DockerHubBase.DockerHub.class);
+        final DockerHubBase.DockerHub created = dockerHubService.create(hubToCreate);
         assertThat(created.id(), is(not(0L)));
         assertThat(created.name(), is(hubToCreate.name()));
         assertThat(created.url(), is(hubToCreate.url()));
@@ -70,7 +70,7 @@ public class DockerHubEntityTest {
                 ", \"url\": \"http://localhost\"" +
                 ", \"default\": false" +
                 "}";
-        final DockerHub hubToCreate = mapper.readValue(hubToCreateJson, DockerHub.class);
+        final DockerHubBase.DockerHub hubToCreate = mapper.readValue(hubToCreateJson, DockerHubBase.DockerHub.class);
         final DockerHubEntity hubEntityToCreate = DockerHubEntity.fromPojo(hubToCreate);
         final DockerHubEntity created = dockerHubService.create(hubEntityToCreate);
 
@@ -84,7 +84,7 @@ public class DockerHubEntityTest {
                 ", \"url\": \"http://localhost\"" +
                 ", \"default\": false" +
                 "}";
-        final DockerHub hubToUpdate = mapper.readValue(hubToUpdateJson, DockerHub.class);
+        final DockerHubBase.DockerHub hubToUpdate = mapper.readValue(hubToUpdateJson, DockerHubBase.DockerHub.class);
         final DockerHubEntity hubEntityToUpdate = DockerHubEntity.fromPojo(hubToUpdate);
 
         dockerHubService.update(hubEntityToUpdate);
@@ -102,8 +102,8 @@ public class DockerHubEntityTest {
                 ", \"url\": \"http://localhost\"" +
                 ", \"default\": false" +
                 "}";
-        final DockerHub hubToCreate = mapper.readValue(hubToCreateJson, DockerHub.class);
-        final DockerHub created = dockerHubService.create(hubToCreate);
+        final DockerHubBase.DockerHub hubToCreate = mapper.readValue(hubToCreateJson, DockerHubBase.DockerHub.class);
+        final DockerHubBase.DockerHub created = dockerHubService.create(hubToCreate);
 
         TestTransaction.flagForCommit();
         TestTransaction.end();
@@ -115,11 +115,11 @@ public class DockerHubEntityTest {
                 ", \"url\": \"http://localhost\"" +
                 ", \"default\": false" +
                 "}";
-        final DockerHub hubToUpdate = mapper.readValue(hubToUpdateJson, DockerHub.class);
+        final DockerHubBase.DockerHub hubToUpdate = mapper.readValue(hubToUpdateJson, DockerHubBase.DockerHub.class);
 
         dockerHubService.update(hubToUpdate);
 
-        final DockerHub updated = dockerHubService.retrieveHub(created.id());
+        final DockerHubBase.DockerHub updated = dockerHubService.retrieveHub(created.id());
         assertThat(updated, is(hubToUpdate));
     }
 }

@@ -21,7 +21,7 @@ import org.nrg.containers.config.DockerControlApiTestConfig;
 import org.nrg.containers.events.model.DockerContainerEvent;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
-import org.nrg.containers.model.dockerhub.DockerHub;
+import org.nrg.containers.model.dockerhub.DockerHubBase;
 import org.nrg.containers.model.image.docker.DockerImage;
 import org.nrg.containers.model.server.docker.DockerServerBase;
 import org.nrg.framework.scope.EntityId;
@@ -63,7 +63,7 @@ public class DockerControlApiTest {
     // private static final String KELSEYM_PYDICOM = "kelseym/pydicom:latest";
     private static final String BUSYBOX_ID = "sha256:47bcc53f74dc94b1920f0b34f6036096526296767650f223433fe65c35f149eb";
     private static final String BUSYBOX_NAME = "busybox:1.24.2-uclibc";
-    private static final DockerHub DOCKER_HUB = DockerHub.DEFAULT;
+    private static final DockerHubBase.DockerHub DOCKER_HUB = DockerHubBase.DockerHub.DEFAULT;
 
     @Autowired private DockerControlApi controlApi;
     @Autowired private NrgPreferenceService mockPrefsService;

@@ -17,7 +17,9 @@ import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
-import org.nrg.containers.model.dockerhub.DockerHub;
+import org.nrg.containers.model.dockerhub.DockerHubBase;
+import org.nrg.containers.model.dockerhub.DockerHubBase.DockerHub;
+import org.nrg.containers.model.dockerhub.DockerHubBase.DockerHubWithPing;
 import org.nrg.containers.model.image.docker.DockerImage;
 import org.nrg.containers.model.image.docker.DockerImageAndCommandSummary;
 import org.nrg.containers.model.server.docker.DockerServerBase.DockerServer;
@@ -126,6 +128,10 @@ public class DockerRestApiTest {
         when(mockRoleService.isSiteAdmin(nonAdmin)).thenReturn(false);
         when(mockUserManagementServiceI.getUser(NON_ADMIN_USERNAME)).thenReturn(nonAdmin);
         NONADMIN_AUTH = new TestingAuthenticationToken(nonAdmin, nonAdminPassword);
+
+        // Have to use the do().when() construction because the when().do() throws an Exception
+        doReturn("OK")
+                .when(mockContainerControlApi).pingHub(Mockito.any(DockerHub.class), Mockito.anyString(), Mockito.anyString());
     }
 
     @Test
@@ -280,10 +286,12 @@ public class DockerRestApiTest {
         final DockerHub dockerHub = DockerHub.DEFAULT;
         final DockerHub privateHub = DockerHub.create(10L, "my hub", "http://localhost", false);
         final List<DockerHub> hubs = Lists.newArrayList(dockerHub, privateHub);
-        final String obscuredHubJson = mapper.writeValueAsString(hubs);
+        final List<DockerHubWithPing> hubsWithPing = Lists.newArrayList(
+                DockerHubWithPing.create(dockerHub, true),
+                DockerHubWithPing.create(privateHub, true)
+        );
 
         when(mockDockerHubService.getHubs()).thenReturn(hubs);
-
 
         final String response =
                 mockMvc.perform(request)
@@ -291,7 +299,7 @@ public class DockerRestApiTest {
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
-        assertThat(response, is(obscuredHubJson));
+        assertThat(response, is(mapper.writeValueAsString(hubsWithPing)));
     }
 
     @Test
@@ -299,14 +307,14 @@ public class DockerRestApiTest {
         final String pathTemplate = "/docker/hubs/%d";
 
         final long privateHubId = 10L;
-        final DockerHub privateHubExpected = DockerHub.create(privateHubId, "my hub", "http://localhost", false);
-        final String privateHubObscuredJson = mapper.writeValueAsString(privateHubExpected);
-        final DockerHub defaultHubExpected = DockerHub.DEFAULT;
-        final String defaultHubObscuredJson = mapper.writeValueAsString(defaultHubExpected);
-        final long defaultHubId = defaultHubExpected.id();
+        final DockerHub privateHub = DockerHub.create(privateHubId, "my hub", "http://localhost", false);
+        final DockerHubWithPing privateHubWithPing = DockerHubWithPing.create(privateHub, true);
+        final DockerHub defaultHub = DockerHub.DEFAULT;
+        final DockerHubWithPing defaultHubWithPing = DockerHubWithPing.create(defaultHub, true);
+        final long defaultHubId = defaultHub.id();
 
-        when(mockDockerHubService.getHub(defaultHubId)).thenReturn(defaultHubExpected);
-        when(mockDockerHubService.getHub(privateHubId)).thenReturn(privateHubExpected);
+        when(mockDockerHubService.getHub(defaultHubId)).thenReturn(defaultHub);
+        when(mockDockerHubService.getHub(privateHubId)).thenReturn(privateHub);
 
         // Get default hub
         final MockHttpServletRequestBuilder defaultHubRequest =
@@ -315,13 +323,14 @@ public class DockerRestApiTest {
                         .with(csrf())
                         .with(testSecurityContext());
 
-        final String defaultHubResponse =
+        final String defaultHubResponseStr =
                 mockMvc.perform(defaultHubRequest)
                         .andExpect(status().isOk())
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
-        assertThat(defaultHubResponse, is(defaultHubObscuredJson));
+        final DockerHubWithPing defaultHubResponse = mapper.readValue(defaultHubResponseStr, DockerHubWithPing.class);
+        assertThat(defaultHubResponse, is(defaultHubWithPing));
 
         // Get private hub
         final MockHttpServletRequestBuilder privateHubRequest =
@@ -330,13 +339,14 @@ public class DockerRestApiTest {
                         .with(csrf())
                         .with(testSecurityContext());
 
-        final String privateHubResponse =
+        final String privateHubResponseStr =
                 mockMvc.perform(privateHubRequest)
                         .andExpect(status().isOk())
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
-        assertThat(privateHubResponse, is(privateHubObscuredJson));
+        final DockerHubWithPing privateHubResponse = mapper.readValue(privateHubResponseStr, DockerHubWithPing.class);
+        assertThat(privateHubResponse, is(privateHubWithPing));
     }
 
     @Test
@@ -344,14 +354,14 @@ public class DockerRestApiTest {
         final String pathTemplate = "/docker/hubs/%s";
 
         final String privateHubName = "my hub";
-        final DockerHub privateHubExpected = DockerHub.create(10L, privateHubName, "http://localhost", false);
-        final String privateHubObscuredJson = mapper.writeValueAsString(privateHubExpected);
-        final DockerHub defaultHubExpected = DockerHub.DEFAULT;
-        final String defaultHubObscuredJson = mapper.writeValueAsString(defaultHubExpected);
-        final String defaultHubName = defaultHubExpected.name();
+        final DockerHub privateHub = DockerHub.create(10L, privateHubName, "http://localhost", false);
+        final DockerHubWithPing privateHubWithPing = DockerHubWithPing.create(privateHub, true);
+        final DockerHub defaultHub = DockerHub.DEFAULT;
+        final DockerHubWithPing defaultHubWithPing = DockerHubWithPing.create(defaultHub, true);
+        final String defaultHubName = defaultHub.name();
 
-        when(mockDockerHubService.getHub(defaultHubName)).thenReturn(defaultHubExpected);
-        when(mockDockerHubService.getHub(privateHubName)).thenReturn(privateHubExpected);
+        when(mockDockerHubService.getHub(defaultHubName)).thenReturn(defaultHub);
+        when(mockDockerHubService.getHub(privateHubName)).thenReturn(privateHub);
 
         // Get default hub
         final MockHttpServletRequestBuilder defaultHubRequest =
@@ -360,13 +370,14 @@ public class DockerRestApiTest {
                         .with(csrf())
                         .with(testSecurityContext());
 
-        final String defaultHubResponse =
+        final String defaultHubResponseStr =
                 mockMvc.perform(defaultHubRequest)
                         .andExpect(status().isOk())
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
-        assertThat(defaultHubResponse, is(defaultHubObscuredJson));
+        final DockerHubWithPing defaultHubResponse = mapper.readValue(defaultHubResponseStr, DockerHubWithPing.class);
+        assertThat(defaultHubResponse, is(defaultHubWithPing));
 
         // Get private hub
         final MockHttpServletRequestBuilder privateHubRequest =
@@ -375,21 +386,20 @@ public class DockerRestApiTest {
                         .with(csrf())
                         .with(testSecurityContext());
 
-        final String privateHubResponse =
+        final String privateHubResponseStr =
                 mockMvc.perform(privateHubRequest)
                         .andExpect(status().isOk())
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
-        assertThat(privateHubResponse, is(privateHubObscuredJson));
+        final DockerHubWithPing privateHubResponse = mapper.readValue(privateHubResponseStr, DockerHubWithPing.class);
+        assertThat(privateHubResponse, is(privateHubWithPing));
     }
 
     @Test
     public void testCreateHub() throws Exception {
         final String path = "/docker/hubs";
 
-        // Because we obscure the username and password in the json representation in docker hubs,
-        // we have to write the json directly, not create an object an serialized json from it.
         final String hubToCreateJson = "{" +
                 "\"id\": 0" +
                 ", \"name\": \"a hub name\"" +
@@ -399,7 +409,7 @@ public class DockerRestApiTest {
         final DockerHub hubToCreate = mapper.readValue(hubToCreateJson, DockerHub.class);
 
         final DockerHub created = DockerHub.create(10L, "a hub name", "http://localhost", false);
-        final String createdObscuredJson = mapper.writeValueAsString(created);
+        final DockerHubWithPing createdAndPingged = DockerHubWithPing.create(created, true);
 
         when(mockDockerHubService.create(hubToCreate)).thenReturn(created);
 
@@ -417,7 +427,8 @@ public class DockerRestApiTest {
                         .andReturn()
                         .getResponse()
                         .getContentAsString();
-        assertThat(response, is(createdObscuredJson));
+        final DockerHubWithPing createdAndReturned = mapper.readValue(response, DockerHubWithPing.class);
+        assertThat(createdAndReturned, is(createdAndPingged));
 
         // TODO figure out why the non-admin tests are failing and fix them. The code seems fine on a live XNAT.
         // final MockHttpServletRequestBuilder nonAdminRequest =

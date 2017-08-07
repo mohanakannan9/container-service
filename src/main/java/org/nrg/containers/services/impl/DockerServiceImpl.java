@@ -8,7 +8,8 @@ import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotUniqueException;
 import org.nrg.containers.model.command.auto.Command;
-import org.nrg.containers.model.dockerhub.DockerHub;
+import org.nrg.containers.model.dockerhub.DockerHubBase.DockerHub;
+import org.nrg.containers.model.dockerhub.DockerHubBase.DockerHubWithPing;
 import org.nrg.containers.model.image.docker.DockerImage;
 import org.nrg.containers.model.image.docker.DockerImageAndCommandSummary;
 import org.nrg.containers.model.server.docker.DockerServerBase;
@@ -27,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 
@@ -54,28 +56,28 @@ public class DockerServiceImpl implements DockerService {
     }
 
     @Override
-    public List<DockerHub> getHubs() {
-        return dockerHubService.getHubs();
+    public List<DockerHubWithPing> getHubs() {
+        return ping(dockerHubService.getHubs());
     }
 
     @Override
-    public DockerHub getHub(final long id) throws NotFoundException {
-        return dockerHubService.getHub(id);
+    public DockerHubWithPing getHub(final long id) throws NotFoundException {
+        return ping(dockerHubService.getHub(id));
     }
 
     @Override
-    public DockerHub getHub(final String name) throws NotFoundException, NotUniqueException {
-        return dockerHubService.getHub(name);
+    public DockerHubWithPing getHub(final String name) throws NotFoundException, NotUniqueException {
+        return ping(dockerHubService.getHub(name));
     }
 
     @Override
-    public DockerHub createHub(final DockerHub hub)  {
-        return dockerHubService.create(hub);
+    public DockerHubWithPing createHub(final DockerHub hub)  {
+        return ping(dockerHubService.create(hub));
     }
 
     @Override
-    public DockerHub createHubAndSetDefault(final DockerHub hub, final String username, final String reason)  {
-        return dockerHubService.createAndSetDefault(hub, username, reason);
+    public DockerHubWithPing createHubAndSetDefault(final DockerHub hub, final String username, final String reason)  {
+        return ping(dockerHubService.createAndSetDefault(hub, username, reason));
     }
 
     @Override
@@ -138,6 +140,31 @@ public class DockerServiceImpl implements DockerService {
         return controlApi.pingHub(hub, username, password);
     }
 
+    @Nullable
+    private Boolean canConnectToHub(final DockerHub hub) {
+        try {
+            return "OK".equals(pingHub(hub));
+        } catch (DockerServerException | NoServerPrefException e) {
+            // ignored
+        }
+        return null;
+    }
+
+    @Nonnull
+    private DockerHubWithPing ping(final DockerHub hubBeforePing) {
+        final Boolean ping = canConnectToHub(hubBeforePing);
+        return DockerHubWithPing.create(hubBeforePing, ping);
+    }
+
+    @Nonnull
+    private List<DockerHubWithPing> ping(final @Nonnull List<DockerHub> hubsBeforePing) {
+        final List<DockerHubWithPing> hubsAfterPing = Lists.newArrayList();
+        for (final DockerHub hubBeforePing : hubsBeforePing) {
+            hubsAfterPing.add(ping(hubBeforePing));
+        }
+        return hubsAfterPing;
+    }
+
     @Override
     public DockerImage pullFromHub(final long hubId, final String imageName, final boolean saveCommands)
             throws DockerServerException, NoServerPrefException, NotFoundException {
@@ -172,6 +199,7 @@ public class DockerServiceImpl implements DockerService {
             throws NoServerPrefException, DockerServerException {
         return pullFromHub(hub, imageName, saveCommands, null, null);
     }
+
     private DockerImage pullFromHub(final DockerHub hub,
                                     final String imageName,
                                     final boolean saveCommands,

@@ -12,8 +12,9 @@ import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.exceptions.NotUniqueException;
 import org.nrg.containers.exceptions.UnauthorizedException;
 import org.nrg.containers.model.command.auto.Command;
+import org.nrg.containers.model.dockerhub.DockerHubBase.DockerHub;
+import org.nrg.containers.model.dockerhub.DockerHubBase.DockerHubWithPing;
 import org.nrg.containers.model.image.docker.DockerImage;
-import org.nrg.containers.model.dockerhub.DockerHub;
 import org.nrg.containers.model.image.docker.DockerImageAndCommandSummary;
 import org.nrg.containers.model.server.docker.DockerServerBase;
 import org.nrg.containers.model.server.docker.DockerServerBase.DockerServerWithPing;
@@ -112,30 +113,30 @@ public class DockerRestApi extends AbstractXapiRestController {
 
     @XapiRequestMapping(value = "/hubs", method = GET)
     @ResponseBody
-    public List<DockerHub> getHubs() throws UnauthorizedException {
+    public List<DockerHubWithPing> getHubs() throws UnauthorizedException {
         return dockerService.getHubs();
     }
 
     @XapiRequestMapping(value = "/hubs/{id:" + ID_REGEX + "}", method = GET)
     @ResponseBody
-    public DockerHub getHub(final @PathVariable long id) throws NotFoundException {
+    public DockerHubWithPing getHub(final @PathVariable long id) throws NotFoundException {
         return dockerService.getHub(id);
     }
 
     @XapiRequestMapping(value = "/hubs/{name:" + NAME_REGEX + "}", method = GET)
     @ResponseBody
-    public DockerHub getHub(final @PathVariable String name) throws NotFoundException, NotUniqueException {
+    public DockerHubWithPing getHub(final @PathVariable String name) throws NotFoundException, NotUniqueException {
         return dockerService.getHub(name);
     }
 
     @XapiRequestMapping(value = "/hubs", method = POST, restrictTo = Admin)
     @ResponseBody
-    public ResponseEntity<DockerHub> createHub(final @RequestBody DockerHub hub,
-                                               final @RequestParam(value = "default", defaultValue = "false") boolean setDefault,
-                                               final @RequestParam(value = "reason", defaultValue = "User request") String reason)
+    public ResponseEntity<DockerHubWithPing> createHub(final @RequestBody DockerHub hub,
+                                                       final @RequestParam(value = "default", defaultValue = "false") boolean setDefault,
+                                                       final @RequestParam(value = "reason", defaultValue = "User request") String reason)
             throws NrgServiceRuntimeException {
         final UserI userI = XDAT.getUserDetails();
-        final DockerHub created = setDefault ?
+        final DockerHubWithPing created = setDefault ?
                 dockerService.createHubAndSetDefault(hub, userI.getUsername(), reason) :
                 dockerService.createHub(hub);
         return new ResponseEntity<>(created, HttpStatus.CREATED);
