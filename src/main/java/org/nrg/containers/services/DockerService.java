@@ -7,7 +7,8 @@ import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.dockerhub.DockerHub;
 import org.nrg.containers.model.image.docker.DockerImage;
 import org.nrg.containers.model.image.docker.DockerImageAndCommandSummary;
-import org.nrg.containers.model.server.docker.DockerServer;
+import org.nrg.containers.model.server.docker.DockerServerBase;
+import org.nrg.containers.model.server.docker.DockerServerBase.DockerServerWithPing;
 import org.nrg.containers.services.DockerHubService.DockerHubDeleteDefaultException;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
@@ -41,8 +42,8 @@ public interface DockerService {
     DockerImage pullFromHub(String imageName, boolean saveCommands)
             throws DockerServerException, NoServerPrefException, NotFoundException;
 
-    DockerServer getServer() throws NotFoundException;
-    DockerServer setServer(DockerServer server) throws InvalidPreferenceName;
+    DockerServerWithPing getServer() throws NotFoundException;
+    DockerServerWithPing setServer(DockerServerBase.DockerServer server) throws InvalidPreferenceName;
     String pingServer() throws NoServerPrefException, DockerServerException;
 
     List<DockerImage> getImages() throws NoServerPrefException, DockerServerException;

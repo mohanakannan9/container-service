@@ -20,7 +20,7 @@ import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.model.dockerhub.DockerHub;
 import org.nrg.containers.model.image.docker.DockerImage;
 import org.nrg.containers.model.image.docker.DockerImageAndCommandSummary;
-import org.nrg.containers.model.server.docker.DockerServer;
+import org.nrg.containers.model.server.docker.DockerServerBase.DockerServer;
 import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.DockerHubService;

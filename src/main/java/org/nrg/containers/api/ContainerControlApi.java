@@ -9,7 +9,9 @@ import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.container.auto.ContainerMessage;
 import org.nrg.containers.model.dockerhub.DockerHub;
 import org.nrg.containers.model.image.docker.DockerImage;
-import org.nrg.containers.model.server.docker.DockerServer;
+import org.nrg.containers.model.server.docker.DockerServerBase;
+import org.nrg.containers.model.server.docker.DockerServerBase.DockerServer;
+import org.nrg.containers.model.server.docker.DockerServerBase.DockerServerWithPing;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 
@@ -19,8 +21,10 @@ import java.util.Map;
 
 public interface ContainerControlApi {
     DockerServer getServer() throws NoServerPrefException;
+    DockerServerWithPing getServerAndPing() throws NoServerPrefException;
     DockerServer setServer(String host, String certPath) throws InvalidPreferenceName;
     DockerServer setServer(DockerServer server) throws InvalidPreferenceName;
+    DockerServerWithPing setServerAndPing(DockerServer server) throws InvalidPreferenceName;
     void setServer(String host) throws InvalidPreferenceName;
     String pingServer() throws NoServerPrefException, DockerServerException;
     boolean canConnect();

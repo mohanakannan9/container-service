@@ -6,7 +6,7 @@ Not yet released.
 
 ### Features
 
-*
+* Ping server on `GET /docker/server`
 
 ### Bugfixes
 

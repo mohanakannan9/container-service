@@ -13,9 +13,10 @@ import org.nrg.containers.exceptions.NotUniqueException;
 import org.nrg.containers.exceptions.UnauthorizedException;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.image.docker.DockerImage;
-import org.nrg.containers.model.server.docker.DockerServer;
 import org.nrg.containers.model.dockerhub.DockerHub;
 import org.nrg.containers.model.image.docker.DockerImageAndCommandSummary;
+import org.nrg.containers.model.server.docker.DockerServerBase;
+import org.nrg.containers.model.server.docker.DockerServerBase.DockerServerWithPing;
 import org.nrg.containers.services.DockerHubService.DockerHubDeleteDefaultException;
 import org.nrg.containers.services.DockerService;
 import org.nrg.framework.annotations.XapiRestController;
@@ -28,8 +29,6 @@ import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -38,7 +37,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -76,14 +74,14 @@ public class DockerRestApi extends AbstractXapiRestController {
     }
 
     @ApiOperation(value = "Docker server", notes = "Returns Docker server configuration values",
-            response = DockerServer.class)
+            response = DockerServerBase.DockerServer.class)
     @ApiResponses({
             @ApiResponse(code = 200, message = "The Docker server configuration"),
             @ApiResponse(code = 400, message = "The server has not been configured"),
             @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "/server", method = GET, produces = JSON)
     @ResponseBody
-    public DockerServer getServer() throws NotFoundException {
+    public DockerServerWithPing getServer() throws NotFoundException {
         return dockerService.getServer();
     }
 
@@ -94,14 +92,14 @@ public class DockerRestApi extends AbstractXapiRestController {
             @ApiResponse(code = 400, message = "Must set the \"host\" property in request body"),
             @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "/server", method = POST, restrictTo = Admin)
-    public ResponseEntity<String> setServer(final @RequestBody DockerServer dockerServer)
+    public ResponseEntity<String> setServer(final @RequestBody DockerServerBase.DockerServer dockerServer)
             throws InvalidPreferenceName, JsonProcessingException, UnauthorizedException {
         if (StringUtils.isBlank(dockerServer.host())) {
             return new ResponseEntity<>("Must set the \"host\" property in request body.",
                     HttpStatus.BAD_REQUEST);
         }
 
-        final DockerServer server = dockerService.setServer(dockerServer);
+        final DockerServerWithPing server = dockerService.setServer(dockerServer);
         return new ResponseEntity<>(mapper.writeValueAsString(server), HttpStatus.CREATED);
     }
 

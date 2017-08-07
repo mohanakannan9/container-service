@@ -11,7 +11,8 @@ import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.dockerhub.DockerHub;
 import org.nrg.containers.model.image.docker.DockerImage;
 import org.nrg.containers.model.image.docker.DockerImageAndCommandSummary;
-import org.nrg.containers.model.server.docker.DockerServer;
+import org.nrg.containers.model.server.docker.DockerServerBase;
+import org.nrg.containers.model.server.docker.DockerServerBase.DockerServerWithPing;
 import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.services.CommandLabelService;
 import org.nrg.containers.services.CommandService;
@@ -185,17 +186,17 @@ public class DockerServiceImpl implements DockerService {
     }
 
     @Override
-    public DockerServer getServer() throws NotFoundException {
+    public DockerServerWithPing getServer() throws NotFoundException {
         try {
-            return controlApi.getServer();
+            return controlApi.getServerAndPing();
         } catch (NoServerPrefException e) {
             throw new NotFoundException(e);
         }
     }
 
     @Override
-    public DockerServer setServer(final DockerServer server) throws InvalidPreferenceName {
-        return controlApi.setServer(server);
+    public DockerServerWithPing setServer(final DockerServerBase.DockerServer server) throws InvalidPreferenceName {
+        return controlApi.setServerAndPing(server);
     }
 
     @Override

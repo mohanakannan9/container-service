@@ -23,7 +23,7 @@ import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.dockerhub.DockerHub;
 import org.nrg.containers.model.image.docker.DockerImage;
-import org.nrg.containers.model.server.docker.DockerServer;
+import org.nrg.containers.model.server.docker.DockerServerBase;
 import org.nrg.framework.scope.EntityId;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.slf4j.Logger;
@@ -133,7 +133,7 @@ public class DockerControlApiTest {
     public void testGetServer() throws Exception {
         assumeThat(canConnectToDocker(), is(true));
 
-        final DockerServer server = controlApi.getServer();
+        final DockerServerBase.DockerServer server = controlApi.getServer();
         assertThat(server.host(), is(CONTAINER_HOST));
         assertThat(server.certPath(), is(CERT_PATH));
     }
