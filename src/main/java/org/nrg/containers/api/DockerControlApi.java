@@ -31,10 +31,11 @@ import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMount;
 import org.nrg.containers.model.container.auto.ContainerMessage;
-import org.nrg.containers.model.server.docker.DockerServer;
+import org.nrg.containers.model.dockerhub.DockerHubBase.DockerHub;
+import org.nrg.containers.model.server.docker.DockerServerBase.DockerServer;
+import org.nrg.containers.model.server.docker.DockerServerBase.DockerServerWithPing;
 import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.model.command.auto.Command;
-import org.nrg.containers.model.dockerhub.DockerHub;
 import org.nrg.containers.model.image.docker.DockerImage;
 import org.nrg.containers.services.CommandLabelService;
 import org.nrg.framework.exceptions.NotFoundException;
@@ -85,6 +86,12 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     @Override
+    public DockerServerWithPing getServerAndPing() throws NoServerPrefException {
+        final DockerServer dockerServerBeforePing = getServer();
+        return DockerServerWithPing.create(dockerServerBeforePing, canConnect());
+    }
+
+    @Override
     public void setServer(final String host) throws InvalidPreferenceName {
         setServer(host, null);
     }
@@ -102,6 +109,12 @@ public class DockerControlApi implements ContainerControlApi {
     public DockerServer setServer(final DockerServer serverBean) throws InvalidPreferenceName {
         containerServerPref.fromPojo(serverBean);
         return serverBean;
+    }
+
+    @Override
+    public DockerServerWithPing setServerAndPing(final DockerServer server) throws InvalidPreferenceName {
+        final DockerServer dockerServerBeforePing = setServer(server);
+        return DockerServerWithPing.create(dockerServerBeforePing, canConnect());
     }
 
     @Override
