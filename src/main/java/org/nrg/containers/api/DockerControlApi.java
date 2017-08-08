@@ -14,6 +14,7 @@ import com.spotify.docker.client.LogStream;
 import com.spotify.docker.client.exceptions.ContainerNotFoundException;
 import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.exceptions.DockerException;
+import com.spotify.docker.client.exceptions.ImageNotFoundException;
 import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
 import com.spotify.docker.client.messages.ContainerInfo;
@@ -253,9 +254,11 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     private com.spotify.docker.client.messages.ImageInfo _getImageById(final String imageId, final DockerClient client)
-        throws DockerServerException, NoServerPrefException {
+        throws DockerServerException, NoServerPrefException, NotFoundException {
         try {
             return client.inspectImage(imageId);
+        } catch (ImageNotFoundException e) {
+            throw new NotFoundException(e);
         } catch (DockerException | InterruptedException e) {
             throw new DockerServerException(e);
         }

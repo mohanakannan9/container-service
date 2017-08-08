@@ -8,8 +8,10 @@ Not yet released.
 
 * Ping server on `GET /docker/server` and create
 * [CS-111][] Ping hub on /xapi/hubs operations
+* [CS-62][] Special-case an error when someone wants to POST to /images/save but instead GETs /images/save.
 
 [CS-111]: https://issues.xnat.org/browse/CS-111
+[CS-62]: https://issues.xnat.org/browse/CS-62
 
 ### Bugfixes
 

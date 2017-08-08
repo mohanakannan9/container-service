@@ -258,8 +258,18 @@ public class DockerRestApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = "/images/{id}", method = GET, produces = JSON)
     @ResponseBody
     public DockerImage getImage(final @PathVariable("id") String id)
-            throws NoServerPrefException, NotFoundException {
-        return dockerService.getImage(id);
+            throws NoServerPrefException, NotFoundException, BadRequestException {
+        try {
+            return dockerService.getImage(id);
+        } catch (NotFoundException e) {
+            // CS-62 We will catch the case where the image id is "save"
+            // This is likely because they meant to POST to /images/save.
+            if ("save".equals(id)) {
+                throw new BadRequestException("To save commands from image labels POST to /images/save.");
+            } else {
+                throw e;
+            }
+        }
     }
 
     @ApiOperation(value = "Delete Docker image",
@@ -305,6 +315,12 @@ public class DockerRestApi extends AbstractXapiRestController {
         return e.getMessage();
     }
 
+    @ResponseStatus(value = HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(value = {BadRequestException.class})
+    public String handleBadRequest(final Exception e) {
+        return e.getMessage();
+    }
+
     @ResponseStatus(value = HttpStatus.NOT_FOUND)
     @ExceptionHandler(value = {NotFoundException.class})
     public String handleNotFound(final Exception e) {
@@ -325,7 +341,7 @@ public class DockerRestApi extends AbstractXapiRestController {
 
     @ResponseStatus(value = HttpStatus.BAD_REQUEST)
     @ExceptionHandler(value = {NrgServiceRuntimeException.class})
-    public String handleBadRequest() {
+    public String handleInvalidDockerHub() {
         return "Body was not a valid Docker Hub.";
     }
 
