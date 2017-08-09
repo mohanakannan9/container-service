@@ -17,7 +17,9 @@ Not yet released.
 
 ### Bugfixes
 
-*
+* [CS-263][] When finalizing a container, check if user can edit parent before creating new resource. (Sorry, I thought I had already done this.)
+
+[CS-263]: https://issues.xnat.org/browse/CS-263
 
 ## 1.1
 

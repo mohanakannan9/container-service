@@ -25,6 +25,7 @@ import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
+import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.restlet.util.XNATRestConstants;
 import org.nrg.xnat.services.archive.CatalogService;
@@ -279,13 +280,22 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
                 }
 
                 try {
+                    final URIManager.DataURIA uri = UriParserUtils.parseURI(parentUri);
+                    if (!Permissions.canEdit(userI, ((URIManager.ArchiveItemURI) uri).getSecurityItem())) {
+                        final String message = String.format(prefix + "User does not have permission to add resources to item with URI %s.", parentUri);
+                        log.error(message);
+                        throw new UnauthorizedException(message);
+                    }
+
                     final XnatResourcecatalog resourcecatalog = catalogService.insertResources(userI, parentUri, toUpload, label, null, null, null);
                     createdUri = UriParserUtils.getArchiveUri(resourcecatalog);
                     if (StringUtils.isBlank(createdUri)) {
                         createdUri = parentUri + "/resources/" + resourcecatalog.getLabel();
                     }
                 } catch (ClientException e) {
-                    throw new UnauthorizedException(prefix + "User does not have permissions to upload files to " + parentUri + ".", e);
+                    final String message = String.format(prefix + "User does not have permission to add resources to item with URI %s.", parentUri);
+                    log.error(message);
+                    throw new UnauthorizedException(message);
                 } catch (Exception e) {
                     throw new ContainerException(prefix + "Could not upload files to resource.", e);
                 }
