@@ -186,7 +186,7 @@ var XNAT = getObject(XNAT || {});
     containerHostManager.table = function(container, callback){
 
         // initialize the table - we'll add to it below
-        var chTable = XNAT.table({
+        var chmTable = XNAT.table({
             className: 'container-hosts xnat-table',
             style: {
                 width: '100%',
@@ -196,10 +196,11 @@ var XNAT = getObject(XNAT || {});
         });
 
         // add table header row
-        chTable.tr()
+        chmTable.tr()
             .th({ addClass: 'left', html: '<b>Host Name</b>' })
             .th('<b>Host Path</b>')
             .th('<b>Default</b>')
+            .th('<b>Status</b>')
             .th('<b>Actions</b>');
 
         function editLink(item, text){
@@ -253,29 +254,40 @@ var XNAT = getObject(XNAT || {});
             }, 'Edit');
         }
 
+        function hostPingStatus(ping) {
+            var status = {};
+            if (ping !== undefined) {
+                status = (ping) ? { label: 'OK', message: 'Ping Status: OK'} :  { label: 'Down', message: 'Ping Status: FALSE' };
+            } else {
+                status = { label: 'Error', message: 'No response to ping' };
+            }
+            return spawn('span', { title: status.message }, status.label);
+        }
+
         containerHostManager.getAll().done(function(data){
             data = [].concat(data);
             data.forEach(function(item){
-                chTable.tr({ title: item.name, data: { id: item.id, host: item.host, certPath: item.certPath}})
+                chmTable.tr({ title: item.name, data: { id: item.id, host: item.host, certPath: item.certPath}})
                     .td([editLink(item, item.name)]).addClass('host')
                     .td([ spawn('div.center', [item.host]) ])
                     .td([ spawn('div.center', [defaultToggle(item)]) ])
-                    .td([ spawn('div.center', [editButton(item)]) ]);
+                    .td([ spawn('div.center', [hostPingStatus(item.ping)]) ])
+                    .td([ spawn('div.center', [editButton(item)]) ])
             });
 
             if (container){
-                $$(container).append(chTable.table);
+                $$(container).append(chmTable.table);
             }
 
             if (isFunction(callback)) {
-                callback(chTable.table);
+                callback(chmTable.table);
             }
 
         });
 
-        containerHostManager.$table = $(chTable.table);
+        containerHostManager.$table = $(chmTable.table);
 
-        return chTable.table;
+        return chmTable.table;
     };
 
     containerHostManager.init = function(container){
@@ -384,6 +396,7 @@ var XNAT = getObject(XNAT || {});
                 var $url = $form.find('input[name=url]');
                 var $name = $form.find('input[name=name]');
                 var isDefault = $form.find('input[name=default]').val();
+                xmodal.loading.open({ title: 'Validating host URL'});
                 $form.submitJSON({
                     method: 'POST',
                     url: (isNew) ? imageHostUrl(isDefault) : imageHostUrl(isDefault,item.id),
@@ -414,10 +427,12 @@ var XNAT = getObject(XNAT || {});
                     },
                     success: function(){
                         imageHostManager.refreshTable();
+                        xmodal.loading.close();
                         xmodal.close(obj.$modal);
                         XNAT.ui.banner.top(2000, 'Saved.', 'success')
                     },
                     fail: function(e){
+                        xmodal.loading.close();
                         errorHandler(e);
                     }
                 });
@@ -444,6 +459,7 @@ var XNAT = getObject(XNAT || {});
             .th('<b>Name</b>')
             .th('<b>URL</b>')
             .th('<b>Default</b>')
+            .th('<b>Status</b>')
             .th('<b>Actions</b>');
 
         function editLink(item, text){
@@ -499,6 +515,16 @@ var XNAT = getObject(XNAT || {});
             return (status) ? valIfTrue : false;
         }
 
+        function hubPingStatus(ping) {
+            var status = {};
+            if (ping !== undefined) {
+                status = (ping) ? { label: 'OK', message: 'Ping Status: OK' } : { label: 'Down', message: 'Ping Status: False' };
+            } else {
+                status = { label: 'Error', message: 'No response to ping' };
+            }
+            return spawn('span',{ title: status.message }, status.label);
+        }
+
         function deleteButton(item){
             return spawn('button.btn.sm.delete', {
                 onclick: function(){
@@ -535,11 +561,12 @@ var XNAT = getObject(XNAT || {});
                     .td([ editLink(item, item.name) ]).addClass('name')
                     .td( item.url )
                     .td([ defaultToggle(item)] ).addClass('status')
+                    .td([ spawn('div.center', [hubPingStatus(item.ping)]) ])
                     .td([ spawn('div.center', [editButton(item), spacer(10), deleteButton(item)]) ]);
             });
 
             if (imageHost){
-                $$(imageHost).append(ihmTable.table);
+                $$(imageHost).empty().append(ihmTable.table);
             }
 
             if (isFunction(callback)) {
@@ -589,8 +616,9 @@ var XNAT = getObject(XNAT || {});
         var $manager = $$(container||'div#image-host-manager');
 
         imageHostManager.$table.remove();
+        $manager.append('Loading...');
         imageHostManager.table(null, function(table){
-            $manager.prepend(table);
+            $manager.empty().prepend(table);
         });
     };
 
