@@ -649,7 +649,7 @@ public class DockerControlApi implements ContainerControlApi {
                 attributes.put(LABEL_KEY, "<elided>");
             }
             final DockerContainerEvent containerEvent =
-                    new DockerContainerEvent(dockerEvent.action(),
+                    DockerContainerEvent.create(dockerEvent.action(),
                             dockerEventActor != null? dockerEventActor.id() : null,
                             dockerEvent.time(),
                             dockerEvent.timeNano(),

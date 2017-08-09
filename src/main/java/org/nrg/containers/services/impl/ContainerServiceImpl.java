@@ -242,12 +242,9 @@ public class ContainerServiceImpl implements ContainerService {
         // execution will be null if either we aren't tracking the container
         // that this event is about, or if we have already recorded the event
         if (execution != null ) {
-
-            final Matcher exitCodeMatcher =
-                    exitCodePattern.matcher(event.getStatus());
-            if (exitCodeMatcher.matches()) {
+            if (event.isExitStatus()) {
                 log.debug("Container is dead. Finalizing.");
-                final String exitCode = exitCodeMatcher.group(1);
+                final String exitCode = event.exitCode();
                 final String userLogin = execution.userId();
                 try {
                     final UserI userI = Users.getUser(userLogin);
@@ -271,11 +268,11 @@ public class ContainerServiceImpl implements ContainerService {
 
     @Override
     public void finalize(final Container container, final UserI userI) {
-        String exitCode = "x";
+        String exitCode = null;
         for (final ContainerHistory history : container.history()) {
-            final Matcher exitCodeMatcher = exitCodePattern.matcher(history.status());
-            if (exitCodeMatcher.matches()) {
-                exitCode = exitCodeMatcher.group(1);
+            if (StringUtils.isNotBlank(history.exitCode())) {
+                exitCode = history.exitCode();
+                break;
             }
         }
         finalize(container, userI, exitCode);

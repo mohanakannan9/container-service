@@ -410,6 +410,7 @@ public abstract class Container {
         @JsonProperty("time-recorded") public abstract Date timeRecorded();
         @Nullable @JsonProperty("external-timestamp") public abstract String externalTimestamp();
         @Nullable @JsonProperty("message") public abstract String message();
+        @Nullable @JsonProperty("exitCode") public abstract String exitCode();
 
         @JsonCreator
         public static ContainerHistory create(@JsonProperty("id") final long databaseId,
@@ -418,7 +419,8 @@ public abstract class Container {
                                               @JsonProperty("entity-id") final String entityId,
                                               @JsonProperty("time-recorded") final Date timeRecorded,
                                               @JsonProperty("external-timestamp") final String externalTimestamp,
-                                              @JsonProperty("message") final String message) {
+                                              @JsonProperty("message") final String message,
+                                              @JsonProperty("exitCode") final String exitCode) {
             return builder()
                     .databaseId(databaseId)
                     .status(status)
@@ -426,22 +428,32 @@ public abstract class Container {
                     .entityId(entityId)
                     .timeRecorded(timeRecorded)
                     .externalTimestamp(externalTimestamp)
+                    .message(message)
+                    .exitCode(exitCode)
                     .build();
         }
 
         public static ContainerHistory create(final ContainerEntityHistory containerEntityHistory) {
-            return create(containerEntityHistory.getId(), containerEntityHistory.getStatus(), containerEntityHistory.getEntityType(),
-                    containerEntityHistory.getEntityId(), containerEntityHistory.getTimeRecorded(), containerEntityHistory.getExternalTimestamp(), null);
+            return builder()
+                    .databaseId(containerEntityHistory.getId())
+                    .status(containerEntityHistory.getStatus())
+                    .entityType(containerEntityHistory.getEntityType())
+                    .entityId(containerEntityHistory.getEntityId())
+                    .timeRecorded(containerEntityHistory.getTimeRecorded())
+                    .externalTimestamp(containerEntityHistory.getExternalTimestamp())
+                    .exitCode(containerEntityHistory.getExitCode())
+                    .build();
         }
 
         public static ContainerHistory fromContainerEvent(final ContainerEvent containerEvent) {
             return builder()
-                    .status(containerEvent.getStatus())
+                    .status(containerEvent.status())
                     .entityType("event")
                     .entityId(null)
                     .timeRecorded(new Date())
-                    .externalTimestamp(containerEvent instanceof DockerContainerEvent ? String.valueOf(((DockerContainerEvent)containerEvent).getTimeNano()) : null)
+                    .externalTimestamp(containerEvent instanceof DockerContainerEvent ? String.valueOf(((DockerContainerEvent)containerEvent).timeNano()) : null)
                     .message(null)
+                    .exitCode(containerEvent.exitCode())
                     .build();
         }
 
@@ -481,6 +493,7 @@ public abstract class Container {
             public abstract Builder timeRecorded(Date timeRecorded);
             public abstract Builder externalTimestamp(String externalTimestamp);
             public abstract Builder message(String message);
+            public abstract Builder exitCode(String exitCode);
             public abstract ContainerHistory build();
         }
     }
