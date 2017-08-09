@@ -911,7 +911,7 @@ var XNAT = getObject(XNAT || {});
     commandListManager.table = function(imageName,callback){
 
         // initialize the table - we'll add to it below
-        var chTable = XNAT.table({
+        var clmTable = XNAT.table({
             className: 'enabled-commands xnat-table',
             style: {
                 width: '100%',
@@ -921,7 +921,7 @@ var XNAT = getObject(XNAT || {});
         });
 
         // add table header row
-        chTable.tr()
+        clmTable.tr()
             .th({ addClass: 'left', html: '<b>Command</b>' })
             .th('<b>XNAT Actions</b>')
             .th('<b>Site-wide Config</b>')
@@ -1014,23 +1014,23 @@ var XNAT = getObject(XNAT || {});
                     } else {
                         xnatActions = 'N/A';
                     }
-                    chTable.tr({title: command.name, data: {id: command.id, name: command.name, image: command.image}})
+                    clmTable.tr({title: command.name, data: {id: command.id, name: command.name, image: command.image}})
                         .td([viewLink(command, command.name)]).addClass('name')
                         .td(xnatActions)
                         .td('N/A')
                         .td(command.version)
-                        .td([['div.center', [viewCommandButton(command), spacer(10), deleteCommandButton(command)]]]);
+                        .td([ spawn('div.center', [viewCommandButton(command), spacer(10), deleteCommandButton(command)]) ]);
                 }
             } else {
                 // create a handler when no command data is returned.
-                chTable.tr({title: 'No command data found'})
+                clmTable.tr({title: 'No command data found'})
                     .td({colSpan: '5', html: 'No Commands Found'});
             }
         });
 
-        commandListManager.$table = $(chTable.table);
+        commandListManager.$table = $(clmTable.table);
 
-        return chTable.table;
+        return clmTable.table;
     };
 
     imageFilterManager.init = function(container){
@@ -1228,7 +1228,7 @@ var XNAT = getObject(XNAT || {});
     configDefinition.table = function(config) {
 
         // initialize the table - we'll add to it below
-        var chTable = XNAT.table({
+        var cceditTable = XNAT.table({
             className: 'command-config-definition xnat-table '+config.type,
             style: {
                 width: '100%',
@@ -1276,7 +1276,7 @@ var XNAT = getObject(XNAT || {});
             var inputs = config.inputs;
 
             // add table header row
-            chTable.tr()
+            cceditTable.tr()
                 .th({ addClass: 'left', html: '<b>Input</b>' })
                 .th('<b>Default Value</b>')
                 .th('<b>Matcher Value</b>')
@@ -1285,7 +1285,7 @@ var XNAT = getObject(XNAT || {});
 
             for (i in inputs) {
                 var input = inputs[i];
-                chTable.tr({ data: { input: i }, className: 'input' })
+                cceditTable.tr({ data: { input: i }, className: 'input' })
                     .td( { data: { key: 'key' }, addClass: 'left'}, i )
                     .td( { data: { key: 'property', property: 'default-value' }}, basicConfigInput('defaultVal',input['default-value']) )
                     .td( { data: { key: 'property', property: 'matcher' }}, basicConfigInput('matcher',input['matcher']) )
@@ -1298,22 +1298,22 @@ var XNAT = getObject(XNAT || {});
             var outputs = config.outputs;
 
             // add table header row
-            chTable.tr()
+            cceditTable.tr()
                 .th({ addClass: 'left', html: '<b>Output</b>' })
                 .th({ addClass: 'left', width: '75%', html: '<b>Label</b>' });
 
             for (o in outputs) {
                 var output = outputs[o];
-                chTable.tr({ data: { output: o }, className: 'output' })
+                cceditTable.tr({ data: { output: o }, className: 'output' })
                     .td( { data: { key: 'key' }, addClass: 'left'}, o )
                     .td( { data: { key: 'property', property: 'label' }}, basicConfigInput('label',output['label']) );
             }
 
         }
 
-        configDefinition.$table = $(chTable.table);
+        configDefinition.$table = $(cceditTable.table);
 
-        return chTable.table;
+        return cceditTable.table;
     };
 
 
@@ -1437,7 +1437,7 @@ var XNAT = getObject(XNAT || {});
         // add master switch
         ccmTable.tr({ 'style': { 'background-color': '#f3f3f3' }})
             .td({className: 'name', html: 'Enable / Disable All Commands', colSpan: 2 })
-            .td([['div',[masterCommandCheckbox()]]])
+            .td([ spawn('div',[masterCommandCheckbox()]) ])
             .td();
 
         function viewLink(item, wrapper, text){
@@ -1531,34 +1531,6 @@ var XNAT = getObject(XNAT || {});
             ]);
         }
 
-        function deleteConfigButton(item,wrapper){
-            return spawn('button.btn.sm.delete', {
-                onclick: function(){
-                    xmodal.confirm({
-                        height: 220,
-                        scroll: false,
-                        content: "" +
-                        "<p>Are you sure you'd like to delete the <b>" + item.name + "</b> command configuration?</p>" +
-                        "<p><b>This action cannot be undone. This action does not delete any project-specific configurations for this command.</b></p>",
-                        okAction: function(){
-                            console.log('delete id ' + item.id);
-                            XNAT.xhr.delete({
-                                url: configUrl(item.id,wrapper.name),
-                                success: function(){
-                                    console.log('"'+ wrapper.name + '" command deleted');
-                                    XNAT.ui.banner.top(1000, '<b>"'+ wrapper.name + '"</b> configuration deleted.', 'success');
-                                    commandConfigManager.refreshTable();
-                                },
-                                fail: function(e){
-                                    errorHandler(e);
-                                }
-                            });
-                        }
-                    })
-                }
-            }, 'Delete');
-        }
-
         commandConfigManager.getAll().done(function(data) {
             if (data) {
                 for (var i = 0, j = data.length; i < j; i++) {
@@ -1567,10 +1539,10 @@ var XNAT = getObject(XNAT || {});
                         for (var k = 0, l = command.xnat.length; k < l; k++) {
                             var wrapper = command.xnat[k];
                             ccmTable.tr({title: wrapper.name, data: {wrapperid: wrapper.id, commandid: command.id, name: wrapper.name, image: command.image}})
-                                .td([viewLink(command, wrapper, wrapper.description)]).addClass('name')
-                                .td([['span.truncate.truncate200', command.image ]])
-                                .td([['div', [enabledCheckbox(command,wrapper)]]])
-                                .td([['div.center', [viewConfigButton(command,wrapper), spacer(10), deleteConfigButton(command,wrapper)]]]);
+                                .td([ viewLink(command, wrapper, wrapper.description) ]).addClass('name')
+                                .td([ spawn('span.truncate.truncate200', command.image ) ])
+                                .td([ spawn('div', [enabledCheckbox(command,wrapper)]) ])
+                                .td([ spawn('div.center', [viewConfigButton(command,wrapper)]) ]);
                         }
                     }
                 }
