@@ -9,9 +9,11 @@ Not yet released.
 * Ping server on `GET /docker/server` and create
 * [CS-111][] Ping hub on /xapi/hubs operations
 * [CS-62][] Special-case an error when someone wants to POST to /images/save but instead GETs /images/save.
+* [CS-215][] POST /xapi/docker/pull will now return a 404 rather than a 500 when it cannot find the image you are attempting to pull
 
 [CS-111]: https://issues.xnat.org/browse/CS-111
 [CS-62]: https://issues.xnat.org/browse/CS-62
+[CS-215]: https://issues.xnat.org/browse/CS-215
 
 ### Bugfixes
 

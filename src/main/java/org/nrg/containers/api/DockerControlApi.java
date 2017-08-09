@@ -452,39 +452,41 @@ public class DockerControlApi implements ContainerControlApi {
 
     @Override
     @Nullable
-    public DockerImage pullImage(final String name) throws NoServerPrefException, DockerServerException {
+    public DockerImage pullImage(final String name) throws NoServerPrefException, DockerServerException, NotFoundException {
         return pullImage(name, null);
     }
 
     @Override
     @Nullable
     public DockerImage pullImage(final String name, final @Nullable DockerHub hub)
-            throws NoServerPrefException, DockerServerException {
+            throws NoServerPrefException, DockerServerException, NotFoundException {
         return pullImage(name, hub, null, null);
     }
 
     @Override
     @Nullable
-    public DockerImage pullImage(final String name, final @Nullable DockerHub hub, final @Nullable String username, final @Nullable String password) throws NoServerPrefException, DockerServerException {
-        try (final DockerClient client = getClient()) {
-            _pullImage(name, registryAuth(hub, username, password), client);
-            return getImageById(name, client);
+    public DockerImage pullImage(final String name, final @Nullable DockerHub hub, final @Nullable String username, final @Nullable String password) throws NoServerPrefException, DockerServerException, NotFoundException {
+        final DockerClient client = getClient();
+        _pullImage(name, registryAuth(hub, username, password), client);  // We want to throw NotFoundException here if the image is not found on the hub
+        try {
+            return getImageById(name, client);  // We don't want to throw NotFoundException from here. If we can't find the image here after it has been pulled, that is a server error.
         } catch (NotFoundException e) {
             final String m = String.format("Image \"%s\" was not found", name);
             log.error(m);
-            // throw new DockerServerException(m);
+            throw new DockerServerException(e);
         }
-        return null;
     }
 
-    private void _pullImage(final @Nonnull String name, final @Nullable RegistryAuth registryAuth, final @Nonnull DockerClient client) throws DockerServerException {
+    private void _pullImage(final @Nonnull String name, final @Nullable RegistryAuth registryAuth, final @Nonnull DockerClient client) throws DockerServerException, NotFoundException {
         try {
             if (registryAuth == null) {
                 client.pull(name);
             } else {
                 client.pull(name, registryAuth);
             }
-        }  catch (DockerException | InterruptedException e) {
+        } catch (ImageNotFoundException e) {
+            throw new NotFoundException(e.getMessage());
+        } catch (DockerException | InterruptedException e) {
             log.error(e.getMessage());
             throw new DockerServerException(e);
         }

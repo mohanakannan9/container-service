@@ -35,9 +35,9 @@ public interface ContainerControlApi {
     DockerImage getImageById(final String imageId) throws NotFoundException, DockerServerException, NoServerPrefException;
     void deleteImageById(String id, Boolean force) throws NoServerPrefException, DockerServerException;
 
-    DockerImage pullImage(String name) throws NoServerPrefException, DockerServerException;
-    DockerImage pullImage(String name, DockerHub hub) throws NoServerPrefException, DockerServerException;
-    DockerImage pullImage(String name, DockerHub hub, String username, String password) throws NoServerPrefException, DockerServerException;
+    DockerImage pullImage(String name) throws NoServerPrefException, DockerServerException, NotFoundException;
+    DockerImage pullImage(String name, DockerHub hub) throws NoServerPrefException, DockerServerException, NotFoundException;
+    DockerImage pullImage(String name, DockerHub hub, String username, String password) throws NoServerPrefException, DockerServerException, NotFoundException;
 
     String createContainer(final ResolvedCommand dockerCommand) throws NoServerPrefException, DockerServerException, ContainerException;
     //    String createContainer(final String imageName, final List<String> runCommand, final List <String> volumes) throws NoServerPrefException, DockerServerException;

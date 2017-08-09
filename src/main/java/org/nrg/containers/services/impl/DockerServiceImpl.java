@@ -196,7 +196,7 @@ public class DockerServiceImpl implements DockerService {
     }
 
     private DockerImage pullFromHub(final DockerHub hub, final String imageName, final boolean saveCommands)
-            throws NoServerPrefException, DockerServerException {
+            throws NoServerPrefException, DockerServerException, NotFoundException {
         return pullFromHub(hub, imageName, saveCommands, null, null);
     }
 
@@ -205,7 +205,7 @@ public class DockerServiceImpl implements DockerService {
                                     final boolean saveCommands,
                                     final String username,
                                     final String password)
-            throws NoServerPrefException, DockerServerException {
+            throws NoServerPrefException, DockerServerException, NotFoundException {
         final DockerImage dockerImage = controlApi.pullImage(imageName, hub, username, password);
         if (saveCommands) {
             saveFromImageLabels(imageName, dockerImage);

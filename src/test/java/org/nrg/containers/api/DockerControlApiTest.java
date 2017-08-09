@@ -292,12 +292,12 @@ public class DockerControlApiTest {
         // TODO assert more things about the events
     }
 
-    private Matcher<DockerServerException> imageNotFoundException(final String name) {
+    private Matcher<Exception> imageNotFoundException(final String name) {
         final String exceptionMessage = "Image not found: " + name;
-        final String description = "for image name " + name;
-        return new CustomTypeSafeMatcher<DockerServerException>(description) {
+        final String description = "Image not found exception with image name " + name;
+        return new CustomTypeSafeMatcher<Exception>(description) {
             @Override
-            protected boolean matchesSafely(final DockerServerException ex) {
+            protected boolean matchesSafely(final Exception ex) {
                 return ex.getMessage().contains(exceptionMessage);
             }
         };
