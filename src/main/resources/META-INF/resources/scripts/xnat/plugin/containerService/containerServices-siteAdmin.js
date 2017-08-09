@@ -820,6 +820,7 @@ var XNAT = getObject(XNAT || {});
                             function() {
                                 xmodal.closeAll();
                                 imageListManager.refreshTable();
+                                commandConfigManager.refreshTable();
                                 XNAT.ui.banner.top(2000, 'Pull request complete.', 'success');
                             })
                         .fail(
@@ -886,6 +887,7 @@ var XNAT = getObject(XNAT || {});
                                 data: editorContent,
                                 success: function(obj){
                                     imageListManager.refreshTable();
+                                    commandConfigManager.refreshTable();
                                     xmodal.close(obj.$modal);
                                     XNAT.ui.banner.top(2000, 'Command definition saved.', 'success');
                                 },
@@ -986,6 +988,7 @@ var XNAT = getObject(XNAT || {});
                                     console.log('"'+ item.name + '" command deleted');
                                     XNAT.ui.banner.top(1000, '<b>"'+ item.name + '"</b> deleted.', 'success');
                                     imageListManager.refreshTable();
+                                    commandConfigManager.refreshTable();
                                 }
                             });
                         }
