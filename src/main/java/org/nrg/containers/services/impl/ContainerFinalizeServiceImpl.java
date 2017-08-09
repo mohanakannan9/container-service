@@ -1,6 +1,5 @@
 package org.nrg.containers.services.impl;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
@@ -22,7 +21,6 @@ import org.nrg.transporter.TransportService;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Permissions;
-import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.helpers.uri.URIManager;
@@ -54,7 +52,6 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
     private final SiteConfigPreferences siteConfigPreferences;
     private final TransportService transportService;
     private final CatalogService catalogService;
-    private PermissionsServiceI permissionsService;
 
     @Autowired
     public ContainerFinalizeServiceImpl(final ContainerControlApi containerControlApi,
@@ -64,30 +61,7 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
         this.containerControlApi = containerControlApi;
         this.siteConfigPreferences = siteConfigPreferences;
         this.transportService = transportService;
-        this.permissionsService = null;
         this.catalogService = catalogService;
-    }
-
-    @VisibleForTesting
-    public ContainerFinalizeServiceImpl(final ContainerControlApi containerControlApi,
-                                        final SiteConfigPreferences siteConfigPreferences,
-                                        final TransportService transportService,
-                                        final CatalogService catalogService,
-                                        final PermissionsServiceI permissionsService) {
-        this.containerControlApi = containerControlApi;
-        this.siteConfigPreferences = siteConfigPreferences;
-        this.transportService = transportService;
-        this.permissionsService = permissionsService;
-        this.catalogService = catalogService;
-    }
-
-    private PermissionsServiceI getPermissionsService() {
-        // We need this layer of indirection, rather than wiring in the PermissionsServiceI implementation,
-        // because we need to wait until after XFT/XDAT is fully initialized before getting this. See XNAT-4647.
-        if (permissionsService == null) {
-            permissionsService = Permissions.getPermissionsService();
-        }
-        return permissionsService;
     }
 
     @Override
