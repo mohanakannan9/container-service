@@ -212,11 +212,10 @@ var XNAT = getObject(XNAT || {});
         }
 
         function defaultToggle(item){
-            var defaultVal = !!item.default;
             var rdo = spawn('input.container-host-enabled', {
                 type: 'radio',
                 name: 'defaultHost',
-                checked: defaultVal,
+                checked: 'checked',
                 value: 'default',
                 data: { id: item.id, name: item.name },
                 onchange: function(){
@@ -254,37 +253,14 @@ var XNAT = getObject(XNAT || {});
             }, 'Edit');
         }
 
-        function deleteButton(item){
-            return spawn('button.btn.sm.delete', {
-                onclick: function(){
-                    xmodal.confirm({
-                        height: 220,
-                        scroll: false,
-                        content: "" +
-                        "<p>Are you sure you'd like to delete the Container Host at <b>" + item.host + "</b>?</p>" +
-                        "<p><b>This action cannot be undone.</b></p>",
-                        okAction: function(){
-                            XNAT.xhr.delete({
-                                url: containerHostUrl(item.id),
-                                success: function(){
-                                    XNAT.ui.banner.top(1000, '<b>"'+ item.host + '"</b> deleted.', 'success');
-                                    containerHostManager.refreshTable();
-                                }
-                            });
-                        }
-                    })
-                }
-            }, 'Delete');
-        }
-
         containerHostManager.getAll().done(function(data){
             data = [].concat(data);
             data.forEach(function(item){
                 chTable.tr({ title: item.name, data: { id: item.id, host: item.host, certPath: item.certPath}})
                     .td([editLink(item, item.name)]).addClass('host')
-                    .td([['div.center', [item.host]]])
-                    .td([['div.center', [defaultToggle(item)]]])
-                    .td([['div.center', [editButton(item), spacer(10), deleteButton(item)]]]);
+                    .td([ spawn('div.center', [item.host]) ])
+                    .td([ spawn('div.center', [defaultToggle(item)]) ])
+                    .td([ spawn('div.center', [editButton(item)]) ]);
             });
 
             if (container){
@@ -453,7 +429,7 @@ var XNAT = getObject(XNAT || {});
     imageHostManager.table = function(imageHost, callback){
 
         // initialize the table - we'll add to it below
-        var chTable = XNAT.table({
+        var ihmTable = XNAT.table({
             className: 'image-hosts xnat-table',
             style: {
                 width: '100%',
@@ -463,7 +439,7 @@ var XNAT = getObject(XNAT || {});
         });
 
         // add table header row
-        chTable.tr()
+        ihmTable.tr()
             .th({ addClass: 'left', html: '<b>ID</b>' })
             .th('<b>Name</b>')
             .th('<b>URL</b>')
@@ -554,27 +530,27 @@ var XNAT = getObject(XNAT || {});
         imageHostManager.getAll().done(function(data){
             data = [].concat(data);
             data.forEach(function(item){
-                chTable.tr({ title: item.name, data: { id: item.id, name: item.name, url: item.url}})
-                    .td(['div.center'],item.id)
-                    .td([editLink(item, item.name)]).addClass('name')
-                    .td(item.url)
-                    .td([defaultToggle(item)]).addClass('status')
-                    .td([['div.center', [editButton(item), spacer(10), deleteButton(item)]]]);
+                ihmTable.tr({ title: item.name, data: { id: item.id, name: item.name, url: item.url}})
+                    .td( item.id )
+                    .td([ editLink(item, item.name) ]).addClass('name')
+                    .td( item.url )
+                    .td([ defaultToggle(item)] ).addClass('status')
+                    .td([ spawn('div.center', [editButton(item), spacer(10), deleteButton(item)]) ]);
             });
 
             if (imageHost){
-                $$(imageHost).append(chTable.table);
+                $$(imageHost).append(ihmTable.table);
             }
 
             if (isFunction(callback)) {
-                callback(chTable.table);
+                callback(ihmTable.table);
             }
 
         });
 
-        imageHostManager.$table = $(chTable.table);
+        imageHostManager.$table = $(ihmTable.table);
 
-        return chTable.table;
+        return ihmTable.table;
     };
 
     imageHostManager.init = function(container){

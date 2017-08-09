@@ -90,6 +90,7 @@ imageHostsPanel:
                                     name: default
                                     label: Set As Default?
                                     checked: false
+                                    value: true
                                     onText: Default Hub
                                     offText: Not Default
         imageHostTable:
