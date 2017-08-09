@@ -268,9 +268,14 @@ public class ContainerServiceImpl implements ContainerService {
 
     @Override
     public void finalize(final Container container, final UserI userI) {
+        // Assumption: At most one container history item will have a non-null exit code.
+        // "": This event is an exit event (status == kill, die, or oom) but the attributes map
+        //      did not contain an "exitCode" key
+        // "0": success
+        // "1" to "255": failure
         String exitCode = null;
         for (final ContainerHistory history : container.history()) {
-            if (StringUtils.isNotBlank(history.exitCode())) {
+            if (history.exitCode() != null) {
                 exitCode = history.exitCode();
                 break;
             }

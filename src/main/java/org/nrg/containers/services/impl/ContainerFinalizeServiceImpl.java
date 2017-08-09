@@ -75,7 +75,8 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
 
         private Container toFinalize;
         private UserI userI;
-        private String exitCode;
+        // private String exitCode;
+        private boolean isFailed;
 
         private Map<String, ContainerMount> untransportedMounts;
         private Map<String, ContainerMount> transportedMounts;
@@ -87,7 +88,21 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
                                         final String exitCode) {
             this.toFinalize = toFinalize;
             this.userI = userI;
-            this.exitCode = exitCode;
+            // this.exitCode = exitCode;
+
+            // Assume that everything is fine unless the exit code is explicitly > 0.
+            // So exitCode="0", ="", =null all count as success.
+            isFailed = false;
+            if (StringUtils.isNotBlank(exitCode)) {
+                Long exitCodeNumber = null;
+                try {
+                    exitCodeNumber = Long.parseLong(exitCode);
+                } catch (NumberFormatException e) {
+                    // ignored
+                }
+
+                isFailed = exitCodeNumber != null && exitCodeNumber > 0;
+            }
 
             untransportedMounts = Maps.newHashMap();
             transportedMounts = Maps.newHashMap();
@@ -99,26 +114,30 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
             final Container.Builder finalizedContainerBuilder = toFinalize.toBuilder();
             finalizedContainerBuilder.logPaths(uploadLogs());
 
-            // TODO Add some stuff with status code. "x" means "don't know", "0" success, greater than 0 failure.
+            if (!isFailed) {
+                // Do not try to upload outputs if we know the container failed.
+                for (final ContainerMount mountOut : toFinalize.mounts()) {
+                    untransportedMounts.put(mountOut.name(), mountOut);
+                }
 
-            for (final ContainerMount mountOut : toFinalize.mounts()) {
-                untransportedMounts.put(mountOut.name(), mountOut);
-            }
-
-            final OutputsAndExceptions outputsAndExceptions = uploadOutputs();
-            final List<Exception> failedRequiredOutputs = outputsAndExceptions.exceptions;
-            if (!failedRequiredOutputs.isEmpty()) {
-                finalizedContainerBuilder.addHistoryItem(Container.ContainerHistory.fromSystem("Failed",
-                        "Failed to upload required outputs.\n" + Joiner.on("\n").join(Lists.transform(failedRequiredOutputs, new Function<Exception, String>() {
-                            @Override
-                            public String apply(final Exception input) {
-                                return input.getMessage();
-                            }
-                        }))))
-                        .outputs(outputsAndExceptions.outputs);
+                final OutputsAndExceptions outputsAndExceptions = uploadOutputs();
+                final List<Exception> failedRequiredOutputs = outputsAndExceptions.exceptions;
+                if (!failedRequiredOutputs.isEmpty()) {
+                    finalizedContainerBuilder.addHistoryItem(Container.ContainerHistory.fromSystem("Failed",
+                            "Failed to upload required outputs.\n" + Joiner.on("\n").join(Lists.transform(failedRequiredOutputs, new Function<Exception, String>() {
+                                @Override
+                                public String apply(final Exception input) {
+                                    return input.getMessage();
+                                }
+                            }))))
+                            .outputs(outputsAndExceptions.outputs);
+                } else {
+                    finalizedContainerBuilder.outputs(outputsAndExceptions.outputs);  // Overwrite any existing outputs
+                }
             } else {
-                finalizedContainerBuilder.outputs(outputsAndExceptions.outputs);  // Overwrite any existing outputs
+                // TODO We know the container has failed. Should we send an email?
             }
+
             return finalizedContainerBuilder.build();
         }
 
