@@ -413,13 +413,13 @@ var XNAT = getObject(XNAT || {});
             );
         }
 
-        function viewConfigButton(command,wrapper){
+        function editConfigButton(command,wrapper){
             return spawn('button.btn.sm', {
                 onclick: function(e){
                     e.preventDefault();
                     projConfigDefinition.dialog(command.id, wrapper.name, false);
                 }
-            }, 'Set Input Defaults');
+            }, 'Set Defaults');
         }
 
         function enabledCheckbox(command,wrapper){
@@ -513,7 +513,7 @@ var XNAT = getObject(XNAT || {});
                                 .td([viewLink(command, wrapper, wrapper.description)]).addClass('name')
                                 .td(command.image)
                                 .td([['div.center', [enabledCheckbox(command,wrapper)]]])
-                                .td([['div.center', [viewConfigButton(command,wrapper)]]]);
+                                .td([['div.center', [editConfigButton(command,wrapper)]]]);
                         }
                     }
 

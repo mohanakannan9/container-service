@@ -1452,13 +1452,13 @@ var XNAT = getObject(XNAT || {});
             }, [['b', text]]);
         }
 
-        function viewConfigButton(item,wrapper){
+        function editConfigButton(item,wrapper){
             return spawn('button.btn.sm', {
                 onclick: function(e){
                     e.preventDefault();
                     configDefinition.dialog(item.id, wrapper.name, false);
                 }
-            }, 'View');
+            }, 'Set Defaults');
         }
 
         function enabledCheckbox(command,wrapper){
@@ -1545,7 +1545,7 @@ var XNAT = getObject(XNAT || {});
                                 .td([ viewLink(command, wrapper, wrapper.description) ]).addClass('name')
                                 .td([ spawn('span.truncate.truncate200', command.image ) ])
                                 .td([ spawn('div', [enabledCheckbox(command,wrapper)]) ])
-                                .td([ spawn('div.center', [viewConfigButton(command,wrapper)]) ]);
+                                .td([ spawn('div.center', [editConfigButton(command,wrapper)]) ]);
                         }
                     }
                 }
