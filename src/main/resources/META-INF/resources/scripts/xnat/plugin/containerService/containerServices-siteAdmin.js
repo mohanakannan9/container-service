@@ -65,6 +65,29 @@ var XNAT = getObject(XNAT || {});
         });
     }
 
+    function csValidator(inputs){
+        var errorMsg = [];
+
+        if (inputs.length){
+            inputs.forEach(function($input){
+                if (!$input.val()){
+                    errorMsg.push( spawn('li', [
+                        spawn('strong', $input.prop('name')),
+                        ' requires a value.'
+                    ]) );
+                    $input.addClass('invalid');
+                }
+            });
+
+            if (errorMsg.length) {
+                return spawn('div', [
+                    spawn('p', 'Errors found:'),
+                    spawn('ul', errorMsg)
+                ]);
+            }
+        } else return true;
+    }
+
 
 /* ====================== *
  * Container Host Manager *
@@ -153,25 +176,15 @@ var XNAT = getObject(XNAT || {});
 
                 $form.find(':input').removeClass('invalid');
 
-                var errors = 0;
-                var errorMsg = 'Errors were found with the following fields: <ul>';
-
-                [$host].forEach(function($el){
-                    var el = $el[0];
-                    if (!el.value) {
-                        errors++;
-                        errorMsg += '<li><b>' + el.title + '</b> is required.</li>';
-                        $el.addClass('invalid');
-                    }
-                });
-
-                errorMsg += '</ul>';
-
-                if (errors > 0) {
-                    xmodal.message('Errors Found', errorMsg, { height: 300 });
+                if (csValidator([$host])) {
+                    XNAT.dialog.open({
+                        title: 'Validation Error',
+                        width: 300,
+                        content: csValidator([$host])
+                    })
                 }
 
-                return errors === 0;
+                return csValidator() === true;
 
             },
             success: function(){
@@ -744,18 +757,17 @@ var XNAT = getObject(XNAT || {});
 
     // dialog to add new images
     addImage.dialog = function(item){
-        var tmpl = $('#add-image-template');
-        var pullUrl;
+        var tmpl = $('#add-image-template').find('form').clone();
         item = item || {};
-        xmodal.open({
+        XNAT.dialog.open({
             title: 'Pull New Image',
-            template: tmpl.clone(),
-            width: 450,
-            height: 400,
-            scroll: false,
-            padding: '0',
+            content: tmpl.html(),
+            width: 500,
+            padding: 0,
             beforeShow: function(obj){
-                var $form = obj.$modal.find('form');
+                var $form = obj.$modal.find('.xnat-dialog-content');
+                $form.addClass('panel');
+
                 if (item && isDefined(item.image)) {
                     $form.setValues(item);
                 }
@@ -774,57 +786,66 @@ var XNAT = getObject(XNAT || {});
                     }
                 });
             },
-            okClose: false,
-            okLabel: 'Pull Image',
-            okAction: function(obj){
-                // the form panel is 'imageListTemplate' in containers-elements.yaml
-                var $form = obj.$modal.find('form');
-                var $image = $form.find('input[name=image]');
-                var $tag = $form.find('input[name=tag]');
+            buttons: [
+                {
+                    label: 'Pull Image',
+                    isDefault: true,
+                    close: false,
+                    action: function(obj){
+                        // the form panel is 'imageListTemplate' in containers-elements.yaml
+                        var $form = obj.$modal.find('.xnat-dialog-content');
+                        var $image = $form.find('input[name=image]');
+                        var $tag = $form.find('input[name=tag]');
 
-                // validate form inputs, then pull them into the URI querystring and create an XHR request.
-                $form.find(':input').removeClass('invalid');
+                        // validate form inputs, then pull them into the URI querystring and create an XHR request.
+                        $form.find(':input').removeClass('invalid');
 
-                var errors = 0;
-                var errorMsg = 'Errors were found with the following fields: <ul>';
+                        var errors = 0;
+                        var errorMsg = 'Errors were found with the following fields: <ul>';
 
-                [$image].forEach(function($el){
-                    var el = $el[0];
-                    if (!el.value) {
-                        errors++;
-                        errorMsg += '<li><b>' + el.title + '</b> is required.</li>';
-                        $el.addClass('invalid');
-                    }
-                });
-
-                errorMsg += '</ul>';
-
-                if (errors > 0) {
-                    xmodal.message('Errors Found', errorMsg, { height: 300 });
-                } else {
-                    // stitch together the image and tag definition, if a tag value was specified.
-                    if ($tag.val().length > 0 && $tag.val().indexOf(':') < 0) {
-                        $tag.val(':' + $tag.val());
-                    }
-                    var imageName = $image.val() + $tag.val();
-
-                    xmodal.loading.open({title: 'Submitting Pull Request',height: '110'});
-
-                    XNAT.xhr.post({ url: '/xapi/docker/pull?save-commands=true&image='+imageName })
-                        .success(
-                            function() {
-                                xmodal.closeAll();
-                                imageListManager.refreshTable();
-                                commandConfigManager.refreshTable();
-                                XNAT.ui.banner.top(2000, 'Pull request complete.', 'success');
-                            })
-                        .fail(
-                            function(e) {
-                                errorHandler(e, 'Could Not Pull Image');
+                        [$image].forEach(function($el){
+                            var el = $el[0];
+                            if (!el.value) {
+                                errors++;
+                                errorMsg += '<li><b>' + el.title + '</b> is required.</li>';
+                                $el.addClass('invalid');
                             }
-                        );
+                        });
+
+                        errorMsg += '</ul>';
+
+                        if (errors > 0) {
+                            xmodal.message('Errors Found', errorMsg, { height: 300 });
+                        } else {
+                            // stitch together the image and tag definition, if a tag value was specified.
+                            if ($tag.val().length > 0 && $tag.val().indexOf(':') < 0) {
+                                $tag.val(':' + $tag.val());
+                            }
+                            var imageName = $image.val() + $tag.val();
+
+                            xmodal.loading.open({ title: 'Submitting Pull Request', height: '110' });
+
+                            XNAT.xhr.post({
+                                url: '/xapi/docker/pull?save-commands=true&image='+imageName,
+                                success: function() {
+                                    xmodal.loading.close();
+                                    XNAT.dialog.closeAll();
+                                    imageListManager.refreshTable();
+                                    commandConfigManager.refreshTable();
+                                    XNAT.ui.banner.top(2000, 'Pull request complete.', 'success');
+                                },
+                                fail: function(e) {
+                                    errorHandler(e, 'Could Not Pull Image');
+                                }
+                            })
+                        }
+                    }
+                },
+                {
+                    label: 'Cancel',
+                    close: true
                 }
-            }
+            ]
         });
     };
 
