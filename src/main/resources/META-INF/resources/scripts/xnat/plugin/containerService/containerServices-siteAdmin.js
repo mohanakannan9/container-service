@@ -85,7 +85,7 @@ var XNAT = getObject(XNAT || {});
                     spawn('ul', errorMsg)
                 ]);
             }
-        } else return true;
+        } else return false;
     }
 
 
@@ -129,64 +129,82 @@ var XNAT = getObject(XNAT || {});
 
     // dialog to create/edit hosts
     containerHostManager.dialog = function(item, isNew){
-        var tmpl = $('#container-host-editor-template'),
+        var tmpl = $('#container-host-editor-template').find('form').clone(),
             doWhat = (isNew) ? 'Create' : 'Edit';
         item = item || {};
-        xmodal.open({
+        XNAT.dialog.open({
             title: doWhat + ' Container Server Host',
-            template: tmpl.clone(),
+            content: spawn('form'),
             width: 450,
-            height: 300,
-            scroll: false,
-            padding: '0',
             beforeShow: function(obj){
-                var $form = obj.$modal.find('form');
+                var $formContainer = obj.$modal.find('.xnat-dialog-content');
+                $formContainer.addClass('panel');
+                $formContainer.find('form').append(tmpl.html());
+
                 if (item && isDefined(item.host)) {
-                    $form.setValues(item);
+                    $formContainer.setValues(item);
                 }
             },
-            okClose: false,
-            okLabel: 'Save',
-            okAction: function(obj){
-                // the form panel is 'containerHostTemplate' in site-admin-element.yaml
-                var $form = obj.$modal.find('form');
-                var $host = $form.find('input[name=host]');
-                if (isNew) {
-                    xmodal.confirm({
-                        height: 220,
-                        scroll: false,
-                        content: "<p>This will replace your existing host definition. Are you sure you want to do this?</p>"+
-                            "<p><strong>This action cannot be undone.</strong></p>",
-                        okAction: function(){
-                            submitHostEditor($form,$host);
+            buttons: [
+                {
+                    label: 'Save',
+                    isDefault: true,
+                    close: false,
+                    action: function(obj){
+                        var $form = obj.$modal.find('form');
+                        var $host = $form.find('input[name=host]');
+
+                        $form.find(':input').removeClass('invalid');
+
+                        if (csValidator([$host])) {
+                            XNAT.dialog.open({
+                                title: 'Validation Error',
+                                width: 300,
+                                content: csValidator([$host])
+                            })
+                        } else {
+                            XNAT.dialog.closeAll();
+                            if (isNew) {
+                                XNAT.dialog.open({
+                                    content: spawn('div',[
+                                        spawn('p','This will replace your existing host definition. Are you sure you want to do this?'),
+                                        spawn('p', { 'style': { 'font-weight': 'bold' }}, 'This action cannot be undone.')
+                                    ]),
+                                    buttons: [
+                                        {
+                                            label: 'OK',
+                                            close: true,
+                                            isDefault: true,
+                                            action: function () {
+                                                submitHostEditor($form);
+                                            }
+                                        },
+                                        {
+                                            label: 'Cancel',
+                                            action: function(){
+                                                XNAT.dialog.closeAll();
+                                            }
+                                        }
+                                    ]
+                                });
+                            } else {
+                                submitHostEditor($form);
+                            }
                         }
-                    })
-                } else {
-                    submitHostEditor($form,$host);
+                    }
+                },
+                {
+                    label: 'Cancel',
+                    close: true
                 }
-            }
+            ]
         });
     };
 
-    function submitHostEditor($form,$host){
+    function submitHostEditor($form){
         $form.submitJSON({
             method: 'POST',
             url: containerHostUrl(),
-            validate: function(){
-
-                $form.find(':input').removeClass('invalid');
-
-                if (csValidator([$host])) {
-                    XNAT.dialog.open({
-                        title: 'Validation Error',
-                        width: 300,
-                        content: csValidator([$host])
-                    })
-                }
-
-                return csValidator() === true;
-
-            },
             success: function(){
                 containerHostManager.refreshTable();
                 xmodal.closeAll();
