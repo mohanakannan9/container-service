@@ -669,9 +669,10 @@ var XNAT = getObject(XNAT || {});
         }
     ];
 
-    function imageUrl(appended){
-        appended = isDefined(appended) ? '/' + appended : '';
-        return rootUrl('/xapi/docker/images' + appended);
+    function imageUrl(appended,force){
+        appended = (appended) ? '/' + appended : '';
+        force = (force) ? '?force=true' : '';
+        return rootUrl('/xapi/docker/images' + appended + force);
     }
 
     function commandUrl(appended){
@@ -1077,31 +1078,59 @@ var XNAT = getObject(XNAT || {});
             });
         }
 
-        function deleteImageButton(image) {
-            return spawn('button.btn.sm',{
-                html: 'Delete Image',
-                onclick: function(){
-                    xmodal.confirm({
-                        height: 220,
-                        scroll: false,
-                        content: "" +
-                        "<p>Are you sure you'd like to delete the "+image.tags[0]+" image?</p>" +
-                        "<p><strong>This action cannot be undone.</strong></p>",
-                        okAction: function(){
-                            console.log('delete image id', image['image-id']);
+        function deleteImage(image,force) {
+            var content;
+            force = !!(force);
+            if (!force) {
+                content = spawn('div',[
+                    spawn('p','Are you sure you\'d like to delete the '+image.tags[0]+' image?'),
+                    spawn('p', [ spawn('strong', 'This action cannot be undone.' )])
+                ]);
+            } else {
+                content = spawn('p','Containers have been run using '+image.tags[0]+'. Please confirm that you want to delete this image.');
+            }
+            XNAT.dialog.open({
+                width: 400,
+                content: content,
+                buttons: [
+                    {
+                        label: 'OK',
+                        isDefault: true,
+                        close: false,
+                        action: function(){
                             XNAT.xhr.delete({
-                                url: imageUrl(image['image-id']),
+                                url: imageUrl(image['image-id'],force),
                                 success: function(){
                                     console.log(image.tags[0] + ' image deleted');
                                     XNAT.ui.banner.top(1000, '<b>' + image.tags[0] + ' image deleted.', 'success');
                                     imageListManager.refreshTable();
+                                    XNAT.dialog.closeAll();
                                 },
                                 fail: function(e){
-                                    errorHandler(e);
+                                    if (e.status === 500) {
+                                        XNAT.dialog.closeAll();
+                                        deleteImage(image,true);
+                                    } else {
+                                        errorHandler(e);
+                                    }
                                 }
                             })
                         }
-                    })
+                    },
+                    {
+                        label: 'Cancel',
+                        close: true
+                    }
+                ]
+
+            });
+        }
+
+        function deleteImageButton(image) {
+            return spawn('button.btn.sm',{
+                html: 'Delete Image',
+                onclick: function(){
+                    deleteImage(image);
                 }
             });
         }
