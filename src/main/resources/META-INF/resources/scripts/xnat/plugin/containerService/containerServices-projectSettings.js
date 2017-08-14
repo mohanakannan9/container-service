@@ -823,7 +823,10 @@ var XNAT = getObject(XNAT || {});
         });
     };
 
-    commandAutomation.table = function(){
+    commandAutomation.table = function(isAdmin){
+        // if the user has admin privileges, then display additional controls.
+        isAdmin = isAdmin || false;
+
         // initialize the table - we'll add to it below
         var caTable = XNAT.table({
             className: 'xnat-table compact',
@@ -849,8 +852,8 @@ var XNAT = getObject(XNAT || {});
             return d.toISOString().replace('T',' ').replace('Z',' ');
         }
 
-        function deleteAutomationButton(id){
-            return spawn('button.deleteAutomationButton',{ data: { id: id }, html: 'Delete' });
+        function deleteAutomationButton(id,isAdmin){
+            if (isAdmin) return spawn('button.deleteAutomationButton',{ data: { id: id }, html: 'Delete' });
         }
 
         XNAT.xhr.getJSON({
@@ -872,7 +875,7 @@ var XNAT = getObject(XNAT || {});
                                 .td( mapping['subscription-user-name'] )
                                 .td( displayDate(mapping['timestamp']) )
                                 .td( mapping['enabled'] )
-                                .td([ deleteAutomationButton(mapping['id']) ])
+                                .td([ deleteAutomationButton(mapping['id'],isAdmin) ])
                         }
                     });
 
@@ -897,14 +900,16 @@ var XNAT = getObject(XNAT || {});
         var manager = $('#command-automation-list');
         var $footer = manager.parents('.panel').find('.panel-footer');
 
-        manager.html('');
-        manager.append(commandAutomation.table());
-
         var isAdmin; // check current user's admin status by checking the JSP page variable PAGE.username
+
         XNAT.xhr.getJSON({
             url: '/xapi/users/' + PAGE.username + '/roles',
             success: function (userRoles) {
                 isAdmin = userRoles.find(function(role){ return role ==='Administrator' });
+
+                manager.html('');
+                manager.append(commandAutomation.table(isAdmin));
+
                 if (!refresh && isAdmin !== undefined) {
                     var newAutomation = spawn('button.new-command-automation.btn.btn-sm.submit', {
                         html: 'Add New Command Automation',
