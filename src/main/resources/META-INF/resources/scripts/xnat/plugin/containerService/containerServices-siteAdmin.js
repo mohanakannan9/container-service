@@ -715,12 +715,6 @@ var XNAT = getObject(XNAT || {});
     };
 
     commandListManager.getCommands = commandListManager.getAll = function(imageName,callback){
-        /*
-         if (imageName) {
-         imageName = imageName.split(':')[0]; // remove any tag definition (i.e. ':latest') in the image name
-         imageName = imageName.replace("/","%2F"); // convert slashes in image names to URL-ASCII equivalent
-         }
-         */
         callback = isFunction(callback) ? callback : function(){};
         return XNAT.xhr.get({
             url: (imageName) ? commandUrl('?image='+imageName) : commandUrl(),
@@ -883,7 +877,7 @@ var XNAT = getObject(XNAT || {});
                             var url = (imageName) ? commandUrl('?image='+imageName) : commandUrl();
 
                             XNAT.xhr.postJSON({
-                                url: commandUrl(),
+                                url: url,
                                 dataType: 'json',
                                 data: editorContent,
                                 success: function(obj){
@@ -910,7 +904,7 @@ var XNAT = getObject(XNAT || {});
     };
 
 
-    // create table for listing comands
+    // create table for listing commands
     commandListManager.table = function(imageName,callback){
 
         // initialize the table - we'll add to it below
