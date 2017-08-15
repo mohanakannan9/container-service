@@ -356,10 +356,12 @@ var XNAT = getObject(XNAT || {});
 
     console.log('imageHostManagement.js');
 
-    var imageHostManager;
+    var imageHostManager, imageHostList;
 
     XNAT.plugin.containerService.imageHostManager = imageHostManager =
         getObject(XNAT.plugin.containerService.imageHostManager || {});
+
+    XNAT.plugin.containerService.imageHostList = imageHostList = [];
 
     function imageHostUrl(isDefault,appended){
         appended = isDefined(appended) ? '/' + appended : '';
@@ -377,7 +379,7 @@ var XNAT = getObject(XNAT || {});
             url: imageHostUrl(),
             dataType: 'json',
             success: function(data){
-                imageHostManager.hosts = data;
+                imageHostList = data;
                 callback.apply(this, arguments);
             }
         });
@@ -428,7 +430,7 @@ var XNAT = getObject(XNAT || {});
                                 success: function () {
                                     imageHostManager.refreshTable();
                                     xmodal.loading.close();
-                                    XNAT.dialog.close(obj.$modal);
+                                    XNAT.dialog.closeAll();
                                     XNAT.ui.banner.top(2000, 'Saved.', 'success')
                                 },
                                 fail: function (e) {
@@ -620,7 +622,7 @@ var XNAT = getObject(XNAT || {});
         var $manager = $$(container||'div#image-host-manager');
 
         imageHostManager.$table.remove();
-        $manager.append('Loading...');
+        $manager.append('Verifying Host Status...');
         imageHostManager.table(null, function(table){
             $manager.empty().prepend(table);
         });
@@ -705,19 +707,6 @@ var XNAT = getObject(XNAT || {});
         });
     };
 
-    // get the list of image hubs
-    imageHubs.getHubs = imageHubs.getAll = function(callback){
-        callback = isFunction(callback)? callback : function(){};
-        return XNAT.xhr.get({
-            url: '/xapi/docker/hubs',
-            dataType: 'json',
-            success: function(data){
-                imageHubs.hubs = data;
-                callback.apply(this, arguments);
-            }
-        });
-    };
-
     commandListManager.getCommands = commandListManager.getAll = function(imageName,callback){
         callback = isFunction(callback) ? callback : function(){};
         return XNAT.xhr.get({
@@ -763,19 +752,17 @@ var XNAT = getObject(XNAT || {});
                     $formContainer.setValues(item);
                 }
                 var $hubSelect = $formContainer.find('#hub-id');
-                // get list of image hubs and select the default hub
-                imageHubs.getAll().done(function(hubs){
-                    if (hubs.length > 1) {
-                        hubs.forEach(function(item){
-                            var option = '<option value="'+item.id+'"';
-                            if (item.default) option += ' selected';
-                            option += '>'+item.name+'</option>';
-                            $hubSelect.prop('disabled',false).append(option);
-                        });
-                    } else {
-                        $hubSelect.parents('.panel-element').hide();
-                    }
-                });
+                // query the cached list of image hubs
+                if (imageHostList.length > 1) {
+                    imageHostList.forEach(function(hub){
+                        var option = '<option value="'+hub.id+'"';
+                        if (hub.default) option += ' selected';
+                        option += '>'+hub.name+'</option>';
+                        $hubSelect.prop('disabled',false).append(option);
+                    });
+                } else {
+                    $hubSelect.parents('.panel-element').hide();
+                }
             },
             buttons: [
                 {
