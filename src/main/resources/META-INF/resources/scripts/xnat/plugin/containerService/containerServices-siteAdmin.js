@@ -642,6 +642,7 @@ var XNAT = getObject(XNAT || {});
     var imageListManager,
         imageFilterManager,
         addImage,
+        commandList,
         commandListManager,
         commandDefinition,
         wrapperList,
@@ -655,6 +656,8 @@ var XNAT = getObject(XNAT || {});
 
     XNAT.plugin.containerService.addImage = addImage =
         getObject(XNAT.plugin.containerService.addImage || {});
+
+    XNAT.plugin.containerService.commandList = commandList = [];
 
     XNAT.plugin.containerService.commandListManager = commandListManager =
         getObject(XNAT.plugin.containerService.commandListManager || {});
@@ -686,14 +689,6 @@ var XNAT = getObject(XNAT || {});
         return csrfUrl('/xapi/commands' + appended);
     }
 
-    function imagePullUrl(appended,hubId){
-        if (isDefined(hubId)) {
-            return rootUrl('/xapi/docker/hubs/'+ hubId +'pull?' + appended);
-        } else {
-            return rootUrl('/xapi/docker/pull?' + appended);
-        }
-    }
-
     // get the list of images
     imageListManager.getImages = imageListManager.getAll = function(callback){
         callback = isFunction(callback) ? callback : function(){};
@@ -713,6 +708,7 @@ var XNAT = getObject(XNAT || {});
             url: (imageName) ? commandUrl('?image='+imageName) : commandUrl(),
             dataType: 'json',
             success: function(data){
+                commandList = data;
                 if (data) {
                     return data;
                 }
@@ -1007,6 +1003,9 @@ var XNAT = getObject(XNAT || {});
                         .td(command.version)
                         .td([ spawn('div.center', [viewCommandButton(command), spacer(10), deleteCommandButton(command)]) ]);
                 }
+
+                // initialize the command history table after the command list is loaded
+                historyTable.init();
             } else {
                 // create a handler when no command data is returned.
                 clmTable.tr({title: 'No command data found'})
@@ -1203,7 +1202,7 @@ var XNAT = getObject(XNAT || {});
                 callback.apply(this, arguments);
             },
             fail: function (e) {
-                errorHandler(e, 'Could Not Retrieve List of Command Configurations');
+                errorHandler(e, 'Could Not Retrieve List of Commands');
             }
         });
     };
@@ -2045,7 +2044,7 @@ var XNAT = getObject(XNAT || {});
         }
 
         function displayCommandWithPopup(historyEntry){
-            var commandLabel = XNAT.plugin.containerService.wrapperList[historyEntry['wrapper-id']];
+            var commandLabel = XNAT.plugin.containerService.wrapperList[historyEntry['wrapper-id']] || 'Unknown Command';
             return spawn ('a',{
                 href: 'javascript:XNAT.plugin.containerService.historyTable.viewHistory(\''+historyEntry['id']+'\')',
                 title: 'View Full History Entry',
@@ -2053,54 +2052,52 @@ var XNAT = getObject(XNAT || {});
             });
         }
 
-        commandListManager.getAll().done(function(commands){
-            // populate the list of wrappers
-            commands.forEach(function(command){
-                var wrappers = command.xnat;
-                wrappers.forEach(function(wrapper){
-                    XNAT.plugin.containerService.wrapperList[wrapper.id] = wrapper.description;
-                })
 
-            });
+        // populate the list of wrappers
+        commandList.forEach(function(command){
+            var wrappers = command.xnat;
+            wrappers.forEach(function(wrapper){
+                XNAT.plugin.containerService.wrapperList[wrapper.id] = wrapper.description;
+            })
 
-            XNAT.xhr.getJSON({
-                url: getCommandHistoryUrl(),
-                fail: function(e){
-                    errorHandler(e, 'Could Not Retrieve Command History');
-                },
-                success: function(data){
-                    if (data.length > 0) {
-                        data.sort(function(a,b){
-                            return (a.id < b.id) ? -1 : 1;
-                        });
+        });
 
-                        data.forEach(function(historyEntry){
-                            containerHistory[historyEntry['id']] = historyEntry;
-                            containerHistory[historyEntry['id']]['wrapper-name'] = XNAT.plugin.containerService.wrapperList[historyEntry['wrapper-id']];
+        XNAT.xhr.getJSON({
+            url: getCommandHistoryUrl(),
+            fail: function(e){
+                errorHandler(e, 'Could Not Retrieve Command History');
+            },
+            success: function(data){
+                if (data.length > 0) {
+                    data.sort(function(a,b){
+                        return (a.id < b.id) ? -1 : 1;
+                    });
 
-                            var timestamp = 0;
-                            historyEntry['history'].forEach(function(h){
-                                if(h['status'] == 'Created') {
-                                    timestamp = h['time-recorded'];
-                                }
-                            })
+                    data.forEach(function(historyEntry){
+                        containerHistory[historyEntry['id']] = historyEntry;
+                        containerHistory[historyEntry['id']]['wrapper-name'] = XNAT.plugin.containerService.wrapperList[historyEntry['wrapper-id']];
 
-                            chTable.tr({title: historyEntry['id'], id: historyEntry['id'] })
-                                .td({ addClass: 'left', html: '<b>'+historyEntry['id']+'</b>' })
-                                .td(historyEntry['docker-image'])
-                                .td([ displayCommandWithPopup(historyEntry) ])
-                                .td(historyEntry['user-id'])
-                                .td([ displayDate(timestamp) ])
-                                .td([ displayProject(historyEntry['mounts']) ]);
-                        });
-                    } else {
-                        chTable.tr()
-                            .td({ colspan: 7, html: "No history entries found" });
-                    }
+                        var timestamp = 0;
+                        historyEntry['history'].forEach(function(h){
+                            if(h['status'] == 'Created') {
+                                timestamp = h['time-recorded'];
+                            }
+                        })
 
+                        chTable.tr({title: historyEntry['id'], id: historyEntry['id'] })
+                            .td({ addClass: 'left', html: '<b>'+historyEntry['id']+'</b>' })
+                            .td(historyEntry['docker-image'])
+                            .td([ displayCommandWithPopup(historyEntry) ])
+                            .td(historyEntry['user-id'])
+                            .td([ displayDate(timestamp) ])
+                            .td([ displayProject(historyEntry['mounts']) ]);
+                    });
+                } else {
+                    chTable.tr()
+                        .td({ colspan: 7, html: "No history entries found" });
                 }
-            });
 
+            }
         });
 
         historyTable.$table = $(chTable.table);
@@ -2108,9 +2105,47 @@ var XNAT = getObject(XNAT || {});
         return chTable.table;
     };
 
+    historyTable.viewLog = viewLog = function(containerId,logFile){
+        XNAT.xhr.get ({
+            url: rootUrl('/xapi/containers/'+containerId+'/logs/'+logFile),
+            success: function(data){
+                // split the output into lines
+                data = data.split('\n');
+
+                XNAT.dialog.open({
+                    title: 'View '+logFile,
+                    width: 500,
+                    content: null,
+                    beforeShow: function(obj){
+                        data.forEach(function(newLine){
+                            obj.$modal.find('.xnat-dialog-content').append(spawn('code',{ 'style': { 'display': 'block' }}, newLine));
+                        });
+                    },
+                    buttons: [
+                        {
+                            label: 'OK',
+                            isDefault: true,
+                            close: true
+                        }
+                    ]
+                })
+            },
+            fail: function(e){
+                errorHandler(e, 'Cannot retrieve '+logFile);
+            }
+        })
+    };
+
     historyTable.viewHistory = function(id){
         if (containerHistory[id]) {
             var historyEntry = XNAT.plugin.containerService.containerHistory[id];
+            var historyDialogButtons = [
+                {
+                    label: 'OK',
+                    isDefault: true,
+                    close: true
+                }
+            ];
 
             // build nice-looking history entry table
             var pheTable = XNAT.table({
@@ -2147,6 +2182,32 @@ var XNAT = getObject(XNAT || {});
                 pheTable.tr()
                     .td('<b>'+key+'</b>')
                     .td([ spawn('div',{ style: { 'word-break': 'break-all','max-width':'600px' }}, formattedVal) ]);
+
+                // check logs and populate buttons at bottom of modal
+                if (key === 'log-paths') {
+                    // returns an array of log paths
+                    historyEntry[key].forEach(function(logPath){
+                        if (logPath.indexOf('stdout.log') > 0) {
+                            historyDialogButtons.push({
+                                label: 'View StdOut.log',
+                                close: false,
+                                action: function(){
+                                    historyTable.viewLog(historyEntry['container-id'],'stdout')
+                                }
+                            });
+                        }
+                        if (logPath.indexOf('stderr.log') > 0) {
+                            historyDialogButtons.push({
+                                label: 'View StdErr.log',
+                                close: false,
+                                action: function(){
+                                    historyTable.viewLog(historyEntry['container-id'],'stderr')
+                                }
+                            })
+                        }
+                    });
+                }
+
             }
 
             // display history
@@ -2155,13 +2216,7 @@ var XNAT = getObject(XNAT || {});
                 width: 800,
                 scroll: true,
                 content: pheTable.table,
-                buttons: [
-                    {
-                        label: 'OK',
-                        isDefault: true,
-                        close: true
-                    }
-                ]
+                buttons: historyDialogButtons
             });
         } else {
             XNAT.ui.dialog.open({
@@ -2177,13 +2232,13 @@ var XNAT = getObject(XNAT || {});
         }
     };
 
-    historyTable.init = function(container){
+    historyTable.init = historyTable.refresh = function(container){
         var manager = $$(container || '#command-history-container');
         manager.html('');
 
         manager.append(historyTable.table());
     };
 
-    historyTable.init();
-
+    // Don't call this until the command list has been populated.
+    // historyTable.init();
 }));
