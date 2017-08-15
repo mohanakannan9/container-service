@@ -142,7 +142,7 @@ var XNAT = getObject(XNAT || {});
                 $formContainer.find('form').append(tmpl.html());
 
                 if (item && isDefined(item.host)) {
-                    $formContainer.setValues(item);
+                    $formContainer.find('form').setValues(item);
                 }
             },
             buttons: [
@@ -402,73 +402,63 @@ var XNAT = getObject(XNAT || {});
 
     // dialog to create/edit hosts
     imageHostManager.dialog = function(item, isNew){
-        var tmpl = $('#image-host-editor-template');
+        var tmpl = $('#image-host-editor-template').find('form');
         isNew = isNew || false;
         var doWhat = (isNew) ? 'Create' : 'Edit';
         item = item || {};
-        xmodal.open({
+
+        XNAT.dialog.open({
             title: doWhat + ' Image Hub',
-            template: tmpl.clone(),
-            width: 450,
-            height: 300,
-            scroll: false,
-            padding: '0',
+            content: spawn('form'),
+            width: 550,
             beforeShow: function(obj){
-                var $form = obj.$modal.find('form');
+                var $formContainer = obj.$modal.find('.xnat-dialog-content');
+                $formContainer.addClass('panel').find('form').append(tmpl.html());
                 if (item && isDefined(item.url)) {
-                    $form.setValues(item);
+                    $formContainer.find('form').setValues(item);
                 }
             },
-            okClose: false,
-            okLabel: 'Save',
-            okAction: function(obj){
-                // the form panel is 'imageHostTemplate' in containers-elements.yaml
-                var $form = obj.$modal.find('form');
-                var $url = $form.find('input[name=url]');
-                var $name = $form.find('input[name=name]');
-                var isDefault = $form.find('input[name=default]').val();
-                xmodal.loading.open({ title: 'Validating host URL'});
-                $form.submitJSON({
-                    method: 'POST',
-                    url: (isNew) ? imageHostUrl(isDefault) : imageHostUrl(isDefault,item.id),
-                    validate: function(){
+            buttons: [
+                {
+                    label: 'Save',
+                    isDefault: true,
+                    close: false,
+                    action: function(obj){
+                        var $form = obj.$modal.find('form');
+                        var $url = $form.find('input[name=url]');
+                        var $name = $form.find('input[name=name]');
+                        var isDefault = $form.find('input[name=default]').val();
 
                         $form.find(':input').removeClass('invalid');
 
-                        var errors = 0;
-                        var errorMsg = 'Errors were found with the following fields: <ul>';
-
-                        [$name,$url].forEach(function($el){
-                            var el = $el[0];
-                            if (!el.value) {
-                                errors++;
-                                errorMsg += '<li><b>' + el.title + '</b> is required.</li>';
-                                $el.addClass('invalid');
-                            }
-                        });
-
-                        errorMsg += '</ul>';
-
-                        if (errors > 0) {
-                            xmodal.message('Errors Found', errorMsg, { height: 300 });
+                        if (csValidator([$url,$name])) {
+                            XNAT.dialog.open({
+                                title: 'Validation Error',
+                                width: 300,
+                                content: csValidator([$url,$name])
+                            })
+                        } else {
+                            xmodal.loading.open({ title: 'Validating host URL'});
+                            $form.submitJSON({
+                                method: 'POST',
+                                url: (isNew) ? imageHostUrl(isDefault) : imageHostUrl(isDefault, item.id),
+                                success: function () {
+                                    imageHostManager.refreshTable();
+                                    xmodal.loading.close();
+                                    XNAT.dialog.close(obj.$modal);
+                                    XNAT.ui.banner.top(2000, 'Saved.', 'success')
+                                },
+                                fail: function (e) {
+                                    xmodal.loading.close();
+                                    errorHandler(e);
+                                }
+                            });
                         }
-
-                        return errors === 0;
-
-                    },
-                    success: function(){
-                        imageHostManager.refreshTable();
-                        xmodal.loading.close();
-                        xmodal.close(obj.$modal);
-                        XNAT.ui.banner.top(2000, 'Saved.', 'success')
-                    },
-                    fail: function(e){
-                        xmodal.loading.close();
-                        errorHandler(e);
                     }
-                });
-            }
+                }
+            ]
         });
+
     };
 
     // create table for Image Hosts
@@ -779,17 +769,17 @@ var XNAT = getObject(XNAT || {});
         item = item || {};
         XNAT.dialog.open({
             title: 'Pull New Image',
-            content: tmpl.html(),
+            content: spawn('form'),
             width: 500,
             padding: 0,
             beforeShow: function(obj){
-                var $form = obj.$modal.find('.xnat-dialog-content');
-                $form.addClass('panel');
+                var $formContainer = obj.$modal.find('.xnat-dialog-content');
+                $formContainer.addClass('panel').find('form').append(tmpl.html());
 
                 if (item && isDefined(item.image)) {
-                    $form.setValues(item);
+                    $formContainer.setValues(item);
                 }
-                var $hubSelect = $form.find('#hub-id');
+                var $hubSelect = $formContainer.find('#hub-id');
                 // get list of image hubs and select the default hub
                 imageHubs.getAll().done(function(hubs){
                     if (hubs.length > 1) {
@@ -810,30 +800,19 @@ var XNAT = getObject(XNAT || {});
                     isDefault: true,
                     close: false,
                     action: function(obj){
-                        // the form panel is 'imageListTemplate' in containers-elements.yaml
-                        var $form = obj.$modal.find('.xnat-dialog-content');
+                        var $form = obj.$modal.find('form');
                         var $image = $form.find('input[name=image]');
                         var $tag = $form.find('input[name=tag]');
 
                         // validate form inputs, then pull them into the URI querystring and create an XHR request.
                         $form.find(':input').removeClass('invalid');
 
-                        var errors = 0;
-                        var errorMsg = 'Errors were found with the following fields: <ul>';
-
-                        [$image].forEach(function($el){
-                            var el = $el[0];
-                            if (!el.value) {
-                                errors++;
-                                errorMsg += '<li><b>' + el.title + '</b> is required.</li>';
-                                $el.addClass('invalid');
-                            }
-                        });
-
-                        errorMsg += '</ul>';
-
-                        if (errors > 0) {
-                            xmodal.message('Errors Found', errorMsg, { height: 300 });
+                        if (csValidator([$image,$tag])) {
+                            XNAT.dialog.open({
+                                title: 'Validation Error',
+                                width: 300,
+                                content: csValidator([$image,$tag])
+                            })
                         } else {
                             // stitch together the image and tag definition, if a tag value was specified.
                             if ($tag.val().length > 0 && $tag.val().indexOf(':') < 0) {
@@ -841,7 +820,7 @@ var XNAT = getObject(XNAT || {});
                             }
                             var imageName = $image.val() + $tag.val();
 
-                            xmodal.loading.open({ title: 'Submitting Pull Request', height: '110' });
+                            xmodal.loading.open({ title: 'Submitting Pull Request' });
 
                             XNAT.xhr.post({
                                 url: '/xapi/docker/pull?save-commands=true&image='+imageName,
