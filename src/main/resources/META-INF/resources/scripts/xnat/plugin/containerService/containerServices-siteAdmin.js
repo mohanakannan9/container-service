@@ -254,23 +254,6 @@ var XNAT = getObject(XNAT || {});
                     // save the status when clicked
                     var radio = this;
                     xmodal.alert('Cannot set default server yet');
-                    /*
-                    defaultVal = radio.checked;
-                    XNAT.xhr.post({
-                        url: containerHostUrl(item.id+'?default=true'),
-                        success: function(){
-                            radio.value = defaultVal;
-                            radio.checked = 'checked';
-                            containerHostManager.refreshTable();
-                            XNAT.ui.banner.top(1000, '<b>' + item.name + '</b> set as default', 'success');
-                        },
-                            fail: function(e){
-                            radio.checked = false;
-                            containerHostManager.refreshTable();
-                            errorHandler(e);
-                        }
-                    });
-                    */
                 }
             });
             return spawn('div.center', [rdo]);
@@ -450,7 +433,7 @@ var XNAT = getObject(XNAT || {});
                                 },
                                 fail: function (e) {
                                     xmodal.loading.close();
-                                    errorHandler(e);
+                                    errorHandler(e, 'Could Not Update Image Host');
                                 }
                             });
                         }
@@ -524,7 +507,7 @@ var XNAT = getObject(XNAT || {});
                         fail: function(e){
                             radio.checked = false;
                             imageHostManager.refreshTable();
-                            errorHandler(e,'Could Not Set Default Hub');
+                            errorHandler(e,'Could Not Set Default Image Host');
                         }
                     });
                 }
@@ -553,7 +536,7 @@ var XNAT = getObject(XNAT || {});
                         height: 220,
                         scroll: false,
                         content: "" +
-                        "<p>Are you sure you'd like to delete the Container Host at <b>" + item.url + "</b>?</p>" +
+                        "<p>Are you sure you'd like to delete the Image Host at <b>" + item.url + "</b>?</p>" +
                         "<p><b>This action cannot be undone.</b></p>",
                         okAction: function(){
                             XNAT.xhr.delete({
@@ -563,7 +546,7 @@ var XNAT = getObject(XNAT || {});
                                     imageHostManager.refreshTable();
                                 },
                                 fail: function(e){
-                                    errorHandler(e);
+                                    errorHandler(e, 'Could Not Delete Image Host');
                                 }
                             });
                         }
@@ -1123,7 +1106,7 @@ var XNAT = getObject(XNAT || {});
                                         XNAT.dialog.closeAll();
                                         deleteImage(image,true);
                                     } else {
-                                        errorHandler(e);
+                                        errorHandler(e, 'Could Not Delete Image');
                                     }
                                 }
                             })
@@ -1233,7 +1216,7 @@ var XNAT = getObject(XNAT || {});
                 callback.apply(this, arguments);
             },
             fail: function (e) {
-                errorHandler(e);
+                errorHandler(e, 'Could Not Retrieve List of Command Configurations');
             }
         });
     };
@@ -1249,7 +1232,7 @@ var XNAT = getObject(XNAT || {});
                 callback.apply(this, arguments);
             },
             fail: function(e){
-                errorHandler(e);
+                errorHandler(e, 'Could Not Query Enabled Status');
             }
         });
     };
@@ -1377,78 +1360,80 @@ var XNAT = getObject(XNAT || {});
                 tmplBody.spawn('h3','Outputs');
                 tmplBody.append(configDefinition.table({ type: 'outputs', outputs: outputs }));
 
-                xmodal.open({
+                XNAT.dialog.open({
                     title: 'Set Config Values',
-                    template: tmpl.clone(),
+                    content: tmpl.html(),
                     width: 850,
-                    height: 500,
-                    scroll: true,
                     beforeShow: function(obj){
                         var $panel = obj.$modal.find('#config-viewer-panel');
-                        /*
-                         $panel.find('input[type=text]').each(function(){
-                         $(this).val($(this).data('value'));
-                         });
-                         */
                         $panel.find('input[type=checkbox]').each(function(){
                             $(this).prop('checked',$(this).data('checked'));
                         })
                     },
-                    okClose: false,
-                    okLabel: 'Save',
-                    okAction: function(obj){
-                        var $panel = obj.$modal.find('#config-viewer-panel');
-                        var configObj = { inputs: {}, outputs: {} };
+                    buttons: [
+                        {
+                            label: 'Save',
+                            isDefault: true,
+                            close: false,
+                            action: function(obj){
+                                var $panel = obj.$modal.find('#config-viewer-panel');
+                                var configObj = { inputs: {}, outputs: {} };
 
-                        // gather input items from table
-                        var inputRows = $panel.find('table.inputs').find('tr.input');
-                        $(inputRows).each(function(){
-                            var row = $(this);
-                            // each row contains multiple cells, each of which defines a property.
-                            var key = $(row).find("[data-key='key']").html();
-                            configObj.inputs[key] = {};
+                                // gather input items from table
+                                var inputRows = $panel.find('table.inputs').find('tr.input');
+                                $(inputRows).each(function(){
+                                    var row = $(this);
+                                    // each row contains multiple cells, each of which defines a property.
+                                    var key = $(row).find("[data-key='key']").html();
+                                    configObj.inputs[key] = {};
 
-                            $(row).find("[data-key='property']").each(function(){
-                                var propKey = $(this).data('property');
-                                var formInput = $(this).find('input');
-                                if ($(formInput).is('input[type=checkbox]')) {
-                                    var checkboxVal = ($(formInput).is(':checked')) ? $(formInput).val() : 'false';
-                                    configObj.inputs[key][propKey] = checkboxVal;
-                                } else {
-                                    configObj.inputs[key][propKey] = $(this).find('input').val();
-                                }
-                            });
+                                    $(row).find("[data-key='property']").each(function(){
+                                        var propKey = $(this).data('property');
+                                        var formInput = $(this).find('input');
+                                        if ($(formInput).is('input[type=checkbox]')) {
+                                            var checkboxVal = ($(formInput).is(':checked')) ? $(formInput).val() : 'false';
+                                            configObj.inputs[key][propKey] = checkboxVal;
+                                        } else {
+                                            configObj.inputs[key][propKey] = $(this).find('input').val();
+                                        }
+                                    });
 
-                        });
+                                });
 
-                        // gather output items from table
-                        var outputRows = $panel.find('table.outputs').find('tr.output');
-                        $(outputRows).each(function(){
-                            var row = $(this);
-                            // each row contains multiple cells, each of which defines a property.
-                            var key = $(row).find("[data-key='key']").html();
-                            configObj.outputs[key] = {};
+                                // gather output items from table
+                                var outputRows = $panel.find('table.outputs').find('tr.output');
+                                $(outputRows).each(function(){
+                                    var row = $(this);
+                                    // each row contains multiple cells, each of which defines a property.
+                                    var key = $(row).find("[data-key='key']").html();
+                                    configObj.outputs[key] = {};
 
-                            $(row).find("[data-key='property']").each(function(){
-                                var propKey = $(this).data('property');
-                                configObj.outputs[key][propKey] = $(this).find('input').val();
-                            });
+                                    $(row).find("[data-key='property']").each(function(){
+                                        var propKey = $(this).data('property');
+                                        configObj.outputs[key][propKey] = $(this).find('input').val();
+                                    });
 
-                        });
+                                });
 
-                        // POST the updated command config
-                        XNAT.xhr.postJSON({
-                            url: configUrl(commandId,wrapperName,'enabled=true'),
-                            dataType: 'json',
-                            data: JSON.stringify(configObj),
-                            success: function() {
-                                console.log('"' + wrapperName + '" updated');
-                                XNAT.ui.banner.top(1000, '<b>"' + wrapperName + '"</b> updated.', 'success');
-                                xmodal.closeAll();
-                            },
-                            fail: function(e){ errorHandler(e); }
-                        });
-                    }
+                                // POST the updated command config
+                                XNAT.xhr.postJSON({
+                                    url: configUrl(commandId,wrapperName,'enabled=true'),
+                                    dataType: 'json',
+                                    data: JSON.stringify(configObj),
+                                    success: function() {
+                                        console.log('"' + wrapperName + '" updated');
+                                        XNAT.ui.banner.top(1000, '<b>"' + wrapperName + '"</b> updated.', 'success');
+                                        XNAT.dialog.closeAll();
+                                    },
+                                    fail: function(e){ errorHandler(e, 'Could Not Update Config Definition'); }
+                                });
+                            }
+                        },
+                        {
+                            label: 'Cancel',
+                            close: true
+                        }
+                    ]
                 });
 
             })
@@ -1529,7 +1514,7 @@ var XNAT = getObject(XNAT || {});
                             XNAT.ui.banner.top(1000, '<b>' + wrapper.name+ '</b> ' + status, 'success');
                         },
                         fail: function(e){
-                            errorHandler(e);
+                            errorHandler(e, 'Could Not Set '+status.toUpperCase()+' Status');
                         }
                     });
 
@@ -1696,7 +1681,7 @@ var XNAT = getObject(XNAT || {});
                 callback.apply(this, arguments);
             },
             fail: function(e){
-                errorHandler(e,'Could not get project list.');
+                errorHandler(e,'Could Not Get Project List.');
             }
         });
     };
@@ -1724,7 +1709,7 @@ var XNAT = getObject(XNAT || {});
                 })
             },
             fail: function(e){
-                errorHandler(e);
+                errorHandler(e, 'Could Not Delete Command Automation');
             }
         })
     };
@@ -1744,7 +1729,7 @@ var XNAT = getObject(XNAT || {});
                     XNAT.plugin.containerService.commandAutomation.init('refresh');
                 },
                 fail: function(e){
-                    errorHandler(e, 'Could not delete command automation');
+                    errorHandler(e, 'Could Not Delete Command Automation');
                 }
             })
         }
@@ -1879,11 +1864,10 @@ var XNAT = getObject(XNAT || {});
                                                 XNAT.plugin.containerService.commandAutomation.init('refresh');
                                             },
                                             fail: function(e){
-                                                errorHandler(e,'Could not create command automation');
+                                                errorHandler(e,'Could Not Create Command Automation');
                                             }
                                         });
                                     } else {
-                                        console.log(project,command,wrapper,event);
                                         xmodal.alert('Please enter a value for each field');
                                     }
                                 }
@@ -1940,7 +1924,7 @@ var XNAT = getObject(XNAT || {});
         XNAT.xhr.getJSON({
             url: getCommandAutomationUrl(),
             fail: function(e){
-                errorHandler(e);
+                errorHandler(e, 'Could Not Retrieve Command Automation List');
             },
             success: function(data){
                 // data returns an array of known command event mappings
@@ -2095,7 +2079,7 @@ var XNAT = getObject(XNAT || {});
             XNAT.xhr.getJSON({
                 url: getCommandHistoryUrl(),
                 fail: function(e){
-                    errorHandler(e);
+                    errorHandler(e, 'Could Not Retrieve Command History');
                 },
                 success: function(data){
                     if (data.length > 0) {
