@@ -381,7 +381,7 @@ var XNAT = getObject(XNAT || {});
 
                         if (!inputs[i].parent || inputs[i].parent === undefined) {
                             // child inputs that specify a parent get special treatment
-                            inputs[i].type = inputs[i].ui.default.type;
+                            inputs[i].type = (inputs[i]['user-settable'] || i === rootElement) ? inputs[i].ui.default.type : 'hidden';
                             inputs[i].value = inputs[i].ui.default.values[0].value || inputs[i].value;
                             inputs[i].valueLabel = inputs[i].ui.default.values[0].label || '';
 
