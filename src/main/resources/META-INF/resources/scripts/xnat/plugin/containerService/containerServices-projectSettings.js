@@ -96,7 +96,7 @@ var XNAT = getObject(XNAT || {});
     function configUrl(commandId,wrapperName,appended){
         appended = isDefined(appended) ? '?' + appended : '';
         if (!commandId || !wrapperName) return false;
-        return csrfUrl('/xapi/commands/'+commandId+'/wrappers/'+wrapperName+'/config' + appended);
+        return csrfUrl('/xapi/projects/'+getProjectId()+'/commands/'+commandId+'/wrappers/'+wrapperName+'/config' + appended);
     }
 
     function sitewideConfigEnableUrl(commandObj,wrapperObj,flag){
