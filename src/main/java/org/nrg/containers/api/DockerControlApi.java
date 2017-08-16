@@ -610,12 +610,12 @@ public class DockerControlApi implements ContainerControlApi {
 
     @VisibleForTesting
     @Nonnull
-    public DockerClient getClient() throws NoServerPrefException {
+    public DockerClient getClient() throws NoServerPrefException, DockerServerException {
         return getClient(getServer());
     }
 
     @Nonnull
-    private DockerClient getClient(final @Nonnull DockerServer server) {
+    private DockerClient getClient(final @Nonnull DockerServer server) throws DockerServerException {
 
         DefaultDockerClient.Builder clientBuilder =
             DefaultDockerClient.builder()
@@ -631,7 +631,12 @@ public class DockerControlApi implements ContainerControlApi {
             }
         }
 
-        return clientBuilder.build();
+        try {
+            return clientBuilder.build();
+        } catch (Throwable e) {
+            log.error("Could not create DockerClient instance. Reason: " + e.getMessage());
+            throw new DockerServerException(e);
+        }
     }
 
     @Override
