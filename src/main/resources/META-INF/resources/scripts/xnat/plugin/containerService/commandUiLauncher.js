@@ -481,65 +481,52 @@ var XNAT = getObject(XNAT || {});
                             var $panel = obj.$modal.find('.panel'),
                                 targetData = {};
 
-                            // gather form input values
-                            targetData[rootElement] = $panel.find('input[name='+rootElement+']').val();
-
-                            $panel.find('input').not(':disabled').not('[type=checkbox]').not('[type=radio]').not('[name='+rootElement+']').each(function(){
-                                // get the name and value from each text element and add it to our data to post
-                                var key = $(this).prop('name');
-                                targetData[key] = $(this).val();
+                            // check all inputs for invalid characters
+                            var $inputs = $panel.find('input'),
+                                runContainer = true;
+                            $inputs.each(function(){
+                                var input = $(this)[0];
+                                if (!launcher.noIllegalChars(input)) {
+                                    runContainer = false;
+                                    $(this).addClass('invalid');
+                                }
                             });
 
-                            $panel.find('input[type=checkbox]').not(':disabled').each(function(){
-                                var key = $(this).prop('name');
-                                var val = ($(this).is(':checked')) ? $(this).val() : false;
-                                targetData[key] = val;
-                            });
+                            if (runContainer) {
+                                // gather form input values
+                                targetData[rootElement] = $panel.find('input[name='+rootElement+']').val();
 
-                            $panel.find('select').not(':disabled').each(function(){
-                                var key = $(this).prop('name');
-                                var val = $(this).find('option:selected').val();
-                                targetData[key] = val;
-                            });
+                                $panel.find('input').not(':disabled').not('[type=checkbox]').not('[type=radio]').not('[name='+rootElement+']').each(function(){
+                                    // get the name and value from each text element and add it to our data to post
+                                    var key = $(this).prop('name');
+                                    targetData[key] = $(this).val();
+                                });
 
-                            var dataToPost = targetData;
+                                $panel.find('input[type=checkbox]').not(':disabled').each(function(){
+                                    var key = $(this).prop('name');
+                                    var val = ($(this).is(':checked')) ? $(this).val() : false;
+                                    targetData[key] = val;
+                                });
 
-                            xmodal.loading.open({ title: 'Launching Container...' });
+                                $panel.find('select').not(':disabled').each(function(){
+                                    var key = $(this).prop('name');
+                                    var val = $(this).find('option:selected').val();
+                                    targetData[key] = val;
+                                });
 
-                            XNAT.xhr.postJSON({
-                                url: containerLaunchUrl(wrapperId),
-                                data: JSON.stringify(dataToPost),
-                                success: function(data){
-                                    xmodal.loading.close();
+                                var dataToPost = targetData;
 
-                                    var messageContent = (data.status === 'success') ?
-                                        spawn('p',{ style: { 'word-wrap': 'break-word'}}, 'Container ID: '+data['container-id'] ) :
-                                        spawn('p', data.message);
+                                xmodal.loading.open({ title: 'Launching Container...' });
 
-                                    XNAT.ui.dialog.open({
-                                        title: 'Container Launch <span style="text-transform: capitalize">'+data.status+'</span>',
-                                        content: messageContent,
-                                        buttons: [
-                                            {
-                                                label: 'OK',
-                                                isDefault: true,
-                                                close: true,
-                                                action: XNAT.ui.dialog.closeAll()
-                                            }
-                                        ]
-                                    });
-                                },
-                                fail: function (e) {
-                                    xmodal.loading.close();
+                                XNAT.xhr.postJSON({
+                                    url: containerLaunchUrl(wrapperId),
+                                    data: JSON.stringify(dataToPost),
+                                    success: function(data){
+                                        xmodal.loading.close();
 
-                                    if (e.responseJSON.message) {
-                                        var data = e.responseJSON;
-                                        var messageContent = spawn('div',[
-                                            spawn('p',{ style: { 'font-weight': 'bold' }}, 'Error Message:'),
-                                            spawn('pre.json', data.message),
-                                            spawn('p',{ style: { 'font-weight': 'bold' }}, 'Parameters Submitted To XNAT:'),
-                                            spawn('div', prettifyJSON(data.params))
-                                        ]);
+                                        var messageContent = (data.status === 'success') ?
+                                            spawn('p',{ style: { 'word-wrap': 'break-word'}}, 'Container ID: '+data['container-id'] ) :
+                                            spawn('p', data.message);
 
                                         XNAT.ui.dialog.open({
                                             title: 'Container Launch <span style="text-transform: capitalize">'+data.status+'</span>',
@@ -553,11 +540,53 @@ var XNAT = getObject(XNAT || {});
                                                 }
                                             ]
                                         });
-                                    } else {
-                                        errorHandler(e);
+                                    },
+                                    fail: function (e) {
+                                        xmodal.loading.close();
+
+                                        if (e.responseJSON.message) {
+                                            var data = e.responseJSON;
+                                            var messageContent = spawn('div',[
+                                                spawn('p',{ style: { 'font-weight': 'bold' }}, 'Error Message:'),
+                                                spawn('pre.json', data.message),
+                                                spawn('p',{ style: { 'font-weight': 'bold' }}, 'Parameters Submitted To XNAT:'),
+                                                spawn('div', prettifyJSON(data.params))
+                                            ]);
+
+                                            XNAT.ui.dialog.open({
+                                                title: 'Container Launch <span style="text-transform: capitalize">'+data.status+'</span>',
+                                                content: messageContent,
+                                                buttons: [
+                                                    {
+                                                        label: 'OK',
+                                                        isDefault: true,
+                                                        close: true,
+                                                        action: XNAT.ui.dialog.closeAll()
+                                                    }
+                                                ]
+                                            });
+                                        } else {
+                                            errorHandler(e);
+                                        }
                                     }
-                                }
-                            });
+                                });
+
+                            } else {
+                                // don't run container if invalid characters are found
+                                XNAT.dialog.open({
+                                    title: 'Cannot Launch Container',
+                                    content: 'Illegal characters were found in your inputs. Please correct this and try again.',
+                                    width: 400,
+                                    buttons: [
+                                        {
+                                            label: 'OK',
+                                            isDefault: true,
+                                            close: true
+                                        }
+                                    ]
+                                });
+                                return false;
+                            }
 
                         }
                     },
@@ -776,108 +805,94 @@ var XNAT = getObject(XNAT || {});
                             var $panel = obj.$modal.find('.panel'),
                                 bulkData = [];
 
-                            $panel.find('.bulk-inputs').each(function(){
-                                // iterate over each set of inputs and add an object of inputs and values to the bulkData array
-                                var targetData = {},
-                                    $thisPanel = $(this);
-
-                                // gather form input values
-                                targetData[rootElement] = $thisPanel.find('input[name='+rootElement+']').val();
-
-                                $thisPanel.find('input').not(':disabled').not('[type=checkbox]').not('[type=radio]').not('[name='+rootElement+']').each(function(){
-                                    // get the name and value from each text element and add it to our data to post
-                                    var key = $(this).prop('name');
-                                    targetData[key] = $(this).val();
-                                });
-
-                                $thisPanel.find('input[type=checkbox]').not(':disabled').each(function(){
-                                    var key = $(this).prop('name');
-                                    var val = ($(this).is(':checked')) ? $(this).val() : false;
-                                    targetData[key] = val;
-                                });
-
-                                $thisPanel.find('select').not(':disabled').each(function(){
-                                    var key = $(this).prop('name');
-                                    var val = $(this).find('option:selected').val();
-                                    targetData[key] = val;
-                                });
-
-                                bulkData.push(targetData);
+                            // check all inputs for invalid characters
+                            var $inputs = $panel.find('input'),
+                                runContainer = true;
+                            $inputs.each(function(){
+                                var input = $(this)[0];
+                                if (!launcher.noIllegalChars(input)) {
+                                    runContainer = false;
+                                    $(this).addClass('invalid');
+                                }
                             });
 
+                            if (runContainer) {
+                                $panel.find('.bulk-inputs').each(function(){
+                                    // iterate over each set of inputs and add an object of inputs and values to the bulkData array
+                                    var targetData = {},
+                                        $thisPanel = $(this);
 
-                            var dataToPost = bulkData;
+                                    // gather form input values
+                                    targetData[rootElement] = $thisPanel.find('input[name='+rootElement+']').val();
 
-                            xmodal.loading.open({ title: 'Launching Container...' });
-
-                            XNAT.xhr.postJSON({
-                                url: bulkLaunchUrl(wrapperId),
-                                data: JSON.stringify(dataToPost),
-                                success: function(data){
-                                    xmodal.loading.close();
-
-                                    // bulk launch success returns two arrays -- containers that successfully launched, and containers that failed to launch
-                                    var messageContent = [],
-                                        totalLaunchAttempts = data.successes.concat(data.failures).length;
-                                    if (data.failures.length > 0) {
-                                        messageContent.push( spawn('div.message',data.successes.length + ' of '+totalLaunchAttempts+' containers successfully launched.') );
-                                    } else if(data.successes.length > 0) {
-                                        messageContent.push( spawn('div.success','All containers successfully launched.') );
-                                    } else {
-                                        errorHandler({
-                                            statusText: 'Something went wrong. No containers were launched.'
-                                        });
-                                    }
-
-                                    if (data.successes.length > 0) {
-                                        messageContent.push( spawn('h3',{'style': {'margin-top': '2em' }},'Successful Container Launches') );
-
-                                        data.successes.forEach(function(success){
-                                            messageContent.push( spawn('p',[
-                                                spawn('strong','Container ID: '),
-                                                spawn('span',success['container-id'])
-                                            ]) );
-                                            messageContent.push( spawn('div',prettifyJSON(success.params)) );
-                                        });
-                                    }
-
-                                    if (data.failures.length > 0){
-                                        messageContent.push( spawn('h3',{'style': {'margin-top': '2em' }},'Failed Container Launches') );
-                                        data.failures.forEach(function(failure){
-                                            messageContent.push( spawn('p',{ style: { 'font-weight': 'bold' }}, 'Error Message:') );
-                                            messageContent.push( spawn('pre.json', failure.message) );
-                                            messageContent.push( spawn('div',prettifyJSON(failure.params)) );
-                                        });
-                                    }
-
-                                    XNAT.ui.dialog.open({
-                                        title: 'Container Launch Success',
-                                        content: spawn('div', messageContent ),
-                                        buttons: [
-                                            {
-                                                label: 'OK',
-                                                isDefault: true,
-                                                close: true,
-                                                action: XNAT.ui.dialog.closeAll()
-                                            }
-                                        ]
+                                    $thisPanel.find('input').not(':disabled').not('[type=checkbox]').not('[type=radio]').not('[name='+rootElement+']').each(function(){
+                                        // get the name and value from each text element and add it to our data to post
+                                        var key = $(this).prop('name');
+                                        targetData[key] = $(this).val();
                                     });
-                                },
-                                fail: function (e) {
-                                    xmodal.loading.close();
 
-                                    if (e.responseJSON.message) {
-                                        var data = e.responseJSON;
-                                        var messageContent = spawn('div',[
-                                            spawn('p',{ style: { 'font-weight': 'bold' }}, 'Error Message:'),
-                                            spawn('pre.json', data.message),
-                                            spawn('p',{ style: { 'font-weight': 'bold' }}, 'Parameters Submitted To XNAT:'),
-                                            spawn('div', prettifyJSON(data.params))
-                                        ]);
+                                    $thisPanel.find('input[type=checkbox]').not(':disabled').each(function(){
+                                        var key = $(this).prop('name');
+                                        var val = ($(this).is(':checked')) ? $(this).val() : false;
+                                        targetData[key] = val;
+                                    });
+
+                                    $thisPanel.find('select').not(':disabled').each(function(){
+                                        var key = $(this).prop('name');
+                                        var val = $(this).find('option:selected').val();
+                                        targetData[key] = val;
+                                    });
+
+                                    bulkData.push(targetData);
+                                });
+
+                                var dataToPost = bulkData;
+
+                                xmodal.loading.open({ title: 'Launching Container...' });
+
+                                XNAT.xhr.postJSON({
+                                    url: bulkLaunchUrl(wrapperId),
+                                    data: JSON.stringify(dataToPost),
+                                    success: function(data){
+                                        xmodal.loading.close();
+
+                                        // bulk launch success returns two arrays -- containers that successfully launched, and containers that failed to launch
+                                        var messageContent = [],
+                                            totalLaunchAttempts = data.successes.concat(data.failures).length;
+                                        if (data.failures.length > 0) {
+                                            messageContent.push( spawn('div.message',data.successes.length + ' of '+totalLaunchAttempts+' containers successfully launched.') );
+                                        } else if(data.successes.length > 0) {
+                                            messageContent.push( spawn('div.success','All containers successfully launched.') );
+                                        } else {
+                                            errorHandler({
+                                                statusText: 'Something went wrong. No containers were launched.'
+                                            });
+                                        }
+
+                                        if (data.successes.length > 0) {
+                                            messageContent.push( spawn('h3',{'style': {'margin-top': '2em' }},'Successful Container Launches') );
+
+                                            data.successes.forEach(function(success){
+                                                messageContent.push( spawn('p',[
+                                                    spawn('strong','Container ID: '),
+                                                    spawn('span',success['container-id'])
+                                                ]) );
+                                                messageContent.push( spawn('div',prettifyJSON(success.params)) );
+                                            });
+                                        }
+
+                                        if (data.failures.length > 0){
+                                            messageContent.push( spawn('h3',{'style': {'margin-top': '2em' }},'Failed Container Launches') );
+                                            data.failures.forEach(function(failure){
+                                                messageContent.push( spawn('p',{ style: { 'font-weight': 'bold' }}, 'Error Message:') );
+                                                messageContent.push( spawn('pre.json', failure.message) );
+                                                messageContent.push( spawn('div',prettifyJSON(failure.params)) );
+                                            });
+                                        }
 
                                         XNAT.ui.dialog.open({
-                                            title: 'Container Launch <span style="text-transform: capitalize">'+data.status+'</span>',
-                                            content: messageContent,
+                                            title: 'Container Launch Success',
+                                            content: spawn('div', messageContent ),
                                             buttons: [
                                                 {
                                                     label: 'OK',
@@ -887,11 +902,55 @@ var XNAT = getObject(XNAT || {});
                                                 }
                                             ]
                                         });
-                                    } else {
-                                        errorHandler(e);
+                                    },
+                                    fail: function (e) {
+                                        xmodal.loading.close();
+
+                                        if (e.responseJSON.message) {
+                                            var data = e.responseJSON;
+                                            var messageContent = spawn('div',[
+                                                spawn('p',{ style: { 'font-weight': 'bold' }}, 'Error Message:'),
+                                                spawn('pre.json', data.message),
+                                                spawn('p',{ style: { 'font-weight': 'bold' }}, 'Parameters Submitted To XNAT:'),
+                                                spawn('div', prettifyJSON(data.params))
+                                            ]);
+
+                                            XNAT.ui.dialog.open({
+                                                title: 'Container Launch <span style="text-transform: capitalize">'+data.status+'</span>',
+                                                content: messageContent,
+                                                buttons: [
+                                                    {
+                                                        label: 'OK',
+                                                        isDefault: true,
+                                                        close: true,
+                                                        action: XNAT.ui.dialog.closeAll()
+                                                    }
+                                                ]
+                                            });
+                                        } else {
+                                            errorHandler(e);
+                                        }
                                     }
-                                }
-                            });
+                                });
+                            } else {
+                                // don't run container if invalid characters are found
+                                XNAT.dialog.open({
+                                    title: 'Cannot Launch Container',
+                                    content: 'Illegal characters were found in your inputs. Please correct this and try again.',
+                                    width: 400,
+                                    buttons: [
+                                        {
+                                            label: 'OK',
+                                            isDefault: true,
+                                            close: true
+                                        }
+                                    ]
+                                });
+                                return false;
+                            }
+
+
+
 
                         }
                     },
@@ -1029,8 +1088,6 @@ var XNAT = getObject(XNAT || {});
                                     dataToPost.push(itemsToPost);
                                 });
 
-                                console.log(dataToPost);
-
                                 XNAT.xhr.postJSON({
                                     url: bulkLaunchUrl(wrapperId),
                                     data: JSON.stringify(dataToPost),
@@ -1133,8 +1190,23 @@ var XNAT = getObject(XNAT || {});
                 launchManyContainers(inputs,rootElement,wrapperId,targets);
             }
         });
+    };
 
+    launcher.noIllegalChars = function(input,exception){
+        // examine the to-be-submitted value of an input against a list of disallowed characters and return false if any are found.
+        // if an input needs to allow one of these strings, an exception can be passed to this function
+        exception = exception || null;
+        var illegalCharset = [';', '\\|\\|', '&&', '\\$\\(', '`' ],
+            value = input.value,
+            pass = true;
 
+        illegalCharset.forEach(function(test){
+            if (value.match(test) && test !== exception) {
+                pass = false;
+            }
+        });
+
+        return pass;
     };
 
     /*
