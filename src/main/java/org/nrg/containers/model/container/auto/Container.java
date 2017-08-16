@@ -1,7 +1,9 @@
 package org.nrg.containers.model.container.auto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Function;
@@ -9,6 +11,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.spotify.docker.client.messages.ContainerMount;
+import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.events.model.ContainerEvent;
 import org.nrg.containers.events.model.DockerContainerEvent;
 import org.nrg.containers.model.container.ContainerInputType;
@@ -18,6 +22,7 @@ import org.nrg.containers.model.container.entity.ContainerEntityInput;
 import org.nrg.containers.model.container.entity.ContainerEntityMount;
 import org.nrg.containers.model.container.entity.ContainerEntityOutput;
 import org.nrg.containers.model.container.entity.ContainerMountFilesEntity;
+import org.nrg.containers.services.ContainerService;
 
 import javax.annotation.Nullable;
 import java.util.Collections;
@@ -26,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 
 @AutoValue
+@JsonInclude(JsonInclude.Include.ALWAYS)
 public abstract class Container {
     @JsonProperty("id") public abstract long databaseId();
     @JsonProperty("command-id") public abstract long commandId();
@@ -41,6 +47,38 @@ public abstract class Container {
     @JsonProperty("outputs") public abstract ImmutableList<ContainerOutput> outputs();
     @JsonProperty("history") public abstract ImmutableList<ContainerHistory> history();
     @JsonProperty("log-paths") public abstract ImmutableList<String> logPaths();
+
+    /**
+     * The most recent status in the container's history.
+     * @return The most recent status in the container's history.
+     */
+    @JsonGetter("status")
+    public String status() {
+        String status = null;
+        Date timeRecorded = new Date(0);
+
+        // Update status only when history entry is newer
+        for (final ContainerHistory containerHistory : history()) {
+            if (containerHistory.timeRecorded().getTime() > timeRecorded.getTime()) {
+                if (containerHistory.status().equals("created")) {
+                    status = "Created";
+                } else if (containerHistory.status().equals("started")) {
+                    status = "Running";
+                } else if (containerHistory.status().equals("die")) {
+                    status = "Done";
+                } else if (containerHistory.status().equals("kill")) {
+                    status = "Killed";
+                } else if (containerHistory.status().equals("oom")) {
+                    status = "Killed (Out of memory)";
+                } else {
+                    status = containerHistory.status();
+                }
+                timeRecorded = containerHistory.timeRecorded();
+            }
+        }
+
+        return status;
+    }
 
     @JsonCreator
     public static Container create(@JsonProperty("id") final long databaseId,
