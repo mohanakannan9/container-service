@@ -1196,7 +1196,7 @@ var XNAT = getObject(XNAT || {});
         // examine the to-be-submitted value of an input against a list of disallowed characters and return false if any are found.
         // if an input needs to allow one of these strings, an exception can be passed to this function
         exception = exception || null;
-        var illegalCharset = [';', '\\|\\|', '&&', '\\$\\(', '`' ],
+        var illegalCharset = [';', '\\|\\|', '&&', '\\(', '`' ],
             value = input.value,
             pass = true;
 
