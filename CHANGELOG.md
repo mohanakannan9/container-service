@@ -27,11 +27,19 @@ Not yet released.
 * [CS-263][] When finalizing a container, check if user can edit parent before creating new resource. (Sorry, I thought I had already done this.)
 * [CS-341][] `GET /{some identifiers}/launch` returns `user-settable` boolean property on inputs
 * [CS-337][] Fail more gracefully when user tries to use a docker host url with no scheme. An error message is logged that is not super helpful right now, but will become a little bit more helpful in a future version once [spotify/docker-client#870][] is merged and released.
+* [XXX-60][] Prevent users from launching containers with input values containing strings that could be used for arbitrary code execution:
+
+        ;
+        `
+        &&
+        ||
+        (
 
 [CS-263]: https://issues.xnat.org/browse/CS-263
 [CS-341]: https://issues.xnat.org/browse/CS-341
 [CS-337]: https://issues.xnat.org/browse/CS-337
 [spotify/docker-client#870]: https://github.com/spotify/docker-client/pull/870
+[XXX-60]: https://issues.xnat.org/browse/XXX-60
 
 ## 1.1
 
