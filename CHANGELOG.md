@@ -18,8 +18,10 @@ Not yet released.
 ### Bugfixes
 
 * [CS-263][] When finalizing a container, check if user can edit parent before creating new resource. (Sorry, I thought I had already done this.)
+* [CS-341][] `GET /{some identifiers}/launch` returns `user-settable` boolean property on inputs
 
 [CS-263]: https://issues.xnat.org/browse/CS-263
+[CS-341]: https://issues.xnat.org/browse/CS-341
 
 ## 1.1
 
