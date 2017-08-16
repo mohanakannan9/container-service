@@ -665,7 +665,7 @@ var XNAT = getObject(XNAT || {});
                                 // child inputs that specify a parent get special treatment
                                 if ((!inputs[i].parent || inputs[i].parent === undefined)) {
                                     // don't display the root element input again ... it has already been listed.
-                                    inputs[i].type = (i === rootElement) ? 'hidden' : inputs[i].ui.default.type;
+                                    inputs[i].type = (!inputs[i]['user-settable'] || i === rootElement) ? 'hidden' : inputs[i].ui.default.type;
                                     inputs[i].value = inputs[i].ui.default.values[0].value || inputs[i].value;
                                     inputs[i].valueLabel = inputs[i].ui.default.values[0].label || '';
 
