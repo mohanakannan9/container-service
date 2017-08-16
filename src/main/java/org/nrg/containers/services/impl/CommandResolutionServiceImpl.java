@@ -20,6 +20,7 @@ import org.nrg.containers.exceptions.CommandInputResolutionException;
 import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.ContainerMountResolutionException;
+import org.nrg.containers.exceptions.IllegalInputException;
 import org.nrg.containers.exceptions.UnauthorizedException;
 import org.nrg.containers.model.command.auto.Command.CommandInput;
 import org.nrg.containers.model.command.auto.Command.CommandMount;
@@ -388,6 +389,22 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             return resolvedCommand;
         }
 
+        private void checkForIllegalInputValue(final String inputName,
+                                               final String inputValue) throws IllegalInputException {
+            if (inputValue == null) {
+                return;
+            }
+
+            for (final String illegalString : ILLEGAL_INPUT_STRINGS) {
+                if (inputValue.contains(illegalString)) {
+                    final String message = String.format("Input \"%s\" has a value containing illegal string \"%s\".",
+                            inputName, illegalString);
+                    log.info(message);
+                    throw new IllegalInputException(message);
+                }
+            }
+        }
+
         @Nonnull
         private List<ResolvedInputTreeNode<? extends Input>> flattenTree(final ResolvedInputTreeNode<? extends Input> node) {
             final List<ResolvedInputTreeNode<? extends Input>> flatTree = Lists.newArrayList();
@@ -419,7 +436,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
         @Nonnull
         private ResolvedInputValue resolveExternalWrapperInput(final CommandWrapperExternalInput input,
                                                                final Map<String, String> resolvedInputValuesByReplacementKey)
-                throws CommandResolutionException, UnauthorizedException {
+                throws CommandResolutionException, UnauthorizedException, IllegalInputException {
             log.info("Resolving input \"{}\".", input.name());
 
             XnatModelObject resolvedModelObject = null;
@@ -565,6 +582,8 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 }
             }
 
+            checkForIllegalInputValue(input.name(), resolvedValue);
+
             return ResolvedInputValue.builder()
                     .type(input.type())
                     .value(resolvedValue)
@@ -578,7 +597,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
         private List<ResolvedInputValue> resolveDerivedWrapperInput(final CommandWrapperDerivedInput input,
                                                                     final @Nonnull ResolvedInputValue parent,
                                                                     final Map<String, String> resolvedInputValuesByReplacementKey)
-                throws CommandResolutionException {
+                throws CommandResolutionException, IllegalInputException {
             log.info("Resolving input \"{}\".", input.name());
 
             // Resolve the matcher, if one was provided
@@ -893,6 +912,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             final List<ResolvedInputValue> resolvedInputs = Lists.newArrayList();
             for (int i = 0; i < resolvedValues.size(); i++) {
                 final String resolvedValue = resolvedValues.get(i);
+                checkForIllegalInputValue(input.name(), resolvedValue);
                 final XnatModelObject xnatModelObject = resolvedXnatObjects == null ? null : resolvedXnatObjects.get(i);
                 String jsonValue = resolvedValue;
                 String valueLabel = resolvedValue;
@@ -921,7 +941,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
         private ResolvedInputValue resolveCommandInput(final CommandInput input,
                                                        final String providedValue,
                                                        final Map<String, String> resolvedInputValuesByReplacementKey)
-                throws CommandResolutionException {
+                throws CommandResolutionException, IllegalInputException {
             log.info("Resolving command input \"{}\".", input.name());
 
             String resolvedValue = null;
@@ -982,6 +1002,8 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             // }
             // resolvedInputValuesByReplacementKey.put(replacementKey, resolvedValue);
             // resolvedInputCommandLineValuesByReplacementKey.put(replacementKey, getValueForCommandLine(input, resolvedValue));
+
+            checkForIllegalInputValue(input.name(), resolvedValue);
 
             return ResolvedInputValue.builder()
                     .type(input.type())

