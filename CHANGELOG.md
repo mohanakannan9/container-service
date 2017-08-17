@@ -46,6 +46,7 @@ Not yet released.
         ||
         (
 * [CS-349][] Better handle `/experiment/{assessor id}` URIs as inputs for assessor external inputs. (They will not be able to mount files, though. See [CS-354])
+* [CS-350][] More reliably find assessor directories to mount
 
 * [CS-337][] Fail more gracefully when user tries to use a docker host url with no scheme. An error message is logged that is not super helpful right now, but will become a little bit more helpful in a future version once [spotify/docker-client#870][] is merged and released.
 * [CS-279][] Explicitly restrict access to container launch UI to project users with edit permissions (i.e. owners and members)
@@ -74,6 +75,7 @@ Not yet released.
 [CS-273]: https://issues.xnat.org/browse/CS-273
 [CS-349]: https://issues.xnat.org/browse/CS-349
 [CS-354]: https://issues.xnat.org/browse/CS-354
+[CS-350]: https://issues.xnat.org/browse/CS-350
 
 ## 1.1
 

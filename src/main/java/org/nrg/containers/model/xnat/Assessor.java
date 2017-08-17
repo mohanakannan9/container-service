@@ -11,6 +11,7 @@ import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatImageassessordataI;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImageassessordata;
+import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata.UnknownPrimaryProjectException;
 import org.nrg.xft.security.UserI;
@@ -19,14 +20,18 @@ import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.AssessorURII;
 import org.nrg.xnat.helpers.uri.archive.SubjectURII;
+import org.nrg.xnat.helpers.uri.archive.impl.ExptAssessorURI;
+import org.nrg.xnat.helpers.uri.archive.impl.ExptURI;
 
 import javax.annotation.Nullable;
+import java.io.File;
 import java.util.List;
 import java.util.Objects;
 
 @JsonInclude(Include.NON_NULL)
 public class Assessor extends XnatModelObject {
     @JsonIgnore private XnatImageassessordataI xnatImageassessordataI;
+    @JsonIgnore private XnatImagesessiondata parent;
     private List<Resource> resources;
     private String directory;
 
@@ -34,6 +39,9 @@ public class Assessor extends XnatModelObject {
 
     public Assessor(final AssessorURII assessorURII) {
         this.xnatImageassessordataI = assessorURII.getAssessor();
+        if (ExptAssessorURI.class.isAssignableFrom(assessorURII.getClass())) {
+            parent = ((ExptAssessorURI) assessorURII).getSession();
+        }
         this.uri = ((URIManager.DataURIA) assessorURII).getUri();
         populateProperties(null);
     }
@@ -57,13 +65,17 @@ public class Assessor extends XnatModelObject {
         this.label = xnatImageassessordataI.getLabel();
         this.xsiType = xnatImageassessordataI.getXSIType();
         this.directory = null;
-        try {
-            // TODO
-            // I don't know if this will return the correct directory for the assessor,
-            // or if it will give us the directory of the parent session
-            this.directory = ((XnatImageassessordata) xnatImageassessordataI).getCurrentArchiveFolder();
-        } catch (UnknownPrimaryProjectException | InvalidArchiveStructure e) {
-            // ignored, I guess?
+
+        final XnatImageassessordata assessor = ((XnatImageassessordata) xnatImageassessordataI);
+        final File sessionDir = parent != null ? parent.getSessionDir() : null;
+        if (sessionDir != null && sessionDir.isDirectory()) {
+            final File assessorsDir = new File(sessionDir, "ASSESSORS");
+            if (assessorsDir.isDirectory()) {
+                final File assessorDir = new File(assessorsDir, assessor.getArchiveDirectoryName());
+                if (assessorDir.isDirectory()) {
+                    this.directory = assessorDir.getAbsolutePath();
+                }
+            }
         }
 
         this.resources = Lists.newArrayList();
