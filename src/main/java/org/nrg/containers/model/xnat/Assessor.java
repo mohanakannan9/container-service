@@ -79,14 +79,19 @@ public class Assessor extends XnatModelObject {
             @Nullable
             @Override
             public Assessor apply(@Nullable URIManager.ArchiveItemURI uri) {
-                XnatImageassessordata assessor;
                 if (uri != null &&
                         AssessorURII.class.isAssignableFrom(uri.getClass())) {
-                    assessor = ((AssessorURII) uri).getAssessor();
-
+                    final XnatImageassessordata assessor = ((AssessorURII) uri).getAssessor();
                     if (assessor != null &&
                             XnatImageassessordata.class.isAssignableFrom(assessor.getClass())) {
                         return new Assessor((AssessorURII) uri);
+                    }
+                } else if (uri != null &&
+                        ExptURI.class.isAssignableFrom(uri.getClass())) {
+                    final XnatExperimentdata expt = ((ExptURI) uri).getExperiment();
+                    if (expt != null &&
+                            XnatImageassessordata.class.isAssignableFrom(expt.getClass())) {
+                        return new Assessor((XnatImageassessordata) expt);
                     }
                 }
 

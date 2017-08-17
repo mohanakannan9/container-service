@@ -45,13 +45,14 @@ Not yet released.
         &&
         ||
         (
+* [CS-349][] Better handle `/experiment/{assessor id}` URIs as inputs for assessor external inputs. (They will not be able to mount files, though. See [CS-354])
 
 * [CS-337][] Fail more gracefully when user tries to use a docker host url with no scheme. An error message is logged that is not super helpful right now, but will become a little bit more helpful in a future version once [spotify/docker-client#870][] is merged and released.
 * [CS-279][] Explicitly restrict access to container launch UI to project users with edit permissions (i.e. owners and members)
 * [CS-293][], [CS-297][] Remove non-functional "Delete" buttons from instances in the UI where it was not supported
 * [CS-341][] `GET /{some identifiers}/launch` returns `user-settable` boolean property on inputs
 * [CS-339][], [CS-340][] Fix faulty display and handling of non-user-settable inputs in container launch UI
-* [CS-274][] Improve functioning of Project opt-in settings.  
+* [CS-274][] Improve functioning of Project opt-in settings.
 * [CS-212][] Improve display and readability of error messages throughout
 * [CS-317][], [CS-273][] Taxonomy cleanup in UI for consistency
 
@@ -71,8 +72,8 @@ Not yet released.
 [CS-212]: https://issues.xnat.org/browse/CS-212
 [CS-317]: https://issues.xnat.org/browse/CS-317
 [CS-273]: https://issues.xnat.org/browse/CS-273
-
-
+[CS-349]: https://issues.xnat.org/browse/CS-349
+[CS-354]: https://issues.xnat.org/browse/CS-354
 
 ## 1.1
 
