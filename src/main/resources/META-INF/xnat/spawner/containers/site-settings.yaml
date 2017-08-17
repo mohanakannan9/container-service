@@ -84,15 +84,6 @@ imageHostsPanel:
                                     name: url
                                     label: URL
                                     validation: url not-empty
-                                default:
-                                    kind: panel.input.switchbox
-                                    id: default-hub
-                                    name: default
-                                    label: Set As Default?
-                                    checked: false
-                                    value: true
-                                    onText: Default Hub
-                                    offText: Not Default
         imageHostTable:
             tag: "div#image-host-manager"
 

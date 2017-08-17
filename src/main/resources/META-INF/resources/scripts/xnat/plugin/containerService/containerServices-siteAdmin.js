@@ -399,9 +399,15 @@ var XNAT = getObject(XNAT || {});
             beforeShow: function(obj){
                 var $formContainer = obj.$modal.find('.xnat-dialog-content');
                 $formContainer.addClass('panel').find('form').append(tmpl.html());
+                $formContainer.find('.pad20').append(XNAT.ui.panel.input.switchbox({
+                    name: 'default',
+                    label: 'Set Default Hub?',
+                    value: 'false'
+                }));
                 if (item && isDefined(item.url)) {
                     $formContainer.find('form').setValues(item);
                 }
+
             },
             buttons: [
                 {
@@ -412,7 +418,7 @@ var XNAT = getObject(XNAT || {});
                         var $form = obj.$modal.find('form');
                         var $url = $form.find('input[name=url]');
                         var $name = $form.find('input[name=name]');
-                        var isDefault = $form.find('input[name=default]').val();
+                        var setDefault = $form.find('input[name=default]').val();
 
                         $form.find(':input').removeClass('invalid');
 
@@ -426,7 +432,7 @@ var XNAT = getObject(XNAT || {});
                             xmodal.loading.open({ title: 'Validating host URL'});
                             $form.submitJSON({
                                 method: 'POST',
-                                url: (isNew) ? imageHostUrl(isDefault) : imageHostUrl(isDefault, item.id),
+                                url: (isNew) ? imageHostUrl(setDefault) : imageHostUrl(setDefault, item.id),
                                 success: function () {
                                     imageHostManager.refreshTable();
                                     xmodal.loading.close();
