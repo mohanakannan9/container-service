@@ -1074,7 +1074,7 @@ var XNAT = getObject(XNAT || {});
                     spawn('p', [ spawn('strong', 'This action cannot be undone.' )])
                 ]);
             } else {
-                content = spawn('p','Containers have been run using '+image.tags[0]+'. Please confirm that you want to delete this image.');
+                content = spawn('p','Containers may have been run using '+image.tags[0]+'. Please confirm that you want to delete this image.');
             }
             XNAT.dialog.open({
                 width: 400,
