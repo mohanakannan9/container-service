@@ -21,7 +21,8 @@ public abstract class ResolvedCommand {
     public abstract String image();
     public abstract String type();
     public abstract ImmutableMap<String, String> rawInputValues();
-    public abstract ImmutableMap<String, String> wrapperInputValues();
+    public abstract ImmutableMap<String, String> externalWrapperInputValues();
+    public abstract ImmutableMap<String, String> derivedWrapperInputValues();
     public abstract ImmutableMap<String, String> commandInputValues();
     public abstract String commandLine();
     public abstract ImmutableMap<String, String> environmentVariables();
@@ -29,6 +30,13 @@ public abstract class ResolvedCommand {
     public abstract ImmutableList<ResolvedCommandMount> mounts();
     public abstract ImmutableList<ResolvedCommandOutput> outputs();
     @Nullable public abstract String workingDirectory();
+
+    public ImmutableMap<String, String> wrapperInputValues() {
+        final ImmutableMap.Builder<String, String> wrapperValuesBuilder = ImmutableMap.builder();
+        wrapperValuesBuilder.putAll(externalWrapperInputValues());
+        wrapperValuesBuilder.putAll(derivedWrapperInputValues());
+        return wrapperValuesBuilder.build();
+    }
 
     public static Builder builder() {
         return new AutoValue_ResolvedCommand.Builder()
@@ -53,10 +61,16 @@ public abstract class ResolvedCommand {
             rawInputValuesBuilder().put(inputName, inputValue);
             return this;
         }
-        public abstract Builder wrapperInputValues(Map<String, String> xnatInputValues);
-        public abstract ImmutableMap.Builder<String, String> wrapperInputValuesBuilder();
-        public Builder addWrapperInputValue(final String inputName, final String inputValue) {
-            wrapperInputValuesBuilder().put(inputName, inputValue);
+        public abstract Builder externalWrapperInputValues(Map<String, String> inputValues);
+        public abstract ImmutableMap.Builder<String, String> externalWrapperInputValuesBuilder();
+        public Builder addExternalWrapperInputValue(final String inputName, final String inputValue) {
+            externalWrapperInputValuesBuilder().put(inputName, inputValue);
+            return this;
+        }
+        public abstract Builder derivedWrapperInputValues(Map<String, String> inputValues);
+        public abstract ImmutableMap.Builder<String, String> derivedWrapperInputValuesBuilder();
+        public Builder addDerivedWrapperInputValue(final String inputName, final String inputValue) {
+            derivedWrapperInputValuesBuilder().put(inputName, inputValue);
             return this;
         }
         public abstract Builder commandInputValues(Map<String, String> commandInputValues);

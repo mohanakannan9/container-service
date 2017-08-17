@@ -351,15 +351,18 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 flatTree.addAll(flattenTree(rootNode));
                 log.debug("Done flattening tree starting with root node {}.", rootNode.input().name());
             }
-            final Map<String, String> wrapperInputValues = Maps.newHashMap();
+            final Map<String, String> externalWrapperInputValues = Maps.newHashMap();
+            final Map<String, String> derivedWrapperInputValues = Maps.newHashMap();
             final Map<String, String> commandInputValues = Maps.newHashMap();
             for (final ResolvedInputTreeNode<? extends Input> node : flatTree) {
                 final List<ResolvedInputTreeValueAndChildren> valuesAndChildren = node.valuesAndChildren();
                 final String value = (valuesAndChildren != null && !valuesAndChildren.isEmpty()) ?
                         valuesAndChildren.get(0).resolvedValue().value() :
                         null;
-                if (node.input() instanceof CommandWrapperInput) {
-                    wrapperInputValues.put(node.input().name(), value == null ? "null" : value);
+                if (node.input() instanceof CommandWrapperExternalInput) {
+                    externalWrapperInputValues.put(node.input().name(), value == null ? "null" : value);
+                } else if (node.input() instanceof CommandWrapperDerivedInput) {
+                    derivedWrapperInputValues.put(node.input().name(), value == null ? "null" : value);
                 } else {
                     commandInputValues.put(node.input().name(), value == null ? "null" : value);
                 }
@@ -374,7 +377,8 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                     .commandDescription(command.description())
                     .image(command.image())
                     .rawInputValues(inputValues)
-                    .wrapperInputValues(wrapperInputValues) // TODO remove this property
+                    .externalWrapperInputValues(externalWrapperInputValues) // TODO remove this property
+                    .derivedWrapperInputValues(derivedWrapperInputValues) // TODO remove this property
                     .commandInputValues(commandInputValues) // TODO remove this property
                     .outputs(resolveOutputs(resolvedInputTrees, resolvedInputValuesByReplacementKey))
                     .commandLine(resolveCommandLine(resolvedInputTrees))

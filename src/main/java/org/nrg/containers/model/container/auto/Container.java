@@ -186,8 +186,36 @@ public abstract class Container {
     }
 
     @JsonIgnore
+    @SuppressWarnings("deprecation")
     public Map<String, String> getWrapperInputs() {
-        return getInputs(ContainerInputType.WRAPPER);
+        final Map<String, String> wrapperInputs = Maps.newHashMap();
+        wrapperInputs.putAll(getLegacyWrapperInputs());
+        wrapperInputs.putAll(getExternalWrapperInputs());
+        wrapperInputs.putAll(getDerivedWrapperInputs());
+        return wrapperInputs;
+    }
+
+    @JsonIgnore
+    public Map<String, String> getExternalWrapperInputs() {
+        return getInputs(ContainerInputType.WRAPPER_EXTERNAL);
+    }
+
+    @JsonIgnore
+    public Map<String, String> getDerivedWrapperInputs() {
+        return getInputs(ContainerInputType.WRAPPER_DERIVED);
+    }
+
+    /**
+     * Get inputs of type "wrapper".
+     * We no longer save inputs of this type. Now the wrapper inputs are separately saved
+     * as type "wrapper_external" or "wrapper_derived". But we keep this here for legacy containers.
+     * @return A map of wrapper input names to values.
+     * @since 1.2
+     */
+    @JsonIgnore
+    @Deprecated
+    public Map<String, String> getLegacyWrapperInputs() {
+        return getInputs(ContainerInputType.WRAPPER_DEPRECATED);
     }
 
     @JsonIgnore

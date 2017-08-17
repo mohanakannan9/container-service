@@ -16,11 +16,13 @@ Not yet released.
     * `die` -> `Done`
     * `kill` -> `Killed`
     * `oom` -> `Killed (Out of memory)`
+* [CS-227][] Container inputs are no longer recorded with type `wrapper`. Now all wrapper inputs will be recorded as either `wrapper-external` or `wrapper-derived`. Containers launched and recorded before this version will still have inputs of type `wrapper`; we can't migrate them because information has been lost.
 
 [CS-111]: https://issues.xnat.org/browse/CS-111
 [CS-62]: https://issues.xnat.org/browse/CS-62
 [CS-215]: https://issues.xnat.org/browse/CS-215
 [CS-318]: https://issues.xnat.org/browse/CS-318
+[CS-227]: https://issues.xnat.org/browse/CS-227
 
 ### Bugfixes
 

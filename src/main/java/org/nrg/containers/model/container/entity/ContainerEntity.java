@@ -62,7 +62,8 @@ public class ContainerEntity extends AbstractHibernateEntity {
                 })
         ));
         addRawInputs(resolvedCommand.rawInputValues());
-        addWrapperInputs(resolvedCommand.wrapperInputValues());
+        addExternalWrapperInputs(resolvedCommand.externalWrapperInputValues());
+        addDerivedWrapperInputs(resolvedCommand.derivedWrapperInputValues());
         addCommandInputs(resolvedCommand.commandInputValues());
         setOutputs(Lists.newArrayList(
                 Lists.transform(resolvedCommand.outputs(), new Function<ResolvedCommandOutput, ContainerEntityOutput>() {
@@ -245,12 +246,44 @@ public class ContainerEntity extends AbstractHibernateEntity {
     }
 
     @Transient
+    @SuppressWarnings("deprecation")
     public Map<String, String> getWrapperInputs() {
-        return getInputs(ContainerInputType.WRAPPER);
+        final Map<String, String> wrapperInputs = Maps.newHashMap();
+        wrapperInputs.putAll(getLegacyWrapperInputs());
+        wrapperInputs.putAll(getExternalWrapperInputs());
+        wrapperInputs.putAll(getDerivedWrapperInputs());
+        return wrapperInputs;
     }
 
-    public void addWrapperInputs(final Map<String, String> xnatInputValues) {
-        addInputs(ContainerInputType.WRAPPER, xnatInputValues);
+    @Transient
+    public Map<String, String> getExternalWrapperInputs() {
+        return getInputs(ContainerInputType.WRAPPER_EXTERNAL);
+    }
+
+    public void addExternalWrapperInputs(final Map<String, String> xnatInputValues) {
+        addInputs(ContainerInputType.WRAPPER_EXTERNAL, xnatInputValues);
+    }
+
+    @Transient
+    public Map<String, String> getDerivedWrapperInputs() {
+        return getInputs(ContainerInputType.WRAPPER_DERIVED);
+    }
+
+    public void addDerivedWrapperInputs(final Map<String, String> xnatInputValues) {
+        addInputs(ContainerInputType.WRAPPER_DERIVED, xnatInputValues);
+    }
+
+    /**
+     * Get inputs of type "wrapper".
+     * We no longer save inputs of this type. Now the wrapper inputs are separately saved
+     * as type "wrapper_external" or "wrapper_derived". But we keep this here for legacy containers.
+     * @return A map of wrapper input names to values.
+     * @since 1.2
+     */
+    @Transient
+    @Deprecated
+    public Map<String, String> getLegacyWrapperInputs() {
+        return getInputs(ContainerInputType.WRAPPER_DEPRECATED);
     }
 
     @Transient
@@ -281,17 +314,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
             return;
         }
         for (final Map.Entry<String, String> inputEntry : inputs.entrySet()) {
-            switch (type) {
-                case RAW:
-                    addInput(ContainerEntityInput.raw(inputEntry.getKey(), inputEntry.getValue()));
-                    break;
-                case WRAPPER:
-                    addInput(ContainerEntityInput.wrapper(inputEntry.getKey(), inputEntry.getValue()));
-                    break;
-                case COMMAND:
-                    addInput(ContainerEntityInput.command(inputEntry.getKey(), inputEntry.getValue()));
-                    break;
-            }
+            addInput(ContainerEntityInput.create(inputEntry.getKey(), inputEntry.getValue(), type));
         }
     }
 
