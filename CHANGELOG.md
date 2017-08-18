@@ -96,7 +96,7 @@ Not yet released.
 
 ## 1.1
 
-[Released 2017-08-04](https://github.com/NrgXnat/container-service/releases/tag/v1.1).
+[Released 2017-08-04](https://github.com/NrgXnat/container-service/releases/tag/1.1).
 
 ### Features
 
