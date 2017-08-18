@@ -853,7 +853,10 @@ var XNAT = getObject(XNAT || {});
         }
 
         function deleteAutomationButton(id,isAdmin){
-            if (isAdmin) return spawn('button.deleteAutomationButton',{ data: { id: id }, html: 'Delete' });
+            if (isAdmin) return spawn('button.deleteAutomationButton', {
+                data: {id: id},
+                title: 'Delete Automation'
+            }, [ spawn ('i.fa.fa-trash') ]);
         }
 
         XNAT.xhr.getJSON({
