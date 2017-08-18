@@ -76,7 +76,7 @@ imageHostsPanel:
                                     kind: panel.input.text
                                     id: hub-name
                                     name: name
-                                    label: Image Hub Name
+                                    label: Image Host Name
                                     validation: not-empty
                                 url:
                                     kind: panel.input.text
@@ -112,9 +112,9 @@ installedImagesPanel:
                                 hubSelector:
                                     kind: panel.select.single
                                     name: hubId
-                                    label: Select Image Hub
+                                    label: Select Image Host
                                     element:
-                                        title: Select Image Hub
+                                        title: Select Image Host
                                 imageName:
                                     kind: panel.input.text
                                     name: image

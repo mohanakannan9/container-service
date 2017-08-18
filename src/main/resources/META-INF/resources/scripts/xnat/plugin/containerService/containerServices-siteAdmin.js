@@ -393,7 +393,7 @@ var XNAT = getObject(XNAT || {});
         item = item || {};
 
         XNAT.dialog.open({
-            title: doWhat + ' Image Hub',
+            title: doWhat + ' Image Host',
             content: spawn('form'),
             width: 550,
             beforeShow: function(obj){
@@ -523,8 +523,9 @@ var XNAT = getObject(XNAT || {});
             return spawn('div.center', [rdo]);
         }
 
-        function isDefault(status,valIfTrue) {
-            return (status) ? valIfTrue : false;
+        function isDefault(status,valIfTrue,valIfFalse) {
+            valIfFalse = valIfFalse || false;
+            return (status) ? valIfTrue : valIfFalse;
         }
 
         function hubPingStatus(ping) {
@@ -561,8 +562,8 @@ var XNAT = getObject(XNAT || {});
                     })
                 },
                 disabled: isDefault(item.default,"disabled"),
-                title: isDefault(item.default,"Cannot delete the default hub")
-            }, 'Delete');
+                title: isDefault(item.default,"Cannot delete the default hub","Delete Image Host")
+            }, [ spawn('i.fa.fa-trash') ]);
         }
 
         imageHostManager.getAll().done(function(data){
@@ -603,7 +604,7 @@ var XNAT = getObject(XNAT || {});
         // imageHostManager.table($manager);
 
         var newReceiver = spawn('button.new-image-host.btn.btn-sm.submit', {
-            html: 'New Image Hub',
+            html: 'New Image Host',
             onclick: function(){
                 imageHostManager.dialog(null, true);
             }
@@ -913,7 +914,7 @@ var XNAT = getObject(XNAT || {});
             .th('<b>XNAT Actions</b>')
             .th('<b>Site-wide Config</b>')
             .th('<b>Version</b>')
-            .th('<b>Actions</b>');
+            .th({ width: 180, html: '<b>Actions</b>' });
 
         function viewLink(item, text){
             return spawn('a.link|href=#!', {
@@ -978,8 +979,9 @@ var XNAT = getObject(XNAT || {});
                             });
                         }
                     })
-                }
-            }, 'Delete');
+                },
+                title: 'Delete Command'
+            }, [ spawn('i.fa.fa-trash') ]);
         }
 
         commandListManager.getAll(imageName).done(function(data) {
@@ -1115,11 +1117,10 @@ var XNAT = getObject(XNAT || {});
 
         function deleteImageButton(image) {
             return spawn('button.btn.sm',{
-                html: 'Delete Image',
                 onclick: function(){
                     deleteImage(image);
                 }
-            });
+            }, 'Delete Image');
         }
 
         imageListManager.container = $manager;
@@ -1193,6 +1194,10 @@ var XNAT = getObject(XNAT || {});
 
     function siteConfigUrl(){
         return csrfUrl('/xapi/siteConfig');
+    }
+
+    function deleteWrapperUrl(id){
+        return csrfUrl('/xapi/wrappers/'+id);
     }
 
     commandConfigManager.getCommands = commandConfigManager.getAll = function(callback){
@@ -1453,7 +1458,7 @@ var XNAT = getObject(XNAT || {});
             .th({ addClass: 'left', html: '<b>XNAT Command Label</b>' })
             .th('<b>Container</b>')
             .th('<b>Enabled</b>')
-            .th({ width: 150, html: '<b>Actions</b>' });
+            .th({ width: 170, html: '<b>Actions</b>' });
 
         // add master switch
         ccmTable.tr({ 'style': { 'background-color': '#f3f3f3' }})
@@ -1477,6 +1482,31 @@ var XNAT = getObject(XNAT || {});
                     configDefinition.dialog(item.id, wrapper.name, false);
                 }
             }, 'Set Defaults');
+        }
+
+        function deleteConfigButton(wrapper){
+            return spawn('button.btn.sm', {
+                onclick: function(e){
+                    e.preventDefault();
+                    xmodal.confirm({
+                        title: 'Delete '+wrapper.name,
+                        content: 'Are you sure you want to delete this command from your XNAT site? This will cause any execution of this command to be listed as "Unknown" in your Command History table.',
+                        okAction: function(){
+                            XNAT.xhr.delete({
+                                url: deleteWrapperUrl(wrapper.id),
+                                success: function(){
+                                    XNAT.ui.banner.top(1000, '<b>'+wrapper.name+'</b> deleted from site', 'success');
+                                    commandConfigManager.refreshTable();
+                                },
+                                fail: function(e){
+                                    errorHandler(e, 'Could Not Delete Command Configuration');
+                                }
+                            });
+                        }
+                    })
+                },
+                title: 'Delete Command Configuration'
+            }, [ spawn('i.fa.fa-trash') ])
         }
 
         function enabledCheckbox(command,wrapper){
@@ -1563,7 +1593,7 @@ var XNAT = getObject(XNAT || {});
                                 .td([ viewLink(command, wrapper, wrapper.description) ]).addClass('name')
                                 .td([ spawn('span.truncate.truncate200', command.image ) ])
                                 .td([ spawn('div', [enabledCheckbox(command,wrapper)]) ])
-                                .td([ spawn('div.center', [editConfigButton(command,wrapper)]) ]);
+                                .td([ spawn('div.center', [editConfigButton(command,wrapper), spacer(10), deleteConfigButton(wrapper)]) ]);
                         }
                     }
                 }
@@ -1910,7 +1940,10 @@ var XNAT = getObject(XNAT || {});
         }
 
         function deleteAutomationButton(id){
-            return spawn('button.deleteAutomationButton',{ data: { id: id }, html: 'Delete' });
+            return spawn( 'button.deleteAutomationButton', {
+                data: {id: id},
+                title: 'Delete Command Automation'
+            }, [ spawn('i.fa.fa-trash') ]);
         }
 
         XNAT.xhr.getJSON({
@@ -1929,7 +1962,7 @@ var XNAT = getObject(XNAT || {});
                             .td( mapping['xnat-command-wrapper'] )
                             .td( mapping['subscription-user-name'] )
                             .td( mapping['enabled'] )
-                            .td([ deleteAutomationButton(mapping['id']) ])
+                            .td([ spawn('div.center', [ deleteAutomationButton(mapping['id']) ]) ])
                     });
 
                 } else {
