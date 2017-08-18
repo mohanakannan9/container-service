@@ -51,8 +51,10 @@ Not yet released.
 * [CS-350][] More reliably find assessor directories to mount
 
 * [CS-337][] Fail more gracefully when user tries to use a docker host url with no scheme. An error message is logged that is not super helpful right now, but will become a little bit more helpful in a future version once [spotify/docker-client#870][] is merged and released.
+* [CS-351][] Fix a bug with the "Default Image Host" toggle
 * [CS-279][] Explicitly restrict access to container launch UI to project users with edit permissions (i.e. owners and members)
-* [CS-293][], [CS-297][] Remove non-functional "Delete" buttons from instances in the UI where it was not supported
+* [CS-297][] Fix the ability to delete a command configuration. Improve appearance of "Delete" buttons throughout the admin UI
+* [CS-293][] Remove non-functional "Delete" buttons from instances in the UI where it was not supported
 * [CS-341][] `GET /{some identifiers}/launch` returns `user-settable` boolean property on inputs
 * [CS-339][], [CS-340][] Fix faulty display and handling of non-user-settable inputs in container launch UI
 * [CS-274][] Improve functioning of Project opt-in settings.
@@ -74,6 +76,7 @@ Not yet released.
 [CS-347]: https://issues.xnat.org/browse/CS-347
 [CS-349]: https://issues.xnat.org/browse/CS-349
 [CS-350]: https://issues.xnat.org/browse/CS-350
+[CS-351]: https://issues.xnat.org/browse/CS-351
 [CS-354]: https://issues.xnat.org/browse/CS-354
 [XXX-60]: https://issues.xnat.org/browse/XXX-60
 [XXX-61]: https://issues.xnat.org/browse/XXX-61
