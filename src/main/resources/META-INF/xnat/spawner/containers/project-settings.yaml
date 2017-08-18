@@ -92,7 +92,7 @@ projectSettings:
         commandAutomationTab:
             kind: tab
             name: commandAutomationTab
-            label: Automate Commands
+            label: Command Automation
             group: containerServiceProjectTabGroup
             active: false
             contents:

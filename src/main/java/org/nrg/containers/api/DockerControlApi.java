@@ -14,6 +14,7 @@ import com.spotify.docker.client.LogStream;
 import com.spotify.docker.client.exceptions.ContainerNotFoundException;
 import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.exceptions.DockerException;
+import com.spotify.docker.client.exceptions.ImageNotFoundException;
 import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
 import com.spotify.docker.client.messages.ContainerInfo;
@@ -31,10 +32,11 @@ import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMount;
 import org.nrg.containers.model.container.auto.ContainerMessage;
-import org.nrg.containers.model.server.docker.DockerServer;
+import org.nrg.containers.model.dockerhub.DockerHubBase.DockerHub;
+import org.nrg.containers.model.server.docker.DockerServerBase.DockerServer;
+import org.nrg.containers.model.server.docker.DockerServerBase.DockerServerWithPing;
 import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.model.command.auto.Command;
-import org.nrg.containers.model.dockerhub.DockerHub;
 import org.nrg.containers.model.image.docker.DockerImage;
 import org.nrg.containers.services.CommandLabelService;
 import org.nrg.framework.exceptions.NotFoundException;
@@ -85,6 +87,12 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     @Override
+    public DockerServerWithPing getServerAndPing() throws NoServerPrefException {
+        final DockerServer dockerServerBeforePing = getServer();
+        return DockerServerWithPing.create(dockerServerBeforePing, canConnect());
+    }
+
+    @Override
     public void setServer(final String host) throws InvalidPreferenceName {
         setServer(host, null);
     }
@@ -102,6 +110,12 @@ public class DockerControlApi implements ContainerControlApi {
     public DockerServer setServer(final DockerServer serverBean) throws InvalidPreferenceName {
         containerServerPref.fromPojo(serverBean);
         return serverBean;
+    }
+
+    @Override
+    public DockerServerWithPing setServerAndPing(final DockerServer server) throws InvalidPreferenceName {
+        final DockerServer dockerServerBeforePing = setServer(server);
+        return DockerServerWithPing.create(dockerServerBeforePing, canConnect());
     }
 
     @Override
@@ -240,9 +254,11 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     private com.spotify.docker.client.messages.ImageInfo _getImageById(final String imageId, final DockerClient client)
-        throws DockerServerException, NoServerPrefException {
+        throws DockerServerException, NoServerPrefException, NotFoundException {
         try {
             return client.inspectImage(imageId);
+        } catch (ImageNotFoundException e) {
+            throw new NotFoundException(e);
         } catch (DockerException | InterruptedException e) {
             throw new DockerServerException(e);
         }
@@ -436,39 +452,41 @@ public class DockerControlApi implements ContainerControlApi {
 
     @Override
     @Nullable
-    public DockerImage pullImage(final String name) throws NoServerPrefException, DockerServerException {
+    public DockerImage pullImage(final String name) throws NoServerPrefException, DockerServerException, NotFoundException {
         return pullImage(name, null);
     }
 
     @Override
     @Nullable
     public DockerImage pullImage(final String name, final @Nullable DockerHub hub)
-            throws NoServerPrefException, DockerServerException {
+            throws NoServerPrefException, DockerServerException, NotFoundException {
         return pullImage(name, hub, null, null);
     }
 
     @Override
     @Nullable
-    public DockerImage pullImage(final String name, final @Nullable DockerHub hub, final @Nullable String username, final @Nullable String password) throws NoServerPrefException, DockerServerException {
-        try (final DockerClient client = getClient()) {
-            _pullImage(name, registryAuth(hub, username, password), client);
-            return getImageById(name, client);
+    public DockerImage pullImage(final String name, final @Nullable DockerHub hub, final @Nullable String username, final @Nullable String password) throws NoServerPrefException, DockerServerException, NotFoundException {
+        final DockerClient client = getClient();
+        _pullImage(name, registryAuth(hub, username, password), client);  // We want to throw NotFoundException here if the image is not found on the hub
+        try {
+            return getImageById(name, client);  // We don't want to throw NotFoundException from here. If we can't find the image here after it has been pulled, that is a server error.
         } catch (NotFoundException e) {
             final String m = String.format("Image \"%s\" was not found", name);
             log.error(m);
-            // throw new DockerServerException(m);
+            throw new DockerServerException(e);
         }
-        return null;
     }
 
-    private void _pullImage(final @Nonnull String name, final @Nullable RegistryAuth registryAuth, final @Nonnull DockerClient client) throws DockerServerException {
+    private void _pullImage(final @Nonnull String name, final @Nullable RegistryAuth registryAuth, final @Nonnull DockerClient client) throws DockerServerException, NotFoundException {
         try {
             if (registryAuth == null) {
                 client.pull(name);
             } else {
                 client.pull(name, registryAuth);
             }
-        }  catch (DockerException | InterruptedException e) {
+        } catch (ImageNotFoundException e) {
+            throw new NotFoundException(e.getMessage());
+        } catch (DockerException | InterruptedException e) {
             log.error(e.getMessage());
             throw new DockerServerException(e);
         }
@@ -592,12 +610,12 @@ public class DockerControlApi implements ContainerControlApi {
 
     @VisibleForTesting
     @Nonnull
-    public DockerClient getClient() throws NoServerPrefException {
+    public DockerClient getClient() throws NoServerPrefException, DockerServerException {
         return getClient(getServer());
     }
 
     @Nonnull
-    private DockerClient getClient(final @Nonnull DockerServer server) {
+    private DockerClient getClient(final @Nonnull DockerServer server) throws DockerServerException {
 
         DefaultDockerClient.Builder clientBuilder =
             DefaultDockerClient.builder()
@@ -613,7 +631,12 @@ public class DockerControlApi implements ContainerControlApi {
             }
         }
 
-        return clientBuilder.build();
+        try {
+            return clientBuilder.build();
+        } catch (Throwable e) {
+            log.error("Could not create DockerClient instance. Reason: " + e.getMessage());
+            throw new DockerServerException(e);
+        }
     }
 
     @Override
@@ -631,7 +654,7 @@ public class DockerControlApi implements ContainerControlApi {
                 attributes.put(LABEL_KEY, "<elided>");
             }
             final DockerContainerEvent containerEvent =
-                    new DockerContainerEvent(dockerEvent.action(),
+                    DockerContainerEvent.create(dockerEvent.action(),
                             dockerEventActor != null? dockerEventActor.id() : null,
                             dockerEvent.time(),
                             dockerEvent.timeNano(),

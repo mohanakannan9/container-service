@@ -1,0 +1,29 @@
+{
+    "name": "param-test",
+    "description": "Test resolving params",
+    "type": "docker",
+    "image": "busybox:latest",
+    "command-line": "echo #ANYTHING#",
+    "inputs": [
+        {
+            "name": "ANYTHING",
+            "type": "string",
+            "required": true
+        }
+    ],
+    "xnat": [
+        {
+            "name": "identity-wrapper",
+            "description": "Test resolving the command with wrapper params",
+            "external-inputs": [
+                {
+                    "name": "anything",
+                    "type": "string",
+                    "required": true,
+                    "provides-value-to-command-input": "ANYTHING"
+                }
+            ],
+            "derived-inputs": []
+        }
+    ]
+}

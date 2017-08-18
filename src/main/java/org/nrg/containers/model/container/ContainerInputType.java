@@ -5,8 +5,10 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum ContainerInputType {
     RAW("raw"),
-    WRAPPER("wrapper"),
-    COMMAND("command");
+    WRAPPER_DEPRECATED("wrapper"),
+    COMMAND("command"),
+    WRAPPER_EXTERNAL("wrapper-external"),
+    WRAPPER_DERIVED("wrapper-derived");
 
     private final String name;
 

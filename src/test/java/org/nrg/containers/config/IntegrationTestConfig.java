@@ -129,9 +129,8 @@ public class IntegrationTestConfig {
     public ContainerFinalizeService containerFinalizeService(final ContainerControlApi containerControlApi,
                                                              final SiteConfigPreferences siteConfigPreferences,
                                                              final TransportService transportService,
-                                                             final CatalogService catalogService,
-                                                             final PermissionsServiceI permissionsService) {
-        return new ContainerFinalizeServiceImpl(containerControlApi, siteConfigPreferences, transportService, catalogService, permissionsService);
+                                                             final CatalogService catalogService) {
+        return new ContainerFinalizeServiceImpl(containerControlApi, siteConfigPreferences, transportService, catalogService);
     }
 
     @Bean

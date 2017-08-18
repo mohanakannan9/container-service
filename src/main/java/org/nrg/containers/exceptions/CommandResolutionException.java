@@ -8,4 +8,8 @@ public class CommandResolutionException extends Exception {
     public CommandResolutionException(final String message, final Throwable cause) {
         super(message, cause);
     }
+
+    public CommandResolutionException(final Throwable cause) {
+        super(cause);
+    }
 }

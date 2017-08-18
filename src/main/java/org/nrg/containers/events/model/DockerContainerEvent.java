@@ -1,75 +1,45 @@
 package org.nrg.containers.events.model;
 
-import com.google.common.base.MoreObjects;
+import com.google.auto.value.AutoValue;
+import com.google.common.collect.ImmutableMap;
 
+import javax.annotation.Nullable;
 import java.util.Date;
 import java.util.Map;
-import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-public class DockerContainerEvent implements ContainerEvent {
-    private String status;
-    private String containerId;
-    private Date time;
-    private long timeNano;
-    private Map<String, String> attributes;
+@AutoValue
+public abstract class DockerContainerEvent implements ContainerEvent {
+    private static final Pattern exitStatusPattern = Pattern.compile("kill|die|oom");
 
-    public DockerContainerEvent(final String status,
-                                final String containerId,
-                                final Date time,
-                                final long timeNano,
-                                final Map<String, String> attributes) {
-        this.status = status;
-        this.containerId = containerId;
-        this.time = time;
-        this.timeNano = timeNano;
-        this.attributes = attributes;
+    public abstract String status();
+    public abstract String containerId();
+    public abstract Date time();
+    @Nullable public abstract Long timeNano();
+    public abstract ImmutableMap<String, String> attributes();
+
+    public boolean isExitStatus() {
+        final Matcher exitStatusMatcher = exitStatusPattern.matcher(status());
+        return exitStatusMatcher.matches();
     }
 
-    public String getStatus() {
-        return status;
+    public String exitCode() {
+        return isExitStatus() ?
+                (attributes().containsKey("exitCode") ?
+                        attributes().get("exitCode") :
+                        "") :
+                null;
     }
 
-    public String getContainerId() {
-        return containerId;
-    }
-
-    public Date getTime() {
-        return time == null ? null : new Date(time.getTime());
-    }
-
-    public long getTimeNano() {
-        return timeNano;
-    }
-
-    public Map<String, String> getAttributes() {
-        return attributes;
-    }
-
-    @Override
-    public boolean equals(final Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        final DockerContainerEvent that = (DockerContainerEvent) o;
-        return Objects.equals(this.status, that.status) &&
-                Objects.equals(this.containerId, that.containerId) &&
-                Objects.equals(this.time, that.time) &&
-                Objects.equals(this.timeNano, that.timeNano) &&
-                Objects.equals(this.attributes, that.attributes);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(status, containerId, time, timeNano, attributes);
-    }
-
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("status", status)
-                .add("containerId", containerId)
-                .add("time", time)
-                .add("timeNano", timeNano)
-                .add("attributes", attributes)
-                .toString();
+    public static DockerContainerEvent create(final String status,
+                                              final String containerId,
+                                              final Date time,
+                                              final Long timeNano,
+                                              final Map<String, String> attributes) {
+        final ImmutableMap<String, String> attributesCopy = attributes == null ?
+                ImmutableMap.<String, String>of() :
+                ImmutableMap.copyOf(attributes);
+        return new AutoValue_DockerContainerEvent(status, containerId, time, timeNano, attributesCopy);
     }
 }

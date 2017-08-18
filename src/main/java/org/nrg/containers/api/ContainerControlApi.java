@@ -7,9 +7,10 @@ import org.nrg.containers.exceptions.NoServerPrefException;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.container.auto.ContainerMessage;
-import org.nrg.containers.model.dockerhub.DockerHub;
+import org.nrg.containers.model.dockerhub.DockerHubBase.DockerHub;
 import org.nrg.containers.model.image.docker.DockerImage;
-import org.nrg.containers.model.server.docker.DockerServer;
+import org.nrg.containers.model.server.docker.DockerServerBase.DockerServer;
+import org.nrg.containers.model.server.docker.DockerServerBase.DockerServerWithPing;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 
@@ -19,8 +20,10 @@ import java.util.Map;
 
 public interface ContainerControlApi {
     DockerServer getServer() throws NoServerPrefException;
+    DockerServerWithPing getServerAndPing() throws NoServerPrefException;
     DockerServer setServer(String host, String certPath) throws InvalidPreferenceName;
     DockerServer setServer(DockerServer server) throws InvalidPreferenceName;
+    DockerServerWithPing setServerAndPing(DockerServer server) throws InvalidPreferenceName;
     void setServer(String host) throws InvalidPreferenceName;
     String pingServer() throws NoServerPrefException, DockerServerException;
     boolean canConnect();
@@ -32,9 +35,9 @@ public interface ContainerControlApi {
     DockerImage getImageById(final String imageId) throws NotFoundException, DockerServerException, NoServerPrefException;
     void deleteImageById(String id, Boolean force) throws NoServerPrefException, DockerServerException;
 
-    DockerImage pullImage(String name) throws NoServerPrefException, DockerServerException;
-    DockerImage pullImage(String name, DockerHub hub) throws NoServerPrefException, DockerServerException;
-    DockerImage pullImage(String name, DockerHub hub, String username, String password) throws NoServerPrefException, DockerServerException;
+    DockerImage pullImage(String name) throws NoServerPrefException, DockerServerException, NotFoundException;
+    DockerImage pullImage(String name, DockerHub hub) throws NoServerPrefException, DockerServerException, NotFoundException;
+    DockerImage pullImage(String name, DockerHub hub, String username, String password) throws NoServerPrefException, DockerServerException, NotFoundException;
 
     String createContainer(final ResolvedCommand dockerCommand) throws NoServerPrefException, DockerServerException, ContainerException;
     //    String createContainer(final String imageName, final List<String> runCommand, final List <String> volumes) throws NoServerPrefException, DockerServerException;

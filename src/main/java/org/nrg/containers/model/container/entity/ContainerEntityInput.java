@@ -27,25 +27,9 @@ public class ContainerEntityInput {
 
     public ContainerEntityInput() {}
 
-    public static ContainerEntityInput raw(final String name, final String value) {
+    public static ContainerEntityInput create(final String name, final String value, final ContainerInputType type) {
         final ContainerEntityInput input = new ContainerEntityInput();
-        input.type = ContainerInputType.RAW;
-        input.name = name;
-        input.value = value;
-        return input;
-    }
-
-    public static ContainerEntityInput wrapper(final String name, final String value) {
-        final ContainerEntityInput input = new ContainerEntityInput();
-        input.type = ContainerInputType.WRAPPER;
-        input.name = name;
-        input.value = value;
-        return input;
-    }
-
-    public static ContainerEntityInput command(final String name, final String value) {
-        final ContainerEntityInput input = new ContainerEntityInput();
-        input.type = ContainerInputType.COMMAND;
+        input.type = type;
         input.name = name;
         input.value = value;
         return input;

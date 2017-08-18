@@ -6,35 +6,29 @@ buildscript {
     }
     dependencies {
         classpath "net.ltgt.gradle:gradle-apt-plugin:0.9"
+        classpath "io.spring.gradle:dependency-management-plugin:1.0.3.RELEASE"
     }
 }
 
 group 'org.nrg'
-version '1.1'
+version '1.2'
 
 apply plugin: 'java'
 apply plugin: 'idea'
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
 apply plugin: "net.ltgt.apt"
+apply plugin: 'io.spring.dependency-management'
 
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
 def vXnat = '1.7.3'
-def vXnatDev = '1.7.3'
-def vDockerClient = '8+'
-def vSpring = '4.2.9.RELEASE'
-def vSpringSecurity = '4.0.4.RELEASE'
-def vSwagger = '2.4.0'
-def vHibernate = '4.3.11.Final'
-def vJackson = '2.6.5'
-def vSlf4j = '1.7.21'
-def vJunit = '4.12'
-def vPowerMock = '1.7.0'
+def vXnatDev = '1.7.4-SNAPSHOT'
+def vMockito = '1.10.19'
+def vJavassist = '3.21.0-GA'
 
 repositories {
-    mavenLocal()
     jcenter()
     mavenCentral()
     maven {
@@ -51,12 +45,32 @@ repositories {
     }
 }
 
+dependencyManagement {
+    imports {
+        mavenBom("org.nrg:parent:${vXnat}") {
+            bomProperties([
+                    'mockito.version': vMockito,
+                    'javassist.version': vJavassist
+            ])
+        }
+    }
+}
+
+def vDockerClient = '8.9.0'
+def vJsonPath = '2.2.0'
+def vAutoValue = '1.3'
+def vPowerMock = '1.7.0'
+def vGson = '2.8.1'
+def vSwagger = '2.4.0'
+def vJackson = dependencyManagement.importedProperties['jackson.version']
+def vSpringSecurity = dependencyManagement.importedProperties['spring-security.version']
+
 // Use this configuration to put dependencies into the fat jar
 configurations {
     compile.extendsFrom(compileAndInclude)
 }
 configurations.all {
-    resolutionStrategy.force 'org.mockito:mockito-core:1.+'
+    resolutionStrategy.force "org.mockito:mockito-core:${vMockito}"
 }
 //// Possibly add annotation processor dependencies  to IntelliJ
 //idea {
@@ -79,78 +93,78 @@ dependencies {
         exclude group: "com.fasterxml.jackson.core"
         exclude group: "com.fasterxml.jackson.datatype"
     }
-    compileAndInclude "com.jayway.jsonpath:json-path:2.2.0"
+    compileAndInclude "com.jayway.jsonpath:json-path:${vJsonPath}"
 
-    compile ("org.nrg.xnat:web:${vXnatDev}") {
+    compile ("org.nrg.xnat:web") {
         transitive = false
     }
-    compile "org.nrg:framework:${vXnatDev}"
-    compile ("org.nrg.xdat:core:${vXnatDev}") {
+    compile "org.nrg:framework"
+    compile ("org.nrg.xdat:core") {
         transitive = false
     }
-    compile ("org.nrg.xnat:xnat-data-models:${vXnatDev}") {
+    compile ("org.nrg.xnat:xnat-data-models") {
         transitive = false
     }
-    compile "org.nrg:prefs:${vXnat}"
-    compile "org.nrg:notify:${vXnat}"
-    compile "org.nrg:config:${vXnat}"
-    compile "org.nrg:automation:${vXnat}"
-    apt "org.nrg:framework:${vXnatDev}"
+    compile "org.nrg:prefs"
+    compile "org.nrg:notify"
+    compile "org.nrg:config"
+    compile "org.nrg:automation"
+    apt "org.nrg:framework"
 
-    compile "org.springframework:spring-beans:${vSpring}"
-    compile "org.springframework:spring-context:${vSpring}"
-    compile "org.springframework:spring-core:${vSpring}"
-    compile "org.springframework:spring-tx:${vSpring}"
-    compile "org.springframework:spring-web:${vSpring}"
-    compile "org.springframework:spring-webmvc:${vSpring}"
+    compile "org.springframework:spring-beans"
+    compile "org.springframework:spring-context"
+    compile "org.springframework:spring-core"
+    compile "org.springframework:spring-tx"
+    compile "org.springframework:spring-web"
+    compile "org.springframework:spring-webmvc"
 
     compile "io.springfox:springfox-swagger2:${vSwagger}"
     compile "io.springfox:springfox-swagger-ui:${vSwagger}"
 
-    compile "org.hibernate:hibernate-core:${vHibernate}"
+    compile "org.hibernate:hibernate-core"
 
-    compile "com.fasterxml.jackson.core:jackson-annotations:${vJackson}"
-    compile "com.fasterxml.jackson.core:jackson-core:${vJackson}"
-    compile "com.fasterxml.jackson.core:jackson-databind:${vJackson}"
+    compile "com.fasterxml.jackson.core:jackson-annotations"
+    compile "com.fasterxml.jackson.core:jackson-core"
+    compile "com.fasterxml.jackson.core:jackson-databind"
     compile "com.fasterxml.jackson.datatype:jackson-datatype-guava:${vJackson}"
 
-    compile "org.slf4j:slf4j-api:${vSlf4j}"
-    compile "org.slf4j:slf4j-log4j12:${vSlf4j}"
+    compile "org.slf4j:slf4j-api"
+    compile "org.slf4j:slf4j-log4j12"
 
-    compile "commons-lang:commons-lang:2.6"
+    compile "commons-lang:commons-lang"
 
-    compile "javax.inject:javax.inject:1"
-    compile "javax.servlet:javax.servlet-api:3.1.0"
+    compile "javax.inject:javax.inject"
+    compile "javax.servlet:javax.servlet-api"
 
-    compileOnly "com.google.auto.value:auto-value:1.3"
-    apt "com.google.auto.value:auto-value:1.3"
+    compileOnly "com.google.auto.value:auto-value:${vAutoValue}"
+    apt "com.google.auto.value:auto-value:${vAutoValue}"
 
-    compile ("turbine:turbine:2.3.3") {
+    compile ("turbine:turbine") {
         transitive = false
     }
-    compile ("org.apache.velocity:velocity:1.7") {
+    compile ("org.apache.velocity:velocity") {
         transitive = false
     }
-    compile ("stratum:stratum:1.0") {
+    compile ("stratum:stratum") {
         transitive = false
     }
-    compile ("xalan:xalan:2.7.2") {
+    compile ("xalan:xalan") {
         transitive = false
     }
 
-    testCompile group: 'junit', name: 'junit', version: "${vJunit}"
-    testCompile "org.hamcrest:hamcrest-library:1.3"
-    testCompile "org.springframework:spring-test:${vSpring}"
+    testCompile group: 'junit', name: 'junit'
+    testCompile "org.hamcrest:hamcrest-library"
+    testCompile "org.springframework:spring-test"
     testCompile "org.springframework.security:spring-security-test:${vSpringSecurity}"
-    testCompile "org.springframework.security:spring-security-config:${vSpringSecurity}"
-    testCompile "org.mockito:mockito-core:1.+"
-    testCompile "javax.servlet:javax.servlet-api:3.1.0"
-    testCompile "com.h2database:h2:1.4.191"
-    testCompile "org.springframework:spring-jdbc:${vSpring}"
-    testCompile "org.springframework:spring-orm:${vSpring}"
-    testCompile "com.google.code.gson:gson:2.6.2"
-    testCompile "org.json:json:20160810"
-    testCompile "org.apache.commons:commons-dbcp2:2.1.1"
+    testCompile "org.springframework.security:spring-security-config"
+    testCompile "org.mockito:mockito-core"
+    testCompile "javax.servlet:javax.servlet-api"
+    testCompile "com.h2database:h2"
+    testCompile "org.springframework:spring-jdbc"
+    testCompile "org.springframework:spring-orm"
+    testCompile "com.google.code.gson:gson:${vGson}"
+    testCompile "org.json:json"
+    testCompile "org.apache.commons:commons-dbcp2"
     testCompile "org.powermock:powermock-module-junit4:${vPowerMock}"
     testCompile "org.powermock:powermock-api-mockito:${vPowerMock}"
 }

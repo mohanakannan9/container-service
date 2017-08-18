@@ -25,17 +25,19 @@ public class ContainerEntityHistory {
     private String entityId;
     private Date timeRecorded;
     private String externalTimestamp;
+    private String exitCode;
 
     public ContainerEntityHistory() {}
 
     public static ContainerEntityHistory fromContainerEvent(final ContainerEvent containerEvent) {
         final ContainerEntityHistory history = new ContainerEntityHistory();
-        history.status = containerEvent.getStatus();
+        history.status = containerEvent.status();
         history.entityType = "event";
         history.entityId = null;
         history.timeRecorded = new Date();
+        history.exitCode = containerEvent.exitCode();
         if (containerEvent instanceof DockerContainerEvent) {
-            history.externalTimestamp = String.valueOf(((DockerContainerEvent)containerEvent).getTimeNano());
+            history.externalTimestamp = String.valueOf(((DockerContainerEvent)containerEvent).timeNano());
         }
         return history;
     }
@@ -73,6 +75,7 @@ public class ContainerEntityHistory {
         this.setEntityId(containerHistoryPojo.entityId());
         this.setTimeRecorded(containerHistoryPojo.timeRecorded());
         this.setExternalTimestamp(containerHistoryPojo.externalTimestamp());
+        this.setExitCode(containerHistoryPojo.exitCode());
         return this;
     }
 
@@ -135,6 +138,14 @@ public class ContainerEntityHistory {
         this.externalTimestamp = externalTimestamp;
     }
 
+    public String getExitCode() {
+        return exitCode;
+    }
+
+    public void setExitCode(final String exitCode) {
+        this.exitCode = exitCode;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
@@ -159,6 +170,7 @@ public class ContainerEntityHistory {
                 .add("entityId", entityId)
                 .add("timeRecorded", timeRecorded)
                 .add("externalTimestamp", externalTimestamp)
+                .add("exitCode", exitCode)
                 .toString();
     }
 }

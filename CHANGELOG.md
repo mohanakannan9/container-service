@@ -1,5 +1,87 @@
 # Changelog
 
+## 1.2
+
+[Released 2017-08-18](https://github.com/NrgXnat/container-service/releases/tag/1.2).
+
+### Features
+
+* [CS-356][] This version, and forseeable future versions, will continue to support XNAT 1.7.3.
+* Ping server on `GET /docker/server` and create
+* [CS-111][], [CS-285][] Ping hub on /xapi/hubs operations and reflect that ping status in Admin UI
+* [CS-62][] Special-case an error when someone wants to POST to /images/save but instead GETs /images/save.
+* [CS-215][] POST /xapi/docker/pull will now return a 404 rather than a 500 when it cannot find the image you are attempting to pull
+* [CS-318][] Containers returned from `GET /xapi/containers` and `GET /xapi/containers/{id}` now include top-level `status` property. This is mostly equal to the status in the most recent history item on the container, except for mapping the docker event statuses to more user-friendly statuses.
+    * `created` -> `Created`
+    * `started` -> `Running`
+    * `die` -> `Done`
+    * `kill` -> `Killed`
+    * `oom` -> `Killed (Out of memory)`
+* [CS-227][] Container inputs are no longer recorded with type `wrapper`. Now all wrapper inputs will be recorded as either `wrapper-external` or `wrapper-derived`. Containers launched and recorded before this version will still have inputs of type `wrapper`; we can't migrate them because information has been lost.
+* [CS-145][], [CS-146][] Add convenience functions to the UI to enable / disable all commands in a site or in a project
+* [CS-256][], [CS-307][] Force users to confirm delete request on an image that has had containers run in that XNAT
+* [CS-205][], [CS-281][] Allow admins to view container logs directly in the container history table
+
+[CS-62]: https://issues.xnat.org/browse/CS-62
+[CS-111]: https://issues.xnat.org/browse/CS-111
+[CS-145]: https://issues.xnat.org/browse/CS-145
+[CS-146]: https://issues.xnat.org/browse/CS-146
+[CS-205]: https://issues.xnat.org/browse/CS-205
+[CS-215]: https://issues.xnat.org/browse/CS-215
+[CS-227]: https://issues.xnat.org/browse/CS-227
+[CS-256]: https://issues.xnat.org/browse/CS-256
+[CS-281]: https://issues.xnat.org/browse/CS-281
+[CS-285]: https://issues.xnat.org/browse/CS-285
+[CS-307]: https://issues.xnat.org/browse/CS-307
+[CS-318]: https://issues.xnat.org/browse/CS-318
+[CS-356]: https://issues.xnat.org/browse/CS-356
+
+### Bugfixes
+
+* [CS-263][] When finalizing a container, check if user can edit parent before creating new resource. (Sorry, I thought I had already done this.)
+* [CS-347][] Prevent project settings from overwritingn site-wide preferences for command configurations
+* [XXX-60][], [XXX-61][] Prevent users from launching containers with input values containing strings that could be used for arbitrary code execution:
+
+        ;
+        `
+        &&
+        ||
+        (
+* [CS-349][] Better handle `/experiment/{assessor id}` URIs as inputs for assessor external inputs. (They will not be able to mount files, though. See [CS-354])
+* [CS-350][] More reliably find assessor directories to mount
+
+* [CS-337][] Fail more gracefully when user tries to use a docker host url with no scheme. An error message is logged that is not super helpful right now, but will become a little bit more helpful in a future version once [spotify/docker-client#870][] is merged and released.
+* [CS-351][] Fix a bug with the "Default Image Host" toggle
+* [CS-279][] Explicitly restrict access to container launch UI to project users with edit permissions (i.e. owners and members)
+* [CS-297][] Fix the ability to delete a command configuration. Improve appearance of "Delete" buttons throughout the admin UI
+* [CS-293][] Remove non-functional "Delete" buttons from instances in the UI where it was not supported
+* [CS-341][] `GET /{some identifiers}/launch` returns `user-settable` boolean property on inputs
+* [CS-339][], [CS-340][] Fix faulty display and handling of non-user-settable inputs in container launch UI
+* [CS-274][] Improve functioning of Project opt-in settings.
+* [CS-212][] Improve display and readability of error messages throughout
+* [CS-317][], [CS-273][] Taxonomy cleanup in UI for consistency
+
+[CS-212]: https://issues.xnat.org/browse/CS-212
+[CS-263]: https://issues.xnat.org/browse/CS-263
+[CS-273]: https://issues.xnat.org/browse/CS-273
+[CS-274]: https://issues.xnat.org/browse/CS-274
+[CS-279]: https://issues.xnat.org/browse/CS-279
+[CS-293]: https://issues.xnat.org/browse/CS-293
+[CS-297]: https://issues.xnat.org/browse/CS-297
+[CS-317]: https://issues.xnat.org/browse/CS-317
+[CS-337]: https://issues.xnat.org/browse/CS-337
+[CS-339]: https://issues.xnat.org/browse/CS-339
+[CS-340]: https://issues.xnat.org/browse/CS-340
+[CS-341]: https://issues.xnat.org/browse/CS-341
+[CS-347]: https://issues.xnat.org/browse/CS-347
+[CS-349]: https://issues.xnat.org/browse/CS-349
+[CS-350]: https://issues.xnat.org/browse/CS-350
+[CS-351]: https://issues.xnat.org/browse/CS-351
+[CS-354]: https://issues.xnat.org/browse/CS-354
+[XXX-60]: https://issues.xnat.org/browse/XXX-60
+[XXX-61]: https://issues.xnat.org/browse/XXX-61
+[spotify/docker-client#870]: https://github.com/spotify/docker-client/pull/870
+
 ## 1.1
 
 [Released 2017-08-04](https://github.com/NrgXnat/container-service/releases/tag/v1.1).

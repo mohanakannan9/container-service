@@ -15,7 +15,7 @@ import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.config.CommandRestApiTestConfig;
 import org.nrg.containers.model.command.auto.CommandSummaryForContext;
 import org.nrg.containers.model.configuration.CommandConfigurationInternal;
-import org.nrg.containers.model.server.docker.DockerServer;
+import org.nrg.containers.model.server.docker.DockerServerBase;
 import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
@@ -108,7 +108,7 @@ public class CommandRestApiTest {
         // Mock out the prefs bean
         final String containerServerName = "testy test";
         final String containerHost = "unix:///var/run/docker.sock";
-        final DockerServer dockerServer = DockerServer.create(containerServerName, containerHost, null);
+        final DockerServerBase.DockerServer dockerServer = DockerServerBase.DockerServer.create(containerServerName, containerHost, null);
         when(mockDockerServerPrefsBean.getName()).thenReturn(containerServerName);
         when(mockDockerServerPrefsBean.getHost()).thenReturn(containerHost);
         when(mockDockerServerPrefsBean.toPojo()).thenReturn(dockerServer);

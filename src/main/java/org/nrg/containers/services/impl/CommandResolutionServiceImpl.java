@@ -20,6 +20,7 @@ import org.nrg.containers.exceptions.CommandInputResolutionException;
 import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.ContainerMountResolutionException;
+import org.nrg.containers.exceptions.IllegalInputException;
 import org.nrg.containers.exceptions.UnauthorizedException;
 import org.nrg.containers.model.command.auto.Command.CommandInput;
 import org.nrg.containers.model.command.auto.Command.CommandMount;
@@ -350,15 +351,18 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 flatTree.addAll(flattenTree(rootNode));
                 log.debug("Done flattening tree starting with root node {}.", rootNode.input().name());
             }
-            final Map<String, String> wrapperInputValues = Maps.newHashMap();
+            final Map<String, String> externalWrapperInputValues = Maps.newHashMap();
+            final Map<String, String> derivedWrapperInputValues = Maps.newHashMap();
             final Map<String, String> commandInputValues = Maps.newHashMap();
             for (final ResolvedInputTreeNode<? extends Input> node : flatTree) {
                 final List<ResolvedInputTreeValueAndChildren> valuesAndChildren = node.valuesAndChildren();
                 final String value = (valuesAndChildren != null && !valuesAndChildren.isEmpty()) ?
                         valuesAndChildren.get(0).resolvedValue().value() :
                         null;
-                if (node.input() instanceof CommandWrapperInput) {
-                    wrapperInputValues.put(node.input().name(), value == null ? "null" : value);
+                if (node.input() instanceof CommandWrapperExternalInput) {
+                    externalWrapperInputValues.put(node.input().name(), value == null ? "null" : value);
+                } else if (node.input() instanceof CommandWrapperDerivedInput) {
+                    derivedWrapperInputValues.put(node.input().name(), value == null ? "null" : value);
                 } else {
                     commandInputValues.put(node.input().name(), value == null ? "null" : value);
                 }
@@ -373,7 +377,8 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                     .commandDescription(command.description())
                     .image(command.image())
                     .rawInputValues(inputValues)
-                    .wrapperInputValues(wrapperInputValues) // TODO remove this property
+                    .externalWrapperInputValues(externalWrapperInputValues) // TODO remove this property
+                    .derivedWrapperInputValues(derivedWrapperInputValues) // TODO remove this property
                     .commandInputValues(commandInputValues) // TODO remove this property
                     .outputs(resolveOutputs(resolvedInputTrees, resolvedInputValuesByReplacementKey))
                     .commandLine(resolveCommandLine(resolvedInputTrees))
@@ -386,6 +391,22 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             log.info("Done resolving command.");
             log.debug("Resolved command: \n{}", resolvedCommand);
             return resolvedCommand;
+        }
+
+        private void checkForIllegalInputValue(final String inputName,
+                                               final String inputValue) throws IllegalInputException {
+            if (inputValue == null) {
+                return;
+            }
+
+            for (final String illegalString : ILLEGAL_INPUT_STRINGS) {
+                if (inputValue.contains(illegalString)) {
+                    final String message = String.format("Input \"%s\" has a value containing illegal string \"%s\".",
+                            inputName, illegalString);
+                    log.info(message);
+                    throw new IllegalInputException(message);
+                }
+            }
         }
 
         @Nonnull
@@ -419,7 +440,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
         @Nonnull
         private ResolvedInputValue resolveExternalWrapperInput(final CommandWrapperExternalInput input,
                                                                final Map<String, String> resolvedInputValuesByReplacementKey)
-                throws CommandResolutionException, UnauthorizedException {
+                throws CommandResolutionException, UnauthorizedException, IllegalInputException {
             log.info("Resolving input \"{}\".", input.name());
 
             XnatModelObject resolvedModelObject = null;
@@ -565,6 +586,8 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 }
             }
 
+            checkForIllegalInputValue(input.name(), resolvedValue);
+
             return ResolvedInputValue.builder()
                     .type(input.type())
                     .value(resolvedValue)
@@ -578,7 +601,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
         private List<ResolvedInputValue> resolveDerivedWrapperInput(final CommandWrapperDerivedInput input,
                                                                     final @Nonnull ResolvedInputValue parent,
                                                                     final Map<String, String> resolvedInputValuesByReplacementKey)
-                throws CommandResolutionException {
+                throws CommandResolutionException, IllegalInputException {
             log.info("Resolving input \"{}\".", input.name());
 
             // Resolve the matcher, if one was provided
@@ -893,6 +916,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             final List<ResolvedInputValue> resolvedInputs = Lists.newArrayList();
             for (int i = 0; i < resolvedValues.size(); i++) {
                 final String resolvedValue = resolvedValues.get(i);
+                checkForIllegalInputValue(input.name(), resolvedValue);
                 final XnatModelObject xnatModelObject = resolvedXnatObjects == null ? null : resolvedXnatObjects.get(i);
                 String jsonValue = resolvedValue;
                 String valueLabel = resolvedValue;
@@ -921,7 +945,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
         private ResolvedInputValue resolveCommandInput(final CommandInput input,
                                                        final String providedValue,
                                                        final Map<String, String> resolvedInputValuesByReplacementKey)
-                throws CommandResolutionException {
+                throws CommandResolutionException, IllegalInputException {
             log.info("Resolving command input \"{}\".", input.name());
 
             String resolvedValue = null;
@@ -982,6 +1006,8 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             // }
             // resolvedInputValuesByReplacementKey.put(replacementKey, resolvedValue);
             // resolvedInputCommandLineValuesByReplacementKey.put(replacementKey, getValueForCommandLine(input, resolvedValue));
+
+            checkForIllegalInputValue(input.name(), resolvedValue);
 
             return ResolvedInputValue.builder()
                     .type(input.type())

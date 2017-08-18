@@ -11,6 +11,8 @@ import org.nrg.xft.security.UserI;
 import java.util.Map;
 
 public interface CommandResolutionService {
+    String[] ILLEGAL_INPUT_STRINGS = {";", "&&", "||", "`", "("};
+
     PartiallyResolvedCommand preResolve(long wrapperId,
                                         Map<String, String> inputValues,
                                         final UserI userI)

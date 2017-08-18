@@ -1,77 +1,41 @@
 package org.nrg.containers.model.command.auto;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.nrg.containers.model.command.entity.CommandEntity;
 
 import javax.annotation.Nullable;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 @AutoValue
-@JsonInclude(JsonInclude.Include.ALWAYS)
 public abstract class ResolvedCommand {
 
-    @JsonProperty("wrapper-id") public abstract Long wrapperId();
-    @JsonProperty("wrapper-name") public abstract String wrapperName();
-    @Nullable @JsonProperty("wrapper-description") public abstract String wrapperDescription();
-    @JsonProperty("command-id") public abstract Long commandId();
-    @JsonProperty("command-name") public abstract String commandName();
-    @Nullable @JsonProperty("command-description") public abstract String commandDescription();
-    @JsonProperty("image") public abstract String image();
-    @JsonProperty("type") public abstract String type();
-    @JsonProperty("raw-input-values") public abstract ImmutableMap<String, String> rawInputValues();
-    @JsonProperty("xwrapper-input-values") public abstract ImmutableMap<String, String> wrapperInputValues();
-    @JsonProperty("command-input-values") public abstract ImmutableMap<String, String> commandInputValues();
-    @JsonProperty("command-line") public abstract String commandLine();
-    @JsonProperty("env") public abstract ImmutableMap<String, String> environmentVariables();
-    @JsonProperty("ports") public abstract ImmutableMap<String, String> ports();
-    @JsonProperty("mounts") public abstract ImmutableList<ResolvedCommandMount> mounts();
-    @JsonProperty("outputs") public abstract ImmutableList<ResolvedCommandOutput> outputs();
-    @Nullable @JsonProperty("working-directory") public abstract String workingDirectory();
+    public abstract Long wrapperId();
+    public abstract String wrapperName();
+    @Nullable public abstract String wrapperDescription();
+    public abstract Long commandId();
+    public abstract String commandName();
+    @Nullable public abstract String commandDescription();
+    public abstract String image();
+    public abstract String type();
+    public abstract ImmutableMap<String, String> rawInputValues();
+    public abstract ImmutableMap<String, String> externalWrapperInputValues();
+    public abstract ImmutableMap<String, String> derivedWrapperInputValues();
+    public abstract ImmutableMap<String, String> commandInputValues();
+    public abstract String commandLine();
+    public abstract ImmutableMap<String, String> environmentVariables();
+    public abstract ImmutableMap<String, String> ports();
+    public abstract ImmutableList<ResolvedCommandMount> mounts();
+    public abstract ImmutableList<ResolvedCommandOutput> outputs();
+    @Nullable public abstract String workingDirectory();
 
-    @JsonCreator
-    public static ResolvedCommand create(@JsonProperty("wrapper-id") final Long wrapperId,
-                                         @JsonProperty("wrapper-name") final String wrapperName,
-                                         @JsonProperty("wrapper-description") final String wrapperDescription,
-                                         @JsonProperty("command-id") final Long commandId,
-                                         @JsonProperty("command-name") final String commandName,
-                                         @JsonProperty("command-description") final String commandDescription,
-                                         @JsonProperty("image") final String image,
-                                         @JsonProperty("type") final String type,
-                                         @JsonProperty("raw-input-values") final Map<String, String> rawInputValues,
-                                         @JsonProperty("wrapper-input-values") final Map<String, String> wrapperInputValues,
-                                         @JsonProperty("command-input-values") final Map<String, String> commandInputValues,
-                                         @JsonProperty("command-line") final String commandLine,
-                                         @JsonProperty("env") final Map<String, String> environmentVariables,
-                                         @JsonProperty("ports")final Map<String, String> ports,
-                                         @JsonProperty("mounts") final List<ResolvedCommandMount> mounts,
-                                         @JsonProperty("outputs") final List<ResolvedCommandOutput> outputs,
-                                         @JsonProperty("working-directory") final String workingDirectory) {
-        return builder()
-                .wrapperId(wrapperId)
-                .wrapperName(wrapperName)
-                .wrapperDescription(wrapperDescription)
-                .commandId(commandId)
-                .commandName(commandName)
-                .commandDescription(commandDescription)
-                .image(image)
-                .type(type == null ? CommandEntity.DEFAULT_TYPE.getName() : type)
-                .rawInputValues(rawInputValues == null ? Collections.<String, String>emptyMap() : rawInputValues)
-                .wrapperInputValues(wrapperInputValues == null ? Collections.<String, String>emptyMap() : wrapperInputValues)
-                .commandInputValues(commandInputValues == null ? Collections.<String, String>emptyMap() : commandInputValues)
-                .commandLine(commandLine)
-                .environmentVariables(environmentVariables == null ? Collections.<String, String>emptyMap() : environmentVariables)
-                .ports(ports == null ? Collections.<String, String>emptyMap() : ports)
-                .mounts(mounts == null ? Collections.<ResolvedCommandMount>emptyList() : mounts)
-                .outputs(outputs == null ? Collections.<ResolvedCommandOutput>emptyList() : outputs)
-                .workingDirectory(workingDirectory)
-                .build();
+    public ImmutableMap<String, String> wrapperInputValues() {
+        final ImmutableMap.Builder<String, String> wrapperValuesBuilder = ImmutableMap.builder();
+        wrapperValuesBuilder.putAll(externalWrapperInputValues());
+        wrapperValuesBuilder.putAll(derivedWrapperInputValues());
+        return wrapperValuesBuilder.build();
     }
 
     public static Builder builder() {
@@ -97,10 +61,16 @@ public abstract class ResolvedCommand {
             rawInputValuesBuilder().put(inputName, inputValue);
             return this;
         }
-        public abstract Builder wrapperInputValues(Map<String, String> xnatInputValues);
-        public abstract ImmutableMap.Builder<String, String> wrapperInputValuesBuilder();
-        public Builder addWrapperInputValue(final String inputName, final String inputValue) {
-            wrapperInputValuesBuilder().put(inputName, inputValue);
+        public abstract Builder externalWrapperInputValues(Map<String, String> inputValues);
+        public abstract ImmutableMap.Builder<String, String> externalWrapperInputValuesBuilder();
+        public Builder addExternalWrapperInputValue(final String inputName, final String inputValue) {
+            externalWrapperInputValuesBuilder().put(inputName, inputValue);
+            return this;
+        }
+        public abstract Builder derivedWrapperInputValues(Map<String, String> inputValues);
+        public abstract ImmutableMap.Builder<String, String> derivedWrapperInputValuesBuilder();
+        public Builder addDerivedWrapperInputValue(final String inputName, final String inputValue) {
+            derivedWrapperInputValuesBuilder().put(inputName, inputValue);
             return this;
         }
         public abstract Builder commandInputValues(Map<String, String> commandInputValues);
@@ -140,43 +110,17 @@ public abstract class ResolvedCommand {
     }
 
     @AutoValue
-    @JsonInclude(JsonInclude.Include.ALWAYS)
     public abstract static class PartiallyResolvedCommand {
-        @JsonProperty("wrapper-id") public abstract Long wrapperId();
-        @JsonProperty("wrapper-name") public abstract String wrapperName();
-        @Nullable @JsonProperty("wrapper-description") public abstract String wrapperDescription();
-        @JsonProperty("command-id") public abstract Long commandId();
-        @JsonProperty("command-name") public abstract String commandName();
-        @Nullable @JsonProperty("command-description") public abstract String commandDescription();
-        @JsonProperty("image") public abstract String image();
-        @JsonProperty("type") public abstract String type();
-        @JsonProperty("raw-input-values") public abstract ImmutableMap<String, String> rawInputValues();
-        @JsonProperty("resolved-input-trees") public abstract ImmutableList<ResolvedInputTreeNode<? extends Command.Input>> resolvedInputTrees();
-
-        @JsonCreator
-        public static PartiallyResolvedCommand create(@JsonProperty("wrapper-id") final Long wrapperId,
-                                                      @JsonProperty("wrapper-name") final String wrapperName,
-                                                      @JsonProperty("wrapper-description") final String wrapperDescription,
-                                                      @JsonProperty("command-id") final Long commandId,
-                                                      @JsonProperty("command-name") final String commandName,
-                                                      @JsonProperty("command-description") final String commandDescription,
-                                                      @JsonProperty("image") final String image,
-                                                      @JsonProperty("type") final String type,
-                                                      @JsonProperty("raw-input-values") final Map<String, String> rawInputValues,
-                                                      @JsonProperty("resolved-input-trees") final List<ResolvedInputTreeNode<? extends Command.Input>> resolvedInputTrees) {
-            return builder()
-                    .wrapperId(wrapperId)
-                    .wrapperName(wrapperName)
-                    .wrapperDescription(wrapperDescription)
-                    .commandId(commandId)
-                    .commandName(commandName)
-                    .commandDescription(commandDescription)
-                    .image(image)
-                    .type(type == null ? CommandEntity.DEFAULT_TYPE.getName() : type)
-                    .rawInputValues(rawInputValues == null ? Collections.<String, String>emptyMap() : rawInputValues)
-                    .resolvedInputTrees(resolvedInputTrees == null ? Collections.<ResolvedInputTreeNode<? extends Command.Input>>emptyList() : resolvedInputTrees)
-                    .build();
-        }
+        public abstract Long wrapperId();
+        public abstract String wrapperName();
+        @Nullable public abstract String wrapperDescription();
+        public abstract Long commandId();
+        public abstract String commandName();
+        @Nullable public abstract String commandDescription();
+        public abstract String image();
+        public abstract String type();
+        public abstract ImmutableMap<String, String> rawInputValues();
+        public abstract ImmutableList<ResolvedInputTreeNode<? extends Command.Input>> resolvedInputTrees();
 
         public static Builder builder() {
             return new AutoValue_ResolvedCommand_PartiallyResolvedCommand.Builder()
@@ -211,31 +155,13 @@ public abstract class ResolvedCommand {
     }
 
     @AutoValue
-    @JsonInclude(JsonInclude.Include.ALWAYS)
     public abstract static class ResolvedCommandMount {
-        @JsonProperty("name") public abstract String name();
-        @JsonProperty("writable") public abstract Boolean writable();
-        @JsonProperty("container-path") public abstract String containerPath();
-        @JsonProperty("input-files") public abstract ImmutableList<ResolvedCommandMountFiles> inputFiles();
-        @JsonProperty("xnat-host-path") public abstract String xnatHostPath();
-        @JsonProperty("container-host-path") public abstract String containerHostPath();
-
-        @JsonCreator
-        public static ResolvedCommandMount create(@JsonProperty("name") final String name,
-                                                  @JsonProperty("writable") final Boolean writable,
-                                                  @JsonProperty("container-path") final String containerPath,
-                                                  @JsonProperty("input-files") final List<ResolvedCommandMountFiles> inputFiles,
-                                                  @JsonProperty("xnat-host-path") final String xnatHostPath,
-                                                  @JsonProperty("container-host-path") final String containerHostPath) {
-            return builder()
-                    .name(name)
-                    .writable(writable)
-                    .containerPath(containerPath)
-                    .inputFiles(inputFiles == null ? Collections.<ResolvedCommandMountFiles>emptyList() : inputFiles)
-                    .xnatHostPath(xnatHostPath)
-                    .containerHostPath(containerHostPath)
-                    .build();
-        }
+        public abstract String name();
+        public abstract Boolean writable();
+        public abstract String containerPath();
+        public abstract ImmutableList<ResolvedCommandMountFiles> inputFiles();
+        public abstract String xnatHostPath();
+        public abstract String containerHostPath();
 
         public static Builder builder() {
             return new AutoValue_ResolvedCommand_ResolvedCommandMount.Builder();
@@ -266,25 +192,11 @@ public abstract class ResolvedCommand {
     }
 
     @AutoValue
-    @JsonInclude(JsonInclude.Include.ALWAYS)
     public abstract static class PartiallyResolvedCommandMount {
-        @JsonProperty("name") public abstract String name();
-        @JsonProperty("writable") public abstract Boolean writable();
-        @JsonProperty("container-path") public abstract String containerPath();
-        @JsonProperty("input-files") public abstract ImmutableList<ResolvedCommandMountFiles> inputFiles();
-
-        @JsonCreator
-        public static PartiallyResolvedCommandMount create(@JsonProperty("name") final String name,
-                                                           @JsonProperty("writable") final Boolean writable,
-                                                           @JsonProperty("container-path") final String containerPath,
-                                                           @JsonProperty("input-files") final List<ResolvedCommandMountFiles> inputFiles) {
-            return builder()
-                    .name(name)
-                    .writable(writable)
-                    .containerPath(containerPath)
-                    .inputFiles(inputFiles == null ? Collections.<ResolvedCommandMountFiles>emptyList() : inputFiles)
-                    .build();
-        }
+        public abstract String name();
+        public abstract Boolean writable();
+        public abstract String containerPath();
+        public abstract ImmutableList<ResolvedCommandMountFiles> inputFiles();
 
         public static Builder builder() {
             return new AutoValue_ResolvedCommand_PartiallyResolvedCommandMount.Builder();
@@ -315,53 +227,30 @@ public abstract class ResolvedCommand {
     }
 
     @AutoValue
-    @JsonInclude(JsonInclude.Include.ALWAYS)
     public abstract static class ResolvedCommandMountFiles {
-        @JsonProperty("from-wrapper-input") public abstract String fromWrapperInput();
-        @Nullable @JsonProperty("from-uri") public abstract String fromUri();
-        @Nullable @JsonProperty("root-directory") public abstract String rootDirectory();
-        @Nullable @JsonProperty("path") public abstract String path();
+        public abstract String fromWrapperInput();
+        @Nullable public abstract String fromUri();
+        @Nullable public abstract String rootDirectory();
+        @Nullable public abstract String path();
 
-        public static ResolvedCommandMountFiles create(@JsonProperty("from-wrapper-input") final String fromWrapperInput,
-                                                       @JsonProperty("from-uri") final String fromUri,
-                                                       @JsonProperty("root-directory") final String rootDirectory,
-                                                       @JsonProperty("path") final String path) {
+        public static ResolvedCommandMountFiles create(final String fromWrapperInput,
+                                                       final String fromUri,
+                                                       final String rootDirectory,
+                                                       final String path) {
             return new AutoValue_ResolvedCommand_ResolvedCommandMountFiles(fromWrapperInput, fromUri, rootDirectory, path);
         }
     }
 
     @AutoValue
-    @JsonInclude(JsonInclude.Include.ALWAYS)
     public abstract static class ResolvedCommandOutput {
-        @JsonProperty("name") public abstract String name();
-        @JsonProperty("type") public abstract String type();
-        @JsonProperty("required") public abstract Boolean required();
-        @JsonProperty("mount") public abstract String mount();
-        @Nullable @JsonProperty("path") public abstract String path();
-        @Nullable @JsonProperty("glob") public abstract String glob();
-        @JsonProperty("label") public abstract String label();
-        @JsonProperty("handled-by-wrapper-input") public abstract String handledByWrapperInput();
-
-        @JsonCreator
-        public static ResolvedCommandOutput create(@JsonProperty("name") final String name,
-                                                   @JsonProperty("type") final String type,
-                                                   @JsonProperty("required") final Boolean required,
-                                                   @JsonProperty("mount") final String mount,
-                                                   @JsonProperty("path") final String path,
-                                                   @JsonProperty("glob") final String glob,
-                                                   @JsonProperty("label") final String label,
-                                                   @JsonProperty("handled-by-wrapper-input") final String wrapperInputName) {
-            return builder()
-                    .name(name)
-                    .type(type)
-                    .required(required)
-                    .mount(mount)
-                    .path(path)
-                    .glob(glob)
-                    .label(label)
-                    .handledByWrapperInput(wrapperInputName)
-                    .build();
-        }
+        public abstract String name();
+        public abstract String type();
+        public abstract Boolean required();
+        public abstract String mount();
+        @Nullable public abstract String path();
+        @Nullable public abstract String glob();
+        public abstract String label();
+        public abstract String handledByWrapperInput();
 
         public static Builder builder() {
             return new AutoValue_ResolvedCommand_ResolvedCommandOutput.Builder();
@@ -381,5 +270,4 @@ public abstract class ResolvedCommand {
             public abstract ResolvedCommandOutput build();
         }
     }
-
 }

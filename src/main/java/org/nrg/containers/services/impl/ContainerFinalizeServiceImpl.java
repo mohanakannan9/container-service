@@ -1,6 +1,5 @@
 package org.nrg.containers.services.impl;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
@@ -22,9 +21,9 @@ import org.nrg.transporter.TransportService;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Permissions;
-import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
+import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.restlet.util.XNATRestConstants;
 import org.nrg.xnat.services.archive.CatalogService;
@@ -53,7 +52,6 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
     private final SiteConfigPreferences siteConfigPreferences;
     private final TransportService transportService;
     private final CatalogService catalogService;
-    private PermissionsServiceI permissionsService;
 
     @Autowired
     public ContainerFinalizeServiceImpl(final ContainerControlApi containerControlApi,
@@ -63,30 +61,7 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
         this.containerControlApi = containerControlApi;
         this.siteConfigPreferences = siteConfigPreferences;
         this.transportService = transportService;
-        this.permissionsService = null;
         this.catalogService = catalogService;
-    }
-
-    @VisibleForTesting
-    public ContainerFinalizeServiceImpl(final ContainerControlApi containerControlApi,
-                                        final SiteConfigPreferences siteConfigPreferences,
-                                        final TransportService transportService,
-                                        final CatalogService catalogService,
-                                        final PermissionsServiceI permissionsService) {
-        this.containerControlApi = containerControlApi;
-        this.siteConfigPreferences = siteConfigPreferences;
-        this.transportService = transportService;
-        this.permissionsService = permissionsService;
-        this.catalogService = catalogService;
-    }
-
-    private PermissionsServiceI getPermissionsService() {
-        // We need this layer of indirection, rather than wiring in the PermissionsServiceI implementation,
-        // because we need to wait until after XFT/XDAT is fully initialized before getting this. See XNAT-4647.
-        if (permissionsService == null) {
-            permissionsService = Permissions.getPermissionsService();
-        }
-        return permissionsService;
     }
 
     @Override
@@ -100,7 +75,8 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
 
         private Container toFinalize;
         private UserI userI;
-        private String exitCode;
+        // private String exitCode;
+        private boolean isFailed;
 
         private Map<String, ContainerMount> untransportedMounts;
         private Map<String, ContainerMount> transportedMounts;
@@ -112,7 +88,21 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
                                         final String exitCode) {
             this.toFinalize = toFinalize;
             this.userI = userI;
-            this.exitCode = exitCode;
+            // this.exitCode = exitCode;
+
+            // Assume that everything is fine unless the exit code is explicitly > 0.
+            // So exitCode="0", ="", =null all count as success.
+            isFailed = false;
+            if (StringUtils.isNotBlank(exitCode)) {
+                Long exitCodeNumber = null;
+                try {
+                    exitCodeNumber = Long.parseLong(exitCode);
+                } catch (NumberFormatException e) {
+                    // ignored
+                }
+
+                isFailed = exitCodeNumber != null && exitCodeNumber > 0;
+            }
 
             untransportedMounts = Maps.newHashMap();
             transportedMounts = Maps.newHashMap();
@@ -124,26 +114,30 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
             final Container.Builder finalizedContainerBuilder = toFinalize.toBuilder();
             finalizedContainerBuilder.logPaths(uploadLogs());
 
-            // TODO Add some stuff with status code. "x" means "don't know", "0" success, greater than 0 failure.
+            if (!isFailed) {
+                // Do not try to upload outputs if we know the container failed.
+                for (final ContainerMount mountOut : toFinalize.mounts()) {
+                    untransportedMounts.put(mountOut.name(), mountOut);
+                }
 
-            for (final ContainerMount mountOut : toFinalize.mounts()) {
-                untransportedMounts.put(mountOut.name(), mountOut);
-            }
-
-            final OutputsAndExceptions outputsAndExceptions = uploadOutputs();
-            final List<Exception> failedRequiredOutputs = outputsAndExceptions.exceptions;
-            if (!failedRequiredOutputs.isEmpty()) {
-                finalizedContainerBuilder.addHistoryItem(Container.ContainerHistory.fromSystem("Failed",
-                        "Failed to upload required outputs.\n" + Joiner.on("\n").join(Lists.transform(failedRequiredOutputs, new Function<Exception, String>() {
-                            @Override
-                            public String apply(final Exception input) {
-                                return input.getMessage();
-                            }
-                        }))))
-                        .outputs(outputsAndExceptions.outputs);
+                final OutputsAndExceptions outputsAndExceptions = uploadOutputs();
+                final List<Exception> failedRequiredOutputs = outputsAndExceptions.exceptions;
+                if (!failedRequiredOutputs.isEmpty()) {
+                    finalizedContainerBuilder.addHistoryItem(Container.ContainerHistory.fromSystem("Failed",
+                            "Failed to upload required outputs.\n" + Joiner.on("\n").join(Lists.transform(failedRequiredOutputs, new Function<Exception, String>() {
+                                @Override
+                                public String apply(final Exception input) {
+                                    return input.getMessage();
+                                }
+                            }))))
+                            .outputs(outputsAndExceptions.outputs);
+                } else {
+                    finalizedContainerBuilder.outputs(outputsAndExceptions.outputs);  // Overwrite any existing outputs
+                }
             } else {
-                finalizedContainerBuilder.outputs(outputsAndExceptions.outputs);  // Overwrite any existing outputs
+                // TODO We know the container has failed. Should we send an email?
             }
+
             return finalizedContainerBuilder.build();
         }
 
@@ -279,13 +273,22 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
                 }
 
                 try {
+                    final URIManager.DataURIA uri = UriParserUtils.parseURI(parentUri);
+                    if (!Permissions.canEdit(userI, ((URIManager.ArchiveItemURI) uri).getSecurityItem())) {
+                        final String message = String.format(prefix + "User does not have permission to add resources to item with URI %s.", parentUri);
+                        log.error(message);
+                        throw new UnauthorizedException(message);
+                    }
+
                     final XnatResourcecatalog resourcecatalog = catalogService.insertResources(userI, parentUri, toUpload, label, null, null, null);
                     createdUri = UriParserUtils.getArchiveUri(resourcecatalog);
                     if (StringUtils.isBlank(createdUri)) {
                         createdUri = parentUri + "/resources/" + resourcecatalog.getLabel();
                     }
                 } catch (ClientException e) {
-                    throw new UnauthorizedException(prefix + "User does not have permissions to upload files to " + parentUri + ".", e);
+                    final String message = String.format(prefix + "User does not have permission to add resources to item with URI %s.", parentUri);
+                    log.error(message);
+                    throw new UnauthorizedException(message);
                 } catch (Exception e) {
                     throw new ContainerException(prefix + "Could not upload files to resource.", e);
                 }

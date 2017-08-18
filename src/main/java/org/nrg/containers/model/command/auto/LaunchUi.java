@@ -216,6 +216,7 @@ public abstract class LaunchUi {
                     .label(commandInput.name()) // TODO add label to commandInput (pojo, hibernate, tests, and examples)
                     .description(commandInput.description())
                     .required(inputIsRequired)
+                    .userSettable(userSettable)
                     .advanced(advanced)
                     .parent(parentName)
                     .children(childNames);
@@ -232,6 +233,7 @@ public abstract class LaunchUi {
         @Nullable @JsonProperty("description") public abstract String description();
         @JsonProperty("advanced") public abstract Boolean advanced();
         @JsonProperty("required") public abstract Boolean required();
+        @JsonProperty("user-settable") public abstract Boolean userSettable();
         @Nullable @JsonProperty("parent") public abstract String parent();
         @JsonProperty("children") public abstract ImmutableList<String> children();
         @JsonProperty("ui") public abstract ImmutableMap<String, LaunchUiInputValuesAndType> ui();
@@ -246,6 +248,7 @@ public abstract class LaunchUi {
             public abstract Builder description(String description);
             public abstract Builder advanced(Boolean advanced);
             public abstract Builder required(Boolean required);
+            public abstract Builder userSettable(Boolean userSettable);
             public abstract Builder parent(String parent);
             public abstract Builder children(List<String> children);
             abstract ImmutableList.Builder<String> childrenBuilder();
