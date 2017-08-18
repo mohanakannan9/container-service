@@ -6,6 +6,7 @@ Not yet released.
 
 ### Features
 
+* [CS-356][] This version, and forseeable future versions, will continue to support XNAT 1.7.3.
 * Ping server on `GET /docker/server` and create
 * [CS-111][], [CS-285][] Ping hub on /xapi/hubs operations and reflect that ping status in Admin UI
 * [CS-62][] Special-case an error when someone wants to POST to /images/save but instead GETs /images/save.
@@ -33,6 +34,7 @@ Not yet released.
 [CS-285]: https://issues.xnat.org/browse/CS-285
 [CS-307]: https://issues.xnat.org/browse/CS-307
 [CS-318]: https://issues.xnat.org/browse/CS-318
+[CS-356]: https://issues.xnat.org/browse/CS-356
 
 ### Bugfixes
 
