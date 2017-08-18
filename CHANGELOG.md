@@ -21,18 +21,18 @@ Not yet released.
 * [CS-256][], [CS-307][] Force users to confirm delete request on an image that has had containers run in that XNAT
 * [CS-205][], [CS-281][] Allow admins to view container logs directly in the container history table
 
-[CS-111]: https://issues.xnat.org/browse/CS-111
-[CS-285]: https://issues.xnat.org/browse/CS-285
 [CS-62]: https://issues.xnat.org/browse/CS-62
-[CS-215]: https://issues.xnat.org/browse/CS-215
-[CS-318]: https://issues.xnat.org/browse/CS-318
-[CS-227]: https://issues.xnat.org/browse/CS-227
+[CS-111]: https://issues.xnat.org/browse/CS-111
 [CS-145]: https://issues.xnat.org/browse/CS-145
 [CS-146]: https://issues.xnat.org/browse/CS-146
-[CS-256]: https://issues.xnat.org/browse/CS-256
-[CS-307]: https://issues.xnat.org/browse/CS-307
 [CS-205]: https://issues.xnat.org/browse/CS-205
+[CS-215]: https://issues.xnat.org/browse/CS-215
+[CS-227]: https://issues.xnat.org/browse/CS-227
+[CS-256]: https://issues.xnat.org/browse/CS-256
 [CS-281]: https://issues.xnat.org/browse/CS-281
+[CS-285]: https://issues.xnat.org/browse/CS-285
+[CS-307]: https://issues.xnat.org/browse/CS-307
+[CS-318]: https://issues.xnat.org/browse/CS-318
 
 ### Bugfixes
 
@@ -57,25 +57,25 @@ Not yet released.
 * [CS-212][] Improve display and readability of error messages throughout
 * [CS-317][], [CS-273][] Taxonomy cleanup in UI for consistency
 
+[CS-212]: https://issues.xnat.org/browse/CS-212
 [CS-263]: https://issues.xnat.org/browse/CS-263
-[CS-347]: https://issues.xnat.org/browse/CS-347
-[CS-337]: https://issues.xnat.org/browse/CS-337
-[spotify/docker-client#870]: https://github.com/spotify/docker-client/pull/870
-[XXX-60]: https://issues.xnat.org/browse/XXX-60
-[XXX-61]: https://issues.xnat.org/browse/XXX-61
+[CS-273]: https://issues.xnat.org/browse/CS-273
+[CS-274]: https://issues.xnat.org/browse/CS-274
 [CS-279]: https://issues.xnat.org/browse/CS-279
 [CS-293]: https://issues.xnat.org/browse/CS-293
-[CS-341]: https://issues.xnat.org/browse/CS-341
+[CS-297]: https://issues.xnat.org/browse/CS-297
+[CS-317]: https://issues.xnat.org/browse/CS-317
+[CS-337]: https://issues.xnat.org/browse/CS-337
 [CS-339]: https://issues.xnat.org/browse/CS-339
 [CS-340]: https://issues.xnat.org/browse/CS-340
-[CS-297]: https://issues.xnat.org/browse/CS-297
-[CS-274]: https://issues.xnat.org/browse/CS-274
-[CS-212]: https://issues.xnat.org/browse/CS-212
-[CS-317]: https://issues.xnat.org/browse/CS-317
-[CS-273]: https://issues.xnat.org/browse/CS-273
+[CS-341]: https://issues.xnat.org/browse/CS-341
+[CS-347]: https://issues.xnat.org/browse/CS-347
 [CS-349]: https://issues.xnat.org/browse/CS-349
-[CS-354]: https://issues.xnat.org/browse/CS-354
 [CS-350]: https://issues.xnat.org/browse/CS-350
+[CS-354]: https://issues.xnat.org/browse/CS-354
+[XXX-60]: https://issues.xnat.org/browse/XXX-60
+[XXX-61]: https://issues.xnat.org/browse/XXX-61
+[spotify/docker-client#870]: https://github.com/spotify/docker-client/pull/870
 
 ## 1.1
 
