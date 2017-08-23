@@ -13,13 +13,10 @@ import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImageassessordata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatResourcecatalog;
-import org.nrg.xdat.om.base.BaseXnatExperimentdata.UnknownPrimaryProjectException;
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.AssessorURII;
-import org.nrg.xnat.helpers.uri.archive.SubjectURII;
 import org.nrg.xnat.helpers.uri.archive.impl.ExptAssessorURI;
 import org.nrg.xnat.helpers.uri.archive.impl.ExptURI;
 
