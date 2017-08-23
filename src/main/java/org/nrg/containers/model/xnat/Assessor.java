@@ -174,18 +174,20 @@ public class Assessor extends XnatModelObject {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         final Assessor that = (Assessor) o;
-        return Objects.equals(this.resources, that.resources);
+        return Objects.equals(this.resources, that.resources) &&
+                Objects.equals(this.directory, that.directory);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), resources);
+        return Objects.hash(super.hashCode(), resources, directory);
     }
 
     @Override
     public String toString() {
         return addParentPropertiesToString(MoreObjects.toStringHelper(this))
                 .add("resources", resources)
+                .add("directory", directory)
                 .toString();
     }
 }
