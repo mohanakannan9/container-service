@@ -25,6 +25,8 @@ public class Scan extends XnatModelObject {
     @JsonIgnore private XnatImagescandataI xnatImagescandataI;
     @JsonProperty("integer-id") private Integer integerId;
     @JsonProperty("scan-type") private String scanType;
+    @JsonProperty("project-id") private String projectId;
+    @JsonProperty("session-id") private String sessionId;
     private List<Resource> resources;
     private String directory;
 
@@ -124,6 +126,22 @@ public class Scan extends XnatModelObject {
         this.resources = resources;
     }
 
+    public String getProjectId() {
+        return projectId;
+    }
+
+    public void setProjectId(final String projectId) {
+        this.projectId = projectId;
+    }
+
+    public String getSessionId() {
+        return sessionId;
+    }
+
+    public void setSessionId(final String sessionId) {
+        this.sessionId = sessionId;
+    }
+
     public String getDirectory() {
         return directory;
     }
@@ -142,12 +160,14 @@ public class Scan extends XnatModelObject {
                 Objects.equals(this.integerId, that.integerId) &&
                 Objects.equals(this.scanType, that.scanType) &&
                 Objects.equals(this.resources, that.resources) &&
+                Objects.equals(this.projectId, that.projectId) &&
+                Objects.equals(this.sessionId, that.sessionId) &&
                 Objects.equals(this.directory, that.directory);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), xnatImagescandataI, integerId, scanType, resources, directory);
+        return Objects.hash(super.hashCode(), xnatImagescandataI, integerId, scanType, resources, projectId, sessionId, directory);
     }
 
     @Override
@@ -156,6 +176,8 @@ public class Scan extends XnatModelObject {
                 .add("integerId", integerId)
                 .add("scanType", scanType)
                 .add("resources", resources)
+                .add("projectId", projectId)
+                .add("sessionId", sessionId)
                 .add("directory", directory)
                 .toString();
     }
