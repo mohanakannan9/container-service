@@ -25,11 +25,10 @@ import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.model.command.auto.LaunchReport;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.container.entity.ContainerEntity;
-import org.nrg.containers.model.server.docker.DockerServerBase;
-import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.services.CommandResolutionService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerEntityService;
+import org.nrg.containers.services.DockerServerService;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.RoleServiceI;
@@ -62,6 +61,7 @@ import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
+import static org.nrg.containers.model.server.docker.DockerServerBase.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.testSecurityContext;
@@ -97,7 +97,7 @@ public class LaunchRestApiTest {
     @Autowired private ContainerEntityService mockContainerEntityService;
     @Autowired private CommandResolutionService mockCommandResolutionService;
     @Autowired private AliasTokenService mockAliasTokenService;
-    @Autowired private DockerServerPrefsBean mockDockerServerPrefsBean;
+    @Autowired private DockerServerService mockDockerServerService;
     @Autowired private SiteConfigPreferences mockSiteConfigPreferences;
     @Autowired private UserManagementServiceI mockUserManagementServiceI;
     @Autowired private ObjectMapper mapper;
@@ -132,11 +132,8 @@ public class LaunchRestApiTest {
         // Mock out the prefs bean
         final String containerServerName = "testy test";
         final String containerHost = "unix:///var/run/docker.sock";
-        final DockerServerBase.DockerServer dockerServer = DockerServerBase.DockerServer.create(containerServerName, containerHost, null);
-        when(mockDockerServerPrefsBean.getName()).thenReturn(containerServerName);
-        when(mockDockerServerPrefsBean.getHost()).thenReturn(containerHost);
-        when(mockDockerServerPrefsBean.toPojo()).thenReturn(dockerServer);
-        when(mockDockerControlApi.getServer()).thenReturn(dockerServer);
+        final DockerServer dockerServer = DockerServer.create(0L, containerServerName, containerHost, null, false);
+        when(mockDockerServerService.getServer()).thenReturn(dockerServer);
 
         // Mock the userI
         final String url = "mock://url";

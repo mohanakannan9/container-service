@@ -9,7 +9,7 @@ import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.CommandValidationException;
 import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.DockerServerException;
-import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.exceptions.NoDockerServerException;
 import org.nrg.containers.exceptions.UnauthorizedException;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
@@ -266,7 +266,7 @@ public class CommandRestApi extends AbstractXapiRestController {
     }
 
     @ResponseStatus(value = HttpStatus.FAILED_DEPENDENCY)
-    @ExceptionHandler(value = {NoServerPrefException.class})
+    @ExceptionHandler(value = {NoDockerServerException.class})
     public String handleFailedDependency(final Exception ignored) {
         final String message = "Set up Docker server before using this REST endpoint.";
         log.debug(message);

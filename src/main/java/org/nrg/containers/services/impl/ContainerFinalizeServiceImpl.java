@@ -10,7 +10,7 @@ import org.nrg.action.ClientException;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.DockerServerException;
-import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.exceptions.NoDockerServerException;
 import org.nrg.containers.exceptions.UnauthorizedException;
 import org.nrg.containers.model.container.auto.Container;
 import org.nrg.containers.model.container.auto.Container.ContainerMount;
@@ -149,12 +149,12 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
             String stderrLogStr = "";
             try {
                 stdoutLogStr = containerControlApi.getContainerStdoutLog(toFinalize.containerId());
-            } catch (DockerServerException | NoServerPrefException e) {
+            } catch (DockerServerException | NoDockerServerException e) {
                 log.error(prefix + "Could not get logs.", e);
             }
             try {
                 stderrLogStr = containerControlApi.getContainerStderrLog(toFinalize.containerId());
-            } catch (DockerServerException | NoServerPrefException e) {
+            } catch (DockerServerException | NoDockerServerException e) {
                 log.error(prefix + "Could not get logs.", e);
             }
 

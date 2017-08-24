@@ -4,11 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.mockito.Mockito;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.api.DockerControlApi;
-import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.rest.DockerRestApi;
 import org.nrg.containers.services.CommandLabelService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.DockerHubService;
+import org.nrg.containers.services.DockerServerService;
 import org.nrg.containers.services.DockerService;
 import org.nrg.containers.services.impl.CommandLabelServiceImpl;
 import org.nrg.containers.services.impl.DockerServiceImpl;
@@ -44,9 +44,9 @@ public class DockerRestApiTestConfig extends WebSecurityConfigurerAdapter {
     public DockerService dockerService(final ContainerControlApi controlApi,
                                        final DockerHubService dockerHubService,
                                        final CommandService commandService,
-                                       final DockerServerPrefsBean dockerServerPrefsBean,
+                                       final DockerServerService dockerServerService,
                                        final CommandLabelService commandLabelService) {
-        return new DockerServiceImpl(controlApi, dockerHubService, commandService, dockerServerPrefsBean, commandLabelService);
+        return new DockerServiceImpl(controlApi, dockerHubService, commandService, dockerServerService, commandLabelService);
     }
 
     @Bean
@@ -60,15 +60,15 @@ public class DockerRestApiTestConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public DockerServerPrefsBean mockDockerServerPrefsBean() {
-        return Mockito.mock(DockerServerPrefsBean.class);
+    public DockerServerService mockDockerServerService() {
+        return Mockito.mock(DockerServerService.class);
     }
 
     @Bean
-    public ContainerControlApi mockContainerControlApi(final DockerServerPrefsBean containerServerPref,
+    public ContainerControlApi mockContainerControlApi(final DockerServerService dockerServerService,
                                                        final CommandLabelService commandLabelService,
                                                        final NrgEventService eventService) {
-        final ContainerControlApi controlApi = new DockerControlApi(containerServerPref, commandLabelService, eventService);
+        final ContainerControlApi controlApi = new DockerControlApi(dockerServerService, commandLabelService, eventService);
         return Mockito.spy(controlApi);
     }
 

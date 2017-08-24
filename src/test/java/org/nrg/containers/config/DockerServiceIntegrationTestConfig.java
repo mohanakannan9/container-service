@@ -2,10 +2,10 @@ package org.nrg.containers.config;
 
 import org.mockito.Mockito;
 import org.nrg.containers.api.ContainerControlApi;
-import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.services.CommandLabelService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.DockerHubService;
+import org.nrg.containers.services.DockerServerService;
 import org.nrg.containers.services.DockerService;
 import org.nrg.containers.services.impl.DockerServiceImpl;
 import org.springframework.context.annotation.Bean;
@@ -21,9 +21,9 @@ public class DockerServiceIntegrationTestConfig {
     public DockerService dockerService(final ContainerControlApi controlApi,
                                        final DockerHubService dockerHubService,
                                        final CommandService commandService,
-                                       final DockerServerPrefsBean dockerServerPrefsBean,
+                                       final DockerServerService dockerServerService,
                                        final CommandLabelService commandLabelService) {
-        return new DockerServiceImpl(controlApi, dockerHubService, commandService, dockerServerPrefsBean, commandLabelService);
+        return new DockerServiceImpl(controlApi, dockerHubService, commandService, dockerServerService, commandLabelService);
     }
 
     @Bean

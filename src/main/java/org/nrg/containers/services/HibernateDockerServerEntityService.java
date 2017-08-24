@@ -1,0 +1,18 @@
+package org.nrg.containers.services;
+
+import org.nrg.containers.daos.DockerServerEntityRepository;
+import org.nrg.containers.model.server.docker.DockerServerEntity;
+import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@Transactional
+public class HibernateDockerServerEntityService
+        extends AbstractHibernateEntityService<DockerServerEntity, DockerServerEntityRepository>
+        implements DockerServerEntityService {
+    @Override
+    public DockerServerEntity getServer() {
+        return getDao().getUniqueEnabledServer();
+    }
+}

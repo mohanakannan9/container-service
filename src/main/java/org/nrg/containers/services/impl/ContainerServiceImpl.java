@@ -9,7 +9,7 @@ import org.nrg.containers.events.model.ContainerEvent;
 import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.DockerServerException;
-import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.exceptions.NoDockerServerException;
 import org.nrg.containers.exceptions.UnauthorizedException;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.container.auto.Container;
@@ -41,7 +41,6 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.nrg.containers.model.command.entity.CommandType.DOCKER;
@@ -138,7 +137,7 @@ public class ContainerServiceImpl implements ContainerService {
     public Container resolveCommandAndLaunchContainer(final long wrapperId,
                                                       final Map<String, String> inputValues,
                                                       final UserI userI)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException, UnauthorizedException {
+            throws NoDockerServerException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException, UnauthorizedException {
         return launchResolvedCommand(commandResolutionService.resolve(wrapperId, inputValues, userI), userI);
     }
 
@@ -148,7 +147,7 @@ public class ContainerServiceImpl implements ContainerService {
                                                       final String wrapperName,
                                                       final Map<String, String> inputValues,
                                                       final UserI userI)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException, UnauthorizedException {
+            throws NoDockerServerException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException, UnauthorizedException {
         return launchResolvedCommand(commandResolutionService.resolve(commandId, wrapperName, inputValues, userI), userI);
 
     }
@@ -159,7 +158,7 @@ public class ContainerServiceImpl implements ContainerService {
                                                       final long wrapperId,
                                                       final Map<String, String> inputValues,
                                                       final UserI userI)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException, UnauthorizedException {
+            throws NoDockerServerException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException, UnauthorizedException {
         return launchResolvedCommand(commandResolutionService.resolve(project, wrapperId, inputValues, userI), userI);
     }
 
@@ -170,7 +169,7 @@ public class ContainerServiceImpl implements ContainerService {
                                                       final String wrapperName,
                                                       final Map<String, String> inputValues,
                                                       final UserI userI)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException, UnauthorizedException {
+            throws NoDockerServerException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException, UnauthorizedException {
         return launchResolvedCommand(commandResolutionService.resolve(project, commandId, wrapperName, inputValues, userI), userI);
 
     }
@@ -179,7 +178,7 @@ public class ContainerServiceImpl implements ContainerService {
     @Nonnull
     public Container launchResolvedCommand(final ResolvedCommand resolvedCommand,
                                            final UserI userI)
-            throws NoServerPrefException, DockerServerException, ContainerException, UnsupportedOperationException {
+            throws NoDockerServerException, DockerServerException, ContainerException, UnsupportedOperationException {
         if (resolvedCommand.type().equals(DOCKER.getName())) {
             return launchResolvedDockerCommand(resolvedCommand, userI);
         } else {
@@ -190,7 +189,7 @@ public class ContainerServiceImpl implements ContainerService {
     @Nonnull
     private Container launchResolvedDockerCommand(final ResolvedCommand resolvedCommand,
                                                   final UserI userI)
-            throws NoServerPrefException, DockerServerException, ContainerException {
+            throws NoDockerServerException, DockerServerException, ContainerException {
         log.info("Preparing to launch resolved command.");
         final ResolvedCommand preparedToLaunch = prepareToLaunch(resolvedCommand, userI);
 
@@ -303,7 +302,7 @@ public class ContainerServiceImpl implements ContainerService {
     @Override
     @Nonnull
     public String kill(final String containerId, final UserI userI)
-            throws NoServerPrefException, DockerServerException, NotFoundException {
+            throws NoDockerServerException, DockerServerException, NotFoundException {
         // TODO check user permissions. How?
         final Container container = get(containerId);
 
@@ -317,20 +316,20 @@ public class ContainerServiceImpl implements ContainerService {
     @Override
     @Nonnull
     public Map<String, InputStream> getLogStreams(final long id)
-            throws NotFoundException, NoServerPrefException, DockerServerException {
+            throws NotFoundException, NoDockerServerException, DockerServerException {
         return getLogStreams(get(id));
     }
 
     @Override
     @Nonnull
     public Map<String, InputStream> getLogStreams(final String containerId)
-            throws NotFoundException, NoServerPrefException, DockerServerException {
+            throws NotFoundException, NoDockerServerException, DockerServerException {
         return getLogStreams(get(containerId));
     }
 
     @Nonnull
     private Map<String, InputStream> getLogStreams(final Container container)
-            throws NotFoundException, NoServerPrefException, DockerServerException {
+            throws NotFoundException, NoDockerServerException, DockerServerException {
         final Map<String, InputStream> logStreams = Maps.newHashMap();
         for (final String logName : ContainerService.LOG_NAMES) {
             final InputStream logStream = getLogStream(container, logName);
@@ -344,20 +343,20 @@ public class ContainerServiceImpl implements ContainerService {
     @Override
     @Nullable
     public InputStream getLogStream(final long id, final String logFileName)
-            throws NotFoundException, NoServerPrefException, DockerServerException {
+            throws NotFoundException, NoDockerServerException, DockerServerException {
         return getLogStream(get(id), logFileName);
     }
 
     @Override
     @Nullable
     public InputStream getLogStream(final String containerId, final String logFileName)
-            throws NotFoundException, NoServerPrefException, DockerServerException {
+            throws NotFoundException, NoDockerServerException, DockerServerException {
         return getLogStream(get(containerId), logFileName);
     }
 
     @Nullable
     private InputStream getLogStream(final Container container, final String logFileName)
-            throws NoServerPrefException, DockerServerException {
+            throws NoDockerServerException, DockerServerException {
         final String logPath = container.getLogPath(logFileName);
         if (StringUtils.isBlank(logPath)) {
             // If log path is blank, that means we have not yet saved the logs from docker. Go fetch them now.

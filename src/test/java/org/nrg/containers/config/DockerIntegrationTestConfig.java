@@ -2,7 +2,7 @@ package org.nrg.containers.config;
 
 import org.nrg.containers.api.DockerControlApi;
 import org.nrg.containers.events.DockerEventPuller;
-import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
+import org.nrg.containers.services.DockerServerService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -22,8 +22,9 @@ import java.util.concurrent.TimeUnit;
 @Import({IntegrationTestConfig.class})
 public class DockerIntegrationTestConfig implements SchedulingConfigurer {
     @Bean
-    public DockerEventPuller dockerEventPuller(final DockerControlApi dockerControlApi, final DockerServerPrefsBean dockerServerPrefsBean) {
-        return new DockerEventPuller(dockerControlApi, dockerServerPrefsBean);
+    public DockerEventPuller dockerEventPuller(final DockerControlApi dockerControlApi,
+                                               final DockerServerService dockerServerService) {
+        return new DockerEventPuller(dockerControlApi, dockerServerService);
     }
 
     @Bean

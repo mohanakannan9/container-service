@@ -27,14 +27,14 @@ import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.model.container.auto.Container;
 import org.nrg.containers.model.container.auto.Container.ContainerMount;
-import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
+import org.nrg.containers.model.server.docker.DockerServerBase.DockerServer;
 import org.nrg.containers.model.xnat.Project;
 import org.nrg.containers.model.xnat.Resource;
 import org.nrg.containers.model.xnat.Scan;
 import org.nrg.containers.model.xnat.Session;
 import org.nrg.containers.services.CommandService;
-import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.containers.services.ContainerService;
+import org.nrg.containers.services.DockerServerService;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.PermissionsServiceI;
@@ -101,9 +101,8 @@ public class CommandLaunchIntegrationTest {
     @Autowired private CommandService commandService;
     @Autowired private ContainerService containerService;
     @Autowired private DockerControlApi controlApi;
-    @Autowired private ContainerEntityService containerEntityService;
     @Autowired private AliasTokenService mockAliasTokenService;
-    @Autowired private DockerServerPrefsBean mockDockerServerPrefsBean;
+    @Autowired private DockerServerService mockDockerServerService;
     @Autowired private SiteConfigPreferences mockSiteConfigPreferences;
     @Autowired private UserManagementServiceI mockUserManagementServiceI;
     @Autowired private PermissionsServiceI mockPermissionsServiceI;
@@ -164,9 +163,8 @@ public class CommandLaunchIntegrationTest {
             }
         }
 
-        when(mockDockerServerPrefsBean.getHost()).thenReturn(containerHost);
-        when(mockDockerServerPrefsBean.getCertPath()).thenReturn(certPath);
-        when(mockDockerServerPrefsBean.toPojo()).thenCallRealMethod();
+        final DockerServer dockerServer = DockerServer.create(0L, "name", containerHost, certPath, false);
+        when(mockDockerServerService.getServer()).thenReturn(dockerServer);
 
         // Mock the userI
         mockUser = mock(UserI.class);

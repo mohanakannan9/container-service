@@ -14,18 +14,18 @@ import org.mockito.Mockito;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.config.DockerRestApiTestConfig;
 import org.nrg.containers.exceptions.DockerServerException;
-import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.exceptions.NoDockerServerException;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
-import org.nrg.containers.model.dockerhub.DockerHubBase;
 import org.nrg.containers.model.dockerhub.DockerHubBase.DockerHub;
 import org.nrg.containers.model.dockerhub.DockerHubBase.DockerHubWithPing;
 import org.nrg.containers.model.image.docker.DockerImage;
 import org.nrg.containers.model.image.docker.DockerImageAndCommandSummary;
 import org.nrg.containers.model.server.docker.DockerServerBase.DockerServer;
-import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.DockerHubService;
+import org.nrg.containers.services.DockerServerService;
+import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.xdat.security.services.RoleServiceI;
 import org.nrg.xdat.security.services.UserManagementServiceI;
@@ -91,12 +91,12 @@ public class DockerRestApiTest {
 
     private final static String MOCK_CONTAINER_CERT_PATH = "/path/to/file";
     private final static DockerServer MOCK_CONTAINER_SERVER =
-            DockerServer.create(MOCK_CONTAINER_SERVER_NAME, MOCK_CONTAINER_HOST, MOCK_CONTAINER_CERT_PATH);
-    private final NoServerPrefException NO_SERVER_PREF_EXCEPTION =
-            new NoServerPrefException("message");
+            DockerServer.create(0L, MOCK_CONTAINER_SERVER_NAME, MOCK_CONTAINER_HOST, MOCK_CONTAINER_CERT_PATH, false);
+    private final NoDockerServerException NO_SERVER_PREF_EXCEPTION =
+            new NoDockerServerException("message");
+    private final NotFoundException NOT_FOUND_EXCEPTION =
+            new NotFoundException("message");
 
-    private final InvalidPreferenceName INVALID_PREFERENCE_NAME =
-            new InvalidPreferenceName("*invalid name*");
     private final DockerServerException DOCKER_SERVER_EXCEPTION =
             new DockerServerException("Your server dun goofed.");
 
@@ -105,9 +105,9 @@ public class DockerRestApiTest {
     @Autowired private ContainerControlApi mockContainerControlApi;
     @Autowired private RoleServiceI mockRoleService;
     @Autowired private CommandService mockCommandService;
-    @Autowired private DockerServerPrefsBean mockDockerServerPrefsBean;
     @Autowired private UserManagementServiceI mockUserManagementServiceI;
     @Autowired private DockerHubService mockDockerHubService;
+    @Autowired private DockerServerService mockDockerServerService;
 
     @Before
     public void setup() throws Exception {
@@ -132,6 +132,7 @@ public class DockerRestApiTest {
         // Have to use the do().when() construction because the when().do() throws an Exception
         doReturn("OK")
                 .when(mockContainerControlApi).pingHub(Mockito.any(DockerHub.class), Mockito.anyString(), Mockito.anyString());
+        doReturn(MOCK_CONTAINER_SERVER).when(mockDockerServerService).getServer();
     }
 
     @Test
@@ -145,9 +146,6 @@ public class DockerRestApiTest {
                         .with(csrf())
                         .with(testSecurityContext());
 
-        doReturn(MOCK_CONTAINER_SERVER)
-                .when(mockContainerControlApi).getServer();
-
         final String response =
                 mockMvc.perform(request)
                         .andExpect(status().isOk())
@@ -160,8 +158,7 @@ public class DockerRestApiTest {
                 mapper.readValue(response, DockerServer.class);
         assertThat(responseServer, equalTo(MOCK_CONTAINER_SERVER));
 
-        doThrow(NO_SERVER_PREF_EXCEPTION)
-                .when(mockContainerControlApi).getServer();
+        when(mockDockerServerService.getServer()).thenThrow(NOT_FOUND_EXCEPTION);
 
         // Not found
         final String exceptionResponse =
@@ -189,15 +186,14 @@ public class DockerRestApiTest {
                         .with(csrf())
                         .with(testSecurityContext());
 
-        doReturn(MOCK_CONTAINER_SERVER)
-                .when(mockContainerControlApi).setServer(MOCK_CONTAINER_SERVER);
+        when(mockDockerServerService.setServer(MOCK_CONTAINER_SERVER)).thenReturn(MOCK_CONTAINER_SERVER);
 
-        verify(mockContainerControlApi, times(0)).setServer(MOCK_CONTAINER_SERVER); // Method has been called once
+        verify(mockDockerServerService, times(0)).setServer(MOCK_CONTAINER_SERVER); // Method has been called once
 
         mockMvc.perform(request)
                 .andExpect(status().isCreated());
 
-        verify(mockContainerControlApi, times(1)).setServer(MOCK_CONTAINER_SERVER); // Method has been called once
+        verify(mockDockerServerService, times(1)).setServer(MOCK_CONTAINER_SERVER); // Method has been called once
 
         // TODO figure out why the non-admin tests are failing and fix them. The code seems fine on a live XNAT.
         // // Now test setting the server with a non-admin user
@@ -219,19 +215,6 @@ public class DockerRestApiTest {
         // assertThat(exceptionResponseNonAdmin, containsString(NON_ADMIN_USERNAME));
         // verify(mockContainerControlApi, times(1)).setServer(MOCK_CONTAINER_SERVER); // Method has still been called only once
 
-        // Now verify the exception
-        doThrow(INVALID_PREFERENCE_NAME)
-                .when(mockContainerControlApi).setServer(MOCK_CONTAINER_SERVER);
-
-        final String exceptionResponse =
-                mockMvc.perform(request)
-                        .andExpect(status().isInternalServerError())
-                        .andReturn()
-                        .getResponse()
-                        .getContentAsString();
-        assertThat(exceptionResponse, containsString("*invalid name*"));
-
-        verify(mockContainerControlApi, times(2)).setServer(MOCK_CONTAINER_SERVER);
     }
 
     @Test
@@ -656,7 +639,6 @@ public class DockerRestApiTest {
         doReturn(Lists.newArrayList(imageWithSavedCommand, imageWithNonDbCommandLabels)).when(mockContainerControlApi).getAllImages();
         doReturn(null).when(mockContainerControlApi).getImageById(commandWithUnknownImage_imageName);
         when(mockCommandService.getAll()).thenReturn(Lists.newArrayList(commandWithImage, unknownCommand));
-        when(mockDockerServerPrefsBean.getName()).thenReturn(MOCK_CONTAINER_SERVER_NAME);
 
         final List<DockerImageAndCommandSummary> expected = Lists.newArrayList(
                 imageOnServerCommandInDb,

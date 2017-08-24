@@ -1,6 +1,5 @@
 package org.nrg.containers.services;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;
 import org.apache.commons.lang3.StringUtils;
@@ -13,7 +12,6 @@ import org.mockito.Mockito;
 import org.nrg.containers.api.DockerControlApi;
 import org.nrg.containers.config.DockerServiceIntegrationTestConfig;
 import org.nrg.containers.model.command.auto.Command;
-import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
@@ -36,6 +34,7 @@ import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assume.assumeThat;
 import static org.mockito.Mockito.when;
+import static org.nrg.containers.model.server.docker.DockerServerBase.DockerServer.DockerServer;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = DockerServiceIntegrationTestConfig.class)
@@ -52,11 +51,9 @@ public class DockerServiceIntegrationTest {
 
     private static DockerClient CLIENT;
 
-    @Autowired private ObjectMapper mapper;
-    @Autowired private CommandEntityService commandEntityService;
     @Autowired private DockerControlApi controlApi;
     @Autowired private DockerService dockerService;
-    @Autowired private DockerServerPrefsBean mockDockerServerPrefsBean;
+    @Autowired private DockerServerService mockDockerServerService;
     @Autowired private SiteConfigPreferences mockSiteConfigPreferences;
     @Autowired private UserManagementServiceI mockUserManagementServiceI;
 
@@ -95,9 +92,8 @@ public class DockerServiceIntegrationTest {
             }
         }
 
-        when(mockDockerServerPrefsBean.getHost()).thenReturn(containerHost);
-        when(mockDockerServerPrefsBean.getCertPath()).thenReturn(certPath);
-        when(mockDockerServerPrefsBean.toPojo()).thenCallRealMethod();
+        final DockerServer dockerServer = DockerServer.create(0L, "name", containerHost, certPath, false);
+        when(mockDockerServerService.getServer()).thenReturn(dockerServer);
 
         // Mock the userI
         mockUser = Mockito.mock(UserI.class);
