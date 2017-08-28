@@ -1986,7 +1986,9 @@ var XNAT = getObject(XNAT || {});
         var $footer = manager.parents('.panel').find('.panel-footer');
 
         manager.html('');
+        $footer.html('');
 
+        // only show a list of automations if any commands and wrappers have been defined.
         if (Object.keys(wrapperList).length > 0) {
             manager.append(commandAutomationAdmin.table());
 
@@ -2007,7 +2009,7 @@ var XNAT = getObject(XNAT || {});
                 });
             }
         } else {
-            manager.append(spawn('p','There are no commands that can be automated. Please navigate to the Images &amp; Commands tab'))
+            manager.append(spawn('p',{'style' : { 'margin-top': '1em'} },'There are no commands that can be automated. Please navigate to the Images &amp; Commands tab'))
         }
 
     };
