@@ -20,10 +20,12 @@ import org.mockito.Mockito;
 import org.nrg.containers.config.DockerControlApiTestConfig;
 import org.nrg.containers.events.model.DockerContainerEvent;
 import org.nrg.containers.exceptions.DockerServerException;
-import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.exceptions.NoDockerServerException;
 import org.nrg.containers.model.dockerhub.DockerHubBase;
 import org.nrg.containers.model.image.docker.DockerImage;
 import org.nrg.containers.model.server.docker.DockerServerBase;
+import org.nrg.containers.model.server.docker.DockerServerBase.DockerServer;
+import org.nrg.containers.services.DockerServerService;
 import org.nrg.framework.scope.EntityId;
 import org.nrg.prefs.services.NrgPreferenceService;
 import org.slf4j.Logger;
@@ -66,7 +68,7 @@ public class DockerControlApiTest {
     private static final DockerHubBase.DockerHub DOCKER_HUB = DockerHubBase.DockerHub.DEFAULT;
 
     @Autowired private DockerControlApi controlApi;
-    @Autowired private NrgPreferenceService mockPrefsService;
+    @Autowired private DockerServerService mockDockerServerService;
 
     @Rule public ExpectedException exception = ExpectedException.none();
 
@@ -101,21 +103,8 @@ public class DockerControlApiTest {
             }
         }
 
-        final Date timeZero = new Date(0L);
-        final String timeZeroString = String.valueOf(timeZero.getTime());
-
-        // Set up mock prefs service for all the calls that will initialize
-        // the ContainerServerPrefsBean
-        final String toolId = "docker-server";
-        when(mockPrefsService.getPreferenceValue(toolId, "host"))
-            .thenReturn(CONTAINER_HOST);
-        when(mockPrefsService.getPreferenceValue(toolId, "certPath"))
-            .thenReturn(CERT_PATH);
-        when(mockPrefsService.getPreferenceValue(toolId, "lastEventCheckTime", EntityId.Default.getScope(), EntityId.Default.getEntityId()))
-            .thenReturn(timeZeroString);
-        doNothing().when(mockPrefsService)
-            .setPreferenceValue(Mockito.eq(toolId), Mockito.anyString(), Mockito.anyString());
-        when(mockPrefsService.hasPreference(Mockito.eq(toolId), Mockito.anyString())).thenReturn(true);
+        final DockerServer mockDockerServer = DockerServer.create(0L, "Local test server", CONTAINER_HOST, CERT_PATH, false);
+        when(mockDockerServerService.getServer()).thenReturn(mockDockerServer);
 
         CLIENT = controlApi.getClient();
     }
@@ -130,12 +119,8 @@ public class DockerControlApiTest {
     }
 
     @Test
-    public void testGetServer() throws Exception {
-        assumeThat(canConnectToDocker(), is(true));
-
-        final DockerServerBase.DockerServer server = controlApi.getServer();
-        assertThat(server.host(), is(CONTAINER_HOST));
-        assertThat(server.certPath(), is(CERT_PATH));
+    public void testPingServer() throws Exception {
+        assertThat(canConnectToDocker(), is(true));
     }
 
     @Test
@@ -216,7 +201,7 @@ public class DockerControlApiTest {
     }
 
     @Test
-    public void testDeleteImage() throws DockerException, InterruptedException, NoServerPrefException, DockerServerException {
+    public void testDeleteImage() throws DockerException, InterruptedException, NoDockerServerException, DockerServerException {
         assumeThat(canConnectToDocker(), is(true));
 
         CLIENT.pull(BUSYBOX_NAME);

@@ -11,16 +11,14 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.services.ConfigService;
-import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.config.CommandRestApiTestConfig;
 import org.nrg.containers.model.command.auto.CommandSummaryForContext;
 import org.nrg.containers.model.configuration.CommandConfigurationInternal;
-import org.nrg.containers.model.server.docker.DockerServerBase;
-import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerConfigService;
+import org.nrg.containers.services.DockerServerService;
 import org.nrg.framework.constants.Scope;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -60,6 +58,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.nrg.containers.model.server.docker.DockerServerBase.*;
 import static org.nrg.containers.services.ContainerConfigService.WRAPPER_CONFIG_PATH_TEMPLATE;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -92,9 +91,8 @@ public class CommandRestApiTest {
     @Autowired private ObjectMapper mapper;
     @Autowired private CommandService commandService;
     @Autowired private RoleServiceI mockRoleService;
-    @Autowired private ContainerControlApi mockDockerControlApi;
     @Autowired private AliasTokenService mockAliasTokenService;
-    @Autowired private DockerServerPrefsBean mockDockerServerPrefsBean;
+    @Autowired private DockerServerService mockDockerServerService;
     @Autowired private SiteConfigPreferences mockSiteConfigPreferences;
     @Autowired private UserManagementServiceI mockUserManagementServiceI;
     @Autowired private ConfigService mockConfigService;
@@ -108,11 +106,8 @@ public class CommandRestApiTest {
         // Mock out the prefs bean
         final String containerServerName = "testy test";
         final String containerHost = "unix:///var/run/docker.sock";
-        final DockerServerBase.DockerServer dockerServer = DockerServerBase.DockerServer.create(containerServerName, containerHost, null);
-        when(mockDockerServerPrefsBean.getName()).thenReturn(containerServerName);
-        when(mockDockerServerPrefsBean.getHost()).thenReturn(containerHost);
-        when(mockDockerServerPrefsBean.toPojo()).thenReturn(dockerServer);
-        when(mockDockerControlApi.getServer()).thenReturn(dockerServer);
+        final DockerServer dockerServer = DockerServer.create(0L, containerServerName, containerHost, null, false);
+        when(mockDockerServerService.getServer()).thenReturn(dockerServer);
 
         // Mock the userI
         final UserI admin = mock(UserI.class);

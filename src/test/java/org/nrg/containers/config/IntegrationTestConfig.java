@@ -23,13 +23,13 @@ import org.nrg.containers.model.container.entity.ContainerEntityInput;
 import org.nrg.containers.model.container.entity.ContainerEntityMount;
 import org.nrg.containers.model.container.entity.ContainerEntityOutput;
 import org.nrg.containers.model.container.entity.ContainerMountFilesEntity;
-import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.services.CommandLabelService;
 import org.nrg.containers.services.CommandResolutionService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.containers.services.ContainerFinalizeService;
 import org.nrg.containers.services.ContainerService;
+import org.nrg.containers.services.DockerServerService;
 import org.nrg.containers.services.impl.CommandLabelServiceImpl;
 import org.nrg.containers.services.impl.CommandResolutionServiceImpl;
 import org.nrg.containers.services.impl.ContainerFinalizeServiceImpl;
@@ -66,15 +66,15 @@ public class IntegrationTestConfig {
     Control API and dependencies + Events
      */
     @Bean
-    public DockerControlApi dockerControlApi(final DockerServerPrefsBean containerServerPref,
+    public DockerControlApi dockerControlApi(final DockerServerService dockerServerService,
                                              final CommandLabelService commandLabelService,
                                              final NrgEventService eventService) {
-        return new DockerControlApi(containerServerPref, commandLabelService, eventService);
+        return new DockerControlApi(dockerServerService, commandLabelService, eventService);
     }
 
     @Bean
-    public DockerServerPrefsBean mockDockerServerPrefsBean() {
-        return Mockito.mock(DockerServerPrefsBean.class);
+    public DockerServerService mockDockerServerService() {
+        return Mockito.mock(DockerServerService.class);
     }
 
     @Bean

@@ -2,13 +2,13 @@ package org.nrg.containers.config;
 
 import org.mockito.Mockito;
 import org.nrg.containers.api.ContainerControlApi;
-import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.rest.LaunchRestApi;
 import org.nrg.containers.services.CommandResolutionService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.containers.services.ContainerFinalizeService;
 import org.nrg.containers.services.ContainerService;
+import org.nrg.containers.services.DockerServerService;
 import org.nrg.containers.services.impl.ContainerServiceImpl;
 import org.nrg.framework.services.ContextService;
 import org.nrg.transporter.TransportService;
@@ -71,8 +71,8 @@ public class LaunchRestApiTestConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public DockerServerPrefsBean dockerServerPrefsBean() {
-        return Mockito.mock(DockerServerPrefsBean.class);
+    public DockerServerService mockDockerServerService() {
+        return Mockito.mock(DockerServerService.class);
     }
 
     @Bean

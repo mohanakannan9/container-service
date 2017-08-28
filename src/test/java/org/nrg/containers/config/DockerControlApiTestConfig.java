@@ -4,9 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.mockito.Mockito;
 import org.nrg.containers.api.DockerControlApi;
 import org.nrg.containers.daos.ContainerEntityRepository;
-import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.services.CommandLabelService;
 import org.nrg.containers.services.ContainerEntityService;
+import org.nrg.containers.services.DockerServerService;
 import org.nrg.containers.services.impl.CommandLabelServiceImpl;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.prefs.beans.AbstractPreferenceBean;
@@ -24,10 +24,10 @@ import static org.mockito.Mockito.when;
 @Import({ObjectMapperConfig.class})
 public class DockerControlApiTestConfig {
     @Bean
-    public DockerControlApi dockerControlApi(final DockerServerPrefsBean containerServerPref,
+    public DockerControlApi dockerControlApi(final DockerServerService dockerServerService,
                                              final CommandLabelService commandLabelService,
                                              final NrgEventService eventService) {
-        return new DockerControlApi(containerServerPref, commandLabelService, eventService);
+        return new DockerControlApi(dockerServerService, commandLabelService, eventService);
     }
 
     @Bean
@@ -36,8 +36,8 @@ public class DockerControlApiTestConfig {
     }
 
     @Bean
-    public DockerServerPrefsBean dockerServerPrefsBean(final NrgPreferenceService nrgPreferenceService) {
-        return new DockerServerPrefsBean(nrgPreferenceService);
+    public DockerServerService mockDockerServerService() {
+        return Mockito.mock(DockerServerService.class);
     }
 
     @Bean

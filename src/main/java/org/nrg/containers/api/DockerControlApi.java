@@ -28,20 +28,18 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.events.model.DockerContainerEvent;
 import org.nrg.containers.exceptions.DockerServerException;
-import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.exceptions.NoDockerServerException;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMount;
 import org.nrg.containers.model.container.auto.ContainerMessage;
 import org.nrg.containers.model.dockerhub.DockerHubBase.DockerHub;
 import org.nrg.containers.model.server.docker.DockerServerBase.DockerServer;
-import org.nrg.containers.model.server.docker.DockerServerBase.DockerServerWithPing;
-import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.image.docker.DockerImage;
 import org.nrg.containers.services.CommandLabelService;
+import org.nrg.containers.services.DockerServerService;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.services.NrgEventService;
-import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,62 +62,30 @@ import static org.nrg.containers.services.CommandLabelService.LABEL_KEY;
 public class DockerControlApi implements ContainerControlApi {
     private static final Logger log = LoggerFactory.getLogger(DockerControlApi.class);
 
-    private final DockerServerPrefsBean containerServerPref;
+    private final DockerServerService dockerServerService;
     private final CommandLabelService commandLabelService;
     private final NrgEventService eventService;
 
     @Autowired
-    public DockerControlApi(final DockerServerPrefsBean containerServerPref,
+    public DockerControlApi(final DockerServerService dockerServerService,
                             final CommandLabelService commandLabelService,
                             final NrgEventService eventService) {
-        this.containerServerPref = containerServerPref;
+        this.dockerServerService = dockerServerService;
         this.commandLabelService = commandLabelService;
         this.eventService = eventService;
     }
 
-    @Override
     @Nonnull
-    public DockerServer getServer() throws NoServerPrefException {
-        if (containerServerPref == null || containerServerPref.getHost() == null) {
-            throw new NoServerPrefException("No container server URI defined in preferences.");
+    private DockerServer getServer() throws NoDockerServerException {
+        try {
+            return dockerServerService.getServer();
+        } catch (NotFoundException e) {
+            throw new NoDockerServerException(e);
         }
-        return containerServerPref.toPojo();
     }
 
     @Override
-    public DockerServerWithPing getServerAndPing() throws NoServerPrefException {
-        final DockerServer dockerServerBeforePing = getServer();
-        return DockerServerWithPing.create(dockerServerBeforePing, canConnect());
-    }
-
-    @Override
-    public void setServer(final String host) throws InvalidPreferenceName {
-        setServer(host, null);
-    }
-
-    @Override
-    @Nonnull
-    public DockerServer setServer(final String host, final String certPath) throws InvalidPreferenceName {
-        containerServerPref.setHost(host);
-        containerServerPref.setCertPath(certPath);
-        return containerServerPref.toPojo();
-    }
-
-    @Override
-    @Nonnull
-    public DockerServer setServer(final DockerServer serverBean) throws InvalidPreferenceName {
-        containerServerPref.fromPojo(serverBean);
-        return serverBean;
-    }
-
-    @Override
-    public DockerServerWithPing setServerAndPing(final DockerServer server) throws InvalidPreferenceName {
-        final DockerServer dockerServerBeforePing = setServer(server);
-        return DockerServerWithPing.create(dockerServerBeforePing, canConnect());
-    }
-
-    @Override
-    public String pingServer() throws NoServerPrefException, DockerServerException {
+    public String pingServer() throws NoDockerServerException, DockerServerException {
         try (final DockerClient client = getClient()) {
             return client.ping();
         } catch (DockerException | InterruptedException e) {
@@ -133,7 +99,7 @@ public class DockerControlApi implements ContainerControlApi {
         try {
             final String pingResult = pingServer();
             return StringUtils.isNotBlank(pingResult) && pingResult.equals("OK");
-        } catch (NoServerPrefException | DockerServerException ignored) {
+        } catch (NoDockerServerException | DockerServerException ignored) {
             // Any actual errors have already been logged. We can safely ignore them here.
         }
 
@@ -142,14 +108,14 @@ public class DockerControlApi implements ContainerControlApi {
 
     @Override
     @Nonnull
-    public String pingHub(final @Nonnull DockerHub hub) throws DockerServerException, NoServerPrefException {
+    public String pingHub(final @Nonnull DockerHub hub) throws DockerServerException, NoDockerServerException {
         return pingHub(hub, null, null);
     }
 
     @Override
     @Nonnull
     public String pingHub(final @Nonnull DockerHub hub, final @Nullable String username, final @Nullable String password)
-            throws DockerServerException, NoServerPrefException {
+            throws DockerServerException, NoDockerServerException {
         try (final DockerClient client = getClient()) {
             client.auth(registryAuth(hub, username, password));
         } catch (Exception e) {
@@ -178,7 +144,7 @@ public class DockerControlApi implements ContainerControlApi {
      **/
     @Override
     @Nonnull
-    public List<DockerImage> getAllImages() throws NoServerPrefException, DockerServerException {
+    public List<DockerImage> getAllImages() throws NoDockerServerException, DockerServerException {
         return getImages(null);
     }
 
@@ -190,7 +156,7 @@ public class DockerControlApi implements ContainerControlApi {
      **/
     @Nonnull
     private List<DockerImage> getImages(final Map<String, String> params)
-            throws NoServerPrefException, DockerServerException {
+            throws NoDockerServerException, DockerServerException {
         return Lists.newArrayList(
                 Lists.transform(_getImages(params),
                         new Function<Image, DockerImage>() {
@@ -205,7 +171,7 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     private List<com.spotify.docker.client.messages.Image> _getImages(final Map<String, String> params)
-            throws NoServerPrefException, DockerServerException {
+            throws NoDockerServerException, DockerServerException {
         // Transform param map to ListImagesParam array
         final List<ListImagesParam> dockerParamsList = Lists.newArrayList();
         if (params != null && params.size() > 0) {
@@ -238,14 +204,14 @@ public class DockerControlApi implements ContainerControlApi {
     @Override
     @Nonnull
     public DockerImage getImageById(final String imageId)
-        throws NotFoundException, DockerServerException, NoServerPrefException {
+        throws NotFoundException, DockerServerException, NoDockerServerException {
         try (final DockerClient client = getClient()) {
             return getImageById(imageId, client);
         }
     }
 
     private DockerImage getImageById(final String imageId, final DockerClient client)
-            throws NoServerPrefException, DockerServerException, NotFoundException {
+            throws NoDockerServerException, DockerServerException, NotFoundException {
         final DockerImage image = spotifyToNrg(_getImageById(imageId, client));
         if (image != null) {
             return image;
@@ -254,7 +220,7 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     private com.spotify.docker.client.messages.ImageInfo _getImageById(final String imageId, final DockerClient client)
-        throws DockerServerException, NoServerPrefException, NotFoundException {
+        throws DockerServerException, NoDockerServerException, NotFoundException {
         try {
             return client.inspectImage(imageId);
         } catch (ImageNotFoundException e) {
@@ -272,7 +238,7 @@ public class DockerControlApi implements ContainerControlApi {
      **/
     @Override
     public String createContainer(final ResolvedCommand resolvedCommand)
-            throws NoServerPrefException, DockerServerException, ContainerException {
+            throws NoDockerServerException, DockerServerException, ContainerException {
 
         final List<String> bindMounts = Lists.newArrayList();
         for (final ResolvedCommandMount mount : resolvedCommand.mounts()) {
@@ -426,7 +392,7 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     @Override
-    public void startContainer(final String containerId) throws DockerServerException, NoServerPrefException {
+    public void startContainer(final String containerId) throws DockerServerException, NoDockerServerException {
         startContainer(containerId, getServer());
     }
 
@@ -442,7 +408,7 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     @Override
-    public void deleteImageById(final String id, final Boolean force) throws NoServerPrefException, DockerServerException {
+    public void deleteImageById(final String id, final Boolean force) throws NoDockerServerException, DockerServerException {
         try (final DockerClient dockerClient = getClient()) {
             dockerClient.removeImage(id, force, false);
         } catch (DockerException|InterruptedException e) {
@@ -452,20 +418,20 @@ public class DockerControlApi implements ContainerControlApi {
 
     @Override
     @Nullable
-    public DockerImage pullImage(final String name) throws NoServerPrefException, DockerServerException, NotFoundException {
+    public DockerImage pullImage(final String name) throws NoDockerServerException, DockerServerException, NotFoundException {
         return pullImage(name, null);
     }
 
     @Override
     @Nullable
     public DockerImage pullImage(final String name, final @Nullable DockerHub hub)
-            throws NoServerPrefException, DockerServerException, NotFoundException {
+            throws NoDockerServerException, DockerServerException, NotFoundException {
         return pullImage(name, hub, null, null);
     }
 
     @Override
     @Nullable
-    public DockerImage pullImage(final String name, final @Nullable DockerHub hub, final @Nullable String username, final @Nullable String password) throws NoServerPrefException, DockerServerException, NotFoundException {
+    public DockerImage pullImage(final String name, final @Nullable DockerHub hub, final @Nullable String username, final @Nullable String password) throws NoDockerServerException, DockerServerException, NotFoundException {
         final DockerClient client = getClient();
         _pullImage(name, registryAuth(hub, username, password), client);  // We want to throw NotFoundException here if the image is not found on the hub
         try {
@@ -494,7 +460,7 @@ public class DockerControlApi implements ContainerControlApi {
 
     @Override
     public List<Command> parseLabels(final String imageName)
-            throws DockerServerException, NoServerPrefException, NotFoundException {
+            throws DockerServerException, NoDockerServerException, NotFoundException {
         final DockerImage image = getImageById(imageName);
         return commandLabelService.parseLabels(imageName, image);
     }
@@ -505,7 +471,7 @@ public class DockerControlApi implements ContainerControlApi {
      * @return Container objects stored on docker server
      **/
     @Override
-    public List<ContainerMessage> getAllContainers() throws NoServerPrefException, DockerServerException {
+    public List<ContainerMessage> getAllContainers() throws NoDockerServerException, DockerServerException {
         return getContainers(null);
     }
 
@@ -517,7 +483,7 @@ public class DockerControlApi implements ContainerControlApi {
      **/
     @Override
     public List<ContainerMessage> getContainers(final Map<String, String> params)
-        throws NoServerPrefException, DockerServerException {
+        throws NoDockerServerException, DockerServerException {
         List<com.spotify.docker.client.messages.Container> containerList;
 
         // Transform param map to ListImagesParam array
@@ -556,7 +522,7 @@ public class DockerControlApi implements ContainerControlApi {
     @Override
     @Nonnull
     public ContainerMessage getContainer(final String id)
-        throws NotFoundException, NoServerPrefException, DockerServerException {
+        throws NotFoundException, NoDockerServerException, DockerServerException {
         final ContainerMessage container = spotifyToNrg(_getContainer(id));
         if (container != null) {
             return container;
@@ -564,7 +530,7 @@ public class DockerControlApi implements ContainerControlApi {
         throw new NotFoundException(String.format("Could not find container %s", id));
     }
 
-    private ContainerInfo _getContainer(final String id) throws NoServerPrefException, DockerServerException {
+    private ContainerInfo _getContainer(final String id) throws NoDockerServerException, DockerServerException {
         final DockerClient client = getClient();
         try {
             return client.inspectContainer(id);
@@ -582,14 +548,14 @@ public class DockerControlApi implements ContainerControlApi {
      **/
     @Override
     public String getContainerStatus(final String id)
-        throws NotFoundException, NoServerPrefException, DockerServerException {
+        throws NotFoundException, NoDockerServerException, DockerServerException {
         final ContainerMessage container = getContainer(id);
 
         return container.status();
     }
 
     @Override
-    public String getContainerStdoutLog(String id) throws NoServerPrefException, DockerServerException {
+    public String getContainerStdoutLog(String id) throws NoDockerServerException, DockerServerException {
         try (final LogStream logStream = getClient().logs(id, LogsParam.stdout())) {
             return logStream.readFully();
         } catch (Exception e) {
@@ -599,7 +565,7 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     @Override
-    public String getContainerStderrLog(String id) throws NoServerPrefException, DockerServerException {
+    public String getContainerStderrLog(String id) throws NoDockerServerException, DockerServerException {
         try (final LogStream logStream = getClient().logs(id, LogsParam.stderr())) {
             return logStream.readFully();
         } catch (Exception e) {
@@ -610,7 +576,7 @@ public class DockerControlApi implements ContainerControlApi {
 
     @VisibleForTesting
     @Nonnull
-    public DockerClient getClient() throws NoServerPrefException, DockerServerException {
+    public DockerClient getClient() throws NoDockerServerException, DockerServerException {
         return getClient(getServer());
     }
 
@@ -640,7 +606,7 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     @Override
-    public List<DockerContainerEvent> getContainerEvents(final Date since, final Date until) throws NoServerPrefException, DockerServerException {
+    public List<DockerContainerEvent> getContainerEvents(final Date since, final Date until) throws NoDockerServerException, DockerServerException {
         final List<Event> dockerEventList = getDockerContainerEvents(since, until);
 
         final List<DockerContainerEvent> events = Lists.newArrayList();
@@ -665,7 +631,7 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     @Override
-    public List<DockerContainerEvent> getContainerEventsAndThrow(final Date since, final Date until) throws NoServerPrefException, DockerServerException {
+    public List<DockerContainerEvent> getContainerEventsAndThrow(final Date since, final Date until) throws NoDockerServerException, DockerServerException {
         final List<DockerContainerEvent> events = getContainerEvents(since, until);
 
         for (final DockerContainerEvent event : events) {
@@ -678,7 +644,7 @@ public class DockerControlApi implements ContainerControlApi {
         return events;
     }
 
-    private List<Event> getDockerContainerEvents(final Date since, final Date until) throws NoServerPrefException, DockerServerException {
+    private List<Event> getDockerContainerEvents(final Date since, final Date until) throws NoDockerServerException, DockerServerException {
         try(final DockerClient client = getClient()) {
             if (log.isDebugEnabled()) {
                 log.debug("Reading all docker container events from " + since.getTime() + " to " + until.getTime() + ".");
@@ -703,7 +669,7 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     @Override
-    public void killContainer(final String id) throws NoServerPrefException, DockerServerException, NotFoundException {
+    public void killContainer(final String id) throws NoDockerServerException, DockerServerException, NotFoundException {
         try(final DockerClient client = getClient()) {
             log.info("Killing container " + id);
             client.killContainer(id);

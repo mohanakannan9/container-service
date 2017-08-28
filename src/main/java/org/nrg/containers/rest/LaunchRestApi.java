@@ -10,7 +10,7 @@ import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.CommandValidationException;
 import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.DockerServerException;
-import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.exceptions.NoDockerServerException;
 import org.nrg.containers.exceptions.UnauthorizedException;
 import org.nrg.containers.model.command.auto.LaunchReport;
 import org.nrg.containers.model.command.auto.LaunchReport.Success;
@@ -377,7 +377,7 @@ public class LaunchRestApi extends AbstractXapiRestController {
     public ResponseEntity<LaunchReport> launchCommandWQueryParams(final @PathVariable long commandId,
                                                                   final @PathVariable String wrapperName,
                                                                   final @RequestParam Map<String, String> allRequestParams)
-            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException, ContainerException {
+            throws NoDockerServerException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException, ContainerException {
         log.info("Launch requested for command {}, wrapper {}", commandId, wrapperName);
 
         return returnLaunchReportWithStatus(launchContainer(null, commandId, wrapperName, 0L, allRequestParams));
@@ -388,7 +388,7 @@ public class LaunchRestApi extends AbstractXapiRestController {
     public ResponseEntity<LaunchReport> launchCommandWJsonBody(final @PathVariable long commandId,
                                                                final @PathVariable String wrapperName,
                                                                final @RequestBody Map<String, String> allRequestParams)
-            throws NoServerPrefException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException, ContainerException {
+            throws NoDockerServerException, DockerServerException, NotFoundException, BadRequestException, CommandResolutionException, ContainerException {
         log.info("Launch requested for command {}, wrapper {}", commandId, wrapperName);
 
         return returnLaunchReportWithStatus(launchContainer(null, commandId, wrapperName, 0L, allRequestParams));
@@ -553,7 +553,7 @@ public class LaunchRestApi extends AbstractXapiRestController {
     }
 
     @ResponseStatus(value = HttpStatus.FAILED_DEPENDENCY)
-    @ExceptionHandler(value = {NoServerPrefException.class})
+    @ExceptionHandler(value = {NoDockerServerException.class})
     public String handleFailedDependency(final Exception ignored) {
         final String message = "Set up Docker server before using this REST endpoint.";
         log.debug(message);

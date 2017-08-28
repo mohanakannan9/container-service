@@ -5,23 +5,22 @@ import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.exceptions.DockerServerException;
-import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.exceptions.NoDockerServerException;
 import org.nrg.containers.exceptions.NotUniqueException;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.dockerhub.DockerHubBase.DockerHub;
 import org.nrg.containers.model.dockerhub.DockerHubBase.DockerHubWithPing;
 import org.nrg.containers.model.image.docker.DockerImage;
 import org.nrg.containers.model.image.docker.DockerImageAndCommandSummary;
-import org.nrg.containers.model.server.docker.DockerServerBase;
+import org.nrg.containers.model.server.docker.DockerServerBase.DockerServer;
 import org.nrg.containers.model.server.docker.DockerServerBase.DockerServerWithPing;
-import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.services.CommandLabelService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.DockerHubService;
 import org.nrg.containers.services.DockerHubService.DockerHubDeleteDefaultException;
+import org.nrg.containers.services.DockerServerService;
 import org.nrg.containers.services.DockerService;
 import org.nrg.framework.exceptions.NotFoundException;
-import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,19 +38,19 @@ public class DockerServiceImpl implements DockerService {
     private ContainerControlApi controlApi;
     private DockerHubService dockerHubService;
     private CommandService commandService;
-    private final DockerServerPrefsBean dockerServerPrefsBean;
+    private DockerServerService dockerServerService;
     private final CommandLabelService commandLabelService;
 
     @Autowired
     public DockerServiceImpl(final ContainerControlApi controlApi,
                              final DockerHubService dockerHubService,
                              final CommandService commandService,
-                             final DockerServerPrefsBean dockerServerPrefsBean,
+                             final DockerServerService dockerServerService,
                              final CommandLabelService commandLabelService) {
         this.controlApi = controlApi;
         this.dockerHubService = dockerHubService;
         this.commandService = commandService;
-        this.dockerServerPrefsBean = dockerServerPrefsBean;
+        this.dockerServerService = dockerServerService;
         this.commandLabelService = commandLabelService;
     }
 
@@ -106,37 +105,37 @@ public class DockerServiceImpl implements DockerService {
     }
 
     @Override
-    public String pingHub(final long hubId) throws DockerServerException, NoServerPrefException, NotFoundException {
+    public String pingHub(final long hubId) throws DockerServerException, NoDockerServerException, NotFoundException {
         final DockerHub hub = dockerHubService.getHub(hubId);
         return pingHub(hub);
     }
 
     @Override
     public String pingHub(final long hubId, final String username, final String password)
-            throws DockerServerException, NoServerPrefException, NotFoundException {
+            throws DockerServerException, NoDockerServerException, NotFoundException {
         final DockerHub hub = dockerHubService.getHub(hubId);
         return pingHub(hub, username, password);
     }
 
     @Override
     public String pingHub(final String hubName)
-            throws DockerServerException, NoServerPrefException, NotUniqueException, NotFoundException {
+            throws DockerServerException, NoDockerServerException, NotUniqueException, NotFoundException {
         final DockerHub hub = dockerHubService.getHub(hubName);
         return pingHub(hub);
     }
 
     @Override
     public String pingHub(final String hubName, final String username, final String password)
-            throws DockerServerException, NoServerPrefException, NotUniqueException, NotFoundException {
+            throws DockerServerException, NoDockerServerException, NotUniqueException, NotFoundException {
         final DockerHub hub = dockerHubService.getHub(hubName);
         return pingHub(hub, username, password);
     }
 
-    private String pingHub(final DockerHub hub) throws DockerServerException, NoServerPrefException {
+    private String pingHub(final DockerHub hub) throws DockerServerException, NoDockerServerException {
         return pingHub(hub, null, null);
     }
 
-    private String pingHub(final DockerHub hub, final String username, final String password) throws DockerServerException, NoServerPrefException {
+    private String pingHub(final DockerHub hub, final String username, final String password) throws DockerServerException, NoDockerServerException {
         return controlApi.pingHub(hub, username, password);
     }
 
@@ -144,7 +143,7 @@ public class DockerServiceImpl implements DockerService {
     private Boolean canConnectToHub(final DockerHub hub) {
         try {
             return "OK".equals(pingHub(hub));
-        } catch (DockerServerException | NoServerPrefException e) {
+        } catch (DockerServerException | NoDockerServerException e) {
             // ignored
         }
         return null;
@@ -167,36 +166,36 @@ public class DockerServiceImpl implements DockerService {
 
     @Override
     public DockerImage pullFromHub(final long hubId, final String imageName, final boolean saveCommands)
-            throws DockerServerException, NoServerPrefException, NotFoundException {
+            throws DockerServerException, NoDockerServerException, NotFoundException {
         return pullFromHub(dockerHubService.getHub(hubId), imageName, saveCommands);
     }
 
     @Override
     public DockerImage pullFromHub(final long hubId, final String imageName, final boolean saveCommands, final String username, final String password)
-            throws DockerServerException, NoServerPrefException, NotFoundException {
+            throws DockerServerException, NoDockerServerException, NotFoundException {
         return pullFromHub(dockerHubService.getHub(hubId), imageName, saveCommands, username, password);
     }
 
     @Override
     public DockerImage pullFromHub(final String hubName, final String imageName, final boolean saveCommands)
-            throws DockerServerException, NoServerPrefException, NotFoundException, NotUniqueException {
+            throws DockerServerException, NoDockerServerException, NotFoundException, NotUniqueException {
         return pullFromHub(dockerHubService.getHub(hubName), imageName, saveCommands);
     }
 
     @Override
     public DockerImage pullFromHub(final String hubName, final String imageName, final boolean saveCommands, final String username, final String password)
-            throws DockerServerException, NoServerPrefException, NotFoundException, NotUniqueException {
+            throws DockerServerException, NoDockerServerException, NotFoundException, NotUniqueException {
         return pullFromHub(dockerHubService.getHub(hubName), imageName, saveCommands, username, password);
     }
 
     @Override
     public DockerImage pullFromHub(final String imageName, final boolean saveCommands)
-            throws DockerServerException, NoServerPrefException, NotFoundException {
+            throws DockerServerException, NoDockerServerException, NotFoundException {
         return pullFromHub(dockerHubService.getDefault(), imageName, saveCommands);
     }
 
     private DockerImage pullFromHub(final DockerHub hub, final String imageName, final boolean saveCommands)
-            throws NoServerPrefException, DockerServerException, NotFoundException {
+            throws NoDockerServerException, DockerServerException, NotFoundException {
         return pullFromHub(hub, imageName, saveCommands, null, null);
     }
 
@@ -205,7 +204,7 @@ public class DockerServiceImpl implements DockerService {
                                     final boolean saveCommands,
                                     final String username,
                                     final String password)
-            throws NoServerPrefException, DockerServerException, NotFoundException {
+            throws NoDockerServerException, DockerServerException, NotFoundException {
         final DockerImage dockerImage = controlApi.pullImage(imageName, hub, username, password);
         if (saveCommands) {
             saveFromImageLabels(imageName, dockerImage);
@@ -215,34 +214,41 @@ public class DockerServiceImpl implements DockerService {
 
     @Override
     public DockerServerWithPing getServer() throws NotFoundException {
-        try {
-            return controlApi.getServerAndPing();
-        } catch (NoServerPrefException e) {
-            throw new NotFoundException(e);
-        }
+        final DockerServer dockerServer = dockerServerService.getServer();
+        final boolean ping = controlApi.canConnect();
+        return DockerServerWithPing.create(dockerServer, ping);
     }
 
     @Override
-    public DockerServerWithPing setServer(final DockerServerBase.DockerServer server) throws InvalidPreferenceName {
-        return controlApi.setServerAndPing(server);
+    public DockerServerWithPing setServer(final DockerServer server) {
+        final DockerServer dockerServer = dockerServerService.setServer(server);
+        final boolean ping = controlApi.canConnect();
+        return DockerServerWithPing.create(dockerServer, ping);
     }
 
     @Override
-    public String pingServer() throws NoServerPrefException, DockerServerException {
+    public String pingServer() throws NoDockerServerException, DockerServerException {
         return controlApi.pingServer();
     }
 
     @Override
     public List<DockerImage> getImages()
-            throws NoServerPrefException, DockerServerException {
+            throws NoDockerServerException, DockerServerException {
         return controlApi.getAllImages();
     }
 
     @Override
+    @Nonnull
     public List<DockerImageAndCommandSummary> getImageSummaries()
-            throws NoServerPrefException, DockerServerException {
+            throws NoDockerServerException, DockerServerException {
         // TODO once I have multiple docker servers, I will have to go ask all of them for their images
-        final String server = dockerServerPrefsBean.getName();
+        final DockerServer dockerServer;
+        try {
+            dockerServer = dockerServerService.getServer();
+        } catch (NotFoundException e) {
+            throw new NoDockerServerException(e);
+        }
+        final String server = dockerServer.name();
 
         final List<DockerImage> rawImages = controlApi.getAllImages();
 
@@ -360,7 +366,7 @@ public class DockerServiceImpl implements DockerService {
     }
 
     public DockerImage getImage(final String imageId)
-            throws NoServerPrefException, NotFoundException {
+            throws NoDockerServerException, NotFoundException {
         try {
             return controlApi.getImageById(imageId);
         } catch (DockerServerException e) {
@@ -369,13 +375,13 @@ public class DockerServiceImpl implements DockerService {
     }
 
     public void removeImage(final String imageId, final Boolean force)
-            throws NoServerPrefException, DockerServerException {
+            throws NoDockerServerException, DockerServerException {
         controlApi.deleteImageById(imageId, force);
     }
 
     @Override
     @Nonnull
-    public List<Command> saveFromImageLabels(final String imageName) throws DockerServerException, NotFoundException, NoServerPrefException {
+    public List<Command> saveFromImageLabels(final String imageName) throws DockerServerException, NotFoundException, NoDockerServerException {
         return saveFromImageLabels(imageName, controlApi.getImageById(imageName));
     }
 
