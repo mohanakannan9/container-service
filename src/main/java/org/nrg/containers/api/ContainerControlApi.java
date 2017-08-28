@@ -18,8 +18,6 @@ import java.util.List;
 import java.util.Map;
 
 public interface ContainerControlApi {
-    DockerServerWithPing getServerAndPing() throws NoDockerServerException;
-    DockerServerWithPing setServerAndPing(DockerServer server);
     String pingServer() throws NoDockerServerException, DockerServerException;
     boolean canConnect();
 

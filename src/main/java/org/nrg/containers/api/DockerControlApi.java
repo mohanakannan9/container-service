@@ -34,7 +34,6 @@ import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMoun
 import org.nrg.containers.model.container.auto.ContainerMessage;
 import org.nrg.containers.model.dockerhub.DockerHubBase.DockerHub;
 import org.nrg.containers.model.server.docker.DockerServerBase.DockerServer;
-import org.nrg.containers.model.server.docker.DockerServerBase.DockerServerWithPing;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.image.docker.DockerImage;
 import org.nrg.containers.services.CommandLabelService;
@@ -83,18 +82,6 @@ public class DockerControlApi implements ContainerControlApi {
         } catch (NotFoundException e) {
             throw new NoDockerServerException(e);
         }
-    }
-
-    @Override
-    public DockerServerWithPing getServerAndPing() throws NoDockerServerException {
-        final DockerServer dockerServerBeforePing = getServer();
-        return DockerServerWithPing.create(dockerServerBeforePing, canConnect());
-    }
-
-    @Override
-    public DockerServerWithPing setServerAndPing(final DockerServer server) {
-        final DockerServer dockerServerBeforePing = dockerServerService.setServer(server);
-        return DockerServerWithPing.create(dockerServerBeforePing, canConnect());
     }
 
     @Override

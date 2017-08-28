@@ -214,16 +214,16 @@ public class DockerServiceImpl implements DockerService {
 
     @Override
     public DockerServerWithPing getServer() throws NotFoundException {
-        try {
-            return controlApi.getServerAndPing();
-        } catch (NoDockerServerException e) {
-            throw new NotFoundException(e);
-        }
+        final DockerServer dockerServer = dockerServerService.getServer();
+        final boolean ping = controlApi.canConnect();
+        return DockerServerWithPing.create(dockerServer, ping);
     }
 
     @Override
     public DockerServerWithPing setServer(final DockerServer server) {
-        return controlApi.setServerAndPing(server);
+        final DockerServer dockerServer = dockerServerService.setServer(server);
+        final boolean ping = controlApi.canConnect();
+        return DockerServerWithPing.create(dockerServer, ping);
     }
 
     @Override
