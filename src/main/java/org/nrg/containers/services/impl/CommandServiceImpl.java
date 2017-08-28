@@ -87,7 +87,6 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
 
     @Override
     @Nonnull
-    @Transactional
     public Command create(@Nonnull final Command command) throws CommandValidationException {
         final List<String> errors = command.validate();
         if (!errors.isEmpty()) {
@@ -156,7 +155,6 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
 
     @Override
     @Nonnull
-    @Transactional
     public List<Command> save(final List<Command> commands) {
         final List<Command> created = Lists.newArrayList();
         if (!(commands == null || commands.isEmpty())) {
