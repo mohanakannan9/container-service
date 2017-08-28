@@ -93,15 +93,14 @@ public class DockerRestApi extends AbstractXapiRestController {
             @ApiResponse(code = 400, message = "Must set the \"host\" property in request body"),
             @ApiResponse(code = 500, message = "Unexpected error")})
     @XapiRequestMapping(value = "/server", method = POST, restrictTo = Admin)
-    public ResponseEntity<String> setServer(final @RequestBody DockerServer dockerServer)
-            throws JsonProcessingException, UnauthorizedException {
+    public ResponseEntity<DockerServerWithPing> setServer(final @RequestBody DockerServer dockerServer)
+            throws JsonProcessingException, UnauthorizedException, BadRequestException {
         if (StringUtils.isBlank(dockerServer.host())) {
-            return new ResponseEntity<>("Must set the \"host\" property in request body.",
-                    HttpStatus.BAD_REQUEST);
+            throw new BadRequestException("Must set the \"host\" property in request body.");
         }
 
         final DockerServerWithPing server = dockerService.setServer(dockerServer);
-        return new ResponseEntity<>(mapper.writeValueAsString(server), HttpStatus.CREATED);
+        return new ResponseEntity<>(server, HttpStatus.CREATED);
     }
 
     @XapiRequestMapping(value = "/server/ping", method = GET)
