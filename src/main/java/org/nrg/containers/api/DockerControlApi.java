@@ -116,13 +116,14 @@ public class DockerControlApi implements ContainerControlApi {
     @Nonnull
     public String pingHub(final @Nonnull DockerHub hub, final @Nullable String username, final @Nullable String password)
             throws DockerServerException, NoDockerServerException {
+        int status = 500;
         try (final DockerClient client = getClient()) {
-            client.auth(registryAuth(hub, username, password));
+            status = client.auth(registryAuth(hub, username, password));
         } catch (Exception e) {
             log.error(e.getMessage());
             throw new DockerServerException(e);
         }
-        return "OK";
+        return status < 400 ? "OK" : "";
     }
 
     @Nullable
