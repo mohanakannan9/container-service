@@ -715,7 +715,6 @@ var XNAT = getObject(XNAT || {});
             url: (imageName) ? commandUrl('?image='+imageName) : commandUrl(),
             dataType: 'json',
             success: function(data){
-                commandList = data;
                 if (data) {
                     return data;
                 }
@@ -1012,8 +1011,6 @@ var XNAT = getObject(XNAT || {});
                         .td([ spawn('div.center', [viewCommandButton(command), spacer(10), deleteCommandButton(command)]) ]);
                 }
 
-                // initialize the command history table after the command list is loaded
-                historyTable.init();
             } else {
                 // create a handler when no command data is returned.
                 clmTable.tr({title: 'No command data found'})
@@ -1583,6 +1580,9 @@ var XNAT = getObject(XNAT || {});
         }
 
         commandConfigManager.getAll().done(function(data) {
+            // populate commandList[]
+            XNAT.plugin.containerService.commandList = data;
+
             if (data) {
                 for (var i = 0, j = data.length; i < j; i++) {
                     var command = data[i];
@@ -1594,6 +1594,9 @@ var XNAT = getObject(XNAT || {});
                                 .td([ spawn('span.truncate.truncate200', command.image ) ])
                                 .td([ spawn('div', [enabledCheckbox(command,wrapper)]) ])
                                 .td([ spawn('div.center', [editConfigButton(command,wrapper), spacer(10), deleteConfigButton(wrapper)]) ]);
+
+                            // populate wrapperList{}
+                            XNAT.plugin.containerService.wrapperList[wrapper.id] = wrapper.description;
                         }
                     }
                 }
@@ -1602,6 +1605,10 @@ var XNAT = getObject(XNAT || {});
                 ccmTable.tr({title: 'No command config data found'})
                     .td({colSpan: '5', html: 'No XNAT-enabled Commands Found'});
             }
+
+            commandAutomationAdmin.init();  // initialize automation table after command config table data loads
+            historyTable.init();            // initialize the command history table after the command list is loaded
+
         });
 
         commandConfigManager.$table = $(ccmTable.table);
@@ -1681,10 +1688,6 @@ var XNAT = getObject(XNAT || {});
     function getCommandAutomationUrl(appended){
         appended = (appended) ? '?'+appended : '';
         return rootUrl('/xapi/commandeventmapping' + appended);
-    }
-    function postCommandAutomationUrl(flag){
-        flag = (flag) ? '/'+flag : ''; // can be used to set 'enabled' or 'disabled' flag
-        return csrfUrl('/xapi/commandeventmapping' + flag);
     }
     function commandAutomationIdUrl(id){
         return csrfUrl('/xapi/commandeventmapping/' + id );
@@ -1983,27 +1986,33 @@ var XNAT = getObject(XNAT || {});
         var $footer = manager.parents('.panel').find('.panel-footer');
 
         manager.html('');
-        manager.append(commandAutomationAdmin.table());
 
-        if (!refresh) {
-            commandAutomationAdmin.getProjects().done(function(){
-                var newAutomation = spawn('button.new-command-automation.btn.btn-sm.submit', {
-                    html: 'Add New Command Automation',
-                    onclick: function(){
-                        commandAutomationAdmin.addDialog();
-                    }
+        if (Object.keys(wrapperList).length > 0) {
+            manager.append(commandAutomationAdmin.table());
+
+            if (!refresh) {
+                commandAutomationAdmin.getProjects().done(function(){
+                    var newAutomation = spawn('button.new-command-automation.btn.btn-sm.submit', {
+                        html: 'Add New Command Automation',
+                        onclick: function(){
+                            commandAutomationAdmin.addDialog();
+                        }
+                    });
+
+                    // add the 'add new' button to the panel footer
+                    $footer.append(spawn('div.pull-right', [
+                        newAutomation
+                    ]));
+                    $footer.append(spawn('div.clear.clearFix'));
                 });
-
-                // add the 'add new' button to the panel footer
-                $footer.append(spawn('div.pull-right', [
-                    newAutomation
-                ]));
-                $footer.append(spawn('div.clear.clearFix'));
-            });
+            }
+        } else {
+            manager.append(spawn('p','There are no commands that can be automated. Please navigate to the Images &amp; Commands tab'))
         }
+
     };
 
-    commandAutomationAdmin.init();
+    // Automation panel gets initialized after command config table loads.
 
 
 /* =============== *
@@ -2091,16 +2100,6 @@ var XNAT = getObject(XNAT || {});
             });
         }
 
-
-        // populate the list of wrappers
-        commandList.forEach(function(command){
-            var wrappers = command.xnat;
-            wrappers.forEach(function(wrapper){
-                XNAT.plugin.containerService.wrapperList[wrapper.id] = wrapper.description;
-            })
-
-        });
-
         XNAT.xhr.getJSON({
             url: getCommandHistoryUrl(),
             fail: function(e){
@@ -2121,7 +2120,7 @@ var XNAT = getObject(XNAT || {});
                             if(h['status'] == 'Created') {
                                 timestamp = h['time-recorded'];
                             }
-                        })
+                        });
 
                         chTable.tr({title: historyEntry['id'], id: historyEntry['id'] })
                             .td({ addClass: 'left', html: '<b>'+historyEntry['id']+'</b>' })
