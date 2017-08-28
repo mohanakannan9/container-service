@@ -24,6 +24,7 @@ import org.nrg.containers.services.ContainerConfigService;
 import org.nrg.containers.services.ContainerConfigService.CommandConfigurationException;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.exceptions.NrgRuntimeException;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -162,7 +163,7 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
             for (final Command command : commands) {
                 try {
                     created.add(create(command));
-                } catch (CommandValidationException e) {
+                } catch (CommandValidationException | NrgServiceRuntimeException e) {
                     // TODO: should I "update" instead of erroring out if command already exists?
                     log.error("Could not save command " + command.name(), e);
                 }
