@@ -179,7 +179,7 @@ var XNAT = getObject(XNAT || {});
             data: paramToPut,
             dataType: 'json',
             success: function(){
-                XNAT.ui.banner.top(1000, 'Site-wide Command Opt-in Setting set to <b>' + optIn + '</b>.', 'success');
+                XNAT.ui.banner.top(2000, 'Site-wide Command Opt-in Setting set to <b>' + optIn + '</b>.', 'success');
                 if (optIn) projCommandConfigManager.importSiteWideEnabledStatus();
             },
             fail: function(e){
@@ -297,85 +297,161 @@ var XNAT = getObject(XNAT || {});
                     tmplBody.append(projConfigDefinition.table({ type: 'outputs', outputs: outputs }));
                 }
 
-                xmodal.open({
+                XNAT.dialog.open({
                     title: 'Set Config Values',
-                    template: tmpl.clone(),
                     width: 850,
-                    height: 500,
-                    scroll: true,
+                    content: tmpl.html(),
                     beforeShow: function(obj){
                         var $panel = obj.$modal.find('#proj-config-viewer-panel');
                         $panel.find('input[type=checkbox]').each(function(){
                             $(this).prop('checked',$(this).data('checked'));
                         })
                     },
-                    okClose: false,
-                    okLabel: 'Save',
-                    okAction: function(obj){
-                        var $panel = obj.$modal.find('#proj-config-viewer-panel');
-                        var configObj = { inputs: {}, outputs: {} };
+                    buttons: [
+                        {
+                            label: 'Save',
+                            isDefault: true,
+                            close: false,
+                            action: function(obj){
+                                var $panel = obj.$modal.find('#proj-config-viewer-panel');
+                                var configObj = { inputs: {}, outputs: {} };
 
-                        // gather input items from table
-                        var inputRows = $panel.find('table.inputs').find('tr.input');
-                        $(inputRows).each(function(){
-                            var row = $(this);
-                            // each row contains multiple cells, each of which defines a property.
-                            var key = $(row).find("[data-key='key']").html();
-                            configObj.inputs[key] = {};
+                                // gather input items from table
+                                var inputRows = $panel.find('table.inputs').find('tr.input');
+                                $(inputRows).each(function(){
+                                    var row = $(this);
+                                    // each row contains multiple cells, each of which defines a property.
+                                    var key = $(row).find("[data-key='key']").html();
+                                    configObj.inputs[key] = {};
 
-                            $(row).find("[data-key='property']").each(function(){
-                                var propKey = $(this).data('property');
-                                var formInput = $(this).find('input');
-                                if ($(formInput).is('input[type=checkbox]')) {
-                                    var checkboxVal = ($(formInput).is(':checked')) ? $(formInput).val() : 'false';
-                                    configObj.inputs[key][propKey] = checkboxVal;
-                                } else {
-                                    configObj.inputs[key][propKey] = $(this).find('input').val();
-                                }
-                            });
+                                    $(row).find("[data-key='property']").each(function(){
+                                        var propKey = $(this).data('property');
+                                        var formInput = $(this).find('input');
+                                        if ($(formInput).is('input[type=checkbox]')) {
+                                            var checkboxVal = ($(formInput).is(':checked')) ? $(formInput).val() : 'false';
+                                            configObj.inputs[key][propKey] = checkboxVal;
+                                        } else {
+                                            configObj.inputs[key][propKey] = $(this).find('input').val();
+                                        }
+                                    });
 
-                        });
-
-                        // gather output items from table
-                        var outputRows = $panel.find('table.outputs').find('tr.output');
-                        $(outputRows).each(function(){
-                            var row = $(this);
-                            // each row contains multiple cells, each of which defines a property.
-                            var key = $(row).find("[data-key='key']").html();
-                            configObj.outputs[key] = {};
-
-                            $(row).find("[data-key='property']").each(function(){
-                                var propKey = $(this).data('property');
-                                configObj.outputs[key][propKey] = $(this).find('input').val();
-                            });
-
-                        });
-
-                        // POST the updated command config
-                        XNAT.xhr.postJSON({
-                            url: configUrl(commandId,wrapperName,'enabled=true'),
-                            dataType: 'json',
-                            data: JSON.stringify(configObj),
-                            success: function() {
-                                XNAT.ui.banner.top(1000, '<b>"' + wrapperName + '"</b> updated.', 'success');
-                                xmodal.closeAll();
-                            },
-                            fail: function(e) {
-                                xmodal.alert({
-                                    title: 'Error',
-                                    content: '<p><strong>Error '+e.status+'</strong></p><p>'+e.statusText+'</p>',
-                                    okAction: function(){
-                                        xmodal.closeAll();
-                                    }
                                 });
+
+                                // gather output items from table
+                                var outputRows = $panel.find('table.outputs').find('tr.output');
+                                $(outputRows).each(function(){
+                                    var row = $(this);
+                                    // each row contains multiple cells, each of which defines a property.
+                                    var key = $(row).find("[data-key='key']").html();
+                                    configObj.outputs[key] = {};
+
+                                    $(row).find("[data-key='property']").each(function(){
+                                        var propKey = $(this).data('property');
+                                        configObj.outputs[key][propKey] = $(this).find('input').val();
+                                    });
+
+                                });
+
+                                // POST the updated command config
+                                XNAT.xhr.postJSON({
+                                    url: configUrl(commandId,wrapperName,'enabled=true'),
+                                    dataType: 'json',
+                                    data: JSON.stringify(configObj),
+                                    success: function() {
+                                        XNAT.ui.banner.top(2000, '<b>"' + wrapperName + '"</b> updated.', 'success');
+                                        XNAT.dialog.closeAll();
+                                        xmodal.closeAll();
+                                    },
+                                    fail: function(e) {
+                                        xmodal.alert({
+                                            title: 'Error',
+                                            content: '<p><strong>Error '+e.status+'</strong></p><p>'+e.statusText+'</p>',
+                                            okAction: function(){
+                                                XNAT.dialog.closeAll();
+                                                xmodal.closeAll();
+                                            }
+                                        });
+                                    }
+                                })
                             }
-                        })
-                    }
+                        },
+                        {
+                            label: 'Reset to Site-wide Default',
+                            close: false,
+                            action: function(obj){
+                                var $panel = obj.$modal.find('#proj-config-viewer-panel');
+
+                                XNAT.xhr.delete({
+                                    url: configUrl(commandId,wrapperName),
+                                    success: function(){
+                                        XNAT.ui.banner.top(2000, 'Config settings reset to site-wide defaults', 'success');
+                                        // reload settings from site-wide prefs
+                                        XNAT.xhr.getJSON({
+                                            url: rootUrl('/xapi/commands/'+commandId+'/wrappers/'+wrapperName+'/config'),
+                                            success: function(data){
+                                                // gather input items from table
+                                                var inputRows = $panel.find('table.inputs').find('tr.input'),
+                                                    inputData = data.inputs;
+                                                $(inputRows).each(function(){
+                                                    // update text inputs
+                                                    var $input = $(this).find('input[type=text]');
+                                                    $input.val( inputData[$input.prop('name')] );
+
+                                                    // update hidden inputs
+                                                    var $hidden = $(this).find('input[type=hidden]');
+                                                    $hidden.val( inputData[$hidden.prop('name')] );
+
+                                                    // update checkboxes
+                                                    var $checkbox = $(this).find('input[type=checkbox]');
+                                                    $checkbox.prop('checked', inputData[$checkbox.prop('name')]);
+
+                                                    // update radio
+                                                    var $radio = $(this).find('input[type=radio]');
+                                                    $radio.prop( 'checked', (inputData[$radio.prop('name')] === $radio.val()) );
+                                                });
+
+                                                var outputRows = $panel.find('table.outputs').find('tr.output'),
+                                                    outputData = data.outputs;
+                                                $(outputRows).each(function(){
+                                                    // update text inputs
+                                                    var $input = $(this).find('input[type=text]');
+                                                    $input.val( outputData[$input.prop('name')] );
+
+                                                    // update hidden inputs
+                                                    var $hidden = $(this).find('input[type=hidden]');
+                                                    $hidden.val( outputData[$hidden.prop('name')] );
+
+                                                    // update checkboxes
+                                                    var $checkbox = $(this).find('input[type=checkbox]');
+                                                    $checkbox.prop('checked', outputData[$checkbox.prop('name')]);
+
+                                                    // update radio
+                                                    var $radio = $(this).find('input[type=radio]');
+                                                    $radio.prop( 'checked', (outputData[$radio.prop('name')] === $radio.val()) );
+                                                });
+                                            },
+                                            fail: function(e){
+                                                errorHandler(e,'Could not display site-wide default settings for this command')
+                                            }
+                                        });
+                                    },
+                                    fail: function(e){
+                                        errorHandler(e,'Could not reset project-based config settings for this command')
+                                    }
+                                })
+                            }
+                        },
+                        {
+                            label: 'Cancel',
+                            close: true
+                        }
+                    ]
+
                 });
 
             })
             .fail(function(e){
-                errorHandler(e);
+                errorHandler(e, 'Could not retrieve configuration for this command');
             });
 
     };
@@ -463,7 +539,7 @@ var XNAT = getObject(XNAT || {});
                             var status = (enabled ? ' enabled' : ' disabled');
                             checkbox.value = enabled;
                             wrapperList[wrapper.id].enabled = enabled;
-                            XNAT.ui.banner.top(1000, '<b>' + wrapper.name+ '</b> ' + status, 'success');
+                            XNAT.ui.banner.top(2000, '<b>' + wrapper.name+ '</b> ' + status, 'success');
                         }
                     });
 
