@@ -283,7 +283,7 @@ var XNAT = getObject(XNAT || {});
         // get command definition
         projConfigDefinition.getConfig(commandId,wrapperName)
             .success(function(data){
-                var tmpl = $('div#proj-command-config-template');
+                var tmpl = $('div#proj-command-config-template').find('.panel');
                 var tmplBody = $(tmpl).find('.panel-body').html('');
 
                 var inputs = data.inputs;
@@ -300,9 +300,10 @@ var XNAT = getObject(XNAT || {});
                 XNAT.dialog.open({
                     title: 'Set Config Values',
                     width: 850,
-                    content: tmpl.html(),
+                    content: spawn('div.panel'),
                     beforeShow: function(obj){
-                        var $panel = obj.$modal.find('#proj-config-viewer-panel');
+                        var $panel = obj.$modal.find('.panel');
+                        $panel.append(tmpl.html());
                         $panel.find('input[type=checkbox]').each(function(){
                             $(this).prop('checked',$(this).data('checked'));
                         })
@@ -313,7 +314,7 @@ var XNAT = getObject(XNAT || {});
                             isDefault: true,
                             close: false,
                             action: function(obj){
-                                var $panel = obj.$modal.find('#proj-config-viewer-panel');
+                                var $panel = obj.$modal.find('.panel');
                                 var configObj = { inputs: {}, outputs: {} };
 
                                 // gather input items from table
@@ -379,7 +380,7 @@ var XNAT = getObject(XNAT || {});
                             label: 'Reset to Site-wide Default',
                             close: false,
                             action: function(obj){
-                                var $panel = obj.$modal.find('#proj-config-viewer-panel');
+                                var $panel = obj.$modal.find('.panel');
 
                                 XNAT.xhr.delete({
                                     url: configUrl(commandId,wrapperName),
@@ -392,42 +393,35 @@ var XNAT = getObject(XNAT || {});
                                                 // gather input items from table
                                                 var inputRows = $panel.find('table.inputs').find('tr.input'),
                                                     inputData = data.inputs;
+
                                                 $(inputRows).each(function(){
-                                                    // update text inputs
-                                                    var $input = $(this).find('input[type=text]');
-                                                    $input.val( inputData[$input.prop('name')] );
+                                                    var $row = $(this),
+                                                        inputName = $row.data('input');
 
-                                                    // update hidden inputs
-                                                    var $hidden = $(this).find('input[type=hidden]');
-                                                    $hidden.val( inputData[$hidden.prop('name')] );
+                                                    $row.find("[data-key='property']").each(function(){
+                                                        var propKey = $(this).data('property'),
+                                                            $inputToSet = $(this).find('input');
+                                                        if ( $inputToSet.is('input[type=checkbox]') ) {
+                                                            $inputToSet.prop('checked', (inputData[inputName][propKey]));
+                                                        } else {
+                                                            $inputToSet.val(inputData[inputName][propKey]);
+                                                        }
 
-                                                    // update checkboxes
-                                                    var $checkbox = $(this).find('input[type=checkbox]');
-                                                    $checkbox.prop('checked', inputData[$checkbox.prop('name')]);
+                                                    })
 
-                                                    // update radio
-                                                    var $radio = $(this).find('input[type=radio]');
-                                                    $radio.prop( 'checked', (inputData[$radio.prop('name')] === $radio.val()) );
+
                                                 });
 
                                                 var outputRows = $panel.find('table.outputs').find('tr.output'),
                                                     outputData = data.outputs;
                                                 $(outputRows).each(function(){
-                                                    // update text inputs
-                                                    var $input = $(this).find('input[type=text]');
-                                                    $input.val( outputData[$input.prop('name')] );
+                                                    var $row = $(this),
+                                                        inputName = $row.data('input'),
+                                                        keys = Object.keys(inputData[inputName]);
 
-                                                    // update hidden inputs
-                                                    var $hidden = $(this).find('input[type=hidden]');
-                                                    $hidden.val( outputData[$hidden.prop('name')] );
-
-                                                    // update checkboxes
-                                                    var $checkbox = $(this).find('input[type=checkbox]');
-                                                    $checkbox.prop('checked', outputData[$checkbox.prop('name')]);
-
-                                                    // update radio
-                                                    var $radio = $(this).find('input[type=radio]');
-                                                    $radio.prop( 'checked', (outputData[$radio.prop('name')] === $radio.val()) );
+                                                    keys.forEach(function(key){
+                                                        $row.find('input[name='+key+']').val(inputData[inputName][key])
+                                                    });
                                                 });
                                             },
                                             fail: function(e){
