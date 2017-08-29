@@ -90,6 +90,7 @@ var XNAT = getObject(XNAT || {});
     }
 
     function getProjectId(){
+        if (XNAT.data.context.projectID.length > 0) return XNAT.data.context.projectID;
         return getUrlParams().id;
     }
 
