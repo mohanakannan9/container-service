@@ -974,6 +974,7 @@ var XNAT = getObject(XNAT || {});
                                     XNAT.ui.banner.top(1000, '<b>"'+ item.name + '"</b> deleted.', 'success');
                                     imageListManager.refreshTable();
                                     commandConfigManager.refreshTable();
+                                    historyTable.refresh();
                                 }
                             });
                         }
@@ -1090,6 +1091,7 @@ var XNAT = getObject(XNAT || {});
                                     console.log(image.tags[0] + ' image deleted');
                                     XNAT.ui.banner.top(1000, '<b>' + image.tags[0] + ' image deleted.', 'success');
                                     imageListManager.refreshTable();
+                                    historyTable.refresh();
                                     XNAT.dialog.closeAll();
                                 },
                                 fail: function(e){
@@ -1494,6 +1496,7 @@ var XNAT = getObject(XNAT || {});
                                 success: function(){
                                     XNAT.ui.banner.top(1000, '<b>'+wrapper.name+'</b> deleted from site', 'success');
                                     commandConfigManager.refreshTable();
+                                    historyTable.refresh();
                                 },
                                 fail: function(e){
                                     errorHandler(e, 'Could Not Delete Command Configuration');
