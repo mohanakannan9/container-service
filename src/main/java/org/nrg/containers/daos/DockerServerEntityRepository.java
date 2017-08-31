@@ -17,6 +17,13 @@ public class DockerServerEntityRepository extends AbstractHibernateDAO<DockerSer
         return dockerServerEntity;
     }
 
+    public long getUniqueEnabledServerId() {
+        final Long serverId = (Long) getSession()
+                .createQuery("select server.id from DockerServerEntity as server where server.enabled = true")
+                .uniqueResult();
+        return serverId == null ? 0L : serverId;
+    }
+
     @Override
     public DockerServerEntity create(final DockerServerEntity dockerServerEntity) {
         // We only allow one enabled server at a time. To create this one, we must disable
@@ -32,13 +39,10 @@ public class DockerServerEntityRepository extends AbstractHibernateDAO<DockerSer
 
     @Override
     public void update(final DockerServerEntity dockerServerEntity) {
-        if (dockerServerEntity.isEnabled()) {
+        if (dockerServerEntity.isEnabled() && dockerServerEntity.getId() != getUniqueEnabledServerId()) {
             // If the caller wants to update this server to be "enabled", we want to disable
             // the currently enabled server. Unless they are the same.
-            final DockerServerEntity currentlyEnabledServer = getUniqueEnabledServer();
-            if (currentlyEnabledServer.getId() != dockerServerEntity.getId()) {
-                disableServer(currentlyEnabledServer);
-            }
+            disableServer(getUniqueEnabledServer());
         }
         super.update(dockerServerEntity);
     }
