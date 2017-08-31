@@ -44,7 +44,7 @@ public abstract class DockerServerBase {
                     host,
                     certPath,
                     swarmMode != null && swarmMode,
-                    lastEventCheckTime
+                    lastEventCheckTime != null ? lastEventCheckTime : new Date(0)
             );
         }
 
@@ -71,14 +71,16 @@ public abstract class DockerServerBase {
         }
 
         public DockerServer updateEventCheckTime(final Date newLastEventCheckTime) {
-            return create(
-                    this.id(),
-                    this.name(),
-                    this.host(),
-                    this.certPath(),
-                    this.swarmMode(),
-                    newLastEventCheckTime != null ? newLastEventCheckTime : new Date(0)
-            );
+
+            return newLastEventCheckTime == null ? this :
+                    create(
+                            this.id(),
+                            this.name(),
+                            this.host(),
+                            this.certPath(),
+                            this.swarmMode(),
+                            newLastEventCheckTime
+                    );
         }
     }
 
@@ -104,7 +106,14 @@ public abstract class DockerServerBase {
                                                   final Boolean swarmMode,
                                                   final Date lastEventCheckTime,
                                                   final Boolean ping) {
-            return new AutoValue_DockerServerBase_DockerServerWithPing(id, name, host, certPath, swarmMode, lastEventCheckTime, ping);
+            return new AutoValue_DockerServerBase_DockerServerWithPing(
+                    id == null ? 0L : id,
+                    StringUtils.isBlank(name) ? host : name,
+                    host,
+                    certPath,
+                    swarmMode != null && swarmMode,
+                    lastEventCheckTime != null ? lastEventCheckTime : new Date(0),
+                    ping != null && ping);
         }
 
         public static DockerServerWithPing create(final DockerServer dockerServer,
