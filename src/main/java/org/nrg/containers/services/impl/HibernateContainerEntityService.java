@@ -33,7 +33,8 @@ public class HibernateContainerEntityService
         final ContainerEntity createdContainer = new ContainerEntity(resolvedCommand, containerId, userI.getLogin());
         log.debug("Creating ContainerEntity for container with id " + containerId);
         final ContainerEntity created = create(createdContainer);
-        addContainerHistoryItem(created, ContainerEntityHistory.fromUserAction("Created", userI.getLogin()));
+        final ContainerEntityHistory historyItem = ContainerEntityHistory.fromUserAction("Created", userI.getLogin(), created);
+        addContainerHistoryItem(created, historyItem);
         return created;
     }
 
@@ -80,9 +81,9 @@ public class HibernateContainerEntityService
             }
             return null;
         }
-        log.info("Adding new history item to container entity " + containerEntity.getId() + " from event.");
-        addContainerHistoryItem(containerEntity, ContainerEntityHistory.fromContainerEvent(containerEvent));
-        return containerEntity;
+
+        final ContainerEntityHistory added = addContainerHistoryItem(containerEntity, ContainerEntityHistory.fromContainerEvent(containerEvent, containerEntity));
+        return added == null ? null : containerEntity; // Return null if we've already added the history item
     }
 
     @Override
@@ -91,13 +92,14 @@ public class HibernateContainerEntityService
                                                           final ContainerEntityHistory history) {
         if (containerEntity.isItemInHistory(history)) {
             if (log.isDebugEnabled()) {
-                log.debug("History item has already been recorded.");
+                log.debug("Event has already been recorded.");
             }
             return null;
         }
 
+        log.info("Adding new history item to container entity " + containerEntity.getId() + " from event.");
         if (log.isDebugEnabled()) {
-            log.debug("Adding history item: " + history);
+            log.debug("" + history);
         }
         getDao().addHistoryItem(containerEntity, history);
         return history;
