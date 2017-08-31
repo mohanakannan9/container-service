@@ -1,16 +1,24 @@
 # Changelog
 
-## 1.3
+## 1.2.1
 
 Not yet released.
 
 ### Features
 
-*
+* [CS-359][] Docker server is now stored in a hibernate table rather than as a prefs bean. This should ease a possible future transition to multiple docker servers.
+
+[CS-359]: https://issues.xnat.org/browse/CS-359
 
 ### Bugfixes
 
-*
+* [CS-349][] Assessor model objects have URLs that start with their parent session's `/experiments/{sessionId}` URL.
+* [CS-352][] `GET /docker/hubs` and `GET /docker/hubs/{id}` return correct `ping`.
+* [CS-373][] Docker events will only be recorded in container history once.
+
+[CS-349]: https://issues.xnat.org/browse/CS-349
+[CS-352]: https://issues.xnat.org/browse/CS-352
+[CS-373]: https://issues.xnat.org/browse/CS-373
 
 ## 1.2
 
