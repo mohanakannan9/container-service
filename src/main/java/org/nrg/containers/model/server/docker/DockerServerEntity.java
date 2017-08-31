@@ -27,7 +27,7 @@ public class DockerServerEntity extends AbstractHibernateEntity {
         this.name = dockerServer.name();
         this.certPath = dockerServer.certPath();
         this.swarmMode = dockerServer.swarmMode();
-        this.lastEventCheckTime = new Date(); // Initialize with current time
+        this.lastEventCheckTime = dockerServer.lastEventCheckTime();
         return this;
     }
 
