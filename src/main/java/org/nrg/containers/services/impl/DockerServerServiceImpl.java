@@ -1,10 +1,10 @@
-package org.nrg.containers.services;
+package org.nrg.containers.services.impl;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
-import org.nrg.containers.model.server.docker.DockerServerBase;
 import org.nrg.containers.model.server.docker.DockerServerBase.DockerServer;
 import org.nrg.containers.model.server.docker.DockerServerEntity;
+import org.nrg.containers.services.DockerServerService;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
