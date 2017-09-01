@@ -7,19 +7,40 @@ Not yet released.
 ### Features
 
 * [CS-359][] Docker server is now stored in a hibernate table rather than as a prefs bean. This should ease a possible future transition to multiple docker servers.
-* [CS-346][] Project owners that have set new default run-time settings for command configurations can reset those settings to the site-wide defaults. 
+* [CS-346][] Project owners that have set new default run-time settings for command configurations can reset those settings to the site-wide defaults.
+* [CS-374][] Add lots of properties to the xnat model objects, which are now available to use in commands:
+    * Assessor
+        * `project-id`
+        * `session-id`
+    * Session
+        * `subject-id`
+    * Scan
+        * `project-id`
+        * `session-id`
+        * `frames`
+        * `note`
+        * `modality`
+        * `quality`
+        * `scanner`
+        * `scanner-manufacturer`
+        * `scanner-model`
+        * `scanner-software-version`
+        * `series-description`
+        * `start-time`
+        * `uid`
 
 [CS-346]: https://issues.xnat.org/browse/CS-346
 [CS-359]: https://issues.xnat.org/browse/CS-359
+[CS-374]: https://issues.xnat.org/browse/CS-374
 
 ### Bugfixes
 
-* [CS-349][] Assessor model objects have URLs that start with their parent session's `/experiments/{sessionId}` URL. This allows containers to be run on assessors, as long as the assessor has a defined resource directory that can be mounted. 
+* [CS-349][] Assessor model objects have URLs that start with their parent session's `/experiments/{sessionId}` URL. This allows containers to be run on assessors, as long as the assessor has a defined resource directory that can be mounted.
 * [CS-352][] `GET /docker/hubs` and `GET /docker/hubs/{id}` return correct `ping`.
 * [CS-373][] Docker events will only be recorded in container history once.
-* [CS-295][], [CS-353][] Only enable the command automation panel if commands are available to use in the container service, and only allow automations to use enabled commands. 
+* [CS-295][], [CS-353][] Only enable the command automation panel if commands are available to use in the container service, and only allow automations to use enabled commands.
 * [CS-367][] Fix the display issues that caused long command labels to get cut off in the Actions Box "Run Containers" menu.
-* [CS-351][] Don't automatically treat new image hosts as the default image host in the Admin control panel. 
+* [CS-351][] Don't automatically treat new image hosts as the default image host in the Admin control panel.
 
 [CS-295]: https://issues.xnat.org/browse/CS-295
 [CS-349]: https://issues.xnat.org/browse/CS-349

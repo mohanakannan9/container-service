@@ -3,6 +3,7 @@ package org.nrg.containers.model.xnat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
@@ -13,13 +14,10 @@ import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImageassessordata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatResourcecatalog;
-import org.nrg.xdat.om.base.BaseXnatExperimentdata.UnknownPrimaryProjectException;
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.AssessorURII;
-import org.nrg.xnat.helpers.uri.archive.SubjectURII;
 import org.nrg.xnat.helpers.uri.archive.impl.ExptAssessorURI;
 import org.nrg.xnat.helpers.uri.archive.impl.ExptURI;
 
@@ -33,6 +31,8 @@ public class Assessor extends XnatModelObject {
     @JsonIgnore private XnatImageassessordataI xnatImageassessordataI;
     @JsonIgnore private XnatImagesessiondata parent;
     private List<Resource> resources;
+    @JsonProperty("project-id") private String projectId;
+    @JsonProperty("session-id") private String sessionId;
     private String directory;
 
     public Assessor() {}
@@ -70,8 +70,10 @@ public class Assessor extends XnatModelObject {
         this.id = xnatImageassessordataI.getId();
         this.label = xnatImageassessordataI.getLabel();
         this.xsiType = xnatImageassessordataI.getXSIType();
-        this.directory = null;
+        this.projectId = xnatImageassessordataI.getProject();
+        this.sessionId = parent == null ? xnatImageassessordataI.getImagesessionId() : parent.getId();
 
+        this.directory = null;
         final XnatImageassessordata assessor = ((XnatImageassessordata) xnatImageassessordataI);
         final File sessionDir = parent != null ? parent.getSessionDir() : null;
         if (sessionDir != null && sessionDir.isDirectory()) {
@@ -163,6 +165,22 @@ public class Assessor extends XnatModelObject {
         this.resources = resources;
     }
 
+    public String getProjectId() {
+        return projectId;
+    }
+
+    public void setProjectId(final String projectId) {
+        this.projectId = projectId;
+    }
+
+    public String getSessionId() {
+        return sessionId;
+    }
+
+    public void setSessionId(final String sessionId) {
+        this.sessionId = sessionId;
+    }
+
     public String getDirectory() {
         return directory;
     }
@@ -177,18 +195,24 @@ public class Assessor extends XnatModelObject {
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
         final Assessor that = (Assessor) o;
-        return Objects.equals(this.resources, that.resources);
+        return Objects.equals(this.resources, that.resources) &&
+                Objects.equals(this.projectId, that.projectId) &&
+                Objects.equals(this.sessionId, that.sessionId) &&
+                Objects.equals(this.directory, that.directory);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), resources);
+        return Objects.hash(super.hashCode(), resources, projectId, sessionId, directory);
     }
 
     @Override
     public String toString() {
         return addParentPropertiesToString(MoreObjects.toStringHelper(this))
                 .add("resources", resources)
+                .add("projectId", projectId)
+                .add("sessionId", sessionId)
+                .add("directory", directory)
                 .toString();
     }
 }

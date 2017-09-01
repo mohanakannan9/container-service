@@ -25,8 +25,22 @@ public class Scan extends XnatModelObject {
     @JsonIgnore private XnatImagescandataI xnatImagescandataI;
     @JsonProperty("integer-id") private Integer integerId;
     @JsonProperty("scan-type") private String scanType;
+    @JsonProperty("project-id") private String projectId;
+    @JsonProperty("session-id") private String sessionId;
     private List<Resource> resources;
     private String directory;
+
+    private Integer frames;
+    private String note;
+    private String modality;
+    private String quality;
+    private String scanner;
+    @JsonProperty("scanner-manufacturer") private String scannerManufacturer;
+    @JsonProperty("scanner-model") private String scannerModel;
+    @JsonProperty("scanner-software-version") private String scannerSoftwareVersion;
+    @JsonProperty("series-description") private String seriesDescription;
+    @JsonProperty("start-time") private Object startTime;
+    private String uid;
 
     public Scan() {}
 
@@ -52,6 +66,19 @@ public class Scan extends XnatModelObject {
         this.xsiType = xnatImagescandataI.getXSIType();
         this.scanType = xnatImagescandataI.getType();
         this.label = String.format("%s – %s", this.id, this.scanType);
+
+        this.frames = xnatImagescandataI.getFrames();
+        this.note = xnatImagescandataI.getNote();
+        this.modality = xnatImagescandataI.getModality();
+        this.quality = xnatImagescandataI.getQuality();
+        this.scanner = xnatImagescandataI.getScanner();
+        this.scannerManufacturer = xnatImagescandataI.getScanner_manufacturer();
+        this.scannerModel = xnatImagescandataI.getScanner_model();
+        this.scannerSoftwareVersion = xnatImagescandataI.getScanner_softwareversion();
+        this.seriesDescription = xnatImagescandataI.getSeriesDescription();
+        this.startTime = xnatImagescandataI.getStarttime();
+        this.uid = xnatImagescandataI.getUid();
+
         if (this.xnatImagescandataI instanceof XnatImagescandata) {
             this.directory = ((XnatImagescandata) xnatImagescandataI).deriveScanDir();
         }
@@ -124,12 +151,124 @@ public class Scan extends XnatModelObject {
         this.resources = resources;
     }
 
+    public String getProjectId() {
+        return projectId;
+    }
+
+    public void setProjectId(final String projectId) {
+        this.projectId = projectId;
+    }
+
+    public String getSessionId() {
+        return sessionId;
+    }
+
+    public void setSessionId(final String sessionId) {
+        this.sessionId = sessionId;
+    }
+
     public String getDirectory() {
         return directory;
     }
 
     public void setDirectory(final String directory) {
         this.directory = directory;
+    }
+
+    public Integer getIntegerId() {
+        return integerId;
+    }
+
+    public void setIntegerId(final Integer integerId) {
+        this.integerId = integerId;
+    }
+
+    public Integer getFrames() {
+        return frames;
+    }
+
+    public void setFrames(final Integer frames) {
+        this.frames = frames;
+    }
+
+    public String getNote() {
+        return note;
+    }
+
+    public void setNote(final String note) {
+        this.note = note;
+    }
+
+    public String getModality() {
+        return modality;
+    }
+
+    public void setModality(final String modality) {
+        this.modality = modality;
+    }
+
+    public String getQuality() {
+        return quality;
+    }
+
+    public void setQuality(final String quality) {
+        this.quality = quality;
+    }
+
+    public String getScanner() {
+        return scanner;
+    }
+
+    public void setScanner(final String scanner) {
+        this.scanner = scanner;
+    }
+
+    public String getScannerManufacturer() {
+        return scannerManufacturer;
+    }
+
+    public void setScannerManufacturer(final String scannerManufacturer) {
+        this.scannerManufacturer = scannerManufacturer;
+    }
+
+    public String getScannerModel() {
+        return scannerModel;
+    }
+
+    public void setScannerModel(final String scannerModel) {
+        this.scannerModel = scannerModel;
+    }
+
+    public String getScannerSoftwareVersion() {
+        return scannerSoftwareVersion;
+    }
+
+    public void setScannerSoftwareVersion(final String scannerSoftwareVersion) {
+        this.scannerSoftwareVersion = scannerSoftwareVersion;
+    }
+
+    public String getSeriesDescription() {
+        return seriesDescription;
+    }
+
+    public void setSeriesDescription(final String seriesDescription) {
+        this.seriesDescription = seriesDescription;
+    }
+
+    public Object getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(final Object startTime) {
+        this.startTime = startTime;
+    }
+
+    public String getUid() {
+        return uid;
+    }
+
+    public void setUid(final String uid) {
+        this.uid = uid;
     }
 
     @Override
@@ -142,12 +281,14 @@ public class Scan extends XnatModelObject {
                 Objects.equals(this.integerId, that.integerId) &&
                 Objects.equals(this.scanType, that.scanType) &&
                 Objects.equals(this.resources, that.resources) &&
+                Objects.equals(this.projectId, that.projectId) &&
+                Objects.equals(this.sessionId, that.sessionId) &&
                 Objects.equals(this.directory, that.directory);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), xnatImagescandataI, integerId, scanType, resources, directory);
+        return Objects.hash(super.hashCode(), xnatImagescandataI, integerId, scanType, resources, projectId, sessionId, directory);
     }
 
     @Override
@@ -156,7 +297,20 @@ public class Scan extends XnatModelObject {
                 .add("integerId", integerId)
                 .add("scanType", scanType)
                 .add("resources", resources)
+                .add("projectId", projectId)
+                .add("sessionId", sessionId)
                 .add("directory", directory)
+                .add("frames", frames)
+                .add("note", note)
+                .add("modality", modality)
+                .add("quality", quality)
+                .add("scanner", scanner)
+                .add("scannerManufacturer", scannerManufacturer)
+                .add("scannerModel", scannerModel)
+                .add("scannerSoftwareVersion", scannerSoftwareVersion)
+                .add("seriesDescription", seriesDescription)
+                .add("startTime", startTime)
+                .add("uid", uid)
                 .toString();
     }
 }
