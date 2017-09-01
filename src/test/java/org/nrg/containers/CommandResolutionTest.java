@@ -225,7 +225,8 @@ public class CommandResolutionTest {
         // I want to set a resource directory at runtime, so pardon me while I do some unchecked stuff with the values I just read
         final String dicomDir = folder.newFolder("DICOM").getAbsolutePath();
         final Session session = mapper.readValue(new File(inputPath), Session.class);
-        session.getScans().get(0).getResources().get(0).setDirectory(dicomDir);
+        final Scan scan = session.getScans().get(0);
+        scan.getResources().get(0).setDirectory(dicomDir);
         final String sessionRuntimeJson = mapper.writeValueAsString(session);
 
         final Map<String, String> runtimeValues = Maps.newHashMap();
@@ -235,9 +236,14 @@ public class CommandResolutionTest {
         final Map<String, String> expectedWrapperInputValues = Maps.newHashMap();
         expectedWrapperInputValues.put("T1-scantype", "\"SCANTYPE\", \"OTHER_SCANTYPE\"");
         expectedWrapperInputValues.put("session", session.getUri());
-        expectedWrapperInputValues.put("scan", session.getScans().get(0).getUri());
-        expectedWrapperInputValues.put("dicom", session.getScans().get(0).getResources().get(0).getUri());
-        expectedWrapperInputValues.put("scan-id", session.getScans().get(0).getId());
+        expectedWrapperInputValues.put("scan", scan.getUri());
+        expectedWrapperInputValues.put("dicom", scan.getResources().get(0).getUri());
+        expectedWrapperInputValues.put("scan-id", scan.getId());
+        expectedWrapperInputValues.put("frames", String.valueOf(scan.getFrames()));
+        expectedWrapperInputValues.put("series-description", scan.getSeriesDescription());
+        expectedWrapperInputValues.put("modality", scan.getModality());
+        expectedWrapperInputValues.put("quality", scan.getQuality());
+        expectedWrapperInputValues.put("note", scan.getNote());
 
         // command inputs
         final Map<String, String> expectedCommandInputValues = Maps.newHashMap();
