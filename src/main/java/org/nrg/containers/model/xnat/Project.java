@@ -11,6 +11,7 @@ import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xdat.om.XnatSubjectdata;
+import org.nrg.xft.XFTItem;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
@@ -164,6 +165,11 @@ public class Project extends XnatModelObject {
 
     public void setDirectory(final String directory) {
         this.directory = directory;
+    }
+
+    @Override
+    public XFTItem getXftItem() {
+        return xnatProjectdata == null ? null : xnatProjectdata.getItem();
     }
 
     @Override

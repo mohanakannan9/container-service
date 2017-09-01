@@ -1,10 +1,12 @@
 package org.nrg.containers.model.xnat;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.common.base.MoreObjects;
+import org.nrg.xft.XFTItem;
 
 import java.util.Objects;
 
@@ -56,6 +58,9 @@ public abstract class XnatModelObject {
     public void setUri(final String uri) {
         this.uri = uri;
     }
+
+    @JsonIgnore
+    public abstract XFTItem getXftItem();
 
     @Override
     public boolean equals(Object o) {
