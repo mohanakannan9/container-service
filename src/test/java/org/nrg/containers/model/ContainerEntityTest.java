@@ -64,10 +64,11 @@ public class ContainerEntityTest {
                 .build();
 
         final String containerId = "abc123";
+        final String workflowId = "workflow";
         final UserI mockAdmin = Mockito.mock(UserI.class);
         when(mockAdmin.getLogin()).thenReturn("admin");
 
-        final ContainerEntity created = containerEntityService.save(resolvedCommand, containerId, mockAdmin);
+        final ContainerEntity created = containerEntityService.save(resolvedCommand, containerId, workflowId, mockAdmin);
         assertThat(created.getId(), is(not(0L)));
 
         TestTransaction.flagForCommit();

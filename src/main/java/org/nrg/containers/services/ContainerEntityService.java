@@ -11,6 +11,7 @@ import org.nrg.xft.security.UserI;
 public interface ContainerEntityService extends BaseHibernateService<ContainerEntity> {
     ContainerEntity save(final ResolvedCommand resolvedCommand,
                          final String containerId,
+                         final String workflowId,
                          final UserI userI);
 
     ContainerEntity retrieve(final String containerId);

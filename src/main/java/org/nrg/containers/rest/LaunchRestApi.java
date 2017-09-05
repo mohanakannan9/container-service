@@ -457,7 +457,7 @@ public class LaunchRestApi extends AbstractXapiRestController {
                 log.error(mapLogString("Params: ", allRequestParams));
                 log.error("Exception: ", t);
             }
-            return LaunchReport.Failure.create(t.getMessage(), allRequestParams, commandId, wrapperId);
+            return LaunchReport.Failure.create(t.getMessage() != null ? t.getMessage() : "", allRequestParams, commandId, wrapperId);
         }
     }
 

@@ -79,7 +79,13 @@ public class ContainerServiceImpl implements ContainerService {
 
     @Override
     public Container save(final ResolvedCommand resolvedCommand, final String containerId, final UserI userI) {
-        return toPojo(containerEntityService.save(resolvedCommand, containerId, userI));
+        // TODO Create a workflow here
+        final String workflowId = "";
+        return save(resolvedCommand, containerId, workflowId, userI);
+    }
+
+    private Container save(final ResolvedCommand resolvedCommand, final String containerId, final String workflowId, final UserI userI) {
+        return toPojo(containerEntityService.save(resolvedCommand, containerId, workflowId, userI));
     }
 
     @Override
