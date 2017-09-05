@@ -63,14 +63,11 @@ public abstract class ResolvedCommand {
 
     private void setUpLegacyInputLists() {
         // Read out all the input trees into Map<String, String>s
-        final List<ResolvedInputTreeNode<? extends Command.Input>> flatTree = Lists.newArrayList();
-        for (final ResolvedInputTreeNode<? extends Command.Input> rootNode : resolvedInputTrees()) {
-            flatTree.addAll(flattenTree(rootNode));
-        }
+        final List<ResolvedInputTreeNode<? extends Command.Input>> flatTrees = flattenInputTrees();
         final ImmutableMap.Builder<String, String> externalWrapperInputValuesBuilder = ImmutableMap.builder();
         final ImmutableMap.Builder<String, String> derivedWrapperInputValuesBuilder = ImmutableMap.builder();
         final ImmutableMap.Builder<String, String> commandInputValuesBuilder = ImmutableMap.builder();
-        for (final ResolvedInputTreeNode<? extends Command.Input> node : flatTree) {
+        for (final ResolvedInputTreeNode<? extends Command.Input> node : flatTrees) {
             final List<ResolvedInputTreeNode.ResolvedInputTreeValueAndChildren> valuesAndChildren = node.valuesAndChildren();
             final String value = (valuesAndChildren != null && !valuesAndChildren.isEmpty()) ?
                     valuesAndChildren.get(0).resolvedValue().value() :
@@ -86,6 +83,14 @@ public abstract class ResolvedCommand {
         externalWrapperInputValues = externalWrapperInputValuesBuilder.build();
         derivedWrapperInputValues = derivedWrapperInputValuesBuilder.build();
         commandInputValues = commandInputValuesBuilder.build();
+    }
+
+    public List<ResolvedInputTreeNode<? extends Command.Input>> flattenInputTrees() {
+        final List<ResolvedInputTreeNode<? extends Command.Input>> flatTree = Lists.newArrayList();
+        for (final ResolvedInputTreeNode<? extends Command.Input> rootNode : resolvedInputTrees()) {
+            flatTree.addAll(flattenTree(rootNode));
+        }
+        return flatTree;
     }
 
     private List<ResolvedInputTreeNode<? extends Command.Input>> flattenTree(final ResolvedInputTreeNode<? extends Command.Input> node) {

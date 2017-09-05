@@ -11,11 +11,15 @@ import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoDockerServerException;
 import org.nrg.containers.exceptions.UnauthorizedException;
+import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
+import org.nrg.containers.model.command.auto.ResolvedInputTreeNode;
+import org.nrg.containers.model.command.auto.ResolvedInputValue;
 import org.nrg.containers.model.container.auto.Container;
 import org.nrg.containers.model.container.auto.Container.ContainerHistory;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.container.entity.ContainerEntityHistory;
+import org.nrg.containers.model.xnat.XnatModelObject;
 import org.nrg.containers.services.CommandResolutionService;
 import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.containers.services.ContainerFinalizeService;
@@ -27,6 +31,7 @@ import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.services.AliasTokenService;
+import org.nrg.xft.XFTItem;
 import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +49,12 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import static org.nrg.containers.model.command.entity.CommandType.DOCKER;
+import static org.nrg.containers.model.command.entity.CommandWrapperInputType.ASSESSOR;
+import static org.nrg.containers.model.command.entity.CommandWrapperInputType.PROJECT;
+import static org.nrg.containers.model.command.entity.CommandWrapperInputType.RESOURCE;
+import static org.nrg.containers.model.command.entity.CommandWrapperInputType.SCAN;
+import static org.nrg.containers.model.command.entity.CommandWrapperInputType.SESSION;
+import static org.nrg.containers.model.command.entity.CommandWrapperInputType.SUBJECT;
 
 @Service
 public class ContainerServiceImpl implements ContainerService {
@@ -79,8 +90,7 @@ public class ContainerServiceImpl implements ContainerService {
 
     @Override
     public Container save(final ResolvedCommand resolvedCommand, final String containerId, final UserI userI) {
-        // TODO Create a workflow here
-        final String workflowId = "";
+        final String workflowId = makeWorkflowIfAppropriate(resolvedCommand);
         return save(resolvedCommand, containerId, workflowId, userI);
     }
 
@@ -387,6 +397,103 @@ public class ContainerServiceImpl implements ContainerService {
 
     private void handleFailure(final Container container) {
         // TODO handle failure
+    }
+
+    /**
+     * Creates a workflow if possible and returns its ID.
+     *
+     * This is a way for us to show the
+     * the container execution in the history table and as a workflow alert banner
+     * (where enabled) without any custom UI work.
+     *
+     * It is possible to create a workflow for the execution if the resolved command
+     * has one external input which is an XNAT object. If it has zero external inputs,
+     * there is no object on which we can "hang" the workflow, so to speak. If it has more
+     * than one external input, we don't know which is the one that should display the
+     * workflow, so we don't make one.
+     *
+     * @param resolvedCommand A resolved command that will be used to launch a container
+     * @return ID of the created workflow, or null if no workflow was created
+     */
+    @Nullable
+    private String makeWorkflowIfAppropriate(final ResolvedCommand resolvedCommand) {
+        final XFTItem rootInputObject = findRootInputObject(resolvedCommand);
+        return null;
+    }
+
+    @Nullable
+    private XFTItem findRootInputObject(final ResolvedCommand resolvedCommand) {
+        log.debug("Checking input values to find root XNAT input object.");
+        final List<ResolvedInputTreeNode<? extends Command.Input>> flatInputTrees = resolvedCommand.flattenInputTrees();
+
+        XFTItem rootInputValue = null;
+        for (final ResolvedInputTreeNode<? extends Command.Input> node : flatInputTrees) {
+            final Command.Input input = node.input();
+            log.debug("Input \"{}\".", input.name());
+            if (!(input instanceof Command.CommandWrapperExternalInput)) {
+                log.debug("Skipping. Not an external wrapper input.");
+                continue;
+            }
+
+            final String type = input.type();
+            if (!(type.equals(PROJECT.getName()) || type.equals(SUBJECT.getName()) || type.equals(SESSION.getName()) || type.equals(SCAN.getName())
+                    || type.equals(ASSESSOR.getName()) || type.equals(RESOURCE.getName()))) {
+                log.debug("Skipping. Input type \"{}\" is not an XNAT type.", type);
+                continue;
+            }
+
+            final List<ResolvedInputTreeNode.ResolvedInputTreeValueAndChildren> valuesAndChildren = node.valuesAndChildren();
+            if (valuesAndChildren == null || valuesAndChildren.isEmpty() || valuesAndChildren.size() > 1) {
+                log.debug("Skipping. {} values.", (valuesAndChildren == null || valuesAndChildren.isEmpty()) ? "No" : "Multiple");
+                continue;
+            }
+
+            final ResolvedInputValue externalInputValue = valuesAndChildren.get(0).resolvedValue();
+            final XnatModelObject inputValueXnatObject = externalInputValue.xnatModelObject();
+
+            if (inputValueXnatObject == null) {
+                log.debug("Skipping. XNAT model object is null.");
+                continue;
+            }
+
+            if (rootInputValue != null) {
+                // We have already seen one candidate for a root object.
+                // Seeing this one means we have more than one, and won't be able to
+                // uniquely resolve a root object.
+                // We won't be able to make a workflow. We can bail out now.
+                log.debug("Found another root XNAT input object. I was expecting one. Bailing out.", input.name());
+                return null;
+            }
+
+            try {
+                log.debug("Getting input value as XFTItem.");
+                rootInputValue = inputValueXnatObject.getXftItem();
+            } catch (Throwable t) {
+                // If anything goes wrong, bail out. No workflow.
+                log.error("That didn't work.", t);
+                continue;
+            }
+
+            if (rootInputValue == null) {
+                // I don't know if this is even possible
+                log.debug("XFTItem is null.");
+                continue;
+            }
+
+            // This is the first good input value.
+            log.debug("Found a valid root XNAT input object.", input.name());
+        }
+
+        if (rootInputValue == null) {
+            // Didn't find any candidates
+            log.debug("Found no valid root XNAT input object candidates.");
+            return null;
+        }
+
+        // At this point, we know we found a single valid external input value.
+        // We can declare the object in that value to be the root object.
+
+        return rootInputValue;
     }
 
     @Nonnull
