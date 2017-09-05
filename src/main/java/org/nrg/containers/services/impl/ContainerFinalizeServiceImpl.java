@@ -135,6 +135,7 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
                     finalizedContainerBuilder.outputs(outputsAndExceptions.outputs);  // Overwrite any existing outputs
                 }
             } else {
+
                 // TODO We know the container has failed. Should we send an email?
             }
 

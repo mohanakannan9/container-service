@@ -34,7 +34,6 @@ import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
-import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.slf4j.Logger;
@@ -140,15 +139,15 @@ public class ContainerServiceImpl implements ContainerService {
 
     @Override
     @Nullable
-    public Container addContainerEventToHistory(final ContainerEvent containerEvent) {
-        final ContainerEntity containerEntity = containerEntityService.addContainerEventToHistory(containerEvent);
+    public Container addContainerEventToHistory(final ContainerEvent containerEvent, final UserI userI) {
+        final ContainerEntity containerEntity = containerEntityService.addContainerEventToHistory(containerEvent, userI);
         return containerEntity == null ? null : toPojo(containerEntity);
     }
 
     @Override
     @Nullable
-    public ContainerHistory addContainerHistoryItem(final Container container, final ContainerHistory history) {
-        final ContainerEntityHistory containerEntityHistoryItem = containerEntityService.addContainerHistoryItem(fromPojo(container), fromPojo(history));
+    public ContainerHistory addContainerHistoryItem(final Container container, final ContainerHistory history, final UserI userI) {
+        final ContainerEntityHistory containerEntityHistoryItem = containerEntityService.addContainerHistoryItem(fromPojo(container), fromPojo(history), userI);
         return containerEntityHistoryItem == null ? null : toPojo(containerEntityHistoryItem);
     }
 
@@ -223,7 +222,7 @@ public class ContainerServiceImpl implements ContainerService {
         try {
             containerControlApi.startContainer(containerId);
         } catch (DockerServerException e) {
-            addContainerHistoryItem(container, ContainerHistory.fromSystem("Failed", "Did not start." + e.getMessage()));
+            addContainerHistoryItem(container, ContainerHistory.fromSystem("Failed", "Did not start." + e.getMessage()), userI);
             handleFailure(container);
             throw new ContainerException("Failed to start");
         }
@@ -255,23 +254,24 @@ public class ContainerServiceImpl implements ContainerService {
         if (log.isDebugEnabled()) {
             log.debug("Processing container event");
         }
-        final Container execution = addContainerEventToHistory(event);
+        final Container container = retrieve(event.containerId());
 
 
-        // execution will be null if either we aren't tracking the container
+
+        // container will be null if either we aren't tracking the container
         // that this event is about, or if we have already recorded the event
-        if (execution != null ) {
-            if (event.isExitStatus()) {
-                log.debug("Container is dead. Finalizing.");
-                final String exitCode = event.exitCode();
-                final String userLogin = execution.userId();
-                try {
-                    final UserI userI = Users.getUser(userLogin);
-                    finalize(execution, userI, exitCode);
-                } catch (UserInitException | UserNotFoundException e) {
-                    log.error("Could not finalize container execution. Could not get user details for user " + userLogin, e);
-                }
+        if (container != null ) {
+            final String userLogin = container.userId();
+            try {
+                final UserI userI = Users.getUser(userLogin);
 
+                addContainerEventToHistory(event, userI);
+                if (event.isExitStatus()) {
+                    log.debug("Container is dead. Finalizing.");
+                    finalize(container, userI, event.exitCode());
+                }
+            } catch (UserInitException | UserNotFoundException e) {
+                log.error("Could not update container status. Could not get user details for user " + userLogin, e);
             }
         }
 
@@ -326,7 +326,7 @@ public class ContainerServiceImpl implements ContainerService {
         // TODO check user permissions. How?
         final Container container = get(containerId);
 
-        addContainerHistoryItem(container, ContainerHistory.fromUserAction("Killed", userI.getLogin()));
+        addContainerHistoryItem(container, ContainerHistory.fromUserAction("Killed", userI.getLogin()), userI);
 
         final String containerDockerId = container.containerId();
         containerControlApi.killContainer(containerDockerId);

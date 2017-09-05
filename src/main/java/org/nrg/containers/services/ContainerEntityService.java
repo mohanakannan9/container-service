@@ -18,7 +18,7 @@ public interface ContainerEntityService extends BaseHibernateService<ContainerEn
     ContainerEntity get(final String containerId) throws NotFoundException;
     void delete(final String containerId) throws NotFoundException;
 
-    ContainerEntity addContainerEventToHistory(final ContainerEvent containerEvent);
+    ContainerEntity addContainerEventToHistory(final ContainerEvent containerEvent, final UserI userI);
     ContainerEntityHistory addContainerHistoryItem(final ContainerEntity containerEntity,
-                                                   final ContainerEntityHistory history);
+                                                   final ContainerEntityHistory history, final UserI userI);
 }
