@@ -343,31 +343,6 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 );
             }
 
-            // TODO this is temporary, until we figure out a better way to store the input trees
-            // Read out all the input trees into Map<String, String>s
-            final List<ResolvedInputTreeNode<? extends Input>> flatTree = Lists.newArrayList();
-            for (final ResolvedInputTreeNode<? extends Input> rootNode : resolvedInputTrees) {
-                log.debug("Flattening tree starting with root node {}.", rootNode.input().name());
-                flatTree.addAll(flattenTree(rootNode));
-                log.debug("Done flattening tree starting with root node {}.", rootNode.input().name());
-            }
-            final Map<String, String> externalWrapperInputValues = Maps.newHashMap();
-            final Map<String, String> derivedWrapperInputValues = Maps.newHashMap();
-            final Map<String, String> commandInputValues = Maps.newHashMap();
-            for (final ResolvedInputTreeNode<? extends Input> node : flatTree) {
-                final List<ResolvedInputTreeValueAndChildren> valuesAndChildren = node.valuesAndChildren();
-                final String value = (valuesAndChildren != null && !valuesAndChildren.isEmpty()) ?
-                        valuesAndChildren.get(0).resolvedValue().value() :
-                        null;
-                if (node.input() instanceof CommandWrapperExternalInput) {
-                    externalWrapperInputValues.put(node.input().name(), value == null ? "null" : value);
-                } else if (node.input() instanceof CommandWrapperDerivedInput) {
-                    derivedWrapperInputValues.put(node.input().name(), value == null ? "null" : value);
-                } else {
-                    commandInputValues.put(node.input().name(), value == null ? "null" : value);
-                }
-            }
-
             final ResolvedCommand resolvedCommand = ResolvedCommand.builder()
                     .wrapperId(commandWrapper.id())
                     .wrapperName(commandWrapper.name())
@@ -377,9 +352,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                     .commandDescription(command.description())
                     .image(command.image())
                     .rawInputValues(inputValues)
-                    .externalWrapperInputValues(externalWrapperInputValues) // TODO remove this property
-                    .derivedWrapperInputValues(derivedWrapperInputValues) // TODO remove this property
-                    .commandInputValues(commandInputValues) // TODO remove this property
+                    .resolvedInputTrees(resolvedInputTrees)
                     .outputs(resolveOutputs(resolvedInputTrees, resolvedInputValuesByReplacementKey))
                     .commandLine(resolveCommandLine(resolvedInputTrees))
                     .environmentVariables(resolveEnvironmentVariables(resolvedInputValuesByReplacementKey))
@@ -407,34 +380,6 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                     throw new IllegalInputException(message);
                 }
             }
-        }
-
-        @Nonnull
-        private List<ResolvedInputTreeNode<? extends Input>> flattenTree(final ResolvedInputTreeNode<? extends Input> node) {
-            final List<ResolvedInputTreeNode<? extends Input>> flatTree = Lists.newArrayList();
-            log.debug("Adding input \"{}\" to flattened tree.", node.input().name());
-            flatTree.add(node);
-
-            final List<ResolvedInputTreeValueAndChildren> resolvedValueAndChildren = node.valuesAndChildren();
-            if (resolvedValueAndChildren.size() == 1) {
-                // This node has a single value, so we can attempt to flatten its children
-                final ResolvedInputTreeValueAndChildren singleValue = resolvedValueAndChildren.get(0);
-                final List<ResolvedInputTreeNode<? extends Input>> children = singleValue.children();
-                if (!(children == null || children.isEmpty())) {
-                    log.debug("Input \"{}\" has a uniquely resolved value. Adding children.", node.input().name());
-                    for (final ResolvedInputTreeNode<? extends Input> child : children) {
-                        flatTree.addAll(flattenTree(child));
-                    }
-                    log.debug("Done adding children of input \"{}\".", node.input().name());
-                } else {
-                    log.debug("Input \"{}\" has a uniquely resolved value, but no children.", node.input().name());
-                }
-            } else {
-                // This node has multiple values, so we can't flatten its children
-                log.debug("Input \"{}\" does not have a uniquely resolved value. Not checking children.", node.input().name());
-            }
-            log.debug("Done adding input \"{}\" to flattened tree.", node.input().name());
-            return flatTree;
         }
 
         @Nonnull

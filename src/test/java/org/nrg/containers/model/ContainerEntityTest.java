@@ -6,7 +6,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.nrg.containers.config.ContainerEntityTestConfig;
+import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
+import org.nrg.containers.model.command.auto.ResolvedInputTreeNode;
+import org.nrg.containers.model.command.auto.ResolvedInputValue;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.xft.security.UserI;
@@ -16,6 +19,8 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.transaction.TestTransaction;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Collections;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -39,13 +44,22 @@ public class ContainerEntityTest {
     @Test
     @DirtiesContext
     public void testSave() throws Exception {
+        final ResolvedInputTreeNode<? extends Command.Input> inputTreeNode =
+                ResolvedInputTreeNode.create(
+                        Command.CommandInput.builder()
+                                .name("foo")
+                        .build(),
+                        Collections.singletonList(ResolvedInputTreeNode.ResolvedInputTreeValueAndChildren.create(
+                                ResolvedInputValue.builder().value("bar").build()
+                        ))
+                );
         final ResolvedCommand resolvedCommand = ResolvedCommand.builder()
                 .commandId(1L)
                 .commandName("a name")
                 .wrapperId(1L)
                 .wrapperName("another name")
                 .image("xnat/dcm2niix:1.0")
-                .commandInputValues(ImmutableMap.of("foo", "bar"))
+                .resolvedInputTrees(Collections.<ResolvedInputTreeNode<? extends Command.Input>>singletonList(inputTreeNode))
                 .commandLine("Anything I want")
                 .build();
 

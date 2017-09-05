@@ -3,6 +3,7 @@ package org.nrg.containers.model.command.auto;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import org.nrg.containers.model.command.entity.CommandEntity;
 
 import javax.annotation.Nullable;
@@ -11,6 +12,9 @@ import java.util.Map;
 
 @AutoValue
 public abstract class ResolvedCommand {
+    private ImmutableMap<String, String> externalWrapperInputValues;
+    private ImmutableMap<String, String> derivedWrapperInputValues;
+    private ImmutableMap<String, String> commandInputValues;
 
     public abstract Long wrapperId();
     public abstract String wrapperName();
@@ -21,9 +25,7 @@ public abstract class ResolvedCommand {
     public abstract String image();
     public abstract String type();
     public abstract ImmutableMap<String, String> rawInputValues();
-    public abstract ImmutableMap<String, String> externalWrapperInputValues();
-    public abstract ImmutableMap<String, String> derivedWrapperInputValues();
-    public abstract ImmutableMap<String, String> commandInputValues();
+    public abstract ImmutableList<ResolvedInputTreeNode<? extends Command.Input>> resolvedInputTrees();
     public abstract String commandLine();
     public abstract ImmutableMap<String, String> environmentVariables();
     public abstract ImmutableMap<String, String> ports();
@@ -31,11 +33,81 @@ public abstract class ResolvedCommand {
     public abstract ImmutableList<ResolvedCommandOutput> outputs();
     @Nullable public abstract String workingDirectory();
 
+    public ImmutableMap<String, String> externalWrapperInputValues() {
+        if (externalWrapperInputValues == null) {
+            setUpLegacyInputLists();
+        }
+        return externalWrapperInputValues;
+    }
+
+    public ImmutableMap<String, String> derivedWrapperInputValues() {
+        if (derivedWrapperInputValues == null) {
+            setUpLegacyInputLists();
+        }
+        return derivedWrapperInputValues;
+    }
+
+    public ImmutableMap<String, String> commandInputValues() {
+        if (commandInputValues == null) {
+            setUpLegacyInputLists();
+        }
+        return commandInputValues;
+    }
+
     public ImmutableMap<String, String> wrapperInputValues() {
         final ImmutableMap.Builder<String, String> wrapperValuesBuilder = ImmutableMap.builder();
         wrapperValuesBuilder.putAll(externalWrapperInputValues());
         wrapperValuesBuilder.putAll(derivedWrapperInputValues());
         return wrapperValuesBuilder.build();
+    }
+
+    private void setUpLegacyInputLists() {
+        // Read out all the input trees into Map<String, String>s
+        final List<ResolvedInputTreeNode<? extends Command.Input>> flatTree = Lists.newArrayList();
+        for (final ResolvedInputTreeNode<? extends Command.Input> rootNode : resolvedInputTrees()) {
+            flatTree.addAll(flattenTree(rootNode));
+        }
+        final ImmutableMap.Builder<String, String> externalWrapperInputValuesBuilder = ImmutableMap.builder();
+        final ImmutableMap.Builder<String, String> derivedWrapperInputValuesBuilder = ImmutableMap.builder();
+        final ImmutableMap.Builder<String, String> commandInputValuesBuilder = ImmutableMap.builder();
+        for (final ResolvedInputTreeNode<? extends Command.Input> node : flatTree) {
+            final List<ResolvedInputTreeNode.ResolvedInputTreeValueAndChildren> valuesAndChildren = node.valuesAndChildren();
+            final String value = (valuesAndChildren != null && !valuesAndChildren.isEmpty()) ?
+                    valuesAndChildren.get(0).resolvedValue().value() :
+                    null;
+            if (node.input() instanceof Command.CommandWrapperExternalInput) {
+                externalWrapperInputValuesBuilder.put(node.input().name(), value == null ? "null" : value);
+            } else if (node.input() instanceof Command.CommandWrapperDerivedInput) {
+                derivedWrapperInputValuesBuilder.put(node.input().name(), value == null ? "null" : value);
+            } else {
+                commandInputValuesBuilder.put(node.input().name(), value == null ? "null" : value);
+            }
+        }
+        externalWrapperInputValues = externalWrapperInputValuesBuilder.build();
+        derivedWrapperInputValues = derivedWrapperInputValuesBuilder.build();
+        commandInputValues = commandInputValuesBuilder.build();
+    }
+
+    private List<ResolvedInputTreeNode<? extends Command.Input>> flattenTree(final ResolvedInputTreeNode<? extends Command.Input> node) {
+        final List<ResolvedInputTreeNode<? extends Command.Input>> flatTree = Lists.newArrayList();
+        flatTree.add(node);
+
+        final List<ResolvedInputTreeNode.ResolvedInputTreeValueAndChildren> resolvedValueAndChildren = node.valuesAndChildren();
+        if (resolvedValueAndChildren.size() == 1) {
+            // This node has a single value, so we can attempt to flatten its children
+            final ResolvedInputTreeNode.ResolvedInputTreeValueAndChildren singleValue = resolvedValueAndChildren.get(0);
+            final List<ResolvedInputTreeNode<? extends Command.Input>> children = singleValue.children();
+            if (!(children == null || children.isEmpty())) {
+                for (final ResolvedInputTreeNode<? extends Command.Input> child : children) {
+                    flatTree.addAll(flattenTree(child));
+                }
+            } else {
+                // Input has a uniquely resolved value, but no children.
+            }
+        } else {
+            // This node has multiple values, so we can't flatten its children
+        }
+        return flatTree;
     }
 
     public static Builder builder() {
@@ -61,22 +133,10 @@ public abstract class ResolvedCommand {
             rawInputValuesBuilder().put(inputName, inputValue);
             return this;
         }
-        public abstract Builder externalWrapperInputValues(Map<String, String> inputValues);
-        public abstract ImmutableMap.Builder<String, String> externalWrapperInputValuesBuilder();
-        public Builder addExternalWrapperInputValue(final String inputName, final String inputValue) {
-            externalWrapperInputValuesBuilder().put(inputName, inputValue);
-            return this;
-        }
-        public abstract Builder derivedWrapperInputValues(Map<String, String> inputValues);
-        public abstract ImmutableMap.Builder<String, String> derivedWrapperInputValuesBuilder();
-        public Builder addDerivedWrapperInputValue(final String inputName, final String inputValue) {
-            derivedWrapperInputValuesBuilder().put(inputName, inputValue);
-            return this;
-        }
-        public abstract Builder commandInputValues(Map<String, String> commandInputValues);
-        public abstract ImmutableMap.Builder<String, String> commandInputValuesBuilder();
-        public Builder addCommandInputValue(final String inputName, final String inputValue) {
-            commandInputValuesBuilder().put(inputName, inputValue);
+        public abstract Builder resolvedInputTrees(List<ResolvedInputTreeNode<? extends Command.Input>> resolvedInputTrees);
+        public abstract ImmutableList.Builder<ResolvedInputTreeNode<? extends Command.Input>> resolvedInputTreesBuilder();
+        public Builder addResolvedInputTree(final ResolvedInputTreeNode<? extends Command.Input> resolvedInputTree) {
+            resolvedInputTreesBuilder().add(resolvedInputTree);
             return this;
         }
         public abstract Builder commandLine(String commandLine);
@@ -269,5 +329,14 @@ public abstract class ResolvedCommand {
 
             public abstract ResolvedCommandOutput build();
         }
+    }
+
+    public static abstract class ResolvedInput {
+        public abstract long id();
+        @Nullable public abstract String name();
+        public abstract String type();
+        @Nullable public abstract String matcher();
+        public abstract boolean required();
+        @Nullable public abstract String replacementKey();
     }
 }
