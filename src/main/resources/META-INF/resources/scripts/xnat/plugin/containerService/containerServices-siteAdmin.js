@@ -824,6 +824,14 @@ var XNAT = getObject(XNAT || {});
         if (!newCommand) {
             commandDef = commandDef || {};
 
+            var dialogButtons = { close: { label: 'Close' } };
+            if (commandDef['info-url']) dialogButtons.info = {
+                label: 'View Command Info',
+                action: function () {
+                    window.open(commandDef['info-url'], 'infoUrl');
+                }
+            };
+
             _source = spawn('textarea', JSON.stringify(commandDef, null, 4));
 
             _editor = XNAT.app.codeEditor.init(_source, {
@@ -834,15 +842,7 @@ var XNAT = getObject(XNAT || {});
                 title: commandDef.name,
                 classes: 'plugin-json',
                 footerContent: '(read-only)',
-                buttons: {
-                    close: { label: 'Close' },
-                    info: {
-                        label: 'View Command Info',
-                        action: function(){
-                            window.open(commandDef['info-url'],'infoUrl');
-                        }
-                    }
-                },
+                buttons: dialogButtons,
                 afterShow: function(dialog, obj){
                     obj.aceEditor.setReadOnly(true);
                 }
