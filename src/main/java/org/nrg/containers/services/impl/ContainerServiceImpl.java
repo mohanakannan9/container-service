@@ -32,7 +32,11 @@ import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xft.XFTItem;
+import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.persist.PersistentWorkflowI;
+import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.utils.WorkflowUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -90,7 +94,7 @@ public class ContainerServiceImpl implements ContainerService {
 
     @Override
     public Container save(final ResolvedCommand resolvedCommand, final String containerId, final UserI userI) {
-        final String workflowId = makeWorkflowIfAppropriate(resolvedCommand);
+        final String workflowId = makeWorkflowIfAppropriate(resolvedCommand, containerId, userI);
         return save(resolvedCommand, containerId, workflowId, userI);
     }
 
@@ -413,11 +417,33 @@ public class ContainerServiceImpl implements ContainerService {
      * workflow, so we don't make one.
      *
      * @param resolvedCommand A resolved command that will be used to launch a container
+     * @param containerId The docker ID of the container that has been created
+     * @param userI The user launching the container
      * @return ID of the created workflow, or null if no workflow was created
      */
     @Nullable
-    private String makeWorkflowIfAppropriate(final ResolvedCommand resolvedCommand) {
+    private String makeWorkflowIfAppropriate(final ResolvedCommand resolvedCommand, final String containerId, final UserI userI) {
+        log.debug("Preparing to make workflow.");
         final XFTItem rootInputObject = findRootInputObject(resolvedCommand);
+        if (rootInputObject == null) {
+            // We didn't find a root input XNAT object, so we can't make a workflow.
+            log.debug("Cannot make workflow.");
+            return null;
+        }
+
+        log.debug("Creating workflow for Wrapper {} - Command {} - Image {}.",
+                resolvedCommand.wrapperName(), resolvedCommand.commandName(), resolvedCommand.image());
+        try {
+            final PersistentWorkflowI workflow = WorkflowUtils.buildOpenWorkflow(userI, rootInputObject,
+                    EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.TYPE.PROCESS,
+                            resolvedCommand.wrapperName(),"Container launch", containerId));
+            WorkflowUtils.save(workflow, workflow.buildEvent());
+            log.debug("Created workflow {}.", workflow.getWorkflowId());
+            return String.valueOf(workflow.getWorkflowId());
+        } catch (Exception e) {
+            log.error("Could not create workflow.", e);
+        }
+
         return null;
     }
 
