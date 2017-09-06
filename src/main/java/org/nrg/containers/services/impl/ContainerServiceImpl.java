@@ -19,6 +19,7 @@ import org.nrg.containers.model.container.auto.Container;
 import org.nrg.containers.model.container.auto.Container.ContainerHistory;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.container.entity.ContainerEntityHistory;
+import org.nrg.containers.model.xnat.Scan;
 import org.nrg.containers.model.xnat.XnatModelObject;
 import org.nrg.containers.services.CommandResolutionService;
 import org.nrg.containers.services.ContainerEntityService;
@@ -424,7 +425,7 @@ public class ContainerServiceImpl implements ContainerService {
     @Nullable
     private String makeWorkflowIfAppropriate(final ResolvedCommand resolvedCommand, final String containerId, final UserI userI) {
         log.debug("Preparing to make workflow.");
-        final XFTItem rootInputObject = findRootInputObject(resolvedCommand);
+        final XFTItem rootInputObject = findRootInputObject(resolvedCommand, userI);
         if (rootInputObject == null) {
             // We didn't find a root input XNAT object, so we can't make a workflow.
             log.debug("Cannot make workflow.");
@@ -448,7 +449,7 @@ public class ContainerServiceImpl implements ContainerService {
     }
 
     @Nullable
-    private XFTItem findRootInputObject(final ResolvedCommand resolvedCommand) {
+    private XFTItem findRootInputObject(final ResolvedCommand resolvedCommand, final UserI userI) {
         log.debug("Checking input values to find root XNAT input object.");
         final List<ResolvedInputTreeNode<? extends Command.Input>> flatInputTrees = resolvedCommand.flattenInputTrees();
 
@@ -491,9 +492,24 @@ public class ContainerServiceImpl implements ContainerService {
                 return null;
             }
 
+            final XnatModelObject xnatObjectToUseAsRoot;
+            if (type.equals(SCAN.getName())) {
+                // If the external input is a scan, the workflow will not show up anywhere. So we
+                // use its parent session as the root object instead.
+                final XnatModelObject parentSession = ((Scan) inputValueXnatObject).getSession(userI);
+                if (parentSession != null) {
+                    xnatObjectToUseAsRoot = parentSession;
+                } else {
+                    // Ok, nevermind, use the scan anyway. It's not a huge thing.
+                    xnatObjectToUseAsRoot = inputValueXnatObject;
+                }
+            } else {
+                xnatObjectToUseAsRoot = inputValueXnatObject;
+            }
+            
             try {
                 log.debug("Getting input value as XFTItem.");
-                rootInputValue = inputValueXnatObject.getXftItem();
+                rootInputValue = xnatObjectToUseAsRoot.getXftItem();
             } catch (Throwable t) {
                 // If anything goes wrong, bail out. No workflow.
                 log.error("That didn't work.", t);
