@@ -7,6 +7,7 @@ import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.container.entity.ContainerEntityHistory;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.services.ContainerEntityService;
+import org.nrg.containers.services.ContainerUtils;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.xft.security.UserI;
@@ -29,11 +30,13 @@ public class HibernateContainerEntityService
     @Nonnull
     public ContainerEntity save(final ResolvedCommand resolvedCommand,
                                 final String containerId,
+                                final String workflowId,
                                 final UserI userI) {
-        final ContainerEntity createdContainer = new ContainerEntity(resolvedCommand, containerId, userI.getLogin());
+        final ContainerEntity createdContainer = new ContainerEntity(resolvedCommand, containerId, workflowId, userI.getLogin());
         log.debug("Creating ContainerEntity for container with id " + containerId);
         final ContainerEntity created = create(createdContainer);
-        addContainerHistoryItem(created, ContainerEntityHistory.fromUserAction("Created", userI.getLogin()));
+        final ContainerEntityHistory historyItem = ContainerEntityHistory.fromUserAction("Created", userI.getLogin(), created);
+        addContainerHistoryItem(created, historyItem, userI);
         return created;
     }
 
@@ -72,7 +75,7 @@ public class HibernateContainerEntityService
 
     @Override
     @Nullable
-    public ContainerEntity addContainerEventToHistory(final ContainerEvent containerEvent) {
+    public ContainerEntity addContainerEventToHistory(final ContainerEvent containerEvent, final UserI userI) {
         final ContainerEntity containerEntity = retrieve(containerEvent.containerId());
         if (containerEntity == null) {
             if (log.isDebugEnabled()) {
@@ -80,26 +83,32 @@ public class HibernateContainerEntityService
             }
             return null;
         }
-        log.info("Adding new history item to container entity " + containerEntity.getId() + " from event.");
-        addContainerHistoryItem(containerEntity, ContainerEntityHistory.fromContainerEvent(containerEvent));
-        return containerEntity;
+
+        final ContainerEntityHistory added = addContainerHistoryItem(containerEntity,
+                ContainerEntityHistory.fromContainerEvent(containerEvent, containerEntity), userI);
+        return added == null ? null : containerEntity; // Return null if we've already added the history item
     }
 
     @Override
     @Nullable
     public ContainerEntityHistory addContainerHistoryItem(final ContainerEntity containerEntity,
-                                                          final ContainerEntityHistory history) {
+                                                          final ContainerEntityHistory history,
+                                                          final UserI userI) {
         if (containerEntity.isItemInHistory(history)) {
             if (log.isDebugEnabled()) {
-                log.debug("History item has already been recorded.");
+                log.debug("Event has already been recorded.");
             }
             return null;
         }
 
+        log.info("Adding new history item to container entity " + containerEntity.getId() + " from event.");
         if (log.isDebugEnabled()) {
-            log.debug("Adding history item: " + history);
+            log.debug("" + history);
         }
         getDao().addHistoryItem(containerEntity, history);
+
+        ContainerUtils.updateWorkflowStatus(containerEntity.getWorkflowId(), history.getStatus(), userI);
+
         return history;
     }
 }

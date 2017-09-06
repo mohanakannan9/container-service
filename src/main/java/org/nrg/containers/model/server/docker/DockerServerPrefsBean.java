@@ -14,9 +14,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.Date;
 import java.util.Objects;
 
+/**
+ * Docker server settings, stored as a prefs bean.
+ * Deprecated in favor of storing docker server(s) in a hibernate table.
+ * Use DockerServer / DockerServerService for the pojo, and
+ *  DockerServerEntity / DockerServerEntityService for the entity.
+ * @since 1.3
+ */
 @NrgPreferenceBean(toolId = "docker-server",
     toolName = "Docker Server Prefs",
     description = "All the preferences that define a Docker Server")
+@Deprecated
 public class DockerServerPrefsBean extends AbstractPreferenceBean {
     private static final Logger _log = LoggerFactory.getLogger(DockerServerPrefsBean.class);
 
@@ -34,10 +42,6 @@ public class DockerServerPrefsBean extends AbstractPreferenceBean {
         setName(dockerServer.name());
         setCertPath(dockerServer.certPath());
         setLastEventCheckTime(new Date()); // Initialize with current time
-    }
-
-    public DockerServerBase.DockerServer toPojo() {
-        return DockerServerBase.DockerServer.create(this);
     }
 
     @NrgPreference(defaultValue = "Local socket")

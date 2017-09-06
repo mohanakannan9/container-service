@@ -25,11 +25,10 @@ import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.model.command.auto.LaunchReport;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.container.entity.ContainerEntity;
-import org.nrg.containers.model.server.docker.DockerServerBase;
-import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.services.CommandResolutionService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerEntityService;
+import org.nrg.containers.services.DockerServerService;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.RoleServiceI;
@@ -62,6 +61,7 @@ import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
+import static org.nrg.containers.model.server.docker.DockerServerBase.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.testSecurityContext;
@@ -81,6 +81,7 @@ public class LaunchRestApiTest {
     private final String INPUT_VALUE = "the super cool value";
     private final String INPUT_JSON = "{\"" + INPUT_NAME + "\": \"" + INPUT_VALUE + "\"}";
     private final String FAKE_CONTAINER_ID = "098zyx";
+    private final String FAKE_WORKFLOW_ID = "workflow123456";
     private final long WRAPPER_ID = 10L;
 
     private ContainerEntity CONTAINER_ENTITY;
@@ -97,7 +98,7 @@ public class LaunchRestApiTest {
     @Autowired private ContainerEntityService mockContainerEntityService;
     @Autowired private CommandResolutionService mockCommandResolutionService;
     @Autowired private AliasTokenService mockAliasTokenService;
-    @Autowired private DockerServerPrefsBean mockDockerServerPrefsBean;
+    @Autowired private DockerServerService mockDockerServerService;
     @Autowired private SiteConfigPreferences mockSiteConfigPreferences;
     @Autowired private UserManagementServiceI mockUserManagementServiceI;
     @Autowired private ObjectMapper mapper;
@@ -132,11 +133,8 @@ public class LaunchRestApiTest {
         // Mock out the prefs bean
         final String containerServerName = "testy test";
         final String containerHost = "unix:///var/run/docker.sock";
-        final DockerServerBase.DockerServer dockerServer = DockerServerBase.DockerServer.create(containerServerName, containerHost, null);
-        when(mockDockerServerPrefsBean.getName()).thenReturn(containerServerName);
-        when(mockDockerServerPrefsBean.getHost()).thenReturn(containerHost);
-        when(mockDockerServerPrefsBean.toPojo()).thenReturn(dockerServer);
-        when(mockDockerControlApi.getServer()).thenReturn(dockerServer);
+        final DockerServer dockerServer = DockerServer.create(0L, containerServerName, containerHost, null, false);
+        when(mockDockerServerService.getServer()).thenReturn(dockerServer);
 
         // Mock the userI
         final String url = "mock://url";
@@ -185,12 +183,12 @@ public class LaunchRestApiTest {
                 .commandLine("echo hello world")
                 .addRawInputValue(INPUT_NAME, INPUT_VALUE)
                 .build();
-        CONTAINER_ENTITY = new ContainerEntity(RESOLVED_COMMAND, FAKE_CONTAINER_ID, username);
+        CONTAINER_ENTITY = new ContainerEntity(RESOLVED_COMMAND, FAKE_CONTAINER_ID, FAKE_WORKFLOW_ID, username);
 
         // We have to match any resolved command because spring will add a csrf token to the inputs. I don't know how to get that token in advance.
         when(mockDockerControlApi.createContainer(any(ResolvedCommand.class))).thenReturn(FAKE_CONTAINER_ID);
         doNothing().when(mockDockerControlApi).startContainer(FAKE_CONTAINER_ID);
-        when(mockContainerEntityService.save(any(ResolvedCommand.class), eq(FAKE_CONTAINER_ID), eq(mockAdmin)))
+        when(mockContainerEntityService.save(any(ResolvedCommand.class), eq(FAKE_CONTAINER_ID), any(String.class), eq(mockAdmin)))
                 .thenReturn(CONTAINER_ENTITY);
     }
 

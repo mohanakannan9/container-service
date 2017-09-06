@@ -56,6 +56,36 @@
                     "derived-from-xnat-object-property": "id",
                     "provides-value-for-command-input": "whatever",
                     "required": true
+                },
+                {
+                    "name": "frames",
+                    "type": "string",
+                    "derived-from-wrapper-input": "scan",
+                    "derived-from-xnat-object-property": "frames"
+                },
+                {
+                    "name": "series-description",
+                    "type": "string",
+                    "derived-from-wrapper-input": "scan",
+                    "derived-from-xnat-object-property": "series-description"
+                },
+                {
+                    "name": "modality",
+                    "type": "string",
+                    "derived-from-wrapper-input": "scan",
+                    "derived-from-xnat-object-property": "modality"
+                },
+                {
+                    "name": "quality",
+                    "type": "string",
+                    "derived-from-wrapper-input": "scan",
+                    "derived-from-xnat-object-property": "quality"
+                },
+                {
+                    "name": "note",
+                    "type": "string",
+                    "derived-from-wrapper-input": "scan",
+                    "derived-from-xnat-object-property": "note"
                 }
             ],
             "output-handlers": []

@@ -2,16 +2,14 @@ package org.nrg.containers.rest;
 
 import io.swagger.annotations.Api;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.containers.exceptions.BadRequestException;
 import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.CommandValidationException;
 import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.DockerServerException;
-import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.exceptions.NoDockerServerException;
 import org.nrg.containers.model.configuration.CommandConfiguration;
 import org.nrg.containers.model.configuration.ProjectEnabledReport;
-import org.nrg.containers.model.settings.ContainerServiceSettings;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerConfigService;
 import org.nrg.containers.services.ContainerConfigService.CommandConfigurationException;
@@ -429,7 +427,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     }
 
     @ResponseStatus(value = HttpStatus.FAILED_DEPENDENCY)
-    @ExceptionHandler(value = {NoServerPrefException.class})
+    @ExceptionHandler(value = {NoDockerServerException.class})
     public String handleFailedDependency(final Exception ignored) {
         final String message = "Set up Docker server before using this REST endpoint.";
         log.debug(message);

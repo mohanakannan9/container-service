@@ -2,6 +2,7 @@ package org.nrg.containers.model.xnat;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import org.nrg.xft.XFTItem;
 import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -94,6 +95,11 @@ public class XnatFile extends XnatModelObject {
 
     public void setFile(final java.io.File file) {
         this.file = file;
+    }
+
+    @Override
+    public XFTItem getXftItem() {
+        return null;
     }
 
     @Override

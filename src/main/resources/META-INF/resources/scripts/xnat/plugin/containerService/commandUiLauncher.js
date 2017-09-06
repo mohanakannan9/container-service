@@ -1264,7 +1264,7 @@ var XNAT = getObject(XNAT || {});
             containerMenuItems[0].submenu.itemdata.push({
                 text: command['wrapper-description'],
                 url: 'javascript:openCommandLauncher({ wrapperid:"'+command['wrapper-id']+'", launcher: "'+launcher+'", rootElement: "'+ command['root-element-name'] + '" })',
-                classname: 'enabled' // injects a custom classname onto the surrounding li element.
+                classname: 'enabled wrapped' // injects a custom classname onto the surrounding li element.
             });
         }
     };

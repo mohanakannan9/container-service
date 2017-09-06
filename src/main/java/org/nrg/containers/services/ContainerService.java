@@ -4,7 +4,7 @@ import org.nrg.containers.events.model.ContainerEvent;
 import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.DockerServerException;
-import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.exceptions.NoDockerServerException;
 import org.nrg.containers.exceptions.UnauthorizedException;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.container.auto.Container;
@@ -32,32 +32,32 @@ public interface ContainerService {
     void delete(final long id) throws NotFoundException;
     void delete(final String containerId) throws NotFoundException;
 
-    Container addContainerEventToHistory(final ContainerEvent containerEvent);
+    Container addContainerEventToHistory(final ContainerEvent containerEvent, final UserI userI);
     Container.ContainerHistory addContainerHistoryItem(final Container container,
-                                                       final Container.ContainerHistory history);
+                                                       final Container.ContainerHistory history, final UserI userI);
 
     Container resolveCommandAndLaunchContainer(long wrapperId,
                                                Map<String, String> inputValues,
                                                UserI userI)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException, UnauthorizedException;
+            throws NoDockerServerException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException, UnauthorizedException;
     Container resolveCommandAndLaunchContainer(long commandId,
                                                String wrapperName,
                                                Map<String, String> inputValues,
                                                UserI userI)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException, UnauthorizedException;
+            throws NoDockerServerException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException, UnauthorizedException;
     Container resolveCommandAndLaunchContainer(String project,
                                                long wrapperId,
                                                Map<String, String> inputValues,
                                                UserI userI)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException, UnauthorizedException;
+            throws NoDockerServerException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException, UnauthorizedException;
     Container resolveCommandAndLaunchContainer(String project,
                                                long commandId,
                                                String wrapperName,
                                                Map<String, String> inputValues,
                                                UserI userI)
-            throws NoServerPrefException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException, UnauthorizedException;
+            throws NoDockerServerException, DockerServerException, NotFoundException, CommandResolutionException, ContainerException, UnauthorizedException;
     Container launchResolvedCommand(final ResolvedCommand resolvedCommand, final UserI userI)
-            throws NoServerPrefException, DockerServerException, ContainerException;
+            throws NoDockerServerException, DockerServerException, ContainerException;
 
     void processEvent(final ContainerEvent event);
 
@@ -66,10 +66,10 @@ public interface ContainerService {
     void finalize(final Container container, final UserI userI, final String exitCode);
 
     String kill(final String containerId, final UserI userI)
-            throws NoServerPrefException, DockerServerException, NotFoundException;
+            throws NoDockerServerException, DockerServerException, NotFoundException;
 
-    Map<String, InputStream> getLogStreams(long id) throws NotFoundException, NoServerPrefException, DockerServerException;
-    Map<String, InputStream> getLogStreams(String containerId) throws NotFoundException, NoServerPrefException, DockerServerException;
-    InputStream getLogStream(long id, String logFileName) throws NotFoundException, NoServerPrefException, DockerServerException;
-    InputStream getLogStream(String containerId, String logFileName) throws NotFoundException, NoServerPrefException, DockerServerException;
+    Map<String, InputStream> getLogStreams(long id) throws NotFoundException, NoDockerServerException, DockerServerException;
+    Map<String, InputStream> getLogStreams(String containerId) throws NotFoundException, NoDockerServerException, DockerServerException;
+    InputStream getLogStream(long id, String logFileName) throws NotFoundException, NoDockerServerException, DockerServerException;
+    InputStream getLogStream(String containerId, String logFileName) throws NotFoundException, NoDockerServerException, DockerServerException;
 }

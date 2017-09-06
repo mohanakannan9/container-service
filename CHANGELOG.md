@@ -1,5 +1,57 @@
 # Changelog
 
+## 1.2.1
+
+[Released 2017-09-06](https://github.com/NrgXnat/container-service/releases/tag/1.2.1).
+
+### Features
+
+* [CS-343][] Whenever a container is launched, create a workflow. Keep the status updated as the container's status changes. This allows us to piggyback on the existing workflow UI (history table, alert banner, etc.) to display container status.
+* [CS-359][] Docker server is now stored in a hibernate table rather than as a prefs bean. This should ease a possible future transition to multiple docker servers.
+* [CS-346][] Project owners that have set new default run-time settings for command configurations can reset those settings to the site-wide defaults.
+* [CS-374][] Add lots of properties to the xnat model objects, which are now available to use in commands:
+    * Assessor
+        * `project-id`
+        * `session-id`
+    * Session
+        * `subject-id`
+    * Scan
+        * `project-id`
+        * `session-id`
+        * `frames`
+        * `note`
+        * `modality`
+        * `quality`
+        * `scanner`
+        * `scanner-manufacturer`
+        * `scanner-model`
+        * `scanner-software-version`
+        * `series-description`
+        * `start-time`
+        * `uid`
+
+[CS-343]: https://issues.xnat.org/browse/CS-343
+[CS-346]: https://issues.xnat.org/browse/CS-346
+[CS-359]: https://issues.xnat.org/browse/CS-359
+[CS-374]: https://issues.xnat.org/browse/CS-374
+
+### Bugfixes
+
+* [CS-349][] Assessor model objects have URLs that start with their parent session's `/experiments/{sessionId}` URL. This allows containers to be run on assessors, as long as the assessor has a defined resource directory that can be mounted.
+* [CS-352][] `GET /docker/hubs` and `GET /docker/hubs/{id}` return correct `ping`.
+* [CS-373][] Docker events will only be recorded in container history once.
+* [CS-295][], [CS-353][] Only enable the command automation panel if commands are available to use in the container service, and only allow automations to use enabled commands.
+* [CS-367][] Fix the display issues that caused long command labels to get cut off in the Actions Box "Run Containers" menu.
+* [CS-351][] Don't automatically treat new image hosts as the default image host in the Admin control panel.
+
+[CS-295]: https://issues.xnat.org/browse/CS-295
+[CS-349]: https://issues.xnat.org/browse/CS-349
+[CS-351]: https://issues.xnat.org/browse/CS-351
+[CS-352]: https://issues.xnat.org/browse/CS-352
+[CS-353]: https://issues.xnat.org/browse/CS-353
+[CS-367]: https://issues.xnat.org/browse/CS-367
+[CS-373]: https://issues.xnat.org/browse/CS-373
+
 ## 1.2
 
 [Released 2017-08-18](https://github.com/NrgXnat/container-service/releases/tag/1.2).
@@ -84,7 +136,7 @@
 
 ## 1.1
 
-[Released 2017-08-04](https://github.com/NrgXnat/container-service/releases/tag/v1.1).
+[Released 2017-08-04](https://github.com/NrgXnat/container-service/releases/tag/1.1).
 
 ### Features
 

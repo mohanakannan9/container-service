@@ -29,7 +29,8 @@ public class ContainerEntityHistory {
 
     public ContainerEntityHistory() {}
 
-    public static ContainerEntityHistory fromContainerEvent(final ContainerEvent containerEvent) {
+    public static ContainerEntityHistory fromContainerEvent(final ContainerEvent containerEvent,
+                                                            final ContainerEntity parent) {
         final ContainerEntityHistory history = new ContainerEntityHistory();
         history.status = containerEvent.status();
         history.entityType = "event";
@@ -39,26 +40,32 @@ public class ContainerEntityHistory {
         if (containerEvent instanceof DockerContainerEvent) {
             history.externalTimestamp = String.valueOf(((DockerContainerEvent)containerEvent).timeNano());
         }
+        history.containerEntity = parent;
         return history;
     }
 
-    public static ContainerEntityHistory fromSystem(final String status) {
+    public static ContainerEntityHistory fromSystem(final String status,
+                                                    final ContainerEntity parent) {
         final ContainerEntityHistory history = new ContainerEntityHistory();
         history.status = status;
         history.externalTimestamp = null;
         history.entityType = "system";
         history.entityId = null;
         history.timeRecorded = new Date();
+        history.containerEntity = parent;
         return history;
     }
 
-    public static ContainerEntityHistory fromUserAction(final String status, final String username) {
+    public static ContainerEntityHistory fromUserAction(final String status,
+                                                        final String username,
+                                                        final ContainerEntity parent) {
         final ContainerEntityHistory history = new ContainerEntityHistory();
         history.status = status;
         history.externalTimestamp = null;
         history.entityType = "user";
         history.entityId = username;
         history.timeRecorded = new Date();
+        history.containerEntity = parent;
         return history;
     }
 

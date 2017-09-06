@@ -11,13 +11,14 @@ import org.nrg.xft.security.UserI;
 public interface ContainerEntityService extends BaseHibernateService<ContainerEntity> {
     ContainerEntity save(final ResolvedCommand resolvedCommand,
                          final String containerId,
+                         final String workflowId,
                          final UserI userI);
 
     ContainerEntity retrieve(final String containerId);
     ContainerEntity get(final String containerId) throws NotFoundException;
     void delete(final String containerId) throws NotFoundException;
 
-    ContainerEntity addContainerEventToHistory(final ContainerEvent containerEvent);
+    ContainerEntity addContainerEventToHistory(final ContainerEvent containerEvent, final UserI userI);
     ContainerEntityHistory addContainerHistoryItem(final ContainerEntity containerEntity,
-                                                   final ContainerEntityHistory history);
+                                                   final ContainerEntityHistory history, final UserI userI);
 }

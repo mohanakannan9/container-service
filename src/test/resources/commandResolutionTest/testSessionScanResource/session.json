@@ -9,6 +9,11 @@
             "type": "Scan",
             "scan-type": "SCANTYPE",
             "uri": "/experiments/session1/scans/scan1",
+            "frames": "12",
+            "series-description": "great!",
+            "modality": "super!",
+            "quality": "the best!",
+            "note": "I love it - me",
             "resources": [
                 {
                     "id": 0,

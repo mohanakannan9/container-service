@@ -14,6 +14,7 @@ import org.nrg.xdat.model.XnatImagesessiondataI;
 import org.nrg.xdat.model.XnatSubjectdataI;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xdat.om.XnatSubjectdata;
+import org.nrg.xft.XFTItem;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
@@ -154,6 +155,11 @@ public class Subject extends XnatModelObject {
 
     public void setProjectId(final String projectId) {
         this.projectId = projectId;
+    }
+
+    @Override
+    public XFTItem getXftItem() {
+        return xnatSubjectdataI == null ? null : ((XnatSubjectdata)xnatSubjectdataI).getItem();
     }
 
     @Override

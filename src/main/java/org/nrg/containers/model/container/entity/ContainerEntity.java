@@ -1,14 +1,15 @@
 package org.nrg.containers.model.container.entity;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.hibernate.envers.Audited;
+import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMount;
 import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandOutput;
+import org.nrg.containers.model.command.auto.ResolvedInputTreeNode;
 import org.nrg.containers.model.container.ContainerInputType;
 import org.nrg.containers.model.container.auto.Container;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
@@ -25,26 +26,29 @@ import java.util.Objects;
 @Entity
 @Audited
 public class ContainerEntity extends AbstractHibernateEntity {
-    @JsonProperty("command-id") private long commandId;
-    @JsonProperty("wrapper-id") private long wrapperId;
-    @JsonProperty("docker-image") private String dockerImage;
-    @JsonProperty("command-line") private String commandLine;
-    @JsonProperty("working-directory") private String workingDirectory;
-    @JsonProperty("env") private Map<String, String> environmentVariables = Maps.newHashMap();
-    @JsonProperty("mounts") private List<ContainerEntityMount> mounts = Lists.newArrayList();
-    @JsonProperty("container-id") private String containerId;
-    @JsonProperty("user-id") private String userId;
+    private long commandId;
+    private long wrapperId;
+    private String dockerImage;
+    private String commandLine;
+    private String workingDirectory;
+    private Map<String, String> environmentVariables = Maps.newHashMap();
+    private List<ContainerEntityMount> mounts = Lists.newArrayList();
+    private String containerId;
+    private String workflowId;
+    private String userId;
     private List<ContainerEntityInput> inputs;
     private List<ContainerEntityOutput> outputs;
     private List<ContainerEntityHistory> history = Lists.newArrayList();
-    @JsonProperty("log-paths") private List<String> logPaths;
+    private List<String> logPaths;
 
     public ContainerEntity() {}
 
     public ContainerEntity(final ResolvedCommand resolvedCommand,
                            final String containerId,
+                           final String workflowId,
                            final String userId) {
         this.containerId = containerId;
+        this.workflowId = workflowId;
         this.userId = userId;
 
         this.commandId = resolvedCommand.commandId();
@@ -87,6 +91,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
         this.setCommandId(containerPojo.commandId());
         this.setWrapperId(containerPojo.wrapperId());
         this.setContainerId(containerPojo.containerId());
+        this.setWorkflowId(containerPojo.workflowId());
         this.setUserId(containerPojo.userId());
         this.setDockerImage(containerPojo.dockerImage());
         this.setCommandLine(containerPojo.commandLine());
@@ -200,6 +205,14 @@ public class ContainerEntity extends AbstractHibernateEntity {
 
     public void setContainerId(final String containerId) {
         this.containerId = containerId;
+    }
+
+    public String getWorkflowId() {
+        return workflowId;
+    }
+
+    public void setWorkflowId(final String workflowId) {
+        this.workflowId = workflowId;
     }
 
     public String getUserId() {
@@ -390,6 +403,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("containerId", containerId)
+                .add("workflowId", workflowId)
                 .add("commandId", commandId)
                 .add("wrapperId", wrapperId)
                 .add("dockerImage", dockerImage)

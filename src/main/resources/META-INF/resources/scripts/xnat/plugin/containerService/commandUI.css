@@ -35,3 +35,9 @@
 #containerMenu > .bd {
     border-top: none;
 }
+
+
+#actionsMenu li.wrapped a {
+    white-space: normal;
+    width: 180px;
+}

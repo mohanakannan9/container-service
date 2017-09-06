@@ -4,9 +4,8 @@ import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.swagger.annotations.ApiParam;
-import org.apache.commons.io.IOUtils;
 import org.nrg.containers.exceptions.DockerServerException;
-import org.nrg.containers.exceptions.NoServerPrefException;
+import org.nrg.containers.exceptions.NoDockerServerException;
 import org.nrg.containers.model.container.auto.Container;
 import org.nrg.containers.services.ContainerService;
 import org.nrg.framework.annotations.XapiRestController;
@@ -98,7 +97,7 @@ public class ContainerRestApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = "/{id}/kill", method = POST, restrictTo = Admin)
     @ResponseBody
     public String kill(final @PathVariable String id)
-            throws NotFoundException, NoServerPrefException, DockerServerException {
+            throws NotFoundException, NoDockerServerException, DockerServerException {
         final UserI userI = XDAT.getUserDetails();
         return containerService.kill(id, userI);
     }
@@ -115,7 +114,7 @@ public class ContainerRestApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = "/{containerId}/logs", method = GET, restrictTo = Admin)
     public void getLogs(final @PathVariable String containerId,
                                                    final HttpServletResponse response)
-            throws IOException, InsufficientPrivilegesException, NoServerPrefException, DockerServerException, NotFoundException {
+            throws IOException, InsufficientPrivilegesException, NoDockerServerException, DockerServerException, NotFoundException {
         UserI userI = XDAT.getUserDetails();
 
         final Map<String, InputStream> logStreams = containerService.getLogStreams(containerId);
@@ -152,7 +151,7 @@ public class ContainerRestApi extends AbstractXapiRestController {
     @ResponseBody
     public ResponseEntity<String> getLog(final @PathVariable String containerId,
                                          final @PathVariable @ApiParam(allowableValues = "stdout, stderr") String file)
-            throws NoServerPrefException, DockerServerException, NotFoundException {
+            throws NoDockerServerException, DockerServerException, NotFoundException {
         UserI userI = XDAT.getUserDetails();
 
         final InputStream logStream = containerService.getLogStream(containerId, file);
@@ -184,7 +183,7 @@ public class ContainerRestApi extends AbstractXapiRestController {
     }
 
     @ResponseStatus(value = HttpStatus.FAILED_DEPENDENCY)
-    @ExceptionHandler(value = {NoServerPrefException.class})
+    @ExceptionHandler(value = {NoDockerServerException.class})
     public String handleFailedDependency() {
         return "Set up Docker server before using this REST endpoint.";
     }
