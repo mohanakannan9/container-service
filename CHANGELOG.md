@@ -6,6 +6,7 @@ Not yet released.
 
 ### Features
 
+* [CS-343][] Whenever a container is launched, create a workflow. Keep the status updated as the container's status changes. This allows us to piggyback on the existing workflow UI (history table, alert banner, etc.) to display container status.
 * [CS-359][] Docker server is now stored in a hibernate table rather than as a prefs bean. This should ease a possible future transition to multiple docker servers.
 * [CS-346][] Project owners that have set new default run-time settings for command configurations can reset those settings to the site-wide defaults.
 * [CS-374][] Add lots of properties to the xnat model objects, which are now available to use in commands:
@@ -29,6 +30,7 @@ Not yet released.
         * `start-time`
         * `uid`
 
+[CS-343]: https://issues.xnat.org/browse/CS-343
 [CS-346]: https://issues.xnat.org/browse/CS-346
 [CS-359]: https://issues.xnat.org/browse/CS-359
 [CS-374]: https://issues.xnat.org/browse/CS-374

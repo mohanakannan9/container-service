@@ -506,7 +506,7 @@ public class ContainerServiceImpl implements ContainerService {
             } else {
                 xnatObjectToUseAsRoot = inputValueXnatObject;
             }
-            
+
             try {
                 log.debug("Getting input value as XFTItem.");
                 rootInputValue = xnatObjectToUseAsRoot.getXftItem();
