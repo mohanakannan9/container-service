@@ -14,6 +14,7 @@ import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImageassessordata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.om.XnatResourcecatalog;
+import org.nrg.xft.XFTItem;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
@@ -187,6 +188,11 @@ public class Assessor extends XnatModelObject {
 
     public void setDirectory(final String directory) {
         this.directory = directory;
+    }
+
+    @Override
+    public XFTItem getXftItem() {
+        return xnatImageassessordataI == null ? null : ((XnatImagesessiondata) xnatImageassessordataI).getItem();
     }
 
     @Override

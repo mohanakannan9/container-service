@@ -11,6 +11,7 @@ import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.om.XnatImagescandata;
 import org.nrg.xdat.om.XnatResourcecatalog;
+import org.nrg.xft.XFTItem;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
@@ -269,6 +270,11 @@ public class Scan extends XnatModelObject {
 
     public void setUid(final String uid) {
         this.uid = uid;
+    }
+
+    @Override
+    public XFTItem getXftItem() {
+        return xnatImagescandataI == null ? null : ((XnatImagescandata)xnatImagescandataI).getItem();
     }
 
     @Override

@@ -16,8 +16,7 @@ public abstract class ResolvedInputTreeNode<T extends Input> {
     @JsonProperty("values-and-children") public abstract List<ResolvedInputTreeValueAndChildren> valuesAndChildren();
 
     public static ResolvedInputTreeNode<? extends Input> create(final PreresolvedInputTreeNode preresolvedInputTreeNode) {
-        return new AutoValue_ResolvedInputTreeNode<>(preresolvedInputTreeNode.input(),
-                Lists.<ResolvedInputTreeValueAndChildren>newArrayList());
+        return create(preresolvedInputTreeNode.input(), Lists.<ResolvedInputTreeValueAndChildren>newArrayList());
     }
 
     @JsonCreator
@@ -33,7 +32,7 @@ public abstract class ResolvedInputTreeNode<T extends Input> {
         @JsonProperty("children") public abstract List<ResolvedInputTreeNode<? extends Input>> children();
 
         public static ResolvedInputTreeValueAndChildren create(final ResolvedInputValue resolvedValue) {
-            return new AutoValue_ResolvedInputTreeNode_ResolvedInputTreeValueAndChildren(resolvedValue, Lists.<ResolvedInputTreeNode<? extends Input>>newArrayList());
+            return create(resolvedValue, Lists.<ResolvedInputTreeNode<? extends Input>>newArrayList());
         }
 
         @JsonCreator

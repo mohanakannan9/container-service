@@ -11,11 +11,16 @@ import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoDockerServerException;
 import org.nrg.containers.exceptions.UnauthorizedException;
+import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
+import org.nrg.containers.model.command.auto.ResolvedInputTreeNode;
+import org.nrg.containers.model.command.auto.ResolvedInputValue;
 import org.nrg.containers.model.container.auto.Container;
 import org.nrg.containers.model.container.auto.Container.ContainerHistory;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.container.entity.ContainerEntityHistory;
+import org.nrg.containers.model.xnat.Scan;
+import org.nrg.containers.model.xnat.XnatModelObject;
 import org.nrg.containers.services.CommandResolutionService;
 import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.containers.services.ContainerFinalizeService;
@@ -27,7 +32,11 @@ import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.services.AliasTokenService;
+import org.nrg.xft.XFTItem;
+import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.security.UserI;
+import org.nrg.xnat.utils.WorkflowUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +53,12 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import static org.nrg.containers.model.command.entity.CommandType.DOCKER;
+import static org.nrg.containers.model.command.entity.CommandWrapperInputType.ASSESSOR;
+import static org.nrg.containers.model.command.entity.CommandWrapperInputType.PROJECT;
+import static org.nrg.containers.model.command.entity.CommandWrapperInputType.RESOURCE;
+import static org.nrg.containers.model.command.entity.CommandWrapperInputType.SCAN;
+import static org.nrg.containers.model.command.entity.CommandWrapperInputType.SESSION;
+import static org.nrg.containers.model.command.entity.CommandWrapperInputType.SUBJECT;
 
 @Service
 public class ContainerServiceImpl implements ContainerService {
@@ -79,7 +94,12 @@ public class ContainerServiceImpl implements ContainerService {
 
     @Override
     public Container save(final ResolvedCommand resolvedCommand, final String containerId, final UserI userI) {
-        return toPojo(containerEntityService.save(resolvedCommand, containerId, userI));
+        final String workflowId = makeWorkflowIfAppropriate(resolvedCommand, containerId, userI);
+        return save(resolvedCommand, containerId, workflowId, userI);
+    }
+
+    private Container save(final ResolvedCommand resolvedCommand, final String containerId, final String workflowId, final UserI userI) {
+        return toPojo(containerEntityService.save(resolvedCommand, containerId, workflowId, userI));
     }
 
     @Override
@@ -120,15 +140,15 @@ public class ContainerServiceImpl implements ContainerService {
 
     @Override
     @Nullable
-    public Container addContainerEventToHistory(final ContainerEvent containerEvent) {
-        final ContainerEntity containerEntity = containerEntityService.addContainerEventToHistory(containerEvent);
+    public Container addContainerEventToHistory(final ContainerEvent containerEvent, final UserI userI) {
+        final ContainerEntity containerEntity = containerEntityService.addContainerEventToHistory(containerEvent, userI);
         return containerEntity == null ? null : toPojo(containerEntity);
     }
 
     @Override
     @Nullable
-    public ContainerHistory addContainerHistoryItem(final Container container, final ContainerHistory history) {
-        final ContainerEntityHistory containerEntityHistoryItem = containerEntityService.addContainerHistoryItem(fromPojo(container), fromPojo(history));
+    public ContainerHistory addContainerHistoryItem(final Container container, final ContainerHistory history, final UserI userI) {
+        final ContainerEntityHistory containerEntityHistoryItem = containerEntityService.addContainerHistoryItem(fromPojo(container), fromPojo(history), userI);
         return containerEntityHistoryItem == null ? null : toPojo(containerEntityHistoryItem);
     }
 
@@ -203,7 +223,7 @@ public class ContainerServiceImpl implements ContainerService {
         try {
             containerControlApi.startContainer(containerId);
         } catch (DockerServerException e) {
-            addContainerHistoryItem(container, ContainerHistory.fromSystem("Failed", "Did not start." + e.getMessage()));
+            addContainerHistoryItem(container, ContainerHistory.fromSystem("Failed", "Did not start." + e.getMessage()), userI);
             handleFailure(container);
             throw new ContainerException("Failed to start");
         }
@@ -235,23 +255,24 @@ public class ContainerServiceImpl implements ContainerService {
         if (log.isDebugEnabled()) {
             log.debug("Processing container event");
         }
-        final Container execution = addContainerEventToHistory(event);
+        final Container container = retrieve(event.containerId());
 
 
-        // execution will be null if either we aren't tracking the container
+
+        // container will be null if either we aren't tracking the container
         // that this event is about, or if we have already recorded the event
-        if (execution != null ) {
-            if (event.isExitStatus()) {
-                log.debug("Container is dead. Finalizing.");
-                final String exitCode = event.exitCode();
-                final String userLogin = execution.userId();
-                try {
-                    final UserI userI = Users.getUser(userLogin);
-                    finalize(execution, userI, exitCode);
-                } catch (UserInitException | UserNotFoundException e) {
-                    log.error("Could not finalize container execution. Could not get user details for user " + userLogin, e);
-                }
+        if (container != null ) {
+            final String userLogin = container.userId();
+            try {
+                final UserI userI = Users.getUser(userLogin);
 
+                addContainerEventToHistory(event, userI);
+                if (event.isExitStatus()) {
+                    log.debug("Container is dead. Finalizing.");
+                    finalize(container, userI, event.exitCode());
+                }
+            } catch (UserInitException | UserNotFoundException e) {
+                log.error("Could not update container status. Could not get user details for user " + userLogin, e);
             }
         }
 
@@ -306,7 +327,7 @@ public class ContainerServiceImpl implements ContainerService {
         // TODO check user permissions. How?
         final Container container = get(containerId);
 
-        addContainerHistoryItem(container, ContainerHistory.fromUserAction("Killed", userI.getLogin()));
+        addContainerHistoryItem(container, ContainerHistory.fromUserAction("Killed", userI.getLogin()), userI);
 
         final String containerDockerId = container.containerId();
         containerControlApi.killContainer(containerDockerId);
@@ -381,6 +402,140 @@ public class ContainerServiceImpl implements ContainerService {
 
     private void handleFailure(final Container container) {
         // TODO handle failure
+    }
+
+    /**
+     * Creates a workflow if possible and returns its ID.
+     *
+     * This is a way for us to show the
+     * the container execution in the history table and as a workflow alert banner
+     * (where enabled) without any custom UI work.
+     *
+     * It is possible to create a workflow for the execution if the resolved command
+     * has one external input which is an XNAT object. If it has zero external inputs,
+     * there is no object on which we can "hang" the workflow, so to speak. If it has more
+     * than one external input, we don't know which is the one that should display the
+     * workflow, so we don't make one.
+     *
+     * @param resolvedCommand A resolved command that will be used to launch a container
+     * @param containerId The docker ID of the container that has been created
+     * @param userI The user launching the container
+     * @return ID of the created workflow, or null if no workflow was created
+     */
+    @Nullable
+    private String makeWorkflowIfAppropriate(final ResolvedCommand resolvedCommand, final String containerId, final UserI userI) {
+        log.debug("Preparing to make workflow.");
+        final XFTItem rootInputObject = findRootInputObject(resolvedCommand, userI);
+        if (rootInputObject == null) {
+            // We didn't find a root input XNAT object, so we can't make a workflow.
+            log.debug("Cannot make workflow.");
+            return null;
+        }
+
+        log.debug("Creating workflow for Wrapper {} - Command {} - Image {}.",
+                resolvedCommand.wrapperName(), resolvedCommand.commandName(), resolvedCommand.image());
+        try {
+            final PersistentWorkflowI workflow = WorkflowUtils.buildOpenWorkflow(userI, rootInputObject,
+                    EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.TYPE.PROCESS,
+                            resolvedCommand.wrapperName(),"Container launch", containerId));
+            WorkflowUtils.save(workflow, workflow.buildEvent());
+            log.debug("Created workflow {}.", workflow.getWorkflowId());
+            return String.valueOf(workflow.getWorkflowId());
+        } catch (Exception e) {
+            log.error("Could not create workflow.", e);
+        }
+
+        return null;
+    }
+
+    @Nullable
+    private XFTItem findRootInputObject(final ResolvedCommand resolvedCommand, final UserI userI) {
+        log.debug("Checking input values to find root XNAT input object.");
+        final List<ResolvedInputTreeNode<? extends Command.Input>> flatInputTrees = resolvedCommand.flattenInputTrees();
+
+        XFTItem rootInputValue = null;
+        for (final ResolvedInputTreeNode<? extends Command.Input> node : flatInputTrees) {
+            final Command.Input input = node.input();
+            log.debug("Input \"{}\".", input.name());
+            if (!(input instanceof Command.CommandWrapperExternalInput)) {
+                log.debug("Skipping. Not an external wrapper input.");
+                continue;
+            }
+
+            final String type = input.type();
+            if (!(type.equals(PROJECT.getName()) || type.equals(SUBJECT.getName()) || type.equals(SESSION.getName()) || type.equals(SCAN.getName())
+                    || type.equals(ASSESSOR.getName()) || type.equals(RESOURCE.getName()))) {
+                log.debug("Skipping. Input type \"{}\" is not an XNAT type.", type);
+                continue;
+            }
+
+            final List<ResolvedInputTreeNode.ResolvedInputTreeValueAndChildren> valuesAndChildren = node.valuesAndChildren();
+            if (valuesAndChildren == null || valuesAndChildren.isEmpty() || valuesAndChildren.size() > 1) {
+                log.debug("Skipping. {} values.", (valuesAndChildren == null || valuesAndChildren.isEmpty()) ? "No" : "Multiple");
+                continue;
+            }
+
+            final ResolvedInputValue externalInputValue = valuesAndChildren.get(0).resolvedValue();
+            final XnatModelObject inputValueXnatObject = externalInputValue.xnatModelObject();
+
+            if (inputValueXnatObject == null) {
+                log.debug("Skipping. XNAT model object is null.");
+                continue;
+            }
+
+            if (rootInputValue != null) {
+                // We have already seen one candidate for a root object.
+                // Seeing this one means we have more than one, and won't be able to
+                // uniquely resolve a root object.
+                // We won't be able to make a workflow. We can bail out now.
+                log.debug("Found another root XNAT input object. I was expecting one. Bailing out.", input.name());
+                return null;
+            }
+
+            final XnatModelObject xnatObjectToUseAsRoot;
+            if (type.equals(SCAN.getName())) {
+                // If the external input is a scan, the workflow will not show up anywhere. So we
+                // use its parent session as the root object instead.
+                final XnatModelObject parentSession = ((Scan) inputValueXnatObject).getSession(userI);
+                if (parentSession != null) {
+                    xnatObjectToUseAsRoot = parentSession;
+                } else {
+                    // Ok, nevermind, use the scan anyway. It's not a huge thing.
+                    xnatObjectToUseAsRoot = inputValueXnatObject;
+                }
+            } else {
+                xnatObjectToUseAsRoot = inputValueXnatObject;
+            }
+
+            try {
+                log.debug("Getting input value as XFTItem.");
+                rootInputValue = xnatObjectToUseAsRoot.getXftItem();
+            } catch (Throwable t) {
+                // If anything goes wrong, bail out. No workflow.
+                log.error("That didn't work.", t);
+                continue;
+            }
+
+            if (rootInputValue == null) {
+                // I don't know if this is even possible
+                log.debug("XFTItem is null.");
+                continue;
+            }
+
+            // This is the first good input value.
+            log.debug("Found a valid root XNAT input object.", input.name());
+        }
+
+        if (rootInputValue == null) {
+            // Didn't find any candidates
+            log.debug("Found no valid root XNAT input object candidates.");
+            return null;
+        }
+
+        // At this point, we know we found a single valid external input value.
+        // We can declare the object in that value to be the root object.
+
+        return rootInputValue;
     }
 
     @Nonnull

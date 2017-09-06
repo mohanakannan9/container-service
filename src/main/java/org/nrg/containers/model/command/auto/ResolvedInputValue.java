@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
+import org.nrg.containers.model.command.entity.CommandInputEntity;
 import org.nrg.containers.model.xnat.XnatModelObject;
 
 import javax.annotation.Nullable;
@@ -32,7 +33,8 @@ public abstract class ResolvedInputValue {
     }
 
     public static Builder builder() {
-        return new AutoValue_ResolvedInputValue.Builder();
+        return new AutoValue_ResolvedInputValue.Builder()
+                .type(CommandInputEntity.DEFAULT_TYPE.getName());
     }
 
     @AutoValue.Builder

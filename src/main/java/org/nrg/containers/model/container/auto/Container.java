@@ -37,6 +37,7 @@ public abstract class Container {
     @JsonProperty("command-id") public abstract long commandId();
     @JsonProperty("wrapper-id") public abstract long wrapperId();
     @JsonProperty("container-id") public abstract String containerId();
+    @Nullable @JsonProperty("workflow-id") public abstract String workflowId();
     @JsonProperty("user-id") public abstract String userId();
     @JsonProperty("docker-image") public abstract String dockerImage();
     @JsonProperty("command-line") public abstract String commandLine();
@@ -85,6 +86,7 @@ public abstract class Container {
                                    @JsonProperty("command-id") final long commandId,
                                    @JsonProperty("wrapper-id") final long wrapperId,
                                    @JsonProperty("container-id") final String containerId,
+                                   @JsonProperty("workflow-id") final String workflowId,
                                    @JsonProperty("user-id") final String userId,
                                    @JsonProperty("docker-image") final String dockerImage,
                                    @JsonProperty("command-line") final String commandLine,
@@ -101,6 +103,7 @@ public abstract class Container {
                 .commandId(commandId)
                 .wrapperId(wrapperId)
                 .containerId(containerId)
+                .workflowId(workflowId)
                 .userId(userId)
                 .dockerImage(dockerImage)
                 .commandLine(commandLine)
@@ -120,6 +123,7 @@ public abstract class Container {
                 .commandId(containerEntity.getCommandId())
                 .wrapperId(containerEntity.getWrapperId())
                 .containerId(containerEntity.getContainerId())
+                .workflowId(containerEntity.getWorkflowId())
                 .userId(containerEntity.getUserId())
                 .dockerImage(containerEntity.getDockerImage())
                 .commandLine(containerEntity.getCommandLine())
@@ -239,6 +243,7 @@ public abstract class Container {
         public abstract Builder commandId(long commandId);
         public abstract Builder wrapperId(long wrapperId);
         public abstract Builder containerId(String containerId);
+        public abstract Builder workflowId(String workflowId);
         public abstract Builder userId(String userId);
         public abstract Builder dockerImage(String dockerImage);
         public abstract Builder commandLine(String commandLine);

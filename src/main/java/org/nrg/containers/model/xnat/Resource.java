@@ -13,6 +13,7 @@ import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatResourcecatalogI;
 import org.nrg.xdat.om.XnatAbstractresource;
 import org.nrg.xdat.om.XnatResourcecatalog;
+import org.nrg.xft.XFTItem;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
@@ -154,6 +155,11 @@ public class Resource extends XnatModelObject {
 
     public void setFiles(final List<XnatFile> files) {
         this.files = files;
+    }
+
+    @Override
+    public XFTItem getXftItem() {
+        return xnatResourcecatalog == null ? null : xnatResourcecatalog.getItem();
     }
 
     @Override
