@@ -17,16 +17,19 @@ import org.nrg.containers.model.container.auto.Container.ContainerMount;
 import org.nrg.containers.model.container.auto.Container.ContainerOutput;
 import org.nrg.containers.services.ContainerFinalizeService;
 import org.nrg.containers.services.ContainerService;
+import org.nrg.containers.services.ContainerUtils;
 import org.nrg.transporter.TransportService;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Permissions;
+import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.restlet.util.XNATRestConstants;
 import org.nrg.xnat.services.archive.CatalogService;
+import org.nrg.xnat.utils.WorkflowUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -134,9 +137,11 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
                 } else {
                     finalizedContainerBuilder.outputs(outputsAndExceptions.outputs);  // Overwrite any existing outputs
                 }
-            } else {
 
+                ContainerUtils.updateWorkflowStatus(toFinalize.workflowId(), PersistentWorkflowUtils.COMPLETE, userI);
+            } else {
                 // TODO We know the container has failed. Should we send an email?
+                ContainerUtils.updateWorkflowStatus(toFinalize.workflowId(), PersistentWorkflowUtils.FAILED, userI);
             }
 
             return finalizedContainerBuilder.build();
