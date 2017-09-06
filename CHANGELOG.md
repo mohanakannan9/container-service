@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.2.2
+
+Not yet released.
+
+### Features
+
+
+
+### Bugs
+
+
+
 ## 1.2.1
 
 [Released 2017-09-06](https://github.com/NrgXnat/container-service/releases/tag/1.2.1).
