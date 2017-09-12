@@ -2061,7 +2061,7 @@ var XNAT = getObject(XNAT || {});
 
         function displayDate(timestamp){
             var d = new Date(timestamp);
-            return d.toISOString().replace('T',' ').replace('Z',' ');
+            return d.toISOString().replace('T',' ').replace('Z',' ').split('.')[0];
         }
 
         function displayInput(inputObj){
@@ -2132,11 +2132,11 @@ var XNAT = getObject(XNAT || {});
                         });
 
                         chTable.tr({title: historyEntry['id'], id: historyEntry['id'] })
-                            .td({ addClass: 'left', html: '<b>'+historyEntry['id']+'</b>' })
+                            .td({ className: 'left', html: '<b>'+historyEntry['id']+'</b>' })
                             .td(historyEntry['docker-image'])
                             .td([ displayCommandWithPopup(historyEntry) ])
                             .td(historyEntry['user-id'])
-                            .td([ displayDate(timestamp) ])
+                            .td({ className: 'center mono' }, [ displayDate(timestamp) ])
                             .td([ displayProject(historyEntry['mounts']) ]);
                     });
                 } else {
@@ -2151,6 +2151,323 @@ var XNAT = getObject(XNAT || {});
 
         return chTable.table;
     };
+
+    function spawnHistoryTable(url){
+
+        var $dataRows = [];
+
+        // load 'current' users initially
+        var URL = url || getCommandHistoryUrl();
+
+        // TODO:
+        // TODO: set min-width as well as max-width
+        // TODO:
+
+        var styles = {
+            id: (60-24)+'px',
+            image: (150-24)+'px',
+            command: (200-24) + 'px',
+            user: (120-24) + 'px',
+            date: (100-24) + 'px',
+            project: (100-24) +'px'
+        };
+        // var altStyles = {};
+        // forOwn(styles, function(name, val){
+        //     altStyles[name] = (val * 0.8)
+        // });
+        return {
+            kind: 'table.dataTable',
+            name: 'userProfiles',
+            id: 'user-profiles',
+            load: URL,
+            before: {
+                filterCss: {
+                    tag: 'style|type=text/css',
+                    content: '\n' +
+                    '#command-history-container td.history-id { width: ' + styles.id + '; } \n' +
+                    '#command-history-container td.user .truncate { width: ' + styles.user + '; } \n' +
+                    '#command-history-container td.date { width: ' + styles.date + '; } \n' +
+                    '#command-history-container tr.filter-date, \n' +
+                    '@media screen and (max-width: 1200px) { \n' +
+                    '    #command-history-container td.user .truncate { width: 90px; }' +
+                    '}'
+                }
+            },
+            onRender: showUsersTable,
+            table: {
+                classes: 'highlight hidden',
+                on: [
+                    ['click', 'a.user-id', updateUserData],
+                    ['click', 'a.select-all', selectAllUsers],
+                    ['click', 'a.edit-user', editUser],
+                    // ['click', 'a.full-name', userProjectsAndSecurity],
+                    ['click', 'a.send-email', goToEmail],
+                    // ['change', 'input.user-verified', setVerified],
+                    // ['change', 'input.user-enabled', setEnabled],
+                    ['click', 'a.active-user', killActiveSessions],
+                    ['click', 'a.session-info', viewSessionInfo]
+                ]
+            },
+            trs: function(tr, data){
+                // 'this' is the currently iterating <tr>
+                data.userId = setRowId(data);
+                tr.id = data.userId;
+                addDataAttrs(tr, { filter: '0' });
+            },
+            sortable: 'username, fullName, email',
+            filter: 'fullName, email',
+            items: {
+                // _id: '~data-id',
+                // _username: '~data-username',
+                // _select: {
+                //     label: 'Select',
+                //     th: { html: '<a href="#!" class="select-all link">Select</a>' },
+                //     td: { className: 'centered' },
+                //     apply: function(){
+                //         return spawn('input.select-user', {
+                //             type: 'checkbox',
+                //             checked: false,
+                //             title: this.username + ':select'
+                //         });
+                //         //return '<a href="#!" class="username link">' + this.username + '</a>'
+                //     }
+                // },
+                //
+                id: {
+                    label: 'ID',
+                    sort: true,
+                    // th: { style: { width: styles.id }},
+                    td: {
+                        // style: { width: styles.id },
+                        className: 'user-id center'
+                    },
+                    apply: function(id){
+                        return spawn('a.user-id.link', {
+                            href: '#!',
+                            title: this.username + ': refresh'
+                        }, [['i.hidden', zeroPad(id, 6)], id]);
+                    }
+                },
+                username: {
+                    label: 'Username',
+                    filter: true, // add filter: true to individual items to add a filter
+                    // th: { style: { width: styles.username }},
+                    // td: { style: { width: styles.username }},
+                    apply: function(username, tr){
+                        //console.log(tr);
+                        // var _username = truncateText(username);
+                        return spawn('a.username.link.truncate.edit-user', {
+                            href: '#!',
+                            title: username + ': details',
+                            // html: _username,
+                            html: username//,
+                            // style: { width: styles.username },
+                            // data: { username: username }
+                        });
+                    }
+                },
+                fullName: {
+                    label: 'Name',
+                    // th: { style: { width: styles.name }},
+                    // td: { style: { width: styles.name }},
+                    apply: function(){
+                        // var _fullName = truncateText(this.lastName + ', ' + this.firstName);
+                        var _fullName = (this.lastName + ', ' + this.firstName);
+                        return spawn('a.full-name.link.truncate.edit-user', {
+                            href: '#!',
+                            title: this.username + ': project and security settings',
+                            html: _fullName//,
+                            // style: { width: styles.name },
+                            // data: { username: this.username }
+                        });
+                        //return this.lastName + ', ' + this.firstName
+                    }
+                },
+                email: {
+                    label: 'Email',
+                    // th: { style: { width: styles.email }},
+                    // td: { style: { width: styles.email }},
+                    apply: function(email){
+                        // var _email = truncateText(email);
+                        return spawn('a.send-email.link.truncate.edit-user', {
+                            href: '#!',
+                            title: email + ': send email',
+                            // style: { width: styles.email },
+                            // title: 'Send email to: ' + email,
+                            // html: _email
+                            html: email
+                        })
+                    }
+                },
+                verified: {
+                    label: 'Verified',
+                    // th: { style: { width: styles.verified }},
+                    td: {
+                        // style: { width: styles.verified },
+                        className: 'verified center'
+                    },
+                    // custom filter menu
+                    filter: function(table){
+                        return spawn('div.center', [XNAT.ui.select.menu({
+                            value: 'all',
+                            options: [
+                                { label: 'All', value: 'all' },
+                                { label: 'Verified', value: '1' },
+                                { label: 'Unverified', value: '0' }
+                            ],
+                            element: filterMenuElement.call(table, 'verified')
+                        }).element])
+                    },
+                    apply: function(){
+                        return userStatusInfo.call(this, 'verified', 'unverified');
+                    }
+                },
+                enabled: {
+                    label: 'Enabled',
+                    // th: { style: { width: styles.enabled }},
+                    td: {
+                        // style: { width: styles.enabled },
+                        className: 'enabled center'
+                    },
+                    filter: function(table){
+                        return spawn('div.center', [XNAT.ui.select.menu({
+                            value: 'all',
+                            options: [
+                                { label: 'All', value: 'all' },
+                                { label: 'Enabled', value: '1' },
+                                { label: 'Disabled', value: '0' }
+                            ],
+                            element: filterMenuElement.call(table, 'enabled')
+                        }).element])
+                    },
+                    apply: function(){
+                        return userStatusInfo.call(this, 'enabled', 'disabled');
+                    }
+                },
+                // by convention, name 'custom' columns with ALL CAPS
+                // 'custom' columns do not correspond directly with
+                // a data item
+                ACTIVE: {
+                    label: 'Active',
+                    sort: true,
+                    // th: { style: { width: styles.active }},
+                    td: {
+                        // style: { width: styles.active },
+                        className: 'active center mono'
+                    },
+                    filter: function(table){
+                        var $table = $(table);
+                        return spawn('div.center', [XNAT.ui.select.menu({
+                            value: 'all',
+                            options: {
+                                all: 'All',
+                                active: 'Active',
+                                inactive: 'Inactive'
+                            },
+                            element: {
+                                id: 'user-filter-select-active',
+                                on: {
+                                    change: function(){
+                                        var selectedValue = $(this).val();
+                                        var $rows = $table.find('tbody').find('tr');
+                                        var FILTERCLASS = 'filter-active';
+                                        if (selectedValue === 'all') {
+                                            $rows.removeClass(FILTERCLASS);
+                                            return;
+                                        }
+                                        $rows.addClass(FILTERCLASS);
+                                        $rows.each(function(){
+                                            var $row = $(this);
+                                            var isActive = $row.find('a.active-user').length > 0;
+                                            if (isActive && selectedValue === 'active') {
+                                                $row.removeClass(FILTERCLASS);
+                                                return;
+                                            }
+                                            if (!isActive && selectedValue === 'inactive') {
+                                                $row.removeClass(FILTERCLASS);
+                                            }
+                                        });
+                                    }
+                                }
+                            }
+                        }).element])
+                    },
+                    apply: activeUserInfo
+                },
+                lastSuccessfulLogin: {
+                    label: 'Last Login',
+                    sort: true,
+                    th: { className: 'last-login center' },
+                    td: { className: 'last-login center mono' },
+                    filter: function(table){
+                        var MIN = 60*1000;
+                        var HOUR = MIN*60;
+                        var X8HRS = HOUR*8;
+                        var X24HRS = HOUR*24;
+                        var X7DAYS = X24HRS*7;
+                        var X30DAYS = X24HRS*30;
+                        return spawn('div.center', [XNAT.ui.select.menu({
+                            value: 0,
+                            options: {
+                                all: {
+                                    label: 'All',
+                                    value: 0,
+                                    selected: true
+                                },
+                                lastHour: {
+                                    label: 'Last Hour',
+                                    value: HOUR
+                                },
+                                last8hours: {
+                                    label: 'Last 8 Hrs',
+                                    value: X8HRS
+                                },
+                                last24hours: {
+                                    label: 'Last 24 Hrs',
+                                    value: X24HRS
+                                },
+                                lastWeek: {
+                                    label: 'Last Week',
+                                    value: X7DAYS
+                                },
+                                last30days: {
+                                    label: 'Last 30 days',
+                                    value: X30DAYS
+                                },
+                                never: {
+                                    label: 'Never',
+                                    value: -1
+                                }
+                            },
+                            element: {
+                                id: 'user-filter-select-last-login',
+                                on: {
+                                    change: function(){
+                                        var FILTERCLASS = 'filter-login';
+                                        var selectedValue = parseInt(this.value, 10);
+                                        var currentTime = Date.now();
+                                        $dataRows = $dataRows.length ? $dataRows : $$(table).find('tbody').find('tr');
+                                        if (selectedValue === 0) {
+                                            $dataRows.removeClass(FILTERCLASS);
+                                        }
+                                        else {
+                                            $dataRows.addClass(FILTERCLASS).filter(function(){
+                                                var timestamp = this.querySelector('input.last-login.timestamp');
+                                                var lastLogin = +(timestamp.value);
+                                                return selectedValue === lastLogin-1 || selectedValue > (currentTime - lastLogin);
+                                            }).removeClass(FILTERCLASS);
+                                        }
+                                    }
+                                }
+                            }
+                        }).element])
+                    },
+                    apply: lastLoginInfo
+                }
+            }
+        }
+    }
+
 
     historyTable.viewLog = viewLog = function(containerId,logFile){
         XNAT.xhr.get ({
