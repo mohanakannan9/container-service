@@ -1,7 +1,6 @@
 package org.nrg.containers.model.container.auto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -11,8 +10,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.spotify.docker.client.messages.ContainerMount;
-import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.events.model.ContainerEvent;
 import org.nrg.containers.events.model.DockerContainerEvent;
 import org.nrg.containers.model.container.ContainerInputType;
@@ -22,7 +19,6 @@ import org.nrg.containers.model.container.entity.ContainerEntityInput;
 import org.nrg.containers.model.container.entity.ContainerEntityMount;
 import org.nrg.containers.model.container.entity.ContainerEntityOutput;
 import org.nrg.containers.model.container.entity.ContainerMountFilesEntity;
-import org.nrg.containers.services.ContainerService;
 
 import javax.annotation.Nullable;
 import java.util.Collections;
@@ -41,6 +37,10 @@ public abstract class Container {
     @JsonProperty("container-id") public abstract String containerId();
     @Nullable @JsonProperty("workflow-id") public abstract String workflowId();
     @JsonProperty("user-id") public abstract String userId();
+    @Nullable @JsonProperty("swarm") public abstract Boolean swarm();
+    @Nullable @JsonProperty("service-id") public abstract String serviceId();
+    @Nullable @JsonProperty("task-id") public abstract String taskId();
+    @Nullable @JsonProperty("node-id") public abstract String nodeId();
     @JsonProperty("docker-image") public abstract String dockerImage();
     @JsonProperty("command-line") public abstract String commandLine();
     @Nullable @JsonProperty("working-directory") public abstract String workingDirectory();
@@ -60,6 +60,10 @@ public abstract class Container {
                                    @JsonProperty("container-id") final String containerId,
                                    @JsonProperty("workflow-id") final String workflowId,
                                    @JsonProperty("user-id") final String userId,
+                                   @JsonProperty("swarm") final Boolean swarm,
+                                   @JsonProperty("service-id") final String serviceId,
+                                   @JsonProperty("task-id") final String taskId,
+                                   @JsonProperty("node-id") final String nodeId,
                                    @JsonProperty("docker-image") final String dockerImage,
                                    @JsonProperty("command-line") final String commandLine,
                                    @JsonProperty("working-directory") final String workingDirectory,
@@ -79,6 +83,10 @@ public abstract class Container {
                 .containerId(containerId)
                 .workflowId(workflowId)
                 .userId(userId)
+                .swarm(swarm)
+                .serviceId(serviceId)
+                .taskId(taskId)
+                .nodeId(nodeId)
                 .dockerImage(dockerImage)
                 .commandLine(commandLine)
                 .workingDirectory(workingDirectory)
@@ -101,6 +109,10 @@ public abstract class Container {
                 .containerId(containerEntity.getContainerId())
                 .workflowId(containerEntity.getWorkflowId())
                 .userId(containerEntity.getUserId())
+                .swarm(containerEntity.getSwarm())
+                .serviceId(containerEntity.getServiceId())
+                .taskId(containerEntity.getTaskId())
+                .nodeId(containerEntity.getNodeId())
                 .dockerImage(containerEntity.getDockerImage())
                 .commandLine(containerEntity.getCommandLine())
                 .environmentVariables(containerEntity.getEnvironmentVariables() == null ? Collections.<String, String>emptyMap() : containerEntity.getEnvironmentVariables())
@@ -224,6 +236,10 @@ public abstract class Container {
         public abstract Builder dockerImage(String dockerImage);
         public abstract Builder commandLine(String commandLine);
         public abstract Builder workingDirectory(String workingDirectory);
+        public abstract Builder swarm(Boolean swarm);
+        public abstract Builder serviceId(String serviceId);
+        public abstract Builder taskId(String taskId);
+        public abstract Builder nodeId(String nodeId);
         public abstract Builder status(String status);
         public abstract Builder statusTime(Date statusTime);
 

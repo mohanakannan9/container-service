@@ -32,7 +32,7 @@ public class HibernateContainerEntityService
                                 final String containerId,
                                 final String workflowId,
                                 final UserI userI) {
-        final ContainerEntity createdContainer = new ContainerEntity(resolvedCommand, containerId, workflowId, userI.getLogin());
+        final ContainerEntity createdContainer = ContainerEntity.createContainer(resolvedCommand, containerId, workflowId, userI.getLogin());
         log.debug("Creating ContainerEntity for container with id " + containerId);
         final ContainerEntity created = create(createdContainer);
         final ContainerEntityHistory historyItem = ContainerEntityHistory.fromUserAction("Created", userI.getLogin(), created);
