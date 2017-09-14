@@ -214,7 +214,7 @@ public class ContainerServiceImpl implements ContainerService {
         final ResolvedCommand preparedToLaunch = prepareToLaunch(resolvedCommand, userI);
 
         log.info("Creating container from resolved command.");
-        final String containerId = containerControlApi.createContainer(preparedToLaunch);
+        final String containerId = containerControlApi.createContainerOrSwarmService(preparedToLaunch);
 
         log.info("Recording container launch.");
         final Container container = save(preparedToLaunch, containerId, userI);

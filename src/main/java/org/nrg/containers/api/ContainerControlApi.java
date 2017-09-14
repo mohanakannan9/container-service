@@ -32,14 +32,14 @@ public interface ContainerControlApi {
     DockerImage pullImage(String name, DockerHub hub) throws NoDockerServerException, DockerServerException, NotFoundException;
     DockerImage pullImage(String name, DockerHub hub, String username, String password) throws NoDockerServerException, DockerServerException, NotFoundException;
 
-    String createContainer(final ResolvedCommand dockerCommand) throws NoDockerServerException, DockerServerException, ContainerException;
+    String createContainerOrSwarmService(final ResolvedCommand dockerCommand) throws NoDockerServerException, DockerServerException, ContainerException;
     //    String createContainer(final String imageName, final List<String> runCommand, final List <String> volumes) throws NoServerPrefException, DockerServerException;
 //    String createContainer(final DockerServer server, final String imageName,
 //                       final List<String> runCommand, final List <String> volumes) throws DockerServerException;
 //    String createContainer(final DockerServer server, final String imageName,
 //                       final List<String> runCommand, final List <String> volumes,
 //                       final List<String> environmentVariables) throws DockerServerException;
-    void startContainer(final String containerId) throws NoDockerServerException, DockerServerException;
+    void startContainer(final String containerOrServiceId) throws NoDockerServerException, DockerServerException;
 
     List<Command> parseLabels(final String imageName)
             throws DockerServerException, NoDockerServerException, NotFoundException;
