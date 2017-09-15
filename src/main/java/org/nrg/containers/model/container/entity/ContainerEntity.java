@@ -19,6 +19,7 @@ import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.OneToMany;
 import javax.persistence.Transient;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -28,6 +29,8 @@ import java.util.Objects;
 public class ContainerEntity extends AbstractHibernateEntity {
     private long commandId;
     private long wrapperId;
+    private String status;
+    private Date statusTime;
     private String dockerImage;
     private String commandLine;
     private String workingDirectory;
@@ -88,6 +91,8 @@ public class ContainerEntity extends AbstractHibernateEntity {
 
     public ContainerEntity update(final Container containerPojo) {
         this.setId(containerPojo.databaseId());
+        this.setStatus(containerPojo.status());
+        this.setStatusTime(containerPojo.statusTime());
         this.setCommandId(containerPojo.commandId());
         this.setWrapperId(containerPojo.wrapperId());
         this.setContainerId(containerPojo.containerId());
@@ -148,6 +153,22 @@ public class ContainerEntity extends AbstractHibernateEntity {
 
     public void setWrapperId(final long wrapperId) {
         this.wrapperId = wrapperId;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(final String status) {
+        this.status = status;
+    }
+
+    public Date getStatusTime() {
+        return statusTime;
+    }
+
+    public void setStatusTime(final Date statusTime) {
+        this.statusTime = statusTime == null ? null : new Date(statusTime.getTime());
     }
 
     public String getDockerImage() {
@@ -404,6 +425,8 @@ public class ContainerEntity extends AbstractHibernateEntity {
         return MoreObjects.toStringHelper(this)
                 .add("containerId", containerId)
                 .add("workflowId", workflowId)
+                .add("status", status)
+                .add("statusTime", statusTime)
                 .add("commandId", commandId)
                 .add("wrapperId", wrapperId)
                 .add("dockerImage", dockerImage)

@@ -35,6 +35,8 @@ import java.util.Map;
 public abstract class Container {
     @JsonProperty("id") public abstract long databaseId();
     @JsonProperty("command-id") public abstract long commandId();
+    @Nullable @JsonProperty("status") public abstract String status();
+    @Nullable @JsonProperty("status-time") public abstract Date statusTime();
     @JsonProperty("wrapper-id") public abstract long wrapperId();
     @JsonProperty("container-id") public abstract String containerId();
     @Nullable @JsonProperty("workflow-id") public abstract String workflowId();
@@ -49,41 +51,11 @@ public abstract class Container {
     @JsonProperty("history") public abstract ImmutableList<ContainerHistory> history();
     @JsonProperty("log-paths") public abstract ImmutableList<String> logPaths();
 
-    /**
-     * The most recent status in the container's history.
-     * @return The most recent status in the container's history.
-     */
-    @JsonGetter("status")
-    public String status() {
-        String status = null;
-        Date timeRecorded = new Date(0);
-
-        // Update status only when history entry is newer
-        for (final ContainerHistory containerHistory : history()) {
-            if (containerHistory.timeRecorded().getTime() > timeRecorded.getTime()) {
-                if (containerHistory.status().equals("created")) {
-                    status = "Created";
-                } else if (containerHistory.status().equals("started")) {
-                    status = "Running";
-                } else if (containerHistory.status().equals("die")) {
-                    status = "Done";
-                } else if (containerHistory.status().equals("kill")) {
-                    status = "Killed";
-                } else if (containerHistory.status().equals("oom")) {
-                    status = "Killed (Out of memory)";
-                } else {
-                    status = containerHistory.status();
-                }
-                timeRecorded = containerHistory.timeRecorded();
-            }
-        }
-
-        return status;
-    }
-
     @JsonCreator
     public static Container create(@JsonProperty("id") final long databaseId,
                                    @JsonProperty("command-id") final long commandId,
+                                   @JsonProperty("status") final String status,
+                                   @JsonProperty("status-time") final Date statusTime,
                                    @JsonProperty("wrapper-id") final long wrapperId,
                                    @JsonProperty("container-id") final String containerId,
                                    @JsonProperty("workflow-id") final String workflowId,
@@ -100,6 +72,8 @@ public abstract class Container {
 
         return builder()
                 .databaseId(databaseId)
+                .status(status)
+                .statusTime(statusTime == null ? null : new Date(statusTime.getTime()))
                 .commandId(commandId)
                 .wrapperId(wrapperId)
                 .containerId(containerId)
@@ -120,6 +94,8 @@ public abstract class Container {
     public static Container create(final ContainerEntity containerEntity) {
         return builder()
                 .databaseId(containerEntity.getId())
+                .status(containerEntity.getStatus())
+                .statusTime(containerEntity.getStatusTime() == null ? null : new Date(containerEntity.getStatusTime().getTime()))
                 .commandId(containerEntity.getCommandId())
                 .wrapperId(containerEntity.getWrapperId())
                 .containerId(containerEntity.getContainerId())
@@ -248,6 +224,8 @@ public abstract class Container {
         public abstract Builder dockerImage(String dockerImage);
         public abstract Builder commandLine(String commandLine);
         public abstract Builder workingDirectory(String workingDirectory);
+        public abstract Builder status(String status);
+        public abstract Builder statusTime(Date statusTime);
 
         public abstract Builder environmentVariables(Map<String, String> environmentVariables);
         abstract ImmutableMap.Builder<String, String> environmentVariablesBuilder();
