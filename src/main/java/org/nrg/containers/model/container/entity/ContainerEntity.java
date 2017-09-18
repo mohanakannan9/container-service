@@ -2,6 +2,7 @@ package org.nrg.containers.model.container.entity;
 
 import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.hibernate.envers.Audited;
@@ -27,6 +28,13 @@ import java.util.Objects;
 @Entity
 @Audited
 public class ContainerEntity extends AbstractHibernateEntity {
+    public static Map<String, String> STANDARD_STATUS_MAP = ImmutableMap.<String, String>builder()
+            .put("created", "Created")
+            .put("started", "Running")
+            .put("kill", "Killed")
+            .put("oom", "Killed (Out of Memory)")
+            .build();
+
     private long commandId;
     private long wrapperId;
     private String status;
@@ -160,7 +168,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
     }
 
     public void setStatus(final String status) {
-        this.status = status;
+        this.status = STANDARD_STATUS_MAP.containsKey(status) ? STANDARD_STATUS_MAP.get(status) : status;
     }
 
     public Date getStatusTime() {

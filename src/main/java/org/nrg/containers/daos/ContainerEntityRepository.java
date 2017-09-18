@@ -46,7 +46,7 @@ public class ContainerEntityRepository extends AbstractHibernateDAO<ContainerEnt
                 containerEntityHistory.getTimeRecorded().getTime() > containerEntity.getStatusTime().getTime()))
         {
             containerEntity.setStatusTime(containerEntityHistory.getTimeRecorded());
-            containerEntity.setStatus(containerEntityHistory.getStatus()); // TODO map these to a standard set of statii
+            containerEntity.setStatus(containerEntityHistory.getStatus());
         }
         update(containerEntity);
     }
