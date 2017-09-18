@@ -2039,138 +2039,38 @@ var XNAT = getObject(XNAT || {});
         return rootUrl('/xapi/containers' + appended);
     }
 
-    historyTable.table = function(callback){
-        // initialize the table - we'll add to it below
-        var chTable = XNAT.table({
-            className: 'sitewide-command-configs xnat-table compact',
-            style: {
-                width: '100%',
-                marginTop: '15px',
-                marginBottom: '15px'
-            }
-        });
-
-        // add table header row
-        chTable.tr()
-            .th({ addClass: 'left', html: '<b>ID</b>' })
-            .th('<b>Image</b>')
-            .th('<b>Command</b>')
-            .th('<b>User</b>')
-            .th('<b>Date</b>')
-            .th('<b>Project</b>');
-
-        function displayDate(timestamp){
-            var d = new Date(timestamp);
-            return d.toISOString().replace('T',' ').replace('Z',' ').split('.')[0];
-        }
-
-        function displayInput(inputObj){
-            for (var i in inputObj){
-                if (i=="scan") {
-                    var sessionId = inputObj[i].split('/')[2];
-                    var scanId = inputObj[i].split('/scans/')[1];
-                    return spawn(['a|href='+rootUrl('/data/experiments/'+sessionId), sessionId+': '+scanId ]);
-                }
-            }
-        }
-
-        function displayProject(mounts){
-            // assume that the first mount of a container is an input from a project. Parse the URI for that mount and return the project ID.
-            if (mounts.length) {
-                var inputMount = mounts[0]['xnat-host-path'];
-                if (inputMount === undefined) return 'unknown';
-
-                inputMount = inputMount.replace('/data/xnat/archive/','');
-                inputMount = inputMount.replace('/data/archive/','');
-                inputMount = inputMount.replace('/REST/archive/','');
-                var inputMountEls = inputMount.split('/');
-                return spawn('a',{ href: '/data/projects/'+ inputMountEls[0] + '?format=html', html: inputMountEls[0] });
-            } else {
-                return 'unknown';
-            }
-
-        }
-
-        function displayOutput(outputArray){
-            var o = outputArray[0];
-            return o.label;
-        }
-
-        function displayCommandWithPopup(historyEntry){
-            var commandLabel = (XNAT.plugin.containerService.wrapperList[historyEntry['wrapper-id']]) ?
-                XNAT.plugin.containerService.wrapperList[historyEntry['wrapper-id']].description :
-                'Unknown Command';
-            return spawn ('a',{
-                href: 'javascript:XNAT.plugin.containerService.historyTable.viewHistory(\''+historyEntry['id']+'\')',
-                title: 'View Full History Entry',
-                html: commandLabel
-            });
-        }
-
-        XNAT.xhr.getJSON({
-            url: getCommandHistoryUrl(),
-            fail: function(e){
-                errorHandler(e, 'Could Not Retrieve Command History');
-            },
-            success: function(data){
-                if (data.length > 0) {
-                    data.sort(function(a,b){
-                        return (a.id < b.id) ? -1 : 1;
-                    });
-
-                    data.forEach(function(historyEntry){
-                        containerHistory[historyEntry['id']] = historyEntry;
-                        containerHistory[historyEntry['id']]['wrapper-name'] = (XNAT.plugin.containerService.wrapperList[historyEntry['wrapper-id']]) ?
-                            XNAT.plugin.containerService.wrapperList[historyEntry['wrapper-id']].description :
-                            'Unknown (Command definition may have been deleted)';
-
-                        var timestamp = 0;
-                        historyEntry['history'].forEach(function(h){
-                            if(h['status'] == 'Created') {
-                                timestamp = h['time-recorded'];
-                            }
-                        });
-
-                        chTable.tr({title: historyEntry['id'], id: historyEntry['id'] })
-                            .td({ className: 'left', html: '<b>'+historyEntry['id']+'</b>' })
-                            .td(historyEntry['docker-image'])
-                            .td([ displayCommandWithPopup(historyEntry) ])
-                            .td(historyEntry['user-id'])
-                            .td({ className: 'center mono' }, [ displayDate(timestamp) ])
-                            .td([ displayProject(historyEntry['mounts']) ]);
-                    });
-                } else {
-                    chTable.tr()
-                        .td({ colspan: 7, html: "No history entries found" });
-                }
-
-            }
-        });
-
-        historyTable.$table = $(chTable.table);
-
-        return chTable.table;
-    };
-
     function viewHistoryDialog(e, onclose){
         e.preventDefault();
-        var historyId = this.data('id') || $(this).closest('tr').prop('title');
+        var historyId = $(this).data('id') || $(this).closest('tr').prop('title');
         XNAT.plugin.containerService.historyTable.viewHistory(historyId);
     }
 
-    function spawnHistoryTable(url){
+    function sortHistoryData(callback){
+        callback = isFunction(callback) ? callback : function(){};
+
+        var URL = getCommandHistoryUrl();
+        return XNAT.xhr.getJSON(URL)
+            .success(function(data){
+                if (data.length){
+                    data = data.sort(function(a,b){ return (a.id > b.id) ? 1 : -1 });
+                    data.forEach(function(historyEntry){
+                        containerHistory[historyEntry.id] = historyEntry;
+                    });
+                    return data;
+                }
+                callback.apply(this, arguments);
+            })
+    }
+
+    function spawnHistoryTable(sortedHistoryObj){
 
         var $dataRows = [];
-
-        // load 'current' users initially
-        var URL = url || getCommandHistoryUrl();
 
         // TODO:
         // TODO: set min-width as well as max-width
         // TODO:
 
         var styles = {
-            id: (60-24)+'px',
             image: (150-24)+'px',
             command: (200-24) + 'px',
             user: (120-24) + 'px',
@@ -2185,14 +2085,16 @@ var XNAT = getObject(XNAT || {});
             kind: 'table.dataTable',
             name: 'userProfiles',
             id: 'user-profiles',
-            load: URL,
+            // load: URL,
+            data: sortedHistoryObj,
             before: {
                 filterCss: {
                     tag: 'style|type=text/css',
                     content: '\n' +
                     '#command-history-container td.history-id { width: ' + styles.id + '; } \n' +
                     '#command-history-container td.user .truncate { width: ' + styles.user + '; } \n' +
-                    '#command-history-container td.date { width: ' + styles.date + '; } \n'
+                    '#command-history-container td.date { width: ' + styles.date + '; } \n' +
+                        '#command-history-container tr.filter-timestamp { display: none } \n'
                 }
             },
             table: {
@@ -2205,36 +2107,9 @@ var XNAT = getObject(XNAT || {});
                 tr.id = data.id;
                 addDataAttrs(tr, { filter: '0' });
             },
-            sortable: 'id, image, command, user, date, project',
-            filter: 'image, command, user, date, project',
+            sortable: 'id, image, command, user, DATE, PROJECT',
+            filter: 'image, command, user, DATE, PROJECT',
             items: {
-                id: {
-                    label: 'ID',
-                    sort: true,
-                    td: {
-                        className: 'id center'
-                    }
-                },
-                image: {
-                    label: 'Image',
-                    filter: true // add filter: true to individual items to add a filter
-                },
-                command: {
-                    label: 'Command',
-                    filter: true,
-                    apply: function(){
-                        return spawn('a.view-history', {
-                            href: '#!',
-                            title: 'View command history and logs',
-                            data: {'id': this.id },
-                            html: XNAT.plugin.containerService.wrapperList[ this['wrapper-id'] ]
-                        });
-                    }
-                },
-                user: {
-                    label: 'User',
-                    filter: true
-                },
                 // by convention, name 'custom' columns with ALL CAPS
                 // 'custom' columns do not correspond directly with
                 // a data item
@@ -2276,14 +2151,10 @@ var XNAT = getObject(XNAT || {});
                                 last30days: {
                                     label: 'Last 30 days',
                                     value: X30DAYS
-                                },
-                                never: {
-                                    label: 'Never',
-                                    value: -1
                                 }
                             },
                             element: {
-                                id: 'user-filter-select-container-timestamp',
+                                id: 'filter-select-container-timestamp',
                                 on: {
                                     change: function(){
                                         var FILTERCLASS = 'filter-timestamp';
@@ -2295,7 +2166,7 @@ var XNAT = getObject(XNAT || {});
                                         }
                                         else {
                                             $dataRows.addClass(FILTERCLASS).filter(function(){
-                                                var timestamp = this.querySelector('input.container-launch.timestamp');
+                                                var timestamp = this.querySelector('input.container-timestamp');
                                                 var containerLaunch = +(timestamp.value);
                                                 return selectedValue === containerLaunch-1 || selectedValue > (currentTime - containerLaunch);
                                             }).removeClass(FILTERCLASS);
@@ -2313,13 +2184,41 @@ var XNAT = getObject(XNAT || {});
                                     timestamp = h['time-recorded'];
                                     dateString = new Date(timestamp);
                                     dateString = dateString.toISOString().replace('T',' ').replace('Z',' ').split('.')[0];
-                                    return dateString
                                 }
                             });
                         } else {
-                            return 'N/A';
+                            dateString = 'N/A';
                         }
-
+                        return spawn('!',[
+                            spawn('span', dateString ),
+                            spawn('input.hidden.container-timestamp.filtering|type=hidden', { value: timestamp } )
+                        ])
+                    }
+                },
+                image: {
+                    label: 'Image',
+                    filter: true, // add filter: true to individual items to add a filter,
+                    apply: function(){
+                        return this['docker-image'];
+                    }
+                },
+                command: {
+                    label: 'Command',
+                    filter: true,
+                    apply: function(){
+                        return spawn('a.view-history', {
+                            href: '#!',
+                            title: 'View command history and logs',
+                            data: {'id': this.id },
+                            html: XNAT.plugin.containerService.wrapperList[ this['wrapper-id'] ].description
+                        });
+                    }
+                },
+                user: {
+                    label: 'User',
+                    filter: true,
+                    apply: function(){
+                        return this['user-id']
                     }
                 },
                 PROJECT: {
@@ -2477,20 +2376,24 @@ var XNAT = getObject(XNAT || {});
     historyTable.init = historyTable.refresh = function(container){
         var $manager = $$(container || '#command-history-container'),
             _historyTable;
-        if ($manager.length) {
-            setTimeout(function(){
-                $manager.html('loading...');
-            }, 1);
-            setTimeout(function(){
-                _historyTable = XNAT.spawner.spawn({
-                    historyTable: spawnHistoryTable()
-                });
-                _historyTable.done(function(){
-                    this.render($manager.empty(), 20);
-                });
-            }, 10);
-            // return _usersTable;
-        }
+
+        sortHistoryData().done(function(data){
+            if (data.length) {
+                setTimeout(function(){
+                    $manager.html('loading...');
+                }, 1);
+                setTimeout(function(){
+                    _historyTable = XNAT.spawner.spawn({
+                        historyTable: spawnHistoryTable(data)
+                    });
+                    _historyTable.done(function(){
+                        this.render($manager.empty(), 20);
+                    });
+                }, 10);
+                // return _usersTable;
+            }
+        });
+
     };
 
     // Don't call this until the command list has been populated.
