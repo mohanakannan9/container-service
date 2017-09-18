@@ -32,6 +32,9 @@ public interface ContainerService {
     void delete(final long id) throws NotFoundException;
     void delete(final String containerId) throws NotFoundException;
 
+    List<Container> retrieveServices();
+    List<Container> retrieveNonfinalizedServices();
+
     Container addContainerEventToHistory(final ContainerEvent containerEvent, final UserI userI);
     Container.ContainerHistory addContainerHistoryItem(final Container container,
                                                        final Container.ContainerHistory history, final UserI userI);

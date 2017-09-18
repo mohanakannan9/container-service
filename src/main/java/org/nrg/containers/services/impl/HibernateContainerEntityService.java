@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.List;
 
 @Service
 @Transactional
@@ -71,6 +72,18 @@ public class HibernateContainerEntityService
     public void delete(final String containerId) throws NotFoundException {
         final ContainerEntity toDelete = get(containerId);
         delete(toDelete.getId());
+    }
+
+    @Override
+    @Nonnull
+    public List<ContainerEntity> retrieveServices() {
+        return getDao().retrieveServices();
+    }
+
+    @Override
+    @Nonnull
+    public List<ContainerEntity> retrieveNonfinalizedServices() {
+        return getDao().retrieveNonfinalizedServices();
     }
 
     @Override

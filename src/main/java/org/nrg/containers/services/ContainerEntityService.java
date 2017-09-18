@@ -8,6 +8,8 @@ import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
 import org.nrg.xft.security.UserI;
 
+import java.util.List;
+
 public interface ContainerEntityService extends BaseHibernateService<ContainerEntity> {
     ContainerEntity save(final ResolvedCommand resolvedCommand,
                          final String containerId,
@@ -17,6 +19,9 @@ public interface ContainerEntityService extends BaseHibernateService<ContainerEn
     ContainerEntity retrieve(final String containerId);
     ContainerEntity get(final String containerId) throws NotFoundException;
     void delete(final String containerId) throws NotFoundException;
+
+    List<ContainerEntity> retrieveServices();
+    List<ContainerEntity> retrieveNonfinalizedServices();
 
     ContainerEntity addContainerEventToHistory(final ContainerEvent containerEvent, final UserI userI);
     ContainerEntityHistory addContainerHistoryItem(final ContainerEntity containerEntity,

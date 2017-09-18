@@ -1,17 +1,24 @@
 package org.nrg.containers.daos;
 
 import org.hibernate.Hibernate;
+import org.hibernate.criterion.Restrictions;
+import org.nrg.containers.model.container.auto.Container;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.container.entity.ContainerEntityHistory;
 import org.nrg.containers.model.container.entity.ContainerEntityMount;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Collections;
+import java.util.List;
 
 @Repository
 public class ContainerEntityRepository extends AbstractHibernateDAO<ContainerEntity> {
+    private static final Logger log = LoggerFactory.getLogger(ContainerEntityRepository.class);
 
     @Override
     public void initialize(final ContainerEntity entity) {
@@ -49,5 +56,47 @@ public class ContainerEntityRepository extends AbstractHibernateDAO<ContainerEnt
             containerEntity.setStatus(containerEntityHistory.getStatus());
         }
         update(containerEntity);
+    }
+
+    @Nonnull
+    @SuppressWarnings("unchecked")
+    public List<ContainerEntity> retrieveServices() {
+        final List servicesResult = getSession()
+                .createCriteria(ContainerEntity.class)
+                .add(Restrictions.isNotNull("serviceId"))
+                .list();
+        if (servicesResult != null) {
+            try {
+                return (List<ContainerEntity>) servicesResult;
+            } catch (ClassCastException e) {
+                log.error("Failed to cast service search results to ContainerEntity.", e);
+            }
+        }
+        return Collections.emptyList();
+    }
+
+    @Nonnull
+    @SuppressWarnings("unchecked")
+    public List<ContainerEntity> retrieveNonfinalizedServices() {
+        final List servicesResult = getSession()
+                .createCriteria(ContainerEntity.class)
+                .add(Restrictions.conjunction()
+                        .add(Restrictions.isNotNull("serviceId"))
+                        .add(Restrictions.not(Restrictions.disjunction()
+                                .add(Restrictions.like("status", "Complete"))
+                                .add(Restrictions.like("status", "Done"))
+                                .add(Restrictions.like("status", "Failed"))
+                                .add(Restrictions.like("status", "Killed"))
+                        ))
+                )
+                .list();
+        if (servicesResult != null) {
+            try {
+                return (List<ContainerEntity>) servicesResult;
+            } catch (ClassCastException e) {
+                log.error("Failed to cast service search results to ContainerEntity.", e);
+            }
+        }
+        return Collections.emptyList();
     }
 }

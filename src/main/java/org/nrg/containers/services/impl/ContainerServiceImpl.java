@@ -139,6 +139,18 @@ public class ContainerServiceImpl implements ContainerService {
     }
 
     @Override
+    @Nonnull
+    public List<Container> retrieveServices() {
+        return toPojo(containerEntityService.retrieveServices());
+    }
+
+    @Override
+    @Nonnull
+    public List<Container> retrieveNonfinalizedServices() {
+        return toPojo(containerEntityService.retrieveNonfinalizedServices());
+    }
+
+    @Override
     @Nullable
     public Container addContainerEventToHistory(final ContainerEvent containerEvent, final UserI userI) {
         final ContainerEntity containerEntity = containerEntityService.addContainerEventToHistory(containerEvent, userI);
