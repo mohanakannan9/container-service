@@ -266,10 +266,10 @@ public class ContainerServiceImpl implements ContainerService {
             try {
                 final UserI userI = Users.getUser(userLogin);
 
-                addContainerEventToHistory(event, userI);
+                final Container containerWithAddedEvent = addContainerEventToHistory(event, userI);
                 if (event.isExitStatus()) {
                     log.debug("Container is dead. Finalizing.");
-                    finalize(container, userI, event.exitCode());
+                    finalize(containerWithAddedEvent, userI, event.exitCode());
                 }
             } catch (UserInitException | UserNotFoundException e) {
                 log.error("Could not update container status. Could not get user details for user " + userLogin, e);
