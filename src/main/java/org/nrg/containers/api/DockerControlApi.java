@@ -632,7 +632,7 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     @Override
-    public List<DockerContainerEvent> getContainerEventsAndThrow(final Date since, final Date until) throws NoDockerServerException, DockerServerException {
+    public void throwContainerEvents(final Date since, final Date until) throws NoDockerServerException, DockerServerException {
         final List<DockerContainerEvent> events = getContainerEvents(since, until);
 
         for (final DockerContainerEvent event : events) {
@@ -641,8 +641,6 @@ public class DockerControlApi implements ContainerControlApi {
             }
             eventService.triggerEvent(event);
         }
-
-        return events;
     }
 
     private List<Event> getDockerContainerEvents(final Date since, final Date until) throws NoDockerServerException, DockerServerException {

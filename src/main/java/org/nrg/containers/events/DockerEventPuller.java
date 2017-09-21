@@ -80,7 +80,7 @@ public class DockerEventPuller implements Runnable {
         final Date now = new Date();
 
         try {
-            controlApi.getContainerEventsAndThrow(since, now);
+            controlApi.throwContainerEvents(since, now);
             dockerServerService.update(dockerServer.updateEventCheckTime(now));
 
             // Reset failure flags
