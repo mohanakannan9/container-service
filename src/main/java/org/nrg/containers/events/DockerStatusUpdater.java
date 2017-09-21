@@ -15,8 +15,8 @@ import org.springframework.stereotype.Component;
 import java.util.Date;
 
 @Component
-public class DockerEventPuller implements Runnable {
-    private static final Logger log = LoggerFactory.getLogger(DockerEventPuller.class);
+public class DockerStatusUpdater implements Runnable {
+    private static final Logger log = LoggerFactory.getLogger(DockerStatusUpdater.class);
 
     private ContainerControlApi controlApi;
     private DockerServerService dockerServerService;
@@ -27,17 +27,17 @@ public class DockerEventPuller implements Runnable {
 
     @Autowired
     @SuppressWarnings("SpringJavaAutowiringInspection")
-    public DockerEventPuller(final ContainerControlApi controlApi,
-                             final DockerServerService dockerServerService) {
+    public DockerStatusUpdater(final ContainerControlApi controlApi,
+                               final DockerServerService dockerServerService) {
         this.controlApi = controlApi;
         this.dockerServerService = dockerServerService;
     }
 
     @Override
     public void run() {
-        log.trace("Attempting to read docker events.");
+        log.trace("Attempting to update status with docker.");
 
-        final String skipMessage = "Skipping attempt to read events.";
+        final String skipMessage = "Skipping attempt to update status.";
 
         if (!XFTManager.isInitialized()) {
             if (!haveLoggedXftInitFailure) {
@@ -73,7 +73,7 @@ public class DockerEventPuller implements Runnable {
             return;
         }
 
-        // Now we should be able to check the events
+        // Now we should be able to check the status
         final Date lastEventCheckTime = dockerServer.lastEventCheckTime();
         final Date since = lastEventCheckTime == null ? new Date(0L) : lastEventCheckTime;
 

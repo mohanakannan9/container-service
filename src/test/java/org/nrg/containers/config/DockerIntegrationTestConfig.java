@@ -1,7 +1,7 @@
 package org.nrg.containers.config;
 
 import org.nrg.containers.api.DockerControlApi;
-import org.nrg.containers.events.DockerEventPuller;
+import org.nrg.containers.events.DockerStatusUpdater;
 import org.nrg.containers.services.DockerServerService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,15 +22,15 @@ import java.util.concurrent.TimeUnit;
 @Import({IntegrationTestConfig.class})
 public class DockerIntegrationTestConfig implements SchedulingConfigurer {
     @Bean
-    public DockerEventPuller dockerEventPuller(final DockerControlApi dockerControlApi,
-                                               final DockerServerService dockerServerService) {
-        return new DockerEventPuller(dockerControlApi, dockerServerService);
+    public DockerStatusUpdater dockerEventPuller(final DockerControlApi dockerControlApi,
+                                                 final DockerServerService dockerServerService) {
+        return new DockerStatusUpdater(dockerControlApi, dockerServerService);
     }
 
     @Bean
-    public TriggerTask dockerEventPullerTask(final DockerEventPuller dockerEventPuller) {
+    public TriggerTask dockerEventPullerTask(final DockerStatusUpdater dockerStatusUpdater) {
         myTask = new TriggerTask(
-                dockerEventPuller,
+                dockerStatusUpdater,
                 new PeriodicTrigger(5L, TimeUnit.SECONDS)
         );
         return myTask;
