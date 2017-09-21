@@ -545,6 +545,18 @@ public abstract class Container {
                     .build();
         }
 
+        public static ContainerHistory fromServiceTask(final ServiceTask task) {
+            return builder()
+                    .entityType("service")
+                    .entityId(null)
+                    .status(task.status())
+                    .exitCode(task.exitCode() == null ? null : String.valueOf(task.exitCode()))
+                    .timeRecorded(new Date())
+                    .externalTimestamp(task.statusTime() == null ? null : String.valueOf(task.statusTime().getTime()))
+                    .message(task.message())
+                    .build();
+        }
+
         public static Builder builder() {
             return new AutoValue_Container_ContainerHistory.Builder();
         }

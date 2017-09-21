@@ -1,6 +1,7 @@
 package org.nrg.containers.services;
 
 import org.nrg.containers.events.model.ContainerEvent;
+import org.nrg.containers.events.model.ServiceTaskEvent;
 import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.DockerServerException;
@@ -63,6 +64,7 @@ public interface ContainerService {
             throws NoDockerServerException, DockerServerException, ContainerException;
 
     void processEvent(final ContainerEvent event);
+    void processEvent(final ServiceTaskEvent event);
 
     void finalize(final String containerId, final UserI userI) throws NotFoundException;
     void finalize(final Container container, final UserI userI);

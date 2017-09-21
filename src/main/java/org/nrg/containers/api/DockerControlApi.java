@@ -33,19 +33,23 @@ import com.spotify.docker.client.messages.swarm.ReplicatedService;
 import com.spotify.docker.client.messages.swarm.RestartPolicy;
 import com.spotify.docker.client.messages.swarm.ServiceMode;
 import com.spotify.docker.client.messages.swarm.ServiceSpec;
+import com.spotify.docker.client.messages.swarm.Task;
 import com.spotify.docker.client.messages.swarm.TaskSpec;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.events.model.DockerContainerEvent;
+import org.nrg.containers.events.model.ServiceTaskEvent;
+import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoDockerServerException;
+import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMount;
+import org.nrg.containers.model.container.auto.Container;
 import org.nrg.containers.model.container.auto.ContainerMessage;
+import org.nrg.containers.model.container.auto.ServiceTask;
 import org.nrg.containers.model.dockerhub.DockerHubBase.DockerHub;
-import org.nrg.containers.model.server.docker.DockerServerBase.DockerServer;
-import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.image.docker.DockerImage;
+import org.nrg.containers.model.server.docker.DockerServerBase.DockerServer;
 import org.nrg.containers.services.CommandLabelService;
 import org.nrg.containers.services.DockerServerService;
 import org.nrg.framework.exceptions.NotFoundException;
@@ -770,7 +774,11 @@ public class DockerControlApi implements ContainerControlApi {
 
             return eventList;
         } catch (InterruptedException | DockerException e) {
+            log.error(e.getMessage(), e);
             throw new DockerServerException(e);
+        } catch (DockerServerException e) {
+            log.error(e.getMessage(), e);
+            throw e;
         }
     }
 
@@ -780,12 +788,59 @@ public class DockerControlApi implements ContainerControlApi {
             log.info("Killing container " + id);
             client.killContainer(id);
         } catch (ContainerNotFoundException e) {
-            log.error(e.getMessage());
+            log.error(e.getMessage(), e);
             throw new NotFoundException(e);
         } catch (DockerException | InterruptedException e) {
-            log.error(e.getMessage());
+            log.error(e.getMessage(), e);
             throw new DockerServerException(e);
+        } catch (DockerServerException e) {
+            log.error(e.getMessage(), e);
+            throw e;
         }
+    }
+
+    @Override
+    public ServiceTask getTaskForService(final Container service) throws NoDockerServerException, DockerServerException {
+        return getTaskForService(getServer(), service);
+    }
+
+    @Override
+    public ServiceTask getTaskForService(final DockerServer dockerServer, final Container service)
+            throws DockerServerException {
+        try (final DockerClient client = getClient(dockerServer)) {
+            final List<Task> tasks = client.listTasks(Task.Criteria.builder().serviceName(service.serviceId()).build());
+            if (tasks.size() == 1) {
+                final Task task = tasks.get(0);
+                return ServiceTask.builder()
+                        .serviceId(service.serviceId())
+                        .taskId(task.id())
+                        .nodeId(task.nodeId())
+                        .status(task.status().state())
+                        .statusTime(task.status().timestamp())
+                        .message(task.status().message())
+                        .exitCode(task.status().containerStatus().exitCode())
+                        .containerId(task.status().containerStatus().containerId())
+                        .build();
+            }
+        } catch (DockerException | InterruptedException e) {
+            log.error(e.getMessage(), e);
+            throw new DockerServerException(e);
+        } catch (DockerServerException e) {
+            log.error(e.getMessage(), e);
+            throw e;
+        }
+        return null;
+    }
+
+    @Override
+    public void throwTaskEventForService(final Container service) throws NoDockerServerException, DockerServerException {
+        throwTaskEventForService(getServer(), service);
+    }
+
+    @Override
+    public void throwTaskEventForService(final DockerServer dockerServer, final Container service) throws DockerServerException {
+        final ServiceTask task = getTaskForService(dockerServer, service);
+        eventService.triggerEvent(ServiceTaskEvent.create(task, service));
     }
 
     /**

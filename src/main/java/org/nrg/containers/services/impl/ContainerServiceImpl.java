@@ -6,6 +6,7 @@ import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.events.model.ContainerEvent;
+import org.nrg.containers.events.model.ServiceTaskEvent;
 import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.DockerServerException;
@@ -17,6 +18,7 @@ import org.nrg.containers.model.command.auto.ResolvedInputTreeNode;
 import org.nrg.containers.model.command.auto.ResolvedInputValue;
 import org.nrg.containers.model.container.auto.Container;
 import org.nrg.containers.model.container.auto.Container.ContainerHistory;
+import org.nrg.containers.model.container.auto.ServiceTask;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.container.entity.ContainerEntityHistory;
 import org.nrg.containers.model.xnat.Scan;
@@ -290,6 +292,50 @@ public class ContainerServiceImpl implements ContainerService {
 
         if (log.isDebugEnabled()) {
             log.debug("Done processing docker container event: " + event);
+        }
+    }
+
+    @Override
+    public void processEvent(final ServiceTaskEvent event) {
+        final ServiceTask task = event.task();
+        final Container service;
+
+        // When we create the service, we don't know all the IDs. If this is the first time we
+        // have seen a task for this service, we can set those IDs now.
+        if (StringUtils.isBlank(event.service().taskId())) {
+            final Container serviceToUpdate = event.service().toBuilder()
+                    .taskId(task.taskId())
+                    .containerId(task.containerId())
+                    .nodeId(task.nodeId())
+                    .build();
+            containerEntityService.update(fromPojo(serviceToUpdate));
+            service = retrieve(serviceToUpdate.databaseId());
+        } else {
+            service = event.service();
+        }
+
+        if (service != null) {
+            final String userLogin = service.userId();
+            try {
+                final UserI userI = Users.getUser(userLogin);
+                final ContainerHistory taskHistoryItem = ContainerHistory.fromServiceTask(task);
+                final ContainerHistory createdTaskHistoryItem = addContainerHistoryItem(service, taskHistoryItem, userI);
+                if (createdTaskHistoryItem == null) {
+                    // We have already added this task and can safely skip it.
+                } else {
+                    if (task.exitCode() != null) {
+                        log.debug("Service has exited. Finalizing.");
+                        final Container serviceWithAddedEvent = retrieve(service.databaseId());
+                        finalize(serviceWithAddedEvent, userI, String.valueOf(task.exitCode()));
+                    }
+                }
+            } catch (UserInitException | UserNotFoundException e) {
+                log.error("Could not update container status. Could not get user details for user " + userLogin, e);
+            }
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug("Done processing service task event: " + event);
         }
     }
 

@@ -114,13 +114,13 @@ public class HibernateContainerEntityService
             return null;
         }
 
-        log.info("Adding new history item to container entity " + containerEntity.getId() + " from event.");
+        log.info("Adding new history item to container entity " + containerEntity.getId() + ".");
         if (log.isDebugEnabled()) {
             log.debug("" + history);
         }
         getDao().addHistoryItem(containerEntity, history);
 
-        ContainerUtils.updateWorkflowStatus(containerEntity.getWorkflowId(), history.getStatus(), userI);
+        ContainerUtils.updateWorkflowStatus(containerEntity.getWorkflowId(), containerEntity.getStatus(), userI);
 
         return history;
     }

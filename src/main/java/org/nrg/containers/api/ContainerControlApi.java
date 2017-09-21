@@ -6,7 +6,9 @@ import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoDockerServerException;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.command.auto.Command;
+import org.nrg.containers.model.container.auto.Container;
 import org.nrg.containers.model.container.auto.ContainerMessage;
+import org.nrg.containers.model.container.auto.ServiceTask;
 import org.nrg.containers.model.dockerhub.DockerHubBase.DockerHub;
 import org.nrg.containers.model.image.docker.DockerImage;
 import org.nrg.containers.model.server.docker.DockerServerBase.DockerServer;
@@ -55,4 +57,9 @@ public interface ContainerControlApi {
     void throwContainerEvents(final Date since, final Date until) throws NoDockerServerException, DockerServerException;
 
     void killContainer(final String id) throws NoDockerServerException, DockerServerException, NotFoundException;
+
+    ServiceTask getTaskForService(Container service) throws NoDockerServerException, DockerServerException;
+    ServiceTask getTaskForService(DockerServer dockerServer, Container service) throws DockerServerException;
+    void throwTaskEventForService(Container service) throws NoDockerServerException, DockerServerException;
+    void throwTaskEventForService(DockerServer dockerServer, Container service) throws DockerServerException;
 }
