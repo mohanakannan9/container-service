@@ -6,12 +6,15 @@ import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoDockerServerException;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.command.auto.Command;
+import org.nrg.containers.model.container.auto.Container;
 import org.nrg.containers.model.container.auto.ContainerMessage;
+import org.nrg.containers.model.container.auto.ServiceTask;
 import org.nrg.containers.model.dockerhub.DockerHubBase.DockerHub;
 import org.nrg.containers.model.image.docker.DockerImage;
 import org.nrg.containers.model.server.docker.DockerServerBase.DockerServer;
 import org.nrg.containers.model.server.docker.DockerServerBase.DockerServerWithPing;
 import org.nrg.framework.exceptions.NotFoundException;
+import org.nrg.xft.security.UserI;
 
 import java.util.Date;
 import java.util.List;
@@ -32,14 +35,14 @@ public interface ContainerControlApi {
     DockerImage pullImage(String name, DockerHub hub) throws NoDockerServerException, DockerServerException, NotFoundException;
     DockerImage pullImage(String name, DockerHub hub, String username, String password) throws NoDockerServerException, DockerServerException, NotFoundException;
 
-    String createContainer(final ResolvedCommand dockerCommand) throws NoDockerServerException, DockerServerException, ContainerException;
+    Container createContainerOrSwarmService(final ResolvedCommand dockerCommand, final UserI userI) throws NoDockerServerException, DockerServerException, ContainerException;
     //    String createContainer(final String imageName, final List<String> runCommand, final List <String> volumes) throws NoServerPrefException, DockerServerException;
 //    String createContainer(final DockerServer server, final String imageName,
 //                       final List<String> runCommand, final List <String> volumes) throws DockerServerException;
 //    String createContainer(final DockerServer server, final String imageName,
 //                       final List<String> runCommand, final List <String> volumes,
 //                       final List<String> environmentVariables) throws DockerServerException;
-    void startContainer(final String containerId) throws NoDockerServerException, DockerServerException;
+    void startContainer(final String containerOrServiceId) throws NoDockerServerException, DockerServerException;
 
     List<Command> parseLabels(final String imageName)
             throws DockerServerException, NoDockerServerException, NotFoundException;
@@ -48,11 +51,18 @@ public interface ContainerControlApi {
     List<ContainerMessage> getContainers(final Map<String, String> params) throws NoDockerServerException, DockerServerException;
     ContainerMessage getContainer(final String id) throws NotFoundException, NoDockerServerException, DockerServerException;
     String getContainerStatus(final String id) throws NotFoundException, NoDockerServerException, DockerServerException;
-    String getContainerStdoutLog(String id) throws NoDockerServerException, DockerServerException;
-    String getContainerStderrLog(String id) throws NoDockerServerException, DockerServerException;
+    String getContainerStdoutLog(String containerId) throws NoDockerServerException, DockerServerException;
+    String getContainerStderrLog(String containerId) throws NoDockerServerException, DockerServerException;
+    String getServiceStdoutLog(String serviceId) throws NoDockerServerException, DockerServerException;
+    String getServiceStderrLog(String serviceId) throws NoDockerServerException, DockerServerException;
 
     List<DockerContainerEvent> getContainerEvents(final Date since, final Date until) throws NoDockerServerException, DockerServerException;
     void throwContainerEvents(final Date since, final Date until) throws NoDockerServerException, DockerServerException;
 
     void killContainer(final String id) throws NoDockerServerException, DockerServerException, NotFoundException;
+
+    ServiceTask getTaskForService(Container service) throws NoDockerServerException, DockerServerException;
+    ServiceTask getTaskForService(DockerServer dockerServer, Container service) throws DockerServerException;
+    void throwTaskEventForService(Container service) throws NoDockerServerException, DockerServerException;
+    void throwTaskEventForService(DockerServer dockerServer, Container service) throws DockerServerException;
 }

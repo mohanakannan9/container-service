@@ -29,10 +29,16 @@ import java.util.Objects;
 @Audited
 public class ContainerEntity extends AbstractHibernateEntity {
     public static Map<String, String> STANDARD_STATUS_MAP = ImmutableMap.<String, String>builder()
+            .put("complete", "Complete")
             .put("created", "Created")
+            .put("rejected", "Failed")
+            .put("failed", "Failed")
+            .put("start", "Running")
             .put("started", "Running")
+            .put("running", "Running")
             .put("kill", "Killed")
             .put("oom", "Killed (Out of Memory)")
+            .put("starting", "Starting")
             .build();
 
     private long commandId;
@@ -47,49 +53,17 @@ public class ContainerEntity extends AbstractHibernateEntity {
     private String containerId;
     private String workflowId;
     private String userId;
+    private Boolean swarm;
+    private String serviceId;
+
+    private String taskId;
+
+    private String nodeId;
     private List<ContainerEntityInput> inputs;
     private List<ContainerEntityOutput> outputs;
     private List<ContainerEntityHistory> history = Lists.newArrayList();
     private List<String> logPaths;
-
     public ContainerEntity() {}
-
-    public ContainerEntity(final ResolvedCommand resolvedCommand,
-                           final String containerId,
-                           final String workflowId,
-                           final String userId) {
-        this.containerId = containerId;
-        this.workflowId = workflowId;
-        this.userId = userId;
-
-        this.commandId = resolvedCommand.commandId();
-        this.wrapperId = resolvedCommand.wrapperId();
-        this.dockerImage = resolvedCommand.image();
-        this.commandLine = resolvedCommand.commandLine();
-        this.workingDirectory = resolvedCommand.workingDirectory();
-        setEnvironmentVariables(resolvedCommand.environmentVariables());
-        setMounts(Lists.newArrayList(
-                Lists.transform(resolvedCommand.mounts(), new Function<ResolvedCommandMount, ContainerEntityMount>() {
-                    @Override
-                    public ContainerEntityMount apply(final ResolvedCommandMount resolvedCommandMount) {
-                        return new ContainerEntityMount(resolvedCommandMount);
-                    }
-                })
-        ));
-        addRawInputs(resolvedCommand.rawInputValues());
-        addExternalWrapperInputs(resolvedCommand.externalWrapperInputValues());
-        addDerivedWrapperInputs(resolvedCommand.derivedWrapperInputValues());
-        addCommandInputs(resolvedCommand.commandInputValues());
-        setOutputs(Lists.newArrayList(
-                Lists.transform(resolvedCommand.outputs(), new Function<ResolvedCommandOutput, ContainerEntityOutput>() {
-                    @Override
-                    public ContainerEntityOutput apply(final ResolvedCommandOutput resolvedCommandOutput) {
-                        return new ContainerEntityOutput(resolvedCommandOutput);
-                    }
-                })
-        ));
-        setLogPaths(null);
-    }
 
     public static ContainerEntity fromPojo(final Container containerPojo) {
         final ContainerEntity containerEntity = new ContainerEntity();
@@ -106,6 +80,10 @@ public class ContainerEntity extends AbstractHibernateEntity {
         this.setContainerId(containerPojo.containerId());
         this.setWorkflowId(containerPojo.workflowId());
         this.setUserId(containerPojo.userId());
+        this.setServiceId(containerPojo.serviceId());
+        this.setTaskId(containerPojo.taskId());
+        this.setNodeId(containerPojo.nodeId());
+        this.setSwarm(containerPojo.swarm());
         this.setDockerImage(containerPojo.dockerImage());
         this.setCommandLine(containerPojo.commandLine());
         this.setWorkingDirectory(containerPojo.workingDirectory());
@@ -250,6 +228,38 @@ public class ContainerEntity extends AbstractHibernateEntity {
 
     public void setUserId(final String user) {
         this.userId = user;
+    }
+
+    public Boolean getSwarm() {
+        return swarm;
+    }
+
+    public void setSwarm(final Boolean swarm) {
+        this.swarm = swarm != null && swarm;
+    }
+
+    public String getServiceId() {
+        return serviceId;
+    }
+
+    public void setServiceId(final String serviceId) {
+        this.serviceId = serviceId;
+    }
+
+    public String getTaskId() {
+        return taskId;
+    }
+
+    public void setTaskId(final String taskId) {
+        this.taskId = taskId;
+    }
+
+    public String getNodeId() {
+        return nodeId;
+    }
+
+    public void setNodeId(final String nodeId) {
+        this.nodeId = nodeId;
     }
 
     @OneToMany(mappedBy = "containerEntity", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -437,6 +447,10 @@ public class ContainerEntity extends AbstractHibernateEntity {
                 .add("statusTime", statusTime)
                 .add("commandId", commandId)
                 .add("wrapperId", wrapperId)
+                .add("swarm", swarm)
+                .add("serviceId", serviceId)
+                .add("taskId", taskId)
+                .add("nodeId", nodeId)
                 .add("dockerImage", dockerImage)
                 .add("commandLine", commandLine)
                 .add("environmentVariables", environmentVariables)

@@ -6,6 +6,7 @@ import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.events.model.ContainerEvent;
+import org.nrg.containers.events.model.ServiceTaskEvent;
 import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.DockerServerException;
@@ -17,6 +18,7 @@ import org.nrg.containers.model.command.auto.ResolvedInputTreeNode;
 import org.nrg.containers.model.command.auto.ResolvedInputValue;
 import org.nrg.containers.model.container.auto.Container;
 import org.nrg.containers.model.container.auto.Container.ContainerHistory;
+import org.nrg.containers.model.container.auto.ServiceTask;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.container.entity.ContainerEntityHistory;
 import org.nrg.containers.model.xnat.Scan;
@@ -93,16 +95,6 @@ public class ContainerServiceImpl implements ContainerService {
     }
 
     @Override
-    public Container save(final ResolvedCommand resolvedCommand, final String containerId, final UserI userI) {
-        final String workflowId = makeWorkflowIfAppropriate(resolvedCommand, containerId, userI);
-        return save(resolvedCommand, containerId, workflowId, userI);
-    }
-
-    private Container save(final ResolvedCommand resolvedCommand, final String containerId, final String workflowId, final UserI userI) {
-        return toPojo(containerEntityService.save(resolvedCommand, containerId, workflowId, userI));
-    }
-
-    @Override
     @Nullable
     public Container retrieve(final String containerId) {
         final ContainerEntity containerEntity = containerEntityService.retrieve(containerId);
@@ -136,6 +128,18 @@ public class ContainerServiceImpl implements ContainerService {
     @Override
     public void delete(final String containerId) throws NotFoundException {
         containerEntityService.delete(containerId);
+    }
+
+    @Override
+    @Nonnull
+    public List<Container> retrieveServices() {
+        return toPojo(containerEntityService.retrieveServices());
+    }
+
+    @Override
+    @Nonnull
+    public List<Container> retrieveNonfinalizedServices() {
+        return toPojo(containerEntityService.retrieveNonfinalizedServices());
     }
 
     @Override
@@ -214,21 +218,24 @@ public class ContainerServiceImpl implements ContainerService {
         final ResolvedCommand preparedToLaunch = prepareToLaunch(resolvedCommand, userI);
 
         log.info("Creating container from resolved command.");
-        final String containerId = containerControlApi.createContainer(preparedToLaunch);
+        final Container createdContainerOrService = containerControlApi.createContainerOrSwarmService(preparedToLaunch, userI);
 
         log.info("Recording container launch.");
-        final Container container = save(preparedToLaunch, containerId, userI);
+        final String workflowId = makeWorkflowIfAppropriate(resolvedCommand, createdContainerOrService, userI);
+        final Container savedContainerOrService = toPojo(containerEntityService.save(fromPojo(
+                createdContainerOrService.toBuilder().workflowId(workflowId).build()
+        ), userI));
 
         log.info("Starting container.");
         try {
-            containerControlApi.startContainer(containerId);
+            containerControlApi.startContainer(savedContainerOrService.containerId());
         } catch (DockerServerException e) {
-            addContainerHistoryItem(container, ContainerHistory.fromSystem("Failed", "Did not start." + e.getMessage()), userI);
-            handleFailure(container);
+            addContainerHistoryItem(savedContainerOrService, ContainerHistory.fromSystem("Failed", "Did not start." + e.getMessage()), userI);
+            handleFailure(savedContainerOrService);
             throw new ContainerException("Failed to start");
         }
 
-        return container;
+        return createdContainerOrService;
     }
 
     @Nonnull
@@ -282,6 +289,55 @@ public class ContainerServiceImpl implements ContainerService {
     }
 
     @Override
+    public void processEvent(final ServiceTaskEvent event) {
+        final ServiceTask task = event.task();
+        final Container service;
+        log.debug("Processing service task. Task id \"{}\" for service \"{}\".",
+                task.taskId(), task.serviceId());
+
+        // When we create the service, we don't know all the IDs. If this is the first time we
+        // have seen a task for this service, we can set those IDs now.
+        if (StringUtils.isBlank(event.service().taskId())) {
+            log.debug("Service \"{}\" has no task information yet. Setting it now.", task.serviceId());
+            final Container serviceToUpdate = event.service().toBuilder()
+                    .taskId(task.taskId())
+                    .containerId(task.containerId())
+                    .nodeId(task.nodeId())
+                    .build();
+            containerEntityService.update(fromPojo(serviceToUpdate));
+            service = retrieve(serviceToUpdate.databaseId());
+        } else {
+            service = event.service();
+        }
+
+        if (service != null) {
+            final String userLogin = service.userId();
+            try {
+                final UserI userI = Users.getUser(userLogin);
+                final ContainerHistory taskHistoryItem = ContainerHistory.fromServiceTask(task);
+                final ContainerHistory createdTaskHistoryItem = addContainerHistoryItem(service, taskHistoryItem, userI);
+                if (createdTaskHistoryItem == null) {
+                    // We have already added this task and can safely skip it.
+                    log.debug("Skipping task status we have already seen.");
+                } else {
+                    if (task.exitCode() != null || task.isExitStatus()) {
+                        log.debug("Service has exited. Finalizing.");
+                        final String exitCodeString = task.exitCode() == null ? null : String.valueOf(task.exitCode());
+                        final Container serviceWithAddedEvent = retrieve(service.databaseId());
+                        finalize(serviceWithAddedEvent, userI, exitCodeString);
+                    }
+                }
+            } catch (UserInitException | UserNotFoundException e) {
+                log.error("Could not update container status. Could not get user details for user " + userLogin, e);
+            }
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug("Done processing service task event: " + event);
+        }
+    }
+
+    @Override
     public void finalize(final String containerId, final UserI userI) throws NotFoundException {
         finalize(get(containerId), userI);
     }
@@ -305,19 +361,14 @@ public class ContainerServiceImpl implements ContainerService {
 
     @Override
     public void finalize(final Container container, final UserI userI, final String exitCode) {
-        if (log.isInfoEnabled()) {
-            log.info(String.format("Finalizing ContainerExecution %s for container %s", container.databaseId(), container.containerId()));
-        }
+        log.info("Finalizing ContainerExecution {} for container {}.", container.databaseId(), container.containerId());
 
         final Container finalized = containerFinalizeService.finalizeContainer(container, userI, exitCode);
 
-        if (log.isInfoEnabled()) {
-            log.info(String.format("Done uploading for ContainerExecution %s. Now saving information about created outputs.", container.databaseId()));
-        }
+        log.info("Done uploading for ContainerExecution {}. Now saving information about created outputs.", container.databaseId());
+
         containerEntityService.update(fromPojo(finalized));
-        if (log.isDebugEnabled()) {
-            log.debug("Done saving outputs for Container " + String.valueOf(container.databaseId()));
-        }
+        log.debug("Done saving outputs for Container {}.", container.databaseId());
     }
 
     @Override
@@ -418,12 +469,13 @@ public class ContainerServiceImpl implements ContainerService {
      * workflow, so we don't make one.
      *
      * @param resolvedCommand A resolved command that will be used to launch a container
-     * @param containerId The docker ID of the container that has been created
+     * @param containerOrService The Container object which refers to either a container launched on
+     *                           a single docker machine or a service created on a swarm
      * @param userI The user launching the container
      * @return ID of the created workflow, or null if no workflow was created
      */
     @Nullable
-    private String makeWorkflowIfAppropriate(final ResolvedCommand resolvedCommand, final String containerId, final UserI userI) {
+    private String makeWorkflowIfAppropriate(final ResolvedCommand resolvedCommand, final Container containerOrService, final UserI userI) {
         log.debug("Preparing to make workflow.");
         final XFTItem rootInputObject = findRootInputObject(resolvedCommand, userI);
         if (rootInputObject == null) {
@@ -437,7 +489,11 @@ public class ContainerServiceImpl implements ContainerService {
         try {
             final PersistentWorkflowI workflow = WorkflowUtils.buildOpenWorkflow(userI, rootInputObject,
                     EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.TYPE.PROCESS,
-                            resolvedCommand.wrapperName(),"Container launch", containerId));
+                            resolvedCommand.wrapperName(),
+                            "Container launch",
+                            StringUtils.isNotBlank(containerOrService.serviceId()) ?
+                                    containerOrService.serviceId() :
+                                    containerOrService.containerId()));
             WorkflowUtils.save(workflow, workflow.buildEvent());
             log.debug("Created workflow {}.", workflow.getWorkflowId());
             return String.valueOf(workflow.getWorkflowId());

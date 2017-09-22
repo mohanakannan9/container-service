@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.List;
 
 @Service
 @Transactional
@@ -28,13 +29,8 @@ public class HibernateContainerEntityService
 
     @Override
     @Nonnull
-    public ContainerEntity save(final ResolvedCommand resolvedCommand,
-                                final String containerId,
-                                final String workflowId,
-                                final UserI userI) {
-        final ContainerEntity createdContainer = new ContainerEntity(resolvedCommand, containerId, workflowId, userI.getLogin());
-        log.debug("Creating ContainerEntity for container with id " + containerId);
-        final ContainerEntity created = create(createdContainer);
+    public ContainerEntity save(final ContainerEntity toCreate, final UserI userI) {
+        final ContainerEntity created = create(toCreate);
         final ContainerEntityHistory historyItem = ContainerEntityHistory.fromUserAction("Created", userI.getLogin(), created);
         addContainerHistoryItem(created, historyItem, userI);
         return created;
@@ -74,6 +70,18 @@ public class HibernateContainerEntityService
     }
 
     @Override
+    @Nonnull
+    public List<ContainerEntity> retrieveServices() {
+        return getDao().retrieveServices();
+    }
+
+    @Override
+    @Nonnull
+    public List<ContainerEntity> retrieveNonfinalizedServices() {
+        return getDao().retrieveNonfinalizedServices();
+    }
+
+    @Override
     @Nullable
     public ContainerEntity addContainerEventToHistory(final ContainerEvent containerEvent, final UserI userI) {
         final ContainerEntity containerEntity = retrieve(containerEvent.containerId());
@@ -101,13 +109,13 @@ public class HibernateContainerEntityService
             return null;
         }
 
-        log.info("Adding new history item to container entity " + containerEntity.getId() + " from event.");
+        log.info("Adding new history item to container entity " + containerEntity.getId() + ".");
         if (log.isDebugEnabled()) {
             log.debug("" + history);
         }
         getDao().addHistoryItem(containerEntity, history);
 
-        ContainerUtils.updateWorkflowStatus(containerEntity.getWorkflowId(), history.getStatus(), userI);
+        ContainerUtils.updateWorkflowStatus(containerEntity.getWorkflowId(), containerEntity.getStatus(), userI);
 
         return history;
     }

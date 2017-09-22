@@ -1,7 +1,6 @@
 package org.nrg.containers.model.container.auto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -11,10 +10,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.spotify.docker.client.messages.ContainerMount;
-import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.events.model.ContainerEvent;
 import org.nrg.containers.events.model.DockerContainerEvent;
+import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.container.ContainerInputType;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.container.entity.ContainerEntityHistory;
@@ -22,7 +20,7 @@ import org.nrg.containers.model.container.entity.ContainerEntityInput;
 import org.nrg.containers.model.container.entity.ContainerEntityMount;
 import org.nrg.containers.model.container.entity.ContainerEntityOutput;
 import org.nrg.containers.model.container.entity.ContainerMountFilesEntity;
-import org.nrg.containers.services.ContainerService;
+import org.nrg.xft.security.UserI;
 
 import javax.annotation.Nullable;
 import java.util.Collections;
@@ -38,9 +36,13 @@ public abstract class Container {
     @Nullable @JsonProperty("status") public abstract String status();
     @Nullable @JsonProperty("status-time") public abstract Date statusTime();
     @JsonProperty("wrapper-id") public abstract long wrapperId();
-    @JsonProperty("container-id") public abstract String containerId();
+    @Nullable @JsonProperty("container-id") public abstract String containerId();
     @Nullable @JsonProperty("workflow-id") public abstract String workflowId();
     @JsonProperty("user-id") public abstract String userId();
+    @Nullable @JsonProperty("swarm") public abstract Boolean swarm();
+    @Nullable @JsonProperty("service-id") public abstract String serviceId();
+    @Nullable @JsonProperty("task-id") public abstract String taskId();
+    @Nullable @JsonProperty("node-id") public abstract String nodeId();
     @JsonProperty("docker-image") public abstract String dockerImage();
     @JsonProperty("command-line") public abstract String commandLine();
     @Nullable @JsonProperty("working-directory") public abstract String workingDirectory();
@@ -51,6 +53,11 @@ public abstract class Container {
     @JsonProperty("history") public abstract ImmutableList<ContainerHistory> history();
     @JsonProperty("log-paths") public abstract ImmutableList<String> logPaths();
 
+    @JsonIgnore
+    public boolean isSwarmService() {
+        return swarm() != null && swarm();
+    }
+
     @JsonCreator
     public static Container create(@JsonProperty("id") final long databaseId,
                                    @JsonProperty("command-id") final long commandId,
@@ -60,6 +67,10 @@ public abstract class Container {
                                    @JsonProperty("container-id") final String containerId,
                                    @JsonProperty("workflow-id") final String workflowId,
                                    @JsonProperty("user-id") final String userId,
+                                   @JsonProperty("swarm") final Boolean swarm,
+                                   @JsonProperty("service-id") final String serviceId,
+                                   @JsonProperty("task-id") final String taskId,
+                                   @JsonProperty("node-id") final String nodeId,
                                    @JsonProperty("docker-image") final String dockerImage,
                                    @JsonProperty("command-line") final String commandLine,
                                    @JsonProperty("working-directory") final String workingDirectory,
@@ -79,6 +90,10 @@ public abstract class Container {
                 .containerId(containerId)
                 .workflowId(workflowId)
                 .userId(userId)
+                .swarm(swarm)
+                .serviceId(serviceId)
+                .taskId(taskId)
+                .nodeId(nodeId)
                 .dockerImage(dockerImage)
                 .commandLine(commandLine)
                 .workingDirectory(workingDirectory)
@@ -101,6 +116,10 @@ public abstract class Container {
                 .containerId(containerEntity.getContainerId())
                 .workflowId(containerEntity.getWorkflowId())
                 .userId(containerEntity.getUserId())
+                .swarm(containerEntity.getSwarm())
+                .serviceId(containerEntity.getServiceId())
+                .taskId(containerEntity.getTaskId())
+                .nodeId(containerEntity.getNodeId())
                 .dockerImage(containerEntity.getDockerImage())
                 .commandLine(containerEntity.getCommandLine())
                 .environmentVariables(containerEntity.getEnvironmentVariables() == null ? Collections.<String, String>emptyMap() : containerEntity.getEnvironmentVariables())
@@ -142,6 +161,42 @@ public abstract class Container {
                         })
                 )
                 .build();
+    }
+
+    public static Container containerFromResolvedCommand(final ResolvedCommand resolvedCommand,
+                                                         final String containerId,
+                                                         final String userId) {
+        return buildFromResolvedCommand(resolvedCommand)
+                .userId(userId)
+                .containerId(containerId)
+                .build();
+    }
+
+    public static Container serviceFromResolvedCommand(final ResolvedCommand resolvedCommand,
+                                                       final String serviceId,
+                                                       final String userId) {
+        return buildFromResolvedCommand(resolvedCommand)
+                .userId(userId)
+                .serviceId(serviceId)
+                .swarm(true)
+                .build();
+    }
+
+    private static Container.Builder buildFromResolvedCommand(final ResolvedCommand resolvedCommand) {
+        return builder()
+                .databaseId(0L)
+                .commandId(resolvedCommand.commandId())
+                .wrapperId(resolvedCommand.wrapperId())
+                .dockerImage(resolvedCommand.image())
+                .commandLine(resolvedCommand.commandLine())
+                .workingDirectory(resolvedCommand.workingDirectory())
+                .environmentVariables(resolvedCommand.environmentVariables())
+                .mountsFromResolvedCommand(resolvedCommand.mounts())
+                .addRawInputs(resolvedCommand.rawInputValues())
+                .addCommandInputs(resolvedCommand.commandInputValues())
+                .addExternalWrapperInputs(resolvedCommand.externalWrapperInputValues())
+                .addDerivedWrapperInputs(resolvedCommand.derivedWrapperInputValues())
+                .addOutputsFromResolvedCommand(resolvedCommand.outputs());
     }
 
     public static Builder builder() {
@@ -224,6 +279,10 @@ public abstract class Container {
         public abstract Builder dockerImage(String dockerImage);
         public abstract Builder commandLine(String commandLine);
         public abstract Builder workingDirectory(String workingDirectory);
+        public abstract Builder swarm(Boolean swarm);
+        public abstract Builder serviceId(String serviceId);
+        public abstract Builder taskId(String taskId);
+        public abstract Builder nodeId(String nodeId);
         public abstract Builder status(String status);
         public abstract Builder statusTime(Date statusTime);
 
@@ -240,6 +299,14 @@ public abstract class Container {
             mountsBuilder().add(mounts);
             return this;
         }
+        public Builder mountsFromResolvedCommand(final List<ResolvedCommand.ResolvedCommandMount> resolvedCommandMounts) {
+            if (resolvedCommandMounts != null) {
+                for (final ResolvedCommand.ResolvedCommandMount resolvedCommandMount : resolvedCommandMounts) {
+                    addMount(ContainerMount.create(resolvedCommandMount));
+                }
+            }
+            return this;
+        }
 
         public abstract Builder inputs(List<ContainerInput> inputs);
         abstract ImmutableList.Builder<ContainerInput> inputsBuilder();
@@ -247,11 +314,39 @@ public abstract class Container {
             inputsBuilder().add(inputs);
             return this;
         }
+        public Builder addInputsOfType(final ContainerInputType type, final Map<String, String> inputMap) {
+            if (inputMap != null) {
+                for (final Map.Entry<String, String> input : inputMap.entrySet()) {
+                    addInput(ContainerInput.create(0L, type, input.getKey(), input.getValue()));
+                }
+            }
+            return this;
+        }
+        public Builder addRawInputs(Map<String, String> inputMap) {
+            return addInputsOfType(ContainerInputType.RAW, inputMap);
+        }
+        public Builder addExternalWrapperInputs(Map<String, String> inputMap) {
+            return addInputsOfType(ContainerInputType.WRAPPER_EXTERNAL, inputMap);
+        }
+        public Builder addDerivedWrapperInputs(Map<String, String> inputMap) {
+            return addInputsOfType(ContainerInputType.WRAPPER_DERIVED, inputMap);
+        }
+        public Builder addCommandInputs(Map<String, String> inputMap) {
+            return addInputsOfType(ContainerInputType.COMMAND, inputMap);
+        }
 
         public abstract Builder outputs(List<ContainerOutput> outputs);
         abstract ImmutableList.Builder<ContainerOutput> outputsBuilder();
         public Builder addOutput(final ContainerOutput outputs) {
             outputsBuilder().add(outputs);
+            return this;
+        }
+        public Builder addOutputsFromResolvedCommand(final List<ResolvedCommand.ResolvedCommandOutput> resolvedCommandOutputs) {
+            if (resolvedCommandOutputs != null) {
+                for (final ResolvedCommand.ResolvedCommandOutput resolvedCommandOutput : resolvedCommandOutputs) {
+                    addOutput(ContainerOutput.create(resolvedCommandOutput));
+                }
+            }
             return this;
         }
 
@@ -314,6 +409,22 @@ public abstract class Container {
                     containerEntityMount.getContainerPath(), containerMountFiles);
         }
 
+        public static ContainerMount create(final ResolvedCommand.ResolvedCommandMount resolvedCommandMount) {
+            final List<ContainerMountFiles> containerMountFiles = Lists.transform(resolvedCommandMount.inputFiles(), new Function<ResolvedCommand.ResolvedCommandMountFiles, ContainerMountFiles>() {
+                @Override
+                public ContainerMountFiles apply(final ResolvedCommand.ResolvedCommandMountFiles input) {
+                    return ContainerMountFiles.create(input);
+                }
+            });
+            return create(0L,
+                    resolvedCommandMount.name(),
+                    resolvedCommandMount.writable(),
+                    resolvedCommandMount.xnatHostPath(),
+                    resolvedCommandMount.containerHostPath(),
+                    resolvedCommandMount.containerPath(),
+                    containerMountFiles);
+        }
+
         public static Builder builder() {
             return new AutoValue_Container_ContainerMount.Builder();
         }
@@ -360,6 +471,14 @@ public abstract class Container {
         public static ContainerMountFiles create(final ContainerMountFilesEntity containerMountFilesEntity) {
             return create(containerMountFilesEntity.getId(), containerMountFilesEntity.getFromXnatInput(), containerMountFilesEntity.getFromUri(),
                     containerMountFilesEntity.getRootDirectory(), containerMountFilesEntity.getPath());
+        }
+
+        public static ContainerMountFiles create(final ResolvedCommand.ResolvedCommandMountFiles resolvedCommandMountFiles) {
+            return create(0L,
+                    resolvedCommandMountFiles.fromWrapperInput(),
+                    resolvedCommandMountFiles.fromUri(),
+                    resolvedCommandMountFiles.rootDirectory(),
+                    resolvedCommandMountFiles.path());
         }
     }
 
@@ -425,6 +544,19 @@ public abstract class Container {
             return create(containerEntityOutput.getId(), containerEntityOutput.getName(), containerEntityOutput.getType(), containerEntityOutput.isRequired(),
                     containerEntityOutput.getMount(), containerEntityOutput.getPath(), containerEntityOutput.getGlob(),
                     containerEntityOutput.getLabel(), containerEntityOutput.getCreated(), containerEntityOutput.getHandledByXnatCommandInput());
+        }
+
+        public static ContainerOutput create(final ResolvedCommand.ResolvedCommandOutput resolvedCommandOutput) {
+            return create(0L,
+                    resolvedCommandOutput.name(),
+                    resolvedCommandOutput.type(),
+                    resolvedCommandOutput.required(),
+                    resolvedCommandOutput.mount(),
+                    resolvedCommandOutput.path(),
+                    resolvedCommandOutput.glob(),
+                    resolvedCommandOutput.label(),
+                    null,
+                    resolvedCommandOutput.handledByWrapperInput());
         }
 
         public static Builder builder() {
@@ -526,6 +658,18 @@ public abstract class Container {
                     .timeRecorded(new Date())
                     .externalTimestamp(null)
                     .message(null)
+                    .build();
+        }
+
+        public static ContainerHistory fromServiceTask(final ServiceTask task) {
+            return builder()
+                    .entityType("service")
+                    .entityId(null)
+                    .status(task.status())
+                    .exitCode(task.exitCode() == null ? null : String.valueOf(task.exitCode()))
+                    .timeRecorded(new Date())
+                    .externalTimestamp(task.statusTime() == null ? null : String.valueOf(task.statusTime().getTime()))
+                    .message(task.message())
                     .build();
         }
 
