@@ -158,18 +158,8 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
             log.info(prefix + "Getting logs.");
             final List<String> logPaths = Lists.newArrayList();
 
-            String stdoutLogStr = "";
-            String stderrLogStr = "";
-            try {
-                stdoutLogStr = containerControlApi.getContainerStdoutLog(toFinalize.containerId());
-            } catch (DockerServerException | NoDockerServerException e) {
-                log.error(prefix + "Could not get logs.", e);
-            }
-            try {
-                stderrLogStr = containerControlApi.getContainerStderrLog(toFinalize.containerId());
-            } catch (DockerServerException | NoDockerServerException e) {
-                log.error(prefix + "Could not get logs.", e);
-            }
+            final String stdoutLogStr = getStdoutLogStr();
+            final String stderrLogStr = getStderrLogStr();
 
             if (StringUtils.isNotBlank(stdoutLogStr) || StringUtils.isNotBlank(stderrLogStr)) {
 
@@ -208,6 +198,40 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
                 log.debug("Adding log paths to container");
             }
             return logPaths;
+        }
+
+        private String getStderrLogStr() {
+            if (toFinalize.swarm() != null && toFinalize.swarm()) {
+                try {
+                    return containerControlApi.getServiceStderrLog(toFinalize.serviceId());
+                } catch (DockerServerException | NoDockerServerException e) {
+                    log.error(prefix + "Could not get service stderr log.", e);
+                }
+            } else {
+                try {
+                    return containerControlApi.getContainerStderrLog(toFinalize.containerId());
+                } catch (DockerServerException | NoDockerServerException e) {
+                    log.error(prefix + "Could not get container stderr log.", e);
+                }
+            }
+            return null;
+        }
+
+        private String getStdoutLogStr() {
+            if (toFinalize.swarm() != null && toFinalize.swarm()) {
+                try {
+                    return containerControlApi.getServiceStdoutLog(toFinalize.serviceId());
+                } catch (DockerServerException | NoDockerServerException e) {
+                    log.error(prefix + "Could not get service stdout log.", e);
+                }
+            } else {
+                try {
+                    return containerControlApi.getContainerStdoutLog(toFinalize.containerId());
+                } catch (DockerServerException | NoDockerServerException e) {
+                    log.error(prefix + "Could not get container stdout log.", e);
+                }
+            }
+            return null;
         }
 
         private OutputsAndExceptions uploadOutputs() {
