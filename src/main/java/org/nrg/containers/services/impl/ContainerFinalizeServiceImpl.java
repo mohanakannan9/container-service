@@ -201,7 +201,7 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
         }
 
         private String getStderrLogStr() {
-            if (toFinalize.swarm() != null && toFinalize.swarm()) {
+            if (toFinalize.isSwarmService()) {
                 try {
                     return containerControlApi.getServiceStderrLog(toFinalize.serviceId());
                 } catch (DockerServerException | NoDockerServerException e) {
@@ -218,7 +218,7 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
         }
 
         private String getStdoutLogStr() {
-            if (toFinalize.swarm() != null && toFinalize.swarm()) {
+            if (toFinalize.isSwarmService()) {
                 try {
                     return containerControlApi.getServiceStdoutLog(toFinalize.serviceId());
                 } catch (DockerServerException | NoDockerServerException e) {

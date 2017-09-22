@@ -53,6 +53,11 @@ public abstract class Container {
     @JsonProperty("history") public abstract ImmutableList<ContainerHistory> history();
     @JsonProperty("log-paths") public abstract ImmutableList<String> logPaths();
 
+    @JsonIgnore
+    public boolean isSwarmService() {
+        return swarm() != null && swarm();
+    }
+
     @JsonCreator
     public static Container create(@JsonProperty("id") final long databaseId,
                                    @JsonProperty("command-id") final long commandId,

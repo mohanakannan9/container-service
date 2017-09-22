@@ -453,7 +453,7 @@ public class LaunchRestApi extends AbstractXapiRestController {
                 }
             }
 
-            return container.swarm() != null && container.swarm() ?
+            return container.isSwarmService() ?
                     LaunchReport.ServiceSuccess.create(container) :
                     LaunchReport.ContainerSuccess.create(container);
         } catch (Throwable t) {
