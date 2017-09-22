@@ -55,6 +55,7 @@ import java.util.Set;
 
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
@@ -296,7 +297,8 @@ public class LaunchRestApiTest {
 
         final LaunchReport.Success success = bulkLaunchReport.successes().get(0);
         assertThat(success.launchParams(), hasEntry(INPUT_NAME, INPUT_VALUE));
-        assertThat(success.containerId(), is(FAKE_CONTAINER_ID));
+        assertThat(success, instanceOf(LaunchReport.ContainerSuccess.class));
+        assertThat(((LaunchReport.ContainerSuccess) success).containerId(), is(FAKE_CONTAINER_ID));
 
         final LaunchReport.Failure failure = bulkLaunchReport.failures().get(0);
         assertThat(failure.launchParams(), hasEntry(INPUT_NAME, badInputValue));

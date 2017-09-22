@@ -1,9 +1,10 @@
 package org.nrg.containers.model.command.auto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -20,37 +21,91 @@ public abstract class LaunchReport {
     @Nullable @JsonProperty("command-id") public abstract Long commandId();
     @Nullable @JsonProperty("wrapper-id") public abstract Long wrapperId();
 
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "type")
+    @JsonSubTypes({
+            @JsonSubTypes.Type(value = ContainerSuccess.class, name = "container"),
+            @JsonSubTypes.Type(value = ServiceSuccess.class, name = "service")
+    })
+    public static abstract class Success extends LaunchReport {
+        protected final static String STATUS = "success";
+        @JsonProperty("type") public abstract String type();
+    }
+
     @AutoValue
     @JsonInclude(JsonInclude.Include.ALWAYS)
-    public static abstract class Success extends LaunchReport {
-        private final static String STATUS = "success";
+    public static abstract class ContainerSuccess extends Success {
         @JsonProperty("container-id") public abstract String containerId();
+
+        @Override
+        public String type() {
+            return "container";
+        }
 
         @JsonCreator
         @SuppressWarnings("unused")
-        static Success create(@JsonProperty("container-id") final @Nonnull String containerId,
-                              @JsonProperty("status") final String ignoredStatus,
-                              @JsonProperty("params") final Map<String, String> launchParams,
-                              @JsonProperty("command-id") final Long commandId,
-                              @JsonProperty("wrapper-id") final Long wrapperId) {
+        static ContainerSuccess create(@JsonProperty("container-id") final @Nonnull String containerId,
+                                       @JsonProperty("status") final String ignoredStatus,
+                                       @JsonProperty("params") final Map<String, String> launchParams,
+                                       @JsonProperty("command-id") final Long commandId,
+                                       @JsonProperty("wrapper-id") final Long wrapperId) {
             return create(containerId, launchParams, commandId, wrapperId);
         }
 
-        public static Success create(final @Nonnull Container container) {
+        public static ContainerSuccess create(final @Nonnull Container container) {
             final Long commandId = container.commandId() == 0L ? null : container.commandId();
             final Long wrapperId = container.wrapperId() == 0L ? null : container.wrapperId();
-            return create(container.containerId(), container.getRawInputs(), commandId, wrapperId);
+            final String containerId = container.containerId() != null ? container.containerId() : ""; // This should not be null for swarmMode=false
+            return create(containerId, container.getRawInputs(), commandId, wrapperId);
         }
 
-        public static Success create(final @Nonnull String containerId,
-                                     final Map<String, String> launchParams,
-                                     final Long commandIdString,
-                                     final Long wrapperIdString) {
+        public static ContainerSuccess create(final @Nonnull String containerId,
+                                              final Map<String, String> launchParams,
+                                              final Long commandIdString,
+                                              final Long wrapperIdString) {
             final ImmutableMap<String, String> launchParamsCopy =
                     launchParams == null ?
                             ImmutableMap.<String, String>of() :
                             ImmutableMap.copyOf(launchParams);
-            return new AutoValue_LaunchReport_Success(STATUS, launchParamsCopy, commandIdString, wrapperIdString, containerId);
+            return new AutoValue_LaunchReport_ContainerSuccess(STATUS, launchParamsCopy, commandIdString, wrapperIdString, containerId);
+        }
+    }
+
+    @AutoValue
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    public static abstract class ServiceSuccess extends Success {
+        @JsonProperty("service-id") public abstract String serviceId();
+
+        @Override
+        public String type() {
+            return "service";
+        }
+
+        @JsonCreator
+        @SuppressWarnings("unused")
+        static ServiceSuccess create(@JsonProperty("service-id") final @Nonnull String serviceId,
+                                     @JsonProperty("status") final String ignoredStatus,
+                                     @JsonProperty("params") final Map<String, String> launchParams,
+                                     @JsonProperty("command-id") final Long commandId,
+                                     @JsonProperty("wrapper-id") final Long wrapperId) {
+            return create(serviceId, launchParams, commandId, wrapperId);
+        }
+
+        public static ServiceSuccess create(final @Nonnull Container container) {
+            final Long commandId = container.commandId() == 0L ? null : container.commandId();
+            final Long wrapperId = container.wrapperId() == 0L ? null : container.wrapperId();
+            final String serviceId = container.serviceId() != null ? container.serviceId() : ""; // This should not be null for swarmMode=true
+            return create(serviceId, container.getRawInputs(), commandId, wrapperId);
+        }
+
+        public static ServiceSuccess create(final @Nonnull String containerId,
+                                            final Map<String, String> launchParams,
+                                            final Long commandIdString,
+                                            final Long wrapperIdString) {
+            final ImmutableMap<String, String> launchParamsCopy =
+                    launchParams == null ?
+                            ImmutableMap.<String, String>of() :
+                            ImmutableMap.copyOf(launchParams);
+            return new AutoValue_LaunchReport_ServiceSuccess(STATUS, launchParamsCopy, commandIdString, wrapperIdString, containerId);
         }
     }
 
