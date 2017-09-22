@@ -100,7 +100,9 @@ public class DockerStatusUpdater implements Runnable {
             haveLoggedXftInitFailure = false;
             haveLoggedNoServerInDb = false;
         } else if (updateReport.successful) {
-            log.info("Updated status successfully.");
+            if (updateReport.updateReports.size() > 0) {
+                log.debug("Updated status successfully.");
+            }
             // Reset failure flags
             haveLoggedDockerConnectFailure = false;
             haveLoggedXftInitFailure = false;

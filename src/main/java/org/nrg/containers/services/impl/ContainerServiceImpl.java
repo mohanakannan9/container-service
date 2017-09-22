@@ -292,10 +292,13 @@ public class ContainerServiceImpl implements ContainerService {
     public void processEvent(final ServiceTaskEvent event) {
         final ServiceTask task = event.task();
         final Container service;
+        log.debug("Processing service task. Task id \"{}\" for service \"{}\".",
+                task.taskId(), task.serviceId());
 
         // When we create the service, we don't know all the IDs. If this is the first time we
         // have seen a task for this service, we can set those IDs now.
         if (StringUtils.isBlank(event.service().taskId())) {
+            log.debug("Service \"{}\" has no task information yet. Setting it now.", task.serviceId());
             final Container serviceToUpdate = event.service().toBuilder()
                     .taskId(task.taskId())
                     .containerId(task.containerId())
@@ -315,6 +318,7 @@ public class ContainerServiceImpl implements ContainerService {
                 final ContainerHistory createdTaskHistoryItem = addContainerHistoryItem(service, taskHistoryItem, userI);
                 if (createdTaskHistoryItem == null) {
                     // We have already added this task and can safely skip it.
+                    log.debug("Skipping task status we have already seen.");
                 } else {
                     if (task.exitCode() != null) {
                         log.debug("Service has exited. Finalizing.");
@@ -356,19 +360,14 @@ public class ContainerServiceImpl implements ContainerService {
 
     @Override
     public void finalize(final Container container, final UserI userI, final String exitCode) {
-        if (log.isInfoEnabled()) {
-            log.info(String.format("Finalizing ContainerExecution %s for container %s", container.databaseId(), container.containerId()));
-        }
+        log.info("Finalizing ContainerExecution {} for container {}.", container.databaseId(), container.containerId());
 
         final Container finalized = containerFinalizeService.finalizeContainer(container, userI, exitCode);
 
-        if (log.isInfoEnabled()) {
-            log.info(String.format("Done uploading for ContainerExecution %s. Now saving information about created outputs.", container.databaseId()));
-        }
+        log.info("Done uploading for ContainerExecution {}. Now saving information about created outputs.", container.databaseId());
+
         containerEntityService.update(fromPojo(finalized));
-        if (log.isDebugEnabled()) {
-            log.debug("Done saving outputs for Container " + String.valueOf(container.databaseId()));
-        }
+        log.debug("Done saving outputs for Container {}.", container.databaseId());
     }
 
     @Override

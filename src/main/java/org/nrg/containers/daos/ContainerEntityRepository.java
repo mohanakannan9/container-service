@@ -50,10 +50,13 @@ public class ContainerEntityRepository extends AbstractHibernateDAO<ContainerEnt
         containerEntity.addToHistory(containerEntityHistory);
         getSession().persist(containerEntityHistory);
         if (containerEntityHistory.getTimeRecorded() != null && (containerEntity.getStatusTime() == null ||
-                containerEntityHistory.getTimeRecorded().getTime() > containerEntity.getStatusTime().getTime()))
-        {
+                containerEntityHistory.getTimeRecorded().getTime() > containerEntity.getStatusTime().getTime())) {
             containerEntity.setStatusTime(containerEntityHistory.getTimeRecorded());
             containerEntity.setStatus(containerEntityHistory.getStatus());
+            log.debug("Setting container entity {} status to \"{}\", based on history entry status \"{}\".",
+                    containerEntity.getId(),
+                    containerEntity.getStatus(),
+                    containerEntityHistory.getStatus());
         }
         update(containerEntity);
     }
