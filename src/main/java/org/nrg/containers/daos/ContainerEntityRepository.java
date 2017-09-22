@@ -62,24 +62,15 @@ public class ContainerEntityRepository extends AbstractHibernateDAO<ContainerEnt
     }
 
     @Nonnull
-    @SuppressWarnings("unchecked")
     public List<ContainerEntity> retrieveServices() {
         final List servicesResult = getSession()
                 .createCriteria(ContainerEntity.class)
                 .add(Restrictions.isNotNull("serviceId"))
                 .list();
-        if (servicesResult != null) {
-            try {
-                return (List<ContainerEntity>) servicesResult;
-            } catch (ClassCastException e) {
-                log.error("Failed to cast service search results to ContainerEntity.", e);
-            }
-        }
-        return Collections.emptyList();
+        return initializeAndReturnServiceList(servicesResult);
     }
 
     @Nonnull
-    @SuppressWarnings("unchecked")
     public List<ContainerEntity> retrieveNonfinalizedServices() {
         final List servicesResult = getSession()
                 .createCriteria(ContainerEntity.class)
@@ -93,9 +84,18 @@ public class ContainerEntityRepository extends AbstractHibernateDAO<ContainerEnt
                         ))
                 )
                 .list();
+        return initializeAndReturnServiceList(servicesResult);
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<ContainerEntity> initializeAndReturnServiceList(final List servicesResult) {
         if (servicesResult != null) {
             try {
-                return (List<ContainerEntity>) servicesResult;
+                final List<ContainerEntity> toReturn = (List<ContainerEntity>) servicesResult;
+                for (final ContainerEntity containerEntity : toReturn) {
+                    initialize(containerEntity);
+                }
+                return toReturn;
             } catch (ClassCastException e) {
                 log.error("Failed to cast service search results to ContainerEntity.", e);
             }
