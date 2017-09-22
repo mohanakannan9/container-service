@@ -52,7 +52,7 @@ public interface ContainerControlApi {
     String getContainerStderrLog(String id) throws NoDockerServerException, DockerServerException;
 
     List<DockerContainerEvent> getContainerEvents(final Date since, final Date until) throws NoDockerServerException, DockerServerException;
-    List<DockerContainerEvent> getContainerEventsAndThrow(final Date since, final Date until) throws NoDockerServerException, DockerServerException;
+    void throwContainerEvents(final Date since, final Date until) throws NoDockerServerException, DockerServerException;
 
     void killContainer(final String id) throws NoDockerServerException, DockerServerException, NotFoundException;
 }

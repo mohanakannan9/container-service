@@ -2,6 +2,7 @@ package org.nrg.containers.model.container.entity;
 
 import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.hibernate.envers.Audited;
@@ -19,6 +20,7 @@ import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.OneToMany;
 import javax.persistence.Transient;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -26,8 +28,17 @@ import java.util.Objects;
 @Entity
 @Audited
 public class ContainerEntity extends AbstractHibernateEntity {
+    public static Map<String, String> STANDARD_STATUS_MAP = ImmutableMap.<String, String>builder()
+            .put("created", "Created")
+            .put("started", "Running")
+            .put("kill", "Killed")
+            .put("oom", "Killed (Out of Memory)")
+            .build();
+
     private long commandId;
     private long wrapperId;
+    private String status;
+    private Date statusTime;
     private String dockerImage;
     private String commandLine;
     private String workingDirectory;
@@ -88,6 +99,8 @@ public class ContainerEntity extends AbstractHibernateEntity {
 
     public ContainerEntity update(final Container containerPojo) {
         this.setId(containerPojo.databaseId());
+        this.setStatus(containerPojo.status());
+        this.setStatusTime(containerPojo.statusTime());
         this.setCommandId(containerPojo.commandId());
         this.setWrapperId(containerPojo.wrapperId());
         this.setContainerId(containerPojo.containerId());
@@ -148,6 +161,22 @@ public class ContainerEntity extends AbstractHibernateEntity {
 
     public void setWrapperId(final long wrapperId) {
         this.wrapperId = wrapperId;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(final String status) {
+        this.status = STANDARD_STATUS_MAP.containsKey(status) ? STANDARD_STATUS_MAP.get(status) : status;
+    }
+
+    public Date getStatusTime() {
+        return statusTime;
+    }
+
+    public void setStatusTime(final Date statusTime) {
+        this.statusTime = statusTime == null ? null : new Date(statusTime.getTime());
     }
 
     public String getDockerImage() {
@@ -404,6 +433,8 @@ public class ContainerEntity extends AbstractHibernateEntity {
         return MoreObjects.toStringHelper(this)
                 .add("containerId", containerId)
                 .add("workflowId", workflowId)
+                .add("status", status)
+                .add("statusTime", statusTime)
                 .add("commandId", commandId)
                 .add("wrapperId", wrapperId)
                 .add("dockerImage", dockerImage)

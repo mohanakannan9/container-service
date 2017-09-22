@@ -3,12 +3,9 @@ package org.nrg.containers.config;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
-import org.nrg.containers.events.DockerEventPuller;
+import org.nrg.containers.events.DockerStatusUpdater;
 import org.nrg.framework.annotations.XnatPlugin;
 import org.nrg.transporter.config.TransporterConfig;
-import org.nrg.xdat.security.PermissionsServiceImpl;
-import org.nrg.xdat.security.helpers.Permissions;
-import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xnat.initialization.RootConfig;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -45,9 +42,9 @@ public class ContainersConfig {
     }
 
     @Bean
-    public TriggerTask dockerEventPullerTask(final DockerEventPuller dockerEventPuller) {
+    public TriggerTask dockerEventPullerTask(final DockerStatusUpdater dockerStatusUpdater) {
         return new TriggerTask(
-                dockerEventPuller,
+                dockerStatusUpdater,
                 new PeriodicTrigger(10L, TimeUnit.SECONDS)
         );
     }

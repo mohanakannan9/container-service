@@ -126,22 +126,29 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
                 final OutputsAndExceptions outputsAndExceptions = uploadOutputs();
                 final List<Exception> failedRequiredOutputs = outputsAndExceptions.exceptions;
                 if (!failedRequiredOutputs.isEmpty()) {
-                    finalizedContainerBuilder.addHistoryItem(Container.ContainerHistory.fromSystem("Failed",
+                    final Container.ContainerHistory failedHistoryItem = Container.ContainerHistory.fromSystem("Failed",
                             "Failed to upload required outputs.\n" + Joiner.on("\n").join(Lists.transform(failedRequiredOutputs, new Function<Exception, String>() {
                                 @Override
                                 public String apply(final Exception input) {
                                     return input.getMessage();
                                 }
-                            }))))
-                            .outputs(outputsAndExceptions.outputs);
+                            })));
+                    finalizedContainerBuilder.addHistoryItem(failedHistoryItem)
+                            .outputs(outputsAndExceptions.outputs)
+                            .status(failedHistoryItem.status())
+                            .statusTime(failedHistoryItem.timeRecorded());
                 } else {
-                    finalizedContainerBuilder.outputs(outputsAndExceptions.outputs);  // Overwrite any existing outputs
+                    finalizedContainerBuilder.outputs(outputsAndExceptions.outputs)  // Overwrite any existing outputs
+                            .status("Complete")
+                            .statusTime(new Date());
                 }
 
                 ContainerUtils.updateWorkflowStatus(toFinalize.workflowId(), PersistentWorkflowUtils.COMPLETE, userI);
             } else {
                 // TODO We know the container has failed. Should we send an email?
                 ContainerUtils.updateWorkflowStatus(toFinalize.workflowId(), PersistentWorkflowUtils.FAILED, userI);
+                finalizedContainerBuilder.status("Failed")
+                        .statusTime(new Date());
             }
 
             return finalizedContainerBuilder.build();
