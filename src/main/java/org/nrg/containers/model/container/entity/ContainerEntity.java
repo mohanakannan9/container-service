@@ -29,10 +29,16 @@ import java.util.Objects;
 @Audited
 public class ContainerEntity extends AbstractHibernateEntity {
     public static Map<String, String> STANDARD_STATUS_MAP = ImmutableMap.<String, String>builder()
+            .put("complete", "Complete")
             .put("created", "Created")
+            .put("rejected", "Failed")
+            .put("failed", "Failed")
+            .put("start", "Running")
             .put("started", "Running")
+            .put("running", "Running")
             .put("kill", "Killed")
             .put("oom", "Killed (Out of Memory)")
+            .put("starting", "Starting")
             .build();
 
     private long commandId;
