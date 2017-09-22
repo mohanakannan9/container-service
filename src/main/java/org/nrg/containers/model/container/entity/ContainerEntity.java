@@ -59,62 +59,6 @@ public class ContainerEntity extends AbstractHibernateEntity {
     private List<String> logPaths;
     public ContainerEntity() {}
 
-    public static ContainerEntity createContainer(final ResolvedCommand resolvedCommand,
-                                                  final String containerId,
-                                                  final String workflowId,
-                                                  final String userId) {
-        return new ContainerEntity(resolvedCommand, containerId, workflowId, userId, null, false);
-    }
-
-    public static ContainerEntity createService(final ResolvedCommand resolvedCommand,
-                                                final String serviceId,
-                                                final String workflowId,
-                                                final String userId) {
-        return new ContainerEntity(resolvedCommand, null, workflowId, userId, serviceId, true);
-    }
-
-
-    private ContainerEntity(final ResolvedCommand resolvedCommand,
-                            final String containerId,
-                            final String workflowId,
-                            final String userId,
-                            final String serviceId,
-                            final Boolean swarm) {
-        this.containerId = containerId;
-        this.workflowId = workflowId;
-        this.userId = userId;
-        this.serviceId = serviceId;
-        setSwarm(swarm);
-
-        this.commandId = resolvedCommand.commandId();
-        this.wrapperId = resolvedCommand.wrapperId();
-        this.dockerImage = resolvedCommand.image();
-        this.commandLine = resolvedCommand.commandLine();
-        this.workingDirectory = resolvedCommand.workingDirectory();
-        setEnvironmentVariables(resolvedCommand.environmentVariables());
-        setMounts(Lists.newArrayList(
-                Lists.transform(resolvedCommand.mounts(), new Function<ResolvedCommandMount, ContainerEntityMount>() {
-                    @Override
-                    public ContainerEntityMount apply(final ResolvedCommandMount resolvedCommandMount) {
-                        return new ContainerEntityMount(resolvedCommandMount);
-                    }
-                })
-        ));
-        addRawInputs(resolvedCommand.rawInputValues());
-        addExternalWrapperInputs(resolvedCommand.externalWrapperInputValues());
-        addDerivedWrapperInputs(resolvedCommand.derivedWrapperInputValues());
-        addCommandInputs(resolvedCommand.commandInputValues());
-        setOutputs(Lists.newArrayList(
-                Lists.transform(resolvedCommand.outputs(), new Function<ResolvedCommandOutput, ContainerEntityOutput>() {
-                    @Override
-                    public ContainerEntityOutput apply(final ResolvedCommandOutput resolvedCommandOutput) {
-                        return new ContainerEntityOutput(resolvedCommandOutput);
-                    }
-                })
-        ));
-        setLogPaths(null);
-    }
-
     public static ContainerEntity fromPojo(final Container containerPojo) {
         final ContainerEntity containerEntity = new ContainerEntity();
         containerEntity.update(containerPojo);

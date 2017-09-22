@@ -29,13 +29,8 @@ public class HibernateContainerEntityService
 
     @Override
     @Nonnull
-    public ContainerEntity save(final ResolvedCommand resolvedCommand,
-                                final String containerId,
-                                final String workflowId,
-                                final UserI userI) {
-        final ContainerEntity createdContainer = ContainerEntity.createContainer(resolvedCommand, containerId, workflowId, userI.getLogin());
-        log.debug("Creating ContainerEntity for container with id " + containerId);
-        final ContainerEntity created = create(createdContainer);
+    public ContainerEntity save(final ContainerEntity toCreate, final UserI userI) {
+        final ContainerEntity created = create(toCreate);
         final ContainerEntityHistory historyItem = ContainerEntityHistory.fromUserAction("Created", userI.getLogin(), created);
         addContainerHistoryItem(created, historyItem, userI);
         return created;

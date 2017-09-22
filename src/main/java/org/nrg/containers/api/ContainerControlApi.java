@@ -14,6 +14,7 @@ import org.nrg.containers.model.image.docker.DockerImage;
 import org.nrg.containers.model.server.docker.DockerServerBase.DockerServer;
 import org.nrg.containers.model.server.docker.DockerServerBase.DockerServerWithPing;
 import org.nrg.framework.exceptions.NotFoundException;
+import org.nrg.xft.security.UserI;
 
 import java.util.Date;
 import java.util.List;
@@ -34,7 +35,7 @@ public interface ContainerControlApi {
     DockerImage pullImage(String name, DockerHub hub) throws NoDockerServerException, DockerServerException, NotFoundException;
     DockerImage pullImage(String name, DockerHub hub, String username, String password) throws NoDockerServerException, DockerServerException, NotFoundException;
 
-    String createContainerOrSwarmService(final ResolvedCommand dockerCommand) throws NoDockerServerException, DockerServerException, ContainerException;
+    Container createContainerOrSwarmService(final ResolvedCommand dockerCommand, final UserI userI) throws NoDockerServerException, DockerServerException, ContainerException;
     //    String createContainer(final String imageName, final List<String> runCommand, final List <String> volumes) throws NoServerPrefException, DockerServerException;
 //    String createContainer(final DockerServer server, final String imageName,
 //                       final List<String> runCommand, final List <String> volumes) throws DockerServerException;

@@ -54,6 +54,7 @@ import org.nrg.containers.services.CommandLabelService;
 import org.nrg.containers.services.DockerServerService;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.services.NrgEventService;
+import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -249,10 +250,11 @@ public class DockerControlApi implements ContainerControlApi {
      * Launch image on Docker server, either by scheduling a swarm service or directly creating a container
      *
      * @param resolvedCommand A ResolvedDockerCommand. All templates are resolved, all mount paths exist.
+     * @param userI
      * @return ID of created Container or Service
      **/
     @Override
-    public String createContainerOrSwarmService(final ResolvedCommand resolvedCommand)
+    public Container createContainerOrSwarmService(final ResolvedCommand resolvedCommand, final UserI userI)
             throws NoDockerServerException, DockerServerException, ContainerException {
 
         final List<String> environmentVariables = Lists.newArrayList();
@@ -265,20 +267,26 @@ public class DockerControlApi implements ContainerControlApi {
 
         final DockerServer server = getServer();
         return server.swarmMode() ?
-                createService(server,
-                        resolvedCommand.image(),
-                        resolvedCommand.commandLine(),
-                        resolvedCommand.mounts(),
-                        environmentVariables,
-                        resolvedCommand.ports(),
-                        workingDirectory) :
-                createContainer(server,
-                        resolvedCommand.image(),
-                        resolvedCommand.commandLine(),
-                        resolvedCommand.mounts(),
-                        environmentVariables,
-                        resolvedCommand.ports(),
-                        workingDirectory);
+                Container.serviceFromResolvedCommand(resolvedCommand,
+                        createService(server,
+                                resolvedCommand.image(),
+                                resolvedCommand.commandLine(),
+                                resolvedCommand.mounts(),
+                                environmentVariables,
+                                resolvedCommand.ports(),
+                                workingDirectory),
+                        userI.getLogin()
+                ) :
+                Container.containerFromResolvedCommand(resolvedCommand,
+                        createContainer(server,
+                                resolvedCommand.image(),
+                                resolvedCommand.commandLine(),
+                                resolvedCommand.mounts(),
+                                environmentVariables,
+                                resolvedCommand.ports(),
+                                workingDirectory),
+                        userI.getLogin()
+                );
     }
 
     private String createContainer(final DockerServer server,

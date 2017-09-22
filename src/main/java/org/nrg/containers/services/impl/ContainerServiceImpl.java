@@ -95,16 +95,6 @@ public class ContainerServiceImpl implements ContainerService {
     }
 
     @Override
-    public Container save(final ResolvedCommand resolvedCommand, final String containerId, final UserI userI) {
-        final String workflowId = makeWorkflowIfAppropriate(resolvedCommand, containerId, userI);
-        return save(resolvedCommand, containerId, workflowId, userI);
-    }
-
-    private Container save(final ResolvedCommand resolvedCommand, final String containerId, final String workflowId, final UserI userI) {
-        return toPojo(containerEntityService.save(resolvedCommand, containerId, workflowId, userI));
-    }
-
-    @Override
     @Nullable
     public Container retrieve(final String containerId) {
         final ContainerEntity containerEntity = containerEntityService.retrieve(containerId);
@@ -228,21 +218,24 @@ public class ContainerServiceImpl implements ContainerService {
         final ResolvedCommand preparedToLaunch = prepareToLaunch(resolvedCommand, userI);
 
         log.info("Creating container from resolved command.");
-        final String containerId = containerControlApi.createContainerOrSwarmService(preparedToLaunch);
+        final Container createdContainerOrService = containerControlApi.createContainerOrSwarmService(preparedToLaunch, userI);
 
         log.info("Recording container launch.");
-        final Container container = save(preparedToLaunch, containerId, userI);
+        final String workflowId = makeWorkflowIfAppropriate(resolvedCommand, createdContainerOrService, userI);
+        final Container savedContainerOrService = toPojo(containerEntityService.save(fromPojo(
+                createdContainerOrService.toBuilder().workflowId(workflowId).build()
+        ), userI));
 
         log.info("Starting container.");
         try {
-            containerControlApi.startContainer(containerId);
+            containerControlApi.startContainer(savedContainerOrService.containerId());
         } catch (DockerServerException e) {
-            addContainerHistoryItem(container, ContainerHistory.fromSystem("Failed", "Did not start." + e.getMessage()), userI);
-            handleFailure(container);
+            addContainerHistoryItem(savedContainerOrService, ContainerHistory.fromSystem("Failed", "Did not start." + e.getMessage()), userI);
+            handleFailure(savedContainerOrService);
             throw new ContainerException("Failed to start");
         }
 
-        return container;
+        return createdContainerOrService;
     }
 
     @Nonnull
@@ -476,12 +469,13 @@ public class ContainerServiceImpl implements ContainerService {
      * workflow, so we don't make one.
      *
      * @param resolvedCommand A resolved command that will be used to launch a container
-     * @param containerId The docker ID of the container that has been created
+     * @param containerOrService The Container object which refers to either a container launched on
+     *                           a single docker machine or a service created on a swarm
      * @param userI The user launching the container
      * @return ID of the created workflow, or null if no workflow was created
      */
     @Nullable
-    private String makeWorkflowIfAppropriate(final ResolvedCommand resolvedCommand, final String containerId, final UserI userI) {
+    private String makeWorkflowIfAppropriate(final ResolvedCommand resolvedCommand, final Container containerOrService, final UserI userI) {
         log.debug("Preparing to make workflow.");
         final XFTItem rootInputObject = findRootInputObject(resolvedCommand, userI);
         if (rootInputObject == null) {
@@ -495,7 +489,11 @@ public class ContainerServiceImpl implements ContainerService {
         try {
             final PersistentWorkflowI workflow = WorkflowUtils.buildOpenWorkflow(userI, rootInputObject,
                     EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.TYPE.PROCESS,
-                            resolvedCommand.wrapperName(),"Container launch", containerId));
+                            resolvedCommand.wrapperName(),
+                            "Container launch",
+                            StringUtils.isNotBlank(containerOrService.serviceId()) ?
+                                    containerOrService.serviceId() :
+                                    containerOrService.containerId()));
             WorkflowUtils.save(workflow, workflow.buildEvent());
             log.debug("Created workflow {}.", workflow.getWorkflowId());
             return String.valueOf(workflow.getWorkflowId());

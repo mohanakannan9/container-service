@@ -21,10 +21,6 @@ public interface ContainerService {
     String STDERR_LOG_NAME = "stderr.log";
     String[] LOG_NAMES = new String[] {STDOUT_LOG_NAME, STDERR_LOG_NAME};
 
-    Container save(final ResolvedCommand resolvedCommand,
-                   final String containerId,
-                   final UserI userI);
-
     List<Container> getAll();
     Container retrieve(final long id);
     Container retrieve(final String containerId);

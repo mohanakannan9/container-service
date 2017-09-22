@@ -71,8 +71,12 @@ public class ContainerEntityTest {
         final String workflowId = "workflow";
         final UserI mockAdmin = Mockito.mock(UserI.class);
         when(mockAdmin.getLogin()).thenReturn("admin");
-
-        final ContainerEntity created = containerEntityService.save(resolvedCommand, containerId, workflowId, mockAdmin);
+        final Container container = Container.containerFromResolvedCommand(resolvedCommand, containerId, mockAdmin.getLogin())
+                .toBuilder()
+                .workflowId(workflowId)
+                .build();
+        final ContainerEntity toCreate = ContainerEntity.fromPojo(container);
+        final ContainerEntity created = containerEntityService.save(toCreate, mockAdmin);
         assertThat(created.getId(), is(not(0L)));
 
         TestTransaction.flagForCommit();
