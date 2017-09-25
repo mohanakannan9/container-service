@@ -856,8 +856,43 @@ var XNAT = getObject(XNAT || {});
                     window.open(commandDef['info-url'], 'infoUrl');
                 }
             };
+            dialogButtons.save = {
+                label: 'Save Command',
+                action: function(){
+                    var editorContent = _editor.getValue().code;
+                    // editorContent = JSON.stringify(editorContent).replace(/\r?\n|\r/g,' ');
 
-            _source = spawn('textarea', JSON.stringify(commandDef, null, 4));
+                    var url = commandUrl('?image='+imageName);
+
+                    XNAT.xhr.postJSON({
+                        url: url,
+                        dataType: 'json',
+                        data: editorContent,
+                        success: function(obj){
+                            imageListManager.refreshTable();
+                            commandConfigManager.refreshTable();
+                            xmodal.close(obj.$modal);
+                            XNAT.ui.banner.top(2000, 'Command definition updated.', 'success');
+                        },
+                        fail: function(e){
+                            errorHandler(e, 'Could Not Save', false);
+                        }
+                    });
+                }
+            };
+
+            // sanitize the command definition so it can be updated
+            var sanitizedVars = {};
+            ['id', 'hash'].forEach(function(v){
+                sanitizedVars[v] = commandDef[v];
+                delete commandDef[v];
+            });
+            // remove wrapper IDs as well
+            commandDef.xnat.forEach(function(w,i){
+                delete commandDef.xnat[i].id
+            });
+
+            _source = spawn ('textarea', JSON.stringify(commandDef, null, 4));
 
             _editor = XNAT.app.codeEditor.init(_source, {
                 language: 'json'
@@ -866,10 +901,15 @@ var XNAT = getObject(XNAT || {});
             _editor.openEditor({
                 title: commandDef.name,
                 classes: 'plugin-json',
-                footerContent: '(read-only)',
                 buttons: dialogButtons,
                 afterShow: function(dialog, obj){
-                    obj.aceEditor.setReadOnly(true);
+                    obj.aceEditor.setReadOnly(false);
+                    dialog.$modal.find('.body .inner').prepend(
+                        spawn('div',[
+                            spawn('p', 'Command ID: '+sanitizedVars['id']),
+                            spawn('p', 'Hash: '+sanitizedVars['hash'])
+                        ])
+                    );
                 }
             });
         } else {
@@ -2235,7 +2275,7 @@ var XNAT = getObject(XNAT || {});
                             href: '#!',
                             title: 'View command history and logs',
                             data: {'id': this.id },
-                            html: XNAT.plugin.containerService.wrapperList[ this['wrapper-id'] ].description
+                            html: (wrapperList[ this['wrapper-id'] ]) ? wrapperList[ this['wrapper-id'] ].description : this['command-line']
                         });
                     }
                 },
