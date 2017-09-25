@@ -139,9 +139,32 @@ var XNAT = getObject(XNAT || {});
             beforeShow: function(obj){
                 var $formContainer = obj.$modal.find('.xnat-dialog-content');
                 $formContainer.addClass('panel');
-                $formContainer.find('form').append(tmpl.html());
+                obj.$modal.find('form').append(
+                    spawn('!', [
+                        XNAT.ui.panel.input.text({
+                            name: 'name',
+                            label: 'Host Name'
+                        }).element,
+                        XNAT.ui.panel.input.text({
+                            name: 'host',
+                            label: 'URL'
+                        }).element,
+                        XNAT.ui.panel.input.text({
+                            name: 'cert-path',
+                            label: 'Certificate Path'
+                        }).element,
+                        XNAT.ui.panel.input.switchbox({
+                            name: 'swarm-mode',
+                            label: 'Swarm Mode',
+                            onText: 'ON',
+                            offText: 'OFF',
+                            value: 'true'
+                        })
+                    ])
+                );
 
                 if (item && isDefined(item.host)) {
+                    if (item['cert-path'] === 'null') item['cert-path'] = null;
                     $formContainer.find('form').setValues(item);
                 }
             },
@@ -231,6 +254,7 @@ var XNAT = getObject(XNAT || {});
             .th({ addClass: 'left', html: '<b>Host Name</b>' })
             .th('<b>Host Path</b>')
             .th('<b>Default</b>')
+            .th('<b>Swarm Mode</b>')
             .th('<b>Status</b>')
             .th('<b>Actions</b>');
 
@@ -285,6 +309,7 @@ var XNAT = getObject(XNAT || {});
                     .td([editLink(item, item.name)]).addClass('host')
                     .td([ spawn('div.center', [item.host]) ])
                     .td([ spawn('div.center', [defaultToggle(item)]) ])
+                    .td([ spawn('div.center', item['swarm-mode'] ? 'ON' : 'OFF' )])
                     .td([ spawn('div.center', [hostPingStatus(item.ping)]) ])
                     .td([ spawn('div.center', [editButton(item)]) ])
             });

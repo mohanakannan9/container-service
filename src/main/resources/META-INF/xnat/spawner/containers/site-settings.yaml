@@ -39,6 +39,15 @@ dockerSetupPanel:
                             id: cert-path
                             name: certPath
                             label: "Certificate Path"
+                        swarmMode:
+                            kind: panel.input.switchbox
+                            id: swarm-mode
+                            name: swarmMode
+                            label: "Toggle Swarm Mode"
+                            onText: "ON"
+                            offText: "OFF"
+                            value: "true"
+
         containerHostTable:
             tag: "div#container-host-manager"
         csStylesheet:
