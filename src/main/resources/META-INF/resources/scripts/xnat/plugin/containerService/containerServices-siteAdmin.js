@@ -849,36 +849,33 @@ var XNAT = getObject(XNAT || {});
         if (!newCommand) {
             commandDef = commandDef || {};
 
-            var dialogButtons = { close: { label: 'Close' } };
-            if (commandDef['info-url']) dialogButtons.info = {
-                label: 'View Command Info',
-                action: function () {
-                    window.open(commandDef['info-url'], 'infoUrl');
-                }
-            };
-            dialogButtons.save = {
-                label: 'Save Command',
-                action: function(){
-                    var editorContent = _editor.getValue().code;
-                    // editorContent = JSON.stringify(editorContent).replace(/\r?\n|\r/g,' ');
+            var dialogButtons = {
+                update: {
+                    label: 'Save',
+                    isDefault: true,
+                    action: function(){
+                        var editorContent = _editor.getValue().code;
+                        // editorContent = JSON.stringify(editorContent).replace(/\r?\n|\r/g,' ');
 
-                    var url = commandUrl('?image='+imageName);
+                        var url = commandUrl('/'+sanitizedVars['id']);
 
-                    XNAT.xhr.postJSON({
-                        url: url,
-                        dataType: 'json',
-                        data: editorContent,
-                        success: function(obj){
-                            imageListManager.refreshTable();
-                            commandConfigManager.refreshTable();
-                            xmodal.close(obj.$modal);
-                            XNAT.ui.banner.top(2000, 'Command definition updated.', 'success');
-                        },
-                        fail: function(e){
-                            errorHandler(e, 'Could Not Save', false);
-                        }
-                    });
-                }
+                        XNAT.xhr.putJSON({
+                            url: url,
+                            dataType: 'json',
+                            data: editorContent,
+                            success: function(obj){
+                                imageListManager.refreshTable();
+                                commandConfigManager.refreshTable();
+                                xmodal.close(obj.$modal);
+                                XNAT.ui.banner.top(2000, 'Command definition updated.', 'success');
+                            },
+                            fail: function(e){
+                                errorHandler(e, 'Could Not Update', false);
+                            }
+                        });
+                    }
+                },
+                close: { label: 'Cancel' }
             };
 
             // sanitize the command definition so it can be updated
@@ -899,7 +896,7 @@ var XNAT = getObject(XNAT || {});
             });
 
             _editor.openEditor({
-                title: commandDef.name,
+                title: 'Edit Definition For ' + commandDef.name,
                 classes: 'plugin-json',
                 buttons: dialogButtons,
                 afterShow: function(dialog, obj){
@@ -923,11 +920,11 @@ var XNAT = getObject(XNAT || {});
                 title: 'Add New Command to '+imageName,
                 classes: 'plugin-json',
                 buttons: {
-                    save: {
+                    create: {
                         label: 'Save Command',
+                        isDefault: true,
                         action: function(){
                             var editorContent = _editor.getValue().code;
-                            // editorContent = JSON.stringify(editorContent).replace(/\r?\n|\r/g,' ');
 
                             var url = (imageName) ? commandUrl('?image='+imageName) : commandUrl();
 
@@ -939,7 +936,7 @@ var XNAT = getObject(XNAT || {});
                                     imageListManager.refreshTable();
                                     commandConfigManager.refreshTable();
                                     xmodal.close(obj.$modal);
-                                    XNAT.ui.banner.top(2000, 'Command definition saved.', 'success');
+                                    XNAT.ui.banner.top(2000, 'Command definition created.', 'success');
                                 },
                                 fail: function(e){
                                     errorHandler(e, 'Could Not Save', false);
@@ -947,11 +944,8 @@ var XNAT = getObject(XNAT || {});
                             });
                         }
                     },
-                    cancel: {
-                        label: 'Cancel',
-                        action: function(obj){
-                            xmodal.close(obj.$modal);
-                        }
+                    close: {
+                        label: 'Cancel'
                     }
                 }
             });
@@ -984,7 +978,9 @@ var XNAT = getObject(XNAT || {});
             return spawn('a.link|href=#!', {
                 onclick: function(e){
                     e.preventDefault();
-                    commandDefinition.dialog(item, false);
+                    commandDefinition.getCommand(item.id).done(function(commandDef){
+                        commandDefinition.dialog(commandDef, false);
+                    });
                 }
             }, [['b', text]]);
         }
@@ -993,9 +989,11 @@ var XNAT = getObject(XNAT || {});
             return spawn('button.btn.sm', {
                 onclick: function(e){
                     e.preventDefault();
-                    commandDefinition.dialog(item, false);
+                    commandDefinition.getCommand(item.id).done(function(commandDef){
+                        commandDefinition.dialog(commandDef, false);
+                    });
                 }
-            }, 'View Command');
+            }, 'Edit Command');
         }
 
         function enabledCheckbox(item){

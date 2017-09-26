@@ -1,13 +1,19 @@
-.imageContainer {
-    margin: 2em 0;
-    border: 1px solid #e0e0e0;
-    padding: 20px;
+.imageContainer + .imageContainer {
+    margin: 4em 0 0;
 }
 .imageContainer h3 {
-    background: #f3f3f3;
-    border-bottom: 1px solid #e0e0e0;
-    padding: 10px 20px;
-    margin: -20px -20px 0 -20px;
+    border: none;
+    padding: 20px 0 0 2em;
+    position: relative;
+
+}
+.imageContainer h3:before {
+    font-family: "FontAwesome";
+    content: "\f0a0";
+    font-size: 1.5em;
+    color: #808080;
+    position: absolute;
+    bottom: -1px; left: 1px;
 }
 .commandConfigInputRow {
     padding: 5px 0;
