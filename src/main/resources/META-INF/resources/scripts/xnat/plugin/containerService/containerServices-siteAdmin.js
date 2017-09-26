@@ -859,7 +859,7 @@ var XNAT = getObject(XNAT || {});
 
                         var url = commandUrl('/'+sanitizedVars['id']);
 
-                        XNAT.xhr.putJSON({
+                        XNAT.xhr.postJSON({
                             url: url,
                             dataType: 'json',
                             data: editorContent,
@@ -904,7 +904,11 @@ var XNAT = getObject(XNAT || {});
                     dialog.$modal.find('.body .inner').prepend(
                         spawn('div',[
                             spawn('p', 'Command ID: '+sanitizedVars['id']),
-                            spawn('p', 'Hash: '+sanitizedVars['hash'])
+                            spawn('p', 'Hash: '+sanitizedVars['hash']),
+                            spawn('p', [
+                                'Command Info URL: ',
+                                (commandDef['info-url']) ? spawn('a',{ href: commandDef['info-url'], html: commandDef['info-url'], target: '_blank' }) : 'n/a'
+                            ])
                         ])
                     );
                 }
@@ -1048,22 +1052,19 @@ var XNAT = getObject(XNAT || {});
         }
 
         commandListManager.getAll(imageName).done(function(data) {
-            if (data) {
+            if (data.length) {
                 for (var i = 0, j = data.length; i < j; i++) {
-                    var xnatActions = '', command = data[i];
+                    var xnatActions, command = data[i];
                     if (command.xnat) {
+                        xnatActions = [];
                         for (var k = 0, l = command.xnat.length; k < l; k++) {
-                            if (xnatActions.length > 0) xnatActions += '<br>';
-                            xnatActions += command.xnat[k].description;
+                            var description = command.xnat[k].description;
                             if (command.xnat[k].contexts.length > 0) {
-                                var contexts = command.xnat[k].contexts;
-                                xnatActions += "<ul>";
-                                contexts.forEach(function(context){
-                                    xnatActions +="<li>"+context+"</li>";
-                                });
-                                xnatActions += "</ul>";
+                                description = '<b>'+command.xnat[k].contexts.toString() + '</b>: ' + description;
                             }
+                            xnatActions.push(spawn('li',description))
                         }
+                        xnatActions = [ spawn('ul.imageActionList', xnatActions) ];
                     } else {
                         xnatActions = 'N/A';
                     }

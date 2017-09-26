@@ -27,6 +27,14 @@
     width: 30%;
 }
 
+.imageActionList {
+    margin: .25em 0;
+    padding: 0 0 0 2em;
+}
+.imageActionList li + li {
+    margin-top: .5em;
+}
+
 /* enhancement to core XNAT switchbox style. Will be committed back into core code. */
 label.switchbox.disabled {
     cursor: not-allowed;
