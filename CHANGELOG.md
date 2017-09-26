@@ -1,12 +1,14 @@
 # Changelog
 
-## 1.2.2
+## 1.2.1
 
 Not yet released.
 
 ### Features
 
+* [CS-1][] Docker swarm integration. You can configure the container service to launch services on your docker swarm by pointing it to your swarm master and setting Swarm Mode to true. This is a global setting; when swarm mode is turned on all jobs will be run as services sent to the swarm master, when it is off all jobs will be run as containers on the docker server.
 
+[CS-1]: https://issues.xnat.org/browse/CS-1
 
 ### Bugs
 
