@@ -863,10 +863,10 @@ var XNAT = getObject(XNAT || {});
                             url: url,
                             dataType: 'json',
                             data: editorContent,
-                            success: function(obj){
+                            success: function(){
                                 imageListManager.refreshTable();
                                 commandConfigManager.refreshTable();
-                                xmodal.close(obj.$modal);
+                                xmodal.closeAll();
                                 XNAT.ui.banner.top(2000, 'Command definition updated.', 'success');
                             },
                             fail: function(e){
