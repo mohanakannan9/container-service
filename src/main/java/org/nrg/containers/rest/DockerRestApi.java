@@ -107,7 +107,7 @@ public class DockerRestApi extends AbstractXapiRestController {
     @ResponseBody
     public String pingServer()
             throws NoDockerServerException, DockerServerException, UnauthorizedException {
-        return dockerService.pingServer();
+        return dockerService.ping();
     }
 
     @XapiRequestMapping(value = "/hubs", method = GET)

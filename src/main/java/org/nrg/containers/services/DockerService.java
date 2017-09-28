@@ -44,7 +44,7 @@ public interface DockerService {
 
     DockerServerWithPing getServer() throws NotFoundException;
     DockerServerWithPing setServer(DockerServer server);
-    String pingServer() throws NoDockerServerException, DockerServerException;
+    String ping() throws NoDockerServerException, DockerServerException;
 
     List<DockerImage> getImages() throws NoDockerServerException, DockerServerException;
     List<DockerImageAndCommandSummary> getImageSummaries() throws NoDockerServerException, DockerServerException;
