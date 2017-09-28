@@ -150,11 +150,6 @@ public class CommandRestApi extends AbstractXapiRestController {
                                               final @PathVariable long id)
             throws NotFoundException, CommandValidationException, UnauthorizedException, BadRequestException {
         checkAdminOrThrow();
-        try {
-            commandService.throwExceptionIfCommandExists(command);
-        } catch (NrgRuntimeException e) {
-            throw new BadRequestException(e);
-        }
         commandService.update(command.id() == id ? command : command.toBuilder().id(id).build());
         return ResponseEntity.ok().build();
     }
