@@ -498,6 +498,10 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
                 final String externalInputName;
                 if (wrapper.externalInputs().size() == 1) {
                     externalInputName = wrapper.externalInputs().get(0).name();
+                } else if (wrapper.externalInputs().size() == 0) {
+                    // I guess it's fine to have no external inputs. Site-wide command wrappers won't have any.
+                    //      - JF 2017-09-28
+                    externalInputName = "";
                 } else {
                     continue;
                 }
@@ -561,6 +565,11 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
                 match = SchemaElement.GetElement(xsiType).getGenericXFTElement().instanceOf(wrapperXsiType);
             } catch (XFTInitException e) {
                 log.error("XFT not initialized."); // If this happens, we have a lot of other problems.
+            } catch (ElementNotFoundException e) {
+                // I was treating this as an error. Now I want to log it and move on.
+                // This will allow users to set whatever they want as the context and request it by name.
+                //      - JF 2017-09-28
+                log.debug("Did not find XSI type \"{}\".", xsiType);
             }
 
             // Add result to cache
