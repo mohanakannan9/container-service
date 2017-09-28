@@ -136,7 +136,6 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
         }
         final CommandEntity updatableEntity = fromPojo(toUpdate);
         commandEntityService.update(updatableEntity);
-        commandEntityService.refresh(updatableEntity);
         return toPojo(updatableEntity);
     }
 
