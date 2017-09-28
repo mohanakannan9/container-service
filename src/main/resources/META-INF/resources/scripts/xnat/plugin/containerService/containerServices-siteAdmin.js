@@ -849,27 +849,68 @@ var XNAT = getObject(XNAT || {});
         if (!newCommand) {
             commandDef = commandDef || {};
 
-            var dialogButtons = { close: { label: 'Close' } };
-            if (commandDef['info-url']) dialogButtons.info = {
-                label: 'View Command Info',
-                action: function () {
-                    window.open(commandDef['info-url'], 'infoUrl');
-                }
+            var dialogButtons = {
+                update: {
+                    label: 'Save',
+                    isDefault: true,
+                    action: function(){
+                        var editorContent = _editor.getValue().code;
+                        // editorContent = JSON.stringify(editorContent).replace(/\r?\n|\r/g,' ');
+
+                        var url = commandUrl('/'+sanitizedVars['id']);
+
+                        XNAT.xhr.postJSON({
+                            url: url,
+                            dataType: 'json',
+                            data: editorContent,
+                            success: function(){
+                                imageListManager.refreshTable();
+                                commandConfigManager.refreshTable();
+                                xmodal.closeAll();
+                                XNAT.ui.banner.top(2000, 'Command definition updated.', 'success');
+                            },
+                            fail: function(e){
+                                errorHandler(e, 'Could Not Update', false);
+                            }
+                        });
+                    }
+                },
+                close: { label: 'Cancel' }
             };
 
-            _source = spawn('textarea', JSON.stringify(commandDef, null, 4));
+            // sanitize the command definition so it can be updated
+            var sanitizedVars = {};
+            ['id', 'hash'].forEach(function(v){
+                sanitizedVars[v] = commandDef[v];
+                delete commandDef[v];
+            });
+            // remove wrapper IDs as well
+            commandDef.xnat.forEach(function(w,i){
+                delete commandDef.xnat[i].id
+            });
+
+            _source = spawn ('textarea', JSON.stringify(commandDef, null, 4));
 
             _editor = XNAT.app.codeEditor.init(_source, {
                 language: 'json'
             });
 
             _editor.openEditor({
-                title: commandDef.name,
+                title: 'Edit Definition For ' + commandDef.name,
                 classes: 'plugin-json',
-                footerContent: '(read-only)',
                 buttons: dialogButtons,
                 afterShow: function(dialog, obj){
-                    obj.aceEditor.setReadOnly(true);
+                    obj.aceEditor.setReadOnly(false);
+                    dialog.$modal.find('.body .inner').prepend(
+                        spawn('div',[
+                            spawn('p', 'Command ID: '+sanitizedVars['id']),
+                            spawn('p', 'Hash: '+sanitizedVars['hash']),
+                            spawn('p', [
+                                'Command Info URL: ',
+                                (commandDef['info-url']) ? spawn('a',{ href: commandDef['info-url'], html: commandDef['info-url'], target: '_blank' }) : 'n/a'
+                            ])
+                        ])
+                    );
                 }
             });
         } else {
@@ -883,11 +924,11 @@ var XNAT = getObject(XNAT || {});
                 title: 'Add New Command to '+imageName,
                 classes: 'plugin-json',
                 buttons: {
-                    save: {
+                    create: {
                         label: 'Save Command',
+                        isDefault: true,
                         action: function(){
                             var editorContent = _editor.getValue().code;
-                            // editorContent = JSON.stringify(editorContent).replace(/\r?\n|\r/g,' ');
 
                             var url = (imageName) ? commandUrl('?image='+imageName) : commandUrl();
 
@@ -899,7 +940,7 @@ var XNAT = getObject(XNAT || {});
                                     imageListManager.refreshTable();
                                     commandConfigManager.refreshTable();
                                     xmodal.close(obj.$modal);
-                                    XNAT.ui.banner.top(2000, 'Command definition saved.', 'success');
+                                    XNAT.ui.banner.top(2000, 'Command definition created.', 'success');
                                 },
                                 fail: function(e){
                                     errorHandler(e, 'Could Not Save', false);
@@ -907,11 +948,8 @@ var XNAT = getObject(XNAT || {});
                             });
                         }
                     },
-                    cancel: {
-                        label: 'Cancel',
-                        action: function(obj){
-                            xmodal.close(obj.$modal);
-                        }
+                    close: {
+                        label: 'Cancel'
                     }
                 }
             });
@@ -944,7 +982,9 @@ var XNAT = getObject(XNAT || {});
             return spawn('a.link|href=#!', {
                 onclick: function(e){
                     e.preventDefault();
-                    commandDefinition.dialog(item, false);
+                    commandDefinition.getCommand(item.id).done(function(commandDef){
+                        commandDefinition.dialog(commandDef, false);
+                    });
                 }
             }, [['b', text]]);
         }
@@ -953,9 +993,11 @@ var XNAT = getObject(XNAT || {});
             return spawn('button.btn.sm', {
                 onclick: function(e){
                     e.preventDefault();
-                    commandDefinition.dialog(item, false);
+                    commandDefinition.getCommand(item.id).done(function(commandDef){
+                        commandDefinition.dialog(commandDef, false);
+                    });
                 }
-            }, 'View Command');
+            }, 'Edit Command');
         }
 
         function enabledCheckbox(item){
@@ -1010,22 +1052,19 @@ var XNAT = getObject(XNAT || {});
         }
 
         commandListManager.getAll(imageName).done(function(data) {
-            if (data) {
+            if (data.length) {
                 for (var i = 0, j = data.length; i < j; i++) {
-                    var xnatActions = '', command = data[i];
+                    var xnatActions, command = data[i];
                     if (command.xnat) {
+                        xnatActions = [];
                         for (var k = 0, l = command.xnat.length; k < l; k++) {
-                            if (xnatActions.length > 0) xnatActions += '<br>';
-                            xnatActions += command.xnat[k].description;
+                            var description = command.xnat[k].description;
                             if (command.xnat[k].contexts.length > 0) {
-                                var contexts = command.xnat[k].contexts;
-                                xnatActions += "<ul>";
-                                contexts.forEach(function(context){
-                                    xnatActions +="<li>"+context+"</li>";
-                                });
-                                xnatActions += "</ul>";
+                                description = '<b>'+command.xnat[k].contexts.toString() + '</b>: ' + description;
                             }
+                            xnatActions.push(spawn('li',description))
                         }
+                        xnatActions = [ spawn('ul.imageActionList', xnatActions) ];
                     } else {
                         xnatActions = 'N/A';
                     }
@@ -2235,7 +2274,7 @@ var XNAT = getObject(XNAT || {});
                             href: '#!',
                             title: 'View command history and logs',
                             data: {'id': this.id },
-                            html: XNAT.plugin.containerService.wrapperList[ this['wrapper-id'] ].description
+                            html: (wrapperList[ this['wrapper-id'] ]) ? wrapperList[ this['wrapper-id'] ].description : this['command-line']
                         });
                     }
                 },
