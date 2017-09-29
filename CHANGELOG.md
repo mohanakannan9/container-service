@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.3.1
+
+Not yet released.
+
+### Features
+
+
+
+## Bugfixes
+
+
+
 ## 1.3.0
 
 [Released 2017-09-29](https://github.com/NrgXnat/container-service/releases/tag/1.3.0).
@@ -18,7 +30,7 @@
 [CS-381]: https://issues.xnat.org/browse/CS-381
 [CS-383]: https://issues.xnat.org/browse/CS-383
 
-### Bugs
+### Bugfixes
 
 * [CS-382][] Fix command update API
 
