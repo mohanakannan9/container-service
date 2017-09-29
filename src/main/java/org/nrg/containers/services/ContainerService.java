@@ -1,6 +1,7 @@
 package org.nrg.containers.services;
 
 import org.nrg.containers.events.model.ContainerEvent;
+import org.nrg.containers.events.model.ServiceTaskEvent;
 import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.DockerServerException;
@@ -20,10 +21,6 @@ public interface ContainerService {
     String STDERR_LOG_NAME = "stderr.log";
     String[] LOG_NAMES = new String[] {STDOUT_LOG_NAME, STDERR_LOG_NAME};
 
-    Container save(final ResolvedCommand resolvedCommand,
-                   final String containerId,
-                   final UserI userI);
-
     List<Container> getAll();
     Container retrieve(final long id);
     Container retrieve(final String containerId);
@@ -31,6 +28,9 @@ public interface ContainerService {
     Container get(final String containerId) throws NotFoundException;
     void delete(final long id) throws NotFoundException;
     void delete(final String containerId) throws NotFoundException;
+
+    List<Container> retrieveServices();
+    List<Container> retrieveNonfinalizedServices();
 
     Container addContainerEventToHistory(final ContainerEvent containerEvent, final UserI userI);
     Container.ContainerHistory addContainerHistoryItem(final Container container,
@@ -60,6 +60,7 @@ public interface ContainerService {
             throws NoDockerServerException, DockerServerException, ContainerException;
 
     void processEvent(final ContainerEvent event);
+    void processEvent(final ServiceTaskEvent event);
 
     void finalize(final String containerId, final UserI userI) throws NotFoundException;
     void finalize(final Container container, final UserI userI);

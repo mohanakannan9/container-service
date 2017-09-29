@@ -398,7 +398,7 @@ public abstract class Command {
                 // We know at least one output is not handled. Now find out which.
                 for (final String commandOutput : outputNames) {
                     if (!handledOutputs.contains(commandOutput)) {
-                        errors.add(commandName + "command output \"" + commandOutput + "\" is not handled by any output handler.");
+                        errors.add(wrapperName + "command output \"" + commandOutput + "\" is not handled by any output handler.");
                     }
                 }
             }

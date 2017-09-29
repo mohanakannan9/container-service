@@ -126,22 +126,29 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
                 final OutputsAndExceptions outputsAndExceptions = uploadOutputs();
                 final List<Exception> failedRequiredOutputs = outputsAndExceptions.exceptions;
                 if (!failedRequiredOutputs.isEmpty()) {
-                    finalizedContainerBuilder.addHistoryItem(Container.ContainerHistory.fromSystem("Failed",
+                    final Container.ContainerHistory failedHistoryItem = Container.ContainerHistory.fromSystem("Failed",
                             "Failed to upload required outputs.\n" + Joiner.on("\n").join(Lists.transform(failedRequiredOutputs, new Function<Exception, String>() {
                                 @Override
                                 public String apply(final Exception input) {
                                     return input.getMessage();
                                 }
-                            }))))
-                            .outputs(outputsAndExceptions.outputs);
+                            })));
+                    finalizedContainerBuilder.addHistoryItem(failedHistoryItem)
+                            .outputs(outputsAndExceptions.outputs)
+                            .status(failedHistoryItem.status())
+                            .statusTime(failedHistoryItem.timeRecorded());
                 } else {
-                    finalizedContainerBuilder.outputs(outputsAndExceptions.outputs);  // Overwrite any existing outputs
+                    finalizedContainerBuilder.outputs(outputsAndExceptions.outputs)  // Overwrite any existing outputs
+                            .status("Complete")
+                            .statusTime(new Date());
                 }
 
                 ContainerUtils.updateWorkflowStatus(toFinalize.workflowId(), PersistentWorkflowUtils.COMPLETE, userI);
             } else {
                 // TODO We know the container has failed. Should we send an email?
                 ContainerUtils.updateWorkflowStatus(toFinalize.workflowId(), PersistentWorkflowUtils.FAILED, userI);
+                finalizedContainerBuilder.status("Failed")
+                        .statusTime(new Date());
             }
 
             return finalizedContainerBuilder.build();
@@ -151,18 +158,8 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
             log.info(prefix + "Getting logs.");
             final List<String> logPaths = Lists.newArrayList();
 
-            String stdoutLogStr = "";
-            String stderrLogStr = "";
-            try {
-                stdoutLogStr = containerControlApi.getContainerStdoutLog(toFinalize.containerId());
-            } catch (DockerServerException | NoDockerServerException e) {
-                log.error(prefix + "Could not get logs.", e);
-            }
-            try {
-                stderrLogStr = containerControlApi.getContainerStderrLog(toFinalize.containerId());
-            } catch (DockerServerException | NoDockerServerException e) {
-                log.error(prefix + "Could not get logs.", e);
-            }
+            final String stdoutLogStr = getStdoutLogStr();
+            final String stderrLogStr = getStderrLogStr();
 
             if (StringUtils.isNotBlank(stdoutLogStr) || StringUtils.isNotBlank(stderrLogStr)) {
 
@@ -201,6 +198,40 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
                 log.debug("Adding log paths to container");
             }
             return logPaths;
+        }
+
+        private String getStderrLogStr() {
+            if (toFinalize.isSwarmService()) {
+                try {
+                    return containerControlApi.getServiceStderrLog(toFinalize.serviceId());
+                } catch (DockerServerException | NoDockerServerException e) {
+                    log.error(prefix + "Could not get service stderr log.", e);
+                }
+            } else {
+                try {
+                    return containerControlApi.getContainerStderrLog(toFinalize.containerId());
+                } catch (DockerServerException | NoDockerServerException e) {
+                    log.error(prefix + "Could not get container stderr log.", e);
+                }
+            }
+            return null;
+        }
+
+        private String getStdoutLogStr() {
+            if (toFinalize.isSwarmService()) {
+                try {
+                    return containerControlApi.getServiceStdoutLog(toFinalize.serviceId());
+                } catch (DockerServerException | NoDockerServerException e) {
+                    log.error(prefix + "Could not get service stdout log.", e);
+                }
+            } else {
+                try {
+                    return containerControlApi.getContainerStdoutLog(toFinalize.containerId());
+                } catch (DockerServerException | NoDockerServerException e) {
+                    log.error(prefix + "Could not get container stdout log.", e);
+                }
+            }
+            return null;
         }
 
         private OutputsAndExceptions uploadOutputs() {

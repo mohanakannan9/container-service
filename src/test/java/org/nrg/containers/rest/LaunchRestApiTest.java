@@ -24,6 +24,7 @@ import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.model.command.auto.LaunchReport;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
+import org.nrg.containers.model.container.auto.Container;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.services.CommandResolutionService;
 import org.nrg.containers.services.CommandService;
@@ -54,6 +55,7 @@ import java.util.Set;
 
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
@@ -84,7 +86,7 @@ public class LaunchRestApiTest {
     private final String FAKE_WORKFLOW_ID = "workflow123456";
     private final long WRAPPER_ID = 10L;
 
-    private ContainerEntity CONTAINER_ENTITY;
+    private Container CONTAINER;
     private CommandWrapper COMMAND_WRAPPER;
     private ResolvedCommand RESOLVED_COMMAND;
 
@@ -183,13 +185,15 @@ public class LaunchRestApiTest {
                 .commandLine("echo hello world")
                 .addRawInputValue(INPUT_NAME, INPUT_VALUE)
                 .build();
-        CONTAINER_ENTITY = new ContainerEntity(RESOLVED_COMMAND, FAKE_CONTAINER_ID, FAKE_WORKFLOW_ID, username);
+        CONTAINER = Container.containerFromResolvedCommand(RESOLVED_COMMAND, FAKE_CONTAINER_ID, username).toBuilder().workflowId(FAKE_WORKFLOW_ID).build();
+        final ContainerEntity containerEntity = ContainerEntity.fromPojo(CONTAINER);
+        when(mockContainerEntityService.save(containerEntity, mockAdmin)).thenReturn(containerEntity);
 
         // We have to match any resolved command because spring will add a csrf token to the inputs. I don't know how to get that token in advance.
-        when(mockDockerControlApi.createContainer(any(ResolvedCommand.class))).thenReturn(FAKE_CONTAINER_ID);
+        when(mockDockerControlApi.createContainerOrSwarmService(any(ResolvedCommand.class), eq(mockAdmin))).thenReturn(CONTAINER);
         doNothing().when(mockDockerControlApi).startContainer(FAKE_CONTAINER_ID);
-        when(mockContainerEntityService.save(any(ResolvedCommand.class), eq(FAKE_CONTAINER_ID), any(String.class), eq(mockAdmin)))
-                .thenReturn(CONTAINER_ENTITY);
+        // when(mockContainerEntityService.save(any(ResolvedCommand.class), eq(FAKE_CONTAINER_ID), any(String.class), eq(mockAdmin)))
+        //         .thenReturn(CONTAINER_ENTITY);
     }
 
     @Test
@@ -293,7 +297,8 @@ public class LaunchRestApiTest {
 
         final LaunchReport.Success success = bulkLaunchReport.successes().get(0);
         assertThat(success.launchParams(), hasEntry(INPUT_NAME, INPUT_VALUE));
-        assertThat(success.containerId(), is(FAKE_CONTAINER_ID));
+        assertThat(success, instanceOf(LaunchReport.ContainerSuccess.class));
+        assertThat(((LaunchReport.ContainerSuccess) success).containerId(), is(FAKE_CONTAINER_ID));
 
         final LaunchReport.Failure failure = bulkLaunchReport.failures().get(0);
         assertThat(failure.launchParams(), hasEntry(INPUT_NAME, badInputValue));

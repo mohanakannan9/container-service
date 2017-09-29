@@ -13,7 +13,6 @@ import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoDockerServerException;
 import org.nrg.containers.exceptions.UnauthorizedException;
 import org.nrg.containers.model.command.auto.LaunchReport;
-import org.nrg.containers.model.command.auto.LaunchReport.Success;
 import org.nrg.containers.model.command.auto.LaunchUi;
 import org.nrg.containers.model.command.auto.ResolvedCommand.PartiallyResolvedCommand;
 import org.nrg.containers.model.configuration.CommandConfiguration;
@@ -46,6 +45,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import springfox.documentation.annotations.ApiIgnore;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
@@ -427,6 +427,7 @@ public class LaunchRestApi extends AbstractXapiRestController {
         return returnLaunchReportWithStatus(launchReport);
     }
 
+    @Nonnull
     private LaunchReport launchContainer(@Nullable final String project,
                                          final long commandId,
                                          @Nullable final String wrapperName,
@@ -442,15 +443,19 @@ public class LaunchRestApi extends AbstractXapiRestController {
                             (commandId == 0L && wrapperName == null ?
                                     containerService.resolveCommandAndLaunchContainer(project, wrapperId, allRequestParams, userI) :
                                     containerService.resolveCommandAndLaunchContainer(project, commandId, wrapperName, allRequestParams, userI));
+            if (container == null) {
+                throw new CommandResolutionException("Something happened but I do not know what.");
+            }
             if (log.isInfoEnabled()) {
-                log.info("Launched command {}, wrapper {} {}. Produced container {}.", commandId, wrapperId, wrapperName,
-                        container != null ? container.databaseId() : null);
+                log.info("Launched command {}, wrapper {} {}. Produced container {}.", commandId, wrapperId, wrapperName, container.databaseId());
                 if (log.isDebugEnabled()) {
-                    log.debug(container != null ? container.toString() : "Container execution object is null.");
+                    log.debug("" + container);
                 }
             }
 
-            return LaunchReport.Success.create(container);
+            return container.isSwarmService() ?
+                    LaunchReport.ServiceSuccess.create(container) :
+                    LaunchReport.ContainerSuccess.create(container);
         } catch (Throwable t) {
             if (log.isInfoEnabled()) {
                 log.error("Launch failed for command wrapper name {}.", wrapperName);
@@ -473,7 +478,7 @@ public class LaunchRestApi extends AbstractXapiRestController {
     }
 
     private ResponseEntity<LaunchReport> returnLaunchReportWithStatus(final LaunchReport launchReport) {
-        if (launchReport instanceof Success) {
+        if (launchReport instanceof LaunchReport.Success) {
             return ResponseEntity.ok(launchReport);
         } else {
             // TODO It would be better to return different stati for the different exception types.
