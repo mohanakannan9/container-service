@@ -7,12 +7,20 @@ Not yet released.
 ### Features
 
 * [CS-1][] Docker swarm integration. You can configure the container service to launch services on your docker swarm by pointing it to your swarm master and setting Swarm Mode to true. This is a global setting; when swarm mode is turned on all jobs will be run as services sent to the swarm master, when it is off all jobs will be run as containers on the docker server.
+* [CS-377][] Allow editing of command definitions through the Admin UI. In order to make this work, a few fields have to be edited out of the command definition to prevent an ID conflict. 
+* [CS-368][] Add date filtering and sorting to container history table. 
+* [CS-381][] Improve layout of images panel in Admin UI
 
 [CS-1]: https://issues.xnat.org/browse/CS-1
+[CS-368]: https://issues.xnat.org/browse/CS-368
+[CS-377]: https://issues.xnat.org/browse/CS-377
+[CS-381]: https://issues.xnat.org/browse/CS-381
 
 ### Bugs
 
+* [CS-382][] Fix command update API
 
+[CS-382]: https://issues.xnat.org/browse/CS-382
 
 ## 1.2.1
 
