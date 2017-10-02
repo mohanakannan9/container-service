@@ -5,6 +5,7 @@ import org.nrg.containers.rest.CommandRestApi;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.DockerServerService;
 import org.nrg.framework.services.ContextService;
+import org.nrg.xdat.security.UserGroupServiceI;
 import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
@@ -45,6 +46,11 @@ public class CommandRestApiTestConfig extends WebSecurityConfigurerAdapter {
     @Bean
     public PermissionsServiceI permissionsService() {
         return Mockito.mock(PermissionsServiceI.class);
+    }
+
+    @Bean
+    public UserGroupServiceI mockUserGroupService() {
+        return Mockito.mock(UserGroupServiceI.class);
     }
 
     @Override
