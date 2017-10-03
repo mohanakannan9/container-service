@@ -33,7 +33,8 @@ var XNAT = getObject(XNAT || {});
         rootUrl = XNAT.url.rootUrl,
         csrfUrl = XNAT.url.csrfUrl,
         projectId = XNAT.data.context.projectID,
-        xsiType = XNAT.data.context.xsiType;
+        xsiType = XNAT.data.context.xsiType,
+        containerMenuItems;
 
     XNAT.plugin =
         getObject(XNAT.plugin || {});
@@ -1213,7 +1214,7 @@ var XNAT = getObject(XNAT || {});
      * Build UI for menu selection
      */
 
-    var containerMenuItems = [
+    launcher.containerMenuItems = containerMenuItems = [
         {
             text: 'Run Containers',
             url: '#run',

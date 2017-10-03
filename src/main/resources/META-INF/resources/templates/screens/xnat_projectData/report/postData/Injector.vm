@@ -1,0 +1,2 @@
+<!-- injected content -->
+<script src="$content.getURI("/scripts/xnat/plugin/containerService/projectSearchLauncher.js")"></script>
