@@ -139,6 +139,7 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
 
         this.setDefaultValue("showReload", true);
         this.setDefaultValue("showOptionsDropdown", true);
+        this.setDefaultValue("showRcMenu", true);
         this.setDefaultValue("showFilterDisplay", true);
 
         this.setDefaultValue("allowInTableMods", true);
@@ -264,7 +265,15 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
         }
 
         if (this.options.showOptionsDropdown) {
-            this.paginator_html = "<table width='100%'><tr><td id='" + this.div_table_id + "_xT_pT1'>{FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown} <strong>{CurrentPageReport}</strong></td><td align='right'><div id='" + this.div_table_id + "_sv'></div></td><td align='right' id='" + this.div_table_id + "_xT_pT3'><input type='button' id='" + this.div_table_id + "_reload' value='Reload'/></td><td width='82' align='right'><div id='" + this.div_table_id + "_options' class='yuimenubar yuimenubarnav'><div class='bd'><ul class='first-of-type'><li class='yuimenubaritem first-of-type'><a class='yuimenubaritemlabel' href='#" + this.div_table_id + "ot'>Options</a></li></ul></div></div></td></tr><tr><td style='line-height:11px;font-size:11px' id='" + this.div_table_id + "_flt' colspan='4'></td></tr></table>";
+            this.paginator_html = "<table width='100%'>" +
+                "<tr>" +
+                "<td id='" + this.div_table_id + "_xT_pT1'>{FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown} <strong>{CurrentPageReport}</strong></td>" +
+                "<td align='right'><div id='" + this.div_table_id + "_sv'></div></td>" +
+                "<td align='right' id='" + this.div_table_id + "_xT_pT3'><input type='button' id='" + this.div_table_id + "_reload' value='Reload'/></td>" +
+                "<td width='82' align='right'><div id='" + this.div_table_id + "_options' class='yuimenubar yuimenubarnav'><div class='bd'><ul class='first-of-type'><li class='yuimenubaritem first-of-type'><a class='yuimenubaritemlabel' href='#" + this.div_table_id + "ot'>Options</a></li></ul></div></div></td>" +
+                "<td width='130' align='right' class='hidden'><div id='" + this.div_table_id + "_run' class='yuimenubar yuimenubarnav'><div class='bd'><ul class='first-of-type'><li class='yuimenubaritem first-of-type'><a class='yuimenubaritemlabel' href='#" + this.div_table_id + "_rc'>Run Container</a></li></ul></div></div></td>" +
+                "</tr>" +
+                "<tr><td style='line-height:11px;font-size:11px' id='" + this.div_table_id + "_flt' colspan='4'></td></tr></table>";
         }
         else {
             this.paginator_html = "<table width='100%'><tr><td id='" + this.div_table_id + "_xT_pT1'>{FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown} <strong>{CurrentPageReport}</strong></td><td align='right'><div id='" + this.div_table_id + "_sv'></div></td><td align='right' id='" + this.div_table_id + "_xT_pT3'><input type='hidden' id='" + this.div_table_id + "_reload' value='Reload'/></td><td width='82' align='right'></td></tr><tr><td style='line-height:10px;font-size:9px' id='" + this.div_table_id + "_flt' colspan='4'></td></tr></table>";
@@ -312,6 +321,9 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
             if (this.options.showOptionsDropdown) {
                 YAHOO.util.Event.onAvailable(this.div_table_id + "_options", this.renderOptions, true, this);
             }
+            if (this.options.showRcMenu) {
+                YAHOO.util.Event.onAvailable(this.div_table_id + "_run", this.renderRunContainerMenu, true, this);
+            }
         }
         else {
             if (this.options.showFilterDisplay) {
@@ -322,6 +334,10 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
             }
             if (this.options.showOptionsDropdown) {
                 this.renderOptions();
+            }
+
+            if (this.options.showRcMenu) {
+                this.renderRunContainerMenu();
             }
         }
 
@@ -821,111 +837,42 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
     //insert container launch menu
     this.renderRunContainerMenu = function(obj1, obj2){
         this.rcMenu =  null;
-        this.rcMenu = new YAHOO.widget.MenuBar(this.div_table_id + "_rcmenu", {
+        this.rcMenu = new YAHOO.widget.MenuBar(this.div_table_id + "_run", {
             hidedelay: 300,
             maxheight: 200,
             submenualignment: ["tr", "br"]
         });
         this.rcMenu.search = this;
         this.rcMenu.en = this.initResults.ResultSet.rootElementName;
-        
+
+        // only render this in a project setting, for now
+        if (!XNAT.data.context.projectID) return false;
+
+        // otherwise, get the list of available commands and populate the menu
         var that = this;
 
         XNAT.xhr.getJSON({
             url: XNAT.url.rootUrl('/xapi/commands/available?project='+XNAT.data.context.projectID+'&xsiType='+this.rcMenu.en),
             success: function(data){
+                var submenuitems = [];
+                
                 that.rcMenu.subscribe("beforeRender", function(){
-                    if (that.getRoot() == that) {
+                    if (this.getRoot() == this) {
                         try {
-                            var submenuitems = new Array();
-                            submenuitems.push({
-                                text: 'Spreadsheet',
-                                onclick: { fn: that.search.spreadsheetClick, scope: that.search }
+                            data.forEach(function(availableCommand){
+                                if (availableCommand.enabled) {
+                                    submenuitems.push({
+                                        text: availableCommand['wrapper-description'],
+                                        onclick: function(){ console.log(availableCommand['wrapper-id']) }
+                                    });
+                                }
                             });
 
-                            var spec = window.available_elements.getByName(that.en);
-                            if (spec != null || that.en === "wrk:workflowData") {
-                                submenuitems.push({
-                                    text: 'Email',
-                                    onclick: { fn: that.search.emailClick, scope: that.search }
-                                });
-
-                                submenuitems.push({
-                                    text: 'Save Search',
-                                    onclick: { fn: that.search.saveClick, scope: that.search }
-                                });
-                                submenuitems.push({
-                                    text: 'Save as New Search',
-                                    onclick: { fn: that.search.saveAsClick, scope: that.search }
-                                });
-                                submenuitems.push({
-                                    text: 'Show XML',
-                                    onclick: { fn: that.search.showXMLClick, scope: that.search }
-                                });
-
-                                if ((that.en.indexOf("SessionData") > -1)) {
-                                    submenuitems.push({
-                                        text: 'Download',
-                                        onclick: { fn: that.search.downloadClick, scope: that.search }
-                                    });
-                                }
-
-                                if (that.search.obj.ID.startsWith("ss.")) {
-                                    submenuitems.push({
-                                        text: 'Delete Saved Search',
-                                        onclick: { fn: that.search.deleteClick, scope: that.search }
-                                    });
-                                }
-
-                                submenuitems.push({
-                                    text: 'Edit Columns',
-                                    onclick: { fn: that.search.addColumnsClick, scope: that.search }
-                                });
-                                submenuitems.push({
-                                    text: 'Join to ...',
-                                    onclick: { fn: that.search.joinClick, scope: that.search }
-                                });
-
-
-                                if (that.search.options != undefined && that.search.options != null && that.search.options.length == 0) {
-                                    submenuitems = Array.concat(submenuitems, that.search.options);
-                                }
-
-                                if (spec != null && spec.actions != undefined && spec.actions.length > 0) {
-                                    for (var sC = 0; sC < spec.actions.length; sC++) {
-                                        submenuitems.push({
-                                            value: spec.actions[sC].action,
-                                            text: spec.actions[sC].display,
-                                            onclick: { fn: that.search.menuSend, scope: that.search }
-                                        });
-                                    }
-                                }
-
-                                var menuOptions = getSearchMenuOptions();
-                                if (menuOptions) {
-                                    for (var index = 0, total = menuOptions.length; index < total; index++) {
-                                        try {
-                                            var menuOption = menuOptions[index];
-                                            var fnName = 'that.search.handle' + menuOption.label.replace(/\s+/g, '');
-                                            eval(fnName + ' = menuOption.handler');
-                                            submenuitems.push({
-                                                text: menuOption.label,
-                                                onclick: { fn: eval(fnName), scope: that.search }
-                                            });
-                                        }
-                                        catch(e) {
-                                            showMessage("page_body", "Exception", e.message);
-                                        }
-                                    }
-                                }
-                            }
-
-
                             var submenu = {
-                                id: that.search.div_table_id + "ot",
+                                id: that.div_table_id + "_rc",
                                 itemdata: submenuitems
                             };
-                            that.getItem(0).cfg.setProperty("submenu", submenu);
+                            this.getItem(0).cfg.setProperty("submenu", submenu);
                         }
                         catch(e) {
                             showMessage("page_body", "Exception", e.message);
@@ -933,6 +880,11 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
                     }
                 });
                 that.rcMenu.render();
+
+                if (submenuitems.length) {
+                    var rcMenu = document.getElementById(that.div_table_id+'_run');
+                    $(rcMenu).parents('td').removeClass('hidden');
+                }
             }
         })
 
