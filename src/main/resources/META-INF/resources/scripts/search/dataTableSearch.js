@@ -855,7 +855,7 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
             url: XNAT.url.rootUrl('/xapi/commands/available?project='+XNAT.data.context.projectID+'&xsiType='+this.rcMenu.en),
             success: function(data){
                 var submenuitems = [];
-                
+
                 that.rcMenu.subscribe("beforeRender", function(){
                     if (this.getRoot() == this) {
                         try {
@@ -863,7 +863,16 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
                                 if (availableCommand.enabled) {
                                     submenuitems.push({
                                         text: availableCommand['wrapper-description'],
-                                        onclick: function(){ console.log(availableCommand['wrapper-id']) }
+                                        classname: 'projectContainerLauncher',
+                                        onclick: {
+                                            fn: XNAT.plugin.containerService.projectSearchLauncher.open,
+                                            obj: {
+                                                'root-element-name': availableCommand['root-element-name'],
+                                                'wrapper-id': availableCommand['wrapper-id'],
+                                                'search-id': that.initResults.ResultSet.ID
+                                            },
+                                            scope: this.search
+                                        }
                                     });
                                 }
                             });

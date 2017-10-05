@@ -18,37 +18,29 @@ var XNAT = getObject(XNAT || {});
     XNAT.plugin.containerService.projectSearchLauncher = projectSearchLauncher =
         getObject(XNAT.plugin.containerService.projectSearchLauncher || {});
 
-    projectSearchLauncher.init = function(){
-        $('.yui-pg-container').each(function(i){
-            var dtTitleBar = $(this);
-            var xsiType = dtTitleBar.prop('id').split('_')[0].substring(1);
-            var availableCommands = [];
-            XNAT.xhr.getJSON({
-                    url: XNAT.url.rootUrl('/xapi/commands/available?project=${project.getId()}&xsiType='+xsiType)
-                })
-                .success(function(data){
-                    var availableCommands = data;
-                    if (!availableCommands.length) {
-                        return false;
-                    } else {
-                        var opts = [];
-                        availableCommands.forEach(function(command){
-                            opts.push(spawn('option',{ value: command['wrapper-id'] }, command['wrapper-description']))
-                        });
-                        dtTitleBar.find('tr').first().append(spawn('td',[
-                            spawn('input#cs-run-'+i+'|type=submit'),
-                            spawn('select#cs-select-'+i, opts )
-                            ]));
+    /*
+     * To create a bulk container launch from a data search table:
+     * 1. Get the JSON list of XNAT data IDs to target as your root element, and the root element name
+     * 1a. The launcher will be provided with an XNAT search ID to query to get that list
+     * 2. Submit the target list to the bulklaunch API for that command & wrapper
+     * 3. Figure out the rest of the parameters and inputs for launching using the same logic as the scan bulk launcher
+     */
 
-                        var csRunButton = new YAHOO.widget.Button('cs-run-'+i, {
-                            type: 'menu',
-                            menu: 'cs-select-' + i,
-                            label: 'Run Containers',
-                            submenualignment: ["tr", "br"]
-                        });
-                    }
-                });
+    projectSearchLauncher.open = function(){
+        // find obj in the config param of the passed object
+        var obj = this.cfg.config.onclick.value.obj;
+
+        XNAT.xhr.getJSON({
+            url: XNAT.url.rootUrl('/data/search/'+obj['search-id']),
+            success: function(data){
+                var targetList = [];
+                if (data.ResultSet.Result.length){
+                    data.ResultSet.Result.forEach(function(target){
+                        targetList.push(target.key);
+                    })
+                }
+                console.log(obj, targetList);
+            }
         })
-    };
-
+    }
 }));
