@@ -162,6 +162,15 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
             }
         }
 
+        if (this.rcMenu){
+            try {
+                this.rcMenu.destroy();
+            }
+            catch(e) {
+                showMessage("page_body", "Exception", e.message);
+            }
+        }
+
         if (this.reloadButton) {
             this.reloadButton.destroy();
         }
@@ -836,7 +845,7 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
 
     //insert container launch menu
     this.renderRunContainerMenu = function(obj1, obj2){
-        this.rcMenu =  null;
+        this.rcMenu = null;
         this.rcMenu = new YAHOO.widget.MenuBar(this.div_table_id + "_run", {
             hidedelay: 300,
             maxheight: 200,
