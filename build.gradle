@@ -85,7 +85,7 @@ configurations.all {
 //}
 
 dependencies {
-    compileAndInclude (group: "org.nrg", name: "transporter", version: "1.0-SNAPSHOT") {
+    compileAndInclude (group: "org.nrg", name: "transporter", version: "1.0.0") {
         transitive = false
     }
     compileAndInclude (group: 'com.spotify', name: 'docker-client', version: vDockerClient) {
