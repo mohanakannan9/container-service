@@ -51,6 +51,11 @@ var XNAT = getObject(XNAT || {});
 
                     inputArea.append(selectableTable(targetList));
                     inputArea.find('input[type=checkbox]').prop('checked','checked');
+                    inputArea.append(
+                        spawn('!',[
+                            spawn('input|type=hidden',{ name: 'root-element-name', value: config['root-element-name'] }),
+                            spawn('input|type=hidden',{ name: 'wrapper-id', value: config['wrapper-id'] })
+                            ]));
                 },
                 buttons: [
                     {
@@ -61,7 +66,9 @@ var XNAT = getObject(XNAT || {});
                             obj.$modal.find('input.target').each(function(){
                                 if ($(this).prop('checked')) targets.push($(this).val());
                             });
-                            console.log(targets);
+                            var rootElementName = obj.$modal.find('input[name=root-element-name]').val();
+                            var wrapperId = obj.$modal.find('input[name=wrapper-id]').val();
+                            XNAT.plugin.containerService.launcher.bulkLaunchDialog(wrapperId,rootElementName,targets);
                         }
                     },
                     {
@@ -100,7 +107,7 @@ var XNAT = getObject(XNAT || {});
             tableBodyRows.push(
                 spawn('tr',{ id: row['accession-id'] },[
                     spawn('td.table-action-controls.table-selector.center',{ style: { width: '45px' }}, [
-                        spawn('input.selectable-select-one|type=checkbox', { value: row['accession-id'] })
+                        spawn('input.selectable-select-one.target|type=checkbox', { value: row['accession-id'] })
                     ]),
                     spawn('td',{ style: { width: '200px' }},row['label']),
                     spawn('td',{ style: { width: '213px' }},row['accession-id'])
