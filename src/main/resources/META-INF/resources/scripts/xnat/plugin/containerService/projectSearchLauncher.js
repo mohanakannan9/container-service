@@ -49,15 +49,7 @@ var XNAT = getObject(XNAT || {});
                         spawn('p','Select some or all to launch on, or add filters to your search table.')
                         ]));
 
-                    targetList.forEach(function(target){
-                        inputArea.append(
-                            XNAT.ui.panel.input.checkbox({
-                                label: target.label,
-                                className: 'target',
-                                value: target['accession-id']
-                            })
-                        )
-                    });
+                    inputArea.append(selectableTable(targetList));
                     inputArea.find('input[type=checkbox]').prop('checked','checked');
                 },
                 buttons: [
@@ -71,6 +63,10 @@ var XNAT = getObject(XNAT || {});
                             });
                             console.log(targets);
                         }
+                    },
+                    {
+                        label: 'Cancel',
+                        close: true
                     }
                 ]
             });
@@ -81,6 +77,53 @@ var XNAT = getObject(XNAT || {});
 
         }
     };
+
+    function selectableTable(data){
+        var tableHeader = spawn('div.data-table-wrapper.no-body',[
+            spawn('table.xnat-table.fixed-header.clean',[
+                spawn('thead',[
+                    spawn('tr',[
+                        spawn('th.toggle-all',{ style: { width: '45px' }},[
+                            spawn('input.selectable-select-all|type=checkbox',{ title: 'Toggle All'})
+                        ]),
+                        spawn('th.left',{ style: { width: '200px' }},'Label'),
+                        spawn('th.left',{ style: { width: '213px' }},'XNAT Accession ID')
+                    ])
+                ])
+            ])
+        ]);
+
+        var tableBodyRows = [];
+        // loop over an array of data, populate the table body rows
+        // max table width in a 500-px dialog is 458px
+        data.forEach(function(row){
+            tableBodyRows.push(
+                spawn('tr',{ id: row['accession-id'] },[
+                    spawn('td.table-action-controls.table-selector.center',{ style: { width: '45px' }}, [
+                        spawn('input.selectable-select-one|type=checkbox', { value: row['accession-id'] })
+                    ]),
+                    spawn('td',{ style: { width: '200px' }},row['label']),
+                    spawn('td',{ style: { width: '213px' }},row['accession-id'])
+                ])
+            );
+        });
+        
+        var tableBody = spawn('div.data-table-wrapper.no-header',{
+            style: {
+                'max-height': '300px',
+                'overflow-y': 'auto'
+            }
+        },[
+            spawn('table.xnat-table.clean.selectable',[
+                spawn('tbody', tableBodyRows )
+            ])
+        ]);
+
+        return spawn('div.data-table-container',[
+            tableHeader,
+            tableBody
+        ]);
+    }
 
     projectSearchLauncher.open = function(){
         // find obj in the config param of the passed object
