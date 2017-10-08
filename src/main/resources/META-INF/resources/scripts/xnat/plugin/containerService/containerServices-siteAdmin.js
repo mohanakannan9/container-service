@@ -2130,10 +2130,6 @@ var XNAT = getObject(XNAT || {});
 
         var $dataRows = [];
 
-        // TODO:
-        // TODO: set min-width as well as max-width
-        // TODO:
-
         var styles = {
             image: (150-24)+'px',
             command: (200-24) + 'px',
@@ -2443,6 +2439,11 @@ var XNAT = getObject(XNAT || {});
 
         sortHistoryData().done(function(data){
             if (data.length) {
+                // sort list of container launches by execution time, descending
+                data = data.sort(function(a,b){
+                    return (a.history[0]['time-recorded'] < b.history[0]['time-recorded']) ? 1 : -1
+                });
+
                 setTimeout(function(){
                     $manager.html('loading...');
                 }, 1);
@@ -2451,7 +2452,10 @@ var XNAT = getObject(XNAT || {});
                         historyTable: spawnHistoryTable(data)
                     });
                     _historyTable.done(function(){
-                        this.render($manager.empty(), 20);
+                        $manager.empty().append(
+                            spawn('h3', { style: { 'margin-bottom': '1em' }}, data.length + ' Containers Launched On This Site')
+                        );
+                        this.render($manager, 20);
                     });
                 }, 10);
                 // return _usersTable;
