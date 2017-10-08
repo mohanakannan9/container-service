@@ -105,7 +105,7 @@ var XNAT = getObject(XNAT || {});
         // max table width in a 500-px dialog is 458px
         data.forEach(function(row){
             tableBodyRows.push(
-                spawn('tr',{ id: row['accession-id'] },[
+                spawn('tr.selectable-tr',{ id: row['accession-id'] },[
                     spawn('td.table-action-controls.table-selector.center',{ style: { width: '45px' }}, [
                         spawn('input.selectable-select-one.target|type=checkbox', { value: row['accession-id'] })
                     ]),
@@ -139,7 +139,6 @@ var XNAT = getObject(XNAT || {});
         XNAT.xhr.getJSON({
             url: XNAT.url.rootUrl('/data/search/'+obj['search-id']),
             success: function(data){
-                console.log('found data');
                 var targetList = [];
                 if (data.ResultSet.Result.length){
                     data.ResultSet.Result.forEach(function(target){
@@ -153,6 +152,10 @@ var XNAT = getObject(XNAT || {});
             }
         })
     };
+
+    $('.tr-selectable td').on('click',function(){
+        $(this).find('input[type=checkbox]').click();
+    });
 
 
 }));
