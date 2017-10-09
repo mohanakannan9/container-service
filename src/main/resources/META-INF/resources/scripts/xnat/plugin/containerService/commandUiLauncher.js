@@ -33,7 +33,8 @@ var XNAT = getObject(XNAT || {});
         rootUrl = XNAT.url.rootUrl,
         csrfUrl = XNAT.url.csrfUrl,
         projectId = XNAT.data.context.projectID,
-        xsiType = XNAT.data.context.xsiType;
+        xsiType = XNAT.data.context.xsiType,
+        containerMenuItems;
 
     XNAT.plugin =
         getObject(XNAT.plugin || {});
@@ -261,22 +262,35 @@ var XNAT = getObject(XNAT || {});
 
     var staticConfigList = function(name,list) {
         var listArray = list.split(',');
-        listArray.forEach(function(item,i){
-            listArray[i] = '<li>'+item+'</li>'
-        });
-        return spawn(
-            'div.panel-element', { data: { name: name } }, [
-                spawn('label.element-label', name),
-                spawn('div.element-wrapper', [
-                    spawn('ul',{ style: {
-                        'list-style-type': 'none',
-                        margin: 0,
-                        padding: 0
-                    }},listArray.join(''))
-                ]),
-                spawn('br.clear')
-            ]
-        )
+        if (listArray.length > 6) {
+            return spawn(
+                'div.panel-element', { data: { name: name } }, [
+                    spawn('label.element-label', name),
+                    spawn('div.element-wrapper', [
+                        spawn('textarea',{ 'readonly':true, style: { height: '80px' }},listArray.join('\n'))
+                    ]),
+                    spawn('br.clear')
+                ]
+            )
+        }
+        else {
+            listArray.forEach(function(item,i){
+                listArray[i] = '<li>'+item+'</li>'
+            });
+            return spawn(
+                'div.panel-element', { data: { name: name } }, [
+                    spawn('label.element-label', name),
+                    spawn('div.element-wrapper', [
+                        spawn('ul',{ style: {
+                            'list-style-type': 'none',
+                            margin: 0,
+                            padding: 0
+                        }},listArray.join(''))
+                    ]),
+                    spawn('br.clear')
+                ]
+            )
+        }
     };
 
     launcher.formInputs = function(input) {
@@ -634,6 +648,8 @@ var XNAT = getObject(XNAT || {});
                         $targetListContainer = $panel.find('.target-list');
 
                     // display root elements first
+                    $targetListContainer.append(spawn('p',[ spawn('strong', targets.length + ' items selected to run in bulk.' )]));
+
                     var targetList = launcher.formInputs({ name: rootElement, type: 'staticList', value: targets.toString() });
                     $targetListContainer.append(targetList);
 
@@ -1213,7 +1229,7 @@ var XNAT = getObject(XNAT || {});
      * Build UI for menu selection
      */
 
-    var containerMenuItems = [
+    launcher.containerMenuItems = containerMenuItems = [
         {
             text: 'Run Containers',
             url: '#run',
