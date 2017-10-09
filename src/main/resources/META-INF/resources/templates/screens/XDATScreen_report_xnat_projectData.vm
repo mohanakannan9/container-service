@@ -32,7 +32,7 @@
         <script type="text/javascript" src="$content.getURI("scripts/generated/xdat_search_field.js")"></script>
         <script type="text/javascript" src="$content.getURI("scripts/generated/xdat_criteria.js")"></script>
         <script type="text/javascript" src="$content.getURI("scripts/generated/xdat_criteria_set.js")"></script>
-        <script type="text/javascript" src="$content.getURI("scripts/search/tabManager.js")"></script>
+        <script type="text/javascript" src="$content.getURI("scripts/search/csTabManager.js")"></script>
         <script type="text/javascript" src="$content.getURI("scripts/search/saveSearch.js")"></script>
         <script type="text/javascript" src="$content.getURI("scripts/search/searchManager.js")"></script>
         <script type="text/javascript" src="$content.getURI("scripts/search/csDataTableSearch.js")"></script>
