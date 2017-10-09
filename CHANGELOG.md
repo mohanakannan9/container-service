@@ -6,7 +6,9 @@ Not yet released.
 
 ### Features
 
+* [CS-376][] Enable bulk launching of containers from data tables on the project report page. Any filters that the user sets on these tables will be reflected in the list of items that get prepared for launch. The user can then confirm, select or deselect any of those items before launching containers. This feature also works for any project-specific stored search. 
 
+[CS-376]: https://issues.xnat.org/browse/CS-376
 
 ## Bugfixes
 
