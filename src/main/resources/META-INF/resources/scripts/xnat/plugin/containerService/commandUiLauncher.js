@@ -814,7 +814,7 @@ var XNAT = getObject(XNAT || {});
                 },
                 buttons: [
                     {
-                        label: 'Run Container',
+                        label: 'Run Container(s)',
                         isDefault: true,
                         close: false,
                         action: function(obj){
@@ -864,7 +864,7 @@ var XNAT = getObject(XNAT || {});
 
                                 var dataToPost = bulkData;
 
-                                xmodal.loading.open({ title: 'Launching Container...' });
+                                xmodal.loading.open({ title: 'Launching Container(s)...' });
 
                                 XNAT.xhr.postJSON({
                                     url: bulkLaunchUrl(wrapperId),
