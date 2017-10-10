@@ -29,6 +29,30 @@ var XNAT = getObject(XNAT || {});
     function findLabel(key){
         return key.indexOf('identifier') > 0;
     }
+    function errorHandler(e, title, closeAll){
+        console.log(e);
+        title = (title) ? 'Error Found: '+ title : 'Error';
+        closeAll = (closeAll === undefined) ? true : closeAll;
+        var errormsg = (e.statusText) ? '<p><strong>Error ' + e.status + ': '+ e.statusText+'</strong></p><p>' + e.responseText + '</p>' : e;
+        XNAT.dialog.open({
+            width: 450,
+            title: title,
+            content: errormsg,
+            buttons: [
+                {
+                    label: 'OK',
+                    isDefault: true,
+                    close: true,
+                    action: function(){
+                        if (closeAll) {
+                            xmodal.closeAll();
+
+                        }
+                    }
+                }
+            ]
+        });
+    }
 
     projectSearchLauncher.confirmTargets = function(targetList, config){
         // config contains information necessary to build the container launcher
@@ -149,6 +173,14 @@ var XNAT = getObject(XNAT || {});
                 }
 
                 projectSearchLauncher.confirmTargets(targetList, obj);
+            },
+            fail: function(e){
+                if (e.status === '500') {
+                    e.responseText = 'Please reload the data table and try again.';
+                    errorHandler(e,'Expired search table key');
+                } else {
+                    errorHandler(e);
+                }
             }
         })
     };
