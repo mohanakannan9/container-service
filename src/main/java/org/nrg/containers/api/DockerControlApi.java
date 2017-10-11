@@ -100,8 +100,16 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     @Override
-    public String pingServer() throws NoDockerServerException, DockerServerException {
-        try (final DockerClient client = getClient()) {
+    public String ping() throws NoDockerServerException, DockerServerException {
+        return ping(getServer());
+    }
+
+    private String ping(final DockerServer dockerServer) throws DockerServerException {
+        return dockerServer.swarmMode() ? pingSwarmMaster(dockerServer) : pingServer(dockerServer);
+    }
+
+    private String pingServer(final DockerServer dockerServer) throws DockerServerException {
+        try (final DockerClient client = getClient(dockerServer)) {
             return client.ping();
         } catch (DockerException | InterruptedException e) {
             log.error(e.getMessage());
@@ -109,12 +117,25 @@ public class DockerControlApi implements ContainerControlApi {
         }
     }
 
+    private String pingSwarmMaster(final DockerServer dockerServer) throws DockerServerException {
+        try (final DockerClient client = getClient(dockerServer)) {
+            client.listNodes();
+            // If we got this far without an exception, then all is well.
+        } catch (DockerException | InterruptedException e) {
+            log.error(e.getMessage());
+            throw new DockerServerException(e);
+        }
+        return "OK";
+    }
+
     @Override
     public boolean canConnect() {
         try {
-            final String pingResult = pingServer();
+            final String pingResult = ping();
             return StringUtils.isNotBlank(pingResult) && pingResult.equals("OK");
-        } catch (NoDockerServerException | DockerServerException ignored) {
+        } catch (NoDockerServerException e) {
+            log.error(e.getMessage());
+        } catch (DockerServerException ignored) {
             // Any actual errors have already been logged. We can safely ignore them here.
         }
 

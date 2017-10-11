@@ -226,14 +226,14 @@ public class DockerRestApiTest {
                         .with(csrf()).with(testSecurityContext());
 
         doReturn("OK")
-                .when(mockContainerControlApi).pingServer();
+                .when(mockContainerControlApi).ping();
 
         mockMvc.perform(request)
                 .andExpect(status().isOk())
                 .andExpect(content().string(equalTo("OK")));
 
         doThrow(DOCKER_SERVER_EXCEPTION)
-                .when(mockContainerControlApi).pingServer();
+                .when(mockContainerControlApi).ping();
 
         final String ISEResponse =
                 mockMvc.perform(request)
@@ -244,7 +244,7 @@ public class DockerRestApiTest {
         assertThat(ISEResponse, is("The Docker server returned an error:\nYour server dun goofed."));
 
         doThrow(NO_SERVER_PREF_EXCEPTION)
-                .when(mockContainerControlApi).pingServer();
+                .when(mockContainerControlApi).ping();
 
         final String failedDepResponse =
                 mockMvc.perform(request)

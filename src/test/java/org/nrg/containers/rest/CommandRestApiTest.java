@@ -22,6 +22,8 @@ import org.nrg.containers.services.DockerServerService;
 import org.nrg.framework.constants.Scope;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.security.UserGroupI;
+import org.nrg.xdat.security.UserGroupServiceI;
 import org.nrg.xdat.security.helpers.AccessLevel;
 import org.nrg.xdat.security.services.RoleServiceI;
 import org.nrg.xdat.security.services.UserManagementServiceI;
@@ -96,6 +98,7 @@ public class CommandRestApiTest {
     @Autowired private SiteConfigPreferences mockSiteConfigPreferences;
     @Autowired private UserManagementServiceI mockUserManagementServiceI;
     @Autowired private ConfigService mockConfigService;
+    @Autowired private UserGroupServiceI mockUserGroupService;
 
     @Rule public TemporaryFolder folder = new TemporaryFolder(new File("/tmp"));
 
@@ -122,20 +125,35 @@ public class CommandRestApiTest {
         final UserI nonAdmin = mock(UserI.class);
         final String nonAdminUsername = "non-admin";
         final String nonAdminPassword = "non-admin-pass";
+        final String nonAdminOwnerGroupId = NON_ADMIN_IS_OWNER_PROJECT + "_" + AccessLevel.Owner.code();
+        final String nonAdminMemberGroupId = NON_ADMIN_IS_MEMBER_PROJECT + "_" + AccessLevel.Member.code();
+        final String nonAdminCollaboratorGroupId = NON_ADMIN_IS_COLLABORATOR_PROJECT + "_" + AccessLevel.Collaborator.code();
         when(nonAdmin.getLogin()).thenReturn(nonAdminUsername);
         when(nonAdmin.getPassword()).thenReturn(nonAdminPassword);
         when(mockRoleService.isSiteAdmin(nonAdmin)).thenReturn(false);
         when(mockUserManagementServiceI.getUser(nonAdminUsername)).thenReturn(nonAdmin);
         final GrantedAuthority ownerAuthority = mock(GrantedAuthority.class);
-        when(ownerAuthority.getAuthority()).thenReturn(NON_ADMIN_IS_OWNER_PROJECT + "_" + AccessLevel.Owner.code());
+        when(ownerAuthority.getAuthority()).thenReturn(nonAdminOwnerGroupId);
         final GrantedAuthority memberAuthority = mock(GrantedAuthority.class);
-        when(memberAuthority.getAuthority()).thenReturn(NON_ADMIN_IS_MEMBER_PROJECT + "_" + AccessLevel.Member.code());
+        when(memberAuthority.getAuthority()).thenReturn(nonAdminMemberGroupId);
         final GrantedAuthority collaboratorAuthority = mock(GrantedAuthority.class);
-        when(collaboratorAuthority.getAuthority()).thenReturn(NON_ADMIN_IS_COLLABORATOR_PROJECT + "_" + AccessLevel.Collaborator.code());
+        when(collaboratorAuthority.getAuthority()).thenReturn(nonAdminCollaboratorGroupId);
         final List<GrantedAuthority> authorities = Lists.newArrayList(ownerAuthority, memberAuthority, collaboratorAuthority);
         // final List<? extends GrantedAuthority> authoritiesStupidGenericCopy = Lists.newArrayList(authorities);
         NONADMIN_AUTH = new TestingAuthenticationToken(nonAdmin, nonAdminPassword, authorities);
         doReturn(authorities).when(nonAdmin).getAuthorities();
+
+        // Add new mocking behavior for 1.7.4
+        final UserGroupI ownerGroup = mock(UserGroupI.class);
+        when(ownerGroup.getId()).thenReturn(nonAdminOwnerGroupId);
+        when(mockUserGroupService.getGroupsByTag(NON_ADMIN_IS_OWNER_PROJECT)).thenReturn(Collections.singletonList(ownerGroup));
+        final UserGroupI memberGroup = mock(UserGroupI.class);
+        when(memberGroup.getId()).thenReturn(nonAdminMemberGroupId);
+        when(mockUserGroupService.getGroupsByTag(NON_ADMIN_IS_MEMBER_PROJECT)).thenReturn(Collections.singletonList(memberGroup));
+        final UserGroupI collaboratorGroup = mock(UserGroupI.class);
+        when(collaboratorGroup.getId()).thenReturn(nonAdminCollaboratorGroupId);
+        when(mockUserGroupService.getGroupsByTag(NON_ADMIN_IS_COLLABORATOR_PROJECT)).thenReturn(Collections.singletonList(collaboratorGroup));
+        when(mockUserGroupService.getGroupIdsForUser(nonAdmin)).thenReturn(Lists.newArrayList(nonAdminOwnerGroupId, nonAdminMemberGroupId, nonAdminCollaboratorGroupId));
 
         // Mock the aliasTokenService
         final AliasToken mockAliasToken = new AliasToken();
@@ -157,9 +175,10 @@ public class CommandRestApiTest {
     public void testGetAll() throws Exception {
         final String path = "/commands";
 
-        final String commandJson =
-                "{\"name\": \"one\", \"type\": \"docker\", \"image\":\"" + FAKE_DOCKER_IMAGE + "\"}";
-        final Command created = commandService.create(mapper.readValue(commandJson, Command.class));
+        final Command created = commandService.create(commandService.create(Command.builder()
+                .name("one")
+                .image(FAKE_DOCKER_IMAGE)
+                .build()));
 
         TestTransaction.flagForCommit();
         TestTransaction.end();
@@ -192,9 +211,10 @@ public class CommandRestApiTest {
     public void testGet() throws Exception {
         final String pathTemplate = "/commands/%d";
 
-        final String commandJson =
-                "{\"name\": \"one\", \"type\": \"docker\", \"image\":\"" + FAKE_DOCKER_IMAGE + "\"}";
-        final Command created = commandService.create(mapper.readValue(commandJson, Command.class));
+        final Command created = commandService.create(Command.builder()
+                .name("one")
+                .image(FAKE_DOCKER_IMAGE)
+                .build());
         TestTransaction.flagForCommit();
         TestTransaction.end();
         TestTransaction.start();
@@ -297,9 +317,10 @@ public class CommandRestApiTest {
     public void testDelete() throws Exception {
         final String pathTemplate = "/commands/%d";
 
-        final String commandJson =
-                "{\"name\": \"toDelete\", \"type\": \"docker\", \"image\":\"" + FAKE_DOCKER_IMAGE + "\"}";
-        final Command command = commandService.create(mapper.readValue(commandJson, Command.class));
+        final Command command = commandService.create(Command.builder()
+                .name("toDelete")
+                .image(FAKE_DOCKER_IMAGE)
+                .build());
         TestTransaction.flagForCommit();
         TestTransaction.end();
         TestTransaction.start();
@@ -322,11 +343,13 @@ public class CommandRestApiTest {
     public void testAddWrapper() throws Exception {
         final String pathTemplate = "/commands/%d/wrappers";
 
-        final String commandWrapperJson = "{\"name\": \"empty wrapper\"}";
+        final String wrapperName = "some name, does not matter";
+        final String commandWrapperJson = "{\"name\": \"" + wrapperName + "\"}";
 
-        final String commandJson =
-                "{\"name\": \"toCreate\", \"type\": \"docker\", \"image\":\"" + FAKE_DOCKER_IMAGE + "\"}";
-        final Command command = commandService.create(mapper.readValue(commandJson, Command.class));
+        final Command command = commandService.create(Command.builder()
+                .name("toCreate")
+                .image(FAKE_DOCKER_IMAGE)
+                .build());
         TestTransaction.flagForCommit();
         TestTransaction.end();
         TestTransaction.start();
@@ -365,7 +388,7 @@ public class CommandRestApiTest {
         assertThat(retrieved, is(not(nullValue())));
         assertThat(retrieved.id(), is(not(0L)));
         assertThat(idResponse, is(retrieved.id()));
-        assertThat(retrieved.name(), is("empty wrapper"));
+        assertThat(retrieved.name(), is(wrapperName));
 
         // Errors
 
@@ -391,11 +414,14 @@ public class CommandRestApiTest {
     public void testUpdateWrapper() throws Exception {
         final String pathTemplate = "/commands/%d/wrappers/%d";
 
-        final String commandJson =
-                "{\"name\": \"toCreate\", \"type\": \"docker\", \"image\":\"" + FAKE_DOCKER_IMAGE + "\"," +
-                        "\"xnat\":[{\"name\": \"a name\"," +
-                        "\"description\": \"ORIGINAL\"}]}";
-        final Command command = commandService.create(mapper.readValue(commandJson, Command.class));
+        final Command command = commandService.create(Command.builder()
+                .name("toCreate")
+                .image(FAKE_DOCKER_IMAGE)
+                .addCommandWrapper(Command.CommandWrapper.builder()
+                        .name("a name")
+                        .description("ORIGINAL")
+                        .build())
+                .build());
         TestTransaction.flagForCommit();
         TestTransaction.end();
         TestTransaction.start();
@@ -429,10 +455,13 @@ public class CommandRestApiTest {
     public void testDeleteWrapper() throws Exception {
         final String pathTemplate = "/wrappers/%d";
 
-        final String commandJson =
-                "{\"name\": \"toCreate\", \"type\": \"docker\", \"image\":\"" + FAKE_DOCKER_IMAGE + "\"," +
-                        "\"xnat\":[{\"name\": \"a name\"}]}";
-        final Command command = commandService.create(mapper.readValue(commandJson, Command.class));
+        final Command command = commandService.create(Command.builder()
+                .name("toCreate")
+                .image(FAKE_DOCKER_IMAGE)
+                .addCommandWrapper(Command.CommandWrapper.builder()
+                        .name("a name")
+                        .build())
+                .build());
         TestTransaction.flagForCommit();
         TestTransaction.end();
         TestTransaction.start();

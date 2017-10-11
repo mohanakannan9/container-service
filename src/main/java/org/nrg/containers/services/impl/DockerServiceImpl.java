@@ -227,8 +227,8 @@ public class DockerServiceImpl implements DockerService {
     }
 
     @Override
-    public String pingServer() throws NoDockerServerException, DockerServerException {
-        return controlApi.pingServer();
+    public String ping() throws NoDockerServerException, DockerServerException {
+        return controlApi.ping();
     }
 
     @Override
