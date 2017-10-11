@@ -1,19 +1,31 @@
 # Changelog
 
+## 1.3.2
+
+Not yet released.
+
+### Features
+
+*
+
+### Bugfixes
+
+*
+
 ## 1.3.1
 
 [Released 2017-10-11](https://github.com/NrgXnat/container-service/releases/tag/1.3.1).
 
 ### Features
 
-* [CS-376][] Enable bulk launching of containers from data tables on the project report page. Any filters that the user sets on these tables will be reflected in the list of items that get prepared for launch. The user can then confirm, select or deselect any of those items before launching containers. This feature also works for any project-specific stored search. 
+* [CS-376][] Enable bulk launching of containers from data tables on the project report page. Any filters that the user sets on these tables will be reflected in the list of items that get prepared for launch. The user can then confirm, select or deselect any of those items before launching containers. This feature also works for any project-specific stored search.
 
 [CS-376]: https://issues.xnat.org/browse/CS-376
 
-## Bugfixes
+### Bugfixes
 
-* [CS-395][] Catch a rare error that causes the search ID for a project data table to expire within an active session. This interrupts the user's ability to launch a batch of containers from this table. 
-* [CS-396][] Update text of buttons and dialogs related to bulk launches. 
+* [CS-395][] Catch a rare error that causes the search ID for a project data table to expire within an active session. This interrupts the user's ability to launch a batch of containers from this table.
+* [CS-396][] Update text of buttons and dialogs related to bulk launches.
 
 [CS-395]: https://issues.xnat.org/browse/CS-395
 [CS-396]: https://issues.xnat.org/browse/CS-396
