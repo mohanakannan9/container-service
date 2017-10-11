@@ -2,7 +2,7 @@
 
 ## 1.3.1
 
-Not yet released.
+[Released 2017-10-11](https://github.com/NrgXnat/container-service/releases/tag/1.3.1).
 
 ### Features
 
@@ -12,7 +12,11 @@ Not yet released.
 
 ## Bugfixes
 
+* [CS-395][] Catch a rare error that causes the search ID for a project data table to expire within an active session. This interrupts the user's ability to launch a batch of containers from this table. 
+* [CS-396][] Update text of buttons and dialogs related to bulk launches. 
 
+[CS-395]: https://issues.xnat.org/browse/CS-395
+[CS-396]: https://issues.xnat.org/browse/CS-396
 
 ## 1.3.0
 
