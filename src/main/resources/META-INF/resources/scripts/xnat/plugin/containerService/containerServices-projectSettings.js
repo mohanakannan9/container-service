@@ -992,7 +992,7 @@ var XNAT = getObject(XNAT || {});
             XNAT.xhr.getJSON({
                 url: '/xapi/users/' + PAGE.username + '/roles',
                 success: function (userRoles) {
-                    isAdmin = userRoles.find(function(role){ return role ==='Administrator' });
+                    isAdmin = (userRoles.indexOf('Administrator') >= 0);
 
                     manager.append(commandAutomation.table(isAdmin));
 

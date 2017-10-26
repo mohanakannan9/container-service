@@ -372,7 +372,7 @@ var XNAT = getObject(XNAT || {});
             ])
         ]);
 
-        if (inputList.find(function(input) { return input === rootElement; }) ) {
+        if (inputList.indexOf(rootElement) >= 0) {
             // if the root element is specified in the list of inputs ...
 
 
@@ -636,7 +636,7 @@ var XNAT = getObject(XNAT || {});
             spawn('div.target-list')
         ]);
 
-        if ( inputList.find(function(input){ return input === rootElement; }) ) { // if the specified root element matches an input parameter, we can proceed
+        if ( inputList.indexOf(rootElement) >=0 ) { // if the specified root element matches an input parameter, we can proceed
 
             XNAT.ui.dialog.open({
                 title: 'Set Container Launch Values',
@@ -1034,7 +1034,7 @@ var XNAT = getObject(XNAT || {});
         var inputs = launcherConfig.inputs;
 
         var inputList = Object.keys(inputs);
-        if ( inputList.find(function(input){ return input === rootElement; }) ) { // if the specified root element matches an input parameter, we can proceed
+        if ( inputList.indexOf(rootElement) >= 0 ) { // if the specified root element matches an input parameter, we can proceed
 
             inputs[rootElement].type = 'scanSelectMany';
 
