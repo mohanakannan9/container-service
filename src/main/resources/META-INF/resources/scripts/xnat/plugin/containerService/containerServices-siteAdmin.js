@@ -801,6 +801,8 @@ var XNAT = getObject(XNAT || {});
                         var $image = $form.find('input[name=image]');
                         var $tag = $form.find('input[name=tag]');
 
+                        if ($tag.val() === '') $tag.val(':latest');
+
                         // validate form inputs, then pull them into the URI querystring and create an XHR request.
                         $form.find(':input').removeClass('invalid');
 
