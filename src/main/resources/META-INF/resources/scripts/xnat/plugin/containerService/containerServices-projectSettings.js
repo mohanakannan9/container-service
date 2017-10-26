@@ -996,7 +996,7 @@ var XNAT = getObject(XNAT || {});
 
                     manager.append(commandAutomation.table(isAdmin));
 
-                    if (!refresh && isAdmin !== undefined) {
+                    if (!refresh && isAdmin) {
                         var newAutomation = spawn('button.new-command-automation.btn.btn-sm.submit', {
                             html: 'Add New Command Automation',
                             onclick: function(){
