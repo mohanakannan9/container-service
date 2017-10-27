@@ -25,9 +25,6 @@ import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.XapiRequestMapping;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.om.XnatProjectdata;
-import org.nrg.xdat.om.base.auto.AutoXnatProjectdata;
-import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.services.RoleHolder;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
@@ -50,6 +47,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 
+import static org.nrg.xdat.security.helpers.AccessLevel.Member;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
@@ -107,7 +105,7 @@ public class LaunchRestApi extends AbstractXapiRestController {
         return getLaunchUi(null, commandId, wrapperName, 0L, allRequestParams);
     }
 
-    @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/launch"}, method = GET)
+    @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/launch"}, method = GET, restrictTo = Member)
     @ApiIgnore // Swagger UI does not correctly show this API endpoint
     @ResponseBody
     public LaunchUi.SingleLaunchUi getLaunchUi(final @PathVariable String project,
@@ -116,15 +114,10 @@ public class LaunchRestApi extends AbstractXapiRestController {
             throws NotFoundException, CommandResolutionException, UnauthorizedException {
         log.info("Launch UI requested for project {}, wrapper {}", project, wrapperId);
 
-        final HttpStatus status = canEditProjectOrAdmin(project);
-        if (status != null) {
-            return null;
-        }
-
         return getLaunchUi(project, 0L, null, wrapperId, allRequestParams);
     }
 
-    @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/launch"}, method = GET)
+    @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/launch"}, method = GET, restrictTo = Member)
     @ApiIgnore // Swagger UI does not correctly show this API endpoint
     @ResponseBody
     public LaunchUi.SingleLaunchUi getLaunchUi(final @PathVariable String project,
@@ -133,11 +126,6 @@ public class LaunchRestApi extends AbstractXapiRestController {
                                                final @RequestParam Map<String, String> allRequestParams)
             throws NotFoundException, CommandResolutionException, UnauthorizedException {
         log.info("Launch UI requested for project {}, command {}, wrapper {}", project, commandId, wrapperName);
-
-        final HttpStatus status = canEditProjectOrAdmin(project);
-        if (status != null) {
-            return null;
-        }
 
         return getLaunchUi(project, commandId, wrapperName, 0L, allRequestParams);
     }
@@ -224,7 +212,7 @@ public class LaunchRestApi extends AbstractXapiRestController {
         return getBulkLaunchUi(null, commandId, wrapperName, 0L, allRequestParams);
     }
 
-    @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/bulklaunch"}, method = GET)
+    @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/bulklaunch"}, method = GET, restrictTo = Member)
     @ApiIgnore // Swagger UI does not correctly show this API endpoint
     @ResponseBody
     public LaunchUi.BulkLaunchUi getBulkLaunchUi(final @PathVariable String project,
@@ -233,15 +221,10 @@ public class LaunchRestApi extends AbstractXapiRestController {
             throws NotFoundException, CommandResolutionException, UnauthorizedException {
         log.info("Launch UI requested for project {}, wrapper {}", project, wrapperId);
 
-        final HttpStatus status = canEditProjectOrAdmin(project);
-        if (status != null) {
-            return null;
-        }
-
         return getBulkLaunchUi(project, 0L, null, wrapperId, allRequestParams);
     }
 
-    @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/bulklaunch"}, method = GET)
+    @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/bulklaunch"}, method = GET, restrictTo = Member)
     @ApiIgnore // Swagger UI does not correctly show this API endpoint
     @ResponseBody
     public LaunchUi.BulkLaunchUi getBulkLaunchUi(final @PathVariable String project,
@@ -250,11 +233,6 @@ public class LaunchRestApi extends AbstractXapiRestController {
                                                  final @RequestParam Map<String, String> allRequestParams)
             throws NotFoundException, CommandResolutionException, UnauthorizedException {
         log.info("Launch UI requested for project {}, command {}, wrapper {}", project, commandId, wrapperName);
-
-        final HttpStatus status = canEditProjectOrAdmin(project);
-        if (status != null) {
-            return null;
-        }
 
         return getBulkLaunchUi(project, commandId, wrapperName, 0L, allRequestParams);
     }
@@ -339,32 +317,22 @@ public class LaunchRestApi extends AbstractXapiRestController {
         return returnLaunchReportWithStatus(launchContainer(null, 0L, null, wrapperId, allRequestParams));
     }
 
-    @XapiRequestMapping(value = {"/projects/{project}/wrapper/{wrapperId}/launch"}, method = POST)
+    @XapiRequestMapping(value = {"/projects/{project}/wrapper/{wrapperId}/launch"}, method = POST, restrictTo = Member)
     @ApiIgnore // Swagger UI does not correctly show this API endpoint
     public ResponseEntity<LaunchReport> launchCommandWQueryParams(final @PathVariable String project,
                                                                   final @PathVariable long wrapperId,
                                                                   final @RequestParam Map<String, String> allRequestParams) {
         log.info("Launch requested for wrapper id " + String.valueOf(wrapperId));
 
-        final HttpStatus status = canEditProjectOrAdmin(project);
-        if (status != null) {
-            return null;
-        }
-
         return returnLaunchReportWithStatus(launchContainer(project, 0L, null, wrapperId, allRequestParams));
     }
 
-    @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/launch"}, method = POST, consumes = {JSON})
+    @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/launch"}, method = POST, consumes = {JSON}, restrictTo = Member)
     @ApiOperation(value = "Resolve a command from the variable values in the request body, and launch it")
     public ResponseEntity<LaunchReport> launchCommandWJsonBody(final @PathVariable String project,
                                                                final @PathVariable long wrapperId,
                                                                final @RequestBody Map<String, String> allRequestParams) {
         log.info("Launch requested for wrapper id " + String.valueOf(wrapperId));
-
-        final HttpStatus status = canEditProjectOrAdmin(project);
-        if (status != null) {
-            return null;
-        }
 
         return returnLaunchReportWithStatus(launchContainer(project, 0L, null, wrapperId, allRequestParams));
     }
@@ -394,7 +362,7 @@ public class LaunchRestApi extends AbstractXapiRestController {
         return returnLaunchReportWithStatus(launchContainer(null, commandId, wrapperName, 0L, allRequestParams));
     }
 
-    @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/launch"}, method = POST)
+    @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/launch"}, method = POST, restrictTo = Member)
     @ApiIgnore // Swagger UI does not correctly show this API endpoint
     public ResponseEntity<LaunchReport> launchCommandWQueryParams(final @PathVariable String project,
                                                                   final @PathVariable long commandId,
@@ -402,26 +370,16 @@ public class LaunchRestApi extends AbstractXapiRestController {
                                                                   final @RequestParam Map<String, String> allRequestParams) {
         log.info("Launch requested for command {}, wrapper {}", commandId, wrapperName);
 
-        final HttpStatus status = canEditProjectOrAdmin(project);
-        if (status != null) {
-            return null;
-        }
-
         return returnLaunchReportWithStatus(launchContainer(project, commandId, wrapperName, 0L, allRequestParams));
     }
 
-    @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/launch"}, method = POST, consumes = {JSON})
+    @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/launch"}, method = POST, consumes = {JSON}, restrictTo = Member)
     @ApiOperation(value = "Resolve a command from the variable values in the request body, and launch it")
     public ResponseEntity<LaunchReport> launchCommandWJsonBody(final @PathVariable String project,
                                                                final @PathVariable long commandId,
                                                                final @PathVariable String wrapperName,
                                                                final @RequestBody Map<String, String> allRequestParams) {
         log.info("Launch requested for command {}, wrapper {}", commandId, wrapperName);
-
-        final HttpStatus status = canEditProjectOrAdmin(project);
-        if (status != null) {
-            return null;
-        }
 
         final LaunchReport launchReport = launchContainer(project, commandId, wrapperName, 0L, allRequestParams);
         return returnLaunchReportWithStatus(launchReport);
@@ -607,28 +565,5 @@ public class LaunchRestApi extends AbstractXapiRestController {
         }
         log.debug(message);
         return message;
-    }
-
-    /**
-     * Checks if is permitted.
-     *
-     * @param projectId the project ID
-     *
-     * @return the http status
-     */
-    // TODO: Migrate this to the abstract superclass. Can't right now because XDAT doesn't know about XnatProjectdata, etc.
-    protected HttpStatus canEditProjectOrAdmin(String projectId) {
-        final UserI sessionUser = getSessionUser();
-        if (projectId != null) {
-            final XnatProjectdata project = AutoXnatProjectdata.getXnatProjectdatasById(projectId, sessionUser, false);
-            try {
-                return ( Permissions.canEdit(sessionUser, project) || getRoleHolder().isSiteAdmin(sessionUser) ) ? null : HttpStatus.FORBIDDEN;
-            } catch (Exception e) {
-                log.error("Error checking edit status for project", e);
-                return HttpStatus.INTERNAL_SERVER_ERROR;
-            }
-        } else {
-            return isPermitted() == null ? null : HttpStatus.FORBIDDEN;
-        }
     }
 }
