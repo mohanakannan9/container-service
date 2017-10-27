@@ -298,7 +298,7 @@ var XNAT = getObject(XNAT || {});
                 }
 
                 XNAT.dialog.open({
-                    title: 'Set Config Values',
+                    title: 'Set Config Values for '+wrapperName,
                     width: 850,
                     content: spawn('div.panel'),
                     beforeShow: function(obj){
@@ -380,54 +380,12 @@ var XNAT = getObject(XNAT || {});
                             label: 'Reset to Site-wide Default',
                             close: false,
                             action: function(obj){
-                                var $panel = obj.$modal.find('.panel');
 
                                 XNAT.xhr.delete({
                                     url: configUrl(commandId,wrapperName),
                                     success: function(){
                                         XNAT.ui.banner.top(2000, 'Config settings reset to site-wide defaults', 'success');
-                                        // reload settings from site-wide prefs
-                                        XNAT.xhr.getJSON({
-                                            url: rootUrl('/xapi/commands/'+commandId+'/wrappers/'+wrapperName+'/config'),
-                                            success: function(data){
-                                                // gather input items from table
-                                                var inputRows = $panel.find('table.inputs').find('tr.input'),
-                                                    inputData = data.inputs;
-
-                                                $(inputRows).each(function(){
-                                                    var $row = $(this),
-                                                        inputName = $row.data('input');
-
-                                                    $row.find("[data-key='property']").each(function(){
-                                                        var propKey = $(this).data('property'),
-                                                            $inputToSet = $(this).find('input');
-                                                        if ( $inputToSet.is('input[type=checkbox]') ) {
-                                                            $inputToSet.prop('checked', (inputData[inputName][propKey]));
-                                                        } else {
-                                                            $inputToSet.val(inputData[inputName][propKey]);
-                                                        }
-
-                                                    })
-
-
-                                                });
-
-                                                var outputRows = $panel.find('table.outputs').find('tr.output'),
-                                                    outputData = data.outputs;
-                                                $(outputRows).each(function(){
-                                                    var $row = $(this),
-                                                        inputName = $row.data('input'),
-                                                        keys = Object.keys(inputData[inputName]);
-
-                                                    keys.forEach(function(key){
-                                                        $row.find('input[name='+key+']').val(inputData[inputName][key])
-                                                    });
-                                                });
-                                            },
-                                            fail: function(e){
-                                                errorHandler(e,'Could not display site-wide default settings for this command')
-                                            }
-                                        });
+                                        XNAT.dialog.closeAll();
                                     },
                                     fail: function(e){
                                         errorHandler(e,'Could not reset project-based config settings for this command')
