@@ -1563,6 +1563,7 @@ var XNAT = getObject(XNAT || {});
                                     XNAT.ui.banner.top(1000, '<b>'+wrapper.name+'</b> deleted from site', 'success');
                                     commandConfigManager.refreshTable();
                                     historyTable.refresh();
+                                    imageListManager.refresh();
                                 },
                                 fail: function(e){
                                     errorHandler(e, 'Could Not Delete Command Configuration');
