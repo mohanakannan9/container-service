@@ -37,6 +37,29 @@ public abstract class LaunchUi {
     public static abstract class SingleLaunchUi extends LaunchUi {
         @JsonProperty("inputs") public abstract ImmutableMap<String, LaunchUiInput> inputs();
 
+        @JsonCreator
+        public static SingleLaunchUi create(@JsonProperty("command-id") final Long commandId,
+                                            @JsonProperty("command-name") final String commandName,
+                                            @JsonProperty("command-description") final String commandDescription,
+                                            @JsonProperty("wrapper-id") final Long wrapperId,
+                                            @JsonProperty("wrapper-name") final String wrapperName,
+                                            @JsonProperty("wrapper-description") final String wrapperDescription,
+                                            @JsonProperty("image-name") final String imageName,
+                                            @JsonProperty("image-type") final String imageType,
+                                            @JsonProperty("inputs") final Map<String, LaunchUiInput> inputs) {
+            return builder()
+                    .commandId(commandId)
+                    .commandName(commandName)
+                    .commandDescription(commandDescription)
+                    .wrapperId(wrapperId)
+                    .wrapperName(wrapperName)
+                    .wrapperDescription(wrapperDescription)
+                    .imageName(imageName)
+                    .imageType(imageType)
+                    .inputs(inputs)
+                    .build();
+        }
+
         public static SingleLaunchUi create(final PartiallyResolvedCommand partiallyResolvedCommand,
                                             final CommandConfiguration commandConfiguration) {
             return builder()

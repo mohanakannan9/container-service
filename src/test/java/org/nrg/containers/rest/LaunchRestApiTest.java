@@ -17,13 +17,16 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatcher;
+import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.config.LaunchRestApiTestConfig;
 import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.model.command.auto.LaunchReport;
+import org.nrg.containers.model.command.auto.LaunchUi;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
+import org.nrg.containers.model.configuration.CommandConfiguration;
 import org.nrg.containers.model.container.auto.Container;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.services.CommandResolutionService;
@@ -49,6 +52,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -59,6 +63,8 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyMap;
+import static org.mockito.Matchers.anyMapOf;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -68,6 +74,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.testSecurityContext;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -85,6 +92,10 @@ public class LaunchRestApiTest {
     private final String FAKE_CONTAINER_ID = "098zyx";
     private final String FAKE_WORKFLOW_ID = "workflow123456";
     private final long WRAPPER_ID = 10L;
+    private final long COMMAND_ID = 15L;
+    private final String WRAPPER_NAME = "I don't know";
+    private final String COMMAND_NAME = "command-to-launch";
+    private final String IMAGE = "abc123";
 
     private Container CONTAINER;
     private CommandWrapper COMMAND_WRAPPER;
@@ -167,21 +178,18 @@ public class LaunchRestApiTest {
         when(mockSiteConfigPreferences.getBuildPath()).thenReturn(folder.newFolder().getAbsolutePath()); // transporter makes a directory under build
         when(mockSiteConfigPreferences.getArchivePath()).thenReturn(folder.newFolder().getAbsolutePath()); // container logs get stored under archive
 
-        final String wrapperName = "I don't know";
         COMMAND_WRAPPER = CommandWrapper.builder()
                 .id(WRAPPER_ID)
-                .name(wrapperName)
+                .name(WRAPPER_NAME)
                 .build();
-        final long commandId = 15L;
-        final String commandName = "command-to-launch";
         when(mockCommandService.getWrapper(WRAPPER_ID)).thenReturn(COMMAND_WRAPPER);
 
         RESOLVED_COMMAND = ResolvedCommand.builder()
-                .commandId(commandId)
-                .commandName(commandName)
+                .commandId(COMMAND_ID)
+                .commandName(COMMAND_NAME)
                 .wrapperId(WRAPPER_ID)
-                .wrapperName(wrapperName)
-                .image("abc123")
+                .wrapperName(WRAPPER_NAME)
+                .image(IMAGE)
                 .commandLine("echo hello world")
                 .addRawInputValue(INPUT_NAME, INPUT_VALUE)
                 .build();
@@ -303,6 +311,50 @@ public class LaunchRestApiTest {
         final LaunchReport.Failure failure = bulkLaunchReport.failures().get(0);
         assertThat(failure.launchParams(), hasEntry(INPUT_NAME, badInputValue));
         assertThat(failure.message(), is(exceptionMessage));
+    }
+
+    @Test
+    public void testGetLaunchUI() throws Exception {
+        final String pathTemplate = "/projects/%s/wrappers/%d/launch";
+        final String project = "project";
+
+        // Mock out command configuration (project)
+        final CommandConfiguration mockCommandConfiguration = CommandConfiguration.builder()
+                .addInput("name",
+                        CommandConfiguration.CommandInputConfiguration.builder()
+                                .defaultValue("value")
+                                .build()
+                )
+                .build();
+        when(mockCommandService.getProjectConfiguration(project, WRAPPER_ID)).thenReturn(mockCommandConfiguration);
+
+        // Mock out command resolution service
+        final ResolvedCommand.PartiallyResolvedCommand partiallyResolvedCommand = ResolvedCommand.PartiallyResolvedCommand.builder()
+                .wrapperId(WRAPPER_ID)
+                .wrapperName(WRAPPER_NAME)
+                .commandId(COMMAND_ID)
+                .commandName(COMMAND_NAME)
+                .image(IMAGE)
+                .build();
+        when(mockCommandResolutionService.preResolve(eq(project), eq(WRAPPER_ID), anyMapOf(String.class, String.class), eq(mockAdmin)))
+                .thenReturn(partiallyResolvedCommand);
+
+        final LaunchUi expectedLaunchUi = LaunchUi.SingleLaunchUi.create(partiallyResolvedCommand, mockCommandConfiguration);
+
+        final String path = String.format(pathTemplate, project, WRAPPER_ID);
+        final MockHttpServletRequestBuilder request = get(path)
+                .with(authentication(authentication))
+                .with(csrf())
+                .with(testSecurityContext());
+
+        final String response = mockMvc.perform(request)
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        final LaunchUi actualLaunchUi = mapper.readValue(response, LaunchUi.SingleLaunchUi.class);
+        assertThat(actualLaunchUi, is(expectedLaunchUi));
     }
 
     @SuppressWarnings("unchecked")
