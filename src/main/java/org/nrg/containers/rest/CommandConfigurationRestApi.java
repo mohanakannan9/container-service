@@ -396,26 +396,6 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     }
 
     /*
-    SETTINGS
-     */
-    // @XapiRequestMapping(value = {"/container-service/settings"}, method = GET)
-    // @ResponseBody
-    // public ContainerServiceSettings getSettings() {
-    //     return containerConfigService.getSettings();
-    // }
-
-
-
-
-    // all above but for projects
-
-    // PUT /container-service/settings/opt-in
-    // PUT /container-service/settings/opt-out
-    // DELETE /container-service/settings/opt-(in|out)
-
-    // all above but for projects
-
-    /*
     EXCEPTION HANDLING
      */
     @ResponseStatus(value = HttpStatus.NOT_FOUND)

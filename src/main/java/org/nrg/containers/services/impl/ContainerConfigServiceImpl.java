@@ -7,7 +7,6 @@ import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.model.configuration.CommandConfigurationInternal;
-import org.nrg.containers.model.settings.ContainerServiceSettings;
 import org.nrg.containers.services.ContainerConfigService;
 import org.nrg.framework.constants.Scope;
 import org.slf4j.Logger;
@@ -15,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 
@@ -100,79 +98,6 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
     }
 
     @Override
-    @Nonnull
-    public ContainerServiceSettings getSettings() {
-        return ContainerServiceSettings.create(getOptInToSiteCommands());
-    }
-
-    @Override
-    @Nonnull
-    public ContainerServiceSettings getSettings(final String project) {
-        return ContainerServiceSettings.create(getOptInToSiteCommands(project));
-    }
-
-    @Override
-    public Boolean getOptInToSiteCommands() {
-        final Boolean setting = parseBooleanConfig(configService.getConfig(TOOL_ID, OPT_IN_PATH, Scope.Site, null));
-        return setting == null ? OPT_IN_DEFAULT_VALUE : setting;
-    }
-
-    @Override
-    public void setOptInToSiteCommands(final String username, final String reason) throws ConfigServiceException {
-        setOptInToSiteCommands(true, username, reason);
-    }
-
-    @Override
-    public void setOptOutOfSiteCommands(final String username, final String reason) throws ConfigServiceException {
-        setOptInToSiteCommands(false, username, reason);
-    }
-
-    @Override
-    public void deleteOptInToSiteCommands(final String username, final String reason) throws ConfigServiceException {
-        setOptInToSiteCommands(OPT_IN_DEFAULT_VALUE, username, reason);
-    }
-
-    private void setOptInToSiteCommands(final boolean optInDefault, final String username, final String reason) throws ConfigServiceException {
-        configService.replaceConfig(username, reason,
-                TOOL_ID, OPT_IN_PATH,
-                String.valueOf(optInDefault),
-                Scope.Site, null);
-    }
-
-    @Override
-    public Boolean getOptInToSiteCommands(final String project) {
-        final Boolean projectSetting = parseBooleanConfig(configService.getConfig(TOOL_ID, OPT_IN_PATH, Scope.Project, project));
-        return projectSetting == null ? getOptInToSiteCommands() : projectSetting;
-    }
-
-    @Override
-    public void optInToSiteCommands(final String project, final String username, final String reason) throws ConfigServiceException {
-        setOptInToSiteCommands(true, project, username, reason);
-    }
-
-    @Override
-    public void optOutOfSiteCommands(final String project, final String username, final String reason) throws ConfigServiceException {
-        setOptInToSiteCommands(false, project, username, reason);
-    }
-
-    @Override
-    public void deleteOptInToSiteCommandsSetting(final String project, final String username, final String reason) throws ConfigServiceException {
-        setOptInToSiteCommands(getOptInToSiteCommands(), project, username, reason);
-    }
-
-    private void setOptInToSiteCommands(final boolean optIn, final String project, final String username, final String reason) throws ConfigServiceException {
-        configService.replaceConfig(username, reason,
-                TOOL_ID, OPT_IN_PATH,
-                String.valueOf(optIn),
-                Scope.Project, project);
-    }
-
-    @Nullable
-    private Boolean parseBooleanConfig(final @Nullable Configuration configuration) {
-        return (configuration == null || configuration.getContents() == null) ? null : Boolean.parseBoolean(configuration.getContents());
-    }
-
-    @Override
     public void enableForSite(final long wrapperId, final String username, final String reason) throws CommandConfigurationException {
         setCommandEnabled(true, Scope.Site, null, wrapperId, username, reason);
     }
@@ -207,9 +132,7 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
         // Else, if the site "enabled" is true or null, check the project "enabled".
         // If the project "enabled" is false, the result is disabled.
         // If the project "enabled" is true, then the result is enabled.
-        // If the project "enabled" is null, then check the project "opt in": do we enable by default or not?
-        return isEnabledForSite(wrapperId) &&
-                (projectIsEnabledConfig != null ? projectIsEnabledConfig : getOptInToSiteCommands(project));
+        return isEnabledForSite(wrapperId) && projectIsEnabledConfig != null && projectIsEnabledConfig;
     }
 
     private void setCommandEnabled(final Boolean enabled, final Scope scope, final String project, final long wrapperId, final String username, final String reason) throws CommandConfigurationException {
