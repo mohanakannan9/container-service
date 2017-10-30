@@ -10,7 +10,9 @@ Not yet released.
 
 ### Bugfixes
 
-*
+* [CS-335][] Fix permissions errors with command project configuration
+
+[CS-335]: https://issues.xnat.org/browse/CS-335
 
 ## 1.3.1
 
