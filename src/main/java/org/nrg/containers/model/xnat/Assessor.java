@@ -191,7 +191,8 @@ public class Assessor extends XnatModelObject {
     }
 
     @Override
-    public XFTItem getXftItem() {
+    public XFTItem getXftItem(final UserI userI) {
+        loadXnatImageassessordataI(userI);
         return xnatImageassessordataI == null ? null : ((XnatImagesessiondata) xnatImageassessordataI).getItem();
     }
 

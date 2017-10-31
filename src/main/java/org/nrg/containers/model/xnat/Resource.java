@@ -158,7 +158,8 @@ public class Resource extends XnatModelObject {
     }
 
     @Override
-    public XFTItem getXftItem() {
+    public XFTItem getXftItem(final UserI userI) {
+        loadXnatResourcecatalog(userI);
         return xnatResourcecatalog == null ? null : xnatResourcecatalog.getItem();
     }
 

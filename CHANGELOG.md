@@ -12,8 +12,11 @@ Not yet released.
 
 * [CS-335][] Fix permissions errors with command project configuration
 * [CS-410][] Fix command update so all fields in all child objects can update too
+* [CS-402][] Commands launched automatically on session archive now create workflows
+* [CS-402][] Remove en-dash from scan label. This allows automated launches to succeed.
 
 [CS-335]: https://issues.xnat.org/browse/CS-335
+[CS-402]: https://issues.xnat.org/browse/CS-402
 [CS-410]: https://issues.xnat.org/browse/CS-410
 
 ## 1.3.1

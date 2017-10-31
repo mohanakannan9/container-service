@@ -98,7 +98,7 @@ public class XnatFile extends XnatModelObject {
     }
 
     @Override
-    public XFTItem getXftItem() {
+    public XFTItem getXftItem(final UserI userI) {
         return null;
     }
 

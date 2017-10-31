@@ -158,7 +158,8 @@ public class Subject extends XnatModelObject {
     }
 
     @Override
-    public XFTItem getXftItem() {
+    public XFTItem getXftItem(final UserI userI) {
+        loadXnatSubjectdataI(userI);
         return xnatSubjectdataI == null ? null : ((XnatSubjectdata)xnatSubjectdataI).getItem();
     }
 
