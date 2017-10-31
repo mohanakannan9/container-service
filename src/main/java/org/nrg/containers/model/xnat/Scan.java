@@ -66,7 +66,7 @@ public class Scan extends XnatModelObject {
         this.id = xnatImagescandataI.getId();
         this.xsiType = xnatImagescandataI.getXSIType();
         this.scanType = xnatImagescandataI.getType();
-        this.label = String.format("%s – %s", this.id, this.scanType);
+        this.label = String.format("%s - %s", this.id, this.scanType);
 
         this.frames = xnatImagescandataI.getFrames();
         this.note = xnatImagescandataI.getNote();
