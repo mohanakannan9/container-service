@@ -6,6 +6,7 @@ import com.google.common.base.MoreObjects;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.envers.Audited;
 import org.nrg.containers.model.command.auto.Command;
+import org.nrg.containers.model.command.auto.Command.CommandMount;
 
 import javax.annotation.Nonnull;
 import javax.persistence.Entity;
@@ -74,7 +75,7 @@ public class CommandMountEntity implements Serializable {
         this.containerPath = remotePath;
     }
 
-    static CommandMountEntity fromPojo(final Command.CommandMount commandMount) {
+    public static CommandMountEntity fromPojo(final CommandMount commandMount) {
         return new CommandMountEntity().update(commandMount);
     }
 

@@ -494,20 +494,20 @@ public abstract class Command {
         @Nullable @JsonProperty("path") public abstract String path();
 
         @JsonCreator
-        static CommandMount create(@JsonProperty("name") final String name,
-                                   @JsonProperty("writable") final Boolean writable,
-                                   @JsonProperty("path") final String path) {
+        public static CommandMount create(@JsonProperty("name") final String name,
+                                          @JsonProperty("writable") final Boolean writable,
+                                          @JsonProperty("path") final String path) {
             return create(0L, name == null ? "" : name, writable == null ? false : writable, path);
         }
 
-        static CommandMount create(final long id,
-                                   final String name,
-                                   final Boolean writable,
-                                   final String path) {
+        public static CommandMount create(final long id,
+                                          final String name,
+                                          final Boolean writable,
+                                          final String path) {
             return new AutoValue_Command_CommandMount(id, name == null ? "" : name, writable == null ? false : writable, path);
         }
 
-        static CommandMount create(final CommandMountEntity mount) {
+        public static CommandMount create(final CommandMountEntity mount) {
             if (mount == null) {
                 return null;
             }
@@ -1182,11 +1182,11 @@ public abstract class Command {
         @Nullable @JsonProperty("label") public abstract String label();
 
         @JsonCreator
-        static CommandWrapperOutput create(@JsonProperty("name") final String name,
-                                           @JsonProperty("accepts-command-output") final String commandOutputName,
-                                           @JsonProperty("as-a-child-of-wrapper-input") final String wrapperInputName,
-                                           @JsonProperty("type") final String type,
-                                           @JsonProperty("label") final String label) {
+        public static CommandWrapperOutput create(@JsonProperty("name") final String name,
+                                                  @JsonProperty("accepts-command-output") final String commandOutputName,
+                                                  @JsonProperty("as-a-child-of-wrapper-input") final String wrapperInputName,
+                                                  @JsonProperty("type") final String type,
+                                                  @JsonProperty("label") final String label) {
             return create(
                     0L,
                     name,
@@ -1196,12 +1196,12 @@ public abstract class Command {
                     label);
         }
 
-        static CommandWrapperOutput create(final long id,
-                                           final String name,
-                                           final String commandOutputName,
-                                           final String xnatInputName,
-                                           final String type,
-                                           final String label) {
+        public static CommandWrapperOutput create(final long id,
+                                                  final String name,
+                                                  final String commandOutputName,
+                                                  final String xnatInputName,
+                                                  final String type,
+                                                  final String label) {
             return new AutoValue_Command_CommandWrapperOutput(
                     id,
                     name,
@@ -1211,7 +1211,7 @@ public abstract class Command {
                     label);
         }
 
-        static CommandWrapperOutput create(final CommandWrapperOutputEntity wrapperOutput) {
+        public static CommandWrapperOutput create(final CommandWrapperOutputEntity wrapperOutput) {
             if (wrapperOutput == null) {
                 return null;
             }

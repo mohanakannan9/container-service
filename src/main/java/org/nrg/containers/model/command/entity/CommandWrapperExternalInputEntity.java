@@ -1,7 +1,5 @@
 package org.nrg.containers.model.command.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.StringUtils;
@@ -23,20 +21,18 @@ public class CommandWrapperExternalInputEntity {
     public static final CommandWrapperInputType DEFAULT_TYPE = CommandWrapperInputType.STRING;
 
     private long id;
-    @JsonIgnore
     private CommandWrapperEntity commandWrapperEntity;
     private String name;
     private String description;
     private CommandWrapperInputType type;
     private String matcher;
-    @JsonProperty("provides-value-for-command-input") private String providesValueForCommandInput;
-    @JsonProperty("provides-files-for-command-mount") private String providesFilesForCommandMount;
-    @JsonProperty("default-value") private String defaultValue;
-    @JsonProperty("user-settable") private Boolean userSettable = true;
-    @JsonProperty("replacement-key") private String rawReplacementKey;
+    private String providesValueForCommandInput;
+    private String providesFilesForCommandMount;
+    private String defaultValue;
+    private Boolean userSettable = true;
+    private String rawReplacementKey;
     private boolean required = false;
     private boolean loadChildren = true;
-    private String value;
 
     @Nonnull
     public static CommandWrapperExternalInputEntity fromPojo(final @Nonnull Command.CommandWrapperInput commandWrapperInput) {
@@ -197,7 +193,6 @@ public class CommandWrapperExternalInputEntity {
     }
 
     @Transient
-    @JsonIgnore
     public String getReplacementKey() {
         return StringUtils.isNotBlank(rawReplacementKey) ? rawReplacementKey : "#" + getName() + "#";
     }
@@ -220,15 +215,6 @@ public class CommandWrapperExternalInputEntity {
 
     public void setLoadChildren(final boolean loadChildren) {
         this.loadChildren = loadChildren;
-    }
-
-    @Transient
-    public String getValue() {
-        return value;
-    }
-
-    public void setValue(final String value) {
-        this.value = value;
     }
 
     @Override
@@ -260,7 +246,6 @@ public class CommandWrapperExternalInputEntity {
                 .add("rawReplacementKey", rawReplacementKey)
                 .add("required", required)
                 .add("loadChildren", loadChildren)
-                .add("value", value)
                 .toString();
     }
 }
