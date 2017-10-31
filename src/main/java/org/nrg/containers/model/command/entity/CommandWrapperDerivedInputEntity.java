@@ -8,6 +8,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.hibernate.envers.Audited;
 import org.nrg.containers.model.command.auto.Command;
 
+import javax.annotation.Nonnull;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -37,70 +38,79 @@ public class CommandWrapperDerivedInputEntity {
     private boolean loadChildren = true;
     private String value;
 
-    @JsonProperty("derived-from-wrapper-input") private String derivedFromWrapperInput;
-    @JsonProperty("derived-from-xnat-object-property") private String derivedFromXnatObjectProperty;
 
-    public static CommandWrapperDerivedInputEntity fromPojo(final Command.CommandWrapperDerivedInput commandWrapperInput) {
-        final CommandWrapperDerivedInputEntity commandWrapperInputEntity = new CommandWrapperDerivedInputEntity();
-        commandWrapperInputEntity.derivedFromWrapperInput = commandWrapperInput.derivedFromWrapperInput();
-        commandWrapperInputEntity.derivedFromXnatObjectProperty = commandWrapperInput.derivedFromXnatObjectProperty();
-        commandWrapperInputEntity.id = commandWrapperInput.id();
-        commandWrapperInputEntity.name = commandWrapperInput.name();
-        commandWrapperInputEntity.description = commandWrapperInput.description();
+    private String derivedFromWrapperInput;
+    private String derivedFromXnatObjectProperty;
 
-        commandWrapperInputEntity.matcher = commandWrapperInput.matcher();
-        commandWrapperInputEntity.providesValueForCommandInput = commandWrapperInput.providesValueForCommandInput();
-        commandWrapperInputEntity.providesFilesForCommandMount = commandWrapperInput.providesFilesForCommandMount();
-        commandWrapperInputEntity.defaultValue = commandWrapperInput.defaultValue();
-        commandWrapperInputEntity.userSettable = commandWrapperInput.userSettable();
-        commandWrapperInputEntity.rawReplacementKey = commandWrapperInput.rawReplacementKey();
-        commandWrapperInputEntity.required = commandWrapperInput.required();
-        commandWrapperInputEntity.loadChildren = commandWrapperInput.loadChildren();
+    @Nonnull
+    public static CommandWrapperDerivedInputEntity fromPojo(final @Nonnull Command.CommandWrapperDerivedInput commandWrapperInput) {
+        return new CommandWrapperDerivedInputEntity().update(commandWrapperInput);
+    }
+
+    @Nonnull
+    public CommandWrapperDerivedInputEntity update(final @Nonnull Command.CommandWrapperDerivedInput commandWrapperInput) {
+        if (this.id == 0L || commandWrapperInput.id() != 0L) {
+            this.setId(commandWrapperInput.id());
+        }
+        this.setDerivedFromWrapperInput(commandWrapperInput.derivedFromWrapperInput());
+        this.setDerivedFromXnatObjectProperty(commandWrapperInput.derivedFromXnatObjectProperty());
+        this.setName(commandWrapperInput.name());
+        this.setDescription(commandWrapperInput.description());
+        this.setMatcher(commandWrapperInput.matcher());
+        this.setProvidesValueForCommandInput(commandWrapperInput.providesValueForCommandInput());
+        this.setProvidesFilesForCommandMount(commandWrapperInput.providesFilesForCommandMount());
+        this.setDefaultValue(commandWrapperInput.defaultValue());
+        this.setUserSettable(commandWrapperInput.userSettable());
+        this.setRawReplacementKey(commandWrapperInput.rawReplacementKey());
+        this.setRequired(commandWrapperInput.required());
+        this.setLoadChildren(commandWrapperInput.loadChildren());
         switch (commandWrapperInput.type()) {
             case "string":
-                commandWrapperInputEntity.type = CommandWrapperInputType.STRING;
+                this.setType(CommandWrapperInputType.STRING);
                 break;
             case "boolean":
-                commandWrapperInputEntity.type = CommandWrapperInputType.BOOLEAN;
+                this.setType(CommandWrapperInputType.BOOLEAN);
                 break;
             case "number":
-                commandWrapperInputEntity.type = CommandWrapperInputType.NUMBER;
+                this.setType(CommandWrapperInputType.NUMBER);
                 break;
             case "Directory":
-                commandWrapperInputEntity.type = CommandWrapperInputType.DIRECTORY;
+                this.setType(CommandWrapperInputType.DIRECTORY);
                 break;
             case "File[]":
-                commandWrapperInputEntity.type = CommandWrapperInputType.FILES;
+                this.setType(CommandWrapperInputType.FILES);
                 break;
             case "File":
-                commandWrapperInputEntity.type = CommandWrapperInputType.FILE;
+                this.setType(CommandWrapperInputType.FILE);
                 break;
             case "Project":
-                commandWrapperInputEntity.type = CommandWrapperInputType.PROJECT;
+                this.setType(CommandWrapperInputType.PROJECT);
                 break;
             case "Subject":
-                commandWrapperInputEntity.type = CommandWrapperInputType.SUBJECT;
+                this.setType(CommandWrapperInputType.SUBJECT);
                 break;
             case "Session":
-                commandWrapperInputEntity.type = CommandWrapperInputType.SESSION;
+                this.setType(CommandWrapperInputType.SESSION);
                 break;
             case "Scan":
-                commandWrapperInputEntity.type = CommandWrapperInputType.SCAN;
+                this.setType(CommandWrapperInputType.SCAN);
                 break;
             case "Assessor":
-                commandWrapperInputEntity.type = CommandWrapperInputType.ASSESSOR;
+                this.setType(CommandWrapperInputType.ASSESSOR);
                 break;
             case "Resource":
-                commandWrapperInputEntity.type = CommandWrapperInputType.RESOURCE;
+                this.setType(CommandWrapperInputType.RESOURCE);
                 break;
             case "Config":
-                commandWrapperInputEntity.type = CommandWrapperInputType.CONFIG;
+                this.setType(CommandWrapperInputType.CONFIG);
                 break;
             default:
-                commandWrapperInputEntity.type = DEFAULT_TYPE;
+                this.setType(DEFAULT_TYPE);
         }
-        return commandWrapperInputEntity;
+
+        return this;
     }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     public long getId() {

@@ -5,6 +5,7 @@ import com.google.common.base.MoreObjects;
 import org.hibernate.envers.Audited;
 import org.nrg.containers.model.command.auto.Command;
 
+import javax.annotation.Nonnull;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -28,15 +29,21 @@ public class CommandOutputEntity implements Serializable {
     private String glob;
 
     public static CommandOutputEntity fromPojo(final Command.CommandOutput commandOutput) {
-        final CommandOutputEntity commandOutputEntity = new CommandOutputEntity();
-        commandOutputEntity.id = commandOutput.id();
-        commandOutputEntity.name = commandOutput.name();
-        commandOutputEntity.description = commandOutput.description();
-        commandOutputEntity.required = commandOutput.required();
-        commandOutputEntity.mount = commandOutput.mount();
-        commandOutputEntity.path = commandOutput.path();
-        commandOutputEntity.glob = commandOutput.glob();
-        return commandOutputEntity;
+        return new CommandOutputEntity().update(commandOutput);
+    }
+
+    @Nonnull
+    public CommandOutputEntity update(final Command.CommandOutput commandOutput) {
+        if (this.id == 0L || commandOutput.id() != 0L) {
+            this.setId(commandOutput.id());
+        }
+        this.setName(commandOutput.name());
+        this.setDescription(commandOutput.description());
+        this.setRequired(commandOutput.required());
+        this.setMount(commandOutput.mount());
+        this.setPath(commandOutput.path());
+        this.setGlob(commandOutput.glob());
+        return this;
     }
 
     @Id

@@ -19,7 +19,10 @@ import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -42,19 +45,64 @@ public class CommandWrapperEntity implements Serializable {
 
     @Nonnull
     public CommandWrapperEntity update(final @Nonnull Command.CommandWrapper commandWrapper) {
-        this.setId(commandWrapper.id());
-        this.name = commandWrapper.name();
-        this.description = commandWrapper.description();
+        if (this.id == 0L || commandWrapper.id() != 0L) {
+            this.setId(commandWrapper.id());
+        }
+        this.setName(commandWrapper.name());
+        this.setDescription(commandWrapper.description());
         this.setContexts(commandWrapper.contexts());
-        for (final Command.CommandWrapperInput externalCommandWrapperInput : commandWrapper.externalInputs()) {
-            this.addExternalInput(CommandWrapperExternalInputEntity.fromPojo(externalCommandWrapperInput));
+
+        final Map<String, Command.CommandWrapperExternalInput> externalInputsByName = new HashMap<>();
+        for (final Command.CommandWrapperExternalInput externalCommandWrapperInput : commandWrapper.externalInputs()) {
+            externalInputsByName.put(externalCommandWrapperInput.name(), externalCommandWrapperInput);
         }
+        final List<CommandWrapperExternalInputEntity> externalInputEntities = this.externalInputs == null ? Collections.<CommandWrapperExternalInputEntity>emptyList() : this.externalInputs;
+        for (final CommandWrapperExternalInputEntity externalInputEntity : externalInputEntities) {
+            if (externalInputsByName.containsKey(externalInputEntity.getName())) {
+                externalInputEntity.update(externalInputsByName.get(externalInputEntity.getName()));
+                externalInputsByName.remove(externalInputEntity.getName());
+            }
+        }
+        for (final Command.CommandWrapperExternalInput externalInput : commandWrapper.externalInputs()) {
+            if (externalInputsByName.containsKey(externalInput.name())) {
+                this.addExternalInput(CommandWrapperExternalInputEntity.fromPojo(externalInput));
+            }
+        }
+
+        final Map<String, Command.CommandWrapperDerivedInput> derivedInputsByName = new HashMap<>();
         for (final Command.CommandWrapperDerivedInput derivedCommandWrapperInput : commandWrapper.derivedInputs()) {
-            this.addDerivedInput(CommandWrapperDerivedInputEntity.fromPojo(derivedCommandWrapperInput));
+            derivedInputsByName.put(derivedCommandWrapperInput.name(), derivedCommandWrapperInput);
         }
+        final List<CommandWrapperDerivedInputEntity> derivedInputEntities = this.derivedInputs == null ? Collections.<CommandWrapperDerivedInputEntity>emptyList() : this.derivedInputs;
+        for (final CommandWrapperDerivedInputEntity derivedInputEntity : derivedInputEntities) {
+            if (derivedInputsByName.containsKey(derivedInputEntity.getName())) {
+                derivedInputEntity.update(derivedInputsByName.get(derivedInputEntity.getName()));
+                derivedInputsByName.remove(derivedInputEntity.getName());
+            }
+        }
+        for (final Command.CommandWrapperDerivedInput derivedInput : commandWrapper.derivedInputs()) {
+            if (derivedInputsByName.containsKey(derivedInput.name())) {
+                this.addDerivedInput(CommandWrapperDerivedInputEntity.fromPojo(derivedInput));
+            }
+        }
+
+        final Map<String, Command.CommandWrapperOutput> outputsByName = new HashMap<>();
         for (final Command.CommandWrapperOutput commandWrapperOutput : commandWrapper.outputHandlers()) {
-            this.addOutputHandler(CommandWrapperOutputEntity.fromPojo(commandWrapperOutput));
+            outputsByName.put(commandWrapperOutput.name(), commandWrapperOutput);
         }
+        final List<CommandWrapperOutputEntity> outputEntities = this.outputHandlers == null ? Collections.<CommandWrapperOutputEntity>emptyList() : this.outputHandlers;
+        for (final CommandWrapperOutputEntity outputEntity : outputEntities) {
+            if (outputsByName.containsKey(outputEntity.getName())) {
+                outputEntity.update(outputsByName.get(outputEntity.getName()));
+                outputsByName.remove(outputEntity.getName());
+            }
+        }
+        for (final Command.CommandWrapperOutput output : commandWrapper.outputHandlers()) {
+            if (outputsByName.containsKey(output.name())) {
+                this.addOutputHandler(CommandWrapperOutputEntity.fromPojo(output));
+            }
+        }
+
         return this;
     }
 

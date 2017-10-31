@@ -7,6 +7,7 @@ import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.envers.Audited;
 import org.nrg.containers.model.command.auto.Command;
 
+import javax.annotation.Nonnull;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -74,12 +75,15 @@ public class CommandMountEntity implements Serializable {
     }
 
     static CommandMountEntity fromPojo(final Command.CommandMount commandMount) {
-        final CommandMountEntity commandMountEntity = new CommandMountEntity();
-        commandMountEntity.id = commandMount.id();
-        commandMountEntity.name = commandMount.name();
-        commandMountEntity.writable = commandMount.writable();
-        commandMountEntity.containerPath = commandMount.path();
-        return commandMountEntity;
+        return new CommandMountEntity().update(commandMount);
+    }
+
+    @Nonnull
+    public CommandMountEntity update(final Command.CommandMount commandMount) {
+        this.setName(commandMount.name());
+        this.setWritable(commandMount.writable());
+        this.setContainerPath(commandMount.path());
+        return this;
     }
 
     @Transient
