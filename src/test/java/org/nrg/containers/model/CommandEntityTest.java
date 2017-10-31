@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hamcrest.CustomTypeSafeMatcher;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -12,6 +13,12 @@ import org.junit.runner.RunWith;
 import org.nrg.containers.config.CommandTestConfig;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandInput;
+import org.nrg.containers.model.command.auto.Command.CommandMount;
+import org.nrg.containers.model.command.auto.Command.CommandOutput;
+import org.nrg.containers.model.command.auto.Command.CommandWrapper;
+import org.nrg.containers.model.command.auto.Command.CommandWrapperDerivedInput;
+import org.nrg.containers.model.command.auto.Command.CommandWrapperExternalInput;
+import org.nrg.containers.model.command.auto.Command.CommandWrapperOutput;
 import org.nrg.containers.model.command.entity.CommandEntity;
 import org.nrg.containers.model.command.entity.CommandInputEntity;
 import org.nrg.containers.model.command.entity.CommandMountEntity;
@@ -48,85 +55,44 @@ import static org.junit.Assert.assertTrue;
 @Transactional
 @ContextConfiguration(classes = CommandTestConfig.class)
 public class CommandEntityTest {
-    private static final String COOL_INPUT_JSON = "{" +
-            "\"name\":\"my_cool_input\", " +
-            "\"description\":\"A boolean value\", " +
-            "\"type\":\"boolean\", " +
-            "\"required\":true," +
-            "\"true-value\":\"-b\", " +
-            "\"false-value\":\"\"" +
-            "}";
-    private static final String STRING_INPUT_NAME = "foo";
-    private static final String STRING_INPUT_JSON = "{" +
-            "\"name\":\"" + STRING_INPUT_NAME + "\", " +
-            "\"description\":\"A foo that bars\", " +
-            "\"required\":false," +
-            "\"default-value\":\"bar\"," +
-            "\"command-line-flag\":\"--flag\"," +
-            "\"command-line-separator\":\"=\"" +
-            "}";
 
-    private static final String COMMAND_OUTPUT_NAME = "the_output";
-    private static final String COMMAND_OUTPUT = "{" +
-            "\"name\":\"" + COMMAND_OUTPUT_NAME + "\"," +
-            "\"description\":\"It's the output\"," +
-            "\"mount\":\"out\"," +
-            "\"path\":\"relative/path/to/dir\"" +
-            "}";
-    private static final String INPUT_LIST_JSON = "[" + COOL_INPUT_JSON + ", " + STRING_INPUT_JSON + "]";
+    private Command COMMAND;
+    private CommandEntity COMMAND_ENTITY;
 
-    private static final String MOUNT_IN = "{\"name\":\"in\", \"writable\": false, \"path\":\"/input\"}";
-    private static final String MOUNT_OUT = "{\"name\":\"out\", \"writable\": true, \"path\":\"/output\"}";
+    private final String OUTPUT_MOUNT_NAME = "out";
+    private CommandMount MOUNT_IN;
+    private CommandMountEntity MOUNT_ENTITY_IN;
+    private CommandMount MOUNT_OUT;
+    private CommandMountEntity MOUNT_ENTITY_OUT;
 
-    private static final String EXTERNAL_INPUT_NAME = "session";
-    private static final String XNAT_COMMAND_WRAPPER_EXTERNAL_INPUT = "{" +
-            "\"name\": \"" + EXTERNAL_INPUT_NAME + "\"" +
-            ", \"type\": \"Session\"" +
-            "}";
-    private static final String DERIVED_INPUT_NAME = "label";
-    private static final String XNAT_OBJECT_PROPERTY = "label";
-    private static final String XNAT_COMMAND_WRAPPER_DERIVED_INPUT = "{" +
-            "\"name\": \"" + DERIVED_INPUT_NAME + "\"" +
-            ", \"type\": \"string\"" +
-            ", \"derived-from-wrapper-input\": \"" + EXTERNAL_INPUT_NAME + "\"" +
-            ", \"derived-from-xnat-object-property\": \"" + XNAT_OBJECT_PROPERTY + "\"" +
-            ", \"provides-value-for-command-input\": \"" + STRING_INPUT_NAME + "\"" +
-            "}";
+    private final String STRING_INPUT_NAME = "foo";
+    private CommandInput STRING_INPUT;
+    private CommandInputEntity STRING_INPUT_ENTITY;
+    private CommandInput COOL_INPUT;
+    private CommandInputEntity COOL_INPUT_ENTITY;
 
-    private static final String OUTPUT_HANDLER_LABEL = "a_label";
-    private static final String OUTPUT_HANDLER_NAME = "output-handler-name";
-    private static final String XNAT_COMMAND_WRAPPER_OUTPUT_HANDLER = "{" +
-            "\"type\": \"Resource\"" +
-            ", \"accepts-command-output\": \"" + COMMAND_OUTPUT_NAME + "\"" +
-            ", \"as-a-child-of-wrapper-input\": \"" + EXTERNAL_INPUT_NAME + "\"" +
-            ", \"label\": \"" + OUTPUT_HANDLER_LABEL + "\"" +
-            ", \"name\": \"" + OUTPUT_HANDLER_NAME + "\"" +
-            "}";
+    private final String COMMAND_OUTPUT_NAME = "the_output";
+    private CommandOutput COMMAND_OUTPUT;
+    private CommandOutputEntity COMMAND_OUTPUT_ENTITY;
 
-    private static final String XNAT_COMMAND_WRAPPER_NAME = "wrappername";
-    private static final String XNAT_COMMAND_WRAPPER_DESC = "the wrapper description";
-    private static final String XNAT_COMMAND_WRAPPER = "{" +
-            "\"name\": \"" + XNAT_COMMAND_WRAPPER_NAME + "\", " +
-            "\"description\": \"" + XNAT_COMMAND_WRAPPER_DESC + "\"," +
-            "\"external-inputs\": [" + XNAT_COMMAND_WRAPPER_EXTERNAL_INPUT + "], " +
-            "\"derived-inputs\": [" + XNAT_COMMAND_WRAPPER_DERIVED_INPUT + "], " +
-            "\"output-handlers\": [" + XNAT_COMMAND_WRAPPER_OUTPUT_HANDLER + "]" +
-            "}";
+    private final String EXTERNAL_INPUT_NAME = "session";
+    private CommandWrapperExternalInput EXTERNAL_INPUT;
+    private CommandWrapperExternalInputEntity EXTERNAL_INPUT_ENTITY;
 
-    private static final String DOCKER_IMAGE_COMMAND_JSON = "{" +
-            "\"name\":\"docker_image_command\", " +
-            "\"description\":\"Docker Image command for the test\", " +
-            "\"type\": \"docker\", " +
-            "\"info-url\":\"http://abc.xyz\", " +
-            "\"environment-variables\":{\"foo\":\"bar\"}, " +
-            "\"command-line\":\"cmd #foo# #my_cool_input#\", " +
-            "\"mounts\":[" + MOUNT_IN + ", " + MOUNT_OUT + "]," +
-            "\"ports\": {\"22\": \"2222\"}, " +
-            "\"inputs\":" + INPUT_LIST_JSON + ", " +
-            "\"outputs\":[" + COMMAND_OUTPUT + "], " +
-            "\"image\":\"abc123\"" +
-            ", \"xnat\": [" + XNAT_COMMAND_WRAPPER + "]" +
-            "}";
+    private final String DERIVED_INPUT_NAME = "label";
+    private final String XNAT_OBJECT_PROPERTY = "label";
+    private CommandWrapperDerivedInput DERIVED_INPUT;
+    private CommandWrapperDerivedInputEntity DERIVED_INPUT_ENTITY;
+
+    private final String OUTPUT_HANDLER_LABEL = "a_label";
+    private final String OUTPUT_HANDLER_NAME = "output-handler-name";
+    private CommandWrapperOutput OUTPUT_HANDLER;
+    private CommandWrapperOutputEntity OUTPUT_HANDLER_ENTITY;
+
+    private final String COMMAND_WRAPPER_NAME = "wrappername";
+    private final String COMMAND_WRAPPER_DESC = "the wrapper description";
+    private CommandWrapper COMMAND_WRAPPER;
+    private CommandWrapperEntity COMMAND_WRAPPER_ENTITY;
 
 
     @Autowired private ObjectMapper mapper;
@@ -134,169 +100,126 @@ public class CommandEntityTest {
 
     @Rule public ExpectedException expectedException = ExpectedException.none();
 
+    @Before
+    public void setup() throws Exception {
+        MOUNT_IN = CommandMount.create("in", false, "/input");
+        MOUNT_OUT = CommandMount.create(OUTPUT_MOUNT_NAME, true, "/output");
+        MOUNT_ENTITY_IN = CommandMountEntity.fromPojo(MOUNT_IN);
+        MOUNT_ENTITY_OUT = CommandMountEntity.fromPojo(MOUNT_OUT);
+
+        COOL_INPUT = CommandInput.builder()
+                .name("my_cool_input")
+                .description("A boolean value")
+                .type("boolean")
+                .required(true)
+                .trueValue("-b")
+                .falseValue("")
+                .build();
+        STRING_INPUT = CommandInput.builder()
+                .name(STRING_INPUT_NAME)
+                .description("A foo that bars")
+                .required(false)
+                .defaultValue("bar")
+                .commandLineFlag("--flag")
+                .commandLineSeparator("=")
+                .build();
+        COOL_INPUT_ENTITY = CommandInputEntity.fromPojo(COOL_INPUT);
+        STRING_INPUT_ENTITY = CommandInputEntity.fromPojo(STRING_INPUT);
+
+        COMMAND_OUTPUT = CommandOutput.builder()
+                .name(COMMAND_OUTPUT_NAME)
+                .description("It's the output")
+                .mount(OUTPUT_MOUNT_NAME)
+                .path("relative/path/to/dir")
+                .build();
+        COMMAND_OUTPUT_ENTITY = CommandOutputEntity.fromPojo(COMMAND_OUTPUT);
+
+        EXTERNAL_INPUT = CommandWrapperExternalInput.builder()
+                .name(EXTERNAL_INPUT_NAME)
+                .type("Session")
+                .build();
+        EXTERNAL_INPUT_ENTITY = CommandWrapperExternalInputEntity.fromPojo(EXTERNAL_INPUT);
+
+        DERIVED_INPUT = CommandWrapperDerivedInput.builder()
+                .name(DERIVED_INPUT_NAME)
+                .type("string")
+                .derivedFromWrapperInput(EXTERNAL_INPUT_NAME)
+                .derivedFromXnatObjectProperty(XNAT_OBJECT_PROPERTY)
+                .providesValueForCommandInput(STRING_INPUT_NAME)
+                .build();
+        DERIVED_INPUT_ENTITY = CommandWrapperDerivedInputEntity.fromPojo(DERIVED_INPUT);
+
+        OUTPUT_HANDLER = CommandWrapperOutput.create(OUTPUT_HANDLER_NAME,
+                COMMAND_OUTPUT_NAME, EXTERNAL_INPUT_NAME, "Resource", OUTPUT_HANDLER_LABEL);
+        OUTPUT_HANDLER_ENTITY = CommandWrapperOutputEntity.fromPojo(OUTPUT_HANDLER);
+
+        COMMAND_WRAPPER = CommandWrapper.builder()
+                .name(COMMAND_WRAPPER_NAME)
+                .description(COMMAND_WRAPPER_DESC)
+                .addExternalInput(EXTERNAL_INPUT)
+                .addDerivedInput(DERIVED_INPUT)
+                .addOutputHandler(OUTPUT_HANDLER)
+                .build();
+        COMMAND_WRAPPER_ENTITY = CommandWrapperEntity.fromPojo(COMMAND_WRAPPER);
+
+        COMMAND = Command.builder()
+                .name("docker_image_command")
+                .description("Docker Image command for the test")
+                .image("abc123")
+                .type("docker")
+                .infoUrl("http://abc.xyz")
+                .addEnvironmentVariable("foo", "bar")
+                .commandLine("cmd #foo# #my_cool_input#")
+                .addMount(MOUNT_IN)
+                .addMount(MOUNT_OUT)
+                .addInput(COOL_INPUT)
+                .addInput(STRING_INPUT)
+                .addOutput(COMMAND_OUTPUT)
+                .addPort("22", "2222")
+                .addCommandWrapper(COMMAND_WRAPPER)
+                .build();
+
+        COMMAND_ENTITY = CommandEntity.fromPojo(COMMAND);
+
+    }
+
     @Test
     public void testSpringConfiguration() {
         assertThat(commandEntityService, not(nullValue()));
     }
 
     @Test
-    public void testDeserializeCommandInput() throws Exception {
-        final CommandInputEntity commandInputEntity0 =
-                mapper.readValue(COOL_INPUT_JSON, CommandInputEntity.class);
-        final Command.CommandInput commandInput0 = Command.CommandInput.create(commandInputEntity0);
-        final CommandInputEntity fooInputEntity =
-                mapper.readValue(STRING_INPUT_JSON, CommandInputEntity.class);
-        final Command.CommandInput fooInput = Command.CommandInput.create(fooInputEntity);
-
-        assertThat(commandInput0.name(), is("my_cool_input"));
-        assertThat(commandInput0.description(), is("A boolean value"));
-        assertThat(commandInput0.type(), is(CommandInputEntity.Type.BOOLEAN.getName()));
-        assertTrue(commandInput0.required());
-        assertThat(commandInput0.trueValue(), is("-b"));
-        assertThat(commandInput0.falseValue(), is(""));
-        assertThat(commandInput0.replacementKey(), is("#my_cool_input#"));
-        assertThat(commandInput0.commandLineFlag(), is(""));
-        assertThat(commandInput0.commandLineSeparator(), is(" "));
-        assertThat(commandInput0.defaultValue(), is(nullValue()));
-
-        assertThat(fooInput.name(), is("foo"));
-        assertThat(fooInput.description(), is("A foo that bars"));
-        assertThat(fooInput.type(), is(CommandInputEntity.Type.STRING.getName()));
-        assertThat(fooInput.required(), is(false));
-        assertThat(fooInput.trueValue(), is(nullValue()));
-        assertThat(fooInput.falseValue(), is(nullValue()));
-        assertThat(fooInput.replacementKey(), is("#foo#"));
-        assertThat(fooInput.commandLineFlag(), is("--flag"));
-        assertThat(fooInput.commandLineSeparator(), is("="));
-        assertThat(fooInput.defaultValue(), is("bar"));
-    }
-
-    @Test
-    public void testDeserializeDockerImageCommand() throws Exception {
-
-        final List<CommandInputEntity> commandInputEntityList =
-                mapper.readValue(INPUT_LIST_JSON, new TypeReference<List<CommandInputEntity>>() {});
-        final CommandOutputEntity commandOutputEntity = mapper.readValue(COMMAND_OUTPUT, CommandOutputEntity.class);
-
-        final CommandMountEntity input = mapper.readValue(MOUNT_IN, CommandMountEntity.class);
-        final CommandMountEntity output = mapper.readValue(MOUNT_OUT, CommandMountEntity.class);
-
-        final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
-        for (final CommandInputEntity commandInputEntity : commandInputEntityList) {
-            commandInputEntity.setCommandEntity(commandEntity);
-        }
-        commandOutputEntity.setCommandEntity(commandEntity);
-        input.setCommandEntity(commandEntity);
-        output.setCommandEntity(commandEntity);
-
-        assertThat(commandEntity.getImage(), is("abc123"));
-
-        assertThat(commandEntity.getName(), is("docker_image_command"));
-        assertThat(commandEntity.getDescription(), is("Docker Image command for the test"));
-        assertThat(commandEntity.getInfoUrl(), is("http://abc.xyz"));
-        assertThat(commandEntity.getInputs(), is(commandInputEntityList));
-        assertThat(commandEntity.getOutputs(), contains(commandOutputEntity));
-
-        // final CommandRun run = command.getRun();
-        assertThat(commandEntity.getCommandLine(), is("cmd #foo# #my_cool_input#"));
-        assertThat(commandEntity.getEnvironmentVariables(), hasEntry("foo", "bar"));
-        assertThat(commandEntity.getMounts(), contains(input, output));
-
-        assertThat(commandEntity, instanceOf(DockerCommandEntity.class));
-        assertThat(((DockerCommandEntity) commandEntity).getPorts(), hasEntry("22", "2222"));
-    }
-
-    @Test
-    @DirtiesContext
-    public void testPersistDockerImageCommand() throws Exception {
-
-        final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
-
-        commandEntityService.create(commandEntity);
-
-        TestTransaction.flagForCommit();
-        TestTransaction.end();
-        TestTransaction.start();
-
-        final CommandEntity retrievedCommandEntity = commandEntityService.retrieve(commandEntity.getId());
-
-        assertThat(retrievedCommandEntity, is(commandEntity));
-
-        assertThat(Command.create(commandEntity).validate(), is(Matchers.<String>emptyIterable()));
-    }
-
-    @Test
-    public void testDeserializeWrapperInputsAndOutputs() throws Exception {
-        final CommandWrapperExternalInputEntity externalInput = mapper.readValue(XNAT_COMMAND_WRAPPER_EXTERNAL_INPUT, CommandWrapperExternalInputEntity.class);
-        assertThat(externalInput.getName(), is(EXTERNAL_INPUT_NAME));
-        assertThat(externalInput.getType(), is(CommandWrapperInputType.SESSION));
-        assertThat(externalInput.getProvidesValueForCommandInput(), is(nullValue()));
-        assertThat(externalInput.getDefaultValue(), is(nullValue()));
-        assertThat(externalInput.getMatcher(), is(nullValue()));
-        assertThat(externalInput.getRequired(), is(false));
-
-        final CommandWrapperDerivedInputEntity derivedInput = mapper.readValue(XNAT_COMMAND_WRAPPER_DERIVED_INPUT, CommandWrapperDerivedInputEntity.class);
-        assertThat(derivedInput.getName(), is(DERIVED_INPUT_NAME));
-        assertThat(derivedInput.getType(), is(CommandWrapperInputType.STRING));
-        assertThat(derivedInput.getDerivedFromWrapperInput(), is(EXTERNAL_INPUT_NAME));
-        assertThat(derivedInput.getDerivedFromXnatObjectProperty(), is(XNAT_OBJECT_PROPERTY));
-        assertThat(derivedInput.getProvidesValueForCommandInput(), is(STRING_INPUT_NAME));
-        assertThat(derivedInput.getDefaultValue(), is(nullValue()));
-        assertThat(derivedInput.getMatcher(), is(nullValue()));
-        assertThat(derivedInput.getRequired(), is(false));
-
-        final CommandWrapperOutputEntity output = mapper.readValue(XNAT_COMMAND_WRAPPER_OUTPUT_HANDLER, CommandWrapperOutputEntity.class);
-        assertThat(output.getType(), is(CommandWrapperOutputEntity.Type.RESOURCE));
-        assertThat(output.getWrapperInputName(), is(EXTERNAL_INPUT_NAME));
-        assertThat(output.getCommandOutputName(), is(COMMAND_OUTPUT_NAME));
-        assertThat(output.getLabel(), is(OUTPUT_HANDLER_LABEL));
-        assertThat(output.getName(), is(OUTPUT_HANDLER_NAME));
-    }
-
-    @Test
-    public void testDeserializeCommandWithCommandWrapper() throws Exception {
-
-        final CommandWrapperEntity commandWrapperEntity = mapper.readValue(XNAT_COMMAND_WRAPPER, CommandWrapperEntity.class);
-
-        final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
-
-        assertThat(commandEntity.getCommandWrapperEntities(), hasSize(1));
-        assertTrue(commandEntity.getCommandWrapperEntities().contains(commandWrapperEntity));
+    public void testSerializeDeserializeCommand() throws Exception {
+        assertThat(mapper.readValue(mapper.writeValueAsString(COMMAND), Command.class), is(COMMAND));
     }
 
     @Test
     @DirtiesContext
     public void testPersistCommandWithWrapper() throws Exception {
-
-        final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
-
-        commandEntityService.create(commandEntity);
+        final CommandEntity created = commandEntityService.create(COMMAND_ENTITY);
 
         TestTransaction.flagForCommit();
         TestTransaction.end();
         TestTransaction.start();
 
-        final CommandEntity retrievedCommandEntity = commandEntityService.retrieve(commandEntity.getId());
+        final CommandEntity retrievedCommandEntity = commandEntityService.retrieve(created.getId());
 
-        assertThat(retrievedCommandEntity, is(commandEntity));
+        assertThat(retrievedCommandEntity, is(created));
+        assertThat(Command.create(created).validate(), is(Matchers.<String>emptyIterable()));
 
         final List<CommandWrapperEntity> commandWrappers = retrievedCommandEntity.getCommandWrapperEntities();
         assertThat(commandWrappers, hasSize(1));
 
         final CommandWrapperEntity commandWrapperEntity = commandWrappers.get(0);
         assertThat(commandWrapperEntity.getId(), not(0L));
-        assertThat(commandWrapperEntity.getCommandEntity(), is(commandEntity));
-
-        assertThat(Command.create(commandEntity).validate(), is(Matchers.<String>emptyIterable()));
+        assertThat(commandWrapperEntity.getCommandEntity(), is(created));
     }
 
     @Test
     @DirtiesContext
     public void testDeleteCommandWithWrapper() throws Exception {
 
-        final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
-
-        final CommandEntity created = commandEntityService.create(commandEntity);
+        final CommandEntity created = commandEntityService.create(COMMAND_ENTITY);
 
         TestTransaction.flagForCommit();
         TestTransaction.end();
@@ -315,9 +238,7 @@ public class CommandEntityTest {
     @DirtiesContext
     public void testRetrieveCommandWrapper() throws Exception {
 
-        final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
-
-        final CommandEntity created = commandEntityService.create(commandEntity);
+        final CommandEntity created = commandEntityService.create(COMMAND_ENTITY);
 
         TestTransaction.flagForCommit();
         TestTransaction.end();
@@ -334,11 +255,10 @@ public class CommandEntityTest {
     @DirtiesContext
     public void testAddCommandWrapper() throws Exception {
 
-        final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
-        final CommandWrapperEntity toAdd = commandEntity.getCommandWrapperEntities().get(0);
-        commandEntity.setCommandWrapperEntities(null);
+        final CommandWrapperEntity toAdd = COMMAND_ENTITY.getCommandWrapperEntities().get(0);
+        COMMAND_ENTITY.setCommandWrapperEntities(null);
 
-        final CommandEntity created = commandEntityService.create(commandEntity);
+        final CommandEntity created = commandEntityService.create(COMMAND_ENTITY);
 
         TestTransaction.flagForCommit();
         TestTransaction.end();
@@ -350,7 +270,7 @@ public class CommandEntityTest {
         TestTransaction.end();
         TestTransaction.start();
 
-        final CommandEntity retrieved = commandEntityService.get(commandEntity.getId());
+        final CommandEntity retrieved = commandEntityService.get(COMMAND_ENTITY.getId());
         assertThat(retrieved.getCommandWrapperEntities().get(0), is(added));
 
         assertThat(Command.create(retrieved).validate(), is(Matchers.<String>emptyIterable()));
@@ -360,9 +280,7 @@ public class CommandEntityTest {
     @DirtiesContext
     public void testUpdateCommandWrapperDescription() throws Exception {
 
-        final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
-
-        final CommandEntity created = commandEntityService.create(commandEntity);
+        final CommandEntity created = commandEntityService.create(COMMAND_ENTITY);
 
         TestTransaction.flagForCommit();
         TestTransaction.end();
@@ -373,7 +291,7 @@ public class CommandEntityTest {
         final String newDescription = "This is probably a new description, right?";
         createdWrapper.setDescription(newDescription);
 
-        commandEntityService.update(createdWrapper);
+        commandEntityService.update(created);
         TestTransaction.flagForCommit();
         TestTransaction.end();
         TestTransaction.start();
@@ -389,22 +307,20 @@ public class CommandEntityTest {
     @DirtiesContext
     public void testUpdateAddInput() throws Exception {
 
-        final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
-
-        final CommandEntity created = commandEntityService.create(commandEntity);
+        final CommandEntity created = commandEntityService.create(COMMAND_ENTITY);
 
         TestTransaction.flagForCommit();
         TestTransaction.end();
         TestTransaction.start();
 
-        final CommandInput pojoToAdd = CommandInput.builder()
+        final CommandInput inputToAdd = CommandInput.builder()
                 .name("this is new")
                 .description("A new input that didn't exist before")
                 .commandLineFlag("--flag")
                 .commandLineSeparator("=")
                 .defaultValue("yes")
                 .build();
-        created.addInput(CommandInputEntity.fromPojo(pojoToAdd));
+        created.addInput(CommandInputEntity.fromPojo(inputToAdd));
 
         commandEntityService.update(created);
         TestTransaction.flagForCommit();
@@ -414,7 +330,7 @@ public class CommandEntityTest {
         final CommandEntity retrieved = commandEntityService.get(created.getId());
 
         final Command retrievedPojo = Command.create(retrieved);
-        assertThat(pojoToAdd, isInIgnoreId(retrievedPojo.inputs()));
+        assertThat(inputToAdd, isInIgnoreId(retrievedPojo.inputs()));
         assertThat(retrievedPojo.validate(), is(Matchers.<String>emptyIterable()));
     }
 
@@ -439,9 +355,7 @@ public class CommandEntityTest {
     @DirtiesContext
     public void testDeleteCommandWrapper() throws Exception {
 
-        final CommandEntity commandEntity = mapper.readValue(DOCKER_IMAGE_COMMAND_JSON, CommandEntity.class);
-
-        final CommandEntity created = commandEntityService.create(commandEntity);
+        final CommandEntity created = commandEntityService.create(COMMAND_ENTITY);
 
         TestTransaction.flagForCommit();
         TestTransaction.end();

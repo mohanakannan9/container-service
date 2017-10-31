@@ -10,6 +10,7 @@ import com.google.common.collect.Lists;
 import org.hibernate.envers.Audited;
 import org.nrg.containers.model.command.auto.Command;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -34,25 +35,31 @@ public class CommandWrapperOutputEntity {
     private String label;
 
     public static CommandWrapperOutputEntity fromPojo(final Command.CommandWrapperOutput commandWrapperOutput) {
-        final CommandWrapperOutputEntity commandWrapperOutputEntity = new CommandWrapperOutputEntity();
-        commandWrapperOutputEntity.id = commandWrapperOutput.id();
-        commandWrapperOutputEntity.name = commandWrapperOutput.name();
-        commandWrapperOutputEntity.commandOutputName = commandWrapperOutput.commandOutputName();
-        commandWrapperOutputEntity.wrapperInputName = commandWrapperOutput.wrapperInputName();
-        commandWrapperOutputEntity.label = commandWrapperOutput.label();
+        return new CommandWrapperOutputEntity().update(commandWrapperOutput);
+    }
+
+    @Nonnull
+    public CommandWrapperOutputEntity update(final @Nonnull Command.CommandWrapperOutput commandWrapperOutput) {
+        if (this.id == 0L || commandWrapperOutput.id() != 0L) {
+            this.setId(commandWrapperOutput.id());
+        }
+        this.setName(commandWrapperOutput.name());
+        this.setCommandOutputName(commandWrapperOutput.commandOutputName());
+        this.setWrapperInputName(commandWrapperOutput.wrapperInputName());
+        this.setLabel(commandWrapperOutput.label());
 
         switch (commandWrapperOutput.type()) {
             case "Resource":
-                commandWrapperOutputEntity.type = Type.RESOURCE;
+                this.setType(Type.RESOURCE);
                 break;
             case "Assessor":
-                commandWrapperOutputEntity.type = Type.ASSESSOR;
+                this.setType(Type.ASSESSOR);
                 break;
             default:
-                commandWrapperOutputEntity.type = DEFAULT_TYPE;
+                this.setType(DEFAULT_TYPE);
         }
 
-        return commandWrapperOutputEntity;
+        return this;
     }
 
     @Id
