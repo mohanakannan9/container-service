@@ -273,7 +273,8 @@ public class Scan extends XnatModelObject {
     }
 
     @Override
-    public XFTItem getXftItem() {
+    public XFTItem getXftItem(final UserI userI) {
+        loadXnatImagescandataI(userI);
         return xnatImagescandataI == null ? null : ((XnatImagescandata)xnatImagescandataI).getItem();
     }
 

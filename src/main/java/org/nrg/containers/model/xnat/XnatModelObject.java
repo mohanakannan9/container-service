@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.common.base.MoreObjects;
 import org.nrg.xft.XFTItem;
+import org.nrg.xft.security.UserI;
 
 import java.util.Objects;
 
@@ -60,7 +61,7 @@ public abstract class XnatModelObject {
     }
 
     @JsonIgnore
-    public abstract XFTItem getXftItem();
+    public abstract XFTItem getXftItem(final UserI userI);
 
     @Override
     public boolean equals(Object o) {
