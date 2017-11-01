@@ -29,7 +29,7 @@ public abstract class DockerServerBase {
                                           @JsonProperty("host") final String host,
                                           @JsonProperty("cert-path") final String certPath,
                                           @JsonProperty("swarm-mode") final Boolean swarmMode) {
-            return create(id, name, host, certPath, swarmMode, new Date(0));
+            return create(id, name, host, certPath, swarmMode, null);
         }
 
         public static DockerServer create(final Long id,
@@ -44,7 +44,7 @@ public abstract class DockerServerBase {
                     host,
                     certPath,
                     swarmMode != null && swarmMode,
-                    lastEventCheckTime != null ? lastEventCheckTime : new Date(0)
+                    lastEventCheckTime != null ? lastEventCheckTime : new Date()
             );
         }
 

@@ -26,7 +26,6 @@ import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.DockerHubService;
 import org.nrg.containers.services.DockerServerService;
 import org.nrg.framework.exceptions.NotFoundException;
-import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.xdat.security.services.RoleServiceI;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
@@ -55,6 +54,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isIn;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
@@ -156,7 +156,8 @@ public class DockerRestApiTest {
 
         final DockerServer responseServer =
                 mapper.readValue(response, DockerServer.class);
-        assertThat(responseServer, equalTo(MOCK_CONTAINER_SERVER));
+        assertThat(responseServer, is(MOCK_CONTAINER_SERVER.updateEventCheckTime(responseServer.lastEventCheckTime())));
+
 
         when(mockDockerServerService.getServer()).thenThrow(NOT_FOUND_EXCEPTION);
 
@@ -186,14 +187,14 @@ public class DockerRestApiTest {
                         .with(csrf())
                         .with(testSecurityContext());
 
-        when(mockDockerServerService.setServer(MOCK_CONTAINER_SERVER)).thenReturn(MOCK_CONTAINER_SERVER);
+        when(mockDockerServerService.setServer(any(DockerServer.class))).thenReturn(MOCK_CONTAINER_SERVER);
 
-        verify(mockDockerServerService, times(0)).setServer(MOCK_CONTAINER_SERVER); // Method has been called once
+        verify(mockDockerServerService, times(0)).setServer(any(DockerServer.class)); // Method has been called once
 
         mockMvc.perform(request)
                 .andExpect(status().isCreated());
 
-        verify(mockDockerServerService, times(1)).setServer(MOCK_CONTAINER_SERVER); // Method has been called once
+        verify(mockDockerServerService, times(1)).setServer(any(DockerServer.class)); // Method has been called once
 
         // TODO figure out why the non-admin tests are failing and fix them. The code seems fine on a live XNAT.
         // // Now test setting the server with a non-admin user

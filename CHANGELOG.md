@@ -14,10 +14,12 @@ Not yet released.
 * [CS-410][] Fix command update so all fields in all child objects can update too
 * [CS-402][] Commands launched automatically on session archive now create workflows
 * [CS-402][] Remove en-dash from scan label. This allows automated launches to succeed.
+* [CS-415][] Do not read old container events after updating docker server settings
 
 [CS-335]: https://issues.xnat.org/browse/CS-335
 [CS-402]: https://issues.xnat.org/browse/CS-402
 [CS-410]: https://issues.xnat.org/browse/CS-410
+[CS-415]: https://issues.xnat.org/browse/CS-415
 
 ## 1.3.1
 
