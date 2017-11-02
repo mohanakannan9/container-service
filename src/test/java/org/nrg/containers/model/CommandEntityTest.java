@@ -1,6 +1,5 @@
 package org.nrg.containers.model;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hamcrest.CustomTypeSafeMatcher;
 import org.hamcrest.Matcher;
@@ -21,14 +20,7 @@ import org.nrg.containers.model.command.auto.Command.CommandWrapperExternalInput
 import org.nrg.containers.model.command.auto.Command.CommandWrapperOutput;
 import org.nrg.containers.model.command.entity.CommandEntity;
 import org.nrg.containers.model.command.entity.CommandInputEntity;
-import org.nrg.containers.model.command.entity.CommandMountEntity;
-import org.nrg.containers.model.command.entity.CommandOutputEntity;
-import org.nrg.containers.model.command.entity.CommandWrapperDerivedInputEntity;
 import org.nrg.containers.model.command.entity.CommandWrapperEntity;
-import org.nrg.containers.model.command.entity.CommandWrapperExternalInputEntity;
-import org.nrg.containers.model.command.entity.CommandWrapperInputType;
-import org.nrg.containers.model.command.entity.CommandWrapperOutputEntity;
-import org.nrg.containers.model.command.entity.DockerCommandEntity;
 import org.nrg.containers.services.CommandEntityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
@@ -41,15 +33,11 @@ import java.io.File;
 import java.nio.file.Paths;
 import java.util.List;
 
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @Transactional
@@ -59,42 +47,6 @@ public class CommandEntityTest {
     private Command COMMAND;
     private CommandEntity COMMAND_ENTITY;
 
-    private final String OUTPUT_MOUNT_NAME = "out";
-    private CommandMount MOUNT_IN;
-    private CommandMountEntity MOUNT_ENTITY_IN;
-    private CommandMount MOUNT_OUT;
-    private CommandMountEntity MOUNT_ENTITY_OUT;
-
-    private final String STRING_INPUT_NAME = "foo";
-    private CommandInput STRING_INPUT;
-    private CommandInputEntity STRING_INPUT_ENTITY;
-    private CommandInput COOL_INPUT;
-    private CommandInputEntity COOL_INPUT_ENTITY;
-
-    private final String COMMAND_OUTPUT_NAME = "the_output";
-    private CommandOutput COMMAND_OUTPUT;
-    private CommandOutputEntity COMMAND_OUTPUT_ENTITY;
-
-    private final String EXTERNAL_INPUT_NAME = "session";
-    private CommandWrapperExternalInput EXTERNAL_INPUT;
-    private CommandWrapperExternalInputEntity EXTERNAL_INPUT_ENTITY;
-
-    private final String DERIVED_INPUT_NAME = "label";
-    private final String XNAT_OBJECT_PROPERTY = "label";
-    private CommandWrapperDerivedInput DERIVED_INPUT;
-    private CommandWrapperDerivedInputEntity DERIVED_INPUT_ENTITY;
-
-    private final String OUTPUT_HANDLER_LABEL = "a_label";
-    private final String OUTPUT_HANDLER_NAME = "output-handler-name";
-    private CommandWrapperOutput OUTPUT_HANDLER;
-    private CommandWrapperOutputEntity OUTPUT_HANDLER_ENTITY;
-
-    private final String COMMAND_WRAPPER_NAME = "wrappername";
-    private final String COMMAND_WRAPPER_DESC = "the wrapper description";
-    private CommandWrapper COMMAND_WRAPPER;
-    private CommandWrapperEntity COMMAND_WRAPPER_ENTITY;
-
-
     @Autowired private ObjectMapper mapper;
     @Autowired private CommandEntityService commandEntityService;
 
@@ -102,12 +54,20 @@ public class CommandEntityTest {
 
     @Before
     public void setup() throws Exception {
-        MOUNT_IN = CommandMount.create("in", false, "/input");
-        MOUNT_OUT = CommandMount.create(OUTPUT_MOUNT_NAME, true, "/output");
-        MOUNT_ENTITY_IN = CommandMountEntity.fromPojo(MOUNT_IN);
-        MOUNT_ENTITY_OUT = CommandMountEntity.fromPojo(MOUNT_OUT);
+        final String outputMountName = "out";
+        final CommandMount mountIn = CommandMount.create("in", false, "/input");
+        final CommandMount mountOut = CommandMount.create(outputMountName, true, "/output");
 
-        COOL_INPUT = CommandInput.builder()
+        final String stringInputName = "foo";
+        final CommandInput stringInput = CommandInput.builder()
+                .name(stringInputName)
+                .description("A foo that bars")
+                .required(false)
+                .defaultValue("bar")
+                .commandLineFlag("--flag")
+                .commandLineSeparator("=")
+                .build();
+        final CommandInput coolInput = CommandInput.builder()
                 .name("my_cool_input")
                 .description("A boolean value")
                 .type("boolean")
@@ -115,52 +75,45 @@ public class CommandEntityTest {
                 .trueValue("-b")
                 .falseValue("")
                 .build();
-        STRING_INPUT = CommandInput.builder()
-                .name(STRING_INPUT_NAME)
-                .description("A foo that bars")
-                .required(false)
-                .defaultValue("bar")
-                .commandLineFlag("--flag")
-                .commandLineSeparator("=")
-                .build();
-        COOL_INPUT_ENTITY = CommandInputEntity.fromPojo(COOL_INPUT);
-        STRING_INPUT_ENTITY = CommandInputEntity.fromPojo(STRING_INPUT);
 
-        COMMAND_OUTPUT = CommandOutput.builder()
-                .name(COMMAND_OUTPUT_NAME)
+        final String commandOutputName = "the_output";
+        final CommandOutput commandOutput = CommandOutput.builder()
+                .name(commandOutputName)
                 .description("It's the output")
-                .mount(OUTPUT_MOUNT_NAME)
+                .mount(outputMountName)
                 .path("relative/path/to/dir")
                 .build();
-        COMMAND_OUTPUT_ENTITY = CommandOutputEntity.fromPojo(COMMAND_OUTPUT);
 
-        EXTERNAL_INPUT = CommandWrapperExternalInput.builder()
-                .name(EXTERNAL_INPUT_NAME)
+        final String externalInputName = "session";
+        final CommandWrapperExternalInput externalInput = CommandWrapperExternalInput.builder()
+                .name(externalInputName)
                 .type("Session")
                 .build();
-        EXTERNAL_INPUT_ENTITY = CommandWrapperExternalInputEntity.fromPojo(EXTERNAL_INPUT);
 
-        DERIVED_INPUT = CommandWrapperDerivedInput.builder()
-                .name(DERIVED_INPUT_NAME)
+        final String derivedInputName = "label";
+        final String xnatObjectProperty = "label";
+        final CommandWrapperDerivedInput derivedInput = CommandWrapperDerivedInput.builder()
+                .name(derivedInputName)
                 .type("string")
-                .derivedFromWrapperInput(EXTERNAL_INPUT_NAME)
-                .derivedFromXnatObjectProperty(XNAT_OBJECT_PROPERTY)
-                .providesValueForCommandInput(STRING_INPUT_NAME)
+                .derivedFromWrapperInput(externalInputName)
+                .derivedFromXnatObjectProperty(xnatObjectProperty)
+                .providesValueForCommandInput(stringInputName)
                 .build();
-        DERIVED_INPUT_ENTITY = CommandWrapperDerivedInputEntity.fromPojo(DERIVED_INPUT);
 
-        OUTPUT_HANDLER = CommandWrapperOutput.create(OUTPUT_HANDLER_NAME,
-                COMMAND_OUTPUT_NAME, EXTERNAL_INPUT_NAME, "Resource", OUTPUT_HANDLER_LABEL);
-        OUTPUT_HANDLER_ENTITY = CommandWrapperOutputEntity.fromPojo(OUTPUT_HANDLER);
+        final String outputHandlerName = "output-handler-name";
+        final String outputHandlerLabel = "a_label";
+        final CommandWrapperOutput outputHandler = CommandWrapperOutput.create(outputHandlerName,
+                commandOutputName, externalInputName, "Resource", outputHandlerLabel);
 
-        COMMAND_WRAPPER = CommandWrapper.builder()
-                .name(COMMAND_WRAPPER_NAME)
-                .description(COMMAND_WRAPPER_DESC)
-                .addExternalInput(EXTERNAL_INPUT)
-                .addDerivedInput(DERIVED_INPUT)
-                .addOutputHandler(OUTPUT_HANDLER)
+        final String commandWrapperName = "wrappername";
+        final String commandWrapperDesc = "the wrapper description";
+        final CommandWrapper commandWrapper = CommandWrapper.builder()
+                .name(commandWrapperName)
+                .description(commandWrapperDesc)
+                .addExternalInput(externalInput)
+                .addDerivedInput(derivedInput)
+                .addOutputHandler(outputHandler)
                 .build();
-        COMMAND_WRAPPER_ENTITY = CommandWrapperEntity.fromPojo(COMMAND_WRAPPER);
 
         COMMAND = Command.builder()
                 .name("docker_image_command")
@@ -170,13 +123,13 @@ public class CommandEntityTest {
                 .infoUrl("http://abc.xyz")
                 .addEnvironmentVariable("foo", "bar")
                 .commandLine("cmd #foo# #my_cool_input#")
-                .addMount(MOUNT_IN)
-                .addMount(MOUNT_OUT)
-                .addInput(COOL_INPUT)
-                .addInput(STRING_INPUT)
-                .addOutput(COMMAND_OUTPUT)
+                .addMount(mountIn)
+                .addMount(mountOut)
+                .addInput(coolInput)
+                .addInput(stringInput)
+                .addOutput(commandOutput)
                 .addPort("22", "2222")
-                .addCommandWrapper(COMMAND_WRAPPER)
+                .addCommandWrapper(commandWrapper)
                 .build();
 
         COMMAND_ENTITY = CommandEntity.fromPojo(COMMAND);
