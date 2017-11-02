@@ -172,6 +172,12 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
 
     @Override
     @Nonnull
+    public List<Command> getByImage(final String image) {
+        return toPojo(commandEntityService.getByImage(image));
+    }
+
+    @Override
+    @Nonnull
     @Transactional
     public CommandWrapper addWrapper(final long commandId, final @Nonnull CommandWrapper wrapperToAdd) throws CommandValidationException, NotFoundException {
         return addWrapper(get(commandId), wrapperToAdd);
