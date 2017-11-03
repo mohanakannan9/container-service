@@ -15,11 +15,13 @@ Not yet released.
 * [CS-402][] Commands launched automatically on session archive now create workflows
 * [CS-402][] Remove en-dash from scan label. This allows automated launches to succeed.
 * [CS-415][] Do not read old container events after updating docker server settings
+* [CS-416][] Fix a lot of extraneous error messages when launching containers on scans of the form "Cannot construct a (whatever) URI. Parent URI is null."
 
 [CS-335]: https://issues.xnat.org/browse/CS-335
 [CS-402]: https://issues.xnat.org/browse/CS-402
 [CS-410]: https://issues.xnat.org/browse/CS-410
 [CS-415]: https://issues.xnat.org/browse/CS-415
+[CS-416]: https://issues.xnat.org/browse/CS-416
 
 ## 1.3.1
 

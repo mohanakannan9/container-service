@@ -43,7 +43,7 @@ public class Session extends XnatModelObject {
     public Session(final String sessionId, final UserI userI) {
         this.id = sessionId;
         loadXnatImagesessiondata(userI);
-        UriParserUtils.getArchiveUri(xnatImagesessiondataI);
+        this.uri = UriParserUtils.getArchiveUri(xnatImagesessiondataI);
         populateProperties(null);
     }
 
