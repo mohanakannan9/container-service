@@ -74,6 +74,9 @@ var XNAT = getObject(XNAT || {});
     function getLauncherUI(wrapperId,rootElementName,rootElementValue){
         return rootUrl('/xapi/wrappers/'+wrapperId+'/launch?'+rootElementName+'='+rootElementValue);
     }
+    function getProjectLauncherUI(wrapperId,rootElementName,rootElementValue){
+        return rootUrl('/xapi/projects/'+projectId+'/wrappers/'+wrapperId+'/launch?'+rootElementName+'='+rootElementValue);
+    }
     function containerLaunchUrl(wrapperId){
         return csrfUrl('/xapi/wrappers/'+wrapperId+'/launch');
     }
@@ -1007,9 +1010,10 @@ var XNAT = getObject(XNAT || {});
         }
 
         xmodal.loading.open({ title: 'Configuring Container Launcher' });
+        var launchUrl = (projectId) ? getProjectLauncherUI(wrapperId,rootElement,rootElementValue) : getLauncherUI(wrapperId,rootElement,rootElementValue);
 
         XNAT.xhr.getJSON({
-            url: getLauncherUI(wrapperId,rootElement,rootElementValue),
+            url: launchUrl,
             fail: function(e){
                 xmodal.loading.close();
                 errorHandler({
@@ -1170,8 +1174,10 @@ var XNAT = getObject(XNAT || {});
         // end goal is submitting to /xapi/commands/launch/
         // need to build UI with input values from /xapi/wrappers/{id}/launchui, specifying the root element name and path
 
+        var launchUrl = (projectId) ? getProjectLauncherUI(wrapperId,'scan',rootElementPath) : getLauncherUI(wrapperId, 'scan', rootElementPath);
+
         XNAT.xhr.getJSON({
-            url: getLauncherUI(wrapperId,'scan',rootElementPath),
+            url: launchUrl,
             fail: function(e){
                 errorHandler(e);
             },
@@ -1189,10 +1195,13 @@ var XNAT = getObject(XNAT || {});
 
         if (!targets || targets.length === 0) return false;
         var targetObj = rootElement + '=' + targets.toString();
+        var launchUrl = (projectId) ?
+            '/xapi/projects/'+projectId+'/wrappers/'+wrapperId+'/bulklaunch?'+targetObj :
+            '/xapi/wrappers/'+wrapperId+'/bulklaunch?'+targetObj;
 
         xmodal.loading.open({ title: 'Configuring Container Launcher' });
         XNAT.xhr.getJSON({
-            url: '/xapi/wrappers/'+wrapperId+'/bulklaunch?'+targetObj,
+            url: launchUrl,
             fail: function(e){
                 xmodal.loading.close();
                 errorHandler({
