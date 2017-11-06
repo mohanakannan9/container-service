@@ -141,6 +141,11 @@ var XNAT = getObject(XNAT || {});
         }).element;
     };
 
+    var booleanEval = function(val){
+        var trueValues = ['1','y','yes','true','t'];
+        return (trueValues.indexOf(val.toString().toLowerCase()) >= 0 );
+    };
+
     var configCheckbox = function(input){
         var name = input.name || input.outerLabel,
             value = input.value,
@@ -161,7 +166,7 @@ var XNAT = getObject(XNAT || {});
             dataProps['children'] = input.children.join(',');
         }
 
-        if (checked === 'true') attr['checked'] = 'checked';
+        if (checked === 'checked') attr['checked'] = 'checked';
         if (disabled) attr['disabled'] = 'disabled';
 
         value = (boolean) ? 'true' : value;
@@ -346,7 +351,7 @@ var XNAT = getObject(XNAT || {});
                 input.boolean = true;
                 input.outerLabel = input.label;
                 input.innerLabel = input.innerLabel || 'True';
-                input.checked = (input.value === 'true') ? 'checked' : false;
+                input.checked = (booleanEval(input.value)) ? 'checked' : false;
                 formPanelElements.push(configCheckbox(input));
                 break;
             default:
