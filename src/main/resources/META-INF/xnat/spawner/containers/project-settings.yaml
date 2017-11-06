@@ -31,29 +31,6 @@ projectCommandConfigsPanel:
         #   tag: link|rel="stylesheet"|type="text/css"|href="/scripts/xnat/plugin/containerService/containerConfig.css"
             tag: link|rel="stylesheet"|type="text/css"|href="~/scripts/xnat/plugin/containerService/containerConfig.css"
 
-projectCommandProjectPrefs:
-    kind: panel
-    label: Site-wide Preferences for Project Command Use
-    footer: false
-    contents:
-        projectCommandProjectPrefsDesc:
-            tag: "p"
-            contents:
-                "This setting allows you to choose whether to \"opt-in\" or \"opt-out\" of all commands that are enabled at the site-wide level."
-        spacer:
-            tag: "hr|color=#ccc"
-        projectCommandPrefsFormContainer:
-            tag: "div#project-command-prefs-form-container"
-        projectOptIntoSitewideCommands:
-            kind: panel.input.switchbox
-            id: optIntoSitewideCommands
-            value: true
-            checked: false
-            label: Enable Site-wide Commands By Default?
-            onText: Opt-IN To Enabled Site-wide Commands
-            offText: Opt-OUT Of Enabled Site-wide Commands
-            description: "If set to \"Opt-OUT,\" each project will either have to enable each command individually, or change their project opt-in setting."
-
 projectCommandAutomationPanel:
     kind: panel
     name: projectCommandAutomationPanel
@@ -87,7 +64,6 @@ projectSettings:
             group: containerServiceProjectTabGroup
             active: true
             contents:
-                ${projectCommandProjectPrefs}
                 ${projectCommandConfigsPanel}
         commandAutomationTab:
             kind: tab
