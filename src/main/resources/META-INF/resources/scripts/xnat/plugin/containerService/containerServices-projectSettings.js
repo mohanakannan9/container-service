@@ -688,7 +688,7 @@ var XNAT = getObject(XNAT || {});
                             isDefault: true,
                             close: true,
                             action: function(){
-                                XNAT.plugin.containerService.commandAutomation.init('refresh');
+                                XNAT.plugin.containerService.commandAutomation.refresh();
                             }
                         }
                     ]
@@ -712,7 +712,7 @@ var XNAT = getObject(XNAT || {});
                 url: commandAutomationIdUrl(automationID),
                 success: function(){
                     XNAT.ui.banner.top(2000,'Successfully removed command automation from project.','success');
-                    XNAT.plugin.containerService.commandAutomation.init('refresh');
+                    XNAT.plugin.containerService.commandAutomation.refresh();
                 },
                 fail: function(e){
                     errorHandler(e, 'Could not delete command automation');
@@ -834,7 +834,7 @@ var XNAT = getObject(XNAT || {});
                                         success: function(){
                                             XNAT.ui.banner.top(2000, '<b>Success!</b> Command automation has been added', 'success');
                                             XNAT.ui.dialog.closeAll();
-                                            XNAT.plugin.containerService.commandAutomation.init('refresh');
+                                            XNAT.plugin.containerService.commandAutomation.refresh();
                                         },
                                         fail: function(e){
                                             errorHandler(e,'Could not create command automation');
@@ -936,7 +936,7 @@ var XNAT = getObject(XNAT || {});
         return caTable.table;
     };
 
-    commandAutomation.init = function(refresh){
+    commandAutomation.init = commandAutomation.refresh = function(){
         // initialize the list of command automations
         var manager = $('#command-automation-list');
         var $footer = manager.parents('.panel').find('.panel-footer');
@@ -954,7 +954,7 @@ var XNAT = getObject(XNAT || {});
 
                     manager.append(commandAutomation.table(isAdmin));
 
-                    if (!refresh && isAdmin) {
+                    if (isAdmin) {
                         var newAutomation = spawn('button.new-command-automation.btn.btn-sm.submit', {
                             html: 'Add New Command Automation',
                             onclick: function(){
