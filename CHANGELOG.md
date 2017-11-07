@@ -6,22 +6,35 @@ Not yet released.
 
 ### Features
 
-*
+* [CS-282][] Deprecated the "Project Opt-in" setting that wanted to set a default behavior for projects when a new command was added to a site. The UI existed and appeared to do things but was not tied to a functional API. 
 
 ### Bugfixes
 
 * [CS-335][] Fix permissions errors with command project configuration
+* [CS-348][] Ensure that project defaults would be used for container launches where present, instead of defaulting to site-wide defaults 
+* [CS-389][] Set ":latest" as the default tag value when importing an image 
+* [CS-392][] Improve behavior of dialog when removing project-specific defaults for a command 
+* [CS-399][] Refresh image list when deleting a command config
 * [CS-410][] Fix command update so all fields in all child objects can update too
 * [CS-402][] Commands launched automatically on session archive now create workflows
 * [CS-402][] Remove en-dash from scan label. This allows automated launches to succeed.
+* [CS-414][] Fix bug that caused command automation button to disappear when panel refreshed
 * [CS-415][] Do not read old container events after updating docker server settings
 * [CS-416][] Fix a lot of extraneous error messages when launching containers on scans of the form "Cannot construct a (whatever) URI. Parent URI is null."
+* [CS-418][] Fix a bug with the handling of boolean checkboxes in the command launch UI"
 
+[CS-282]: https://issues.xnat.org/browse/CS-282
 [CS-335]: https://issues.xnat.org/browse/CS-335
+[CS-348]: https://issues.xnat.org/browse/CS-348
+[CS-389]: https://issues.xnat.org/browse/CS-392
+[CS-392]: https://issues.xnat.org/browse/CS-392
+[CS-399]: https://issues.xnat.org/browse/CS-392
 [CS-402]: https://issues.xnat.org/browse/CS-402
 [CS-410]: https://issues.xnat.org/browse/CS-410
+[CS-414]: https://issues.xnat.org/browse/CS-414
 [CS-415]: https://issues.xnat.org/browse/CS-415
 [CS-416]: https://issues.xnat.org/browse/CS-416
+[CS-418]: https://issues.xnat.org/browse/CS-418
 
 ## 1.3.1
 
