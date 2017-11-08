@@ -11,7 +11,7 @@ buildscript {
 }
 
 group 'org.nrg'
-version '1.3.2'
+version '1.4.0-SNAPSHOT'
 
 apply plugin: 'java'
 apply plugin: 'idea'
@@ -56,7 +56,7 @@ dependencyManagement {
     }
 }
 
-def vDockerClient = '8.9.1'
+def vDockerClient = '8+'
 def vJsonPath = '2.2.0'
 def vAutoValue = '1.3'
 def vPowerMock = '1.7.0'
