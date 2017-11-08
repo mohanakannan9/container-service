@@ -73,6 +73,7 @@ import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -1684,8 +1685,9 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 if (StringUtils.isNotBlank(commandWrapperInput.providesFilesForCommandMount())) {
                     log.debug("Input \"{}\" provides files to mount \"{}\".",
                             input.name(), commandWrapperInput.providesFilesForCommandMount());
-                    mountSourceInputs.put(commandWrapperInput.providesFilesForCommandMount(),
-                            Lists.<ResolvedInputTreeNode<? extends Input>>newArrayList(node));
+                    final List<ResolvedInputTreeNode<? extends Input>> nodeList = new ArrayList<>();
+                    nodeList.add(node);
+                    mountSourceInputs.put(commandWrapperInput.providesFilesForCommandMount(), nodeList);
                 } else {
                     log.debug("Input \"{}\" does not provide files to mounts.", input.name());
                 }
