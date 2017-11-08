@@ -4,7 +4,6 @@ import org.apache.commons.lang.StringUtils;
 import org.nrg.containers.model.server.docker.DockerServerBase.DockerServer;
 import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.services.DockerServerService;
-import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.xnat.initialization.tasks.AbstractInitializingTask;
 import org.nrg.xnat.initialization.tasks.InitializingTaskException;
 import org.slf4j.Logger;
@@ -21,6 +20,7 @@ public class CheckDockerServerIsDefined extends AbstractInitializingTask {
     @SuppressWarnings("deprecation") private final DockerServerPrefsBean dockerServerPrefsBean;
 
     @Autowired
+    @SuppressWarnings("deprecation")
     public CheckDockerServerIsDefined(final DockerServerService dockerServerService,
                                       final DockerServerPrefsBean dockerServerPrefsBean) {
         this.dockerServerService = dockerServerService;

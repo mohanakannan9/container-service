@@ -801,6 +801,8 @@ var XNAT = getObject(XNAT || {});
                         var $image = $form.find('input[name=image]');
                         var $tag = $form.find('input[name=tag]');
 
+                        if ($tag.val() === '') $tag.val(':latest');
+
                         // validate form inputs, then pull them into the URI querystring and create an XHR request.
                         $form.find(':input').removeClass('invalid');
 
@@ -1561,6 +1563,7 @@ var XNAT = getObject(XNAT || {});
                                     XNAT.ui.banner.top(1000, '<b>'+wrapper.name+'</b> deleted from site', 'success');
                                     commandConfigManager.refreshTable();
                                     historyTable.refresh();
+                                    imageListManager.refresh();
                                 },
                                 fail: function(e){
                                     errorHandler(e, 'Could Not Delete Command Configuration');
@@ -2037,7 +2040,7 @@ var XNAT = getObject(XNAT || {});
 
                 } else {
                     caTable.tr()
-                        .td({ colSpan: '7', html: 'No command event mappings exist for this project.' });
+                        .td({ colSpan: '7', html: 'No command event mappings exist on this site.' });
                 }
             }
         });
@@ -2047,7 +2050,7 @@ var XNAT = getObject(XNAT || {});
         return caTable.table;
     };
 
-    commandAutomationAdmin.init = function(refresh){
+    commandAutomationAdmin.init = function(){
         // initialize the list of command automations
         var manager = $('#command-automation-admin-list');
         var $footer = manager.parents('.panel').find('.panel-footer');
@@ -2059,22 +2062,21 @@ var XNAT = getObject(XNAT || {});
         if (Object.keys(wrapperList).length > 0) {
             manager.append(commandAutomationAdmin.table());
 
-            if (!refresh) {
-                commandAutomationAdmin.getProjects().done(function(){
-                    var newAutomation = spawn('button.new-command-automation.btn.btn-sm.submit', {
-                        html: 'Add New Command Automation',
-                        onclick: function(){
-                            XNAT.plugin.containerService.commandAutomation.addDialog();
-                        }
-                    });
-
-                    // add the 'add new' button to the panel footer
-                    $footer.append(spawn('div.pull-right', [
-                        newAutomation
-                    ]));
-                    $footer.append(spawn('div.clear.clearFix'));
+            commandAutomationAdmin.getProjects().done(function(){
+                var newAutomation = spawn('button.new-command-automation.btn.btn-sm.submit', {
+                    html: 'Add New Command Automation',
+                    onclick: function(){
+                        XNAT.plugin.containerService.commandAutomation.addDialog();
+                    }
                 });
-            }
+
+                // add the 'add new' button to the panel footer
+                $footer.append(spawn('div.pull-right', [
+                    newAutomation
+                ]));
+                $footer.append(spawn('div.clear.clearFix'));
+            });
+
         } else {
             manager.append(spawn('p',{'style' : { 'margin-top': '1em'} },'There are no commands that can be automated. Please navigate to the Images &amp; Commands tab'))
         }

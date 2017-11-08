@@ -104,7 +104,11 @@ public class ScanArchiveListenerAndCommandLauncher implements Consumer<Event<Sca
                                 }
                             }
                         }
-                        containerService.resolveCommandAndLaunchContainer(commandId, wrapperName, inputValues, subscriptionUser);
+                        if (subscriptionProjectId != null && !subscriptionProjectId.isEmpty()) {
+                            containerService.resolveCommandAndLaunchContainer(subscriptionProjectId, commandId, wrapperName, inputValues, subscriptionUser);
+                        } else {
+                            containerService.resolveCommandAndLaunchContainer(commandId, wrapperName, inputValues, subscriptionUser);
+                        }
                     } catch (UserNotFoundException | UserInitException e) {
                         log.error(String.format("Error launching command %d. Could not find or Init subscription owner: %s", commandId, commandEventMapping.getSubscriptionUserName()), e);
                     } catch (NotFoundException | CommandResolutionException | NoDockerServerException | DockerServerException | ContainerException | UnauthorizedException e) {

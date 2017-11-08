@@ -25,6 +25,8 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -74,6 +76,9 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
 
     @Nonnull
     public CommandEntity update(@Nonnull final Command command) {
+        if (this.getId() == 0L || command.id() != 0L) {
+            this.setId(command.id());
+        }
         this.setName(command.name());
         this.setLabel(command.label());
         this.setDescription(command.description());
@@ -85,19 +90,72 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         this.setCommandLine(command.commandLine());
         this.setEnvironmentVariables(command.environmentVariables());
 
+        final Map<String, Command.CommandMount> mountsByName = new HashMap<>();
         for (final Command.CommandMount commandMount : command.mounts()) {
-            this.addMount(CommandMountEntity.fromPojo(commandMount));
+            mountsByName.put(commandMount.name(), commandMount);
+        }
+        final List<CommandMountEntity> mountEntities = this.mounts == null ? Collections.<CommandMountEntity>emptyList() : this.mounts;
+        for (final CommandMountEntity commandMountEntity : mountEntities) {
+            if (mountsByName.containsKey(commandMountEntity.getName())) {
+                commandMountEntity.update(mountsByName.get(commandMountEntity.getName()));
+                mountsByName.remove(commandMountEntity.getName());
+            }
+        }
+        for (final Command.CommandMount commandMount : command.mounts()) {
+            if (mountsByName.containsKey(commandMount.name())) {
+                this.addMount(CommandMountEntity.fromPojo(commandMount));
+            }
         }
 
+        final Map<String, Command.CommandInput> inputsByName = new HashMap<>();
         for (final Command.CommandInput commandInput : command.inputs()) {
-            this.addInput(CommandInputEntity.fromPojo(commandInput));
+            inputsByName.put(commandInput.name(), commandInput);
+        }
+        final List<CommandInputEntity> inputEntities = this.inputs == null ? Collections.<CommandInputEntity>emptyList() : this.inputs;
+        for (final CommandInputEntity commandInputEntity : inputEntities) {
+            if (inputsByName.containsKey(commandInputEntity.getName())) {
+                commandInputEntity.update(inputsByName.get(commandInputEntity.getName()));
+                inputsByName.remove(commandInputEntity.getName());
+            }
+        }
+        for (final Command.CommandInput commandInput : command.inputs()) {
+            if (inputsByName.containsKey(commandInput.name())) {
+                this.addInput(CommandInputEntity.fromPojo(commandInput));
+            }
         }
 
+        final Map<String, Command.CommandOutput> outputsByName = new HashMap<>();
         for (final Command.CommandOutput commandOutput : command.outputs()) {
-            this.addOutput(CommandOutputEntity.fromPojo(commandOutput));
+            outputsByName.put(commandOutput.name(), commandOutput);
+        }
+        final List<CommandOutputEntity> outputEntities = this.outputs == null ? Collections.<CommandOutputEntity>emptyList() : this.outputs;
+        for (final CommandOutputEntity commandOutputEntity : outputEntities) {
+            if (outputsByName.containsKey(commandOutputEntity.getName())) {
+                commandOutputEntity.update(outputsByName.get(commandOutputEntity.getName()));
+                outputsByName.remove(commandOutputEntity.getName());
+            }
+        }
+        for (final Command.CommandOutput commandOutput : command.outputs()) {
+            if (outputsByName.containsKey(commandOutput.name())) {
+                this.addOutput(CommandOutputEntity.fromPojo(commandOutput));
+            }
+        }
+
+        final Map<String, Command.CommandWrapper> wrappersByName = new HashMap<>();
+        for (final Command.CommandWrapper commandWrapper : command.xnatCommandWrappers()) {
+            wrappersByName.put(commandWrapper.name(), commandWrapper);
+        }
+        final List<CommandWrapperEntity> commandWrapperEntities = this.commandWrapperEntities == null ? Collections.<CommandWrapperEntity>emptyList() : this.commandWrapperEntities;
+        for (final CommandWrapperEntity commandWrapperEntity : commandWrapperEntities) {
+            if (wrappersByName.containsKey(commandWrapperEntity.getName())) {
+                commandWrapperEntity.update(wrappersByName.get(commandWrapperEntity.getName()));
+                wrappersByName.remove(commandWrapperEntity.getName());
+            }
         }
         for (final Command.CommandWrapper commandWrapper : command.xnatCommandWrappers()) {
-            this.addWrapper(CommandWrapperEntity.fromPojo(commandWrapper));
+            if (wrappersByName.containsKey(commandWrapper.name())) {
+                this.addWrapper(CommandWrapperEntity.fromPojo(commandWrapper));
+            }
         }
 
         return this;

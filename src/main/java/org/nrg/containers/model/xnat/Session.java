@@ -43,7 +43,7 @@ public class Session extends XnatModelObject {
     public Session(final String sessionId, final UserI userI) {
         this.id = sessionId;
         loadXnatImagesessiondata(userI);
-        UriParserUtils.getArchiveUri(xnatImagesessiondataI);
+        this.uri = UriParserUtils.getArchiveUri(xnatImagesessiondataI);
         populateProperties(null);
     }
 
@@ -219,7 +219,8 @@ public class Session extends XnatModelObject {
     }
 
     @Override
-    public XFTItem getXftItem() {
+    public XFTItem getXftItem(final UserI userI) {
+        loadXnatImagesessiondata(userI);
         return xnatImagesessiondataI == null ? null : ((XnatImagesessiondata)xnatImagesessiondataI).getItem();
     }
 

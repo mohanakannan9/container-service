@@ -203,27 +203,6 @@ sitewideCommandConfigsPanel:
                     header: false
                     footer: false
 
-sitewideCommandProjectPrefs:
-    kind: panel
-    name: sitewideCommandProjectPrefs
-    label: Site-wide Preferences for Project Command Use
-    footer: false
-    contents:
-        sitewideCommandProjectPrefsDesc:
-            tag: "p"
-            contents:
-                "This setting sets the default option for all projects, choosing whether they will \"opt-in\" or \"opt-out\" of all commands that are enabled at the site-wide level. This setting can be customized in each project's settings."
-        spacer:
-            tag: "hr|color=#ccc"
-        optIntoSitewideCommands:
-            kind: panel.input.switchbox
-            label: Default Project Setting
-            value: true
-            onText: Opt-IN To Enabled Site-wide Commands
-            offText: Opt-OUT Of Enabled Site-wide Commands
-            description: >
-                If set to "Opt-OUT," each project will either have to enable each command individually, or change their project opt-in setting.
-
 siteCommandAutomationPanel:
     kind: panel
     name: siteCommandAutomationPanel
@@ -287,7 +266,6 @@ siteSettings:
             group: containerServiceTabGroup
             active: false
             contents:
-                ${sitewideCommandProjectPrefs}
                 ${sitewideCommandConfigsPanel}
         commandAutomationAdminTab:
             kind: tab

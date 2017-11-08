@@ -62,6 +62,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.File;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Date;
@@ -277,6 +278,20 @@ public class DockerControlApi implements ContainerControlApi {
     @Override
     public Container createContainerOrSwarmService(final ResolvedCommand resolvedCommand, final UserI userI)
             throws NoDockerServerException, DockerServerException, ContainerException {
+
+        // CS-403 We need to make sure everything exists before we mount it, else
+        // bad stuff can happen.
+        // TODO I really should be doing this before the files are transported. But right now transporter is a noop anyway.
+        for (final ResolvedCommandMount mount : resolvedCommand.mounts()) {
+            final File mountFile = Paths.get(mount.xnatHostPath()).toFile();
+            if (!mountFile.exists()) {
+                if (mountFile.isDirectory()) {
+                    mountFile.mkdirs();
+                } else {
+                    mountFile.getParentFile().mkdirs();
+                }
+            }
+        }
 
         final List<String> environmentVariables = Lists.newArrayList();
         for (final Map.Entry<String, String> env : resolvedCommand.environmentVariables().entrySet()) {

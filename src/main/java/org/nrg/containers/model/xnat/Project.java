@@ -168,7 +168,8 @@ public class Project extends XnatModelObject {
     }
 
     @Override
-    public XFTItem getXftItem() {
+    public XFTItem getXftItem(final UserI userI) {
+        loadXnatProjectdata(userI);
         return xnatProjectdata == null ? null : xnatProjectdata.getItem();
     }
 

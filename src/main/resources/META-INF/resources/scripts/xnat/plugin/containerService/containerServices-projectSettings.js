@@ -298,7 +298,7 @@ var XNAT = getObject(XNAT || {});
                 }
 
                 XNAT.dialog.open({
-                    title: 'Set Config Values',
+                    title: 'Set Config Values for '+wrapperName,
                     width: 850,
                     content: spawn('div.panel'),
                     beforeShow: function(obj){
@@ -380,54 +380,12 @@ var XNAT = getObject(XNAT || {});
                             label: 'Reset to Site-wide Default',
                             close: false,
                             action: function(obj){
-                                var $panel = obj.$modal.find('.panel');
 
                                 XNAT.xhr.delete({
                                     url: configUrl(commandId,wrapperName),
                                     success: function(){
                                         XNAT.ui.banner.top(2000, 'Config settings reset to site-wide defaults', 'success');
-                                        // reload settings from site-wide prefs
-                                        XNAT.xhr.getJSON({
-                                            url: rootUrl('/xapi/commands/'+commandId+'/wrappers/'+wrapperName+'/config'),
-                                            success: function(data){
-                                                // gather input items from table
-                                                var inputRows = $panel.find('table.inputs').find('tr.input'),
-                                                    inputData = data.inputs;
-
-                                                $(inputRows).each(function(){
-                                                    var $row = $(this),
-                                                        inputName = $row.data('input');
-
-                                                    $row.find("[data-key='property']").each(function(){
-                                                        var propKey = $(this).data('property'),
-                                                            $inputToSet = $(this).find('input');
-                                                        if ( $inputToSet.is('input[type=checkbox]') ) {
-                                                            $inputToSet.prop('checked', (inputData[inputName][propKey]));
-                                                        } else {
-                                                            $inputToSet.val(inputData[inputName][propKey]);
-                                                        }
-
-                                                    })
-
-
-                                                });
-
-                                                var outputRows = $panel.find('table.outputs').find('tr.output'),
-                                                    outputData = data.outputs;
-                                                $(outputRows).each(function(){
-                                                    var $row = $(this),
-                                                        inputName = $row.data('input'),
-                                                        keys = Object.keys(inputData[inputName]);
-
-                                                    keys.forEach(function(key){
-                                                        $row.find('input[name='+key+']').val(inputData[inputName][key])
-                                                    });
-                                                });
-                                            },
-                                            fail: function(e){
-                                                errorHandler(e,'Could not display site-wide default settings for this command')
-                                            }
-                                        });
+                                        XNAT.dialog.closeAll();
                                     },
                                     fail: function(e){
                                         errorHandler(e,'Could not reset project-based config settings for this command')
@@ -730,7 +688,7 @@ var XNAT = getObject(XNAT || {});
                             isDefault: true,
                             close: true,
                             action: function(){
-                                XNAT.plugin.containerService.commandAutomation.init('refresh');
+                                XNAT.plugin.containerService.commandAutomation.refresh();
                             }
                         }
                     ]
@@ -754,7 +712,7 @@ var XNAT = getObject(XNAT || {});
                 url: commandAutomationIdUrl(automationID),
                 success: function(){
                     XNAT.ui.banner.top(2000,'Successfully removed command automation from project.','success');
-                    XNAT.plugin.containerService.commandAutomation.init('refresh');
+                    XNAT.plugin.containerService.commandAutomation.refresh();
                 },
                 fail: function(e){
                     errorHandler(e, 'Could not delete command automation');
@@ -876,7 +834,7 @@ var XNAT = getObject(XNAT || {});
                                         success: function(){
                                             XNAT.ui.banner.top(2000, '<b>Success!</b> Command automation has been added', 'success');
                                             XNAT.ui.dialog.closeAll();
-                                            XNAT.plugin.containerService.commandAutomation.init('refresh');
+                                            XNAT.plugin.containerService.commandAutomation.refresh();
                                         },
                                         fail: function(e){
                                             errorHandler(e,'Could not create command automation');
@@ -978,7 +936,7 @@ var XNAT = getObject(XNAT || {});
         return caTable.table;
     };
 
-    commandAutomation.init = function(refresh){
+    commandAutomation.init = commandAutomation.refresh = function(){
         // initialize the list of command automations
         var manager = $('#command-automation-list');
         var $footer = manager.parents('.panel').find('.panel-footer');
@@ -992,11 +950,11 @@ var XNAT = getObject(XNAT || {});
             XNAT.xhr.getJSON({
                 url: '/xapi/users/' + PAGE.username + '/roles',
                 success: function (userRoles) {
-                    isAdmin = userRoles.find(function(role){ return role ==='Administrator' });
+                    isAdmin = (userRoles.indexOf('Administrator') >= 0);
 
                     manager.append(commandAutomation.table(isAdmin));
 
-                    if (!refresh && isAdmin !== undefined) {
+                    if (isAdmin) {
                         var newAutomation = spawn('button.new-command-automation.btn.btn-sm.submit', {
                             html: 'Add New Command Automation',
                             onclick: function(){

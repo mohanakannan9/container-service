@@ -74,6 +74,9 @@ var XNAT = getObject(XNAT || {});
     function getLauncherUI(wrapperId,rootElementName,rootElementValue){
         return rootUrl('/xapi/wrappers/'+wrapperId+'/launch?'+rootElementName+'='+rootElementValue);
     }
+    function getProjectLauncherUI(wrapperId,rootElementName,rootElementValue){
+        return rootUrl('/xapi/projects/'+projectId+'/wrappers/'+wrapperId+'/launch?'+rootElementName+'='+rootElementValue);
+    }
     function containerLaunchUrl(wrapperId){
         return csrfUrl('/xapi/wrappers/'+wrapperId+'/launch');
     }
@@ -138,6 +141,11 @@ var XNAT = getObject(XNAT || {});
         }).element;
     };
 
+    var booleanEval = function(val){
+        var trueValues = ['1','y','yes','true','t'];
+        return (trueValues.indexOf(val.toString().toLowerCase()) >= 0 );
+    };
+
     var configCheckbox = function(input){
         var name = input.name || input.outerLabel,
             value = input.value,
@@ -158,7 +166,7 @@ var XNAT = getObject(XNAT || {});
             dataProps['children'] = input.children.join(',');
         }
 
-        if (checked === 'true') attr['checked'] = 'checked';
+        if (checked === 'checked') attr['checked'] = 'checked';
         if (disabled) attr['disabled'] = 'disabled';
 
         value = (boolean) ? 'true' : value;
@@ -343,7 +351,7 @@ var XNAT = getObject(XNAT || {});
                 input.boolean = true;
                 input.outerLabel = input.label;
                 input.innerLabel = input.innerLabel || 'True';
-                input.checked = (input.value === 'true') ? 'checked' : false;
+                input.checked = (booleanEval(input.value)) ? 'checked' : false;
                 formPanelElements.push(configCheckbox(input));
                 break;
             default:
@@ -372,7 +380,7 @@ var XNAT = getObject(XNAT || {});
             ])
         ]);
 
-        if (inputList.find(function(input) { return input === rootElement; }) ) {
+        if (inputList.indexOf(rootElement) >= 0) {
             // if the root element is specified in the list of inputs ...
 
 
@@ -636,7 +644,7 @@ var XNAT = getObject(XNAT || {});
             spawn('div.target-list')
         ]);
 
-        if ( inputList.find(function(input){ return input === rootElement; }) ) { // if the specified root element matches an input parameter, we can proceed
+        if ( inputList.indexOf(rootElement) >=0 ) { // if the specified root element matches an input parameter, we can proceed
 
             XNAT.ui.dialog.open({
                 title: 'Set Container Launch Values',
@@ -1007,9 +1015,10 @@ var XNAT = getObject(XNAT || {});
         }
 
         xmodal.loading.open({ title: 'Configuring Container Launcher' });
+        var launchUrl = (projectId) ? getProjectLauncherUI(wrapperId,rootElement,rootElementValue) : getLauncherUI(wrapperId,rootElement,rootElementValue);
 
         XNAT.xhr.getJSON({
-            url: getLauncherUI(wrapperId,rootElement,rootElementValue),
+            url: launchUrl,
             fail: function(e){
                 xmodal.loading.close();
                 errorHandler({
@@ -1034,7 +1043,7 @@ var XNAT = getObject(XNAT || {});
         var inputs = launcherConfig.inputs;
 
         var inputList = Object.keys(inputs);
-        if ( inputList.find(function(input){ return input === rootElement; }) ) { // if the specified root element matches an input parameter, we can proceed
+        if ( inputList.indexOf(rootElement) >= 0 ) { // if the specified root element matches an input parameter, we can proceed
 
             inputs[rootElement].type = 'scanSelectMany';
 
@@ -1170,8 +1179,10 @@ var XNAT = getObject(XNAT || {});
         // end goal is submitting to /xapi/commands/launch/
         // need to build UI with input values from /xapi/wrappers/{id}/launchui, specifying the root element name and path
 
+        var launchUrl = (projectId) ? getProjectLauncherUI(wrapperId,'scan',rootElementPath) : getLauncherUI(wrapperId, 'scan', rootElementPath);
+
         XNAT.xhr.getJSON({
-            url: getLauncherUI(wrapperId,'scan',rootElementPath),
+            url: launchUrl,
             fail: function(e){
                 errorHandler(e);
             },
@@ -1189,10 +1200,13 @@ var XNAT = getObject(XNAT || {});
 
         if (!targets || targets.length === 0) return false;
         var targetObj = rootElement + '=' + targets.toString();
+        var launchUrl = (projectId) ?
+            '/xapi/projects/'+projectId+'/wrappers/'+wrapperId+'/bulklaunch?'+targetObj :
+            '/xapi/wrappers/'+wrapperId+'/bulklaunch?'+targetObj;
 
         xmodal.loading.open({ title: 'Configuring Container Launcher' });
         XNAT.xhr.getJSON({
-            url: '/xapi/wrappers/'+wrapperId+'/bulklaunch?'+targetObj,
+            url: launchUrl,
             fail: function(e){
                 xmodal.loading.close();
                 errorHandler({

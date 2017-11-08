@@ -565,7 +565,7 @@ public class ContainerServiceImpl implements ContainerService {
 
             try {
                 log.debug("Getting input value as XFTItem.");
-                rootInputValue = xnatObjectToUseAsRoot.getXftItem();
+                rootInputValue = xnatObjectToUseAsRoot.getXftItem(userI);
             } catch (Throwable t) {
                 // If anything goes wrong, bail out. No workflow.
                 log.error("That didn't work.", t);

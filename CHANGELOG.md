@@ -1,19 +1,55 @@
 # Changelog
 
+## 1.3.2
+
+[Released 2017-11-08](https://github.com/NrgXnat/container-service/releases/tag/1.3.2).
+
+### Features
+
+* [CS-282][] Deprecated the "Project Opt-in" setting that wanted to set a default behavior for projects when a new command was added to a site. The UI existed and appeared to do things but was not tied to a functional API.
+
+### Bugfixes
+
+* [CS-335][] Fix permissions errors with command project configuration
+* [CS-348][] Ensure that project defaults would be used for container launches where present, instead of defaulting to site-wide defaults
+* [CS-389][] Set ":latest" as the default tag value when importing an image
+* [CS-392][] Improve behavior of dialog when removing project-specific defaults for a command
+* [CS-399][] Refresh image list when deleting a command config
+* [CS-410][] Fix command update so all fields in all child objects can update too
+* [CS-402][] Commands launched automatically on session archive now create workflows
+* [CS-402][] Remove en-dash from scan label. This allows automated launches to succeed.
+* [CS-414][] Fix bug that caused command automation button to disappear when panel refreshed
+* [CS-415][] Do not read old container events after updating docker server settings
+* [CS-416][] Fix a lot of extraneous error messages when launching containers on scans of the form "Cannot construct a (whatever) URI. Parent URI is null."
+* [CS-418][] Fix a bug with the handling of boolean checkboxes in the command launch UI"
+
+[CS-282]: https://issues.xnat.org/browse/CS-282
+[CS-335]: https://issues.xnat.org/browse/CS-335
+[CS-348]: https://issues.xnat.org/browse/CS-348
+[CS-389]: https://issues.xnat.org/browse/CS-392
+[CS-392]: https://issues.xnat.org/browse/CS-392
+[CS-399]: https://issues.xnat.org/browse/CS-392
+[CS-402]: https://issues.xnat.org/browse/CS-402
+[CS-410]: https://issues.xnat.org/browse/CS-410
+[CS-414]: https://issues.xnat.org/browse/CS-414
+[CS-415]: https://issues.xnat.org/browse/CS-415
+[CS-416]: https://issues.xnat.org/browse/CS-416
+[CS-418]: https://issues.xnat.org/browse/CS-418
+
 ## 1.3.1
 
 [Released 2017-10-11](https://github.com/NrgXnat/container-service/releases/tag/1.3.1).
 
 ### Features
 
-* [CS-376][] Enable bulk launching of containers from data tables on the project report page. Any filters that the user sets on these tables will be reflected in the list of items that get prepared for launch. The user can then confirm, select or deselect any of those items before launching containers. This feature also works for any project-specific stored search. 
+* [CS-376][] Enable bulk launching of containers from data tables on the project report page. Any filters that the user sets on these tables will be reflected in the list of items that get prepared for launch. The user can then confirm, select or deselect any of those items before launching containers. This feature also works for any project-specific stored search.
 
 [CS-376]: https://issues.xnat.org/browse/CS-376
 
-## Bugfixes
+### Bugfixes
 
-* [CS-395][] Catch a rare error that causes the search ID for a project data table to expire within an active session. This interrupts the user's ability to launch a batch of containers from this table. 
-* [CS-396][] Update text of buttons and dialogs related to bulk launches. 
+* [CS-395][] Catch a rare error that causes the search ID for a project data table to expire within an active session. This interrupts the user's ability to launch a batch of containers from this table.
+* [CS-396][] Update text of buttons and dialogs related to bulk launches.
 
 [CS-395]: https://issues.xnat.org/browse/CS-395
 [CS-396]: https://issues.xnat.org/browse/CS-396

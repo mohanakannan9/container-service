@@ -10,6 +10,7 @@ import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.envers.Audited;
 import org.nrg.containers.model.command.auto.Command;
 
+import javax.annotation.Nonnull;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -42,34 +43,40 @@ public class CommandInputEntity implements Serializable {
     private String value;
 
     public static CommandInputEntity fromPojo(final Command.CommandInput commandInput) {
-        final CommandInputEntity commandInputEntity = new CommandInputEntity();
-        commandInputEntity.id = commandInput.id();
-        commandInputEntity.name = commandInput.name();
-        commandInputEntity.description = commandInput.description();
-        commandInputEntity.required = commandInput.required();
-        commandInputEntity.matcher = commandInput.matcher();
-        commandInputEntity.defaultValue = commandInput.defaultValue();
-        commandInputEntity.rawReplacementKey = commandInput.rawReplacementKey();
-        commandInputEntity.commandLineFlag = commandInput.commandLineFlag();
-        commandInputEntity.commandLineSeparator = commandInput.commandLineSeparator();
-        commandInputEntity.trueValue = commandInput.trueValue();
-        commandInputEntity.falseValue = commandInput.falseValue();
+        return new CommandInputEntity().update(commandInput);
+    }
+
+    @Nonnull
+    public CommandInputEntity update(final Command.CommandInput commandInput) {
+        if (this.id == 0L || commandInput.id() != 0L) {
+            this.setId(commandInput.id());
+        }
+        this.setName(commandInput.name());
+        this.setDescription(commandInput.description());
+        this.setRequired(commandInput.required());
+        this.setMatcher(commandInput.matcher());
+        this.setDefaultValue(commandInput.defaultValue());
+        this.setRawReplacementKey(commandInput.rawReplacementKey());
+        this.setCommandLineFlag(commandInput.commandLineFlag());
+        this.setCommandLineSeparator(commandInput.commandLineSeparator());
+        this.setTrueValue(commandInput.trueValue());
+        this.setFalseValue(commandInput.falseValue());
 
         switch (commandInput.type()) {
             case "string":
-                commandInputEntity.type = Type.STRING;
+                this.setType(Type.STRING);
                 break;
             case "boolean":
-                commandInputEntity.type = Type.BOOLEAN;
+                this.setType(Type.BOOLEAN);
                 break;
             case "number":
-                commandInputEntity.type = Type.NUMBER;
+                this.setType(Type.NUMBER);
                 break;
             default:
-                commandInputEntity.type = DEFAULT_TYPE;
+                this.setType(DEFAULT_TYPE);
         }
 
-        return commandInputEntity;
+        return this;
     }
 
     @Id
