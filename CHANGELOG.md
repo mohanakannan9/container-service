@@ -2,18 +2,18 @@
 
 ## 1.3.2
 
-Not yet released.
+[Released 2017-11-08](https://github.com/NrgXnat/container-service/releases/tag/1.3.2).
 
 ### Features
 
-* [CS-282][] Deprecated the "Project Opt-in" setting that wanted to set a default behavior for projects when a new command was added to a site. The UI existed and appeared to do things but was not tied to a functional API. 
+* [CS-282][] Deprecated the "Project Opt-in" setting that wanted to set a default behavior for projects when a new command was added to a site. The UI existed and appeared to do things but was not tied to a functional API.
 
 ### Bugfixes
 
 * [CS-335][] Fix permissions errors with command project configuration
-* [CS-348][] Ensure that project defaults would be used for container launches where present, instead of defaulting to site-wide defaults 
-* [CS-389][] Set ":latest" as the default tag value when importing an image 
-* [CS-392][] Improve behavior of dialog when removing project-specific defaults for a command 
+* [CS-348][] Ensure that project defaults would be used for container launches where present, instead of defaulting to site-wide defaults
+* [CS-389][] Set ":latest" as the default tag value when importing an image
+* [CS-392][] Improve behavior of dialog when removing project-specific defaults for a command
 * [CS-399][] Refresh image list when deleting a command config
 * [CS-410][] Fix command update so all fields in all child objects can update too
 * [CS-402][] Commands launched automatically on session archive now create workflows
