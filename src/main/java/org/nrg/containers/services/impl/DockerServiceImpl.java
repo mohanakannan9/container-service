@@ -376,6 +376,14 @@ public class DockerServiceImpl implements DockerService {
 
     public void removeImage(final String imageId, final Boolean force)
             throws NoDockerServerException, DockerServerException {
+        for (final DockerImageAndCommandSummary dockerImageAndCommandSummary : getImageSummaries()) {
+            if (dockerImageAndCommandSummary.imageId() != null && dockerImageAndCommandSummary.imageId().equals(imageId)) {
+                for (final Command command : dockerImageAndCommandSummary.commands()) {
+                    commandService.delete(command);
+                }
+            }
+        }
+
         controlApi.deleteImageById(imageId, force);
     }
 

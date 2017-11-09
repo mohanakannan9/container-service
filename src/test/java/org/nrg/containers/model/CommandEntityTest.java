@@ -33,6 +33,7 @@ import java.io.File;
 import java.nio.file.Paths;
 import java.util.List;
 
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -322,6 +323,42 @@ public class CommandEntityTest {
         TestTransaction.start();
 
         assertThat(commandEntityService.retrieveWrapper(wrapperId), is(nullValue()));
+    }
+
+    @Test
+    @DirtiesContext
+    public void testGetCommandsByImage() throws Exception {
+        final String fooImage = "xnat/foo:1.2.3";
+        final String barImage = "xnat/bar:4.5.6";
+        final Command fooImageCommand1 = Command.builder()
+                .image(fooImage)
+                .name("soahs")
+                .version("0")
+                .build();
+        final Command fooImageCommand2 = Command.builder()
+                .image(fooImage)
+                .name("asuyfo")
+                .version("0")
+                .build();
+        final Command barImageCommand = Command.builder()
+                .image(barImage)
+                .name("dosfa")
+                .version("0")
+                .build();
+
+        final CommandEntity fooImageCommandEntity1 = commandEntityService.create(CommandEntity.fromPojo(fooImageCommand1));
+        final CommandEntity fooImageCommandEntity2 = commandEntityService.create(CommandEntity.fromPojo(fooImageCommand2));
+        final CommandEntity barImageCommandEntity = commandEntityService.create(CommandEntity.fromPojo(barImageCommand));
+
+        final List<CommandEntity> fooImageCommandsRetrieved = commandEntityService.getByImage(fooImage);
+        assertThat(fooImageCommandsRetrieved, hasSize(2));
+        assertThat(fooImageCommandsRetrieved, contains(fooImageCommandEntity1, fooImageCommandEntity2));
+        assertThat(fooImageCommandsRetrieved, not(contains(barImageCommandEntity)));
+
+        final List<CommandEntity> barImageCommandsRetrieved = commandEntityService.getByImage(barImage);
+        assertThat(barImageCommandsRetrieved, hasSize(1));
+        assertThat(barImageCommandsRetrieved, not(contains(fooImageCommandEntity1, fooImageCommandEntity2)));
+        assertThat(barImageCommandsRetrieved, contains(barImageCommandEntity));
     }
 
     @Test
