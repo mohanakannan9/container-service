@@ -144,13 +144,12 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
         final Command command = retrieve(id);
         if (command != null) {
             for (final CommandWrapper commandWrapper : command.xnatCommandWrappers()) {
-                containerConfigService.deleteAllConfiguration(commandWrapper.id());
+                // containerConfigService.deleteAllConfiguration(commandWrapper.id());
             }
 
             commandEntityService.delete(id);
         }
 
-        containerConfigService.deleteAllConfiguration(id);
     }
 
     @Override
@@ -353,16 +352,6 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     @Override
     public void deleteProjectConfiguration(final String project, final long commandId, final String wrapperName, final String username) throws CommandConfigurationException, NotFoundException {
         containerConfigService.deleteProjectConfiguration(project, getWrapperId(commandId, wrapperName), username);
-    }
-
-    @Override
-    public void deleteAllConfiguration(final long commandId, final String wrapperName) throws NotFoundException {
-        containerConfigService.deleteAllConfiguration(getWrapperId(commandId, wrapperName));
-    }
-
-    @Override
-    public void deleteAllConfiguration(final long wrapperId) {
-        containerConfigService.deleteAllConfiguration(wrapperId);
     }
 
     @Override

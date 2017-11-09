@@ -18,7 +18,6 @@ public interface ContainerConfigService {
 
     void deleteSiteConfiguration(long commandId, final String username) throws CommandConfigurationException;
     void deleteProjectConfiguration(String project, long wrapperId, final String username) throws CommandConfigurationException;
-    void deleteAllConfiguration(long wrapperId);
 
     void enableForSite(long wrapperId, final String username, final String reason) throws CommandConfigurationException;
 
