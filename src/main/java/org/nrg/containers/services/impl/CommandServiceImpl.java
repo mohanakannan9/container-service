@@ -141,15 +141,16 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
 
     @Override
     public void delete(final long id) {
-        final Command command = retrieve(id);
-        if (command != null) {
-            for (final CommandWrapper commandWrapper : command.xnatCommandWrappers()) {
-                // containerConfigService.deleteAllConfiguration(commandWrapper.id());
-            }
+        delete(retrieve(id));
+    }
 
-            commandEntityService.delete(id);
+    @Override
+    public void delete(final Command command) {
+        for (final CommandWrapper commandWrapper : command.xnatCommandWrappers()) {
+            commandEntityService.deleteWrapper(commandWrapper.id());
         }
 
+        commandEntityService.delete(fromPojo(command));
     }
 
     @Override
@@ -173,6 +174,13 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     @Nonnull
     public List<Command> getByImage(final String image) {
         return toPojo(commandEntityService.getByImage(image));
+    }
+
+    @Override
+    public void deleteByImage(final String image) {
+        for (final Command command : getByImage(image)) {
+            delete(command);
+        }
     }
 
     @Override

@@ -24,8 +24,10 @@ public interface CommandService {
     List<Command> findByProperties(Map<String, Object> properties);
     Command update(Command updates) throws NotFoundException, CommandValidationException;
     void delete(long id);
+    void delete(Command command);
     List<Command> save(final List<Command> commands);
     List<Command> getByImage(String image);
+    void deleteByImage(String image);
 
     CommandWrapper addWrapper(long commandId, CommandWrapper commandWrapper) throws CommandValidationException, NotFoundException;
     CommandWrapper addWrapper(Command command, CommandWrapper commandWrapper) throws CommandValidationException, NotFoundException;

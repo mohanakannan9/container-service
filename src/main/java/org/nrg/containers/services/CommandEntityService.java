@@ -24,6 +24,7 @@ public interface CommandEntityService extends BaseHibernateService<CommandEntity
 
     CommandEntity getCommandByWrapperId(long wrapperId) throws NotFoundException;
     List<CommandEntity> getByImage(String image);
+    void deleteByImage(String image);
 
     void throwExceptionIfCommandExists(CommandEntity commandEntity) throws NrgRuntimeException;
 }

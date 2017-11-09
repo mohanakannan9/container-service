@@ -143,4 +143,11 @@ public class HibernateCommandEntityService extends AbstractHibernateEntityServic
         }
         return commandEntities;
     }
+
+    @Override
+    public void deleteByImage(final String image) {
+        for (final CommandEntity commandEntity : getByImage(image)) {
+            delete(commandEntity);
+        }
+    }
 }
