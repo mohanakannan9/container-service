@@ -6,11 +6,13 @@ Not yet released.
 
 ### Features
 
-*
+* [CS-355][] When deleting a docker image through CS API, also delete all commands and wrappers associated with the image.
 
 ### Bugfixes
 
 *
+
+[CS-355]: https://issues.xnat.org/browse/CS-355
 
 ## 1.3.2
 
