@@ -380,6 +380,8 @@ public class CommandEntityTest {
                 .type("docker-setup")
                 .image("a-setup-image")
                 .build();
+        final List<String> errors = setupCommand.validate();
+        assertThat(errors, is(Matchers.<String>emptyIterable()));
         final CommandEntity createdSetupCommandEntity = commandEntityService.create(CommandEntity.fromPojo(setupCommand));
     }
 }

@@ -29,6 +29,7 @@ import org.nrg.containers.model.configuration.CommandConfiguration.CommandOutput
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -230,12 +231,8 @@ public abstract class Command {
 
     @Nonnull
     public List<String> validate() {
-        final List<String> errors = Lists.newArrayList();
+        final List<String> errors = new ArrayList<>();
         final List<String> commandTypeNames = CommandType.names();
-
-        if (!commandTypeNames.contains(type())) {
-            errors.add("Cannot instantiate command of type \"" + type() + "\". Known types: " + StringUtils.join(commandTypeNames, ", "));
-        }
 
         if (StringUtils.isBlank(name())) {
             errors.add("Command name cannot be blank.");
@@ -245,6 +242,22 @@ public abstract class Command {
         if (StringUtils.isBlank(image())) {
             errors.add(commandName + "image name cannot be blank.");
         }
+
+        if (type().equals(CommandType.DOCKER.getName())) {
+            errors.addAll(validateDockerCommand());
+        } else if (type().equals(CommandType.DOCKER_SETUP.getName())) {
+            errors.addAll(validateDockerSetupCommand());
+        } else {
+            errors.add(commandName + "Cannot instantiate command of type \"" + type() + "\". Known types: " + StringUtils.join(commandTypeNames, ", "));
+        }
+
+        return errors;
+    }
+
+    @Nonnull
+    private List<String> validateDockerCommand() {
+        final List<String> errors = new ArrayList<>();
+        final String commandName = "Command \"" + name() + "\" - ";
 
         final Function<String, String> addCommandNameToError = new Function<String, String>() {
             @Override
@@ -403,11 +416,38 @@ public abstract class Command {
                 }
             }
 
-
             if (!wrapperErrors.isEmpty()) {
                 errors.addAll(wrapperErrors);
             }
         }
+
+        return errors;
+    }
+
+    @Nonnull
+    private List<String> validateDockerSetupCommand() {
+        final List<String> errors = new ArrayList<>();
+        final String commandName = "Command \"" + name() + "\" - ";
+
+        if (mounts().size() > 0) {
+            errors.add(commandName + "Setup commands cannot declare any mounts.");
+        }
+        if (inputs().size() > 0) {
+            errors.add(commandName + "Setup commands cannot declare any inputs.");
+        }
+        if (outputs().size() > 0) {
+            errors.add(commandName + "Setup commands cannot declare any outputs.");
+        }
+        if (xnatCommandWrappers().size() > 0) {
+            errors.add(commandName + "Setup commands cannot declare any wrappers.");
+        }
+        if (environmentVariables().size() > 0) {
+            errors.add(commandName + "Setup commands cannot declare any environment variables.");
+        }
+        if (ports().size() > 0) {
+            errors.add(commandName + "Setup commands cannot declare any ports.");
+        }
+
 
         return errors;
     }
