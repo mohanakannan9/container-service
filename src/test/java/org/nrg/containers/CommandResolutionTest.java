@@ -25,6 +25,9 @@ import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.model.command.auto.Command.CommandWrapperExternalInput;
 import org.nrg.containers.model.command.auto.Command.ConfiguredCommand;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
+import org.nrg.containers.model.command.auto.ResolvedCommandMount;
+import org.nrg.containers.model.command.auto.ResolvedInputTreeNode;
+import org.nrg.containers.model.command.auto.ResolvedInputValue;
 import org.nrg.containers.model.command.entity.CommandType;
 import org.nrg.containers.model.configuration.CommandConfiguration;
 import org.nrg.containers.model.configuration.CommandConfiguration.CommandInputConfiguration;
@@ -49,6 +52,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -552,5 +556,66 @@ public class CommandResolutionTest {
                         inputName, illegalString)));
             }
         }
+    }
+
+    @Test
+    public void testSerializeResolvedCommand() throws Exception {
+        final Command.CommandWrapperExternalInput externalInput = CommandWrapperExternalInput.builder()
+                .name("externalInput")
+                .id(0L)
+                .type("string")
+                .build();
+        final ResolvedInputValue externalInputValue = ResolvedInputValue.builder()
+                .type("string")
+                .value("externalInputValue")
+                .build();
+        final Command.CommandWrapperDerivedInput derivedInput = Command.CommandWrapperDerivedInput.builder()
+                .name("derivedInput")
+                .id(0L)
+                .type("string")
+                .build();
+        final ResolvedInputValue derivedInputValue = ResolvedInputValue.builder()
+                .type("string")
+                .value("derivedInputValue")
+                .build();
+        final ResolvedInputTreeNode<CommandWrapperExternalInput> inputTree = ResolvedInputTreeNode.create(
+                externalInput,
+                Collections.singletonList(
+                        ResolvedInputTreeNode.ResolvedInputTreeValueAndChildren.create(
+                                externalInputValue,
+                                Collections.<ResolvedInputTreeNode<? extends Command.Input>>singletonList(
+                                        ResolvedInputTreeNode.create(
+                                                derivedInput,
+                                                Collections.singletonList(ResolvedInputTreeNode.ResolvedInputTreeValueAndChildren.create(derivedInputValue))
+                                        )
+                                )
+                        )
+                )
+        );
+
+        final ResolvedCommand resolvedCommand = ResolvedCommand.builder()
+                .commandId(0L)
+                .commandName("command")
+                .commandDescription("command description")
+                .wrapperId(0L)
+                .wrapperName("wrapper")
+                .wrapperDescription("wrapper description")
+                .addEnvironmentVariable("name", "value")
+                .addPort("1", "2")
+                .addRawInputValue("input name", "input value")
+                .addResolvedInputTree(inputTree)
+                .image("image")
+                .commandLine("script.sh")
+                .addMount(ResolvedCommandMount.builder()
+                        .name("mount")
+                        .containerPath("/path")
+                        .writable(true)
+                        .xnatHostPath("/xnat/path")
+                        .containerHostPath("/container/path")
+                        .addInputFiles(ResolvedCommandMount.ResolvedCommandMountFiles.create("derivedInput", null, null, null))
+                        .build())
+                .build();
+
+        final String resolvedCommandJson = mapper.writeValueAsString(resolvedCommand);
     }
 }
