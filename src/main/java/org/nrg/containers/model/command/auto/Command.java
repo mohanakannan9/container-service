@@ -772,21 +772,6 @@ public abstract class Command {
                     .build();
         }
 
-        public static CommandWrapper passthrough(final Command command) {
-            if (command == null) {
-                return null;
-            }
-            return builder()
-                    .externalInputs(Lists.transform(command.inputs(), new Function<CommandInput, CommandWrapperExternalInput>() {
-                        @Nullable
-                        @Override
-                        public CommandWrapperExternalInput apply(@Nullable final CommandInput commandInput) {
-                            return CommandWrapperExternalInput.passthrough(commandInput);
-                        }
-                    }))
-                    .build();
-        }
-
         public static Builder builder() {
             return new AutoValue_Command_CommandWrapper.Builder()
                     .id(0L)
@@ -989,22 +974,6 @@ public abstract class Command {
                     .rawReplacementKey(wrapperInput.getRawReplacementKey())
                     .required(wrapperInput.isRequired() == null || wrapperInput.isRequired())
                     .loadChildren(wrapperInput.getLoadChildren())
-                    .build();
-        }
-
-        static CommandWrapperExternalInput passthrough(final CommandInput commandInput) {
-            if (commandInput == null) {
-                return null;
-            }
-            return builder()
-                    .name(commandInput.name())
-                    .type(commandInput.type())
-                    .matcher(commandInput.matcher())
-                    .providesValueForCommandInput(commandInput.name())
-                    .defaultValue(commandInput.defaultValue())
-                    .userSettable(true)
-                    .required(commandInput.required())
-                    .loadChildren(false)
                     .build();
         }
 
