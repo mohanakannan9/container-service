@@ -12,6 +12,7 @@ import org.nrg.containers.model.command.entity.CommandWrapperEntity;
 import org.nrg.containers.model.command.entity.CommandWrapperExternalInputEntity;
 import org.nrg.containers.model.command.entity.CommandWrapperOutputEntity;
 import org.nrg.containers.model.command.entity.DockerCommandEntity;
+import org.nrg.containers.model.command.entity.DockerSetupCommandEntity;
 import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.transporter.TransportService;
 import org.nrg.transporter.TransportServiceImpl;
@@ -76,6 +77,7 @@ public class CommandTestConfig {
         bean.setAnnotatedClasses(
                 CommandEntity.class,
                 DockerCommandEntity.class,
+                DockerSetupCommandEntity.class,
                 CommandInputEntity.class,
                 CommandOutputEntity.class,
                 CommandMountEntity.class,
