@@ -911,6 +911,7 @@ public abstract class Command {
     public static abstract class CommandWrapperInput extends Input {
         @Nullable @JsonProperty("provides-value-for-command-input") public abstract String providesValueForCommandInput();
         @Nullable @JsonProperty("provides-files-for-command-mount") public abstract String providesFilesForCommandMount();
+        @Nullable @JsonProperty("via-setup-command") public abstract String viaSetupCommand();
         @Nullable @JsonProperty("user-settable") public abstract Boolean userSettable();
         @JsonProperty("load-children") public abstract boolean loadChildren();
 
@@ -924,6 +925,11 @@ public abstract class Command {
             final List<String> types = CommandWrapperInputType.names();
             if (!types.contains(type())) {
                 errors.add("Command wrapper input \"" + name() + "\" - Unknown type \"" + type() + "\". Known types: " + StringUtils.join(types, ", "));
+            }
+
+            if (StringUtils.isNotBlank(viaSetupCommand()) && StringUtils.isBlank(providesFilesForCommandMount())) {
+                errors.add("Command wrapper input \"" + name() + "\" - \"via-setup-command\": \"" + viaSetupCommand() + "\" - " +
+                        "You cannot set \"via-setup-command\" on an input that does not provide files for a command mount.");
             }
 
             return errors;
@@ -944,6 +950,7 @@ public abstract class Command {
                                                   @JsonProperty("matcher") final String matcher,
                                                   @JsonProperty("provides-value-for-command-input") final String providesValueForCommandInput,
                                                   @JsonProperty("provides-files-for-command-mount") final String providesFilesForCommandMount,
+                                                  @JsonProperty("via-setup-command") final String viaSetupCommand,
                                                   @JsonProperty("default-value") final String defaultValue,
                                                   @JsonProperty("user-settable") final Boolean userSettable,
                                                   @JsonProperty("replacement-key") final String rawReplacementKey,
@@ -956,6 +963,7 @@ public abstract class Command {
                     .matcher(matcher)
                     .providesValueForCommandInput(providesValueForCommandInput)
                     .providesFilesForCommandMount(providesFilesForCommandMount)
+                    .viaSetupCommand(viaSetupCommand)
                     .defaultValue(defaultValue)
                     .userSettable(userSettable)
                     .rawReplacementKey(rawReplacementKey)
@@ -977,6 +985,7 @@ public abstract class Command {
                     .matcher(wrapperInput.getMatcher())
                     .providesValueForCommandInput(wrapperInput.getProvidesValueForCommandInput())
                     .providesFilesForCommandMount(wrapperInput.getProvidesFilesForCommandMount())
+                    .viaSetupCommand(wrapperInput.getViaSetupCommand())
                     .defaultValue(wrapperInput.getDefaultValue())
                     .userSettable(wrapperInput.getUserSettable())
                     .rawReplacementKey(wrapperInput.getRawReplacementKey())
@@ -1001,6 +1010,7 @@ public abstract class Command {
                     .type(this.type())
                     .providesValueForCommandInput(this.providesValueForCommandInput())
                     .providesFilesForCommandMount(this.providesFilesForCommandMount())
+                    .viaSetupCommand(this.viaSetupCommand())
                     .required(this.required())
                     .loadChildren(this.loadChildren())
                     .defaultValue(commandInputConfiguration.defaultValue())
@@ -1018,6 +1028,7 @@ public abstract class Command {
             public abstract Builder matcher(final String matcher);
             public abstract Builder providesValueForCommandInput(final String providesValueForCommandInput);
             public abstract Builder providesFilesForCommandMount(final String providesFilesForCommandMount);
+            public abstract Builder viaSetupCommand(final String viaSetupCommand);
             public abstract Builder defaultValue(final String defaultValue);
             public abstract Builder userSettable(final Boolean userSettable);
             public abstract Builder rawReplacementKey(final String rawReplacementKey);
@@ -1033,6 +1044,7 @@ public abstract class Command {
     public static abstract class CommandWrapperDerivedInput extends CommandWrapperInput {
         @Nullable @JsonProperty("derived-from-wrapper-input") public abstract String derivedFromWrapperInput();
         @Nullable @JsonProperty("derived-from-xnat-object-property") public abstract String derivedFromXnatObjectProperty();
+        @Nullable @JsonProperty("via-setup-command") public abstract String viaSetupCommand();
 
         @JsonCreator
         static CommandWrapperDerivedInput create(@JsonProperty("name") final String name,
@@ -1043,6 +1055,7 @@ public abstract class Command {
                                                  @JsonProperty("matcher") final String matcher,
                                                  @JsonProperty("provides-value-for-command-input") final String providesValueForCommandInput,
                                                  @JsonProperty("provides-files-for-command-mount") final String providesFilesForCommandMount,
+                                                 @JsonProperty("via-setup-command") final String viaSetupCommand,
                                                  @JsonProperty("default-value") final String defaultValue,
                                                  @JsonProperty("user-settable") final Boolean userSettable,
                                                  @JsonProperty("replacement-key") final String rawReplacementKey,
@@ -1057,6 +1070,7 @@ public abstract class Command {
                     .matcher(matcher)
                     .providesValueForCommandInput(providesValueForCommandInput)
                     .providesFilesForCommandMount(providesFilesForCommandMount)
+                    .viaSetupCommand(viaSetupCommand)
                     .defaultValue(defaultValue)
                     .userSettable(userSettable)
                     .rawReplacementKey(rawReplacementKey)
@@ -1080,6 +1094,7 @@ public abstract class Command {
                     .matcher(wrapperInput.getMatcher())
                     .providesValueForCommandInput(wrapperInput.getProvidesValueForCommandInput())
                     .providesFilesForCommandMount(wrapperInput.getProvidesFilesForCommandMount())
+                    .viaSetupCommand(wrapperInput.getViaSetupCommand())
                     .defaultValue(wrapperInput.getDefaultValue())
                     .userSettable(wrapperInput.getUserSettable())
                     .rawReplacementKey(wrapperInput.getRawReplacementKey())
@@ -1106,6 +1121,7 @@ public abstract class Command {
                     .derivedFromXnatObjectProperty(this.derivedFromXnatObjectProperty())
                     .providesValueForCommandInput(this.providesValueForCommandInput())
                     .providesFilesForCommandMount(this.providesFilesForCommandMount())
+                    .viaSetupCommand(this.viaSetupCommand())
                     .rawReplacementKey(this.rawReplacementKey())
                     .required(this.required())
                     .loadChildren(this.loadChildren())
@@ -1136,6 +1152,7 @@ public abstract class Command {
             public abstract Builder matcher(final String matcher);
             public abstract Builder providesValueForCommandInput(final String providesValueForCommandInput);
             public abstract Builder providesFilesForCommandMount(final String providesFilesForCommandMount);
+            public abstract Builder viaSetupCommand(final String viaSetupCommand);
             public abstract Builder defaultValue(final String defaultValue);
             public abstract Builder userSettable(final Boolean userSettable);
             public abstract Builder rawReplacementKey(final String rawReplacementKey);
