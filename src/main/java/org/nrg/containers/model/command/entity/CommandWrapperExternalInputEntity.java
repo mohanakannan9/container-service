@@ -1,8 +1,6 @@
 package org.nrg.containers.model.command.entity;
 
 import com.google.common.base.MoreObjects;
-import io.swagger.annotations.ApiModelProperty;
-import org.apache.commons.lang3.StringUtils;
 import org.hibernate.envers.Audited;
 import org.nrg.containers.model.command.auto.Command;
 
@@ -12,7 +10,6 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
-import javax.persistence.Transient;
 import java.util.Objects;
 
 @Entity
@@ -183,18 +180,12 @@ public class CommandWrapperExternalInputEntity {
         this.userSettable = userSettable;
     }
 
-    @ApiModelProperty(value = "String in the command-line or elsewhere that will be replaced by this input's value. Default: #input_name#", example = "[MY_INPUT]")
     public String getRawReplacementKey() {
         return rawReplacementKey;
     }
 
     public void setRawReplacementKey(final String rawReplacementKey) {
         this.rawReplacementKey = rawReplacementKey;
-    }
-
-    @Transient
-    public String getReplacementKey() {
-        return StringUtils.isNotBlank(rawReplacementKey) ? rawReplacementKey : "#" + getName() + "#";
     }
 
     public Boolean getRequired() {

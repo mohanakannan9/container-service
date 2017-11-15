@@ -1,15 +1,9 @@
 package org.nrg.containers.model.command.entity;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
-import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.MoreObjects.ToStringHelper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.envers.Audited;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
@@ -32,10 +26,6 @@ import java.util.Map;
 import java.util.Objects;
 
 @Entity
-@JsonTypeInfo(use = Id.NAME, include = As.PROPERTY, property = "type")
-@JsonSubTypes({
-        @JsonSubTypes.Type(value = DockerCommandEntity.class, name = "docker")
-})
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "type")
 @Table(
@@ -48,16 +38,16 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
     private String label;
     private String description;
     private String version;
-    @JsonProperty("schema-version") private String schemaVersion;
-    @JsonProperty("info-url") private String infoUrl;
+    private String schemaVersion;
+    private String infoUrl;
     private String image;
-    @JsonProperty("working-directory") private String workingDirectory;
-    @JsonProperty("command-line") private String commandLine;
-    @JsonProperty("mounts") private List<CommandMountEntity> mounts;
-    @JsonProperty("environment-variables") private Map<String, String> environmentVariables;
+    private String workingDirectory;
+    private String commandLine;
+    private List<CommandMountEntity> mounts;
+    private Map<String, String> environmentVariables;
     private List<CommandInputEntity> inputs;
     private List<CommandOutputEntity> outputs;
-    @JsonProperty("xnat") private List<CommandWrapperEntity> commandWrapperEntities;
+    private List<CommandWrapperEntity> commandWrapperEntities;
 
     @Nonnull
     public static CommandEntity fromPojo(@Nonnull final Command command) {
@@ -211,7 +201,6 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         this.schemaVersion = schemaVersion;
     }
 
-    @ApiModelProperty("A URL where users can get more information about the Command")
     public String getInfoUrl() {
         return infoUrl;
     }
@@ -236,7 +225,6 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         this.workingDirectory = workingDirectory;
     }
 
-    @ApiModelProperty("The command that will be executed in the container when the Command is launched.")
     public String getCommandLine() {
         return commandLine;
     }
@@ -274,8 +262,6 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
     }
 
     @ElementCollection
-    @ApiModelProperty("A Map of environment variables. Each kay is the environment variable's name, and each value is the environment variable's value." +
-            "Both the names and values can use template strings, e.g. #variable-name#, which will be resolved into a value when the Command is launched.")
     public Map<String, String> getEnvironmentVariables() {
         return environmentVariables;
     }
@@ -287,9 +273,6 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
     }
 
     @OneToMany(mappedBy = "commandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ApiModelProperty("A list of inputs. " +
-            "When the Command is launched, these inputs receive values; " +
-            "those values will be used to fill in any template strings in the Command's run-template, mounts, or environment variables.")
     public List<CommandInputEntity> getInputs() {
         return inputs;
     }
@@ -318,7 +301,6 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
     }
 
     @OneToMany(mappedBy = "commandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ApiModelProperty("A list of outputs.")
     public List<CommandOutputEntity> getOutputs() {
         return outputs;
     }

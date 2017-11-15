@@ -1,9 +1,5 @@
 package org.nrg.containers.model.command.entity;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
@@ -27,10 +23,10 @@ public class CommandWrapperOutputEntity {
     public static final Type DEFAULT_TYPE = Type.RESOURCE;
 
     private long id;
-    @JsonIgnore private CommandWrapperEntity commandWrapperEntity;
+    private CommandWrapperEntity commandWrapperEntity;
     private String name;
-    @JsonProperty("accepts-command-output") private String commandOutputName;
-    @JsonProperty("as-a-child-of-wrapper-input") private String wrapperInputName;
+    private String commandOutputName;
+    private String wrapperInputName;
     private Type type;
     private String label;
 
@@ -153,12 +149,10 @@ public class CommandWrapperOutputEntity {
 
         private final String name;
 
-        @JsonCreator
         Type(final String name) {
             this.name = name;
         }
 
-        @JsonValue
         public String getName() {
             return name;
         }

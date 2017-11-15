@@ -1,6 +1,5 @@
 package org.nrg.containers.model.command.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
 import org.hibernate.envers.Audited;
 import org.nrg.containers.model.command.auto.Command;
@@ -20,7 +19,7 @@ import java.util.Objects;
 public class CommandOutputEntity implements Serializable {
 
     private long id;
-    @JsonIgnore private CommandEntity commandEntity;
+    private CommandEntity commandEntity;
     private String name;
     private String description;
     private Boolean required;

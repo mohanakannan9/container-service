@@ -367,7 +367,7 @@ public class CommandEntityTest {
         // Spring didn't tell us why. See CS-70.
         final String dir = Paths.get(ClassLoader.getSystemResource("ecatHeaderDump").toURI()).toString().replace("%20", " ");
         final String commandJsonFile = dir + "/command.json";
-        final CommandEntity ecatHeaderDump = mapper.readValue(new File(commandJsonFile), CommandEntity.class);
-        commandEntityService.create(ecatHeaderDump);
+        final Command ecatHeaderDump = mapper.readValue(new File(commandJsonFile), Command.class);
+        commandEntityService.create(CommandEntity.fromPojo(ecatHeaderDump));
     }
 }

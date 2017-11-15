@@ -1,7 +1,5 @@
 package org.nrg.containers.model.command.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -32,11 +30,11 @@ public class CommandWrapperEntity implements Serializable {
     private long id;
     private String name;
     private String description;
-    @JsonIgnore private CommandEntity commandEntity;
+    private CommandEntity commandEntity;
     private Set<String> contexts;
-    @JsonProperty("external-inputs") private List<CommandWrapperExternalInputEntity> externalInputs;
-    @JsonProperty("derived-inputs") private List<CommandWrapperDerivedInputEntity> derivedInputs;
-    @JsonProperty("output-handlers") private List<CommandWrapperOutputEntity> outputHandlers;
+    private List<CommandWrapperExternalInputEntity> externalInputs;
+    private List<CommandWrapperDerivedInputEntity> derivedInputs;
+    private List<CommandWrapperOutputEntity> outputHandlers;
 
     @Nonnull
     public static CommandWrapperEntity fromPojo(final @Nonnull Command.CommandWrapper commandWrapper) {
