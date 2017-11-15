@@ -6,8 +6,8 @@ import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import org.hibernate.envers.Audited;
-import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMount;
-import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMountFiles;
+import org.nrg.containers.model.command.auto.ResolvedCommandMount;
+import org.nrg.containers.model.command.auto.ResolvedCommandMount.ResolvedCommandMountFiles;
 import org.nrg.containers.model.container.auto.Container;
 
 import javax.persistence.CascadeType;

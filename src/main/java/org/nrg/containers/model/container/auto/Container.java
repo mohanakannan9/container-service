@@ -13,6 +13,7 @@ import com.google.common.collect.Maps;
 import org.nrg.containers.events.model.ContainerEvent;
 import org.nrg.containers.events.model.DockerContainerEvent;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
+import org.nrg.containers.model.command.auto.ResolvedCommandMount;
 import org.nrg.containers.model.container.ContainerInputType;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.container.entity.ContainerEntityHistory;
@@ -20,7 +21,6 @@ import org.nrg.containers.model.container.entity.ContainerEntityInput;
 import org.nrg.containers.model.container.entity.ContainerEntityMount;
 import org.nrg.containers.model.container.entity.ContainerEntityOutput;
 import org.nrg.containers.model.container.entity.ContainerMountFilesEntity;
-import org.nrg.xft.security.UserI;
 
 import javax.annotation.Nullable;
 import java.util.Collections;
@@ -320,9 +320,9 @@ public abstract class Container {
             mountsBuilder().add(mounts);
             return this;
         }
-        public Builder mountsFromResolvedCommand(final List<ResolvedCommand.ResolvedCommandMount> resolvedCommandMounts) {
+        public Builder mountsFromResolvedCommand(final List<ResolvedCommandMount> resolvedCommandMounts) {
             if (resolvedCommandMounts != null) {
-                for (final ResolvedCommand.ResolvedCommandMount resolvedCommandMount : resolvedCommandMounts) {
+                for (final ResolvedCommandMount resolvedCommandMount : resolvedCommandMounts) {
                     addMount(ContainerMount.create(resolvedCommandMount));
                 }
             }
@@ -430,10 +430,10 @@ public abstract class Container {
                     containerEntityMount.getContainerPath(), containerMountFiles);
         }
 
-        public static ContainerMount create(final ResolvedCommand.ResolvedCommandMount resolvedCommandMount) {
-            final List<ContainerMountFiles> containerMountFiles = Lists.transform(resolvedCommandMount.inputFiles(), new Function<ResolvedCommand.ResolvedCommandMountFiles, ContainerMountFiles>() {
+        public static ContainerMount create(final ResolvedCommandMount resolvedCommandMount) {
+            final List<ContainerMountFiles> containerMountFiles = Lists.transform(resolvedCommandMount.inputFiles(), new Function<ResolvedCommandMount.ResolvedCommandMountFiles, ContainerMountFiles>() {
                 @Override
-                public ContainerMountFiles apply(final ResolvedCommand.ResolvedCommandMountFiles input) {
+                public ContainerMountFiles apply(final ResolvedCommandMount.ResolvedCommandMountFiles input) {
                     return ContainerMountFiles.create(input);
                 }
             });
@@ -494,7 +494,7 @@ public abstract class Container {
                     containerMountFilesEntity.getRootDirectory(), containerMountFilesEntity.getPath());
         }
 
-        public static ContainerMountFiles create(final ResolvedCommand.ResolvedCommandMountFiles resolvedCommandMountFiles) {
+        public static ContainerMountFiles create(final ResolvedCommandMount.ResolvedCommandMountFiles resolvedCommandMountFiles) {
             return create(0L,
                     resolvedCommandMountFiles.fromWrapperInput(),
                     resolvedCommandMountFiles.fromUri(),

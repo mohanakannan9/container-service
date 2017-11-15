@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import org.hibernate.envers.Audited;
-import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMountFiles;
+import org.nrg.containers.model.command.auto.ResolvedCommandMount.ResolvedCommandMountFiles;
 import org.nrg.containers.model.container.auto.Container;
 
 import javax.persistence.Entity;

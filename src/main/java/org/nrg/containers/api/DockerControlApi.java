@@ -43,7 +43,7 @@ import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoDockerServerException;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
-import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMount;
+import org.nrg.containers.model.command.auto.ResolvedCommandMount;
 import org.nrg.containers.model.container.auto.Container;
 import org.nrg.containers.model.container.auto.ContainerMessage;
 import org.nrg.containers.model.container.auto.ServiceTask;

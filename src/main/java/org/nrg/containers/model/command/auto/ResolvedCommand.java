@@ -220,48 +220,11 @@ public abstract class ResolvedCommand {
     }
 
     @AutoValue
-    public abstract static class ResolvedCommandMount {
-        public abstract String name();
-        public abstract Boolean writable();
-        public abstract String containerPath();
-        public abstract ImmutableList<ResolvedCommandMountFiles> inputFiles();
-        public abstract String xnatHostPath();
-        public abstract String containerHostPath();
-
-        public static Builder builder() {
-            return new AutoValue_ResolvedCommand_ResolvedCommandMount.Builder();
-        }
-
-        public abstract Builder toBuilder();
-
-        public String toBindMountString() {
-            return containerHostPath() + ":" + containerPath() + (writable() ? "" : ":ro");
-        }
-
-        @AutoValue.Builder
-        public abstract static class Builder {
-            public abstract Builder name(String name);
-            public abstract Builder writable(Boolean writable);
-            public abstract Builder xnatHostPath(String xnatHostPath);
-            public abstract Builder containerHostPath(String containerHostPath);
-            public abstract Builder containerPath(String containerPath);
-            public abstract Builder inputFiles(List<ResolvedCommandMountFiles> inputFiles);
-            public abstract ImmutableList.Builder<ResolvedCommandMountFiles> inputFilesBuilder();
-            public Builder addInputFiles(final ResolvedCommandMountFiles inputFiles) {
-                inputFilesBuilder().add(inputFiles);
-                return this;
-            }
-
-            public abstract ResolvedCommandMount build();
-        }
-    }
-
-    @AutoValue
     public abstract static class PartiallyResolvedCommandMount {
         public abstract String name();
         public abstract Boolean writable();
         public abstract String containerPath();
-        public abstract ImmutableList<ResolvedCommandMountFiles> inputFiles();
+        public abstract ImmutableList<ResolvedCommandMount.ResolvedCommandMountFiles> inputFiles();
 
         public static Builder builder() {
             return new AutoValue_ResolvedCommand_PartiallyResolvedCommandMount.Builder();
@@ -280,29 +243,14 @@ public abstract class ResolvedCommand {
             public abstract Builder name(String name);
             public abstract Builder writable(Boolean writable);
             public abstract Builder containerPath(String containerPath);
-            public abstract Builder inputFiles(List<ResolvedCommandMountFiles> inputFiles);
-            public abstract ImmutableList.Builder<ResolvedCommandMountFiles> inputFilesBuilder();
-            public Builder addInputFiles(final ResolvedCommandMountFiles inputFiles) {
+            public abstract Builder inputFiles(List<ResolvedCommandMount.ResolvedCommandMountFiles> inputFiles);
+            public abstract ImmutableList.Builder<ResolvedCommandMount.ResolvedCommandMountFiles> inputFilesBuilder();
+            public Builder addInputFiles(final ResolvedCommandMount.ResolvedCommandMountFiles inputFiles) {
                 inputFilesBuilder().add(inputFiles);
                 return this;
             }
 
             public abstract PartiallyResolvedCommandMount build();
-        }
-    }
-
-    @AutoValue
-    public abstract static class ResolvedCommandMountFiles {
-        public abstract String fromWrapperInput();
-        @Nullable public abstract String fromUri();
-        @Nullable public abstract String rootDirectory();
-        @Nullable public abstract String path();
-
-        public static ResolvedCommandMountFiles create(final String fromWrapperInput,
-                                                       final String fromUri,
-                                                       final String rootDirectory,
-                                                       final String path) {
-            return new AutoValue_ResolvedCommand_ResolvedCommandMountFiles(fromWrapperInput, fromUri, rootDirectory, path);
         }
     }
 
@@ -334,14 +282,5 @@ public abstract class ResolvedCommand {
 
             public abstract ResolvedCommandOutput build();
         }
-    }
-
-    public static abstract class ResolvedInput {
-        public abstract long id();
-        @Nullable public abstract String name();
-        public abstract String type();
-        @Nullable public abstract String matcher();
-        public abstract boolean required();
-        @Nullable public abstract String replacementKey();
     }
 }

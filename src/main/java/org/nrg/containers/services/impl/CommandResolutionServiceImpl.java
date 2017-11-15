@@ -18,7 +18,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.exceptions.CommandInputResolutionException;
 import org.nrg.containers.exceptions.CommandResolutionException;
-import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.ContainerMountResolutionException;
 import org.nrg.containers.exceptions.IllegalInputException;
 import org.nrg.containers.exceptions.UnauthorizedException;
@@ -35,8 +34,8 @@ import org.nrg.containers.model.command.auto.Command.Input;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.command.auto.ResolvedCommand.PartiallyResolvedCommand;
 import org.nrg.containers.model.command.auto.ResolvedCommand.PartiallyResolvedCommandMount;
-import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMount;
-import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMountFiles;
+import org.nrg.containers.model.command.auto.ResolvedCommandMount;
+import org.nrg.containers.model.command.auto.ResolvedCommandMount.ResolvedCommandMountFiles;
 import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandOutput;
 import org.nrg.containers.model.command.auto.ResolvedInputValue;
 import org.nrg.containers.model.command.auto.PreresolvedInputTreeNode;
@@ -77,7 +76,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -1798,7 +1796,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                                 commandMount.name(),
                                 inputName);
                         partiallyResolvedMountBuilder.addInputFiles(
-                                ResolvedCommandMountFiles.create(inputName, uri, rootDirectory, null)
+                                ResolvedCommandMount.ResolvedCommandMountFiles.create(inputName, uri, rootDirectory, null)
                         );
                     }
                 }
