@@ -1831,40 +1831,34 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 final ResolvedCommandMountFiles files = filesList.get(0);
                 final String path = files.path();
                 final boolean hasPath = StringUtils.isNotBlank(path);
+                final String directory = files.rootDirectory();
+                final boolean hasDirectory = StringUtils.isNotBlank(directory);
+                final boolean writable = partiallyResolvedCommandMount.writable();
 
-                if (StringUtils.isNotBlank(files.rootDirectory())) {
-                    // That source of files does have a directory set.
+                if (hasPath && hasDirectory) {
 
-                    if (hasPath || partiallyResolvedCommandMount.writable()) {
-                        // In both of these conditions, we must copy some things to a build directory.
-                        // Now we must find out what.
-                        if (hasPath) {
-                            // The source of files also has one or more paths set
+                    log.debug("Mount \"{}\" has a root directory and a file. Copying the file from the root directory to build directory.", partiallyResolvedCommandMount.name());
+                    localDirectory = getBuildDirectory(partiallyResolvedCommandMount);
 
-                            localDirectory = getBuildDirectory(partiallyResolvedCommandMount);
-                            log.debug("Mount \"{}\" has a root directory and a file. Copying the file from the root directory to build directory.", partiallyResolvedCommandMount.name());
-
-                            // TODO CS-54 copy the file in "path", relative to the root directory, to the build directory
-                            log.debug("TODO");
-                        } else {
-                            // The mount is set to "writable".
-                            localDirectory = getBuildDirectory(partiallyResolvedCommandMount);
-                            log.debug("Mount \"{}\" has a root directory, and is set to \"writable\". Copying all files from the root directory to build directory.", partiallyResolvedCommandMount.name());
-
-                            // TODO CS-54 We must copy all files out of the root directory to a build directory.
-                            log.debug("TODO");
-                        }
-                    } else {
-                        // The source of files can be directly mounted
-                        log.debug("Mount \"{}\" has a root directory, and is not set to \"writable\". The root directory can be mounted directly into the container.", partiallyResolvedCommandMount.name());
-                        localDirectory = files.rootDirectory();
-                    }
+                    // TODO CS-54 copy the file in "path", relative to the root directory, to the build directory
+                    log.debug("TODO");
                 } else if (hasPath) {
-                    log.debug("Mount \"{}\" has a file. Copying it to build directory.", partiallyResolvedCommandMount.name());
+                    // Copy the file into the build directory
+                    log.debug("Mount \"{}\" has a file path. Copying it to build directory.", partiallyResolvedCommandMount.name());
                     localDirectory = getBuildDirectory(partiallyResolvedCommandMount);
                     // TODO CS-54 copy the file to the build directory
                     log.debug("TODO");
+                } else if (hasDirectory && writable) {
+                    // The mount has a directory and is set to "writable". We must copy files from the root directory into a writable build directory.
+                    localDirectory = getBuildDirectory(partiallyResolvedCommandMount);
+                    log.debug("Mount \"{}\" has a root directory, and is set to \"writable\". Copying all files from the root directory to build directory.", partiallyResolvedCommandMount.name());
 
+                    // TODO CS-54 We must copy all files out of the root directory to a build directory.
+                    log.debug("TODO");
+                } else if (hasDirectory) {
+                    // The source of files can be directly mounted
+                    log.debug("Mount \"{}\" has a root directory, and is not set to \"writable\". The root directory can be mounted directly into the container.", partiallyResolvedCommandMount.name());
+                    localDirectory = files.rootDirectory();
                 } else {
                     final String message = String.format("Mount \"%s\" should have a file path or a directory or both but it does not.", partiallyResolvedCommandMount.name());
                     log.error(message);
