@@ -82,7 +82,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
 @RunWith(PowerMockRunner.class)
 @PowerMockRunnerDelegate(SpringJUnit4ClassRunner.class)
 @PrepareForTest(UriParserUtils.class)
-@PowerMockIgnore({"org.apache.*", "java.*", "javax.*"})
+@PowerMockIgnore({"org.apache.*", "java.*", "javax.*", "org.w3c.*"})
 @ContextConfiguration(classes = IntegrationTestConfig.class)
 @Transactional
 public class CommandLaunchIntegrationTest {
