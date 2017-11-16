@@ -431,19 +431,17 @@ public abstract class Container {
         }
 
         public static ContainerMount create(final ResolvedCommandMount resolvedCommandMount) {
-            final List<ContainerMountFiles> containerMountFiles = Lists.transform(resolvedCommandMount.inputFiles(), new Function<ResolvedCommandMount.ResolvedCommandMountFiles, ContainerMountFiles>() {
-                @Override
-                public ContainerMountFiles apply(final ResolvedCommandMount.ResolvedCommandMountFiles input) {
-                    return ContainerMountFiles.create(input);
-                }
-            });
             return create(0L,
                     resolvedCommandMount.name(),
                     resolvedCommandMount.writable(),
                     resolvedCommandMount.xnatHostPath(),
                     resolvedCommandMount.containerHostPath(),
                     resolvedCommandMount.containerPath(),
-                    containerMountFiles);
+                    Collections.singletonList(ContainerMountFiles.create(0L,
+                            resolvedCommandMount.fromWrapperInput(),
+                            resolvedCommandMount.fromUri(),
+                            resolvedCommandMount.fromRootDirectory(),
+                            null)));
         }
 
         public static Builder builder() {
@@ -475,9 +473,9 @@ public abstract class Container {
     @AutoValue
     public static abstract class ContainerMountFiles {
         @JsonProperty("id") public abstract long databaseId();
-        @JsonProperty("from-xnat-input") public abstract String fromXnatInput();
+        @Nullable @JsonProperty("from-xnat-input") public abstract String fromXnatInput();
         @Nullable @JsonProperty("from-uri") public abstract String fromUri();
-        @JsonProperty("root-directory") public abstract String rootDirectory();
+        @Nullable @JsonProperty("root-directory") public abstract String rootDirectory();
         @Nullable @JsonProperty("path") public abstract String path();
 
         @JsonCreator
@@ -492,14 +490,6 @@ public abstract class Container {
         public static ContainerMountFiles create(final ContainerMountFilesEntity containerMountFilesEntity) {
             return create(containerMountFilesEntity.getId(), containerMountFilesEntity.getFromXnatInput(), containerMountFilesEntity.getFromUri(),
                     containerMountFilesEntity.getRootDirectory(), containerMountFilesEntity.getPath());
-        }
-
-        public static ContainerMountFiles create(final ResolvedCommandMount.ResolvedCommandMountFiles resolvedCommandMountFiles) {
-            return create(0L,
-                    resolvedCommandMountFiles.fromWrapperInput(),
-                    resolvedCommandMountFiles.fromUri(),
-                    resolvedCommandMountFiles.rootDirectory(),
-                    resolvedCommandMountFiles.path());
         }
     }
 

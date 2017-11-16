@@ -231,7 +231,9 @@ public abstract class ResolvedCommand {
         public abstract String name();
         public abstract Boolean writable();
         public abstract String containerPath();
-        public abstract ImmutableList<ResolvedCommandMount.ResolvedCommandMountFiles> inputFiles();
+        @Nullable public abstract String fromWrapperInput();
+        @Nullable public abstract String fromUri();
+        @Nullable public abstract String fromRootDirectory();
 
         public static Builder builder() {
             return new AutoValue_ResolvedCommand_PartiallyResolvedCommandMount.Builder();
@@ -241,8 +243,7 @@ public abstract class ResolvedCommand {
             return ResolvedCommandMount.builder()
                     .name(this.name())
                     .writable(this.writable())
-                    .containerPath(this.containerPath())
-                    .inputFiles(this.inputFiles());
+                    .containerPath(this.containerPath());
         }
 
         @AutoValue.Builder
@@ -250,12 +251,9 @@ public abstract class ResolvedCommand {
             public abstract Builder name(String name);
             public abstract Builder writable(Boolean writable);
             public abstract Builder containerPath(String containerPath);
-            public abstract Builder inputFiles(List<ResolvedCommandMount.ResolvedCommandMountFiles> inputFiles);
-            public abstract ImmutableList.Builder<ResolvedCommandMount.ResolvedCommandMountFiles> inputFilesBuilder();
-            public Builder addInputFiles(final ResolvedCommandMount.ResolvedCommandMountFiles inputFiles) {
-                inputFilesBuilder().add(inputFiles);
-                return this;
-            }
+            public abstract Builder fromWrapperInput(String fromWrapperInput);
+            public abstract Builder fromUri(String fromUri);
+            public abstract Builder fromRootDirectory(String fromRootDirectory);
 
             public abstract PartiallyResolvedCommandMount build();
         }

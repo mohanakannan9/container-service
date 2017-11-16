@@ -17,6 +17,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.services.ConfigService;
 import org.nrg.containers.exceptions.CommandInputResolutionException;
+import org.nrg.containers.exceptions.CommandMountResolutionException;
 import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.ContainerMountResolutionException;
 import org.nrg.containers.exceptions.IllegalInputException;
@@ -35,7 +36,6 @@ import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.command.auto.ResolvedCommand.PartiallyResolvedCommand;
 import org.nrg.containers.model.command.auto.ResolvedCommand.PartiallyResolvedCommandMount;
 import org.nrg.containers.model.command.auto.ResolvedCommandMount;
-import org.nrg.containers.model.command.auto.ResolvedCommandMount.ResolvedCommandMountFiles;
 import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandOutput;
 import org.nrg.containers.model.command.auto.ResolvedInputValue;
 import org.nrg.containers.model.command.auto.PreresolvedInputTreeNode;
@@ -72,7 +72,6 @@ import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -1647,9 +1646,9 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             }
 
             log.debug("Search input trees to find inputs that provide files to mounts.");
-            Map<String, List<ResolvedInputTreeNode<? extends Input>>> mountSourceInputs = Maps.newHashMap();
+            Map<String, ResolvedInputTreeNode<? extends Input>> mountSourceInputs = Maps.newHashMap();
             for (final ResolvedInputTreeNode<? extends Input> rootNode : resolvedInputTrees) {
-                mountSourceInputs = combineMaps(mountSourceInputs, findMountSourceInputs(rootNode));
+                mountSourceInputs.putAll(findMountSourceInputs(rootNode));
             }
 
             final List<ResolvedCommandMount> resolvedMounts = Lists.newArrayList();
@@ -1673,8 +1672,8 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
         }
 
         @Nonnull
-        private Map<String, List<ResolvedInputTreeNode<? extends Input>>> findMountSourceInputs(final ResolvedInputTreeNode<? extends Input> node) {
-            Map<String, List<ResolvedInputTreeNode<? extends Input>>> mountSourceInputs = Maps.newHashMap();
+        private Map<String, ResolvedInputTreeNode<? extends Input>> findMountSourceInputs(final ResolvedInputTreeNode<? extends Input> node) {
+            Map<String, ResolvedInputTreeNode<? extends Input>> mountSourceInputs = Maps.newHashMap();
 
             final Input input = node.input();
             log.debug("Checking if input \"{}\" provides files to a mount.", input.name());
@@ -1683,9 +1682,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 if (StringUtils.isNotBlank(commandWrapperInput.providesFilesForCommandMount())) {
                     log.debug("Input \"{}\" provides files to mount \"{}\".",
                             input.name(), commandWrapperInput.providesFilesForCommandMount());
-                    final List<ResolvedInputTreeNode<? extends Input>> nodeList = new ArrayList<>();
-                    nodeList.add(node);
-                    mountSourceInputs.put(commandWrapperInput.providesFilesForCommandMount(), nodeList);
+                    mountSourceInputs.put(commandWrapperInput.providesFilesForCommandMount(), node);
                 } else {
                     log.debug("Input \"{}\" does not provide files to mounts.", input.name());
                 }
@@ -1700,12 +1697,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                     log.debug("Input \"{}\" has no children.", input.name());
                 } else {
                     for (final ResolvedInputTreeNode<? extends Input> child : singleValue.children()) {
-                        final Map<String, List<ResolvedInputTreeNode<? extends Input>>> childMountSourceInputs = findMountSourceInputs(child);
-                        if (childMountSourceInputs.size() > 0) {
-                            log.debug("Input \"{}\" has child \"{}\" that provides files to mounts. Combining mount lists.",
-                                    input.name(), child.input().name());
-                            mountSourceInputs = combineMaps(mountSourceInputs, childMountSourceInputs);
-                        }
+                        mountSourceInputs.putAll(findMountSourceInputs(child));
                     }
                 }
             }
@@ -1714,172 +1706,132 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
         }
 
         @Nonnull
-        private Map<String, List<ResolvedInputTreeNode<? extends Input>>> combineMaps(final @Nonnull Map<String, List<ResolvedInputTreeNode<? extends Input>>> sourceMap,
-                                                                                              final @Nonnull Map<String, List<ResolvedInputTreeNode<? extends Input>>> mapToAdd) {
-            for (final Map.Entry<String, List<ResolvedInputTreeNode<? extends Input>>> entryToAdd : mapToAdd.entrySet()) {
-                if (sourceMap.containsKey(entryToAdd.getKey())) {
-                    sourceMap.get(entryToAdd.getKey()).addAll(entryToAdd.getValue());
-                } else {
-                    sourceMap.put(entryToAdd.getKey(), entryToAdd.getValue());
-                }
-            }
-            return sourceMap;
-        }
-
-        @Nonnull
         private ResolvedCommandMount resolveCommandMount(final @Nonnull CommandMount commandMount,
-                                                         final @Nullable List<ResolvedInputTreeNode<? extends Input>> resolvedSourceInputs,
+                                                         final @Nullable ResolvedInputTreeNode<? extends Input> resolvedSourceInput,
                                                          final @Nonnull Map<String, String> resolvedInputValuesByReplacementKey)
                 throws CommandResolutionException {
             log.debug("Resolving command mount \"{}\".", commandMount.name());
 
-            final PartiallyResolvedCommandMount.Builder partiallyResolvedMountBuilder = PartiallyResolvedCommandMount.builder()
+            final PartiallyResolvedCommandMount.Builder partiallyResolvedCommandMountBuilder = PartiallyResolvedCommandMount.builder()
                     .name(commandMount.name())
                     .writable(commandMount.writable())
                     .containerPath(resolveTemplate(commandMount.path(), resolvedInputValuesByReplacementKey));
 
-            if (resolvedSourceInputs == null || resolvedSourceInputs.isEmpty()) {
+            if (resolvedSourceInput == null) {
                 log.debug("Command mount \"{}\" has no inputs that provide it files. Assuming it is an output mount.", commandMount.name());
-                partiallyResolvedMountBuilder.writable(true);
+                partiallyResolvedCommandMountBuilder.writable(true);
             } else {
-                for (final ResolvedInputTreeNode<? extends Input> sourceInput : resolvedSourceInputs) {
-                    final String inputName = sourceInput.input().name();
-                    final String inputType = sourceInput.input().type();
-                    log.debug("Mount \"{}\" has source input \"{}\" with type \"{}\".",
-                            commandMount.name(),
-                            inputName,
-                            inputType);
+                final String inputName = resolvedSourceInput.input().name();
+                final String inputType = resolvedSourceInput.input().type();
+                log.debug("Mount \"{}\" has source input \"{}\" with type \"{}\".",
+                        commandMount.name(),
+                        inputName,
+                        inputType);
 
-                    final List<ResolvedInputTreeValueAndChildren> valuesAndChildren = sourceInput.valuesAndChildren();
-                    if (valuesAndChildren.size() > 1) {
-                        log.debug("Input \"{}\" has multiple resolved values. Adding them all to the mount. (This may be a bad idea.)");
+                final List<ResolvedInputTreeValueAndChildren> valuesAndChildren = resolvedSourceInput.valuesAndChildren();
+                if (valuesAndChildren.size() > 1) {
+                    final String message = String.format("Input \"%s\" has multiple resolved values. We can only use inputs with a single resolved value.", inputName);
+                    log.error(message);
+                    throw new CommandMountResolutionException(message, commandMount);
+                }
+                final ResolvedInputTreeValueAndChildren resolvedInputTreeValueAndChildren = valuesAndChildren.get(0);
+                final ResolvedInputValue resolvedInputValue = resolvedInputTreeValueAndChildren.resolvedValue();
+
+                String rootDirectory = null;
+                String uri = null;
+                if (inputType.equals(DIRECTORY.getName())) {
+                    // TODO
+                } else if (inputType.equals(FILES.getName())) {
+                    // TODO
+                } else if (inputType.equals(FILE.getName())) {
+                    // TODO
+                } else if (inputType.equals(PROJECT.getName()) || inputType.equals(SESSION.getName()) || inputType.equals(SCAN.getName())
+                        || inputType.equals(ASSESSOR.getName()) || inputType.equals(RESOURCE.getName())) {
+                    log.debug("Looking for directory on source input.");
+                    final XnatModelObject xnatModelObject = resolvedInputValue.xnatModelObject();
+                    if (xnatModelObject == null) {
+                        final String message = "Cannot resolve mount URI. Resolved XnatModelObject is null.";
+                        log.error(message);
+                        throw new CommandResolutionException(message);
                     }
-                    for (final ResolvedInputTreeValueAndChildren resolvedInputTreeValueAndChildren : valuesAndChildren) {
-                        final ResolvedInputValue resolvedInputValue = resolvedInputTreeValueAndChildren.resolvedValue();
 
-                        String rootDirectory = null;
-                        String uri = null;
-                        if (inputType.equals(DIRECTORY.getName())) {
-                            // TODO
-                        } else if (inputType.equals(FILES.getName())) {
-                            // TODO
-                        } else if (inputType.equals(FILE.getName())) {
-                            // TODO
-                        } else if (inputType.equals(PROJECT.getName()) || inputType.equals(SESSION.getName()) || inputType.equals(SCAN.getName())
-                                || inputType.equals(ASSESSOR.getName()) || inputType.equals(RESOURCE.getName())) {
-                            log.debug("Looking for directory on source input.");
-                            final XnatModelObject xnatModelObject = resolvedInputValue.xnatModelObject();
-                            if (xnatModelObject == null) {
-                                final String message = "Cannot resolve mount URI. Resolved XnatModelObject is null.";
-                                log.error(message);
-                                throw new CommandResolutionException(message);
-                            }
+                    rootDirectory = JsonPath.parse(resolvedInputValue.jsonValue()).read("directory", String.class);
+                    uri = xnatModelObject.getUri();
 
-                            rootDirectory = JsonPath.parse(resolvedInputValue.jsonValue()).read("directory", String.class);
-                            uri = xnatModelObject.getUri();
-
-                        } else {
-                            final String message = String.format("I don't know how to provide files to a mount from an input of type \"%s\".", inputType);
-                            log.error(message);
-                        }
-
-
-                        if (StringUtils.isBlank(rootDirectory)) {
-                            String message = "Source input has no directory.";
-                            if (log.isDebugEnabled()) {
-                                message += "\ninput: " + sourceInput;
-                            }
-                            log.error(message);
-                        }
-
-                        log.debug("Done resolving mount \"{}\", source input \"{}\".",
-                                commandMount.name(),
-                                inputName);
-                        partiallyResolvedMountBuilder.addInputFiles(
-                                ResolvedCommandMount.ResolvedCommandMountFiles.create(inputName, uri, rootDirectory, null)
-                        );
-                    }
+                } else {
+                    final String message = String.format("I don't know how to provide files to a mount from an input of type \"%s\".", inputType);
+                    log.error(message);
                 }
 
+
+                if (StringUtils.isBlank(rootDirectory)) {
+                    String message = "Source input has no directory.";
+                    if (log.isDebugEnabled()) {
+                        message += "\ninput: " + resolvedSourceInput;
+                    }
+                    log.error(message);
+                }
+
+                log.debug("Done resolving mount \"{}\", source input \"{}\".",
+                        commandMount.name(),
+                        inputName);
+                partiallyResolvedCommandMountBuilder
+                        .fromWrapperInput(inputName)
+                        .fromUri(uri)
+                        .fromRootDirectory(rootDirectory);
             }
 
-            final ResolvedCommandMount resolvedCommandMount = transportMount(partiallyResolvedMountBuilder.build());
+            final ResolvedCommandMount resolvedCommandMount = transportMount(partiallyResolvedCommandMountBuilder.build());
 
             log.debug("Done resolving command mount \"{}\".", commandMount.name());
             return resolvedCommandMount;
         }
 
         private ResolvedCommandMount transportMount(final PartiallyResolvedCommandMount partiallyResolvedCommandMount) throws ContainerMountResolutionException {
+            final String resolvedCommandMountName = partiallyResolvedCommandMount.name();
             final ResolvedCommandMount.Builder resolvedCommandMountBuilder = partiallyResolvedCommandMount.toResolvedCommandMountBuilder();
 
             // First, figure out what we have.
             // Do we have source files? A source directory?
             // Can we mount a directory directly, or should we copy the contents to a build directory?
-            final List<ResolvedCommandMountFiles> filesList = partiallyResolvedCommandMount.inputFiles();
+            // We may need to copy, or may be able to mount directly.
             final String localDirectory;
-            if (filesList != null && filesList.size() > 1) {
-                // We have multiple sources of files. We must copy them into one common location to mount.
-                localDirectory = getBuildDirectory(partiallyResolvedCommandMount);
-                log.debug("Mount \"{}\" has multiple sources of files.", partiallyResolvedCommandMount.name());
-
-                // TODO figure out what to do with multiple sources of files
-                log.debug("TODO");
-            } else if (filesList != null && filesList.size() == 1) {
-                // We have one source of files. We may need to copy, or may be able to mount directly.
-                final ResolvedCommandMountFiles files = filesList.get(0);
-                final String path = files.path();
-                final boolean hasPath = StringUtils.isNotBlank(path);
-                final String directory = files.rootDirectory();
+            if (StringUtils.isNotBlank(partiallyResolvedCommandMount.fromWrapperInput())) {
+                final String directory = partiallyResolvedCommandMount.fromRootDirectory();
                 final boolean hasDirectory = StringUtils.isNotBlank(directory);
                 final boolean writable = partiallyResolvedCommandMount.writable();
 
-                if (hasPath && hasDirectory) {
-
-                    log.debug("Mount \"{}\" has a root directory and a file. Copying the file from the root directory to build directory.", partiallyResolvedCommandMount.name());
-                    localDirectory = getBuildDirectory(partiallyResolvedCommandMount);
-
-                    // TODO CS-54 copy the file in "path", relative to the root directory, to the build directory
-                    log.debug("TODO");
-                } else if (hasPath) {
-                    // Copy the file into the build directory
-                    log.debug("Mount \"{}\" has a file path. Copying it to build directory.", partiallyResolvedCommandMount.name());
-                    localDirectory = getBuildDirectory(partiallyResolvedCommandMount);
-                    // TODO CS-54 copy the file to the build directory
-                    log.debug("TODO");
-                } else if (hasDirectory && writable) {
+                if (hasDirectory && writable) {
                     // The mount has a directory and is set to "writable". We must copy files from the root directory into a writable build directory.
                     localDirectory = getBuildDirectory(partiallyResolvedCommandMount);
-                    log.debug("Mount \"{}\" has a root directory, and is set to \"writable\". Copying all files from the root directory to build directory.", partiallyResolvedCommandMount.name());
+                    log.debug("Mount \"{}\" has a root directory and is set to \"writable\". Copying all files from the root directory to build directory.", resolvedCommandMountName);
 
                     // TODO CS-54 We must copy all files out of the root directory to a build directory.
                     log.debug("TODO");
                 } else if (hasDirectory) {
                     // The source of files can be directly mounted
-                    log.debug("Mount \"{}\" has a root directory, and is not set to \"writable\". The root directory can be mounted directly into the container.", partiallyResolvedCommandMount.name());
-                    localDirectory = files.rootDirectory();
+                    log.debug("Mount \"{}\" has a root directory and is not set to \"writable\". The root directory can be mounted directly into the container.", resolvedCommandMountName);
+                    localDirectory = directory;
                 } else {
-                    final String message = String.format("Mount \"%s\" should have a file path or a directory or both but it does not.", partiallyResolvedCommandMount.name());
+                    final String message = String.format("Mount \"%s\" should have a directory but it does not.", resolvedCommandMountName);
                     log.error(message);
                     throw new ContainerMountResolutionException(message, partiallyResolvedCommandMount);
                 }
-
             } else {
-                log.debug("Mount \"{}\" has no input files. Ensuring mount is set to \"writable\" and creating new build directory.", partiallyResolvedCommandMount.name());
+                log.debug("Mount \"{}\" has no input files. Ensuring mount is set to \"writable\" and creating new build directory.", resolvedCommandMountName);
                 localDirectory = getBuildDirectory(partiallyResolvedCommandMount);
-                if (!partiallyResolvedCommandMount.writable()) {
-                    resolvedCommandMountBuilder.writable(true);
-                }
+                resolvedCommandMountBuilder.writable(true);
             }
 
-            log.debug("Setting mount \"{}\" xnat host path to \"{}\".", partiallyResolvedCommandMount.name(), localDirectory);
+            log.debug("Setting mount \"{}\" xnat host path to \"{}\".", resolvedCommandMountName, localDirectory);
             resolvedCommandMountBuilder.xnatHostPath(localDirectory);
 
-            log.debug("Transporting mount \"{}\".", partiallyResolvedCommandMount.name());
+            log.debug("Transporting mount \"{}\".", resolvedCommandMountName);
             // final Path pathOnContainerHost = transportService.transport(containerHost, Paths.get(buildDirectory));
             // TODO transporting is currently a no-op, and the code is simpler if we don't pretend that we are doing something here.
             final String containerHostPath = localDirectory;
 
-            log.debug("Setting mount \"{}\" container host path to \"{}\".", partiallyResolvedCommandMount.name(), localDirectory);
+            log.debug("Setting mount \"{}\" container host path to \"{}\".", resolvedCommandMountName, localDirectory);
             resolvedCommandMountBuilder.containerHostPath(containerHostPath);
 
             return resolvedCommandMountBuilder.build();

@@ -6,8 +6,6 @@ import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import org.hibernate.envers.Audited;
-import org.nrg.containers.model.command.auto.ResolvedCommandMount;
-import org.nrg.containers.model.command.auto.ResolvedCommandMount.ResolvedCommandMountFiles;
 import org.nrg.containers.model.container.auto.Container;
 
 import javax.persistence.CascadeType;
@@ -36,22 +34,6 @@ public class ContainerEntityMount implements Serializable {
     @JsonProperty("input-files") private List<ContainerMountFilesEntity> inputFiles;
 
     public ContainerEntityMount() {}
-
-    public ContainerEntityMount(final ResolvedCommandMount resolvedCommandMount) {
-        this.name = resolvedCommandMount.name();
-        this.writable = resolvedCommandMount.writable();
-        this.xnatHostPath = resolvedCommandMount.xnatHostPath();
-        this.containerHostPath = resolvedCommandMount.containerHostPath();
-        this.containerPath = resolvedCommandMount.containerPath();
-        setInputFiles(Lists.newArrayList(
-                Lists.transform(resolvedCommandMount.inputFiles(), new Function<ResolvedCommandMountFiles, ContainerMountFilesEntity>() {
-                    @Override
-                    public ContainerMountFilesEntity apply(final ResolvedCommandMountFiles resolvedCommandMountFiles) {
-                        return new ContainerMountFilesEntity(resolvedCommandMountFiles);
-                    }
-                })
-        ));
-    }
 
     public static ContainerEntityMount fromPojo(final Container.ContainerMount containerMountPojo) {
         final ContainerEntityMount containerEntityMount = new ContainerEntityMount();

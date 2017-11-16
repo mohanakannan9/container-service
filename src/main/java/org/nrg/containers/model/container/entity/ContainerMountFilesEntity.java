@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import org.hibernate.envers.Audited;
-import org.nrg.containers.model.command.auto.ResolvedCommandMount.ResolvedCommandMountFiles;
 import org.nrg.containers.model.container.auto.Container;
 
 import javax.persistence.Entity;
@@ -25,13 +24,6 @@ public class ContainerMountFilesEntity {
     private String path;
 
     public ContainerMountFilesEntity() {}
-
-    public ContainerMountFilesEntity(final ResolvedCommandMountFiles resolvedCommandMountFiles) {
-        this.fromXnatInput = resolvedCommandMountFiles.fromWrapperInput();
-        this.fromUri = resolvedCommandMountFiles.fromUri();
-        this.rootDirectory = resolvedCommandMountFiles.rootDirectory();
-        this.path = resolvedCommandMountFiles.path();
-    }
 
     public static ContainerMountFilesEntity fromPojo(final Container.ContainerMountFiles containerMountFilesPojo) {
         final ContainerMountFilesEntity containerMountFilesEntity = new ContainerMountFilesEntity();

@@ -612,7 +612,7 @@ public class CommandResolutionTest {
                         .writable(true)
                         .xnatHostPath("/xnat/path")
                         .containerHostPath("/container/path")
-                        .addInputFiles(ResolvedCommandMount.ResolvedCommandMountFiles.create("derivedInput", null, null, null))
+                        .fromWrapperInput("derivedInput")
                         .build())
                 .build();
 
