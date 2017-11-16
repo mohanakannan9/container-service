@@ -56,7 +56,7 @@ dependencyManagement {
     }
 }
 
-def vDockerClient = '8.9.1'
+def vDockerClient = '8+'
 def vJsonPath = '2.2.0'
 def vAutoValue = '1.3'
 def vPowerMock = '1.7.0'
@@ -106,10 +106,20 @@ dependencies {
         transitive = false
     }
     compile "org.nrg:prefs"
-    compile "org.nrg:notify"
-    compile "org.nrg:config"
-    compile "org.nrg:automation"
+    compile ("org.nrg:notify") {
+        exclude group: "cglib"
+    }
+    compile ("org.nrg:config") {
+        exclude group: "cglib"
+    }
+    compile ("org.nrg:automation") {
+        exclude group: "org.python"
+        exclude group: "cglib"
+    }
     apt "org.nrg:framework"
+    compile ("cglib:cglib:2.2.2") {
+        exclude group: "asm"
+    }
 
     compile "org.springframework:spring-beans"
     compile "org.springframework:spring-context"
