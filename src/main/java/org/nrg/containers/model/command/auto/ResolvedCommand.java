@@ -240,6 +240,7 @@ public abstract class ResolvedCommand {
         public abstract Boolean writable();
         public abstract String containerPath();
         @Nullable public abstract String fromWrapperInput();
+        @Nullable public abstract String viaSetupCommand();
         @Nullable public abstract String fromUri();
         @Nullable public abstract String fromRootDirectory();
 
@@ -251,7 +252,11 @@ public abstract class ResolvedCommand {
             return ResolvedCommandMount.builder()
                     .name(this.name())
                     .writable(this.writable())
-                    .containerPath(this.containerPath());
+                    .containerPath(this.containerPath())
+                    .fromWrapperInput(this.fromWrapperInput())
+                    .viaSetupCommand(this.viaSetupCommand())
+                    .fromUri(this.fromUri())
+                    .fromRootDirectory(this.fromRootDirectory());
         }
 
         @AutoValue.Builder
@@ -260,6 +265,7 @@ public abstract class ResolvedCommand {
             public abstract Builder writable(Boolean writable);
             public abstract Builder containerPath(String containerPath);
             public abstract Builder fromWrapperInput(String fromWrapperInput);
+            public abstract Builder viaSetupCommand(String viaSetupCommand);
             public abstract Builder fromUri(String fromUri);
             public abstract Builder fromRootDirectory(String fromRootDirectory);
 
