@@ -34,6 +34,7 @@ public abstract class ResolvedCommand {
     @JsonProperty("mounts") public abstract ImmutableList<ResolvedCommandMount> mounts();
     @JsonProperty("outputs") public abstract ImmutableList<ResolvedCommandOutput> outputs();
     @JsonProperty("working-directory") @Nullable public abstract String workingDirectory();
+    @JsonProperty("setup-commands") public abstract ImmutableList<ResolvedCommand> setupCommands();
 
     @JsonProperty("external-wrapper-input-values")
     public ImmutableMap<String, String> externalWrapperInputValues() {
@@ -177,6 +178,13 @@ public abstract class ResolvedCommand {
             return this;
         }
         public abstract Builder workingDirectory(String workingDirectory);
+
+        public abstract Builder setupCommands(List<ResolvedCommand> setupCommands);
+        public abstract ImmutableList.Builder<ResolvedCommand> setupCommandsBuilder();
+        public Builder addSetupCommand(final ResolvedCommand setupCommand) {
+            setupCommandsBuilder().add(setupCommand);
+            return this;
+        }
 
         public abstract ResolvedCommand build();
     }

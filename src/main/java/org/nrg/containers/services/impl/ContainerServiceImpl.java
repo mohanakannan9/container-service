@@ -57,6 +57,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import static org.nrg.containers.model.command.entity.CommandType.DOCKER;
+import static org.nrg.containers.model.command.entity.CommandType.DOCKER_SETUP;
 import static org.nrg.containers.model.command.entity.CommandWrapperInputType.ASSESSOR;
 import static org.nrg.containers.model.command.entity.CommandWrapperInputType.PROJECT;
 import static org.nrg.containers.model.command.entity.CommandWrapperInputType.RESOURCE;
@@ -205,7 +206,7 @@ public class ContainerServiceImpl implements ContainerService {
     public Container launchResolvedCommand(final ResolvedCommand resolvedCommand,
                                            final UserI userI)
             throws NoDockerServerException, DockerServerException, ContainerException, UnsupportedOperationException {
-        if (resolvedCommand.type().equals(DOCKER.getName())) {
+        if (resolvedCommand.type().equals(DOCKER.getName()) || resolvedCommand.type().equals(DOCKER_SETUP.getName())) {
             return launchResolvedDockerCommand(resolvedCommand, userI);
         } else {
             throw new UnsupportedOperationException("Cannot launch a command of type " + resolvedCommand.type());
@@ -228,7 +229,14 @@ public class ContainerServiceImpl implements ContainerService {
                 createdContainerOrService.toBuilder().workflowId(workflowId).build()
         ), userI));
 
-        startContainer(userI, savedContainerOrService);
+        if (resolvedCommand.setupCommands().size() > 0) {
+            log.info("Launching setup containers.");
+            for (final ResolvedCommand resolvedSetupCommand : resolvedCommand.setupCommands()) {
+                launchResolvedCommand(resolvedSetupCommand, userI);
+            }
+        } else {
+            startContainer(userI, savedContainerOrService);
+        }
 
         return savedContainerOrService;
     }
