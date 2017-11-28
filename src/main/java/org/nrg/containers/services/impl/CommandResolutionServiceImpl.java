@@ -52,6 +52,7 @@ import org.nrg.containers.model.xnat.XnatFile;
 import org.nrg.containers.model.xnat.XnatModelObject;
 import org.nrg.containers.services.CommandResolutionService;
 import org.nrg.containers.services.CommandService;
+import org.nrg.containers.services.SetupCommandService;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -103,16 +104,19 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
     private final ConfigService configService;
     private final SiteConfigPreferences siteConfigPreferences;
     private final ObjectMapper mapper;
+    private final SetupCommandService setupCommandService;
 
     @Autowired
     public CommandResolutionServiceImpl(final CommandService commandService,
                                         final ConfigService configService,
                                         final SiteConfigPreferences siteConfigPreferences,
-                                        final ObjectMapper mapper) {
+                                        final ObjectMapper mapper,
+                                        final SetupCommandService setupCommandService) {
         this.commandService = commandService;
         this.configService = configService;
         this.siteConfigPreferences = siteConfigPreferences;
         this.mapper = mapper;
+        this.setupCommandService = setupCommandService;
     }
 
     @Override
@@ -370,8 +374,13 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             return resolvedCommand;
         }
 
-        private void resolveSetupCommand(final String setupCommandImage, final String inputMountPath, final String outputMountPath) {
-            final Command setupCommand = commandService.getSetupCommand(setupCommandImage);
+        private void resolveSetupCommand(final String setupCommandImage, final String inputMountPath, final String outputMountPath) throws CommandResolutionException {
+            final Command setupCommand;
+            try {
+                setupCommand = setupCommandService.getSetupCommand(setupCommandImage);
+            } catch (NotFoundException e) {
+                throw new CommandResolutionException("Could not resolve setup command with image " + setupCommandImage, e);
+            }
 
             final ResolvedCommand resolvedSetupCommand = ResolvedCommand.builder()
                     .commandId(setupCommand.id())
@@ -1828,7 +1837,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             return resolvedCommandMount;
         }
 
-        private ResolvedCommandMount transportMount(final PartiallyResolvedCommandMount partiallyResolvedCommandMount) throws ContainerMountResolutionException {
+        private ResolvedCommandMount transportMount(final PartiallyResolvedCommandMount partiallyResolvedCommandMount) throws CommandResolutionException {
             final String resolvedCommandMountName = partiallyResolvedCommandMount.name();
             final ResolvedCommandMount.Builder resolvedCommandMountBuilder = partiallyResolvedCommandMount.toResolvedCommandMountBuilder();
 
