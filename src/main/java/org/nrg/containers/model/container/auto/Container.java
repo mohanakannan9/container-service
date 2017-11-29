@@ -31,6 +31,8 @@ import java.util.Map;
 @AutoValue
 @JsonInclude(JsonInclude.Include.ALWAYS)
 public abstract class Container {
+    @JsonIgnore private String exitCode;
+
     @JsonProperty("id") public abstract long databaseId();
     @JsonProperty("command-id") public abstract long commandId();
     @Nullable @JsonProperty("status") public abstract String status();
@@ -56,6 +58,25 @@ public abstract class Container {
     @JsonIgnore
     public boolean isSwarmService() {
         return swarm() != null && swarm();
+    }
+
+    @JsonIgnore
+    @Nullable
+    public String exitCode() {
+        if (exitCode == null) {
+            // Assumption: At most one container history item will have a non-null exit code.
+            // "": This event is an exit event (status == kill, die, or oom) but the attributes map
+            //      did not contain an "exitCode" key
+            // "0": success
+            // "1" to "255": failure
+            for (final ContainerHistory history : this.history()) {
+                if (history.exitCode() != null) {
+                    exitCode = history.exitCode();
+                    break;
+                }
+            }
+        }
+        return exitCode;
     }
 
     @JsonCreator
