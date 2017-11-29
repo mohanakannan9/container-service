@@ -52,6 +52,7 @@ import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -143,6 +144,11 @@ public class ContainerServiceImpl implements ContainerService {
     @Nonnull
     public List<Container> retrieveNonfinalizedServices() {
         return toPojo(containerEntityService.retrieveNonfinalizedServices());
+    }
+
+    @Override
+    public List<Container> retrieveSetupContainersForParent(final long parentId) {
+        return toPojo(containerEntityService.retrieveSetupContainersForParent(parentId));
     }
 
     @Override
@@ -371,15 +377,81 @@ public class ContainerServiceImpl implements ContainerService {
 
         containerEntityService.update(fromPojo(finalized));
         log.debug("Done saving outputs for Container {}.", container.databaseId());
+
+        final Container parent = finalized.setupContainerParent();
+        if (parent != null) {
+            log.info("Container {} is a setup container for parent container {}. Checking whether parent needs a status change.", container.databaseId(), parent.databaseId());
+            final List<Container> setupContainers = retrieveSetupContainersForParent(parent.databaseId());
+            final List<Container> failedExitCode = new ArrayList<>();
+            final List<Container> nullExitCode = new ArrayList<>();
+            for (final Container setupContainer : setupContainers) {
+                if (exitCodeIsFailed(setupContainer.exitCode())) {
+                    failedExitCode.add(setupContainer);
+                } else if (setupContainer.exitCode() == null) {
+                    nullExitCode.add(setupContainer);
+                }
+            }
+
+            if (failedExitCode.size() > 0) {
+                // If any of the setup containers failed, we must kill the rest and fail the main container.
+                log.info("One or more setup containers have failed. Killing the rest and failing the parent.");
+                for (final Container setupContainer : setupContainers) {
+                    if (failedExitCode.contains(setupContainer)) {
+                        log.debug("Setup container {} with container id {} failed.", setupContainer.databaseId(), setupContainer.containerId());
+                    } else if (nullExitCode.contains(setupContainer)) {
+                        log.info("Setup container {} with container id {} has no exit code. Attempting to kill it.", setupContainer.databaseId(), setupContainer.containerId());
+                        try {
+                            kill(setupContainer, userI);
+                        } catch (NoDockerServerException | DockerServerException | NotFoundException e) {
+                            log.error(String.format("Failed to kill setup container %d.", setupContainer.databaseId()), e);
+                        }
+                    } else {
+                        log.debug("Setup container {} with container id {} succeeded.", setupContainer.databaseId(), setupContainer.containerId());
+                    }
+                }
+
+                final String failedContainerMessageTemplate = "ID %d, container id %s";
+                final String failedContainerMessage;
+                if (failedExitCode.size() == 1) {
+                    final Container failed = failedExitCode.get(0);
+                    failedContainerMessage = "Failed setup container: " + String.format(failedContainerMessageTemplate, failed.databaseId(), failed.containerId());
+                } else {
+                    final StringBuilder sb = new StringBuilder();
+                    sb.append("Failed setup containers: ");
+                    sb.append(String.format(failedContainerMessageTemplate, failedExitCode.get(0).databaseId(), failedExitCode.get(0).containerId()));
+                    for (int i = 1; i < failedExitCode.size(); i++) {
+                        sb.append("; ");
+                        sb.append(String.format(failedContainerMessageTemplate, failedExitCode.get(i).databaseId(), failedExitCode.get(i).containerId()));
+                    }
+                    sb.append(".");
+                    failedContainerMessage = sb.toString();
+                }
+
+                log.info("Setting status to \"Failed Setup\" for parent container {} with container id {}.", parent.databaseId(), parent.containerId());
+                addContainerHistoryItem(parent, ContainerHistory.fromSystem("Failed Setup", failedContainerMessage), userI);
+            } else if (nullExitCode.size() == 0) {
+                // If none of the setup containers have failed and none of the exit codes are null,
+                // that means all the setup containers have succeeded.
+                // We should start the parent container.
+                log.info("All setup containers for parent Container {} are finished and not failed. Starting container id {}.", parent.databaseId(), parent.containerId());
+                try {
+                    startContainer(userI, parent);
+                } catch (NoDockerServerException | ContainerException e) {
+                    log.error("Failed to start parent Container {} with container id {}.", parent.databaseId(), parent.containerId());
+                }
+            }
+        }
     }
 
     @Override
-    @Nonnull
     public String kill(final String containerId, final UserI userI)
             throws NoDockerServerException, DockerServerException, NotFoundException {
         // TODO check user permissions. How?
-        final Container container = get(containerId);
+        return kill(get(containerId), userI);
+    }
 
+    private String kill(final Container container, final UserI userI)
+            throws NoDockerServerException, DockerServerException, NotFoundException {
         addContainerHistoryItem(container, ContainerHistory.fromUserAction("Killed", userI.getLogin()), userI);
 
         final String containerDockerId = container.containerId();

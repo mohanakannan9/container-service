@@ -32,6 +32,8 @@ public interface ContainerService {
     List<Container> retrieveServices();
     List<Container> retrieveNonfinalizedServices();
 
+    List<Container> retrieveSetupContainersForParent(long parentId);
+
     Container addContainerEventToHistory(final ContainerEvent containerEvent, final UserI userI);
     Container.ContainerHistory addContainerHistoryItem(final Container container,
                                                        final Container.ContainerHistory history, final UserI userI);

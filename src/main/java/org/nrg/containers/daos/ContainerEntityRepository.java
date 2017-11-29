@@ -88,6 +88,16 @@ public class ContainerEntityRepository extends AbstractHibernateDAO<ContainerEnt
         return initializeAndReturnList(servicesResult);
     }
 
+    @Nonnull
+    public List<ContainerEntity> retrieveSetupContainersForParent(final long parentId) {
+        final List setupContainersResult = getSession()
+                .createQuery("select setup from ContainerEntity as setup where setup.setupContainerParent.id = :parentId")
+                .setLong("parentId", parentId)
+                .list();
+
+        return initializeAndReturnList(setupContainersResult);
+    }
+
     @SuppressWarnings("unchecked")
     private List<ContainerEntity> initializeAndReturnList(final List result) {
         if (result != null) {
