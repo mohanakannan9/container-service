@@ -18,6 +18,7 @@ import org.nrg.containers.model.command.entity.CommandWrapperEntity;
 import org.nrg.containers.model.command.entity.CommandWrapperExternalInputEntity;
 import org.nrg.containers.model.command.entity.CommandWrapperOutputEntity;
 import org.nrg.containers.model.command.entity.DockerCommandEntity;
+import org.nrg.containers.model.command.entity.DockerSetupCommandEntity;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.container.entity.ContainerEntityHistory;
 import org.nrg.containers.model.container.entity.ContainerEntityInput;
@@ -232,6 +233,7 @@ public class IntegrationTestConfig {
                 DockerServerEntity.class,
                 CommandEntity.class,
                 DockerCommandEntity.class,
+                DockerSetupCommandEntity.class,
                 CommandInputEntity.class,
                 CommandOutputEntity.class,
                 CommandMountEntity.class,
