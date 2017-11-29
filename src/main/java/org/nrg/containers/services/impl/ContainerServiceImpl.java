@@ -355,11 +355,11 @@ public class ContainerServiceImpl implements ContainerService {
 
     @Override
     public void finalize(final Container container, final UserI userI, final String exitCode) {
-        log.info("Finalizing ContainerExecution {} for container {}.", container.databaseId(), container.containerId());
+        log.info("Finalizing Container {}, container id {}.", container.databaseId(), container.containerId());
 
         final Container finalized = containerFinalizeService.finalizeContainer(container, userI, exitCode);
 
-        log.info("Done uploading for ContainerExecution {}. Now saving information about created outputs.", container.databaseId());
+        log.info("Done uploading for Container {}. Now saving information about created outputs.", container.databaseId());
 
         containerEntityService.update(fromPojo(finalized));
         log.debug("Done saving outputs for Container {}.", container.databaseId());
