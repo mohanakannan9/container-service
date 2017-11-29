@@ -982,7 +982,7 @@ public class DockerControlApi implements ContainerControlApi {
                 dockerContainer.id(),
                 dockerContainer.state().running() ? "Running" :
                         dockerContainer.state().paused() ? "Paused" :
-                        dockerContainer.state().restarting() ? "Restarting" :
+                        dockerContainer.state().restarting() != null && dockerContainer.state().restarting() ? "Restarting" :
                         dockerContainer.state().exitCode() != null ? "Exited" :
                         null
         );
