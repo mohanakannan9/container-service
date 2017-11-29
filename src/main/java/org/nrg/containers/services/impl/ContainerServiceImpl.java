@@ -4,6 +4,7 @@ import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.tools.ant.taskdefs.Move;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.events.model.ContainerEvent;
 import org.nrg.containers.events.model.ServiceTaskEvent;
@@ -46,6 +47,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.ws.rs.HEAD;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -226,6 +228,12 @@ public class ContainerServiceImpl implements ContainerService {
                 createdContainerOrService.toBuilder().workflowId(workflowId).build()
         ), userI));
 
+        startContainer(userI, savedContainerOrService);
+
+        return savedContainerOrService;
+    }
+
+    private void startContainer(final UserI userI, final Container savedContainerOrService) throws NoDockerServerException, ContainerException {
         log.info("Starting container.");
         try {
             containerControlApi.startContainer(savedContainerOrService.containerId());
@@ -234,8 +242,6 @@ public class ContainerServiceImpl implements ContainerService {
             handleFailure(savedContainerOrService);
             throw new ContainerException("Failed to start");
         }
-
-        return createdContainerOrService;
     }
 
     @Nonnull
