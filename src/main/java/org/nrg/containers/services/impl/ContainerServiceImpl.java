@@ -357,7 +357,7 @@ public class ContainerServiceImpl implements ContainerService {
     public void finalize(final Container container, final UserI userI, final String exitCode) {
         log.info("Finalizing Container {}, container id {}.", container.databaseId(), container.containerId());
 
-        final Container finalized = containerFinalizeService.finalizeContainer(container, userI, exitCode);
+        final Container finalized = containerFinalizeService.finalizeContainer(container, userI, exitCodeIsFailed(exitCode));
 
         log.info("Done uploading for Container {}. Now saving information about created outputs.", container.databaseId());
 
@@ -617,5 +617,22 @@ public class ContainerServiceImpl implements ContainerService {
     @Nonnull
     private ContainerEntityHistory fromPojo(@Nonnull final ContainerHistory containerHistory) {
         return ContainerEntityHistory.fromPojo(containerHistory);
+    }
+
+    private boolean exitCodeIsFailed(final String exitCode) {
+        // Assume that everything is fine unless the exit code is explicitly > 0.
+        // So exitCode="0", ="", =null all count as not failed.
+        boolean isFailed = false;
+        if (StringUtils.isNotBlank(exitCode)) {
+            Long exitCodeNumber = null;
+            try {
+                exitCodeNumber = Long.parseLong(exitCode);
+            } catch (NumberFormatException e) {
+                // ignored
+            }
+
+            isFailed = exitCodeNumber != null && exitCodeNumber > 0;
+        }
+        return isFailed;
     }
 }
