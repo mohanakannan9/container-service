@@ -13,6 +13,7 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import javax.persistence.CascadeType;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Transient;
 import java.util.Date;
@@ -50,17 +51,21 @@ public class ContainerEntity extends AbstractHibernateEntity {
     private String userId;
     private Boolean swarm;
     private String serviceId;
-
     private String taskId;
-
     private String nodeId;
+    private ContainerEntity setupContainerParent;
     private List<ContainerEntityInput> inputs;
     private List<ContainerEntityOutput> outputs;
     private List<ContainerEntityHistory> history = Lists.newArrayList();
     private List<String> logPaths;
+
+
     public ContainerEntity() {}
 
     public static ContainerEntity fromPojo(final Container containerPojo) {
+        if (containerPojo == null) {
+            return null; // This is for the setup container parent, which may be null
+        }
         final ContainerEntity containerEntity = new ContainerEntity();
         containerEntity.update(containerPojo);
         return containerEntity;
@@ -82,6 +87,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
         this.setDockerImage(containerPojo.dockerImage());
         this.setCommandLine(containerPojo.commandLine());
         this.setWorkingDirectory(containerPojo.workingDirectory());
+        this.setSetupContainerParent(fromPojo(containerPojo.setupContainerParent()));
         this.setEnvironmentVariables(containerPojo.environmentVariables());
         this.setLogPaths(containerPojo.logPaths());
         this.setMounts(Lists.newArrayList(Lists.transform(
@@ -255,6 +261,15 @@ public class ContainerEntity extends AbstractHibernateEntity {
 
     public void setNodeId(final String nodeId) {
         this.nodeId = nodeId;
+    }
+
+    @ManyToOne
+    public ContainerEntity getSetupContainerParent() {
+        return setupContainerParent;
+    }
+
+    public void setSetupContainerParent(final ContainerEntity setupContainerParent) {
+        this.setupContainerParent = setupContainerParent;
     }
 
     @OneToMany(mappedBy = "containerEntity", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -436,21 +451,23 @@ public class ContainerEntity extends AbstractHibernateEntity {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-                .add("containerId", containerId)
-                .add("workflowId", workflowId)
-                .add("status", status)
-                .add("statusTime", statusTime)
-                .add("commandId", commandId)
-                .add("wrapperId", wrapperId)
                 .add("swarm", swarm)
+                .add("containerId", containerId)
                 .add("serviceId", serviceId)
                 .add("taskId", taskId)
                 .add("nodeId", nodeId)
+                .add("userId", userId)
+                .add("setupContainerParentId", setupContainerParent == null ? null : setupContainerParent.getId())
+                .add("workflowId", workflowId)
+                .add("commandId", commandId)
+                .add("wrapperId", wrapperId)
+                .add("status", status)
+                .add("statusTime", statusTime)
                 .add("dockerImage", dockerImage)
                 .add("commandLine", commandLine)
+                .add("workingDirectory", workingDirectory)
                 .add("environmentVariables", environmentVariables)
                 .add("mounts", mounts)
-                .add("userId", userId)
                 .add("inputs", inputs)
                 .add("outputs", outputs)
                 .add("history", history)

@@ -48,6 +48,7 @@ public abstract class Container {
     @JsonProperty("docker-image") public abstract String dockerImage();
     @JsonProperty("command-line") public abstract String commandLine();
     @Nullable @JsonProperty("working-directory") public abstract String workingDirectory();
+    @Nullable @JsonProperty("setup-container-parent") public abstract Container setupContainerParent();
     @JsonProperty("env") public abstract ImmutableMap<String, String> environmentVariables();
     @JsonProperty("mounts") public abstract ImmutableList<ContainerMount> mounts();
     @JsonProperty("inputs") public abstract ImmutableList<ContainerInput> inputs();
@@ -95,6 +96,7 @@ public abstract class Container {
                                    @JsonProperty("docker-image") final String dockerImage,
                                    @JsonProperty("command-line") final String commandLine,
                                    @JsonProperty("working-directory") final String workingDirectory,
+                                   @JsonProperty("setup-container-parent") final Container setupContainerParent,
                                    @JsonProperty("env") final Map<String, String> environmentVariables,
                                    @JsonProperty("mounts") final List<ContainerMount> mounts,
                                    @JsonProperty("inputs") final List<ContainerInput> inputs,
@@ -118,6 +120,7 @@ public abstract class Container {
                 .dockerImage(dockerImage)
                 .commandLine(commandLine)
                 .workingDirectory(workingDirectory)
+                .setupContainerParent(setupContainerParent)
                 .environmentVariables(environmentVariables == null ? Collections.<String, String>emptyMap() : environmentVariables)
                 .mounts(mounts == null ? Collections.<ContainerMount>emptyList() : mounts)
                 .inputs(inputs == null ? Collections.<ContainerInput>emptyList() : inputs)
@@ -128,6 +131,9 @@ public abstract class Container {
     }
 
     public static Container create(final ContainerEntity containerEntity) {
+        if (containerEntity == null) {
+            return null;
+        }
         return builder()
                 .databaseId(containerEntity.getId())
                 .status(containerEntity.getStatus())
@@ -143,6 +149,7 @@ public abstract class Container {
                 .nodeId(containerEntity.getNodeId())
                 .dockerImage(containerEntity.getDockerImage())
                 .commandLine(containerEntity.getCommandLine())
+                .setupContainerParent(create(containerEntity.getSetupContainerParent()))
                 .environmentVariables(containerEntity.getEnvironmentVariables() == null ? Collections.<String, String>emptyMap() : containerEntity.getEnvironmentVariables())
                 .logPaths(containerEntity.getLogPaths() == null ? Collections.<String>emptyList() : containerEntity.getLogPaths())
                 .mounts(containerEntity.getMounts() == null ?
@@ -306,6 +313,7 @@ public abstract class Container {
         public abstract Builder nodeId(String nodeId);
         public abstract Builder status(String status);
         public abstract Builder statusTime(Date statusTime);
+        public abstract Builder setupContainerParent(Container setupContainerParent);
 
         public abstract Builder environmentVariables(Map<String, String> environmentVariables);
         abstract ImmutableMap.Builder<String, String> environmentVariablesBuilder();
