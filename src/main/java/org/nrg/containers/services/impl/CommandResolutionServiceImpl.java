@@ -375,6 +375,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
         }
 
         private void resolveSetupCommand(final String setupCommandImage, final String inputMountPath, final String outputMountPath) throws CommandResolutionException {
+            log.debug("Resolving setup command {}.", setupCommandImage);
             final Command setupCommand;
             try {
                 setupCommand = setupCommandService.getSetupCommand(setupCommandImage);
@@ -406,6 +407,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                             .build())
                     .build();
 
+            log.debug("Adding resolved setup command to list.");
             resolvedSetupCommands.add(resolvedSetupCommand);
         }
 
@@ -1876,6 +1878,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             final String pathToMount;
 
             if (StringUtils.isNotBlank(partiallyResolvedCommandMount.viaSetupCommand())) {
+                log.debug("Command mount will be set up with setup command {}.", partiallyResolvedCommandMount.viaSetupCommand());
                 // If there is a setup command, we do a switcheroo.
                 // Normally, we would mount localDirectory into this mount. Instead, we mount localDirectory
                 // into the setup command as its input, along with another writable build directory as its output.
@@ -2066,7 +2069,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
         final Path created;
         try {
             created = Files.createDirectory(Paths.get(buildDir));
-        } catch (IOException e) {
+        } catch (IOException | NullPointerException e) {
             throw new ContainerMountResolutionException("Could not create build directory " + buildDir, mount, e);
         }
         created.toFile().setWritable(true);
