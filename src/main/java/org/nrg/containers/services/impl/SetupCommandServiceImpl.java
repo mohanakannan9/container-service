@@ -50,11 +50,12 @@ public class SetupCommandServiceImpl implements SetupCommandService {
         try {
             log.debug("Attempting to pull image {}.", imageWithoutCommandName);
             dockerService.pullFromHub(imageWithoutCommandName, true);
+            log.debug("Successfully pulled image {}.", imageWithoutCommandName);
         } catch (Exception ignored) {
             // This could be a problem or it could not. We ignore it for now.
             // We may have the command saved already anyway. If we don't, we will soon find out.
             // And if we can't connect to docker, we will find that out soon enough too.
-            log.debug("Could not pull image {}.", imageWithoutCommandName);
+            log.debug("Could not pull image {}. Continuing.", imageWithoutCommandName);
         }
 
         log.debug("Getting all commands for image {}.", imageWithoutCommandName);

@@ -279,9 +279,7 @@ public class ContainerServiceImpl implements ContainerService {
 
     @Override
     public void processEvent(final ContainerEvent event) {
-        if (log.isDebugEnabled()) {
-            log.debug("Processing container event");
-        }
+        log.debug("Processing container event");
         final Container container = retrieve(event.containerId());
 
 
@@ -301,11 +299,11 @@ public class ContainerServiceImpl implements ContainerService {
             } catch (UserInitException | UserNotFoundException e) {
                 log.error("Could not update container status. Could not get user details for user " + userLogin, e);
             }
+        } else {
+            log.debug("Nothing to do. Container was null after retrieving by id {}.", event.containerId());
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug("Done processing docker container event: " + event);
-        }
+        log.debug("Done processing docker container event: {}", event);
     }
 
     @Override

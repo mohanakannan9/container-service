@@ -90,10 +90,13 @@ public class CommandEntityRepository extends AbstractHibernateDAO<CommandEntity>
     @Override
     @Nullable
     public List<CommandEntity> findByProperties(@Nonnull final Map<String, Object> properties) {
+        log.debug("Searching for command entities by properties: {}", properties);
         final List<CommandEntity> commandEntityList = super.findByProperties(properties);
-        if (commandEntityList == null) {
+        if (commandEntityList == null || commandEntityList.size() == 0) {
+            log.debug("No command entities found with properties: {}", properties);
             return null;
         }
+        log.debug("Found {} command entities. Initializing.", commandEntityList.size());
         for (final CommandEntity commandEntity : commandEntityList) {
             initialize(commandEntity);
         }
