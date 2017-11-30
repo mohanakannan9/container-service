@@ -4,6 +4,7 @@ import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import org.nrg.containers.model.server.docker.DockerServerBase.DockerServer;
 import org.nrg.containers.model.server.docker.DockerServerEntity;
+import org.nrg.containers.services.DockerServerEntityService;
 import org.nrg.containers.services.DockerServerService;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,10 +16,10 @@ import java.util.List;
 
 @Service
 public class DockerServerServiceImpl implements DockerServerService {
-    private final HibernateDockerServerEntityService dockerServerEntityService;
+    private final DockerServerEntityService dockerServerEntityService;
 
     @Autowired
-    public DockerServerServiceImpl(final HibernateDockerServerEntityService dockerServerEntityService) {
+    public DockerServerServiceImpl(final DockerServerEntityService dockerServerEntityService) {
         this.dockerServerEntityService = dockerServerEntityService;
     }
 
