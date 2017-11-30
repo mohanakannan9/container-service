@@ -328,7 +328,7 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         }
     }
 
-    @OneToMany(mappedBy = "commandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "commandEntity", cascade = CascadeType.ALL)
     public List<CommandWrapperEntity> getCommandWrapperEntities() {
         return commandWrapperEntities;
     }
