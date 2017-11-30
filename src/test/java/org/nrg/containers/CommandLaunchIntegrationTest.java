@@ -98,6 +98,8 @@ public class CommandLaunchIntegrationTest {
     private static final Logger log = LoggerFactory.getLogger(CommandLaunchIntegrationTest.class);
 
     private UserI mockUser;
+    private String buildDir;
+    private String archiveDir;
 
     private final String FAKE_USER = "mockUser";
     private final String FAKE_ALIAS = "alias";
@@ -195,9 +197,11 @@ public class CommandLaunchIntegrationTest {
         when(mockAliasTokenService.issueTokenForUser(mockUser)).thenReturn(mockAliasToken);
 
         // Mock the site config preferences
+        buildDir = folder.newFolder().getAbsolutePath();
+        archiveDir = folder.newFolder().getAbsolutePath();
         when(mockSiteConfigPreferences.getSiteUrl()).thenReturn(FAKE_HOST);
-        when(mockSiteConfigPreferences.getBuildPath()).thenReturn(folder.newFolder().getAbsolutePath()); // transporter makes a directory under build
-        when(mockSiteConfigPreferences.getArchivePath()).thenReturn(folder.newFolder().getAbsolutePath()); // container logs get stored under archive
+        when(mockSiteConfigPreferences.getBuildPath()).thenReturn(buildDir); // transporter makes a directory under build
+        when(mockSiteConfigPreferences.getArchivePath()).thenReturn(archiveDir); // container logs get stored under archive
         when(mockSiteConfigPreferences.getProperty("processingUrl", FAKE_HOST)).thenReturn(FAKE_HOST);
 
         // Use powermock to mock out the static method XFTManager.isInitialized()

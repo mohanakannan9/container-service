@@ -81,6 +81,7 @@ public class CommandResolutionTest {
     private Command dummyCommand;
     private String resourceDir;
     private Map<String, CommandWrapper> xnatCommandWrappers;
+    private String buildDir;
 
     @Autowired private ObjectMapper mapper;
     @Autowired private CommandService commandService;
@@ -127,7 +128,8 @@ public class CommandResolutionTest {
             xnatCommandWrappers.put(commandWrapperEntity.name(), commandWrapperEntity);
         }
 
-        when(mockSiteConfigPreferences.getBuildPath()).thenReturn(folder.getRoot().getAbsolutePath());
+        buildDir = folder.newFolder().getAbsolutePath();
+        when(mockSiteConfigPreferences.getBuildPath()).thenReturn(buildDir);
     }
 
     @Test
@@ -657,7 +659,7 @@ public class CommandResolutionTest {
 
         final String resolvedCommandMountPath = resolvedCommandMount.xnatHostPath();
         assertThat(resolvedCommandMountPath, is(resolvedCommandMount.containerHostPath()));
-        assertThat(resolvedCommandMountPath, startsWith(folder.getRoot().getAbsolutePath()));
+        assertThat(resolvedCommandMountPath, startsWith(buildDir));
 
         assertThat(resolvedCommand.setupCommands(), hasSize(1));
         final ResolvedCommand resolvedSetupCommand = resolvedCommand.setupCommands().get(0);
