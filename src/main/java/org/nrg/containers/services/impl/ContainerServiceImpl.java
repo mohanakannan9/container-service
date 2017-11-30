@@ -4,7 +4,6 @@ import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.tools.ant.taskdefs.Move;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.events.model.ContainerEvent;
 import org.nrg.containers.events.model.ServiceTaskEvent;
@@ -47,7 +46,6 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.ws.rs.HEAD;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -212,8 +210,15 @@ public class ContainerServiceImpl implements ContainerService {
     public Container launchResolvedCommand(final ResolvedCommand resolvedCommand,
                                            final UserI userI)
             throws NoDockerServerException, DockerServerException, ContainerException, UnsupportedOperationException {
+        return launchResolvedCommand(resolvedCommand, userI, null);
+    }
+
+    private Container launchResolvedCommand(final ResolvedCommand resolvedCommand,
+                                            final UserI userI,
+                                            final Container parent)
+            throws NoDockerServerException, DockerServerException, ContainerException, UnsupportedOperationException {
         if (resolvedCommand.type().equals(DOCKER.getName()) || resolvedCommand.type().equals(DOCKER_SETUP.getName())) {
-            return launchResolvedDockerCommand(resolvedCommand, userI);
+            return launchResolvedDockerCommand(resolvedCommand, userI, parent);
         } else {
             throw new UnsupportedOperationException("Cannot launch a command of type " + resolvedCommand.type());
         }
@@ -221,7 +226,8 @@ public class ContainerServiceImpl implements ContainerService {
 
     @Nonnull
     private Container launchResolvedDockerCommand(final ResolvedCommand resolvedCommand,
-                                                  final UserI userI)
+                                                  final UserI userI,
+                                                  final Container parent)
             throws NoDockerServerException, DockerServerException, ContainerException {
         log.info("Preparing to launch resolved command.");
         final ResolvedCommand preparedToLaunch = prepareToLaunch(resolvedCommand, userI);
@@ -232,13 +238,16 @@ public class ContainerServiceImpl implements ContainerService {
         log.info("Recording container launch.");
         final String workflowId = makeWorkflowIfAppropriate(resolvedCommand, createdContainerOrService, userI);
         final Container savedContainerOrService = toPojo(containerEntityService.save(fromPojo(
-                createdContainerOrService.toBuilder().workflowId(workflowId).build()
+                createdContainerOrService.toBuilder()
+                        .workflowId(workflowId)
+                        .setupContainerParent(parent)
+                        .build()
         ), userI));
 
         if (resolvedCommand.setupCommands().size() > 0) {
             log.info("Launching setup containers.");
             for (final ResolvedCommand resolvedSetupCommand : resolvedCommand.setupCommands()) {
-                launchResolvedCommand(resolvedSetupCommand, userI);
+                launchResolvedCommand(resolvedSetupCommand, userI, savedContainerOrService);
             }
         } else {
             startContainer(userI, savedContainerOrService);

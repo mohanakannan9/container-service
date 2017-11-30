@@ -18,6 +18,7 @@ import com.spotify.docker.client.messages.ContainerInfo;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
+import org.hamcrest.CustomTypeSafeMatcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -56,6 +57,7 @@ import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.transaction.TestTransaction;
@@ -64,6 +66,8 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -74,11 +78,14 @@ import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 
 import static org.awaitility.Awaitility.await;
+import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.hasItemInArray;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
@@ -479,6 +486,103 @@ public class CommandLaunchIntegrationTest {
     }
 
     @Test
+    @DirtiesContext
+    public void testLaunchCommandWithSetupCommand() throws Exception {
+        assumeThat(SystemUtils.IS_OS_WINDOWS_7, is(false));
+        assumeThat(canConnectToDocker(), is(true));
+
+        CLIENT.pull("busybox:latest");
+
+        final Path setupCommandDirPath = Paths.get(ClassLoader.getSystemResource("setupCommand").toURI());
+        final String setupCommandDir = setupCommandDirPath.toString().replace("%20", " ");
+
+        final String commandWithSetupCommandJsonFile = Paths.get(setupCommandDir, "/command-with-setup-command.json").toString();
+        final Command commandWithSetupCommandToCreate = mapper.readValue(new File(commandWithSetupCommandJsonFile), Command.class);
+        final Command commandWithSetupCommand = commandService.create(commandWithSetupCommandToCreate);
+
+        // We could hard-code the name of the image we referenced in the "via-setup-command" property, or we could pull it out.
+        // Let's do the latter, so in case we change it later this will not fail.
+        assertThat(commandWithSetupCommand.xnatCommandWrappers(), hasSize(1));
+        final CommandWrapper commandWithSetupCommandWrapper = commandWithSetupCommand.xnatCommandWrappers().get(0);
+        assertThat(commandWithSetupCommandWrapper.externalInputs(), hasSize(1));
+        assertThat(commandWithSetupCommandWrapper.externalInputs().get(0).viaSetupCommand(), not(isEmptyOrNullString()));
+        final String setupCommandImageAndCommandName = commandWithSetupCommandWrapper.externalInputs().get(0).viaSetupCommand();
+        final String[] setupCommandSplitOnColon = setupCommandImageAndCommandName.split(":");
+        assertThat(setupCommandSplitOnColon, arrayWithSize(3));
+        final String setupCommandImageName = setupCommandSplitOnColon[0] + ":" + setupCommandSplitOnColon[1];
+        final String setupCommandName = setupCommandSplitOnColon[2];
+
+        CLIENT.build(setupCommandDirPath, setupCommandImageName);
+
+        // Make the setup command from the json file.
+        // Assert that its name and image are the same ones referred to in the "via-setup-command" property
+        final String setupCommandJsonFile = Paths.get(setupCommandDir, "/setup-command.json").toString();
+        final Command setupCommandToCreate = mapper.readValue(new File(setupCommandJsonFile), Command.class);
+        final Command setupCommand = commandService.create(setupCommandToCreate);
+        assertThat(setupCommand.name(), is(setupCommandName));
+        assertThat(setupCommand.image(), is(setupCommandImageName));
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        final String resourceInputJsonPath = setupCommandDir + "/resource.json";
+        // I need to set the resource directory to a temp directory
+        final String resourceDir = folder.newFolder("resource").getAbsolutePath();
+        final Resource resourceInput = mapper.readValue(new File(resourceInputJsonPath), Resource.class);
+        resourceInput.setDirectory(resourceDir);
+        final Map<String, String> runtimeValues = Collections.singletonMap("resource", mapper.writeValueAsString(resourceInput));
+
+        // Write a test file to the resource
+        final String testFileContents = "contents of the file";
+        Files.write(Paths.get(resourceDir, "test.txt"), testFileContents.getBytes());
+
+        // I don't know if I need this, but I copied it from another test
+        final ArchivableItem mockProjectItem = mock(ArchivableItem.class);
+        final ProjURI mockUriObject = mock(ProjURI.class);
+        when(UriParserUtils.parseURI("/archive" + resourceInput.getUri())).thenReturn(mockUriObject);
+        when(mockUriObject.getSecurityItem()).thenReturn(mockProjectItem);
+        when(mockPermissionsServiceI.canEdit(mockUser, mockProjectItem)).thenReturn(Boolean.TRUE);
+
+        // Time to launch this thing
+        final Container mainContainerRightAfterLaunch = containerService.resolveCommandAndLaunchContainer(commandWithSetupCommandWrapper.id(), runtimeValues, mockUser);
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+        Thread.sleep(5000); // Wait for container to finish
+
+        final Container mainContainerAWhileAfterLaunch = containerService.get(mainContainerRightAfterLaunch.databaseId());
+        final List<Container> setupContainers = containerService.retrieveSetupContainersForParent(mainContainerAWhileAfterLaunch.databaseId());
+        assertThat(setupContainers, hasSize(1));
+        final Container setupContainer = setupContainers.get(0);
+
+        // Print the logs for debugging in case weird stuff happened
+        printContainerLogs(setupContainer, "setup");
+        printContainerLogs(mainContainerAWhileAfterLaunch, "main");
+
+        // Sanity Checks
+        assertThat(setupContainer.setupContainerParent(), is(mainContainerAWhileAfterLaunch));
+        assertThat(setupContainer.status(), is(not("Failed")));
+
+        // Check main container's input mount for contents
+        final ContainerMount mainContainerMount = mainContainerAWhileAfterLaunch.mounts().get(0);
+        final File mainContainerMountDir = new File(mainContainerMount.xnatHostPath());
+        final File[] contentsOfMainContainerMountDir = mainContainerMountDir.listFiles();
+
+        // This is what we will be testing, and why it validates that the setup container worked.
+        // We wrote "test.txt" to the resource's directory.
+        // The main container is set to mount an initially empty directory. Call this "main mount".
+        // The setup container is set to mount the resource's directory as its input and the main mount as its output.
+        // When the setup container runs, it copies "text.txt" from its input to its output. It also creates a new
+        //     file "another-file" in its output, which we did not explicitly create in this test.
+        // By verifying that the main container's mount sees both files, we have verified that the setup container
+        //     put the files where they needed to go, and that all the mounts were hooked up correctly.
+        assertThat(contentsOfMainContainerMountDir, hasItemInArray(pathEndsWith("test.txt")));
+        assertThat(contentsOfMainContainerMountDir, hasItemInArray(pathEndsWith("another-file")));
+    }
+
+
+    @Test
     public void testFailedContainer() throws Exception {
         assumeThat(SystemUtils.IS_OS_WINDOWS_7, is(false));
         assumeThat(canConnectToDocker(), is(true));
@@ -527,15 +631,30 @@ public class CommandLaunchIntegrationTest {
     }
 
     private void printContainerLogs(final Container container) throws IOException {
+        printContainerLogs(container, "main");
+    }
+
+    private void printContainerLogs(final Container container, final String containerTypeForLogs) throws IOException {
         for (final String containerLogPath : container.logPaths()) {
             final String[] containerLogPathComponents = containerLogPath.split("/");
             final String containerLogName = containerLogPathComponents[containerLogPathComponents.length - 1];
-            log.info("Displaying contents of {} for container {} {}.", containerLogName, container.databaseId(), container.containerId());
+            log.info("Displaying contents of {} for {} container {} {}.", containerLogName, containerTypeForLogs, container.databaseId(), container.containerId());
             final String[] logLines = readFile(containerLogPath);
             for (final String logLine : logLines) {
                 log.info("\t{}", logLine);
             }
         }
+    }
+
+    private CustomTypeSafeMatcher<File> pathEndsWith(final String filePathEnd) {
+        final String description = "Match a file path if it ends with " + filePathEnd;
+        return new CustomTypeSafeMatcher<File>(description) {
+            @Override
+            protected boolean matchesSafely(final File item) {
+                return item == null && filePathEnd == null ||
+                        item != null && item.getAbsolutePath().endsWith(filePathEnd);
+            }
+        };
     }
 
     private Callable<Boolean> containerIsRunning(final Container container) {

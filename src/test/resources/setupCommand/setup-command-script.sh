@@ -1,5 +1,10 @@
-#!/usr/bin/env sh
+#!/bin/sh
 
-cp /input/* /output
+die(){
+    echo >&2 "$@"
+    exit 1
+}
 
-touch /output/another-file
+cp /input/* /output || die "FAILED cp /input/* /output"
+
+touch /output/another-file || die "FAILED touch /output/another-file"
