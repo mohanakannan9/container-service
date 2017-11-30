@@ -33,7 +33,7 @@ public class DockerIntegrationTestConfig implements SchedulingConfigurer {
     public TriggerTask dockerEventPullerTask(final DockerStatusUpdater dockerStatusUpdater) {
         myTask = new TriggerTask(
                 dockerStatusUpdater,
-                new PeriodicTrigger(5L, TimeUnit.SECONDS)
+                new PeriodicTrigger(250L, TimeUnit.MILLISECONDS)
         );
         return myTask;
     }

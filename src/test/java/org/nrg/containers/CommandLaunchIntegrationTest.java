@@ -22,7 +22,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.nrg.containers.api.DockerControlApi;
-import org.nrg.containers.config.IntegrationTestConfig;
+import org.nrg.containers.config.DockerIntegrationTestConfig;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.model.container.auto.Container;
@@ -40,6 +40,7 @@ import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.services.AliasTokenService;
+import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.archive.impl.ExptURI;
@@ -81,9 +82,9 @@ import static org.powermock.api.mockito.PowerMockito.when;
 
 @RunWith(PowerMockRunner.class)
 @PowerMockRunnerDelegate(SpringJUnit4ClassRunner.class)
-@PrepareForTest(UriParserUtils.class)
-@PowerMockIgnore({"org.apache.*", "java.*", "javax.*", "org.w3c.*"})
-@ContextConfiguration(classes = IntegrationTestConfig.class)
+@PrepareForTest({UriParserUtils.class, XFTManager.class})
+@PowerMockIgnore({"org.apache.*", "java.*", "javax.*", "org.w3c.*", "com.sun.*"})
+@ContextConfiguration(classes = DockerIntegrationTestConfig.class)
 @Transactional
 public class CommandLaunchIntegrationTest {
     private static final Logger log = LoggerFactory.getLogger(CommandLaunchIntegrationTest.class);
@@ -102,7 +103,7 @@ public class CommandLaunchIntegrationTest {
     @Autowired private ContainerService containerService;
     @Autowired private DockerControlApi controlApi;
     @Autowired private AliasTokenService mockAliasTokenService;
-    @Autowired private DockerServerService mockDockerServerService;
+    @Autowired private DockerServerService dockerServerService;
     @Autowired private SiteConfigPreferences mockSiteConfigPreferences;
     @Autowired private UserManagementServiceI mockUserManagementServiceI;
     @Autowired private PermissionsServiceI mockPermissionsServiceI;
@@ -163,8 +164,7 @@ public class CommandLaunchIntegrationTest {
             }
         }
 
-        final DockerServer dockerServer = DockerServer.create(0L, "name", containerHost, certPath, false);
-        when(mockDockerServerService.getServer()).thenReturn(dockerServer);
+        dockerServerService.setServer(DockerServer.create(0L, "name", containerHost, certPath, false));
 
         // Mock the userI
         mockUser = mock(UserI.class);
@@ -188,6 +188,10 @@ public class CommandLaunchIntegrationTest {
         when(mockSiteConfigPreferences.getBuildPath()).thenReturn(folder.newFolder().getAbsolutePath()); // transporter makes a directory under build
         when(mockSiteConfigPreferences.getArchivePath()).thenReturn(folder.newFolder().getAbsolutePath()); // container logs get stored under archive
         when(mockSiteConfigPreferences.getProperty("processingUrl", FAKE_HOST)).thenReturn(FAKE_HOST);
+
+        // Use powermock to mock out the static method XFTManager.isInitialized()
+        mockStatic(XFTManager.class);
+        when(XFTManager.isInitialized()).thenReturn(true);
 
         CLIENT = controlApi.getClient();
     }

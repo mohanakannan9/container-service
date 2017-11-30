@@ -53,7 +53,7 @@ public class DockerServiceIntegrationTest {
 
     @Autowired private DockerControlApi controlApi;
     @Autowired private DockerService dockerService;
-    @Autowired private DockerServerService mockDockerServerService;
+    @Autowired private DockerServerService dockerServerService;
     @Autowired private SiteConfigPreferences mockSiteConfigPreferences;
     @Autowired private UserManagementServiceI mockUserManagementServiceI;
 
@@ -92,8 +92,7 @@ public class DockerServiceIntegrationTest {
             }
         }
 
-        final DockerServer dockerServer = DockerServer.create(0L, "name", containerHost, certPath, false);
-        when(mockDockerServerService.getServer()).thenReturn(dockerServer);
+        dockerServerService.setServer(DockerServer.create(0L, "name", containerHost, certPath, false));
 
         // Mock the userI
         mockUser = Mockito.mock(UserI.class);
