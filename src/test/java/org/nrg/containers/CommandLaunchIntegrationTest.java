@@ -16,6 +16,7 @@ import com.spotify.docker.client.exceptions.DockerException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -61,6 +62,7 @@ import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -95,6 +97,9 @@ public class CommandLaunchIntegrationTest {
     private final String FAKE_ALIAS = "alias";
     private final String FAKE_SECRET = "secret";
     private final String FAKE_HOST = "mock://url";
+
+    private final List<String> containersToCleanUp = new ArrayList<>();
+    private final List<String> imagesToCleanUp = new ArrayList<>();
 
     private static DockerClient CLIENT;
 
@@ -196,6 +201,21 @@ public class CommandLaunchIntegrationTest {
         CLIENT = controlApi.getClient();
     }
 
+    @After
+    public void cleanup() throws Exception {
+        for (final String containerToCleanUp : containersToCleanUp) {
+            CLIENT.removeContainer(containerToCleanUp, DockerClient.RemoveContainerParam.forceKill());
+        }
+        containersToCleanUp.clear();
+
+        for (final String imageToCleanUp : imagesToCleanUp) {
+            CLIENT.removeImage(imageToCleanUp, true, false);
+        }
+        imagesToCleanUp.clear();
+
+        CLIENT.close();
+    }
+
     private boolean canConnectToDocker() {
         try {
             return CLIENT.ping().equals("OK");
@@ -248,6 +268,7 @@ public class CommandLaunchIntegrationTest {
         runtimeValues.put("T1-scantype", t1Scantype);
 
         final Container execution = containerService.resolveCommandAndLaunchContainer(commandWrapper.id(), runtimeValues, mockUser);
+        containersToCleanUp.add(execution.containerId());
         Thread.sleep(1000); // Wait for container to finish
 
         // Raw inputs
@@ -360,6 +381,7 @@ public class CommandLaunchIntegrationTest {
         runtimeValues.put("project", projectJson);
 
         final Container execution = containerService.resolveCommandAndLaunchContainer(commandWrapper.id(), runtimeValues, mockUser);
+        containersToCleanUp.add(execution.containerId());
         Thread.sleep(1000); // Wait for container to finish
 
         // Raw inputs
