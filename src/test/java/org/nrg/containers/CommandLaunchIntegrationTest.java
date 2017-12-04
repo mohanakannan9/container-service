@@ -336,6 +336,8 @@ public class CommandLaunchIntegrationTest {
         assertThat(outputMount.containerPath(), is("/output"));
         final String outputPath = outputMount.xnatHostPath();
 
+        printContainerLogs(execution);
+
         try {
             final String[] outputFileContents = readFile(outputPath + "/out.txt");
             assertThat(outputFileContents.length, greaterThanOrEqualTo(2));
@@ -440,6 +442,8 @@ public class CommandLaunchIntegrationTest {
         assertThat(outputMount.containerPath(), is("/output"));
         final String outputPath = outputMount.xnatHostPath();
 
+        printContainerLogs(execution);
+
         try {
             // Read two output files: files.txt and dirs.txt
             final String[] expectedFilesFileContents = {
@@ -475,6 +479,18 @@ public class CommandLaunchIntegrationTest {
             throw new IOException("Cannot read output file " + outputFile.getAbsolutePath());
         }
         return FileUtils.readFileToString(outputFile).split("\\n");
+    }
+
+    private void printContainerLogs(final Container container) throws IOException {
+        for (final String containerLogPath : container.logPaths()) {
+            final String[] containerLogPathComponents = containerLogPath.split("/");
+            final String containerLogName = containerLogPathComponents[containerLogPathComponents.length - 1];
+            log.info("Displaying contents of {} for container {} {}.", containerLogName, container.databaseId(), container.containerId());
+            final String[] logLines = readFile(containerLogPath);
+            for (final String logLine : logLines) {
+                log.info("\t{}", logLine);
+            }
+        }
     }
 
     private Callable<Boolean> containerIsRunning(final Container container) {
