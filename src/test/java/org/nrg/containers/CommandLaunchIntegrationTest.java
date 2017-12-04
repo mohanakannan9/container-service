@@ -12,7 +12,9 @@ import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.exceptions.ContainerNotFoundException;
 import com.spotify.docker.client.exceptions.DockerException;
+import com.spotify.docker.client.messages.ContainerInfo;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
@@ -66,8 +68,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
@@ -269,7 +273,7 @@ public class CommandLaunchIntegrationTest {
 
         final Container execution = containerService.resolveCommandAndLaunchContainer(commandWrapper.id(), runtimeValues, mockUser);
         containersToCleanUp.add(execution.containerId());
-        Thread.sleep(1000); // Wait for container to finish
+        await().until(containerIsRunning(execution), is(false));
 
         // Raw inputs
         assertThat(execution.getRawInputs(), is(runtimeValues));
@@ -382,7 +386,7 @@ public class CommandLaunchIntegrationTest {
 
         final Container execution = containerService.resolveCommandAndLaunchContainer(commandWrapper.id(), runtimeValues, mockUser);
         containersToCleanUp.add(execution.containerId());
-        Thread.sleep(1000); // Wait for container to finish
+        await().until(containerIsRunning(execution), is(false));
 
         // Raw inputs
         assertThat(execution.getRawInputs(), is(runtimeValues));
@@ -471,5 +475,19 @@ public class CommandLaunchIntegrationTest {
             throw new IOException("Cannot read output file " + outputFile.getAbsolutePath());
         }
         return FileUtils.readFileToString(outputFile).split("\\n");
+    }
+
+    private Callable<Boolean> containerIsRunning(final Container container) {
+        return new Callable<Boolean>() {
+            public Boolean call() throws Exception {
+                try {
+                    final ContainerInfo containerInfo = CLIENT.inspectContainer(container.containerId());
+                    return containerInfo.state().running();
+                } catch (ContainerNotFoundException ignored) {
+                    // Ignore exception. If container is not found, it is not running.
+                    return false;
+                }
+            }
+        };
     }
 }
