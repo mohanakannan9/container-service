@@ -58,6 +58,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.transaction.TestTransaction;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Nullable;
@@ -65,6 +66,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -472,6 +474,45 @@ public class CommandLaunchIntegrationTest {
         }
     }
 
+    @Test
+    public void testFailedContainer() throws Exception {
+        assumeThat(SystemUtils.IS_OS_WINDOWS_7, is(false));
+        assumeThat(canConnectToDocker(), is(true));
+
+        CLIENT.pull("busybox:latest");
+
+        final Command willFail = commandService.create(Command.builder()
+                .name("will-fail")
+                .image("busybox:latest")
+                .version("0")
+                .commandLine("exit 1")
+                .addCommandWrapper(CommandWrapper.builder()
+                        .name("placeholder")
+                        .build())
+                .build());
+        final CommandWrapper willFailWrapper = willFail.xnatCommandWrappers().get(0);
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        final Container container = containerService.resolveCommandAndLaunchContainer(willFailWrapper.id(), Collections.<String, String>emptyMap(), mockUser);
+        containersToCleanUp.add(container.containerId());
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        printContainerLogs(container);
+
+        await().until(containerIsRunning(container), is(false));
+
+        await().until(containerHistoryHasItemFromSystem(container.databaseId()), is(true));
+        final Container exited = containerService.get(container.databaseId());
+        assertThat(exited.exitCode(), is("1"));
+        assertThat(exited.status(), is("Failed"));
+    }
+
     @SuppressWarnings("deprecation")
     private String[] readFile(final String outputFilePath) throws IOException {
         final File outputFile = new File(outputFilePath);
@@ -503,6 +544,24 @@ public class CommandLaunchIntegrationTest {
                     // Ignore exception. If container is not found, it is not running.
                     return false;
                 }
+            }
+        };
+    }
+
+    private Callable<Boolean> containerHistoryHasItemFromSystem(final long containerDatabaseId) {
+        return new Callable<Boolean>() {
+            public Boolean call() throws Exception {
+                try {
+                    final Container container = containerService.get(containerDatabaseId);
+                    for (final Container.ContainerHistory historyItem : container.history()) {
+                        if (historyItem.entityType() != null && historyItem.entityType().equals("system")) {
+                            return true;
+                        }
+                    }
+                } catch (Exception ignored) {
+                    // ignored
+                }
+                return false;
             }
         };
     }
