@@ -59,6 +59,8 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.support.ResourceTransactionManager;
 import reactor.Environment;
 import reactor.bus.EventBus;
+import reactor.core.Dispatcher;
+import reactor.core.dispatch.RingBufferDispatcher;
 
 import javax.sql.DataSource;
 import java.util.Properties;
@@ -98,8 +100,13 @@ public class IntegrationTestConfig {
     }
 
     @Bean
-    public EventBus eventBus(final Environment env) {
-        return EventBus.create(env, Environment.THREAD_POOL);
+    public Dispatcher dispatcher() {
+        return new RingBufferDispatcher("dispatch");
+    }
+
+    @Bean
+    public EventBus eventBus(final Environment env, final Dispatcher dispatcher) {
+        return EventBus.create(env, dispatcher);
     }
 
     @Bean
