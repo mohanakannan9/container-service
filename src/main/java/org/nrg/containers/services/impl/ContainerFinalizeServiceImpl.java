@@ -133,6 +133,7 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
                 // TODO We know the container has failed. Should we send an email?
                 ContainerUtils.updateWorkflowStatus(toFinalize.workflowId(), PersistentWorkflowUtils.FAILED, userI);
                 finalizedContainerBuilder.status("Failed")
+                        .addHistoryItem(Container.ContainerHistory.fromSystem("Failed", ""))
                         .statusTime(new Date());
             }
 
