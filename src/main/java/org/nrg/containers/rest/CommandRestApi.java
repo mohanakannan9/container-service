@@ -50,7 +50,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 @XapiRestController
-@Api("Command API for XNAT Container service")
+@Api("Command API for XNAT Container Service")
 public class CommandRestApi extends AbstractXapiRestController {
     private static final Logger log = LoggerFactory.getLogger(CommandRestApi.class);
 
@@ -182,7 +182,7 @@ public class CommandRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperId}"}, method = POST)
-    @ApiOperation(value = "Update a Command")
+    @ApiOperation(value = "Update a Command Wrapper")
     @ResponseBody
     public ResponseEntity<Void> updateWrapper(final @RequestBody CommandWrapper commandWrapper,
                                               final @PathVariable long commandId,
@@ -195,7 +195,7 @@ public class CommandRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(value = {"/wrappers/{wrapperId}"}, method = DELETE)
-    @ApiOperation(value = "Delete a Command", code = 204)
+    @ApiOperation(value = "Delete a Command Wrapper", code = 204)
     public ResponseEntity<Void> deleteWrapper(final @PathVariable long wrapperId)
             throws NotFoundException, UnauthorizedException {
         checkAdminOrThrow();
@@ -207,6 +207,7 @@ public class CommandRestApi extends AbstractXapiRestController {
     AVAILABLE FOR LAUNCHING
      */
     @XapiRequestMapping(value = {"/commands/available"}, params = {"project", "xsiType"}, method = GET, restrictTo = Read)
+    @ApiOperation(value = "Get Commands available in given project context and XSIType")
     @ResponseBody
     public List<CommandSummaryForContext> availableCommands(final @RequestParam String project,
                                                             final @RequestParam String xsiType)
@@ -219,6 +220,7 @@ public class CommandRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(value = {"/commands/available/site"}, params = {"xsiType"}, method = GET, restrictTo = Admin)
+    @ApiOperation(value = "Get Commands sitewide with given XSIType")
     @ResponseBody
     public List<CommandSummaryForContext> availableCommands(final @RequestParam String xsiType)
             throws ElementNotFoundException {
