@@ -7,10 +7,12 @@ Not yet released.
 ### Features
 
 * [CS-355][] When deleting a docker image through CS API, also delete all commands and wrappers associated with the image.
+* Docs: Add new script that bulk uploads all changed source docs
+* Docs: Add support for "NO UPLOAD" comment in source docs that should be skipped and not uploaded to wiki
 
 ### Bugfixes
 
-*
+* Docs: Fix mishandling of anchor tags/links on wiki pages. Confluence uses a macro for these, not raw HTML anchors.
 
 [CS-355]: https://issues.xnat.org/browse/CS-355
 
