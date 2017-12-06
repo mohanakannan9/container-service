@@ -14,6 +14,10 @@ pushd $docsdir > /dev/null
 
 mostRecentReleaseTag=$(git describe --abbrev=0 --tags)
 
+# Make container-service-api.md from template and swagger.json
+echo "Making container-service-api.md from template"
+./make-container-service-api-md.py
+
 # For each markdown file...
 #     Convert it to HTML and confluence HTML
 #     Upload it to wiki
@@ -32,12 +36,17 @@ for mdFilePath in $(ls *.md); do
         continue
     fi
 
-    d=$(git diff ${mostRecentReleaseTag} ${mdName}) || (echo "Failed to check if $mdName has changed since last release. Skipping."; continue)
+    if [[ "$base" == "container-service-api" ]]; then
+        fileToCompare="swagger.json"
+    else
+        fileToCompare=${mdName}
+    fi
+    d=$(git diff ${mostRecentReleaseTag} ${fileToCompare}) || (echo "Failed to check if $fileToCompare has changed since last release. Skipping."; continue)
 
     if [[ -n "$d" ]]; then
-        echo "$mdName has changed since last release. Proceeding with conversion and upload."
+        echo "$fileToCompare has changed since last release. Proceeding with conversion and upload."
     else
-        echo "$mdName has not changed since last release. Skipping."
+        echo "$fileToCompare has not changed since last release. Skipping."
         continue
     fi
 
@@ -52,5 +61,6 @@ done
 echo "Cleaning up"
 rm *.html
 rm *.html.confluence
+rm container-service-api.md
 
 popd > /dev/null
