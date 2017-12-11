@@ -5,9 +5,9 @@ If you have a docker image and a command that you want to execute with the XNAT 
 Making an image XNAT ready is simple a pretty simple process. At a high level, here are the steps:
 
 1. Serialize your command(s) from JSON into one string.
-2. Save a label on your docker image with the key "org.nrg.commands" and the value the command string from step 1.
+2. Save a label on your docker image with the key `"org.nrg.commands"` and the value the command string from step 1.
 
-And that's all there is! If you push your image up to docker hub, the commands will go along as part of the image's labels. Then when you or another user pulls the image down, the container service will read... [LINK TO INSTALLING AN XNAT-READY IMAGE].
+And that's all there is! If you push your image up to docker hub, the commands will go along as part of the image's labels. Then when you or another user pulls the image down, the container service will read the labels and install the command; see ([Installing a Command from an XNAT-Ready Image](#installing-a-command-from-an-xnat-ready-image)).
 
 ## Serializing commands to a string
 To serialize the command JSON to a string, all the double quote (`"`) characters need to be escaped (`\"`) and the whole thing surrounded by double quotes. Instead of the command looking like this
@@ -35,3 +35,13 @@ To make the image XNAT ready, the `value` will be a list of commands and the `ke
 
 ## Examples
 You can see several examples in the various Dockerfiles in the [github.com/nrgxnat/docker-images](https://github.com/nrgxnat/docker-images) repo.
+
+## Installing a Command from an XNAT-Ready Image
+
+You can do this in two different ways, depending on if you need to pull down the image from Docker Hub or if you have the image already on your docker server.
+
+When you pull down an XNAT-Ready image from Docker Hub using the container service, the commands in the labels will be read by default. You can pull an image from Docker Hub using the UI; click the `Add new Image` button in `Administer > Plugin Settings > Container Service > Commands and Images`. Provide the image name (`account/image`) and the version. You can also use the REST API directly; `POST` to `/xapi/docker/pull` with the query param `image=(account)/(image):(version)`.
+
+Alternatively, if the image is already on your Docker server, you can instruct the Container service to look for Commands in its labels. There is no way to do this through the UI, only through the REST API. Issue a `POST` to `/xapi/images/save` with the query param `image=(account)/(image):(version)`.
+
+Once you do one of these things (a new image is pulled down, or you `POST` to `/xapi/images/save`) the Container Service will check in the image's labels for one with the key `"org.nrg.commands"`. If it finds that, it will parse the value as a list of Commands. If that succeeds, it will attempt to save each command in the list.
