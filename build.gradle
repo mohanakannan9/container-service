@@ -1,12 +1,30 @@
+import com.github.kongchen.swagger.docgen.mavenplugin.ApiSource
+import com.github.zhurlik.SwaggerTask
+import io.swagger.models.Contact
+import io.swagger.models.Info
+import io.swagger.models.License
+
 buildscript {
     repositories {
         maven {
             url "https://plugins.gradle.org/m2/"
         }
+        maven {
+            url 'https://nrgxnat.jfrog.io/nrgxnat/libs-release'
+            name 'XNAT Release Repository'
+        }
+        maven {
+            url 'https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot'
+            name 'XNAT Snapshot Repository'
+        }
     }
     dependencies {
         classpath "net.ltgt.gradle:gradle-apt-plugin:0.9"
         classpath "io.spring.gradle:dependency-management-plugin:1.0.3.RELEASE"
+        classpath "gradle.plugin.com.github.zhurlik:gradle-swagger-plugin:0.2"
+        classpath group: 'io.swagger', name: 'swagger-core', version: '1.5.+'
+        classpath group: 'com.github.kongchen', name: 'swagger-maven-plugin', version: '3.1.+'
+        classpath "org.nrg.xdat:core:1.7.3"
     }
 }
 
@@ -19,6 +37,7 @@ apply plugin: 'maven'
 apply plugin: 'maven-publish'
 apply plugin: "net.ltgt.apt"
 apply plugin: 'io.spring.dependency-management'
+apply plugin: "com.github.zhurlik.swagger"
 
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
@@ -181,6 +200,39 @@ dependencies {
 
 task unitTest( type: Test ) {
     exclude '**/DockerControlApiTest.class', '**/*IntegrationTest.class'
+}
+
+task(type: SwaggerTask, 'swagger') {
+
+    // any dirs with classes
+    classesDirs = [
+            file("${buildDir}/classes/java/main")
+            // project(':your-project').sourceSets['main'].output.classesDir
+    ]
+
+    apiSources = [
+            new ApiSource(
+                    springmvc: true,
+                    locations: ['org/nrg/containers/rest', 'org/nrg/xapi/rest'],
+                    schemes: ['http', 'https'],
+                    host: 'xnat.org',
+                    basePath: '/xapi',
+                    info: new Info(
+                            title: 'Container Service API',
+                            version: "${version}",
+                            description: 'XAPI endpoints for the XNAT Container Service',
+                            contact: new Contact(
+                                    email: 'jflavin@wustl.edu',
+                                    name: 'John Flavin'
+                            ),
+                            license: new License(
+                                    url: 'https://github.com/NrgXnat/container-service/blob/master/LICENSE.md',
+                                    name: 'BSD 2-Clause'
+                            )
+                    ),
+                    swaggerDirectory: file("docs").path,
+            )
+    ]
 }
 
 task fatJar(type: Jar) {

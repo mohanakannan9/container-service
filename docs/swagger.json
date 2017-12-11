@@ -1,0 +1,3424 @@
+{
+  "swagger" : "2.0",
+  "info" : {
+    "description" : "XAPI endpoints for the XNAT Container Service",
+    "version" : "1.4.0-SNAPSHOT",
+    "title" : "Container Service API",
+    "contact" : {
+      "name" : "John Flavin",
+      "email" : "jflavin@wustl.edu"
+    },
+    "license" : {
+      "name" : "BSD 2-Clause",
+      "url" : "https://github.com/NrgXnat/container-service/blob/master/LICENSE.md"
+    }
+  },
+  "host" : "xnat.org",
+  "basePath" : "/xapi",
+  "tags" : [ {
+    "name" : "API for Launching Containers with XNAT Container service"
+  }, {
+    "name" : "Command API for XNAT Container Service"
+  }, {
+    "name" : "Command Configuration API for XNAT Container service"
+  }, {
+    "name" : "Command Event Mapping API for XNAT Container Service"
+  }, {
+    "name" : "Docker API for XNAT Container Service"
+  } ],
+  "schemes" : [ "http", "https" ],
+  "paths" : {
+    "/commandeventmapping" : {
+      "get" : {
+        "tags" : [ "Command Event Mapping API for XNAT Container Service" ],
+        "summary" : "Get all Command-Event Mappings",
+        "description" : "",
+        "operationId" : "getMappings",
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "type" : "array",
+              "items" : {
+                "$ref" : "#/definitions/CommandEventMapping"
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "Command Event Mapping API for XNAT Container Service" ],
+        "summary" : "Create a Command-Event Mapping",
+        "description" : "",
+        "operationId" : "create",
+        "parameters" : [ {
+          "in" : "body",
+          "name" : "body",
+          "required" : false,
+          "schema" : {
+            "$ref" : "#/definitions/CommandEventMapping"
+          }
+        } ],
+        "responses" : {
+          "201" : {
+            "description" : "successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/CommandEventMapping"
+            }
+          }
+        }
+      }
+    },
+    "/commandeventmapping/{id}" : {
+      "get" : {
+        "tags" : [ "Command Event Mapping API for XNAT Container Service" ],
+        "summary" : "Get a Command-Event-Mapping",
+        "description" : "",
+        "operationId" : "retrieve",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/CommandEventMapping"
+            }
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "Command Event Mapping API for XNAT Container Service" ],
+        "summary" : "Delete a Command-Event Mapping",
+        "description" : "",
+        "operationId" : "delete",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "successful operation",
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        }
+      }
+    },
+    "/commandeventmapping/{id}/disable" : {
+      "put" : {
+        "tags" : [ "Command Event Mapping API for XNAT Container Service" ],
+        "summary" : "Disable a Command-Event Mapping",
+        "description" : "",
+        "operationId" : "disable",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          }
+        }
+      }
+    },
+    "/commandeventmapping/{id}/enable" : {
+      "put" : {
+        "tags" : [ "Command Event Mapping API for XNAT Container Service" ],
+        "summary" : "Enable a Command-Event Mapping",
+        "description" : "",
+        "operationId" : "enable",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          }
+        }
+      }
+    },
+    "/commands" : {
+      "get" : {
+        "tags" : [ "Command API for XNAT Container Service" ],
+        "summary" : "Get Commands by criteria",
+        "description" : "",
+        "operationId" : "getCommands",
+        "parameters" : [ {
+          "name" : "name",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "version",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "image",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "type" : "array",
+              "items" : {
+                "$ref" : "#/definitions/Command"
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "Command API for XNAT Container Service" ],
+        "summary" : "Create a Command",
+        "description" : "",
+        "operationId" : "createCommand",
+        "produces" : [ "application/json;charset=UTF-8" ],
+        "parameters" : [ {
+          "name" : "image",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : false,
+          "schema" : {
+            "$ref" : "#/definitions/CommandCreation"
+          }
+        } ],
+        "responses" : {
+          "201" : {
+            "description" : "successful operation",
+            "schema" : {
+              "type" : "integer",
+              "format" : "int64"
+            }
+          }
+        }
+      }
+    },
+    "/commands/available" : {
+      "get" : {
+        "tags" : [ "Command API for XNAT Container Service" ],
+        "summary" : "Get Commands available in given project context and XSIType",
+        "description" : "",
+        "operationId" : "availableCommands",
+        "parameters" : [ {
+          "name" : "project",
+          "in" : "query",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "xsiType",
+          "in" : "query",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "type" : "array",
+              "items" : {
+                "$ref" : "#/definitions/CommandSummaryForContext"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/commands/available/site" : {
+      "get" : {
+        "tags" : [ "Command API for XNAT Container Service" ],
+        "summary" : "Get Commands sitewide with given XSIType",
+        "description" : "",
+        "operationId" : "availableCommands",
+        "parameters" : [ {
+          "name" : "xsiType",
+          "in" : "query",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "type" : "array",
+              "items" : {
+                "$ref" : "#/definitions/CommandSummaryForContext"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/commands/{commandId}/wrappers/{wrapperId}" : {
+      "post" : {
+        "tags" : [ "Command API for XNAT Container Service" ],
+        "summary" : "Update a Command Wrapper",
+        "description" : "",
+        "operationId" : "updateWrapper",
+        "parameters" : [ {
+          "in" : "body",
+          "name" : "body",
+          "required" : false,
+          "schema" : {
+            "$ref" : "#/definitions/CommandWrapper"
+          }
+        }, {
+          "name" : "commandId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "name" : "wrapperId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          }
+        }
+      }
+    },
+    "/commands/{commandId}/wrappers/{wrapperName}/bulklaunch" : {
+      "get" : {
+        "tags" : [ "API for Launching Containers with XNAT Container service" ],
+        "summary" : "Get Bulk Launch UI for wrapper",
+        "description" : "DOES NOT WORK PROPERLY IN SWAGGER UI",
+        "operationId" : "getBulkLaunchUi",
+        "parameters" : [ {
+          "name" : "commandId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "name" : "wrapperName",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "allRequestParams",
+          "in" : "query",
+          "required" : true,
+          "type" : "object"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/BulkLaunchUi"
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "API for Launching Containers with XNAT Container service" ],
+        "summary" : "Resolve a command from the variable values in the request body, and launch it",
+        "description" : "",
+        "operationId" : "bulklaunch",
+        "consumes" : [ "application/json;charset=UTF-8" ],
+        "parameters" : [ {
+          "name" : "commandId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "name" : "wrapperName",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : false,
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "type" : "object",
+              "additionalProperties" : {
+                "type" : "string"
+              }
+            }
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/BulkLaunchReport"
+            }
+          }
+        }
+      }
+    },
+    "/commands/{commandId}/wrappers/{wrapperName}/config" : {
+      "get" : {
+        "tags" : [ "Command Configuration API for XNAT Container service" ],
+        "summary" : "Get (site)",
+        "description" : "",
+        "operationId" : "getConfiguration",
+        "parameters" : [ {
+          "name" : "commandId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "name" : "wrapperName",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/CommandConfiguration"
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "Command Configuration API for XNAT Container service" ],
+        "summary" : "Configure (site)",
+        "description" : "",
+        "operationId" : "createConfiguration",
+        "parameters" : [ {
+          "in" : "body",
+          "name" : "body",
+          "required" : false,
+          "schema" : {
+            "$ref" : "#/definitions/CommandConfiguration"
+          }
+        }, {
+          "name" : "commandId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "name" : "wrapperName",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "enable",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean"
+        }, {
+          "name" : "reason",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "Command Configuration API for XNAT Container service" ],
+        "summary" : "Delete (site)",
+        "description" : "",
+        "operationId" : "deleteConfiguration",
+        "parameters" : [ {
+          "name" : "commandId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "name" : "wrapperName",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          }
+        }
+      }
+    },
+    "/commands/{commandId}/wrappers/{wrapperName}/disabled" : {
+      "put" : {
+        "tags" : [ "Command Configuration API for XNAT Container service" ],
+        "summary" : "Disable (site)",
+        "description" : "",
+        "operationId" : "disableConfiguration",
+        "parameters" : [ {
+          "name" : "commandId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "name" : "wrapperName",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "reason",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          }
+        }
+      }
+    },
+    "/commands/{commandId}/wrappers/{wrapperName}/enabled" : {
+      "get" : {
+        "tags" : [ "Command Configuration API for XNAT Container service" ],
+        "summary" : "Is Enabled (site)",
+        "description" : "",
+        "operationId" : "isConfigurationEnabled",
+        "parameters" : [ {
+          "name" : "commandId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "name" : "wrapperName",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "type" : "boolean"
+            }
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "Command Configuration API for XNAT Container service" ],
+        "summary" : "Enable (site)",
+        "description" : "",
+        "operationId" : "enableConfiguration",
+        "parameters" : [ {
+          "name" : "commandId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "name" : "wrapperName",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "reason",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          }
+        }
+      }
+    },
+    "/commands/{commandId}/wrappers/{wrapperName}/launch" : {
+      "get" : {
+        "tags" : [ "API for Launching Containers with XNAT Container service" ],
+        "summary" : "Get Launch UI for wrapper",
+        "description" : "DOES NOT WORK PROPERLY IN SWAGGER UI",
+        "operationId" : "getLaunchUi",
+        "parameters" : [ {
+          "name" : "commandId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "name" : "wrapperName",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "allRequestParams",
+          "in" : "query",
+          "required" : true,
+          "type" : "object"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/SingleLaunchUi"
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "API for Launching Containers with XNAT Container service" ],
+        "summary" : "Resolve a command from the variable values in the request body, and launch it",
+        "description" : "",
+        "operationId" : "launchCommandWJsonBody",
+        "consumes" : [ "application/json;charset=UTF-8" ],
+        "parameters" : [ {
+          "name" : "commandId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "name" : "wrapperName",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : false,
+          "schema" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            }
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/LaunchReport"
+            }
+          }
+        }
+      }
+    },
+    "/commands/{id}" : {
+      "get" : {
+        "tags" : [ "Command API for XNAT Container Service" ],
+        "summary" : "Get a Command by ID",
+        "description" : "",
+        "operationId" : "retrieveCommand",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/Command"
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "Command API for XNAT Container Service" ],
+        "summary" : "Update a Command",
+        "description" : "",
+        "operationId" : "updateCommand",
+        "parameters" : [ {
+          "in" : "body",
+          "name" : "body",
+          "required" : false,
+          "schema" : {
+            "$ref" : "#/definitions/Command"
+          }
+        }, {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "Command API for XNAT Container Service" ],
+        "summary" : "Delete a Command",
+        "description" : "",
+        "operationId" : "delete",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          }
+        }
+      }
+    },
+    "/commands/{id}/wrappers" : {
+      "post" : {
+        "tags" : [ "Command API for XNAT Container Service" ],
+        "summary" : "Create a Command Wrapper",
+        "description" : "",
+        "operationId" : "createWrapper",
+        "produces" : [ "application/json;charset=UTF-8" ],
+        "parameters" : [ {
+          "in" : "body",
+          "name" : "body",
+          "required" : false,
+          "schema" : {
+            "$ref" : "#/definitions/CommandWrapperCreation"
+          }
+        }, {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        } ],
+        "responses" : {
+          "201" : {
+            "description" : "successful operation",
+            "schema" : {
+              "type" : "integer",
+              "format" : "int64"
+            }
+          }
+        }
+      }
+    },
+    "/docker/hubs" : {
+      "get" : {
+        "tags" : [ "Docker API for XNAT Container Service" ],
+        "summary" : "Get Docker Hubs",
+        "description" : "",
+        "operationId" : "getHubs",
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "type" : "array",
+              "items" : {
+                "$ref" : "#/definitions/DockerHubWithPing"
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "Docker API for XNAT Container Service" ],
+        "summary" : "Create new Docker Hub",
+        "description" : "",
+        "operationId" : "createHub",
+        "parameters" : [ {
+          "in" : "body",
+          "name" : "body",
+          "required" : false,
+          "schema" : {
+            "$ref" : "#/definitions/DockerHub"
+          }
+        }, {
+          "name" : "default",
+          "in" : "query",
+          "required" : true,
+          "type" : "boolean"
+        }, {
+          "name" : "reason",
+          "in" : "query",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "201" : {
+            "description" : "successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/DockerHubWithPing"
+            }
+          }
+        }
+      }
+    },
+    "/docker/hubs/{id}" : {
+      "get" : {
+        "tags" : [ "Docker API for XNAT Container Service" ],
+        "summary" : "Get Docker Hub by ID",
+        "description" : "",
+        "operationId" : "getHub",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "pattern" : "\\d+",
+          "format" : "int64"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/DockerHubWithPing"
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "Docker API for XNAT Container Service" ],
+        "summary" : "Update Docker Hub by ID",
+        "description" : "",
+        "operationId" : "updateHub",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "pattern" : "\\d+",
+          "format" : "int64"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : false,
+          "schema" : {
+            "$ref" : "#/definitions/DockerHub"
+          }
+        }, {
+          "name" : "default",
+          "in" : "query",
+          "required" : true,
+          "type" : "boolean"
+        }, {
+          "name" : "reason",
+          "in" : "query",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "Docker API for XNAT Container Service" ],
+        "summary" : "Delete Docker Hub by ID",
+        "description" : "",
+        "operationId" : "deleteHub",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "pattern" : "\\d+",
+          "format" : "int64"
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          }
+        }
+      }
+    },
+    "/docker/hubs/{id}/ping" : {
+      "get" : {
+        "tags" : [ "Docker API for XNAT Container Service" ],
+        "summary" : "Ping Docker Hub by ID",
+        "description" : "Returns \"OK\" on success.",
+        "operationId" : "pingHub",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "pattern" : "\\d+",
+          "format" : "int64"
+        }, {
+          "name" : "username",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "password",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        }
+      }
+    },
+    "/docker/hubs/{id}/pull" : {
+      "post" : {
+        "tags" : [ "Docker API for XNAT Container Service" ],
+        "summary" : "Pull image from Docker Hub by ID",
+        "description" : "",
+        "operationId" : "pullImageFromHub",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "pattern" : "\\d+",
+          "format" : "int64"
+        }, {
+          "name" : "image",
+          "in" : "query",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "save-commands",
+          "in" : "query",
+          "required" : true,
+          "type" : "boolean"
+        }, {
+          "name" : "username",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "password",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          }
+        }
+      }
+    },
+    "/docker/hubs/{name}" : {
+      "get" : {
+        "tags" : [ "Docker API for XNAT Container Service" ],
+        "summary" : "Get Docker Hub by Name",
+        "description" : "",
+        "operationId" : "getHub",
+        "parameters" : [ {
+          "name" : "name",
+          "in" : "path",
+          "required" : true,
+          "type" : "string",
+          "pattern" : "\\d*[^\\d]+\\d*"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/DockerHubWithPing"
+            }
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "Docker API for XNAT Container Service" ],
+        "summary" : "Delete Docker Hub by Name",
+        "description" : "",
+        "operationId" : "deleteHub",
+        "parameters" : [ {
+          "name" : "name",
+          "in" : "path",
+          "required" : true,
+          "type" : "string",
+          "pattern" : "\\d*[^\\d]+\\d*"
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          }
+        }
+      }
+    },
+    "/docker/hubs/{name}/ping" : {
+      "get" : {
+        "tags" : [ "Docker API for XNAT Container Service" ],
+        "summary" : "Ping Docker Hub by Name",
+        "description" : "Returns \"OK\" on success.",
+        "operationId" : "pingHub",
+        "parameters" : [ {
+          "name" : "name",
+          "in" : "path",
+          "required" : true,
+          "type" : "string",
+          "pattern" : "\\d*[^\\d]+\\d*"
+        }, {
+          "name" : "username",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "password",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        }
+      }
+    },
+    "/docker/hubs/{name}/pull" : {
+      "post" : {
+        "tags" : [ "Docker API for XNAT Container Service" ],
+        "summary" : "Pull image from Docker Hub by Name",
+        "description" : "",
+        "operationId" : "pullImageFromHub",
+        "parameters" : [ {
+          "name" : "name",
+          "in" : "path",
+          "required" : true,
+          "type" : "string",
+          "pattern" : "\\d*[^\\d]+\\d*"
+        }, {
+          "name" : "image",
+          "in" : "query",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "save-commands",
+          "in" : "query",
+          "required" : true,
+          "type" : "boolean"
+        }, {
+          "name" : "username",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "password",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          }
+        }
+      }
+    },
+    "/docker/image-summaries" : {
+      "get" : {
+        "tags" : [ "Docker API for XNAT Container Service" ],
+        "summary" : "Get summary list of images and commands.",
+        "description" : "",
+        "operationId" : "getImageSummaries",
+        "produces" : [ "application/json;charset=UTF-8" ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "type" : "array",
+              "items" : {
+                "$ref" : "#/definitions/DockerImageAndCommandSummary"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/docker/images" : {
+      "get" : {
+        "tags" : [ "Docker API for XNAT Container Service" ],
+        "summary" : "Get list of images.",
+        "description" : "Returns a list of all Docker images on the Docker server.",
+        "operationId" : "getImages",
+        "produces" : [ "application/json;charset=UTF-8" ],
+        "responses" : {
+          "200" : {
+            "description" : "A list of images on the server",
+            "schema" : {
+              "type" : "array",
+              "items" : {
+                "$ref" : "#/definitions/DockerImage"
+              }
+            }
+          },
+          "424" : {
+            "description" : "Admin must set up Docker server."
+          },
+          "500" : {
+            "description" : "Unexpected error"
+          }
+        }
+      }
+    },
+    "/docker/images/save" : {
+      "post" : {
+        "tags" : [ "Docker API for XNAT Container Service" ],
+        "summary" : "Save Commands from labels",
+        "description" : "Read labels from Docker image. If any labels contain key org.nrg.commands, parse value as list of Commands.",
+        "operationId" : "saveFromLabels",
+        "parameters" : [ {
+          "name" : "image",
+          "in" : "query",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "type" : "array",
+              "items" : {
+                "$ref" : "#/definitions/Command"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/docker/images/{id}" : {
+      "get" : {
+        "tags" : [ "Docker API for XNAT Container Service" ],
+        "summary" : "Get Docker image",
+        "description" : "Retrieve information about a Docker image from the docker server",
+        "operationId" : "getImage",
+        "produces" : [ "application/json;charset=UTF-8" ],
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Found the image",
+            "schema" : {
+              "$ref" : "#/definitions/DockerImage"
+            }
+          },
+          "404" : {
+            "description" : "No docker image with given id on the server"
+          },
+          "424" : {
+            "description" : "Admin must set up Docker server."
+          },
+          "500" : {
+            "description" : "Unexpected error"
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "Docker API for XNAT Container Service" ],
+        "summary" : "Delete Docker image",
+        "description" : "Remove information about a Docker image",
+        "operationId" : "deleteImage",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "force",
+          "in" : "query",
+          "required" : true,
+          "type" : "boolean"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Image was removed"
+          },
+          "404" : {
+            "description" : "No docker image with given id on docker server"
+          },
+          "424" : {
+            "description" : "Admin must set up Docker server."
+          },
+          "500" : {
+            "description" : "Unexpected error"
+          }
+        }
+      }
+    },
+    "/docker/pull" : {
+      "post" : {
+        "tags" : [ "Docker API for XNAT Container Service" ],
+        "summary" : "Pull image from default Docker Hub",
+        "description" : "",
+        "operationId" : "pullImageFromDefaultHub",
+        "parameters" : [ {
+          "name" : "image",
+          "in" : "query",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "save-commands",
+          "in" : "query",
+          "required" : true,
+          "type" : "boolean"
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          }
+        }
+      }
+    },
+    "/docker/server" : {
+      "get" : {
+        "tags" : [ "Docker API for XNAT Container Service" ],
+        "summary" : "Docker server",
+        "description" : "Returns Docker server configuration values",
+        "operationId" : "getServer",
+        "produces" : [ "application/json;charset=UTF-8" ],
+        "responses" : {
+          "200" : {
+            "description" : "The Docker server configuration",
+            "schema" : {
+              "$ref" : "#/definitions/DockerServer"
+            }
+          },
+          "400" : {
+            "description" : "The server has not been configured"
+          },
+          "500" : {
+            "description" : "Unexpected error"
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "Docker API for XNAT Container Service" ],
+        "summary" : "Set Docker server configuration",
+        "description" : "Save new Docker server configuration values",
+        "operationId" : "setServer",
+        "parameters" : [ {
+          "in" : "body",
+          "name" : "body",
+          "required" : false,
+          "schema" : {
+            "$ref" : "#/definitions/DockerServer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/DockerServerWithPing"
+            }
+          },
+          "201" : {
+            "description" : "The Docker server configuration was saved"
+          },
+          "400" : {
+            "description" : "Must set the \"host\" property in request body"
+          },
+          "500" : {
+            "description" : "Unexpected error"
+          }
+        }
+      }
+    },
+    "/docker/server/ping" : {
+      "get" : {
+        "tags" : [ "Docker API for XNAT Container Service" ],
+        "summary" : "Ping docker server.",
+        "description" : "Returns \"OK\" on success.",
+        "operationId" : "pingServer",
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        }
+      }
+    },
+    "/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/bulklaunch" : {
+      "get" : {
+        "tags" : [ "API for Launching Containers with XNAT Container service" ],
+        "summary" : "Get Bulk Launch UI for wrapper",
+        "description" : "DOES NOT WORK PROPERLY IN SWAGGER UI",
+        "operationId" : "getBulkLaunchUi",
+        "parameters" : [ {
+          "name" : "project",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "commandId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "name" : "wrapperName",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "allRequestParams",
+          "in" : "query",
+          "required" : true,
+          "type" : "object"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/BulkLaunchUi"
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "API for Launching Containers with XNAT Container service" ],
+        "summary" : "Resolve a command from the variable values in the request body, and launch it",
+        "description" : "",
+        "operationId" : "bulklaunch",
+        "consumes" : [ "application/json;charset=UTF-8" ],
+        "parameters" : [ {
+          "name" : "project",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "commandId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "name" : "wrapperName",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : false,
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "type" : "object",
+              "additionalProperties" : {
+                "type" : "string"
+              }
+            }
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/BulkLaunchReport"
+            }
+          }
+        }
+      }
+    },
+    "/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/config" : {
+      "get" : {
+        "tags" : [ "Command Configuration API for XNAT Container service" ],
+        "summary" : "Get (project)",
+        "description" : "",
+        "operationId" : "getConfiguration",
+        "parameters" : [ {
+          "name" : "project",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "commandId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "name" : "wrapperName",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/CommandConfiguration"
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "Command Configuration API for XNAT Container service" ],
+        "summary" : "Configure (project)",
+        "description" : "",
+        "operationId" : "createConfiguration",
+        "parameters" : [ {
+          "in" : "body",
+          "name" : "body",
+          "required" : false,
+          "schema" : {
+            "$ref" : "#/definitions/CommandConfiguration"
+          }
+        }, {
+          "name" : "project",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "commandId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "name" : "wrapperName",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "enable",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean"
+        }, {
+          "name" : "reason",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "Command Configuration API for XNAT Container service" ],
+        "summary" : "Delete (project)",
+        "description" : "",
+        "operationId" : "deleteConfiguration",
+        "parameters" : [ {
+          "name" : "project",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "commandId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "name" : "wrapperName",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          }
+        }
+      }
+    },
+    "/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/disabled" : {
+      "put" : {
+        "tags" : [ "Command Configuration API for XNAT Container service" ],
+        "summary" : "Disable (project)",
+        "description" : "",
+        "operationId" : "disableConfiguration",
+        "parameters" : [ {
+          "name" : "project",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "commandId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "name" : "wrapperName",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "reason",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          }
+        }
+      }
+    },
+    "/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/enabled" : {
+      "get" : {
+        "tags" : [ "Command Configuration API for XNAT Container service" ],
+        "summary" : "Is Enabled (project)",
+        "description" : "",
+        "operationId" : "isConfigurationEnabled",
+        "parameters" : [ {
+          "name" : "project",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "commandId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "name" : "wrapperName",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/ProjectEnabledReport"
+            }
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "Command Configuration API for XNAT Container service" ],
+        "summary" : "Enable (project)",
+        "description" : "",
+        "operationId" : "enableConfiguration",
+        "parameters" : [ {
+          "name" : "project",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "commandId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "name" : "wrapperName",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "reason",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          }
+        }
+      }
+    },
+    "/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/launch" : {
+      "get" : {
+        "tags" : [ "API for Launching Containers with XNAT Container service" ],
+        "summary" : "Get Launch UI for wrapper",
+        "description" : "DOES NOT WORK PROPERLY IN SWAGGER UI",
+        "operationId" : "getLaunchUi",
+        "parameters" : [ {
+          "name" : "project",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "commandId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "name" : "wrapperName",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "allRequestParams",
+          "in" : "query",
+          "required" : true,
+          "type" : "object"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/SingleLaunchUi"
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "API for Launching Containers with XNAT Container service" ],
+        "summary" : "Resolve a command from the variable values in the request body, and launch it",
+        "description" : "",
+        "operationId" : "launchCommandWJsonBody",
+        "consumes" : [ "application/json;charset=UTF-8" ],
+        "parameters" : [ {
+          "name" : "project",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "commandId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "name" : "wrapperName",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : false,
+          "schema" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            }
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/LaunchReport"
+            }
+          }
+        }
+      }
+    },
+    "/projects/{project}/wrapper/{wrapperId}/launch" : {
+      "post" : {
+        "tags" : [ "API for Launching Containers with XNAT Container service" ],
+        "summary" : "Resolve a command from the variable values in the query params, and launch it",
+        "description" : "DOES NOT WORK PROPERLY IN SWAGGER UI",
+        "operationId" : "launchCommandWQueryParams",
+        "parameters" : [ {
+          "name" : "project",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "wrapperId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "name" : "allRequestParams",
+          "in" : "query",
+          "required" : true,
+          "type" : "object"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/LaunchReport"
+            }
+          }
+        }
+      }
+    },
+    "/projects/{project}/wrappers/{wrapperId}/bulklaunch" : {
+      "get" : {
+        "tags" : [ "API for Launching Containers with XNAT Container service" ],
+        "summary" : "Get Bulk Launch UI for wrapper",
+        "description" : "DOES NOT WORK PROPERLY IN SWAGGER UI",
+        "operationId" : "getBulkLaunchUi",
+        "parameters" : [ {
+          "name" : "project",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "wrapperId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "name" : "allRequestParams",
+          "in" : "query",
+          "required" : true,
+          "type" : "object"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/BulkLaunchUi"
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "API for Launching Containers with XNAT Container service" ],
+        "summary" : "Resolve a command from the variable values in the request body, and launch it",
+        "description" : "",
+        "operationId" : "bulklaunch",
+        "consumes" : [ "application/json;charset=UTF-8" ],
+        "parameters" : [ {
+          "name" : "project",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "wrapperId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : false,
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "type" : "object",
+              "additionalProperties" : {
+                "type" : "string"
+              }
+            }
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/BulkLaunchReport"
+            }
+          }
+        }
+      }
+    },
+    "/projects/{project}/wrappers/{wrapperId}/config" : {
+      "get" : {
+        "tags" : [ "Command Configuration API for XNAT Container service" ],
+        "summary" : "Get (project)",
+        "description" : "",
+        "operationId" : "getConfiguration",
+        "parameters" : [ {
+          "name" : "project",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "wrapperId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/CommandConfiguration"
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "Command Configuration API for XNAT Container service" ],
+        "summary" : "Configure (project)",
+        "description" : "",
+        "operationId" : "createConfiguration",
+        "parameters" : [ {
+          "in" : "body",
+          "name" : "body",
+          "required" : false,
+          "schema" : {
+            "$ref" : "#/definitions/CommandConfiguration"
+          }
+        }, {
+          "name" : "project",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "wrapperId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "name" : "enable",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean"
+        }, {
+          "name" : "reason",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "Command Configuration API for XNAT Container service" ],
+        "summary" : "Delete (project)",
+        "description" : "",
+        "operationId" : "deleteConfiguration",
+        "parameters" : [ {
+          "name" : "project",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "wrapperId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          }
+        }
+      }
+    },
+    "/projects/{project}/wrappers/{wrapperId}/disabled" : {
+      "put" : {
+        "tags" : [ "Command Configuration API for XNAT Container service" ],
+        "summary" : "Disable (project)",
+        "description" : "",
+        "operationId" : "disableConfiguration",
+        "parameters" : [ {
+          "name" : "project",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "wrapperId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "name" : "reason",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          }
+        }
+      }
+    },
+    "/projects/{project}/wrappers/{wrapperId}/enabled" : {
+      "get" : {
+        "tags" : [ "Command Configuration API for XNAT Container service" ],
+        "summary" : "Is Enabled (project)",
+        "description" : "",
+        "operationId" : "isConfigurationEnabled",
+        "parameters" : [ {
+          "name" : "project",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "wrapperId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/ProjectEnabledReport"
+            }
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "Command Configuration API for XNAT Container service" ],
+        "summary" : "Enable (project)",
+        "description" : "",
+        "operationId" : "enableConfiguration",
+        "parameters" : [ {
+          "name" : "project",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "wrapperId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "name" : "reason",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          }
+        }
+      }
+    },
+    "/projects/{project}/wrappers/{wrapperId}/launch" : {
+      "get" : {
+        "tags" : [ "API for Launching Containers with XNAT Container service" ],
+        "summary" : "Get Launch UI for wrapper",
+        "description" : "DOES NOT WORK PROPERLY IN SWAGGER UI",
+        "operationId" : "getLaunchUi",
+        "parameters" : [ {
+          "name" : "project",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "wrapperId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "name" : "allRequestParams",
+          "in" : "query",
+          "required" : true,
+          "type" : "object"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/SingleLaunchUi"
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "API for Launching Containers with XNAT Container service" ],
+        "summary" : "Resolve a command from the variable values in the request body, and launch it",
+        "description" : "",
+        "operationId" : "launchCommandWJsonBody",
+        "consumes" : [ "application/json;charset=UTF-8" ],
+        "parameters" : [ {
+          "name" : "project",
+          "in" : "path",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "wrapperId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : false,
+          "schema" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            }
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/LaunchReport"
+            }
+          }
+        }
+      }
+    },
+    "/wrappers/{wrapperId}" : {
+      "delete" : {
+        "tags" : [ "Command API for XNAT Container Service" ],
+        "summary" : "Delete a Command Wrapper",
+        "description" : "",
+        "operationId" : "deleteWrapper",
+        "parameters" : [ {
+          "name" : "wrapperId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          }
+        }
+      }
+    },
+    "/wrappers/{wrapperId}/bulklaunch" : {
+      "get" : {
+        "tags" : [ "API for Launching Containers with XNAT Container service" ],
+        "summary" : "Get Bulk Launch UI for wrapper",
+        "description" : "DOES NOT WORK PROPERLY IN SWAGGER UI",
+        "operationId" : "getBulkLaunchUi",
+        "parameters" : [ {
+          "name" : "wrapperId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "name" : "allRequestParams",
+          "in" : "query",
+          "required" : true,
+          "type" : "object"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/BulkLaunchUi"
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "API for Launching Containers with XNAT Container service" ],
+        "summary" : "Resolve a command from the variable values in the request body, and launch it",
+        "description" : "",
+        "operationId" : "bulklaunch",
+        "consumes" : [ "application/json;charset=UTF-8" ],
+        "parameters" : [ {
+          "name" : "wrapperId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : false,
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "type" : "object",
+              "additionalProperties" : {
+                "type" : "string"
+              }
+            }
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/BulkLaunchReport"
+            }
+          }
+        }
+      }
+    },
+    "/wrappers/{wrapperId}/config" : {
+      "get" : {
+        "tags" : [ "Command Configuration API for XNAT Container service" ],
+        "summary" : "Get (site)",
+        "description" : "",
+        "operationId" : "getConfiguration",
+        "parameters" : [ {
+          "name" : "wrapperId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/CommandConfiguration"
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "Command Configuration API for XNAT Container service" ],
+        "summary" : "Configure (site)",
+        "description" : "",
+        "operationId" : "createConfiguration",
+        "parameters" : [ {
+          "in" : "body",
+          "name" : "body",
+          "required" : false,
+          "schema" : {
+            "$ref" : "#/definitions/CommandConfiguration"
+          }
+        }, {
+          "name" : "wrapperId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "name" : "enable",
+          "in" : "query",
+          "required" : false,
+          "type" : "boolean"
+        }, {
+          "name" : "reason",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "Command Configuration API for XNAT Container service" ],
+        "summary" : "Delete (site)",
+        "description" : "",
+        "operationId" : "deleteConfiguration",
+        "parameters" : [ {
+          "name" : "wrapperId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          }
+        }
+      }
+    },
+    "/wrappers/{wrapperId}/disabled" : {
+      "put" : {
+        "tags" : [ "Command Configuration API for XNAT Container service" ],
+        "summary" : "Disable (site)",
+        "description" : "",
+        "operationId" : "disableConfiguration",
+        "parameters" : [ {
+          "name" : "wrapperId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "name" : "reason",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          }
+        }
+      }
+    },
+    "/wrappers/{wrapperId}/enabled" : {
+      "get" : {
+        "tags" : [ "Command Configuration API for XNAT Container service" ],
+        "summary" : "Is Enabled (site)",
+        "description" : "",
+        "operationId" : "isConfigurationEnabled",
+        "parameters" : [ {
+          "name" : "wrapperId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "type" : "boolean"
+            }
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "Command Configuration API for XNAT Container service" ],
+        "summary" : "Enable (site)",
+        "description" : "",
+        "operationId" : "enableConfiguration",
+        "parameters" : [ {
+          "name" : "wrapperId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "name" : "reason",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "successful operation"
+          }
+        }
+      }
+    },
+    "/wrappers/{wrapperId}/launch" : {
+      "get" : {
+        "tags" : [ "API for Launching Containers with XNAT Container service" ],
+        "summary" : "Get Launch UI for wrapper",
+        "description" : "DOES NOT WORK PROPERLY IN SWAGGER UI",
+        "operationId" : "getLaunchUi",
+        "parameters" : [ {
+          "name" : "wrapperId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "name" : "allRequestParams",
+          "in" : "query",
+          "required" : true,
+          "type" : "object"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/SingleLaunchUi"
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "API for Launching Containers with XNAT Container service" ],
+        "summary" : "Resolve a command from the variable values in the request body, and launch it",
+        "description" : "",
+        "operationId" : "launchCommandWJsonBody",
+        "consumes" : [ "application/json;charset=UTF-8" ],
+        "parameters" : [ {
+          "name" : "wrapperId",
+          "in" : "path",
+          "required" : true,
+          "type" : "integer",
+          "format" : "int64"
+        }, {
+          "in" : "body",
+          "name" : "body",
+          "required" : false,
+          "schema" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            }
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "successful operation",
+            "schema" : {
+              "$ref" : "#/definitions/LaunchReport"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions" : {
+    "BulkLaunchReport" : {
+      "type" : "object",
+      "properties" : {
+        "successes" : {
+          "type" : "array",
+          "readOnly" : true,
+          "items" : {
+            "$ref" : "#/definitions/Success"
+          }
+        },
+        "failures" : {
+          "type" : "array",
+          "readOnly" : true,
+          "items" : {
+            "$ref" : "#/definitions/Failure"
+          }
+        }
+      }
+    },
+    "BulkLaunchUi" : {
+      "type" : "object",
+      "properties" : {
+        "inputs" : {
+          "type" : "array",
+          "readOnly" : true,
+          "items" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "$ref" : "#/definitions/LaunchUiInput"
+            }
+          }
+        },
+        "wrapper-name" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "command-id" : {
+          "type" : "integer",
+          "format" : "int64",
+          "readOnly" : true
+        },
+        "wrapper-id" : {
+          "type" : "integer",
+          "format" : "int64",
+          "readOnly" : true
+        },
+        "command-name" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "command-description" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "wrapper-description" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "image-name" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "image-type" : {
+          "type" : "string",
+          "readOnly" : true
+        }
+      }
+    },
+    "Command" : {
+      "type" : "object",
+      "properties" : {
+        "id" : {
+          "type" : "integer",
+          "format" : "int64",
+          "readOnly" : true
+        },
+        "name" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "label" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "description" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "version" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "schema-version" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "info-url" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "image" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "type" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "index" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "hash" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "working-directory" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "command-line" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "mounts" : {
+          "type" : "array",
+          "readOnly" : true,
+          "items" : {
+            "$ref" : "#/definitions/CommandMount"
+          }
+        },
+        "environment-variables" : {
+          "type" : "object",
+          "readOnly" : true,
+          "additionalProperties" : {
+            "type" : "string"
+          }
+        },
+        "ports" : {
+          "type" : "object",
+          "readOnly" : true,
+          "additionalProperties" : {
+            "type" : "string"
+          }
+        },
+        "inputs" : {
+          "type" : "array",
+          "readOnly" : true,
+          "items" : {
+            "$ref" : "#/definitions/CommandInput"
+          }
+        },
+        "outputs" : {
+          "type" : "array",
+          "readOnly" : true,
+          "items" : {
+            "$ref" : "#/definitions/CommandOutput"
+          }
+        },
+        "xnat" : {
+          "type" : "array",
+          "readOnly" : true,
+          "items" : {
+            "$ref" : "#/definitions/CommandWrapper"
+          }
+        }
+      }
+    },
+    "CommandConfiguration" : {
+      "type" : "object",
+      "properties" : {
+        "inputs" : {
+          "type" : "object",
+          "readOnly" : true,
+          "additionalProperties" : {
+            "$ref" : "#/definitions/CommandInputConfiguration"
+          }
+        },
+        "outputs" : {
+          "type" : "object",
+          "readOnly" : true,
+          "additionalProperties" : {
+            "$ref" : "#/definitions/CommandOutputConfiguration"
+          }
+        }
+      }
+    },
+    "CommandCreation" : {
+      "type" : "object",
+      "properties" : {
+        "name" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "label" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "description" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "version" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "schema-version" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "info-url" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "image" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "type" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "index" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "hash" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "working-directory" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "command-line" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "mounts" : {
+          "type" : "array",
+          "readOnly" : true,
+          "items" : {
+            "$ref" : "#/definitions/CommandMount"
+          }
+        },
+        "environment-variables" : {
+          "type" : "object",
+          "readOnly" : true,
+          "additionalProperties" : {
+            "type" : "string"
+          }
+        },
+        "ports" : {
+          "type" : "object",
+          "readOnly" : true,
+          "additionalProperties" : {
+            "type" : "string"
+          }
+        },
+        "inputs" : {
+          "type" : "array",
+          "readOnly" : true,
+          "items" : {
+            "$ref" : "#/definitions/CommandInput"
+          }
+        },
+        "outputs" : {
+          "type" : "array",
+          "readOnly" : true,
+          "items" : {
+            "$ref" : "#/definitions/CommandOutput"
+          }
+        },
+        "xnat" : {
+          "type" : "array",
+          "readOnly" : true,
+          "items" : {
+            "$ref" : "#/definitions/CommandWrapperCreation"
+          }
+        }
+      }
+    },
+    "CommandEventMapping" : {
+      "type" : "object",
+      "properties" : {
+        "id" : {
+          "type" : "integer",
+          "format" : "int64"
+        },
+        "timestamp" : {
+          "type" : "string",
+          "format" : "date-time"
+        },
+        "enabled" : {
+          "type" : "boolean"
+        },
+        "disabled" : {
+          "type" : "string",
+          "format" : "date-time"
+        },
+        "created" : {
+          "type" : "string",
+          "format" : "date-time"
+        },
+        "event-type" : {
+          "type" : "string"
+        },
+        "command-id" : {
+          "type" : "integer",
+          "format" : "int64"
+        },
+        "xnat-command-wrapper" : {
+          "type" : "string"
+        },
+        "project" : {
+          "type" : "string"
+        },
+        "subscription-user-name" : {
+          "type" : "string"
+        }
+      }
+    },
+    "CommandInput" : {
+      "type" : "object",
+      "properties" : {
+        "name" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "description" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "type" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "required" : {
+          "type" : "boolean",
+          "readOnly" : true
+        },
+        "matcher" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "default-value" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "replacement-key" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "command-line-flag" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "command-line-separator" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "true-value" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "false-value" : {
+          "type" : "string",
+          "readOnly" : true
+        }
+      }
+    },
+    "CommandInputConfiguration" : {
+      "type" : "object",
+      "properties" : {
+        "description" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "type" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "default-value" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "matcher" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "user-settable" : {
+          "type" : "boolean",
+          "readOnly" : true
+        },
+        "advanced" : {
+          "type" : "boolean",
+          "readOnly" : true
+        },
+        "required" : {
+          "type" : "boolean",
+          "readOnly" : true
+        }
+      }
+    },
+    "CommandMount" : {
+      "type" : "object",
+      "properties" : {
+        "name" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "writable" : {
+          "type" : "boolean",
+          "readOnly" : true
+        },
+        "path" : {
+          "type" : "string",
+          "readOnly" : true
+        }
+      }
+    },
+    "CommandOutput" : {
+      "type" : "object",
+      "properties" : {
+        "name" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "description" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "required" : {
+          "type" : "boolean",
+          "readOnly" : true
+        },
+        "mount" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "path" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "glob" : {
+          "type" : "string",
+          "readOnly" : true
+        }
+      }
+    },
+    "CommandOutputConfiguration" : {
+      "type" : "object",
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "label" : {
+          "type" : "string",
+          "readOnly" : true
+        }
+      }
+    },
+    "CommandSummaryForContext" : {
+      "type" : "object",
+      "properties" : {
+        "command-id" : {
+          "type" : "integer",
+          "format" : "int64",
+          "readOnly" : true
+        },
+        "command-name" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "command-description" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "wrapper-id" : {
+          "type" : "integer",
+          "format" : "int64",
+          "readOnly" : true
+        },
+        "wrapper-name" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "wrapper-description" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "image-name" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "image-type" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "enabled" : {
+          "type" : "boolean",
+          "readOnly" : true
+        },
+        "root-element-name" : {
+          "type" : "string",
+          "readOnly" : true
+        }
+      }
+    },
+    "CommandWrapper" : {
+      "type" : "object",
+      "properties" : {
+        "id" : {
+          "type" : "integer",
+          "format" : "int64",
+          "readOnly" : true
+        },
+        "name" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "description" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "contexts" : {
+          "type" : "array",
+          "readOnly" : true,
+          "uniqueItems" : true,
+          "items" : {
+            "type" : "string"
+          }
+        },
+        "external-inputs" : {
+          "type" : "array",
+          "readOnly" : true,
+          "items" : {
+            "$ref" : "#/definitions/CommandWrapperExternalInput"
+          }
+        },
+        "derived-inputs" : {
+          "type" : "array",
+          "readOnly" : true,
+          "items" : {
+            "$ref" : "#/definitions/CommandWrapperDerivedInput"
+          }
+        },
+        "output-handlers" : {
+          "type" : "array",
+          "readOnly" : true,
+          "items" : {
+            "$ref" : "#/definitions/CommandWrapperOutput"
+          }
+        }
+      }
+    },
+    "CommandWrapperCreation" : {
+      "type" : "object",
+      "properties" : {
+        "name" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "description" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "contexts" : {
+          "type" : "array",
+          "readOnly" : true,
+          "uniqueItems" : true,
+          "items" : {
+            "type" : "string"
+          }
+        },
+        "external-inputs" : {
+          "type" : "array",
+          "readOnly" : true,
+          "items" : {
+            "$ref" : "#/definitions/CommandWrapperExternalInput"
+          }
+        },
+        "derived-inputs" : {
+          "type" : "array",
+          "readOnly" : true,
+          "items" : {
+            "$ref" : "#/definitions/CommandWrapperDerivedInput"
+          }
+        },
+        "output-handlers" : {
+          "type" : "array",
+          "readOnly" : true,
+          "items" : {
+            "$ref" : "#/definitions/CommandWrapperOutput"
+          }
+        }
+      }
+    },
+    "CommandWrapperDerivedInput" : {
+      "type" : "object",
+      "properties" : {
+        "name" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "description" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "type" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "derived-from-wrapper-input" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "derived-from-xnat-object-property" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "matcher" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "provides-value-for-command-input" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "provides-files-for-command-mount" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "default-value" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "user-settable" : {
+          "type" : "boolean",
+          "readOnly" : true
+        },
+        "replacement-key" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "required" : {
+          "type" : "boolean",
+          "readOnly" : true
+        },
+        "load-children" : {
+          "type" : "boolean",
+          "readOnly" : true
+        }
+      }
+    },
+    "CommandWrapperExternalInput" : {
+      "type" : "object",
+      "properties" : {
+        "name" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "description" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "type" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "matcher" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "provides-value-for-command-input" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "provides-files-for-command-mount" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "default-value" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "user-settable" : {
+          "type" : "boolean",
+          "readOnly" : true
+        },
+        "replacement-key" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "required" : {
+          "type" : "boolean",
+          "readOnly" : true
+        },
+        "load-children" : {
+          "type" : "boolean",
+          "readOnly" : true
+        }
+      }
+    },
+    "CommandWrapperOutput" : {
+      "type" : "object",
+      "properties" : {
+        "name" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "accepts-command-output" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "as-a-child-of-wrapper-input" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "type" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "label" : {
+          "type" : "string",
+          "readOnly" : true
+        }
+      }
+    },
+    "ContainerSuccess" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/Success"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "container-id" : {
+            "type" : "string",
+            "readOnly" : true
+          }
+        }
+      } ]
+    },
+    "DockerHub" : {
+      "type" : "object",
+      "properties" : {
+        "id" : {
+          "type" : "integer",
+          "format" : "int64",
+          "readOnly" : true
+        },
+        "name" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "url" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "default" : {
+          "type" : "boolean",
+          "readOnly" : true
+        }
+      }
+    },
+    "DockerHubWithPing" : {
+      "type" : "object",
+      "properties" : {
+        "id" : {
+          "type" : "integer",
+          "format" : "int64",
+          "readOnly" : true
+        },
+        "name" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "url" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "default" : {
+          "type" : "boolean",
+          "readOnly" : true
+        },
+        "ping" : {
+          "type" : "boolean",
+          "readOnly" : true
+        }
+      }
+    },
+    "DockerImage" : {
+      "type" : "object",
+      "properties" : {
+        "image-id" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "tags" : {
+          "type" : "array",
+          "readOnly" : true,
+          "items" : {
+            "type" : "string"
+          }
+        },
+        "labels" : {
+          "type" : "object",
+          "readOnly" : true,
+          "additionalProperties" : {
+            "type" : "string"
+          }
+        }
+      },
+      "description" : "Properties that define an image."
+    },
+    "DockerImageAndCommandSummary" : {
+      "type" : "object",
+      "properties" : {
+        "image-id" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "server" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "names" : {
+          "type" : "array",
+          "readOnly" : true,
+          "uniqueItems" : true,
+          "items" : {
+            "type" : "string"
+          }
+        },
+        "commands" : {
+          "type" : "array",
+          "readOnly" : true,
+          "items" : {
+            "$ref" : "#/definitions/Command"
+          }
+        }
+      }
+    },
+    "DockerServer" : {
+      "type" : "object",
+      "properties" : {
+        "id" : {
+          "type" : "integer",
+          "format" : "int64",
+          "readOnly" : true
+        },
+        "name" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "host" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "cert-path" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "swarm-mode" : {
+          "type" : "boolean",
+          "readOnly" : true
+        }
+      }
+    },
+    "DockerServerWithPing" : {
+      "type" : "object",
+      "properties" : {
+        "id" : {
+          "type" : "integer",
+          "format" : "int64",
+          "readOnly" : true
+        },
+        "name" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "host" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "cert-path" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "swarm-mode" : {
+          "type" : "boolean",
+          "readOnly" : true
+        },
+        "ping" : {
+          "type" : "boolean",
+          "readOnly" : true
+        }
+      }
+    },
+    "Failure" : {
+      "type" : "object",
+      "properties" : {
+        "message" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "status" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "params" : {
+          "type" : "object",
+          "readOnly" : true,
+          "additionalProperties" : {
+            "type" : "string"
+          }
+        },
+        "command-id" : {
+          "type" : "integer",
+          "format" : "int64",
+          "readOnly" : true
+        },
+        "wrapper-id" : {
+          "type" : "integer",
+          "format" : "int64",
+          "readOnly" : true
+        }
+      }
+    },
+    "LaunchReport" : {
+      "type" : "object",
+      "properties" : {
+        "status" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "command-id" : {
+          "type" : "integer",
+          "format" : "int64",
+          "readOnly" : true
+        },
+        "wrapper-id" : {
+          "type" : "integer",
+          "format" : "int64",
+          "readOnly" : true
+        },
+        "params" : {
+          "type" : "object",
+          "readOnly" : true,
+          "additionalProperties" : {
+            "type" : "string"
+          }
+        }
+      }
+    },
+    "LaunchUiInput" : {
+      "type" : "object",
+      "properties" : {
+        "parent" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "label" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "required" : {
+          "type" : "boolean",
+          "readOnly" : true
+        },
+        "description" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "children" : {
+          "type" : "array",
+          "readOnly" : true,
+          "items" : {
+            "type" : "string"
+          }
+        },
+        "ui" : {
+          "type" : "object",
+          "readOnly" : true,
+          "additionalProperties" : {
+            "$ref" : "#/definitions/LaunchUiInputValuesAndType"
+          }
+        },
+        "user-settable" : {
+          "type" : "boolean",
+          "readOnly" : true
+        },
+        "advanced" : {
+          "type" : "boolean",
+          "readOnly" : true
+        }
+      }
+    },
+    "LaunchUiInputValue" : {
+      "type" : "object",
+      "properties" : {
+        "value" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "label" : {
+          "type" : "string",
+          "readOnly" : true
+        }
+      }
+    },
+    "LaunchUiInputValuesAndType" : {
+      "type" : "object",
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "readOnly" : true,
+          "enum" : [ "DEFAULT", "TEXT", "NUMBER", "BOOLEAN", "SELECT", "HIDDEN", "STATIC" ]
+        },
+        "values" : {
+          "type" : "array",
+          "readOnly" : true,
+          "items" : {
+            "$ref" : "#/definitions/LaunchUiInputValue"
+          }
+        }
+      }
+    },
+    "ProjectEnabledReport" : {
+      "type" : "object",
+      "properties" : {
+        "enabled-for-site" : {
+          "type" : "boolean",
+          "readOnly" : true
+        },
+        "enabled-for-project" : {
+          "type" : "boolean",
+          "readOnly" : true
+        },
+        "project" : {
+          "type" : "string",
+          "readOnly" : true
+        }
+      }
+    },
+    "ServiceSuccess" : {
+      "allOf" : [ {
+        "$ref" : "#/definitions/Success"
+      }, {
+        "type" : "object",
+        "properties" : {
+          "service-id" : {
+            "type" : "string",
+            "readOnly" : true
+          }
+        }
+      } ]
+    },
+    "SingleLaunchUi" : {
+      "type" : "object",
+      "properties" : {
+        "command-id" : {
+          "type" : "integer",
+          "format" : "int64",
+          "readOnly" : true
+        },
+        "command-name" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "command-description" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "wrapper-id" : {
+          "type" : "integer",
+          "format" : "int64",
+          "readOnly" : true
+        },
+        "wrapper-name" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "wrapper-description" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "image-name" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "image-type" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "inputs" : {
+          "type" : "object",
+          "readOnly" : true,
+          "additionalProperties" : {
+            "$ref" : "#/definitions/LaunchUiInput"
+          }
+        }
+      }
+    },
+    "Success" : {
+      "type" : "object",
+      "discriminator" : "type",
+      "properties" : {
+        "type" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "status" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "command-id" : {
+          "type" : "integer",
+          "format" : "int64",
+          "readOnly" : true
+        },
+        "wrapper-id" : {
+          "type" : "integer",
+          "format" : "int64",
+          "readOnly" : true
+        },
+        "params" : {
+          "type" : "object",
+          "readOnly" : true,
+          "additionalProperties" : {
+            "type" : "string"
+          }
+        }
+      }
+    }
+  }
+}
