@@ -113,6 +113,8 @@ public class CommandLaunchIntegrationTest {
     private final String FAKE_SECRET = "secret";
     private final String FAKE_HOST = "mock://url";
 
+    private boolean testIsOnCircleCi;
+
     private final List<String> containersToCleanUp = new ArrayList<>();
     private final List<String> imagesToCleanUp = new ArrayList<>();
 
@@ -158,6 +160,9 @@ public class CommandLaunchIntegrationTest {
         final String hostEnv = System.getenv("DOCKER_HOST");
         final String certPathEnv = System.getenv("DOCKER_CERT_PATH");
         final String tlsVerify = System.getenv("DOCKER_TLS_VERIFY");
+
+        final String circleCiEnv = System.getenv("CIRCLECI");
+        testIsOnCircleCi = StringUtils.isNotBlank(circleCiEnv) && Boolean.parseBoolean(circleCiEnv);
 
         final boolean useTls = tlsVerify != null && tlsVerify.equals("1");
         final String certPath;
@@ -490,6 +495,9 @@ public class CommandLaunchIntegrationTest {
     public void testLaunchCommandWithSetupCommand() throws Exception {
         assumeThat(SystemUtils.IS_OS_WINDOWS_7, is(false));
         assumeThat(canConnectToDocker(), is(true));
+
+        // This test fails on Circle CI because we cannot mount local directories into containers
+        assumeThat(testIsOnCircleCi, is(false));
 
         CLIENT.pull("busybox:latest");
 
