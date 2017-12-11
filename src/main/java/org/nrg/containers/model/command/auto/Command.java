@@ -29,6 +29,7 @@ import org.nrg.containers.model.configuration.CommandConfiguration.CommandOutput
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -230,12 +231,8 @@ public abstract class Command {
 
     @Nonnull
     public List<String> validate() {
-        final List<String> errors = Lists.newArrayList();
+        final List<String> errors = new ArrayList<>();
         final List<String> commandTypeNames = CommandType.names();
-
-        if (!commandTypeNames.contains(type())) {
-            errors.add("Cannot instantiate command of type \"" + type() + "\". Known types: " + StringUtils.join(commandTypeNames, ", "));
-        }
 
         if (StringUtils.isBlank(name())) {
             errors.add("Command name cannot be blank.");
@@ -245,6 +242,22 @@ public abstract class Command {
         if (StringUtils.isBlank(image())) {
             errors.add(commandName + "image name cannot be blank.");
         }
+
+        if (type().equals(CommandType.DOCKER.getName())) {
+            errors.addAll(validateDockerCommand());
+        } else if (type().equals(CommandType.DOCKER_SETUP.getName())) {
+            errors.addAll(validateDockerSetupCommand());
+        } else {
+            errors.add(commandName + "Cannot instantiate command of type \"" + type() + "\". Known types: " + StringUtils.join(commandTypeNames, ", "));
+        }
+
+        return errors;
+    }
+
+    @Nonnull
+    private List<String> validateDockerCommand() {
+        final List<String> errors = new ArrayList<>();
+        final String commandName = "Command \"" + name() + "\" - ";
 
         final Function<String, String> addCommandNameToError = new Function<String, String>() {
             @Override
@@ -403,11 +416,38 @@ public abstract class Command {
                 }
             }
 
-
             if (!wrapperErrors.isEmpty()) {
                 errors.addAll(wrapperErrors);
             }
         }
+
+        return errors;
+    }
+
+    @Nonnull
+    private List<String> validateDockerSetupCommand() {
+        final List<String> errors = new ArrayList<>();
+        final String commandName = "Command \"" + name() + "\" - ";
+
+        if (mounts().size() > 0) {
+            errors.add(commandName + "Setup commands cannot declare any mounts.");
+        }
+        if (inputs().size() > 0) {
+            errors.add(commandName + "Setup commands cannot declare any inputs.");
+        }
+        if (outputs().size() > 0) {
+            errors.add(commandName + "Setup commands cannot declare any outputs.");
+        }
+        if (xnatCommandWrappers().size() > 0) {
+            errors.add(commandName + "Setup commands cannot declare any wrappers.");
+        }
+        if (environmentVariables().size() > 0) {
+            errors.add(commandName + "Setup commands cannot declare any environment variables.");
+        }
+        if (ports().size() > 0) {
+            errors.add(commandName + "Setup commands cannot declare any ports.");
+        }
+
 
         return errors;
     }
@@ -911,6 +951,7 @@ public abstract class Command {
     public static abstract class CommandWrapperInput extends Input {
         @Nullable @JsonProperty("provides-value-for-command-input") public abstract String providesValueForCommandInput();
         @Nullable @JsonProperty("provides-files-for-command-mount") public abstract String providesFilesForCommandMount();
+        @Nullable @JsonProperty("via-setup-command") public abstract String viaSetupCommand();
         @Nullable @JsonProperty("user-settable") public abstract Boolean userSettable();
         @JsonProperty("load-children") public abstract boolean loadChildren();
 
@@ -924,6 +965,11 @@ public abstract class Command {
             final List<String> types = CommandWrapperInputType.names();
             if (!types.contains(type())) {
                 errors.add("Command wrapper input \"" + name() + "\" - Unknown type \"" + type() + "\". Known types: " + StringUtils.join(types, ", "));
+            }
+
+            if (StringUtils.isNotBlank(viaSetupCommand()) && StringUtils.isBlank(providesFilesForCommandMount())) {
+                errors.add("Command wrapper input \"" + name() + "\" - \"via-setup-command\": \"" + viaSetupCommand() + "\" - " +
+                        "You cannot set \"via-setup-command\" on an input that does not provide files for a command mount.");
             }
 
             return errors;
@@ -944,6 +990,7 @@ public abstract class Command {
                                                   @JsonProperty("matcher") final String matcher,
                                                   @JsonProperty("provides-value-for-command-input") final String providesValueForCommandInput,
                                                   @JsonProperty("provides-files-for-command-mount") final String providesFilesForCommandMount,
+                                                  @JsonProperty("via-setup-command") final String viaSetupCommand,
                                                   @JsonProperty("default-value") final String defaultValue,
                                                   @JsonProperty("user-settable") final Boolean userSettable,
                                                   @JsonProperty("replacement-key") final String rawReplacementKey,
@@ -956,6 +1003,7 @@ public abstract class Command {
                     .matcher(matcher)
                     .providesValueForCommandInput(providesValueForCommandInput)
                     .providesFilesForCommandMount(providesFilesForCommandMount)
+                    .viaSetupCommand(viaSetupCommand)
                     .defaultValue(defaultValue)
                     .userSettable(userSettable)
                     .rawReplacementKey(rawReplacementKey)
@@ -977,6 +1025,7 @@ public abstract class Command {
                     .matcher(wrapperInput.getMatcher())
                     .providesValueForCommandInput(wrapperInput.getProvidesValueForCommandInput())
                     .providesFilesForCommandMount(wrapperInput.getProvidesFilesForCommandMount())
+                    .viaSetupCommand(wrapperInput.getViaSetupCommand())
                     .defaultValue(wrapperInput.getDefaultValue())
                     .userSettable(wrapperInput.getUserSettable())
                     .rawReplacementKey(wrapperInput.getRawReplacementKey())
@@ -1001,6 +1050,7 @@ public abstract class Command {
                     .type(this.type())
                     .providesValueForCommandInput(this.providesValueForCommandInput())
                     .providesFilesForCommandMount(this.providesFilesForCommandMount())
+                    .viaSetupCommand(this.viaSetupCommand())
                     .required(this.required())
                     .loadChildren(this.loadChildren())
                     .defaultValue(commandInputConfiguration.defaultValue())
@@ -1018,6 +1068,7 @@ public abstract class Command {
             public abstract Builder matcher(final String matcher);
             public abstract Builder providesValueForCommandInput(final String providesValueForCommandInput);
             public abstract Builder providesFilesForCommandMount(final String providesFilesForCommandMount);
+            public abstract Builder viaSetupCommand(final String viaSetupCommand);
             public abstract Builder defaultValue(final String defaultValue);
             public abstract Builder userSettable(final Boolean userSettable);
             public abstract Builder rawReplacementKey(final String rawReplacementKey);
@@ -1033,6 +1084,7 @@ public abstract class Command {
     public static abstract class CommandWrapperDerivedInput extends CommandWrapperInput {
         @Nullable @JsonProperty("derived-from-wrapper-input") public abstract String derivedFromWrapperInput();
         @Nullable @JsonProperty("derived-from-xnat-object-property") public abstract String derivedFromXnatObjectProperty();
+        @Nullable @JsonProperty("via-setup-command") public abstract String viaSetupCommand();
 
         @JsonCreator
         static CommandWrapperDerivedInput create(@JsonProperty("name") final String name,
@@ -1043,6 +1095,7 @@ public abstract class Command {
                                                  @JsonProperty("matcher") final String matcher,
                                                  @JsonProperty("provides-value-for-command-input") final String providesValueForCommandInput,
                                                  @JsonProperty("provides-files-for-command-mount") final String providesFilesForCommandMount,
+                                                 @JsonProperty("via-setup-command") final String viaSetupCommand,
                                                  @JsonProperty("default-value") final String defaultValue,
                                                  @JsonProperty("user-settable") final Boolean userSettable,
                                                  @JsonProperty("replacement-key") final String rawReplacementKey,
@@ -1057,6 +1110,7 @@ public abstract class Command {
                     .matcher(matcher)
                     .providesValueForCommandInput(providesValueForCommandInput)
                     .providesFilesForCommandMount(providesFilesForCommandMount)
+                    .viaSetupCommand(viaSetupCommand)
                     .defaultValue(defaultValue)
                     .userSettable(userSettable)
                     .rawReplacementKey(rawReplacementKey)
@@ -1080,6 +1134,7 @@ public abstract class Command {
                     .matcher(wrapperInput.getMatcher())
                     .providesValueForCommandInput(wrapperInput.getProvidesValueForCommandInput())
                     .providesFilesForCommandMount(wrapperInput.getProvidesFilesForCommandMount())
+                    .viaSetupCommand(wrapperInput.getViaSetupCommand())
                     .defaultValue(wrapperInput.getDefaultValue())
                     .userSettable(wrapperInput.getUserSettable())
                     .rawReplacementKey(wrapperInput.getRawReplacementKey())
@@ -1106,6 +1161,7 @@ public abstract class Command {
                     .derivedFromXnatObjectProperty(this.derivedFromXnatObjectProperty())
                     .providesValueForCommandInput(this.providesValueForCommandInput())
                     .providesFilesForCommandMount(this.providesFilesForCommandMount())
+                    .viaSetupCommand(this.viaSetupCommand())
                     .rawReplacementKey(this.rawReplacementKey())
                     .required(this.required())
                     .loadChildren(this.loadChildren())
@@ -1136,6 +1192,7 @@ public abstract class Command {
             public abstract Builder matcher(final String matcher);
             public abstract Builder providesValueForCommandInput(final String providesValueForCommandInput);
             public abstract Builder providesFilesForCommandMount(final String providesFilesForCommandMount);
+            public abstract Builder viaSetupCommand(final String viaSetupCommand);
             public abstract Builder defaultValue(final String defaultValue);
             public abstract Builder userSettable(final Boolean userSettable);
             public abstract Builder rawReplacementKey(final String rawReplacementKey);

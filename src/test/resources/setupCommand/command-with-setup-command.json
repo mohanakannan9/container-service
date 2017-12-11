@@ -1,0 +1,32 @@
+{
+    "name": "command-with-setup-command",
+    "description": "A command with a setup command",
+    "type": "docker",
+    "image": "busybox:latest",
+    "command-line": "ls /input",
+    "inputs": [],
+    "mounts": [
+        {
+            "name": "input",
+            "path": "/input"
+        }
+    ],
+    "xnat": [
+        {
+            "name": "wrapper",
+            "description": "Insert a setup command before the command",
+            "external-inputs": [
+                {
+                    "name": "resource",
+                    "description": "A fake resource, which will be mounted",
+                    "type": "Resource",
+                    "required": true,
+                    "provides-files-for-command-mount": "input",
+                    "via-setup-command": "xnat/test-setup-command:latest:setup-command"
+                }
+            ],
+            "derived-inputs": [],
+            "output-handlers": []
+        }
+    ]
+}

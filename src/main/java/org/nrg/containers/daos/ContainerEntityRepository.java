@@ -2,7 +2,6 @@ package org.nrg.containers.daos;
 
 import org.hibernate.Hibernate;
 import org.hibernate.criterion.Restrictions;
-import org.nrg.containers.model.container.auto.Container;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.container.entity.ContainerEntityHistory;
 import org.nrg.containers.model.container.entity.ContainerEntityMount;
@@ -38,6 +37,8 @@ public class ContainerEntityRepository extends AbstractHibernateDAO<ContainerEnt
         Hibernate.initialize(entity.getInputs());
         Hibernate.initialize(entity.getOutputs());
         Hibernate.initialize(entity.getLogPaths());
+
+        initialize(entity.getSetupContainerParent());
     }
 
     @Nullable
@@ -85,6 +86,16 @@ public class ContainerEntityRepository extends AbstractHibernateDAO<ContainerEnt
                 )
                 .list();
         return initializeAndReturnList(servicesResult);
+    }
+
+    @Nonnull
+    public List<ContainerEntity> retrieveSetupContainersForParent(final long parentId) {
+        final List setupContainersResult = getSession()
+                .createQuery("select setup from ContainerEntity as setup where setup.setupContainerParent.id = :parentId")
+                .setLong("parentId", parentId)
+                .list();
+
+        return initializeAndReturnList(setupContainersResult);
     }
 
     @SuppressWarnings("unchecked")

@@ -362,6 +362,7 @@ public class CommandEntityTest {
     }
 
     @Test
+    @DirtiesContext
     public void testCreateEcatHeaderDump() throws Exception {
         // A User was attempting to create the command in this resource.
         // Spring didn't tell us why. See CS-70.
@@ -369,5 +370,18 @@ public class CommandEntityTest {
         final String commandJsonFile = dir + "/command.json";
         final Command ecatHeaderDump = mapper.readValue(new File(commandJsonFile), Command.class);
         commandEntityService.create(CommandEntity.fromPojo(ecatHeaderDump));
+    }
+
+    @Test
+    @DirtiesContext
+    public void testCreateSetupCommand() throws Exception {
+        final Command setupCommand = Command.builder()
+                .name("setup")
+                .type("docker-setup")
+                .image("a-setup-image")
+                .build();
+        final List<String> errors = setupCommand.validate();
+        assertThat(errors, is(Matchers.<String>emptyIterable()));
+        final CommandEntity createdSetupCommandEntity = commandEntityService.create(CommandEntity.fromPojo(setupCommand));
     }
 }

@@ -16,6 +16,7 @@ public abstract class ResolvedCommandMount {
     @JsonProperty("xnat-host-path") public abstract String xnatHostPath();
     @JsonProperty("container-host-path") public abstract String containerHostPath();
     @Nullable @JsonProperty("from-wrapper-input") public abstract String fromWrapperInput();
+    @Nullable @JsonProperty("via-setup-command") public abstract String viaSetupCommand();
     @Nullable @JsonProperty("from-uri") public abstract String fromUri();
     @Nullable @JsonProperty("from-root-directory") public abstract String fromRootDirectory();
 
@@ -38,10 +39,10 @@ public abstract class ResolvedCommandMount {
         public abstract Builder containerHostPath(String containerHostPath);
         public abstract Builder containerPath(String containerPath);
         public abstract Builder fromWrapperInput(String fromWrapperInput);
+        public abstract Builder viaSetupCommand(String viaSetupCommand);
         public abstract Builder fromUri(String fromUri);
         public abstract Builder fromRootDirectory(String fromRootDirectory);
 
         public abstract ResolvedCommandMount build();
     }
-
 }

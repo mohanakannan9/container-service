@@ -34,6 +34,7 @@ public abstract class ResolvedCommand {
     @JsonProperty("mounts") public abstract ImmutableList<ResolvedCommandMount> mounts();
     @JsonProperty("outputs") public abstract ImmutableList<ResolvedCommandOutput> outputs();
     @JsonProperty("working-directory") @Nullable public abstract String workingDirectory();
+    @JsonProperty("setup-commands") public abstract ImmutableList<ResolvedCommand> setupCommands();
 
     @JsonProperty("external-wrapper-input-values")
     public ImmutableMap<String, String> externalWrapperInputValues() {
@@ -178,6 +179,13 @@ public abstract class ResolvedCommand {
         }
         public abstract Builder workingDirectory(String workingDirectory);
 
+        public abstract Builder setupCommands(List<ResolvedCommand> setupCommands);
+        public abstract ImmutableList.Builder<ResolvedCommand> setupCommandsBuilder();
+        public Builder addSetupCommand(final ResolvedCommand setupCommand) {
+            setupCommandsBuilder().add(setupCommand);
+            return this;
+        }
+
         public abstract ResolvedCommand build();
     }
 
@@ -232,6 +240,7 @@ public abstract class ResolvedCommand {
         public abstract Boolean writable();
         public abstract String containerPath();
         @Nullable public abstract String fromWrapperInput();
+        @Nullable public abstract String viaSetupCommand();
         @Nullable public abstract String fromUri();
         @Nullable public abstract String fromRootDirectory();
 
@@ -243,7 +252,11 @@ public abstract class ResolvedCommand {
             return ResolvedCommandMount.builder()
                     .name(this.name())
                     .writable(this.writable())
-                    .containerPath(this.containerPath());
+                    .containerPath(this.containerPath())
+                    .fromWrapperInput(this.fromWrapperInput())
+                    .viaSetupCommand(this.viaSetupCommand())
+                    .fromUri(this.fromUri())
+                    .fromRootDirectory(this.fromRootDirectory());
         }
 
         @AutoValue.Builder
@@ -252,6 +265,7 @@ public abstract class ResolvedCommand {
             public abstract Builder writable(Boolean writable);
             public abstract Builder containerPath(String containerPath);
             public abstract Builder fromWrapperInput(String fromWrapperInput);
+            public abstract Builder viaSetupCommand(String viaSetupCommand);
             public abstract Builder fromUri(String fromUri);
             public abstract Builder fromRootDirectory(String fromRootDirectory);
 

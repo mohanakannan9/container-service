@@ -25,6 +25,7 @@ public class CommandWrapperDerivedInputEntity {
     private String matcher;
     private String providesValueForCommandInput;
     private String providesFilesForCommandMount;
+    private String viaSetupCommand;
     private String defaultValue;
     private Boolean userSettable = true;
     private String rawReplacementKey;
@@ -51,6 +52,7 @@ public class CommandWrapperDerivedInputEntity {
         this.setMatcher(commandWrapperInput.matcher());
         this.setProvidesValueForCommandInput(commandWrapperInput.providesValueForCommandInput());
         this.setProvidesFilesForCommandMount(commandWrapperInput.providesFilesForCommandMount());
+        this.setViaSetupCommand(commandWrapperInput.viaSetupCommand());
         this.setDefaultValue(commandWrapperInput.defaultValue());
         this.setUserSettable(commandWrapperInput.userSettable());
         this.setRawReplacementKey(commandWrapperInput.rawReplacementKey());
@@ -187,6 +189,14 @@ public class CommandWrapperDerivedInputEntity {
         this.providesFilesForCommandMount = providesFilesForCommandMount;
     }
 
+    public String getViaSetupCommand() {
+        return viaSetupCommand;
+    }
+
+    public void setViaSetupCommand(final String viaSetupCommand) {
+        this.viaSetupCommand = viaSetupCommand;
+    }
+
     public String getDefaultValue() {
         return defaultValue;
     }
@@ -258,6 +268,7 @@ public class CommandWrapperDerivedInputEntity {
                 .add("matcher", matcher)
                 .add("providesValueForCommandInput", providesValueForCommandInput)
                 .add("providesFilesForCommandMount", providesFilesForCommandMount)
+                .add("viaSetupCommand", viaSetupCommand)
                 .add("defaultValue", defaultValue)
                 .add("userSettable", userSettable)
                 .add("rawReplacementKey", rawReplacementKey)

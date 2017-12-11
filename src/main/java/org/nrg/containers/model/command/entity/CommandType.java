@@ -11,7 +11,8 @@ import java.util.List;
 
 public enum CommandType {
 
-    DOCKER("docker");
+    DOCKER("docker"),
+    DOCKER_SETUP("docker-setup");
 
     private final String name;
 

@@ -56,6 +56,9 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
             case "docker":
                 commandEntity = DockerCommandEntity.fromPojo(command);
                 break;
+            case "docker-setup":
+                commandEntity = DockerSetupCommandEntity.fromPojo(command);
+                break;
             default:
                 // This should have been caught already, but still...
                 throw new RuntimeException("Cannot instantiate command with type " + command.type());

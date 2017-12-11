@@ -22,6 +22,7 @@ import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.ContainerMountResolutionException;
 import org.nrg.containers.exceptions.IllegalInputException;
 import org.nrg.containers.exceptions.UnauthorizedException;
+import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandInput;
 import org.nrg.containers.model.command.auto.Command.CommandMount;
 import org.nrg.containers.model.command.auto.Command.CommandOutput;
@@ -51,6 +52,7 @@ import org.nrg.containers.model.xnat.XnatFile;
 import org.nrg.containers.model.xnat.XnatModelObject;
 import org.nrg.containers.services.CommandResolutionService;
 import org.nrg.containers.services.CommandService;
+import org.nrg.containers.services.SetupCommandService;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -72,6 +74,7 @@ import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -101,16 +104,19 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
     private final ConfigService configService;
     private final SiteConfigPreferences siteConfigPreferences;
     private final ObjectMapper mapper;
+    private final SetupCommandService setupCommandService;
 
     @Autowired
     public CommandResolutionServiceImpl(final CommandService commandService,
                                         final ConfigService configService,
                                         final SiteConfigPreferences siteConfigPreferences,
-                                        final ObjectMapper mapper) {
+                                        final ObjectMapper mapper,
+                                        final SetupCommandService setupCommandService) {
         this.commandService = commandService;
         this.configService = configService;
         this.siteConfigPreferences = siteConfigPreferences;
         this.mapper = mapper;
+        this.setupCommandService = setupCommandService;
     }
 
     @Override
@@ -240,6 +246,8 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
         private final DocumentContext commandWrapperJsonpathSearchContext;
         private String containerHost;
 
+        private List<ResolvedCommand> resolvedSetupCommands;
+
         // Caches
         private Map<String, String> inputValues;
 
@@ -272,6 +280,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                     Collections.<String, String>emptyMap() :
                     inputValues;
 
+            this.resolvedSetupCommands = new ArrayList<>();
         }
 
         @Nonnull
@@ -357,11 +366,49 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                     .workingDirectory(resolveWorkingDirectory(resolvedInputValuesByReplacementKey))
                     .ports(resolvePorts(resolvedInputValuesByReplacementKey))
                     .mounts(resolveCommandMounts(resolvedInputTrees, resolvedInputValuesByReplacementKey))
+                    .setupCommands(resolvedSetupCommands)
                     .build();
 
             log.info("Done resolving command.");
             log.debug("Resolved command: \n{}", resolvedCommand);
             return resolvedCommand;
+        }
+
+        private void resolveSetupCommand(final String setupCommandImage, final String inputMountPath, final String outputMountPath) throws CommandResolutionException {
+            log.debug("Resolving setup command {}.", setupCommandImage);
+            final Command setupCommand;
+            try {
+                setupCommand = setupCommandService.getSetupCommand(setupCommandImage);
+            } catch (NotFoundException e) {
+                throw new CommandResolutionException("Could not resolve setup command with image " + setupCommandImage, e);
+            }
+
+            final ResolvedCommand resolvedSetupCommand = ResolvedCommand.builder()
+                    .commandId(setupCommand.id())
+                    .commandName(setupCommand.name())
+                    .image(setupCommand.image())
+                    .wrapperId(0L)
+                    .wrapperName("")
+                    .commandLine(setupCommand.commandLine())
+                    .workingDirectory(setupCommand.workingDirectory())
+                    .addMount(ResolvedCommandMount.builder()
+                            .name("input")
+                            .containerPath("/input")
+                            .xnatHostPath(inputMountPath)
+                            .containerHostPath(inputMountPath)
+                            .writable(false)
+                            .build())
+                    .addMount(ResolvedCommandMount.builder()
+                            .name("output")
+                            .containerPath("/output")
+                            .xnatHostPath(outputMountPath)
+                            .containerHostPath(outputMountPath)
+                            .writable(true)
+                            .build())
+                    .build();
+
+            log.debug("Adding resolved setup command to list.");
+            resolvedSetupCommands.add(resolvedSetupCommand);
         }
 
         private void checkForIllegalInputValue(final String inputName,
@@ -1721,8 +1768,9 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 log.debug("Command mount \"{}\" has no inputs that provide it files. Assuming it is an output mount.", commandMount.name());
                 partiallyResolvedCommandMountBuilder.writable(true);
             } else {
-                final String inputName = resolvedSourceInput.input().name();
-                final String inputType = resolvedSourceInput.input().type();
+                final Input input = resolvedSourceInput.input();
+                final String inputName = input.name();
+                final String inputType = input.type();
                 log.debug("Mount \"{}\" has source input \"{}\" with type \"{}\".",
                         commandMount.name(),
                         inputName,
@@ -1772,11 +1820,15 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                     log.error(message);
                 }
 
+                final String viaSetupCommand = (CommandWrapperInput.class.isAssignableFrom(input.getClass())) ?
+                        ((CommandWrapperInput) input).viaSetupCommand() : null;
+
                 log.debug("Done resolving mount \"{}\", source input \"{}\".",
                         commandMount.name(),
                         inputName);
                 partiallyResolvedCommandMountBuilder
                         .fromWrapperInput(inputName)
+                        .viaSetupCommand(viaSetupCommand)
                         .fromUri(uri)
                         .fromRootDirectory(rootDirectory);
             }
@@ -1787,7 +1839,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             return resolvedCommandMount;
         }
 
-        private ResolvedCommandMount transportMount(final PartiallyResolvedCommandMount partiallyResolvedCommandMount) throws ContainerMountResolutionException {
+        private ResolvedCommandMount transportMount(final PartiallyResolvedCommandMount partiallyResolvedCommandMount) throws CommandResolutionException {
             final String resolvedCommandMountName = partiallyResolvedCommandMount.name();
             final ResolvedCommandMount.Builder resolvedCommandMountBuilder = partiallyResolvedCommandMount.toResolvedCommandMountBuilder();
 
@@ -1823,16 +1875,30 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 resolvedCommandMountBuilder.writable(true);
             }
 
-            log.debug("Setting mount \"{}\" xnat host path to \"{}\".", resolvedCommandMountName, localDirectory);
-            resolvedCommandMountBuilder.xnatHostPath(localDirectory);
+            final String pathToMount;
+
+            if (StringUtils.isNotBlank(partiallyResolvedCommandMount.viaSetupCommand())) {
+                log.debug("Command mount will be set up with setup command {}.", partiallyResolvedCommandMount.viaSetupCommand());
+                // If there is a setup command, we do a switcheroo.
+                // Normally, we would mount localDirectory into this mount. Instead, we mount localDirectory
+                // into the setup command as its input, along with another writable build directory as its output.
+                // Then we mount the output build directory into this mount.
+                // In that way, the setup command will write to the mount whatever files we need to find.
+                final String writableMountPath = getBuildDirectory(partiallyResolvedCommandMount);
+                resolveSetupCommand(partiallyResolvedCommandMount.viaSetupCommand(), localDirectory, writableMountPath);
+                pathToMount = writableMountPath;
+            } else {
+                pathToMount = localDirectory;
+            }
+
+            log.debug("Setting mount \"{}\" xnat host path to \"{}\".", resolvedCommandMountName, pathToMount);
+            resolvedCommandMountBuilder.xnatHostPath(pathToMount);
 
             log.debug("Transporting mount \"{}\".", resolvedCommandMountName);
             // final Path pathOnContainerHost = transportService.transport(containerHost, Paths.get(buildDirectory));
             // TODO transporting is currently a no-op, and the code is simpler if we don't pretend that we are doing something here.
-            final String containerHostPath = localDirectory;
-
-            log.debug("Setting mount \"{}\" container host path to \"{}\".", resolvedCommandMountName, localDirectory);
-            resolvedCommandMountBuilder.containerHostPath(containerHostPath);
+            log.debug("Setting mount \"{}\" container host path to \"{}\".", resolvedCommandMountName, pathToMount);
+            resolvedCommandMountBuilder.containerHostPath(pathToMount);
 
             return resolvedCommandMountBuilder.build();
         }
@@ -2003,7 +2069,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
         final Path created;
         try {
             created = Files.createDirectory(Paths.get(buildDir));
-        } catch (IOException e) {
+        } catch (IOException | NullPointerException e) {
             throw new ContainerMountResolutionException("Could not create build directory " + buildDir, mount, e);
         }
         created.toFile().setWritable(true);
