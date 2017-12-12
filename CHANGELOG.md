@@ -11,6 +11,12 @@ Not yet released.
 * Docs: Add new script that bulk uploads all changed source docs
 * Docs: Add support for "NO UPLOAD" comment in source docs that should be skipped and not uploaded to wiki
 * [CS-340][] Check in generated swagger.json from REST API dump, and scripts to upload it to wiki
+* Add lots of new documentation
+    * [CS-434][] Command resolution
+    * [CS-434][] Container launching (internals)
+    * Container launching (as a user)
+    * Enabling commands on a project
+    * Troubleshooting
 
 ### Bugfixes
 
@@ -21,6 +27,7 @@ Not yet released.
 [CS-421]: https://issues.xnat.org/browse/CS-421
 [CS-430]: https://issues.xnat.org/browse/CS-430
 [CS-433]: https://issues.xnat.org/browse/CS-433
+[CS-434]: https://issues.xnat.org/browse/CS-434
 
 ## 1.3.2
 
