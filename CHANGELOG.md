@@ -15,10 +15,12 @@ Not yet released.
 ### Bugfixes
 
 * Docs: Fix mishandling of anchor tags/links on wiki pages. Confluence uses a macro for these, not raw HTML anchors.
+* [CS-433][] Remove image entrypoints when launching containers.
 
 [CS-355]: https://issues.xnat.org/browse/CS-355
 [CS-421]: https://issues.xnat.org/browse/CS-421
 [CS-430]: https://issues.xnat.org/browse/CS-430
+[CS-433]: https://issues.xnat.org/browse/CS-433
 
 ## 1.3.2
 

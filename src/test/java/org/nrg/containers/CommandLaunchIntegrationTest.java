@@ -521,6 +521,7 @@ public class CommandLaunchIntegrationTest {
         final String setupCommandName = setupCommandSplitOnColon[2];
 
         CLIENT.build(setupCommandDirPath, setupCommandImageName);
+        imagesToCleanUp.add(setupCommandImageName);
 
         // Make the setup command from the json file.
         // Assert that its name and image are the same ones referred to in the "via-setup-command" property
@@ -591,6 +592,7 @@ public class CommandLaunchIntegrationTest {
 
 
     @Test
+    @DirtiesContext
     public void testFailedContainer() throws Exception {
         assumeThat(SystemUtils.IS_OS_WINDOWS_7, is(false));
         assumeThat(canConnectToDocker(), is(true));
@@ -619,14 +621,52 @@ public class CommandLaunchIntegrationTest {
         TestTransaction.end();
         TestTransaction.start();
 
-        printContainerLogs(container);
-
         await().until(containerIsRunning(container), is(false));
-
         await().until(containerHistoryHasItemFromSystem(container.databaseId()), is(true));
+
         final Container exited = containerService.get(container.databaseId());
+        printContainerLogs(exited);
         assertThat(exited.exitCode(), is("1"));
         assertThat(exited.status(), is("Failed"));
+    }
+
+    @Test
+    @DirtiesContext
+    public void testEntrypointIsRemoved() throws Exception {
+        assumeThat(canConnectToDocker(), is(true));
+
+        CLIENT.pull("busybox:latest");
+
+        final String resourceDir = Paths.get(ClassLoader.getSystemResource("commandLaunchTest").toURI()).toString().replace("%20", " ");
+        final Path testDir = Paths.get(resourceDir, "/testEntrypointIsRemoved");
+        final String commandJsonFile = Paths.get(testDir.toString(), "/command.json").toString();
+
+        final String imageName = "xnat/entrypoint-test:latest";
+        CLIENT.build(testDir, imageName);
+        imagesToCleanUp.add(imageName);
+
+        final Command commandToCreate = mapper.readValue(new File(commandJsonFile), Command.class);
+        final Command command = commandService.create(commandToCreate);
+        final CommandWrapper wrapper = command.xnatCommandWrappers().get(0);
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        final Container container = containerService.resolveCommandAndLaunchContainer(wrapper.id(), Collections.<String, String>emptyMap(), mockUser);
+        containersToCleanUp.add(container.containerId());
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        await().until(containerIsRunning(container), is(false));
+        await().until(containerHasLogPaths(container.databaseId())); // Thus we know it has been finalized
+
+        final Container exited = containerService.get(container.databaseId());
+        printContainerLogs(exited);
+        assertThat(exited.status(), is(not("Failed")));
+        assertThat(exited.exitCode(), is("0"));
     }
 
     @SuppressWarnings("deprecation")
@@ -675,6 +715,15 @@ public class CommandLaunchIntegrationTest {
                     // Ignore exception. If container is not found, it is not running.
                     return false;
                 }
+            }
+        };
+    }
+
+    private Callable<Boolean> containerHasLogPaths(final long containerDbId) {
+        return new Callable<Boolean>() {
+            public Boolean call() throws Exception {
+                final Container container = containerService.get(containerDbId);
+                return container.logPaths().size() > 0;
             }
         };
     }

@@ -378,7 +378,8 @@ public class DockerControlApi implements ContainerControlApi {
                         .image(imageName)
                         .attachStdout(true)
                         .attachStderr(true)
-                        .cmd(Lists.newArrayList("/bin/sh", "-c", runCommand))
+                        .cmd("/bin/sh", "-c", runCommand)
+                        .entrypoint("") // CS-433 Override any entrypoint image specifies
                         .env(environmentVariables)
                         .workingDir(workingDirectory)
                         .build();
