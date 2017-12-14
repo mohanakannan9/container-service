@@ -44,6 +44,7 @@ import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.services.AliasTokenService;
+import org.nrg.xft.ItemI;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
@@ -91,6 +92,8 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
@@ -195,6 +198,9 @@ public class CommandLaunchIntegrationTest {
         mockUser = mock(UserI.class);
         when(mockUser.getLogin()).thenReturn(FAKE_USER);
 
+        // Permissions
+        when(mockPermissionsServiceI.canEdit(any(UserI.class), any(ItemI.class))).thenReturn(Boolean.TRUE);
+
         // Mock the user management service
         when(mockUserManagementServiceI.getUser(FAKE_USER)).thenReturn(mockUser);
 
@@ -248,6 +254,7 @@ public class CommandLaunchIntegrationTest {
     }
 
     @Test
+    @DirtiesContext
     public void testFakeReconAll() throws Exception {
         assumeThat(SystemUtils.IS_OS_WINDOWS_7, is(false));
         assumeThat(canConnectToDocker(), is(true));
@@ -281,7 +288,6 @@ public class CommandLaunchIntegrationTest {
         final ProjURI mockUriObject = mock(ProjURI.class);
         when(UriParserUtils.parseURI("/archive" + session.getUri())).thenReturn(mockUriObject);
         when(mockUriObject.getSecurityItem()).thenReturn(mockProjectItem);
-        when(mockPermissionsServiceI.canEdit(mockUser, mockProjectItem)).thenReturn(Boolean.TRUE);
 
         final String t1Scantype = "T1_TEST_SCANTYPE";
 
@@ -376,6 +382,7 @@ public class CommandLaunchIntegrationTest {
     }
 
     @Test
+    @DirtiesContext
     public void testProjectMount() throws Exception {
         assumeThat(canConnectToDocker(), is(true));
 
@@ -399,7 +406,6 @@ public class CommandLaunchIntegrationTest {
         final ExptURI mockUriObject = mock(ExptURI.class);
         when(UriParserUtils.parseURI("/archive" + project.getUri())).thenReturn(mockUriObject);
         when(mockUriObject.getSecurityItem()).thenReturn(mockProjectItem);
-        when(mockPermissionsServiceI.canEdit(mockUser, mockProjectItem)).thenReturn(Boolean.TRUE);
 
         final Map<String, String> runtimeValues = Maps.newHashMap();
         runtimeValues.put("project", projectJson);
@@ -551,7 +557,6 @@ public class CommandLaunchIntegrationTest {
         final ProjURI mockUriObject = mock(ProjURI.class);
         when(UriParserUtils.parseURI("/archive" + resourceInput.getUri())).thenReturn(mockUriObject);
         when(mockUriObject.getSecurityItem()).thenReturn(mockProjectItem);
-        when(mockPermissionsServiceI.canEdit(mockUser, mockProjectItem)).thenReturn(Boolean.TRUE);
 
         // Time to launch this thing
         final Container mainContainerRightAfterLaunch = containerService.resolveCommandAndLaunchContainer(commandWithSetupCommandWrapper.id(), runtimeValues, mockUser);
