@@ -34,7 +34,7 @@ version = "1.0"
 args = docopt(__doc__, version=version)
 username = args['<username>']
 password = args['<password>']
-postId = args.get('<postId>')
+postId = args.get('-i')
 filepath = args['<file>']
 messageList = args.get('<message>')
 
