@@ -53,7 +53,8 @@ public class ContainerEntity extends AbstractHibernateEntity {
     private String serviceId;
     private String taskId;
     private String nodeId;
-    private ContainerEntity setupContainerParent;
+    private String subtype;
+    private ContainerEntity parentContainerEntity;
     private List<ContainerEntityInput> inputs;
     private List<ContainerEntityOutput> outputs;
     private List<ContainerEntityHistory> history = Lists.newArrayList();
@@ -87,7 +88,8 @@ public class ContainerEntity extends AbstractHibernateEntity {
         this.setDockerImage(containerPojo.dockerImage());
         this.setCommandLine(containerPojo.commandLine());
         this.setWorkingDirectory(containerPojo.workingDirectory());
-        this.setSetupContainerParent(fromPojo(containerPojo.setupContainerParent()));
+        this.setSubtype(containerPojo.subtype());
+        this.setParentContainerEntity(fromPojo(containerPojo.parentContainer()));
         this.setEnvironmentVariables(containerPojo.environmentVariables());
         this.setLogPaths(containerPojo.logPaths());
         this.setMounts(Lists.newArrayList(Lists.transform(
@@ -193,6 +195,14 @@ public class ContainerEntity extends AbstractHibernateEntity {
                 environmentVariables;
     }
 
+    public String getSubtype() {
+        return subtype;
+    }
+
+    public void setSubtype(final String subtype) {
+        this.subtype = subtype;
+    }
+
     @OneToMany(mappedBy = "containerEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<ContainerEntityMount> getMounts() {
         return mounts;
@@ -264,12 +274,12 @@ public class ContainerEntity extends AbstractHibernateEntity {
     }
 
     @ManyToOne
-    public ContainerEntity getSetupContainerParent() {
-        return setupContainerParent;
+    public ContainerEntity getParentContainerEntity() {
+        return parentContainerEntity;
     }
 
-    public void setSetupContainerParent(final ContainerEntity setupContainerParent) {
-        this.setupContainerParent = setupContainerParent;
+    public void setParentContainerEntity(final ContainerEntity parentContainerEntity) {
+        this.parentContainerEntity = parentContainerEntity;
     }
 
     @OneToMany(mappedBy = "containerEntity", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -457,7 +467,9 @@ public class ContainerEntity extends AbstractHibernateEntity {
                 .add("taskId", taskId)
                 .add("nodeId", nodeId)
                 .add("userId", userId)
-                .add("setupContainerParentId", setupContainerParent == null ? null : setupContainerParent.getId())
+                .add("subtype", subtype)
+                .add("parentContainerEntityId", parentContainerEntity == null ? null : parentContainerEntity.getId())
+                .add("parentContainerEntityContainerId", parentContainerEntity == null ? null : parentContainerEntity.getContainerId())
                 .add("workflowId", workflowId)
                 .add("commandId", commandId)
                 .add("wrapperId", wrapperId)

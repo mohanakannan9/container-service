@@ -327,6 +327,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                     .commandName(command.name())
                     .commandDescription(command.description())
                     .image(command.image())
+                    .type(command.type())
                     .rawInputValues(inputValues)
                     .resolvedInputTrees(resolvedInputTrees)
                     .build();
@@ -358,6 +359,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                     .commandName(command.name())
                     .commandDescription(command.description())
                     .image(command.image())
+                    .type(command.type())
                     .rawInputValues(inputValues)
                     .resolvedInputTrees(resolvedInputTrees)
                     .outputs(resolveOutputs(resolvedInputTrees, resolvedInputValuesByReplacementKey))
@@ -383,29 +385,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 throw new CommandResolutionException("Could not resolve setup command with image " + setupCommandImage, e);
             }
 
-            final ResolvedCommand resolvedSetupCommand = ResolvedCommand.builder()
-                    .commandId(setupCommand.id())
-                    .commandName(setupCommand.name())
-                    .image(setupCommand.image())
-                    .wrapperId(0L)
-                    .wrapperName("")
-                    .commandLine(setupCommand.commandLine())
-                    .workingDirectory(setupCommand.workingDirectory())
-                    .addMount(ResolvedCommandMount.builder()
-                            .name("input")
-                            .containerPath("/input")
-                            .xnatHostPath(inputMountPath)
-                            .containerHostPath(inputMountPath)
-                            .writable(false)
-                            .build())
-                    .addMount(ResolvedCommandMount.builder()
-                            .name("output")
-                            .containerPath("/output")
-                            .xnatHostPath(outputMountPath)
-                            .containerHostPath(outputMountPath)
-                            .writable(true)
-                            .build())
-                    .build();
+            final ResolvedCommand resolvedSetupCommand = ResolvedCommand.fromSetupCommand(setupCommand, inputMountPath, outputMountPath);
 
             log.debug("Adding resolved setup command to list.");
             resolvedSetupCommands.add(resolvedSetupCommand);

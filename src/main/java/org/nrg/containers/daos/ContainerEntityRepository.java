@@ -38,7 +38,7 @@ public class ContainerEntityRepository extends AbstractHibernateDAO<ContainerEnt
         Hibernate.initialize(entity.getOutputs());
         Hibernate.initialize(entity.getLogPaths());
 
-        initialize(entity.getSetupContainerParent());
+        initialize(entity.getParentContainerEntity());
     }
 
     @Nullable
@@ -89,10 +89,12 @@ public class ContainerEntityRepository extends AbstractHibernateDAO<ContainerEnt
     }
 
     @Nonnull
-    public List<ContainerEntity> retrieveSetupContainersForParent(final long parentId) {
+    public List<ContainerEntity> retrieveContainersForParentWithSubtype(final long parentId,
+                                                                        final String subtype) {
         final List setupContainersResult = getSession()
-                .createQuery("select setup from ContainerEntity as setup where setup.setupContainerParent.id = :parentId")
+                .createQuery("select c from ContainerEntity as c where c.parentContainerEntity.id = :parentId and c.subtype = :subtype")
                 .setLong("parentId", parentId)
+                .setString("subtype", subtype)
                 .list();
 
         return initializeAndReturnList(setupContainersResult);

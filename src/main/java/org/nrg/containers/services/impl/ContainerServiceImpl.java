@@ -240,7 +240,7 @@ public class ContainerServiceImpl implements ContainerService {
         final Container savedContainerOrService = toPojo(containerEntityService.save(fromPojo(
                 createdContainerOrService.toBuilder()
                         .workflowId(workflowId)
-                        .setupContainerParent(parent)
+                        .setParentProperties(parent)
                         .build()
         ), userI));
 
@@ -385,7 +385,7 @@ public class ContainerServiceImpl implements ContainerService {
         containerEntityService.update(fromPojo(finalized));
         log.debug("Done saving outputs for Container {}.", container.databaseId());
 
-        final Container parent = finalized.setupContainerParent();
+        final Container parent = finalized.parentContainer();
         if (parent != null) {
             log.info("Container {} is a setup container for parent container {}. Checking whether parent needs a status change.", container.databaseId(), parent.databaseId());
             final List<Container> setupContainers = retrieveSetupContainersForParent(parent.databaseId());

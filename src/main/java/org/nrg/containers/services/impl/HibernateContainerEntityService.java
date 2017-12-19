@@ -82,7 +82,7 @@ public class HibernateContainerEntityService
 
     @Override
     public List<ContainerEntity> retrieveSetupContainersForParent(final long parentId) {
-        return getDao().retrieveSetupContainersForParent(parentId);
+        return getDao().retrieveContainersForParentWithSubtype(parentId, "setup");
     }
 
     @Override

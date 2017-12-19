@@ -7,6 +7,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import org.nrg.containers.model.command.entity.CommandEntity;
+import org.nrg.containers.model.command.entity.CommandType;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -126,6 +127,35 @@ public abstract class ResolvedCommand {
     public static Builder builder() {
         return new AutoValue_ResolvedCommand.Builder()
                 .type(CommandEntity.DEFAULT_TYPE.getName());
+    }
+
+    public static ResolvedCommand fromSetupCommand(final Command setupCommand,
+                                                   final String inputMountPath,
+                                                   final String outputMountPath) {
+        return builder()
+                .wrapperId(0L)
+                .wrapperName("")
+                .type(CommandType.DOCKER_SETUP.getName())
+                .commandId(setupCommand.id())
+                .commandName(setupCommand.name())
+                .image(setupCommand.image())
+                .commandLine(setupCommand.commandLine())
+                .workingDirectory(setupCommand.workingDirectory())
+                .addMount(ResolvedCommandMount.builder()
+                        .name("input")
+                        .containerPath("/input")
+                        .xnatHostPath(inputMountPath)
+                        .containerHostPath(inputMountPath)
+                        .writable(false)
+                        .build())
+                .addMount(ResolvedCommandMount.builder()
+                        .name("output")
+                        .containerPath("/output")
+                        .xnatHostPath(outputMountPath)
+                        .containerHostPath(outputMountPath)
+                        .writable(true)
+                        .build())
+                .build();
     }
 
     public abstract Builder toBuilder();
