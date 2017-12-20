@@ -167,15 +167,13 @@ We would need to write a new setup command to take the Freesurfer data and BIDS-
 >
 > The folder structure of the mindboggle input should look like:
 
-```
-bids_dir/
-  derivatives/
-    freesurfer/
-      sub-*/
-        mri/
-        label/
-        surf/
-```
+    bids_dir/
+      derivatives/
+        freesurfer/
+          sub-*/
+            mri/
+            label/
+            surf/
 
 Also note that a lot of the paths in the docs look like example paths, but they are not. They should be used literally.
 

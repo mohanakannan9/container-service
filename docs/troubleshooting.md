@@ -35,9 +35,9 @@ These are the checks that have to pass for a wrapper to show up in the Run Conta
 When you get the message `"Failed to start"` it means that the container service was able to resolve your command, and could _create_ a container from it, but could not _start_ that container.
 
 Usually this means something is wrong with your image. You should test whether you can run commands in your image manually. If you see any errors that look like this:
-```bash
-docker: Error response from daemon: OCI runtime create failed: container_linux.go:295: starting container process caused "exec: \"foo\": executable file not found in $PATH": unknown.
-```
+
+    docker: Error response from daemon: OCI runtime create failed: container_linux.go:295: starting container process caused "exec: \"foo\": executable file not found in $PATH": unknown.
+
 ...that indicates that whatever command you tried to run could not be run.
 
 Note that, whenever the container service runs a command in a container, it does two things:
