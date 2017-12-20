@@ -24,7 +24,7 @@ regexAndReplacements = ((xnatIssueLinkRe, xnatIssueLinkReplacement),
                         (wikiLinkRe, wikiLinkReplacement))
 
 with open(inputAndOutputFile, "r") as f:
-    confluenceOriginal = [line.strip() for line in f.readlines()]
+    confluenceOriginal = [line.rstrip("\n") for line in f.readlines()]
 
 confluenceProcessed = []
 for line in confluenceOriginal:
