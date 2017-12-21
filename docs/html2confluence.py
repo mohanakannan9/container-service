@@ -13,12 +13,18 @@ headerAnchorReplacement = "<h\\1><ac:structured-macro ac:name=\"anchor\" ac:sche
 
 anchorLinkRe = re.compile(r'<a href="#([^"]+?)">(.*?)<\/a>')
 anchorLinkReplacement = "<ac:link ac:anchor=\"\\1\"><ac:plain-text-link-body><![CDATA[\\2]]></ac:plain-text-link-body></ac:link>"
+
+wikiLinkRe = re.compile(r'<a href="https://wiki\.xnat\.org/display/[^/]+?/([^"]+?)">(.+?)</a>')
+def wikiLinkReplacement(matchobj):
+    return "<ac:link ac:tooltip=\"{0}\"><ri:page ri:content-title=\"{0}\" /><ac:plain-text-link-body><![CDATA[{1}]]></ac:plain-text-link-body></ac:link>".format(matchobj.group(1).replace('+', ' '), matchobj.group(2))
+
 regexAndReplacements = ((xnatIssueLinkRe, xnatIssueLinkReplacement),
                         (headerAnchorRe, headerAnchorReplacement),
-                        (anchorLinkRe, anchorLinkReplacement))
+                        (anchorLinkRe, anchorLinkReplacement),
+                        (wikiLinkRe, wikiLinkReplacement))
 
 with open(inputAndOutputFile, "r") as f:
-    confluenceOriginal = [line.strip() for line in f.readlines()]
+    confluenceOriginal = [line.rstrip("\n") for line in f.readlines()]
 
 confluenceProcessed = []
 for line in confluenceOriginal:

@@ -78,7 +78,8 @@ If you want XNAT to execute your docker image, you will need a Command. The Comm
                         "user-settable": true,
                         "replacement-key": "",
                         "provides-value-for-command-input": "",
-                        "provides-files-for-command-mount": ""
+                        "provides-files-for-command-mount": "",
+                        "via-setup-command": "repo/image:version[:commandname]"
                     }
                 ],
                 "derived-inputs": [
@@ -92,6 +93,7 @@ If you want XNAT to execute your docker image, you will need a Command. The Comm
                         "replacement-key": "",
                         "provides-value-for-command-input": "",
                         "provides-files-for-command-mount": "",
+                        "via-setup-command": "repo/image:version[:commandname]",
                         "derived-from-wrapper-input": "",
                         "derived-from-xnat-object-property": ""
                     }
@@ -108,7 +110,6 @@ If you want XNAT to execute your docker image, you will need a Command. The Comm
             }
         ]
     }
-
 
 - **name** - The name of the command. Should be unique, but that is not required.
 - **label** - A short human-friendly name of the command. If none is provided, the name will be used.
@@ -162,6 +163,7 @@ If you want XNAT to execute your docker image, you will need a Command. The Comm
         - **replacement-key** - A shorthand way to refer to this input's value elsewhere in the command. Default: the input's name bracketed by "#"; e.g. for an input named "foo" the default replacement-key is "#foo#".
         - **provides-value-for-command-input** - The name of a Command Input, which will receive its value from this input.
         - **provides-files-for-command-mount** - The name of a Command Mount, which will receive files from this input.
+        - **via-setup-command** - A reference to a setup command image (format: `repo/image:version[:commandname]` where the `commandname` is optional). See the page on [Setup Commands](https://wiki.xnat.org/display/CS/Setup+Commands) for more.
     - **derived-inputs** - A List of Inputs to the Command Wrapper that will not come in from outside, but instead will be derived from other inputs as parents or children. See [Wrapper Inputs](#wrapper-inputs) for more.
         - **name**
         - **description**
@@ -172,6 +174,7 @@ If you want XNAT to execute your docker image, you will need a Command. The Comm
         - **replacement-key** - A shorthand way to refer to this input's value elsewhere in the command. Default: the input's name bracketed by "#"; e.g. for an input named "foo" the default replacement-key is "#foo#".
         - **provides-value-for-command-input** - The name of a Command Input, which will receive its value from this input.
         - **provides-files-for-command-mount** - The name of a Command Mount, which will receive files from this input.
+        - **via-setup-command** - A reference to a setup command image (format: `repo/image:version[:commandname]` where the `commandname` is optional). See the page on [Setup Commands](https://wiki.xnat.org/display/CS/Setup+Commands) for more.
         - **derived-from-wrapper-input** - Name of a Wrapper input which is a "parent" to this input. See [Deriving values](#deriving-values).
         - **derived-from-xnat-object-property** - Property of an XNAT object that will be used for the value of this input. See [Deriving values](#deriving-values).
     - **output-handlers** - A list of [output handlers](#output-handling). You use these to instruct the container service how and where to upload your container's outputs.

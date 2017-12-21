@@ -8,7 +8,7 @@ mdFile = 'container-service-api.md'
 
 with open(swaggerJsonFile, 'r') as f:
     swaggerJson = json.load(f)
-swaggerJsonString = json.dumps(swaggerJson).replace('"', '\\"')
+swaggerJsonString = json.dumps(swaggerJson)
 
 with open(mdTemplateFile, 'r') as f:
     mdTemplate = f.read()
