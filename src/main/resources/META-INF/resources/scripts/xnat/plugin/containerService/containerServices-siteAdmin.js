@@ -2133,6 +2133,7 @@ var XNAT = getObject(XNAT || {});
 
                         if (entry['parent-database-id']) {
                             data[entry['parent-database-id']-1].project = projectId;
+                            data[entry['parent-database-id']-1]['setup-container-id'] = entry.id;
                         }
                     });
 
@@ -2444,6 +2445,25 @@ var XNAT = getObject(XNAT || {});
                         }
                     });
                 }
+                if (key === 'setup-container-id') {
+                    historyDialogButtons.push({
+                        label: 'View Setup Container',
+                        close: true,
+                        action: function(){
+                            historyTable.viewHistory(historyEntry[key]);
+                        }
+                    })
+                }
+                if (key === 'parent-database-id' && historyEntry[key]) {
+                    var parentId = historyEntry[key];
+                    historyDialogButtons.push({
+                        label: 'View Parent Container',
+                        close: true,
+                        action: function(){
+                            historyTable.viewHistory(parentId);
+                        }
+                    })
+                }
 
             }
 
@@ -2456,6 +2476,7 @@ var XNAT = getObject(XNAT || {});
                 buttons: historyDialogButtons
             });
         } else {
+            console.log(id);
             XNAT.ui.dialog.open({
                 content: 'Sorry, could not display this history item.',
                 buttons: [
