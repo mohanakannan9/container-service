@@ -21,13 +21,17 @@ Not yet released.
 ### Bugfixes
 
 * Docs: Fix mishandling of anchor tags/links on wiki pages. Confluence uses a macro for these, not raw HTML anchors.
+* [CS-420][] Fix handling of non-standard default values for boolean inputs in bulk launches
 * [CS-433][] Remove image entrypoints when launching containers.
+* [CS-435][] Command wrappers with no descriptions were not displaying properly in the UI
 
 [CS-355]: https://issues.xnat.org/browse/CS-355
+[CS-420]: https://issues.xnat.org/browse/CS-420
 [CS-421]: https://issues.xnat.org/browse/CS-421
 [CS-430]: https://issues.xnat.org/browse/CS-430
 [CS-433]: https://issues.xnat.org/browse/CS-433
 [CS-434]: https://issues.xnat.org/browse/CS-434
+[CS-435]: https://issues.xnat.org/browse/CS-435
 
 ## 1.3.2
 
