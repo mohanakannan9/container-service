@@ -2118,14 +2118,46 @@ var XNAT = getObject(XNAT || {});
         return XNAT.xhr.getJSON(URL)
             .success(function(data){
                 if (data.length){
+                    // sort data by ID
                     data = data.sort(function(a,b){ return (a.id > b.id) ? 1 : -1 });
+
+                    // add a project field before returning. For setup containers, this requires some additional work.
+                    var setupContainers = data.filter(function(a) { return (a.subtype) ? a.subtype.toLowerCase() === 'setup' : false });
+                    setupContainers.forEach(function(entry){
+                        var projectId = getProjectIdFromMounts(entry);
+                        data[entry.id - 1].project = projectId;
+
+                        if (entry['parent-database-id']) {
+                            data[entry['parent-database-id']-1].project = projectId;
+                        }
+                    });
+
+                    // copy the history listing into an object for individual reference
                     data.forEach(function(historyEntry){
                         containerHistory[historyEntry.id] = historyEntry;
                     });
+
                     return data;
                 }
                 callback.apply(this, arguments);
             })
+    }
+
+    function getProjectIdFromMounts(entry){
+        var mounts = entry.mounts;
+        // assume that the first mount of a container is an input from a project. Parse the URI for that mount and return the project ID.
+        if (mounts.length) {
+            var inputMount = mounts[0]['xnat-host-path'];
+            if (inputMount === undefined) return false;
+
+            inputMount = inputMount.replace('/data/xnat/archive/','');
+            inputMount = inputMount.replace('/data/archive/','');
+            inputMount = inputMount.replace('/REST/archive/','');
+            var inputMountEls = inputMount.split('/');
+            return inputMountEls[0];
+        } else {
+            return false;
+        }
     }
 
     function spawnHistoryTable(sortedHistoryObj){
@@ -2287,19 +2319,11 @@ var XNAT = getObject(XNAT || {});
                     label: 'Project',
                     filter: true,
                     apply: function(){
-                        var mounts = this.mounts;
-                        // assume that the first mount of a container is an input from a project. Parse the URI for that mount and return the project ID.
-                        if (mounts.length) {
-                            var inputMount = mounts[0]['xnat-host-path'];
-                            if (inputMount === undefined) return 'unknown';
-
-                            inputMount = inputMount.replace('/data/xnat/archive/','');
-                            inputMount = inputMount.replace('/data/archive/','');
-                            inputMount = inputMount.replace('/REST/archive/','');
-                            var inputMountEls = inputMount.split('/');
-                            return spawn('a',{ href: '/data/projects/'+ inputMountEls[0] + '?format=html', html: inputMountEls[0] });
+                        var projectId = (this.project) ? this.project : getProjectIdFromMounts(this);
+                        if (projectId) {
+                            return spawn('a',{ href: '/data/projects/'+ projectId + '?format=html', html: projectId });
                         } else {
-                            return 'unknown';
+                            return 'Unknown';
                         }
                     }
                 }
