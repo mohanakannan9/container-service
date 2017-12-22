@@ -767,6 +767,11 @@ var XNAT = getObject(XNAT || {});
                                     inputs[i].type = 'hidden';
                                     inputs[i].value = inputs[i].ui.default.values[0].value || inputs[i].value;
 
+                                    // handle non-standard boolean input values in bulk hidden inputs
+                                    if (inputs[i].ui.default.type === 'boolean') {
+                                        inputs[i].value = booleanEval(inputs[i].value)
+                                    }
+
                                     var inputElement = launcher.formInputs(inputs[i]);
                                     $bulkInputContainer.append(inputElement);
 
