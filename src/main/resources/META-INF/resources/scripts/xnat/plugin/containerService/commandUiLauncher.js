@@ -1257,11 +1257,15 @@ var XNAT = getObject(XNAT || {});
 
     launcher.addMenuItem = function(command,commandSet){
         commandSet = commandSet || [];
+        var label = (command['wrapper-description'].length) ?
+            command['wrapper-description'] :
+            command['wrapper-name'];
+
         if (command.enabled){
             commandSet.push(
                 spawn('li', [
                     spawn('a', {
-                        html: command['wrapper-description'],
+                        html: label,
                         href: '#!',
                         className: 'commandLauncher',
                         data: {
@@ -1291,8 +1295,11 @@ var XNAT = getObject(XNAT || {});
     launcher.addYUIMenuItem = function(command){
         if (command.enabled) {
             var launcher = command.launcher || "default";
+            var label = (command['wrapper-description'].length) ?
+                command['wrapper-description'] :
+                command['wrapper-name'];
             containerMenuItems[0].submenu.itemdata.push({
-                text: command['wrapper-description'],
+                text: label,
                 url: 'javascript:openCommandLauncher({ wrapperid:"'+command['wrapper-id']+'", launcher: "'+launcher+'", rootElement: "'+ command['root-element-name'] + '" })',
                 classname: 'enabled wrapped' // injects a custom classname onto the surrounding li element.
             });

@@ -434,7 +434,10 @@ var XNAT = getObject(XNAT || {});
             .td([ spawn('div',[ masterCommandCheckbox() ]) ])
             .td();
 
-        function viewLink(command, wrapper, text){
+        function viewLink(command, wrapper){
+            var label = (wrapper.description.length) ?
+                wrapper.description :
+                wrapper.name;
             return spawn(
                 'a.link|href=#!',
                 {
@@ -443,7 +446,7 @@ var XNAT = getObject(XNAT || {});
                         projConfigDefinition.dialog(command.id, wrapper.name, false);
                     }
                 },
-                spawn('b', text)
+                spawn('b', label)
             );
         }
 
@@ -548,7 +551,7 @@ var XNAT = getObject(XNAT || {});
                             wrapperList[wrapper.id] = { id: wrapper.id, description: wrapper.description };
 
                             pccmTable.tr({title: wrapper.name, data: {id: wrapper.id, name: wrapper.name, image: command.image}})
-                                .td([viewLink(command, wrapper, wrapper.description)]).addClass('name')
+                                .td([viewLink(command, wrapper)]).addClass('name')
                                 .td(command.image)
                                 .td([['div.center', [enabledCheckbox(command,wrapper)]]])
                                 .td([['div.center', [editConfigButton(command,wrapper)]]]);
