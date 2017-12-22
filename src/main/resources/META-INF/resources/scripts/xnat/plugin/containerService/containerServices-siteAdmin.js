@@ -1667,7 +1667,11 @@ var XNAT = getObject(XNAT || {});
                                 .td([ spawn('div.center', [editConfigButton(command,wrapper), spacer(10), deleteConfigButton(wrapper)]) ]);
 
                             // populate wrapperList{}
-                            XNAT.plugin.containerService.wrapperList[wrapper.id] = { 'id': wrapper.id, 'description': wrapper.description };
+                            XNAT.plugin.containerService.wrapperList[wrapper.id] = {
+                                'id': wrapper.id,
+                                'name': wrapper.name,
+                                'description': wrapper.description
+                            };
                         }
                     }
                 }
@@ -2300,11 +2304,17 @@ var XNAT = getObject(XNAT || {});
                     label: 'Command',
                     filter: true,
                     apply: function(){
+                        var label = (wrapperList[ this['wrapper-id'] ]) ?
+                            (wrapperList[ this['wrapper-id'] ].description) ?
+                                wrapperList[ this['wrapper-id'] ].description :
+                                wrapperList[ this['wrapper-id'] ].name
+                            : this['command-line'];
+
                         return spawn('a.view-history', {
                             href: '#!',
                             title: 'View command history and logs',
                             data: {'id': this.id },
-                            html: (wrapperList[ this['wrapper-id'] ]) ? wrapperList[ this['wrapper-id'] ].description : this['command-line']
+                            html: label
                         });
                     }
                 },
