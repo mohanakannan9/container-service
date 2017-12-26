@@ -1206,8 +1206,8 @@ var XNAT = getObject(XNAT || {});
         if (!targets || targets.length === 0) return false;
         var targetObj = rootElement + '=' + targets.toString();
         var launchUrl = (projectId) ?
-            '/xapi/projects/'+projectId+'/wrappers/'+wrapperId+'/bulklaunch?'+targetObj :
-            '/xapi/wrappers/'+wrapperId+'/bulklaunch?'+targetObj;
+            rootUrl('/xapi/projects/'+projectId+'/wrappers/'+wrapperId+'/bulklaunch?'+targetObj) :
+            rootUrl('/xapi/wrappers/'+wrapperId+'/bulklaunch?'+targetObj);
 
         xmodal.loading.open({ title: 'Configuring Container Launcher' });
         XNAT.xhr.getJSON({

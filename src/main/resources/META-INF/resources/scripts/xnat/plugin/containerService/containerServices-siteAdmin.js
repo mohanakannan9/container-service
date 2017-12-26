@@ -833,7 +833,7 @@ var XNAT = getObject(XNAT || {});
                             xmodal.loading.open({ title: 'Submitting Pull Request' });
 
                             XNAT.xhr.post({
-                                url: '/xapi/docker/pull?save-commands=true&image='+imageName,
+                                url: csrfUrl('/xapi/docker/pull?save-commands=true&image='+imageName),
                                 success: function() {
                                     xmodal.loading.close();
                                     XNAT.dialog.closeAll();

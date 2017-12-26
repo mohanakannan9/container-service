@@ -117,12 +117,12 @@ var XNAT = getObject(XNAT || {});
         return csrfUrl('/xapi/projects/'+projectId+'/commands/'+commandId+'/wrappers/'+wrapperName+'/' + flag);
     }
 
-    function projectPrefUrl(action){
-        var projectId = getProjectId();
-        action = action||''; 
-        var flag = (action.toUpperCase() === 'PUT') ? '?inbody=true' : '';
-        return csrfUrl('/data/projects/'+projectId+'/config/container-service/general' + flag);
-    }
+    // function projectPrefUrl(action){
+    //     var projectId = getProjectId();
+    //     action = action||'';
+    //     var flag = (action.toUpperCase() === 'PUT') ? '?inbody=true' : '';
+    //     return csrfUrl('/data/projects/'+projectId+'/config/container-service/general' + flag);
+    // }
 
     projCommandConfigManager.getCommands = projCommandConfigManager.getAll = function(callback){
 
@@ -171,22 +171,22 @@ var XNAT = getObject(XNAT || {});
     };
 
     // auto-save to project config on click of the opt-in switchbox.
-    $('#optIntoSitewideCommands').on('change',function(){
-        var optIn = $(this).prop('checked');
-        var paramToPut = JSON.stringify({ optIntoSitewideCommands: optIn });
-        XNAT.xhr.putJSON({
-            url: projectPrefUrl('PUT'),
-            data: paramToPut,
-            dataType: 'json',
-            success: function(){
-                XNAT.ui.banner.top(2000, 'Site-wide Command Opt-in Setting set to <b>' + optIn + '</b>.', 'success');
-                if (optIn) projCommandConfigManager.importSiteWideEnabledStatus();
-            },
-            fail: function(e){
-                xmodal.alert({title: 'Error', content: e.statusText });
-            }
-        });
-    });
+    // $('#optIntoSitewideCommands').on('change',function(){
+    //     var optIn = $(this).prop('checked');
+    //     var paramToPut = JSON.stringify({ optIntoSitewideCommands: optIn });
+    //     XNAT.xhr.putJSON({
+    //         url: projectPrefUrl('PUT'),
+    //         data: paramToPut,
+    //         dataType: 'json',
+    //         success: function(){
+    //             XNAT.ui.banner.top(2000, 'Site-wide Command Opt-in Setting set to <b>' + optIn + '</b>.', 'success');
+    //             if (optIn) projCommandConfigManager.importSiteWideEnabledStatus();
+    //         },
+    //         fail: function(e){
+    //             xmodal.alert({title: 'Error', content: e.statusText });
+    //         }
+    //     });
+    // });
 
 
     projConfigDefinition.table = function(config) {
@@ -621,33 +621,33 @@ var XNAT = getObject(XNAT || {});
         $manager.append(projCommandConfigManager.table({id: 'project-commands', className: '' }));
 
         // set value of opt-in controller based on project config
-        $('#optIntoSitewideCommands').prop('checked',false);
+        // $('#optIntoSitewideCommands').prop('checked',false);
 
-        XNAT.xhr.getJSON({
-            url: projectPrefUrl(),
-            success: function(data){
-                var configParams = JSON.parse(data.ResultSet.Result[0].contents);
-                if (configParams.optIntoSitewideCommands === true) {
-                    $('#optIntoSitewideCommands').prop('checked','checked');
-                }
-            },
-            fail: function(){
-                // if no project preference was found, set one based on the site-wide opt-in preference.
-                XNAT.xhr.getJSON('/xapi/siteConfig/optIntoSitewideCommands')
-                    .done(function(data){
-                        var optIn = data || false;
-                        var paramToPut = JSON.stringify({ optIntoSitewideCommands: optIn });
-                        XNAT.xhr.putJSON({
-                            url: projectPrefUrl('PUT'),
-                            dataType: 'json',
-                            data: paramToPut
-                        });
-                        if (optIn) {
-                            $('#optIntoSitewideCommands').prop('checked','checked');
-                        }
-                    })
-            }
-        });
+        // XNAT.xhr.getJSON({
+        //     url: projectPrefUrl(),
+        //     success: function(data){
+        //         var configParams = JSON.parse(data.ResultSet.Result[0].contents);
+        //         // if (configParams.optIntoSitewideCommands === true) {
+        //         //     $('#optIntoSitewideCommands').prop('checked','checked');
+        //         // }
+        //     },
+        //     fail: function(){
+        //         // if no project preference was found, set one based on the site-wide opt-in preference.
+        //         // XNAT.xhr.getJSON('/xapi/siteConfig/optIntoSitewideCommands')
+        //         //     .done(function(data){
+        //         //         var optIn = data || false;
+        //         //         var paramToPut = JSON.stringify({ optIntoSitewideCommands: optIn });
+        //         //         XNAT.xhr.putJSON({
+        //         //             url: projectPrefUrl('PUT'),
+        //         //             dataType: 'json',
+        //         //             data: paramToPut
+        //         //         });
+        //         //         if (optIn) {
+        //         //             $('#optIntoSitewideCommands').prop('checked','checked');
+        //         //         }
+        //         //     })
+        //     }
+        // });
     };
 
     // delay initializing this panel until automation panel is defined.
@@ -951,7 +951,7 @@ var XNAT = getObject(XNAT || {});
         if (commandList.length && Object.keys(XNAT.plugin.containerService.wrapperList).length){
             // initialize automation table
             XNAT.xhr.getJSON({
-                url: '/xapi/users/' + PAGE.username + '/roles',
+                url: rootUrl('/xapi/users/' + PAGE.username + '/roles'),
                 success: function (userRoles) {
                     isAdmin = (userRoles.indexOf('Administrator') >= 0);
 
