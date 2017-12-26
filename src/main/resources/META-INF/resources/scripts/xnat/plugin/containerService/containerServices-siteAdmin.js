@@ -801,7 +801,18 @@ var XNAT = getObject(XNAT || {});
                         var $image = $form.find('input[name=image]');
                         var $tag = $form.find('input[name=tag]');
 
-                        if ($tag.val() === '') $tag.val(':latest');
+                        if ($image.val().indexOf(':') > 0) {
+                            // if the tag is included in the image title, move it to the tag field
+                            var imageTitleParts = $image.val().split(':');
+                            $image.val(imageTitleParts[0]);
+
+                            if ($tag.val() === '') {
+                                $tag.val(':' + imageTitleParts[1]);
+                            }
+                        }
+                        else {
+                            if ($tag.val() === '') $tag.val(':latest');
+                        }
 
                         // validate form inputs, then pull them into the URI querystring and create an XHR request.
                         $form.find(':input').removeClass('invalid');
@@ -1531,13 +1542,16 @@ var XNAT = getObject(XNAT || {});
             .td([ spawn('div',[masterCommandCheckbox()]) ])
             .td();
 
-        function viewLink(item, wrapper, text){
+        function viewLink(item, wrapper){
+            var label = (wrapper.description.length) ?
+                wrapper.description :
+                wrapper.name;
             return spawn('a.link|href=#!', {
                 onclick: function(e){
                     e.preventDefault();
                     configDefinition.dialog(item.id, wrapper.name, false);
                 }
-            }, [['b', text]]);
+            }, [['b', label]]);
         }
 
         function editConfigButton(item,wrapper){
@@ -1661,7 +1675,7 @@ var XNAT = getObject(XNAT || {});
                         for (var k = 0, l = command.xnat.length; k < l; k++) {
                             var wrapper = command.xnat[k];
                             ccmTable.tr({title: wrapper.name, data: {wrapperid: wrapper.id, commandid: command.id, name: wrapper.name, image: command.image}})
-                                .td([ viewLink(command, wrapper, wrapper.description) ]).addClass('name')
+                                .td([ viewLink(command, wrapper) ]).addClass('name')
                                 .td([ spawn('span.truncate.truncate200', command.image ) ])
                                 .td([ spawn('div', [enabledCheckbox(command,wrapper)]) ])
                                 .td([ spawn('div.center', [editConfigButton(command,wrapper), spacer(10), deleteConfigButton(wrapper)]) ]);
