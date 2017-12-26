@@ -1165,9 +1165,9 @@ var XNAT = getObject(XNAT || {});
                             XNAT.xhr.delete({
                                 url: imageUrl(image['image-id'],force),
                                 success: function(){
-                                    console.log(image.tags[0] + ' image deleted');
-                                    XNAT.ui.banner.top(1000, '<b>' + image.tags[0] + ' image deleted.', 'success');
+                                    XNAT.ui.banner.top(1000, '<b>' + image.tags[0] + ' image deleted, along with its commands and configurations.', 'success');
                                     imageListManager.refreshTable();
+                                    commandConfigManager.refreshTable();
                                     historyTable.refresh();
                                     XNAT.dialog.closeAll();
                                 },
