@@ -856,7 +856,7 @@ var XNAT = getObject(XNAT || {});
         });
     };
 
-    // create a read-only code editor dialog to view a command definition
+    // create a code editor dialog to view a command definition
     commandDefinition.dialog = function(commandDef,newCommand,imageName){
         var _source,_editor;
         if (!newCommand) {
@@ -912,6 +912,7 @@ var XNAT = getObject(XNAT || {});
                 title: 'Edit Definition For ' + commandDef.name,
                 classes: 'plugin-json',
                 buttons: dialogButtons,
+                height: 680,
                 afterShow: function(dialog, obj){
                     obj.aceEditor.setReadOnly(false);
                     dialog.$modal.find('.body .inner').prepend(
