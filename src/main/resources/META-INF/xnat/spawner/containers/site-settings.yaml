@@ -188,7 +188,7 @@ sitewideCommandConfigsPanel:
     footer: false
     contents:
         commandConfigDescription:
-            tag: "p"
+            tag: div.message
             contents:
                 "This panel lists all commands and XNAT-aware command wrappers from all installed images, and allows admins to define a site-wide configuration for each command wrapper. This site-wide configuration can be used by default by a project, or a project can create its own configuration to overwrite the site-wide defaults."
         commandConfigListContainer:
