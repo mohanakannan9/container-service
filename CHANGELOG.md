@@ -24,8 +24,9 @@ Not yet released.
 * [CS-420][] Fix handling of non-standard default values for boolean inputs in bulk launches
 * [CS-433][] Remove image entrypoints when launching containers.
 * [CS-435][] Command wrappers with no descriptions were not displaying properly in the UI
-* [CS-442][], [CS-443][], [CS-449][] Multiple failures when running XNAT in a non-root context
+* [CS-442][], [CS-443][], [CS-449][] Multiple failures when running XNAT in a non-root context: pulling images, project settings, bulk launching
 * [CS-448][] Fix height of 'Edit Command' dialog so full code editor is displayed
+* [CS-450][] Restrict usage of command automation to commands that match the context of selected events
 
 [CS-355]: https://issues.xnat.org/browse/CS-355
 [CS-420]: https://issues.xnat.org/browse/CS-420
@@ -38,6 +39,7 @@ Not yet released.
 [CS-443]: https://issues.xnat.org/browse/CS-443
 [CS-448]: https://issues.xnat.org/browse/CS-448
 [CS-449]: https://issues.xnat.org/browse/CS-449
+[CS-450]: https://issues.xnat.org/browse/CS-450
 
 ## 1.3.2
 
