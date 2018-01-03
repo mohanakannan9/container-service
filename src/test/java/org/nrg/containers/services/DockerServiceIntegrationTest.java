@@ -12,14 +12,18 @@ import org.mockito.Mockito;
 import org.nrg.containers.api.DockerControlApi;
 import org.nrg.containers.config.DockerServiceIntegrationTestConfig;
 import org.nrg.containers.model.command.auto.Command;
+import org.nrg.containers.model.image.docker.DockerImage;
+import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.transaction.TestTransaction;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
@@ -31,8 +35,11 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeThat;
+import static org.mockito.Matchers.notNull;
 import static org.mockito.Mockito.when;
 import static org.nrg.containers.model.server.docker.DockerServerBase.DockerServer.DockerServer;
 
@@ -53,6 +60,7 @@ public class DockerServiceIntegrationTest {
 
     @Autowired private DockerControlApi controlApi;
     @Autowired private DockerService dockerService;
+    @Autowired private CommandService commandService;
     @Autowired private DockerServerService dockerServerService;
     @Autowired private SiteConfigPreferences mockSiteConfigPreferences;
     @Autowired private UserManagementServiceI mockUserManagementServiceI;
@@ -120,6 +128,7 @@ public class DockerServiceIntegrationTest {
     }
 
     @Test
+    @DirtiesContext
     public void testSaveCommandFromImageLabels() throws Exception {
         assumeThat(canConnectToDocker(), is(true));
 
@@ -139,5 +148,52 @@ public class DockerServiceIntegrationTest {
         assertThat(wrapper.id(), not(0L));
 
         CLIENT.removeImage(imageName);
+    }
+
+    @Test
+    @DirtiesContext
+    public void testDeleteCommandWhenDeleteImage() throws Exception {
+        assumeThat(canConnectToDocker(), is(true));
+
+        final String imageName = "xnat/testy-test";
+        final String dir = Paths.get(ClassLoader.getSystemResource("dockerServiceIntegrationTest").toURI()).toString().replace("%20", " ");
+
+        final String imageId = CLIENT.build(Paths.get(dir), imageName);
+
+        final List<Command> commands = dockerService.saveFromImageLabels(imageName);
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        final DockerImage dockerImageByName = dockerService.getImage(imageName);
+        final DockerImage dockerImageById = dockerService.getImage(imageId);
+        assertThat(dockerImageByName, is(not(nullValue(DockerImage.class))));
+        assertThat(dockerImageByName, is(dockerImageById));
+
+        dockerService.removeImageById(imageId, true);
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        try {
+            dockerService.getImage(imageId);
+            fail("We expect a NotFoundException to be thrown when getting an image that we have removed. If this line is executed it means no exception was thrown.");
+        } catch (NotFoundException ignored) {
+            // exception is expected
+        } catch (Exception e) {
+            fail("We expect a NotFoundException to be thrown when getting an image that we have removed. If this line is executed it means another exception type was thrown.\n" + e.getClass().getName() + ": " + e.getMessage());
+        }
+
+        for (final Command command : commands) {
+            final Command retrieved = commandService.retrieve(command.id());
+            assertThat(retrieved, is(nullValue(Command.class)));
+
+            for (final Command.CommandWrapper commandWrapper : command.xnatCommandWrappers()) {
+                final Command.CommandWrapper retrievedWrapper = commandService.retrieveWrapper(commandWrapper.id());
+                assertThat(retrievedWrapper, is(nullValue(Command.CommandWrapper.class)));
+            }
+        }
     }
 }

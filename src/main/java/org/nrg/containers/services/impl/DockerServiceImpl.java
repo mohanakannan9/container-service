@@ -374,12 +374,13 @@ public class DockerServiceImpl implements DockerService {
         }
     }
 
-    public void removeImage(final String imageId, final Boolean force)
+    public void removeImageById(final String imageId, final Boolean force)
             throws NoDockerServerException, DockerServerException {
         for (final DockerImageAndCommandSummary dockerImageAndCommandSummary : getImageSummaries()) {
-            if (dockerImageAndCommandSummary.imageId() != null && dockerImageAndCommandSummary.imageId().equals(imageId)) {
+            if (dockerImageAndCommandSummary.imageId() != null &&
+                    (dockerImageAndCommandSummary.imageId().equals(imageId) || dockerImageAndCommandSummary.imageId().contains(imageId))) {
                 for (final Command command : dockerImageAndCommandSummary.commands()) {
-                    commandService.delete(command);
+                    commandService.delete(command.id());
                 }
             }
         }

@@ -298,7 +298,7 @@ public class DockerRestApi extends AbstractXapiRestController {
     public ResponseEntity<Void> deleteImage(final @PathVariable("id") String id,
                                             final @RequestParam(value = "force", defaultValue = "false") Boolean force)
             throws NotFoundException, NoDockerServerException, DockerServerException {
-        dockerService.removeImage(id, force);
+        dockerService.removeImageById(id, force);
         return ResponseEntity.noContent().build();
     }
 

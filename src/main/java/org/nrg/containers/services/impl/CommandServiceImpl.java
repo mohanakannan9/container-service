@@ -150,7 +150,7 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
             commandEntityService.deleteWrapper(commandWrapper.id());
         }
 
-        commandEntityService.delete(fromPojo(command));
+        commandEntityService.delete(command.id());
     }
 
     @Override
