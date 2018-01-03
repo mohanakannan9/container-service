@@ -674,6 +674,45 @@ public class CommandLaunchIntegrationTest {
         assertThat(exited.exitCode(), is("0"));
     }
 
+    @Test
+    @DirtiesContext
+    public void testContainerWorkingDirectory() throws Exception {
+        assumeThat(SystemUtils.IS_OS_WINDOWS_7, is(false));
+        assumeThat(canConnectToDocker(), is(true));
+
+        CLIENT.pull("busybox:latest");
+
+        final String workingDirectory = "/usr/local/bin";
+        final Command command = commandService.create(Command.builder()
+                .name("command")
+                .image("busybox:latest")
+                .version("0")
+                .commandLine("pwd")
+                .workingDirectory(workingDirectory)
+                .addCommandWrapper(CommandWrapper.builder()
+                        .name("placeholder")
+                        .build())
+                .build());
+        final CommandWrapper wrapper = command.xnatCommandWrappers().get(0);
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        final Container container = containerService.resolveCommandAndLaunchContainer(wrapper.id(), Collections.<String, String>emptyMap(), mockUser);
+        containersToCleanUp.add(container.containerId());
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        await().until(containerIsRunning(container), is(false));
+
+        final Container exited = containerService.get(container.databaseId());
+        printContainerLogs(exited);
+        assertThat(exited.workingDirectory(), is(workingDirectory));
+    }
+
     @SuppressWarnings("deprecation")
     private String[] readFile(final String outputFilePath) throws IOException {
         final File outputFile = new File(outputFilePath);

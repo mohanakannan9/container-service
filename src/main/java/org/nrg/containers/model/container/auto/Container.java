@@ -157,6 +157,7 @@ public abstract class Container {
                 .nodeId(containerEntity.getNodeId())
                 .dockerImage(containerEntity.getDockerImage())
                 .commandLine(containerEntity.getCommandLine())
+                .workingDirectory(containerEntity.getWorkingDirectory())
                 .subtype(containerEntity.getSubtype())
                 .parentContainer(create(containerEntity.getParentContainerEntity()))
                 .parentDatabaseId(containerEntity.getParentContainerEntity() != null ? containerEntity.getParentContainerEntity().getId() : null)
