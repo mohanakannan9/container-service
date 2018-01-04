@@ -22,6 +22,7 @@ Not yet released.
 
 * Docs: Fix mishandling of anchor tags/links on wiki pages. Confluence uses a macro for these, not raw HTML anchors.
 * [CS-420][] Fix handling of non-standard default values for boolean inputs in bulk launches
+* [CS-432][] Do not update container/workflow status if new events come in from docker and container is already in a "terminal" state (Completed, Failed, Killed, or related states)
 * [CS-433][] Remove image entrypoints when launching containers.
 * [CS-435][] Command wrappers with no descriptions were not displaying properly in the UI
 * [CS-442][], [CS-443][], [CS-449][] Multiple failures when running XNAT in a non-root context: pulling images, project settings, bulk launching
@@ -33,6 +34,7 @@ Not yet released.
 [CS-420]: https://issues.xnat.org/browse/CS-420
 [CS-421]: https://issues.xnat.org/browse/CS-421
 [CS-430]: https://issues.xnat.org/browse/CS-430
+[CS-432]: https://issues.xnat.org/browse/CS-432
 [CS-433]: https://issues.xnat.org/browse/CS-433
 [CS-434]: https://issues.xnat.org/browse/CS-434
 [CS-435]: https://issues.xnat.org/browse/CS-435

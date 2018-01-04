@@ -15,13 +15,19 @@ public class ContainerUtils {
             log.debug("Updating status of workflow {}.", workflowId);
             final PersistentWorkflowI workflow = WorkflowUtils.getUniqueWorkflow(userI, workflowId);
             if (workflow != null) {
-                log.debug("Found workflow {}. Updating status to \"{}\".", workflow.getWorkflowId(), status);
+                log.debug("Found workflow {}.", workflow.getWorkflowId());
 
-                workflow.setStatus(status);
-                try {
-                    WorkflowUtils.save(workflow, workflow.buildEvent());
-                } catch (Exception e) {
-                    log.error("Could not update workflow status.", e);
+                if (workflow.getStatus() == null || !workflow.getStatus().equals(status)) {
+                    log.debug("Updating workflow {} status to \"{}\".", workflow.getWorkflowId(), status);
+
+                    workflow.setStatus(status);
+                    try {
+                        WorkflowUtils.save(workflow, workflow.buildEvent());
+                    } catch (Exception e) {
+                        log.error("Could not update workflow status.", e);
+                    }
+                } else {
+                    log.debug("Workflow {} status is already \"{}\"; not updating.", workflow.getWorkflowId(), status);
                 }
             } else {
                 log.debug("Could not find workflow.");

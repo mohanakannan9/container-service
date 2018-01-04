@@ -16,10 +16,14 @@ import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Transient;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 @Entity
 @Audited
@@ -36,6 +40,9 @@ public class ContainerEntity extends AbstractHibernateEntity {
             .put("oom", "Killed (Out of Memory)")
             .put("starting", "Starting")
             .build();
+    private static final Set<String> TERMINAL_STATI = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            "Complete", "Failed", "Killed"
+    )));
 
     private long commandId;
     private long wrapperId;
@@ -150,6 +157,18 @@ public class ContainerEntity extends AbstractHibernateEntity {
 
     public void setStatus(final String status) {
         this.status = STANDARD_STATUS_MAP.containsKey(status) ? STANDARD_STATUS_MAP.get(status) : status;
+    }
+
+    @Transient
+    public boolean statusIsTerminal() {
+        if (status != null) {
+            for (final String terminalStatus : TERMINAL_STATI) {
+                if (status.contains(terminalStatus)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public Date getStatusTime() {

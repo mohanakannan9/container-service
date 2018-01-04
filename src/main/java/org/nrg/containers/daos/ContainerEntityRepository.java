@@ -50,8 +50,13 @@ public class ContainerEntityRepository extends AbstractHibernateDAO<ContainerEnt
                                final @Nonnull ContainerEntityHistory containerEntityHistory) {
         containerEntity.addToHistory(containerEntityHistory);
         getSession().persist(containerEntityHistory);
-        if (containerEntityHistory.getTimeRecorded() != null && (containerEntity.getStatusTime() == null ||
-                containerEntityHistory.getTimeRecorded().getTime() > containerEntity.getStatusTime().getTime())) {
+
+        final boolean historyEntryIsMoreRecentThanContainerStatus =
+                containerEntityHistory.getTimeRecorded() != null &&
+                        (containerEntity.getStatusTime() == null ||
+                                containerEntityHistory.getTimeRecorded().getTime() > containerEntity.getStatusTime().getTime());
+
+        if (historyEntryIsMoreRecentThanContainerStatus && !containerEntity.statusIsTerminal()) {
             containerEntity.setStatusTime(containerEntityHistory.getTimeRecorded());
             containerEntity.setStatus(containerEntityHistory.getStatus());
             log.debug("Setting container entity {} status to \"{}\", based on history entry status \"{}\".",
@@ -59,6 +64,7 @@ public class ContainerEntityRepository extends AbstractHibernateDAO<ContainerEnt
                     containerEntity.getStatus(),
                     containerEntityHistory.getStatus());
         }
+
         update(containerEntity);
     }
 
