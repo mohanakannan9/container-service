@@ -32,6 +32,7 @@ import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.containers.services.ContainerFinalizeService;
 import org.nrg.containers.services.ContainerService;
+import org.nrg.containers.services.DockerHubService;
 import org.nrg.containers.services.DockerServerEntityService;
 import org.nrg.containers.services.DockerServerService;
 import org.nrg.containers.services.DockerService;
@@ -41,6 +42,7 @@ import org.nrg.containers.services.impl.CommandResolutionServiceImpl;
 import org.nrg.containers.services.impl.ContainerFinalizeServiceImpl;
 import org.nrg.containers.services.impl.ContainerServiceImpl;
 import org.nrg.containers.services.impl.DockerServerServiceImpl;
+import org.nrg.containers.services.impl.DockerServiceImpl;
 import org.nrg.containers.services.impl.HibernateContainerEntityService;
 import org.nrg.containers.services.impl.HibernateDockerServerEntityService;
 import org.nrg.containers.services.impl.SetupCommandServiceImpl;
@@ -159,8 +161,17 @@ public class IntegrationTestConfig {
     }
 
     @Bean
-    public DockerService mockDockerService() {
-        return Mockito.mock(DockerService.class);
+    public DockerService dockerService(final ContainerControlApi controlApi,
+                                       final DockerHubService dockerHubService,
+                                       final CommandService commandService,
+                                       final DockerServerService dockerServerService,
+                                       final CommandLabelService commandLabelService) {
+        return new DockerServiceImpl(controlApi, dockerHubService, commandService, dockerServerService, commandLabelService);
+    }
+
+    @Bean
+    public DockerHubService mockDockerHubService() {
+        return Mockito.mock(DockerHubService.class);
     }
 
     @Bean

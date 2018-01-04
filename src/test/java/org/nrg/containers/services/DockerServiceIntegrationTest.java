@@ -10,7 +10,7 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.nrg.containers.api.DockerControlApi;
-import org.nrg.containers.config.DockerServiceIntegrationTestConfig;
+import org.nrg.containers.config.IntegrationTestConfig;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.image.docker.DockerImage;
 import org.nrg.framework.exceptions.NotFoundException;
@@ -44,7 +44,7 @@ import static org.mockito.Mockito.when;
 import static org.nrg.containers.model.server.docker.DockerServerBase.DockerServer.DockerServer;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = DockerServiceIntegrationTestConfig.class)
+@ContextConfiguration(classes = IntegrationTestConfig.class)
 @Transactional
 public class DockerServiceIntegrationTest {
     private static final Logger log = LoggerFactory.getLogger(DockerServiceIntegrationTest.class);

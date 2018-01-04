@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 @EnableScheduling
 @EnableTransactionManagement
 @Import({IntegrationTestConfig.class})
-public class DockerIntegrationTestConfig implements SchedulingConfigurer {
+public class EventPullingIntegrationTestConfig implements SchedulingConfigurer {
     @Bean
     public DockerStatusUpdater dockerEventPuller(final DockerControlApi dockerControlApi,
                                                  final DockerServerService dockerServerService,

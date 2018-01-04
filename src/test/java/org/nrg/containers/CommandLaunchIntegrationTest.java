@@ -26,7 +26,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.nrg.containers.api.DockerControlApi;
-import org.nrg.containers.config.DockerIntegrationTestConfig;
+import org.nrg.containers.config.EventPullingIntegrationTestConfig;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.model.container.auto.Container;
@@ -102,7 +102,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
 @PowerMockRunnerDelegate(SpringJUnit4ClassRunner.class)
 @PrepareForTest({UriParserUtils.class, XFTManager.class})
 @PowerMockIgnore({"org.apache.*", "java.*", "javax.*", "org.w3c.*", "com.sun.*"})
-@ContextConfiguration(classes = DockerIntegrationTestConfig.class)
+@ContextConfiguration(classes = EventPullingIntegrationTestConfig.class)
 @Transactional
 public class CommandLaunchIntegrationTest {
     private static final Logger log = LoggerFactory.getLogger(CommandLaunchIntegrationTest.class);
