@@ -2,7 +2,7 @@
   "swagger" : "2.0",
   "info" : {
     "description" : "XAPI endpoints for the XNAT Container Service",
-    "version" : "1.4.0-SNAPSHOT",
+    "version" : "1.4.0",
     "title" : "Container Service API",
     "contact" : {
       "name" : "John Flavin",
