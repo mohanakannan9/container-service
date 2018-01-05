@@ -2919,6 +2919,10 @@
           "type" : "string",
           "readOnly" : true
         },
+        "via-setup-command" : {
+          "type" : "string",
+          "readOnly" : true
+        },
         "default-value" : {
           "type" : "string",
           "readOnly" : true
@@ -2965,6 +2969,10 @@
           "readOnly" : true
         },
         "provides-files-for-command-mount" : {
+          "type" : "string",
+          "readOnly" : true
+        },
+        "via-setup-command" : {
           "type" : "string",
           "readOnly" : true
         },
