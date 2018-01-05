@@ -34,7 +34,7 @@ version = "1.0"
 args = docopt(__doc__, version=version)
 username = args['<username>']
 password = args['<password>']
-postId = args.get('<postId>')
+postId = args.get('-i')
 filepath = args['<file>']
 messageList = args.get('<message>')
 
@@ -64,22 +64,36 @@ print "Ok"
 
 # Get the existing post. We will need some information about it.
 print "Get old post"
-r = s.get(url)
+r = s.get(url, params={"expand": "version,space"})
 if not r.ok:
-    sys.exit("No post with id {}".format(postId))
+    errorMessage = ''
+    if r.text:
+        try:
+            errorMessageJson = json.loads(r.text)
+            errorMessage = ':\n' + errorMessageJson.get('message', '')
+        except:
+            # Ignored
+            pass
+
+    sys.exit("ERROR getting post with id {}{}".format(postId, errorMessage))
 print "Ok"
 
 post = r.json()
 # post['type']
 # post['space']['key']
-previousVersionNumber = post['version']['number']
+previousVersionNumber = post.get('version', {}).get('number', '')
+if not previousVersionNumber:
+    sys.exit("ERROR: Could not get version number of post {}".format(postId))
+spaceKey = post.get('space', {}).get('key', '')
+if not previousVersionNumber:
+    sys.exit("ERROR: Could not get space key of post {}".format(postId))
 
 newPostJson = {
     "id": postId,
     "type": post['type'],
     "title": post['title'],
     "space": {
-        "key": post['space']['key']
+        "key": spaceKey
     },
     "body": {
         "storage": {
@@ -93,7 +107,7 @@ newPostJson = {
     }
 }
 
-print "Uploading new post..."
+print "Uploading..."
 r = s.put(url, json=newPostJson)
 if not r.ok:
     print "Upload failed"

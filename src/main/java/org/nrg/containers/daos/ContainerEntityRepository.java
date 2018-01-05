@@ -2,7 +2,6 @@ package org.nrg.containers.daos;
 
 import org.hibernate.Hibernate;
 import org.hibernate.criterion.Restrictions;
-import org.nrg.containers.model.container.auto.Container;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.container.entity.ContainerEntityHistory;
 import org.nrg.containers.model.container.entity.ContainerEntityMount;
@@ -38,6 +37,8 @@ public class ContainerEntityRepository extends AbstractHibernateDAO<ContainerEnt
         Hibernate.initialize(entity.getInputs());
         Hibernate.initialize(entity.getOutputs());
         Hibernate.initialize(entity.getLogPaths());
+
+        initialize(entity.getParentContainerEntity());
     }
 
     @Nullable
@@ -49,8 +50,13 @@ public class ContainerEntityRepository extends AbstractHibernateDAO<ContainerEnt
                                final @Nonnull ContainerEntityHistory containerEntityHistory) {
         containerEntity.addToHistory(containerEntityHistory);
         getSession().persist(containerEntityHistory);
-        if (containerEntityHistory.getTimeRecorded() != null && (containerEntity.getStatusTime() == null ||
-                containerEntityHistory.getTimeRecorded().getTime() > containerEntity.getStatusTime().getTime())) {
+
+        final boolean historyEntryIsMoreRecentThanContainerStatus =
+                containerEntityHistory.getTimeRecorded() != null &&
+                        (containerEntity.getStatusTime() == null ||
+                                containerEntityHistory.getTimeRecorded().getTime() > containerEntity.getStatusTime().getTime());
+
+        if (historyEntryIsMoreRecentThanContainerStatus && !containerEntity.statusIsTerminal()) {
             containerEntity.setStatusTime(containerEntityHistory.getTimeRecorded());
             containerEntity.setStatus(containerEntityHistory.getStatus());
             log.debug("Setting container entity {} status to \"{}\", based on history entry status \"{}\".",
@@ -58,6 +64,7 @@ public class ContainerEntityRepository extends AbstractHibernateDAO<ContainerEnt
                     containerEntity.getStatus(),
                     containerEntityHistory.getStatus());
         }
+
         update(containerEntity);
     }
 
@@ -67,7 +74,7 @@ public class ContainerEntityRepository extends AbstractHibernateDAO<ContainerEnt
                 .createCriteria(ContainerEntity.class)
                 .add(Restrictions.isNotNull("serviceId"))
                 .list();
-        return initializeAndReturnServiceList(servicesResult);
+        return initializeAndReturnList(servicesResult);
     }
 
     @Nonnull
@@ -84,20 +91,32 @@ public class ContainerEntityRepository extends AbstractHibernateDAO<ContainerEnt
                         ))
                 )
                 .list();
-        return initializeAndReturnServiceList(servicesResult);
+        return initializeAndReturnList(servicesResult);
+    }
+
+    @Nonnull
+    public List<ContainerEntity> retrieveContainersForParentWithSubtype(final long parentId,
+                                                                        final String subtype) {
+        final List setupContainersResult = getSession()
+                .createQuery("select c from ContainerEntity as c where c.parentContainerEntity.id = :parentId and c.subtype = :subtype")
+                .setLong("parentId", parentId)
+                .setString("subtype", subtype)
+                .list();
+
+        return initializeAndReturnList(setupContainersResult);
     }
 
     @SuppressWarnings("unchecked")
-    private List<ContainerEntity> initializeAndReturnServiceList(final List servicesResult) {
-        if (servicesResult != null) {
+    private List<ContainerEntity> initializeAndReturnList(final List result) {
+        if (result != null) {
             try {
-                final List<ContainerEntity> toReturn = (List<ContainerEntity>) servicesResult;
+                final List<ContainerEntity> toReturn = (List<ContainerEntity>) result;
                 for (final ContainerEntity containerEntity : toReturn) {
                     initialize(containerEntity);
                 }
                 return toReturn;
             } catch (ClassCastException e) {
-                log.error("Failed to cast service search results to ContainerEntity.", e);
+                log.error("Failed to cast results to ContainerEntity.", e);
             }
         }
         return Collections.emptyList();

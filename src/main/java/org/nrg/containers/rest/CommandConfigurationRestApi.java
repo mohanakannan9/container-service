@@ -1,6 +1,7 @@
 package org.nrg.containers.rest;
 
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.exceptions.BadRequestException;
 import org.nrg.containers.exceptions.CommandResolutionException;
@@ -57,6 +58,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
 
     // Configure for site + command wrapper
     @XapiRequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/config"}, method = POST, restrictTo = Admin)
+    @ApiOperation(value = "Configure (site)", code = 201)
     public ResponseEntity<Void> createConfiguration(final @RequestBody CommandConfiguration commandConfiguration,
                                                     final @PathVariable long commandId,
                                                     final @PathVariable String wrapperName,
@@ -70,6 +72,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(value = {"/wrappers/{wrapperId}/config"}, method = POST, restrictTo = Admin)
+    @ApiOperation(value = "Configure (site)", code = 201)
     public ResponseEntity<Void> createConfiguration(final @RequestBody CommandConfiguration commandConfiguration,
                                                     final @PathVariable long wrapperId,
                                                     final @RequestParam(required = false, defaultValue = "true") boolean enable,
@@ -83,6 +86,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
 
     // Get configuration for site + command wrapper
     @XapiRequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/config"}, method = GET, restrictTo = Admin)
+    @ApiOperation(value = "Get (site)")
     @ResponseBody
     public CommandConfiguration getConfiguration(final @PathVariable long commandId,
                                                  final @PathVariable String wrapperName) throws NotFoundException {
@@ -90,6 +94,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(value = {"/wrappers/{wrapperId}/config"}, method = GET, restrictTo = Admin)
+    @ApiOperation(value = "Get (site)")
     @ResponseBody
     public CommandConfiguration getConfiguration(final @PathVariable long wrapperId) throws NotFoundException {
         return commandService.getSiteConfiguration(wrapperId);
@@ -97,6 +102,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
 
     // Delete configuration for site + command wrapper
     @XapiRequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/config"}, method = DELETE, restrictTo = Admin)
+    @ApiOperation(value = "Delete (site)", code = 204)
     public ResponseEntity<Void> deleteConfiguration(final @PathVariable long commandId,
                                                     final @PathVariable String wrapperName)
             throws CommandConfigurationException, NotFoundException {
@@ -106,6 +112,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(value = {"/wrappers/{wrapperId}/config"}, method = DELETE, restrictTo = Admin)
+    @ApiOperation(value = "Delete (site)", code = 204)
     public ResponseEntity<Void> deleteConfiguration(final @PathVariable long wrapperId)
             throws CommandConfigurationException, NotFoundException {
         final UserI userI = XDAT.getUserDetails();
@@ -115,6 +122,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
 
     // Configure for project + command wrapper
     @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/config"}, method = POST, restrictTo = Owner)
+    @ApiOperation(value = "Configure (project)", code = 201)
     public ResponseEntity<Void> createConfiguration(final @RequestBody CommandConfiguration commandConfiguration,
                                                     final @PathVariable String project,
                                                     final @PathVariable long commandId,
@@ -129,6 +137,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/config"}, method = POST, restrictTo = Owner)
+    @ApiOperation(value = "Configure (project)", code = 201)
     public ResponseEntity<Void> createConfiguration(final @RequestBody CommandConfiguration commandConfiguration,
                                                     final @PathVariable String project,
                                                     final @PathVariable long wrapperId,
@@ -143,6 +152,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
 
     // Get configuration for project + command wrapper
     @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/config"}, method = GET, restrictTo = Read)
+    @ApiOperation(value = "Get (project)")
     @ResponseBody
     public CommandConfiguration getConfiguration(final @PathVariable String project,
                                                  final @PathVariable long commandId,
@@ -151,6 +161,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/config"}, method = GET, restrictTo = Read)
+    @ApiOperation(value = "Get (project)")
     @ResponseBody
     public CommandConfiguration getConfiguration(final @PathVariable String project,
                                                  final @PathVariable long wrapperId) throws NotFoundException {
@@ -159,6 +170,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
 
     // Delete configuration for project + command wrapper
     @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/config"}, method = DELETE, restrictTo = Owner)
+    @ApiOperation(value = "Delete (project)", code = 204)
     public ResponseEntity<Void> deleteConfiguration(final @PathVariable String project,
                                                     final @PathVariable long commandId,
                                                     final @PathVariable String wrapperName)
@@ -169,6 +181,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/config"}, method = DELETE, restrictTo = Owner)
+    @ApiOperation(value = "Delete (project)", code = 204)
     public ResponseEntity<Void> deleteConfiguration(final @PathVariable String project,
                                                     final @PathVariable long wrapperId)
             throws CommandConfigurationException, NotFoundException {
@@ -181,6 +194,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     ENABLE/DISABLE
      */
     @XapiRequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/enabled"}, method = GET, restrictTo = Admin)
+    @ApiOperation(value = "Is Enabled (site)")
     @ResponseBody
     public Boolean isConfigurationEnabled(final @PathVariable long commandId,
                                           final @PathVariable String wrapperName)
@@ -189,6 +203,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(value = {"/wrappers/{wrapperId}/enabled"}, method = GET, restrictTo = Admin)
+    @ApiOperation(value = "Is Enabled (site)")
     @ResponseBody
     public Boolean isConfigurationEnabled(final @PathVariable long wrapperId)
             throws CommandConfigurationException, NotFoundException {
@@ -196,6 +211,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/enabled"}, method = PUT, restrictTo = Admin)
+    @ApiOperation(value = "Enable (site)")
     public ResponseEntity<Void> enableConfiguration(final @PathVariable long commandId,
                                                     final @PathVariable String wrapperName,
                                                     final @RequestParam(required = false) String reason)
@@ -206,6 +222,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(value = {"/wrappers/{wrapperId}/enabled"}, method = PUT, restrictTo = Admin)
+    @ApiOperation(value = "Enable (site)")
     public ResponseEntity<Void> enableConfiguration(final @PathVariable long wrapperId,
                                                     final @RequestParam(required = false) String reason)
             throws CommandConfigurationException, NotFoundException {
@@ -215,6 +232,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(value = {"/commands/{commandId}/wrappers/{wrapperName}/disabled"}, method = PUT, restrictTo = Admin)
+    @ApiOperation(value = "Disable (site)")
     public ResponseEntity<Void> disableConfiguration(final @PathVariable long commandId,
                                                      final @PathVariable String wrapperName,
                                                      final @RequestParam(required = false) String reason)
@@ -225,6 +243,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(value = {"/wrappers/{wrapperId}/disabled"}, method = PUT, restrictTo = Admin)
+    @ApiOperation(value = "Disable (site)")
     public ResponseEntity<Void> disableConfiguration(final @PathVariable long wrapperId,
                                                      final @RequestParam(required = false) String reason)
             throws CommandConfigurationException, NotFoundException {
@@ -234,6 +253,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/enabled"}, method = GET, restrictTo = Read)
+    @ApiOperation(value = "Is Enabled (project)")
     public ProjectEnabledReport isConfigurationEnabled(final @PathVariable String project,
                                                                        final @PathVariable long commandId,
                                                                        final @PathVariable String wrapperName)
@@ -242,6 +262,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/enabled"}, method = GET, restrictTo = Read)
+    @ApiOperation(value = "Is Enabled (project)")
     @ResponseBody
     public ProjectEnabledReport isConfigurationEnabled(final @PathVariable String project,
                                                                        final @PathVariable long wrapperId)
@@ -250,6 +271,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/enabled"}, method = PUT, restrictTo = Owner)
+    @ApiOperation(value = "Enable (project)")
     public ResponseEntity<Void> enableConfiguration(final @PathVariable String project,
                                                     final @PathVariable long commandId,
                                                     final @PathVariable String wrapperName,
@@ -261,6 +283,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/enabled"}, method = PUT, restrictTo = Owner)
+    @ApiOperation(value = "Enable (project)")
     public ResponseEntity<Void> enableConfiguration(final @PathVariable String project,
                                                     final @PathVariable long wrapperId,
                                                     final @RequestParam(required = false) String reason)
@@ -271,6 +294,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(value = {"/projects/{project}/commands/{commandId}/wrappers/{wrapperName}/disabled"}, method = PUT, restrictTo = Owner)
+    @ApiOperation(value = "Disable (project)")
     public ResponseEntity<Void> disableConfiguration(final @PathVariable String project,
                                                      final @PathVariable long commandId,
                                                      final @PathVariable String wrapperName,
@@ -282,6 +306,7 @@ public class CommandConfigurationRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(value = {"/projects/{project}/wrappers/{wrapperId}/disabled"}, method = PUT, restrictTo = Owner)
+    @ApiOperation(value = "Disable (project)")
     public ResponseEntity<Void> disableConfiguration(final @PathVariable String project,
                                                      final @PathVariable long wrapperId,
                                                      final @RequestParam(required = false) String reason)

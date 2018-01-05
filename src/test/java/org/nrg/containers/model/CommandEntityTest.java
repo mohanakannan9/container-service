@@ -33,6 +33,7 @@ import java.io.File;
 import java.nio.file.Paths;
 import java.util.List;
 
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -325,12 +326,62 @@ public class CommandEntityTest {
     }
 
     @Test
+    @DirtiesContext
+    public void testGetCommandsByImage() throws Exception {
+        final String fooImage = "xnat/foo:1.2.3";
+        final String barImage = "xnat/bar:4.5.6";
+        final Command fooImageCommand1 = Command.builder()
+                .image(fooImage)
+                .name("soahs")
+                .version("0")
+                .build();
+        final Command fooImageCommand2 = Command.builder()
+                .image(fooImage)
+                .name("asuyfo")
+                .version("0")
+                .build();
+        final Command barImageCommand = Command.builder()
+                .image(barImage)
+                .name("dosfa")
+                .version("0")
+                .build();
+
+        final CommandEntity fooImageCommandEntity1 = commandEntityService.create(CommandEntity.fromPojo(fooImageCommand1));
+        final CommandEntity fooImageCommandEntity2 = commandEntityService.create(CommandEntity.fromPojo(fooImageCommand2));
+        final CommandEntity barImageCommandEntity = commandEntityService.create(CommandEntity.fromPojo(barImageCommand));
+
+        final List<CommandEntity> fooImageCommandsRetrieved = commandEntityService.getByImage(fooImage);
+        assertThat(fooImageCommandsRetrieved, hasSize(2));
+        assertThat(fooImageCommandsRetrieved, contains(fooImageCommandEntity1, fooImageCommandEntity2));
+        assertThat(fooImageCommandsRetrieved, not(contains(barImageCommandEntity)));
+
+        final List<CommandEntity> barImageCommandsRetrieved = commandEntityService.getByImage(barImage);
+        assertThat(barImageCommandsRetrieved, hasSize(1));
+        assertThat(barImageCommandsRetrieved, not(contains(fooImageCommandEntity1, fooImageCommandEntity2)));
+        assertThat(barImageCommandsRetrieved, contains(barImageCommandEntity));
+    }
+
+    @Test
+    @DirtiesContext
     public void testCreateEcatHeaderDump() throws Exception {
         // A User was attempting to create the command in this resource.
         // Spring didn't tell us why. See CS-70.
         final String dir = Paths.get(ClassLoader.getSystemResource("ecatHeaderDump").toURI()).toString().replace("%20", " ");
         final String commandJsonFile = dir + "/command.json";
-        final CommandEntity ecatHeaderDump = mapper.readValue(new File(commandJsonFile), CommandEntity.class);
-        commandEntityService.create(ecatHeaderDump);
+        final Command ecatHeaderDump = mapper.readValue(new File(commandJsonFile), Command.class);
+        commandEntityService.create(CommandEntity.fromPojo(ecatHeaderDump));
+    }
+
+    @Test
+    @DirtiesContext
+    public void testCreateSetupCommand() throws Exception {
+        final Command setupCommand = Command.builder()
+                .name("setup")
+                .type("docker-setup")
+                .image("a-setup-image")
+                .build();
+        final List<String> errors = setupCommand.validate();
+        assertThat(errors, is(Matchers.<String>emptyIterable()));
+        final CommandEntity createdSetupCommandEntity = commandEntityService.create(CommandEntity.fromPojo(setupCommand));
     }
 }

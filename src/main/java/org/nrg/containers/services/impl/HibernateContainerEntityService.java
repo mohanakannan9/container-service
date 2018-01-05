@@ -5,7 +5,6 @@ import org.nrg.containers.daos.ContainerEntityRepository;
 import org.nrg.containers.events.model.ContainerEvent;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.container.entity.ContainerEntityHistory;
-import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.containers.services.ContainerUtils;
 import org.nrg.framework.exceptions.NotFoundException;
@@ -79,6 +78,11 @@ public class HibernateContainerEntityService
     @Nonnull
     public List<ContainerEntity> retrieveNonfinalizedServices() {
         return getDao().retrieveNonfinalizedServices();
+    }
+
+    @Override
+    public List<ContainerEntity> retrieveSetupContainersForParent(final long parentId) {
+        return getDao().retrieveContainersForParentWithSubtype(parentId, "setup");
     }
 
     @Override

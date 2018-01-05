@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -132,5 +133,21 @@ public class HibernateCommandEntityService extends AbstractHibernateEntityServic
     @Override
     public CommandEntity getCommandByWrapperId(final long wrapperId) throws NotFoundException {
         return getDao().getCommandByWrapperId(wrapperId);
+    }
+
+    @Override
+    public List<CommandEntity> getByImage(final String image) {
+        final List<CommandEntity> commandEntities = findByProperties(Collections.<String, Object>singletonMap("image", image));
+        for (final CommandEntity commandEntity : commandEntities) {
+            initialize(commandEntity);
+        }
+        return commandEntities;
+    }
+
+    @Override
+    public void deleteByImage(final String image) {
+        for (final CommandEntity commandEntity : getByImage(image)) {
+            delete(commandEntity);
+        }
     }
 }

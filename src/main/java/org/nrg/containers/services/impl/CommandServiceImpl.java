@@ -24,6 +24,7 @@ import org.nrg.containers.services.ContainerConfigService;
 import org.nrg.containers.services.ContainerConfigService.CommandConfigurationException;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.exceptions.NrgRuntimeException;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -86,7 +87,6 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
 
     @Override
     @Nonnull
-    @Transactional
     public Command create(@Nonnull final Command command) throws CommandValidationException {
         final List<String> errors = command.validate();
         if (!errors.isEmpty()) {
@@ -141,34 +141,46 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
 
     @Override
     public void delete(final long id) {
-        final Command command = retrieve(id);
-        if (command != null) {
-            for (final CommandWrapper commandWrapper : command.xnatCommandWrappers()) {
-                containerConfigService.deleteAllConfiguration(commandWrapper.id());
-            }
+        delete(retrieve(id));
+    }
 
-            commandEntityService.delete(id);
+    @Override
+    public void delete(final Command command) {
+        for (final CommandWrapper commandWrapper : command.xnatCommandWrappers()) {
+            commandEntityService.deleteWrapper(commandWrapper.id());
         }
 
-        containerConfigService.deleteAllConfiguration(id);
+        commandEntityService.delete(command.id());
     }
 
     @Override
     @Nonnull
-    @Transactional
     public List<Command> save(final List<Command> commands) {
         final List<Command> created = Lists.newArrayList();
         if (!(commands == null || commands.isEmpty())) {
             for (final Command command : commands) {
                 try {
                     created.add(create(command));
-                } catch (CommandValidationException e) {
+                } catch (CommandValidationException | NrgServiceRuntimeException e) {
                     // TODO: should I "update" instead of erroring out if command already exists?
                     log.error("Could not save command " + command.name(), e);
                 }
             }
         }
         return created;
+    }
+
+    @Override
+    @Nonnull
+    public List<Command> getByImage(final String image) {
+        return toPojo(commandEntityService.getByImage(image));
+    }
+
+    @Override
+    public void deleteByImage(final String image) {
+        for (final Command command : getByImage(image)) {
+            delete(command);
+        }
     }
 
     @Override
@@ -348,16 +360,6 @@ public class CommandServiceImpl implements CommandService, InitializingBean {
     @Override
     public void deleteProjectConfiguration(final String project, final long commandId, final String wrapperName, final String username) throws CommandConfigurationException, NotFoundException {
         containerConfigService.deleteProjectConfiguration(project, getWrapperId(commandId, wrapperName), username);
-    }
-
-    @Override
-    public void deleteAllConfiguration(final long commandId, final String wrapperName) throws NotFoundException {
-        containerConfigService.deleteAllConfiguration(getWrapperId(commandId, wrapperName));
-    }
-
-    @Override
-    public void deleteAllConfiguration(final long wrapperId) {
-        containerConfigService.deleteAllConfiguration(wrapperId);
     }
 
     @Override

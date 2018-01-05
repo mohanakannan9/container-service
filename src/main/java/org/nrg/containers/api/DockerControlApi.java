@@ -43,7 +43,7 @@ import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoDockerServerException;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
-import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMount;
+import org.nrg.containers.model.command.auto.ResolvedCommandMount;
 import org.nrg.containers.model.container.auto.Container;
 import org.nrg.containers.model.container.auto.ContainerMessage;
 import org.nrg.containers.model.container.auto.ServiceTask;
@@ -378,7 +378,8 @@ public class DockerControlApi implements ContainerControlApi {
                         .image(imageName)
                         .attachStdout(true)
                         .attachStderr(true)
-                        .cmd(Lists.newArrayList("/bin/sh", "-c", runCommand))
+                        .cmd("/bin/sh", "-c", runCommand)
+                        .entrypoint("") // CS-433 Override any entrypoint image specifies
                         .env(environmentVariables)
                         .workingDir(workingDirectory)
                         .build();
@@ -497,7 +498,7 @@ public class DockerControlApi implements ContainerControlApi {
                         .taskTemplate(taskSpec)
                         .mode(ServiceMode.builder()
                                 .replicated(ReplicatedService.builder()
-                                        .replicas(1L)
+                                        .replicas(0L) // We initially want zero replicas. We will modify this later when it is time to start.
                                         .build())
                                 .build())
                         .endpointSpec(EndpointSpec.builder()
@@ -550,16 +551,37 @@ public class DockerControlApi implements ContainerControlApi {
 
     private void startContainer(final String containerOrServiceId,
                                 final DockerServer server) throws DockerServerException {
-        if (server.swarmMode()) {
-            // This is a no-op. A service is started when it is created.
-        } else {
-            try (final DockerClient client = getClient(server)) {
+        final boolean swarmMode = server.swarmMode();
+        try (final DockerClient client = getClient(server)) {
+            if (swarmMode) {
+                log.debug("Inspecting service " + containerOrServiceId);
+                final com.spotify.docker.client.messages.swarm.Service service = client.inspectService(containerOrServiceId);
+                if (service == null || service.spec() == null) {
+                    throw new DockerServerException("Could not start service " + containerOrServiceId + ". Could not inspect service spec.");
+                }
+                final ServiceSpec originalSpec = service.spec();
+                final ServiceSpec updatedSpec = ServiceSpec.builder()
+                        .taskTemplate(originalSpec.taskTemplate())
+                        .endpointSpec(originalSpec.endpointSpec())
+                        .mode(ServiceMode.builder()
+                                .replicated(ReplicatedService.builder()
+                                        .replicas(1L)
+                                        .build())
+                                .build())
+                        .build();
+                final Long version = service.version() != null && service.version().index() != null ?
+                        service.version().index() + 1 : null;
+
+                log.info("Setting service replication to 1.");
+                client.updateService(containerOrServiceId, version, updatedSpec);
+            } else {
                 log.info("Starting container: id " + containerOrServiceId);
                 client.startContainer(containerOrServiceId);
-            } catch (DockerException | InterruptedException e) {
-                log.error(e.getMessage());
-                throw new DockerServerException("Could not start container " + containerOrServiceId, e);
             }
+        } catch (DockerException | InterruptedException e) {
+            log.error(e.getMessage());
+            final String containerOrService = swarmMode ? "service" : "container";
+            throw new DockerServerException("Could not start " + containerOrService + " " + containerOrServiceId, e);
         }
     }
 
@@ -961,7 +983,7 @@ public class DockerControlApi implements ContainerControlApi {
                 dockerContainer.id(),
                 dockerContainer.state().running() ? "Running" :
                         dockerContainer.state().paused() ? "Paused" :
-                        dockerContainer.state().restarting() ? "Restarting" :
+                        dockerContainer.state().restarting() != null && dockerContainer.state().restarting() ? "Restarting" :
                         dockerContainer.state().exitCode() != null ? "Exited" :
                         null
         );

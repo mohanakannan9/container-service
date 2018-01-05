@@ -13,6 +13,8 @@ import com.google.common.collect.Maps;
 import org.nrg.containers.events.model.ContainerEvent;
 import org.nrg.containers.events.model.DockerContainerEvent;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
+import org.nrg.containers.model.command.auto.ResolvedCommandMount;
+import org.nrg.containers.model.command.entity.CommandType;
 import org.nrg.containers.model.container.ContainerInputType;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.container.entity.ContainerEntityHistory;
@@ -20,7 +22,6 @@ import org.nrg.containers.model.container.entity.ContainerEntityInput;
 import org.nrg.containers.model.container.entity.ContainerEntityMount;
 import org.nrg.containers.model.container.entity.ContainerEntityOutput;
 import org.nrg.containers.model.container.entity.ContainerMountFilesEntity;
-import org.nrg.xft.security.UserI;
 
 import javax.annotation.Nullable;
 import java.util.Collections;
@@ -31,6 +32,8 @@ import java.util.Map;
 @AutoValue
 @JsonInclude(JsonInclude.Include.ALWAYS)
 public abstract class Container {
+    @JsonIgnore private String exitCode;
+
     @JsonProperty("id") public abstract long databaseId();
     @JsonProperty("command-id") public abstract long commandId();
     @Nullable @JsonProperty("status") public abstract String status();
@@ -46,6 +49,10 @@ public abstract class Container {
     @JsonProperty("docker-image") public abstract String dockerImage();
     @JsonProperty("command-line") public abstract String commandLine();
     @Nullable @JsonProperty("working-directory") public abstract String workingDirectory();
+    @Nullable @JsonProperty("subtype") public abstract String subtype();
+    @Nullable @JsonProperty("parent-database-id") public abstract Long parentDatabaseId();
+    @Nullable @JsonProperty("parent-container-id") public abstract String parentContainerId();
+    @JsonIgnore @Nullable public abstract Container parentContainer();
     @JsonProperty("env") public abstract ImmutableMap<String, String> environmentVariables();
     @JsonProperty("mounts") public abstract ImmutableList<ContainerMount> mounts();
     @JsonProperty("inputs") public abstract ImmutableList<ContainerInput> inputs();
@@ -56,6 +63,25 @@ public abstract class Container {
     @JsonIgnore
     public boolean isSwarmService() {
         return swarm() != null && swarm();
+    }
+
+    @JsonIgnore
+    @Nullable
+    public String exitCode() {
+        if (exitCode == null) {
+            // Assumption: At most one container history item will have a non-null exit code.
+            // "": This event is an exit event (status == kill, die, or oom) but the attributes map
+            //      did not contain an "exitCode" key
+            // "0": success
+            // "1" to "255": failure
+            for (final ContainerHistory history : this.history()) {
+                if (history.exitCode() != null) {
+                    exitCode = history.exitCode();
+                    break;
+                }
+            }
+        }
+        return exitCode;
     }
 
     @JsonCreator
@@ -74,6 +100,9 @@ public abstract class Container {
                                    @JsonProperty("docker-image") final String dockerImage,
                                    @JsonProperty("command-line") final String commandLine,
                                    @JsonProperty("working-directory") final String workingDirectory,
+                                   @JsonProperty("subtype") final String subtype,
+                                   @JsonProperty("parent-database-id") final long parentDatabaseId,
+                                   @JsonProperty("parent-container-id") final String parentContainerId,
                                    @JsonProperty("env") final Map<String, String> environmentVariables,
                                    @JsonProperty("mounts") final List<ContainerMount> mounts,
                                    @JsonProperty("inputs") final List<ContainerInput> inputs,
@@ -97,6 +126,9 @@ public abstract class Container {
                 .dockerImage(dockerImage)
                 .commandLine(commandLine)
                 .workingDirectory(workingDirectory)
+                .subtype(subtype)
+                .parentDatabaseId(parentDatabaseId)
+                .parentContainerId(parentContainerId)
                 .environmentVariables(environmentVariables == null ? Collections.<String, String>emptyMap() : environmentVariables)
                 .mounts(mounts == null ? Collections.<ContainerMount>emptyList() : mounts)
                 .inputs(inputs == null ? Collections.<ContainerInput>emptyList() : inputs)
@@ -107,6 +139,9 @@ public abstract class Container {
     }
 
     public static Container create(final ContainerEntity containerEntity) {
+        if (containerEntity == null) {
+            return null;
+        }
         return builder()
                 .databaseId(containerEntity.getId())
                 .status(containerEntity.getStatus())
@@ -122,6 +157,11 @@ public abstract class Container {
                 .nodeId(containerEntity.getNodeId())
                 .dockerImage(containerEntity.getDockerImage())
                 .commandLine(containerEntity.getCommandLine())
+                .workingDirectory(containerEntity.getWorkingDirectory())
+                .subtype(containerEntity.getSubtype())
+                .parentContainer(create(containerEntity.getParentContainerEntity()))
+                .parentDatabaseId(containerEntity.getParentContainerEntity() != null ? containerEntity.getParentContainerEntity().getId() : null)
+                .parentContainerId(containerEntity.getParentContainerEntity() != null ? containerEntity.getParentContainerEntity().getContainerId() : null)
                 .environmentVariables(containerEntity.getEnvironmentVariables() == null ? Collections.<String, String>emptyMap() : containerEntity.getEnvironmentVariables())
                 .logPaths(containerEntity.getLogPaths() == null ? Collections.<String>emptyList() : containerEntity.getLogPaths())
                 .mounts(containerEntity.getMounts() == null ?
@@ -183,6 +223,10 @@ public abstract class Container {
     }
 
     private static Container.Builder buildFromResolvedCommand(final ResolvedCommand resolvedCommand) {
+        String containerSubtype = null;
+        if (resolvedCommand.type().equals(CommandType.DOCKER_SETUP.getName())) {
+            containerSubtype = "setup";
+        }
         return builder()
                 .databaseId(0L)
                 .commandId(resolvedCommand.commandId())
@@ -191,6 +235,7 @@ public abstract class Container {
                 .commandLine(resolvedCommand.commandLine())
                 .workingDirectory(resolvedCommand.workingDirectory())
                 .environmentVariables(resolvedCommand.environmentVariables())
+                .subtype(containerSubtype)
                 .mountsFromResolvedCommand(resolvedCommand.mounts())
                 .addRawInputs(resolvedCommand.rawInputValues())
                 .addCommandInputs(resolvedCommand.commandInputValues())
@@ -285,6 +330,17 @@ public abstract class Container {
         public abstract Builder nodeId(String nodeId);
         public abstract Builder status(String status);
         public abstract Builder statusTime(Date statusTime);
+        public abstract Builder subtype(String subtype);
+        public abstract Builder parentDatabaseId(Long parentDatabaseId);
+        public abstract Builder parentContainerId(String parentContainerId);
+        public abstract Builder parentContainer(Container parentContainer);
+
+        public Builder setParentProperties(final Container parentContainer) {
+            return this
+                    .parentContainer(parentContainer)
+                    .parentContainerId(parentContainer == null ? null : parentContainer.containerId())
+                    .parentDatabaseId(parentContainer == null ? null : parentContainer.databaseId());
+        }
 
         public abstract Builder environmentVariables(Map<String, String> environmentVariables);
         abstract ImmutableMap.Builder<String, String> environmentVariablesBuilder();
@@ -299,9 +355,9 @@ public abstract class Container {
             mountsBuilder().add(mounts);
             return this;
         }
-        public Builder mountsFromResolvedCommand(final List<ResolvedCommand.ResolvedCommandMount> resolvedCommandMounts) {
+        public Builder mountsFromResolvedCommand(final List<ResolvedCommandMount> resolvedCommandMounts) {
             if (resolvedCommandMounts != null) {
-                for (final ResolvedCommand.ResolvedCommandMount resolvedCommandMount : resolvedCommandMounts) {
+                for (final ResolvedCommandMount resolvedCommandMount : resolvedCommandMounts) {
                     addMount(ContainerMount.create(resolvedCommandMount));
                 }
             }
@@ -409,20 +465,18 @@ public abstract class Container {
                     containerEntityMount.getContainerPath(), containerMountFiles);
         }
 
-        public static ContainerMount create(final ResolvedCommand.ResolvedCommandMount resolvedCommandMount) {
-            final List<ContainerMountFiles> containerMountFiles = Lists.transform(resolvedCommandMount.inputFiles(), new Function<ResolvedCommand.ResolvedCommandMountFiles, ContainerMountFiles>() {
-                @Override
-                public ContainerMountFiles apply(final ResolvedCommand.ResolvedCommandMountFiles input) {
-                    return ContainerMountFiles.create(input);
-                }
-            });
+        public static ContainerMount create(final ResolvedCommandMount resolvedCommandMount) {
             return create(0L,
                     resolvedCommandMount.name(),
                     resolvedCommandMount.writable(),
                     resolvedCommandMount.xnatHostPath(),
                     resolvedCommandMount.containerHostPath(),
                     resolvedCommandMount.containerPath(),
-                    containerMountFiles);
+                    Collections.singletonList(ContainerMountFiles.create(0L,
+                            resolvedCommandMount.fromWrapperInput(),
+                            resolvedCommandMount.fromUri(),
+                            resolvedCommandMount.fromRootDirectory(),
+                            null)));
         }
 
         public static Builder builder() {
@@ -454,9 +508,9 @@ public abstract class Container {
     @AutoValue
     public static abstract class ContainerMountFiles {
         @JsonProperty("id") public abstract long databaseId();
-        @JsonProperty("from-xnat-input") public abstract String fromXnatInput();
+        @Nullable @JsonProperty("from-xnat-input") public abstract String fromXnatInput();
         @Nullable @JsonProperty("from-uri") public abstract String fromUri();
-        @JsonProperty("root-directory") public abstract String rootDirectory();
+        @Nullable @JsonProperty("root-directory") public abstract String rootDirectory();
         @Nullable @JsonProperty("path") public abstract String path();
 
         @JsonCreator
@@ -471,14 +525,6 @@ public abstract class Container {
         public static ContainerMountFiles create(final ContainerMountFilesEntity containerMountFilesEntity) {
             return create(containerMountFilesEntity.getId(), containerMountFilesEntity.getFromXnatInput(), containerMountFilesEntity.getFromUri(),
                     containerMountFilesEntity.getRootDirectory(), containerMountFilesEntity.getPath());
-        }
-
-        public static ContainerMountFiles create(final ResolvedCommand.ResolvedCommandMountFiles resolvedCommandMountFiles) {
-            return create(0L,
-                    resolvedCommandMountFiles.fromWrapperInput(),
-                    resolvedCommandMountFiles.fromUri(),
-                    resolvedCommandMountFiles.rootDirectory(),
-                    resolvedCommandMountFiles.path());
         }
     }
 

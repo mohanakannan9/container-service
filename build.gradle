@@ -1,17 +1,35 @@
+import com.github.kongchen.swagger.docgen.mavenplugin.ApiSource
+import com.github.zhurlik.SwaggerTask
+import io.swagger.models.Contact
+import io.swagger.models.Info
+import io.swagger.models.License
+
 buildscript {
     repositories {
         maven {
             url "https://plugins.gradle.org/m2/"
         }
+        maven {
+            url 'https://nrgxnat.jfrog.io/nrgxnat/libs-release'
+            name 'XNAT Release Repository'
+        }
+        maven {
+            url 'https://nrgxnat.jfrog.io/nrgxnat/libs-snapshot'
+            name 'XNAT Snapshot Repository'
+        }
     }
     dependencies {
         classpath "net.ltgt.gradle:gradle-apt-plugin:0.9"
         classpath "io.spring.gradle:dependency-management-plugin:1.0.3.RELEASE"
+        classpath "gradle.plugin.com.github.zhurlik:gradle-swagger-plugin:0.2"
+        classpath group: 'io.swagger', name: 'swagger-core', version: '1.5.+'
+        classpath group: 'com.github.kongchen', name: 'swagger-maven-plugin', version: '3.1.+'
+        classpath "org.nrg.xdat:core:1.7.3"
     }
 }
 
 group 'org.nrg'
-version '1.3.2'
+version '1.4.0'
 
 apply plugin: 'java'
 apply plugin: 'idea'
@@ -19,6 +37,7 @@ apply plugin: 'maven'
 apply plugin: 'maven-publish'
 apply plugin: "net.ltgt.apt"
 apply plugin: 'io.spring.dependency-management'
+apply plugin: "com.github.zhurlik.swagger"
 
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
@@ -27,6 +46,7 @@ def vXnat = '1.7.3'
 def vXnatDev = '1.7.5-SNAPSHOT'
 def vMockito = '1.10.19'
 def vJavassist = '3.21.0-GA'
+def vAwaitility = '2.0.0'
 
 repositories {
     jcenter()
@@ -56,7 +76,7 @@ dependencyManagement {
     }
 }
 
-def vDockerClient = '8.9.1'
+def vDockerClient = '8.10.0'
 def vJsonPath = '2.2.0'
 def vAutoValue = '1.3'
 def vPowerMock = '1.7.0'
@@ -106,10 +126,20 @@ dependencies {
         transitive = false
     }
     compile "org.nrg:prefs"
-    compile "org.nrg:notify"
-    compile "org.nrg:config"
-    compile "org.nrg:automation"
+    compile ("org.nrg:notify") {
+        exclude group: "cglib"
+    }
+    compile ("org.nrg:config") {
+        exclude group: "cglib"
+    }
+    compile ("org.nrg:automation") {
+        exclude group: "org.python"
+        exclude group: "cglib"
+    }
     apt "org.nrg:framework"
+    compile ("cglib:cglib:2.2.2") {
+        exclude group: "asm"
+    }
 
     compile "org.springframework:spring-beans"
     compile "org.springframework:spring-context"
@@ -167,10 +197,44 @@ dependencies {
     testCompile "org.apache.commons:commons-dbcp2"
     testCompile "org.powermock:powermock-module-junit4:${vPowerMock}"
     testCompile "org.powermock:powermock-api-mockito:${vPowerMock}"
+    testCompile "org.awaitility:awaitility:${vAwaitility}"
 }
 
 task unitTest( type: Test ) {
     exclude '**/DockerControlApiTest.class', '**/*IntegrationTest.class'
+}
+
+task(type: SwaggerTask, 'swagger') {
+
+    // any dirs with classes
+    classesDirs = [
+            file("${buildDir}/classes/java/main")
+            // project(':your-project').sourceSets['main'].output.classesDir
+    ]
+
+    apiSources = [
+            new ApiSource(
+                    springmvc: true,
+                    locations: ['org/nrg/containers/rest', 'org/nrg/xapi/rest'],
+                    schemes: ['http', 'https'],
+                    host: 'xnat.org',
+                    basePath: '/xapi',
+                    info: new Info(
+                            title: 'Container Service API',
+                            version: "${version}",
+                            description: 'XAPI endpoints for the XNAT Container Service',
+                            contact: new Contact(
+                                    email: 'jflavin@wustl.edu',
+                                    name: 'John Flavin'
+                            ),
+                            license: new License(
+                                    url: 'https://github.com/NrgXnat/container-service/blob/master/LICENSE.md',
+                                    name: 'BSD 2-Clause'
+                            )
+                    ),
+                    swaggerDirectory: file("docs").path,
+            )
+    ]
 }
 
 task fatJar(type: Jar) {

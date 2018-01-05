@@ -7,6 +7,7 @@ import org.nrg.config.services.ConfigService;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.api.DockerControlApi;
 import org.nrg.containers.daos.ContainerEntityRepository;
+import org.nrg.containers.daos.DockerServerEntityRepository;
 import org.nrg.containers.events.listeners.DockerContainerEventListener;
 import org.nrg.containers.model.command.entity.CommandEntity;
 import org.nrg.containers.model.command.entity.CommandInputEntity;
@@ -17,24 +18,34 @@ import org.nrg.containers.model.command.entity.CommandWrapperEntity;
 import org.nrg.containers.model.command.entity.CommandWrapperExternalInputEntity;
 import org.nrg.containers.model.command.entity.CommandWrapperOutputEntity;
 import org.nrg.containers.model.command.entity.DockerCommandEntity;
+import org.nrg.containers.model.command.entity.DockerSetupCommandEntity;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.container.entity.ContainerEntityHistory;
 import org.nrg.containers.model.container.entity.ContainerEntityInput;
 import org.nrg.containers.model.container.entity.ContainerEntityMount;
 import org.nrg.containers.model.container.entity.ContainerEntityOutput;
 import org.nrg.containers.model.container.entity.ContainerMountFilesEntity;
+import org.nrg.containers.model.server.docker.DockerServerEntity;
 import org.nrg.containers.services.CommandLabelService;
 import org.nrg.containers.services.CommandResolutionService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.containers.services.ContainerFinalizeService;
 import org.nrg.containers.services.ContainerService;
+import org.nrg.containers.services.DockerHubService;
+import org.nrg.containers.services.DockerServerEntityService;
 import org.nrg.containers.services.DockerServerService;
+import org.nrg.containers.services.DockerService;
+import org.nrg.containers.services.SetupCommandService;
 import org.nrg.containers.services.impl.CommandLabelServiceImpl;
 import org.nrg.containers.services.impl.CommandResolutionServiceImpl;
 import org.nrg.containers.services.impl.ContainerFinalizeServiceImpl;
 import org.nrg.containers.services.impl.ContainerServiceImpl;
+import org.nrg.containers.services.impl.DockerServerServiceImpl;
+import org.nrg.containers.services.impl.DockerServiceImpl;
 import org.nrg.containers.services.impl.HibernateContainerEntityService;
+import org.nrg.containers.services.impl.HibernateDockerServerEntityService;
+import org.nrg.containers.services.impl.SetupCommandServiceImpl;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.transporter.TransportService;
@@ -54,6 +65,8 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.support.ResourceTransactionManager;
 import reactor.Environment;
 import reactor.bus.EventBus;
+import reactor.core.Dispatcher;
+import reactor.core.dispatch.RingBufferDispatcher;
 
 import javax.sql.DataSource;
 import java.util.Properties;
@@ -73,8 +86,18 @@ public class IntegrationTestConfig {
     }
 
     @Bean
-    public DockerServerService mockDockerServerService() {
-        return Mockito.mock(DockerServerService.class);
+    public DockerServerService dockerServerService(final DockerServerEntityService dockerServerEntityService) {
+        return new DockerServerServiceImpl(dockerServerEntityService);
+    }
+
+    @Bean
+    public DockerServerEntityService dockerServerEntityService() {
+        return new HibernateDockerServerEntityService();
+    }
+
+    @Bean
+    public DockerServerEntityRepository dockerServerEntityRepository() {
+        return new DockerServerEntityRepository();
     }
 
     @Bean
@@ -83,8 +106,13 @@ public class IntegrationTestConfig {
     }
 
     @Bean
-    public EventBus eventBus(final Environment env) {
-        return EventBus.create(env, Environment.THREAD_POOL);
+    public Dispatcher dispatcher() {
+        return new RingBufferDispatcher("dispatch");
+    }
+
+    @Bean
+    public EventBus eventBus(final Environment env, final Dispatcher dispatcher) {
+        return EventBus.create(env, dispatcher);
     }
 
     @Bean
@@ -121,8 +149,29 @@ public class IntegrationTestConfig {
     public CommandResolutionService commandResolutionService(final CommandService commandService,
                                                              final ConfigService configService,
                                                              final SiteConfigPreferences siteConfigPreferences,
-                                                             final ObjectMapper objectMapper) {
-        return new CommandResolutionServiceImpl(commandService, configService, siteConfigPreferences, objectMapper);
+                                                             final ObjectMapper objectMapper,
+                                                             final SetupCommandService setupCommandService) {
+        return new CommandResolutionServiceImpl(commandService, configService, siteConfigPreferences, objectMapper, setupCommandService);
+    }
+
+    @Bean
+    public SetupCommandService setupCommandService(final CommandService commandService,
+                                                   final DockerService dockerService) {
+        return new SetupCommandServiceImpl(commandService, dockerService);
+    }
+
+    @Bean
+    public DockerService dockerService(final ContainerControlApi controlApi,
+                                       final DockerHubService dockerHubService,
+                                       final CommandService commandService,
+                                       final DockerServerService dockerServerService,
+                                       final CommandLabelService commandLabelService) {
+        return new DockerServiceImpl(controlApi, dockerHubService, commandService, dockerServerService, commandLabelService);
+    }
+
+    @Bean
+    public DockerHubService mockDockerHubService() {
+        return Mockito.mock(DockerHubService.class);
     }
 
     @Bean
@@ -192,8 +241,10 @@ public class IntegrationTestConfig {
         bean.setDataSource(dataSource);
         bean.setHibernateProperties(properties);
         bean.setAnnotatedClasses(
+                DockerServerEntity.class,
                 CommandEntity.class,
                 DockerCommandEntity.class,
+                DockerSetupCommandEntity.class,
                 CommandInputEntity.class,
                 CommandOutputEntity.class,
                 CommandMountEntity.class,

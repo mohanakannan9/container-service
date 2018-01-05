@@ -6,11 +6,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.hibernate.envers.Audited;
-import org.nrg.containers.model.command.auto.Command;
-import org.nrg.containers.model.command.auto.ResolvedCommand;
-import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandMount;
-import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandOutput;
-import org.nrg.containers.model.command.auto.ResolvedInputTreeNode;
 import org.nrg.containers.model.container.ContainerInputType;
 import org.nrg.containers.model.container.auto.Container;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
@@ -18,12 +13,17 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import javax.persistence.CascadeType;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Transient;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 @Entity
 @Audited
@@ -40,6 +40,9 @@ public class ContainerEntity extends AbstractHibernateEntity {
             .put("oom", "Killed (Out of Memory)")
             .put("starting", "Starting")
             .build();
+    private static final Set<String> TERMINAL_STATI = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            "Complete", "Failed", "Killed"
+    )));
 
     private long commandId;
     private long wrapperId;
@@ -55,17 +58,22 @@ public class ContainerEntity extends AbstractHibernateEntity {
     private String userId;
     private Boolean swarm;
     private String serviceId;
-
     private String taskId;
-
     private String nodeId;
+    private String subtype;
+    private ContainerEntity parentContainerEntity;
     private List<ContainerEntityInput> inputs;
     private List<ContainerEntityOutput> outputs;
     private List<ContainerEntityHistory> history = Lists.newArrayList();
     private List<String> logPaths;
+
+
     public ContainerEntity() {}
 
     public static ContainerEntity fromPojo(final Container containerPojo) {
+        if (containerPojo == null) {
+            return null; // This is for the setup container parent, which may be null
+        }
         final ContainerEntity containerEntity = new ContainerEntity();
         containerEntity.update(containerPojo);
         return containerEntity;
@@ -87,6 +95,8 @@ public class ContainerEntity extends AbstractHibernateEntity {
         this.setDockerImage(containerPojo.dockerImage());
         this.setCommandLine(containerPojo.commandLine());
         this.setWorkingDirectory(containerPojo.workingDirectory());
+        this.setSubtype(containerPojo.subtype());
+        this.setParentContainerEntity(fromPojo(containerPojo.parentContainer()));
         this.setEnvironmentVariables(containerPojo.environmentVariables());
         this.setLogPaths(containerPojo.logPaths());
         this.setMounts(Lists.newArrayList(Lists.transform(
@@ -149,6 +159,18 @@ public class ContainerEntity extends AbstractHibernateEntity {
         this.status = STANDARD_STATUS_MAP.containsKey(status) ? STANDARD_STATUS_MAP.get(status) : status;
     }
 
+    @Transient
+    public boolean statusIsTerminal() {
+        if (status != null) {
+            for (final String terminalStatus : TERMINAL_STATI) {
+                if (status.contains(terminalStatus)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     public Date getStatusTime() {
         return statusTime;
     }
@@ -190,6 +212,14 @@ public class ContainerEntity extends AbstractHibernateEntity {
         this.environmentVariables = environmentVariables == null ?
                 Maps.<String, String>newHashMap() :
                 environmentVariables;
+    }
+
+    public String getSubtype() {
+        return subtype;
+    }
+
+    public void setSubtype(final String subtype) {
+        this.subtype = subtype;
     }
 
     @OneToMany(mappedBy = "containerEntity", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -260,6 +290,15 @@ public class ContainerEntity extends AbstractHibernateEntity {
 
     public void setNodeId(final String nodeId) {
         this.nodeId = nodeId;
+    }
+
+    @ManyToOne
+    public ContainerEntity getParentContainerEntity() {
+        return parentContainerEntity;
+    }
+
+    public void setParentContainerEntity(final ContainerEntity parentContainerEntity) {
+        this.parentContainerEntity = parentContainerEntity;
     }
 
     @OneToMany(mappedBy = "containerEntity", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -441,21 +480,25 @@ public class ContainerEntity extends AbstractHibernateEntity {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-                .add("containerId", containerId)
-                .add("workflowId", workflowId)
-                .add("status", status)
-                .add("statusTime", statusTime)
-                .add("commandId", commandId)
-                .add("wrapperId", wrapperId)
                 .add("swarm", swarm)
+                .add("containerId", containerId)
                 .add("serviceId", serviceId)
                 .add("taskId", taskId)
                 .add("nodeId", nodeId)
+                .add("userId", userId)
+                .add("subtype", subtype)
+                .add("parentContainerEntityId", parentContainerEntity == null ? null : parentContainerEntity.getId())
+                .add("parentContainerEntityContainerId", parentContainerEntity == null ? null : parentContainerEntity.getContainerId())
+                .add("workflowId", workflowId)
+                .add("commandId", commandId)
+                .add("wrapperId", wrapperId)
+                .add("status", status)
+                .add("statusTime", statusTime)
                 .add("dockerImage", dockerImage)
                 .add("commandLine", commandLine)
+                .add("workingDirectory", workingDirectory)
                 .add("environmentVariables", environmentVariables)
                 .add("mounts", mounts)
-                .add("userId", userId)
                 .add("inputs", inputs)
                 .add("outputs", outputs)
                 .add("history", history)

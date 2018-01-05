@@ -8,6 +8,7 @@ import org.nrg.containers.exceptions.BadRequestException;
 import org.nrg.containers.model.CommandEventMapping;
 import org.nrg.containers.services.CommandEventMappingService;
 import org.nrg.framework.annotations.XapiRestController;
+import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.xapi.rest.AbstractXapiRestController;
 import org.nrg.xapi.rest.XapiRequestMapping;
@@ -22,10 +23,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -57,7 +60,7 @@ public class CommandEventMappingRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(method = GET)
-    @ApiOperation(value = "Get all Commands-Event-Mappings")
+    @ApiOperation(value = "Get all Command-Event Mappings")
     @ResponseBody
     public List<CommandEventMapping> getMappings() {
         List<CommandEventMapping> mappings = commandEventMappingService.getAll();
@@ -79,7 +82,8 @@ public class CommandEventMappingRestApi extends AbstractXapiRestController {
 
 
     @XapiRequestMapping(method = POST, restrictTo = Admin)
-    public ResponseEntity<CommandEventMapping> createCommand(final @RequestBody CommandEventMapping commandEventMapping)
+    @ApiOperation(value = "Create a Command-Event Mapping", code = 201)
+    public ResponseEntity<CommandEventMapping> create(final @RequestBody CommandEventMapping commandEventMapping)
             throws BadRequestException {
         try {
             if(StringUtils.isBlank(commandEventMapping.getEventType())){
@@ -114,40 +118,39 @@ public class CommandEventMappingRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(value = {"/{id}"}, method = DELETE, restrictTo = Admin)
-    @ApiOperation(value = "Delete a CommandEventMapping", code = 204)
+    @ApiOperation(value = "Delete a Command-Event Mapping", code = 204)
     public ResponseEntity<String> delete(final @PathVariable Long id) {
         commandEventMappingService.delete(id);
         return new ResponseEntity<>("", HttpStatus.NO_CONTENT);
     }
 
     @XapiRequestMapping(value = {"/{id}/enable"}, method = PUT, restrictTo = Admin)
-    @ApiOperation(value = "Enable a Command-Event-Mapping")
+    @ApiOperation(value = "Enable a Command-Event Mapping")
     @ResponseBody
-    public ResponseEntity<Void> enable(final @PathVariable Long id) {
-        try {
-            CommandEventMapping mapping = commandEventMappingService.retrieve(id);
-            mapping.setEnabled(true);
-        }
-        catch(Exception e){
-            log.error("", e);
+    public ResponseEntity<Void> enable(final @PathVariable Long id) throws NotFoundException {
+        commandEventMappingService.enable(id);
 
-        }
         return ResponseEntity.ok().build();
     }
 
     @XapiRequestMapping(value = {"/{id}/disable"}, method = PUT, restrictTo = Admin)
-    @ApiOperation(value = "Disable a Command-Event-Mapping")
+    @ApiOperation(value = "Disable a Command-Event Mapping")
     @ResponseBody
-    public ResponseEntity<Void> disable(final @PathVariable Long id) {
-        try {
-            CommandEventMapping mapping = commandEventMappingService.retrieve(id);
-            mapping.setEnabled(false);
-            mapping.setDisabled(new Date());
-        }
-        catch(Exception e){
-            log.error("", e);
-        }
+    public ResponseEntity<Void> disable(final @PathVariable Long id) throws NotFoundException {
+        commandEventMappingService.disable(id);
+
         return ResponseEntity.ok().build();
+    }
+
+    /*
+    EXCEPTION HANDLING
+    */
+    @ResponseStatus(value = HttpStatus.NOT_FOUND)
+    @ExceptionHandler(value = {NotFoundException.class})
+    public String handleNotFound(final Exception e) {
+        final String message = e.getMessage();
+        log.debug(message);
+        return message;
     }
 
 }

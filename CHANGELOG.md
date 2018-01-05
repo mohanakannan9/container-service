@@ -1,5 +1,50 @@
 # Changelog
 
+## 1.4.0
+
+[Released 2018-01-05](https://github.com/NrgXnat/container-service/releases/tag/1.4.0).
+
+### Features
+
+* [CS-421][] Add Setup Commands. These are special commands that can be used to pre-process files from XNAT before they are mounted into a container launched from a "main" command.
+* [CS-355][] When deleting a docker image through CS API, also delete all commands and wrappers associated with the image.
+* Docs: Add new script that bulk uploads all changed source docs
+* Docs: Add support for "NO UPLOAD" comment in source docs that should be skipped and not uploaded to wiki
+* [CS-340][] Check in generated swagger.json from REST API dump, and scripts to upload it to wiki
+* Add lots of new documentation
+    * [CS-434][] Command resolution
+    * [CS-434][] Container launching (internals)
+    * Container launching (as a user)
+    * Enabling commands on a project
+    * Troubleshooting
+
+### Bugfixes
+
+* Docs: Fix mishandling of anchor tags/links on wiki pages. Confluence uses a macro for these, not raw HTML anchors.
+* [CS-420][] Fix handling of non-standard default values for boolean inputs in bulk launches
+* [CS-432][] Do not update container/workflow status if new events come in from docker and container is already in a "terminal" state (Completed, Failed, Killed, or related states)
+* [CS-433][] Remove image entrypoints when launching containers.
+* [CS-435][] Command wrappers with no descriptions were not displaying properly in the UI
+* [CS-442][], [CS-443][], [CS-449][] Multiple failures when running XNAT in a non-root context: pulling images, project settings, bulk launching
+* [CS-448][] Fix height of 'Edit Command' dialog so full code editor is displayed
+* [CS-450][] Restrict usage of command automation to commands that match the context of selected events
+* [CS-454][] Container working directory was not being saved at launch
+
+[CS-355]: https://issues.xnat.org/browse/CS-355
+[CS-420]: https://issues.xnat.org/browse/CS-420
+[CS-421]: https://issues.xnat.org/browse/CS-421
+[CS-430]: https://issues.xnat.org/browse/CS-430
+[CS-432]: https://issues.xnat.org/browse/CS-432
+[CS-433]: https://issues.xnat.org/browse/CS-433
+[CS-434]: https://issues.xnat.org/browse/CS-434
+[CS-435]: https://issues.xnat.org/browse/CS-435
+[CS-442]: https://issues.xnat.org/browse/CS-442
+[CS-443]: https://issues.xnat.org/browse/CS-443
+[CS-448]: https://issues.xnat.org/browse/CS-448
+[CS-449]: https://issues.xnat.org/browse/CS-449
+[CS-450]: https://issues.xnat.org/browse/CS-450
+[CS-454]: https://issues.xnat.org/browse/CS-454
+
 ## 1.3.2
 
 [Released 2017-11-08](https://github.com/NrgXnat/container-service/releases/tag/1.3.2).

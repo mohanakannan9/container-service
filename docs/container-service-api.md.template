@@ -1,0 +1,5 @@
+<!-- id: 50888964 -->
+
+<ac:structured-macro ac:name="tip" ac:schema-version="1" ac:macro-id="ff7038e0-6ca4-444e-8f40-6da7034065fc"><ac:rich-text-body>The Container Service API swagger documentation can be accessed inside your XNAT by site administrators. Navigate to `https://{XNAT_HOME_URL}/xapi/swagger-ui.html`. You can also execute API calls from this UI.</ac:rich-text-body></ac:structured-macro>
+
+<ac:structured-macro ac:name="open-api" ac:schema-version="1" ac:macro-id="2e58d357-896e-4eec-9df1-6d82563d103f"><ac:plain-text-body><![CDATA[%SWAGGER_JSON_HERE%]]></ac:plain-text-body></ac:structured-macro>

@@ -93,11 +93,6 @@ public class ContainerConfigServiceImpl implements ContainerConfigService {
     }
 
     @Override
-    public void deleteAllConfiguration(final long wrapperId) {
-        // TODO
-    }
-
-    @Override
     public void enableForSite(final long wrapperId, final String username, final String reason) throws CommandConfigurationException {
         setCommandEnabled(true, Scope.Site, null, wrapperId, username, reason);
     }

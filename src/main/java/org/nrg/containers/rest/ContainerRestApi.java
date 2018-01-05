@@ -3,6 +3,7 @@ package org.nrg.containers.rest;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoDockerServerException;
@@ -66,6 +67,7 @@ public class ContainerRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(method = GET, restrictTo = Admin)
+    @ApiOperation(value = "Get all Containers")
     @ResponseBody
     public List<Container> getAll() {
         return Lists.transform(containerService.getAll(), new Function<Container, Container>() {
@@ -77,24 +79,28 @@ public class ContainerRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(value = "/{id}", method = GET, restrictTo = Admin)
+    @ApiOperation(value = "Get Containers by database ID")
     @ResponseBody
     public Container get(final @PathVariable String id) throws NotFoundException {
         return scrubPasswordEnv(containerService.get(id));
     }
 
     @XapiRequestMapping(value = "/{id}", method = DELETE, restrictTo = Admin)
+    @ApiOperation(value = "Get Container by container server ID")
     public ResponseEntity<Void> delete(final @PathVariable String id) throws NotFoundException {
         containerService.delete(id);
         return ResponseEntity.noContent().build();
     }
 
     @XapiRequestMapping(value = "/{id}/finalize", method = POST, produces = JSON, restrictTo = Admin)
+    @ApiOperation(value = "Finalize Container")
     public void finalize(final @PathVariable String id) throws NotFoundException {
         final UserI userI = XDAT.getUserDetails();
         containerService.finalize(id, userI);
     }
 
     @XapiRequestMapping(value = "/{id}/kill", method = POST, restrictTo = Admin)
+    @ApiOperation(value = "Kill Container")
     @ResponseBody
     public String kill(final @PathVariable String id)
             throws NotFoundException, NoDockerServerException, DockerServerException {
@@ -112,8 +118,10 @@ public class ContainerRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(value = "/{containerId}/logs", method = GET, restrictTo = Admin)
+    @ApiOperation(value = "Get Container logs",
+            notes = "Return stdout and stderr logs as a zip")
     public void getLogs(final @PathVariable String containerId,
-                                                   final HttpServletResponse response)
+                        final HttpServletResponse response)
             throws IOException, InsufficientPrivilegesException, NoDockerServerException, DockerServerException, NotFoundException {
         UserI userI = XDAT.getUserDetails();
 
@@ -148,6 +156,7 @@ public class ContainerRestApi extends AbstractXapiRestController {
     }
 
     @XapiRequestMapping(value = "/{containerId}/logs/{file}", method = GET, restrictTo = Admin)
+    @ApiOperation(value = "Get Container logs", notes = "Return either stdout or stderr logs")
     @ResponseBody
     public ResponseEntity<String> getLog(final @PathVariable String containerId,
                                          final @PathVariable @ApiParam(allowableValues = "stdout, stderr") String file)

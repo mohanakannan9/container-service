@@ -1,8 +1,6 @@
 package org.nrg.containers.model.command.entity;
 
 import com.google.common.base.MoreObjects;
-import io.swagger.annotations.ApiModelProperty;
-import org.apache.commons.lang3.StringUtils;
 import org.hibernate.envers.Audited;
 import org.nrg.containers.model.command.auto.Command;
 
@@ -12,7 +10,6 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
-import javax.persistence.Transient;
 import java.util.Objects;
 
 @Entity
@@ -28,6 +25,7 @@ public class CommandWrapperDerivedInputEntity {
     private String matcher;
     private String providesValueForCommandInput;
     private String providesFilesForCommandMount;
+    private String viaSetupCommand;
     private String defaultValue;
     private Boolean userSettable = true;
     private String rawReplacementKey;
@@ -54,6 +52,7 @@ public class CommandWrapperDerivedInputEntity {
         this.setMatcher(commandWrapperInput.matcher());
         this.setProvidesValueForCommandInput(commandWrapperInput.providesValueForCommandInput());
         this.setProvidesFilesForCommandMount(commandWrapperInput.providesFilesForCommandMount());
+        this.setViaSetupCommand(commandWrapperInput.viaSetupCommand());
         this.setDefaultValue(commandWrapperInput.defaultValue());
         this.setUserSettable(commandWrapperInput.userSettable());
         this.setRawReplacementKey(commandWrapperInput.rawReplacementKey());
@@ -190,6 +189,14 @@ public class CommandWrapperDerivedInputEntity {
         this.providesFilesForCommandMount = providesFilesForCommandMount;
     }
 
+    public String getViaSetupCommand() {
+        return viaSetupCommand;
+    }
+
+    public void setViaSetupCommand(final String viaSetupCommand) {
+        this.viaSetupCommand = viaSetupCommand;
+    }
+
     public String getDefaultValue() {
         return defaultValue;
     }
@@ -206,18 +213,12 @@ public class CommandWrapperDerivedInputEntity {
         this.userSettable = userSettable;
     }
 
-    @ApiModelProperty(value = "String in the command-line or elsewhere that will be replaced by this input's value. Default: #input_name#", example = "[MY_INPUT]")
     public String getRawReplacementKey() {
         return rawReplacementKey;
     }
 
     public void setRawReplacementKey(final String rawReplacementKey) {
         this.rawReplacementKey = rawReplacementKey;
-    }
-
-    @Transient
-    public String getReplacementKey() {
-        return StringUtils.isNotBlank(rawReplacementKey) ? rawReplacementKey : "#" + getName() + "#";
     }
 
     public Boolean getRequired() {
@@ -267,6 +268,7 @@ public class CommandWrapperDerivedInputEntity {
                 .add("matcher", matcher)
                 .add("providesValueForCommandInput", providesValueForCommandInput)
                 .add("providesFilesForCommandMount", providesFilesForCommandMount)
+                .add("viaSetupCommand", viaSetupCommand)
                 .add("defaultValue", defaultValue)
                 .add("userSettable", userSettable)
                 .add("rawReplacementKey", rawReplacementKey)

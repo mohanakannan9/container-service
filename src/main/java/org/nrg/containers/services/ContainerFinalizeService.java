@@ -6,5 +6,5 @@ import org.nrg.xft.security.UserI;
 public interface ContainerFinalizeService {
     Container finalizeContainer(Container toFinalize,
                                 UserI userI,
-                                String exitCode);
+                                boolean isFailed);
 }

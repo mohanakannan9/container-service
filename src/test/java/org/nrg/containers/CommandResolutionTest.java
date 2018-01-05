@@ -25,6 +25,9 @@ import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.model.command.auto.Command.CommandWrapperExternalInput;
 import org.nrg.containers.model.command.auto.Command.ConfiguredCommand;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
+import org.nrg.containers.model.command.auto.ResolvedCommandMount;
+import org.nrg.containers.model.command.auto.ResolvedInputTreeNode;
+import org.nrg.containers.model.command.auto.ResolvedInputValue;
 import org.nrg.containers.model.command.entity.CommandType;
 import org.nrg.containers.model.configuration.CommandConfiguration;
 import org.nrg.containers.model.configuration.CommandConfiguration.CommandInputConfiguration;
@@ -36,7 +39,10 @@ import org.nrg.containers.model.xnat.Session;
 import org.nrg.containers.services.CommandResolutionService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerConfigService;
+import org.nrg.containers.services.DockerService;
+import org.nrg.containers.services.SetupCommandService;
 import org.nrg.framework.constants.Scope;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,15 +55,18 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isA;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.when;
@@ -72,11 +81,13 @@ public class CommandResolutionTest {
     private Command dummyCommand;
     private String resourceDir;
     private Map<String, CommandWrapper> xnatCommandWrappers;
+    private String buildDir;
 
     @Autowired private ObjectMapper mapper;
     @Autowired private CommandService commandService;
     @Autowired private CommandResolutionService commandResolutionService;
     @Autowired private ConfigService mockConfigService;
+    @Autowired private SiteConfigPreferences mockSiteConfigPreferences;
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder(new File("/tmp"));
@@ -116,6 +127,9 @@ public class CommandResolutionTest {
         for (final CommandWrapper commandWrapperEntity : dummyCommand.xnatCommandWrappers()) {
             xnatCommandWrappers.put(commandWrapperEntity.name(), commandWrapperEntity);
         }
+
+        buildDir = folder.newFolder().getAbsolutePath();
+        when(mockSiteConfigPreferences.getBuildPath()).thenReturn(buildDir);
     }
 
     @Test
@@ -552,5 +566,127 @@ public class CommandResolutionTest {
                         inputName, illegalString)));
             }
         }
+    }
+
+    @Test
+    public void testSerializeResolvedCommand() throws Exception {
+        final Command.CommandWrapperExternalInput externalInput = CommandWrapperExternalInput.builder()
+                .name("externalInput")
+                .id(0L)
+                .type("string")
+                .build();
+        final ResolvedInputValue externalInputValue = ResolvedInputValue.builder()
+                .type("string")
+                .value("externalInputValue")
+                .build();
+        final Command.CommandWrapperDerivedInput derivedInput = Command.CommandWrapperDerivedInput.builder()
+                .name("derivedInput")
+                .id(0L)
+                .type("string")
+                .build();
+        final ResolvedInputValue derivedInputValue = ResolvedInputValue.builder()
+                .type("string")
+                .value("derivedInputValue")
+                .build();
+        final ResolvedInputTreeNode<CommandWrapperExternalInput> inputTree = ResolvedInputTreeNode.create(
+                externalInput,
+                Collections.singletonList(
+                        ResolvedInputTreeNode.ResolvedInputTreeValueAndChildren.create(
+                                externalInputValue,
+                                Collections.<ResolvedInputTreeNode<? extends Command.Input>>singletonList(
+                                        ResolvedInputTreeNode.create(
+                                                derivedInput,
+                                                Collections.singletonList(ResolvedInputTreeNode.ResolvedInputTreeValueAndChildren.create(derivedInputValue))
+                                        )
+                                )
+                        )
+                )
+        );
+
+        final ResolvedCommand resolvedCommand = ResolvedCommand.builder()
+                .commandId(0L)
+                .commandName("command")
+                .commandDescription("command description")
+                .wrapperId(0L)
+                .wrapperName("wrapper")
+                .wrapperDescription("wrapper description")
+                .addEnvironmentVariable("name", "value")
+                .addPort("1", "2")
+                .addRawInputValue("input name", "input value")
+                .addResolvedInputTree(inputTree)
+                .image("image")
+                .commandLine("script.sh")
+                .addMount(ResolvedCommandMount.builder()
+                        .name("mount")
+                        .containerPath("/path")
+                        .writable(true)
+                        .xnatHostPath("/xnat/path")
+                        .containerHostPath("/container/path")
+                        .fromWrapperInput("derivedInput")
+                        .build())
+                .build();
+
+        final String resolvedCommandJson = mapper.writeValueAsString(resolvedCommand);
+    }
+
+    @Test
+    @DirtiesContext
+    public void testResolveCommandWithSetupCommand() throws Exception {
+        final String setupCommandResourceDir = Paths.get(ClassLoader.getSystemResource("setupCommand").toURI()).toString().replace("%20", " ");
+
+        final String setupCommandJson = setupCommandResourceDir + "/setup-command.json";
+        final Command setupCommandToCreate = mapper.readValue(new File(setupCommandJson), Command.class);
+        final Command setupCommand = commandService.create(setupCommandToCreate);
+
+        final String commandWithSetupCommandJson = setupCommandResourceDir + "/command-with-setup-command.json";
+        final Command commandWithSetupCommand = mapper.readValue(new File(commandWithSetupCommandJson), Command.class);
+        final Command commandWithSetupCommandCreated = commandService.create(commandWithSetupCommand);
+        final CommandWrapper commandWrapper = commandWithSetupCommandCreated.xnatCommandWrappers().get(0);
+
+        final String resourceInputJsonPath = setupCommandResourceDir + "/resource.json";
+        // I need to set the resource directory to a temp directory
+        final String resourceDir = folder.newFolder("resource").getAbsolutePath();
+        final Resource resourceInput = mapper.readValue(new File(resourceInputJsonPath), Resource.class);
+        resourceInput.setDirectory(resourceDir);
+        final String resourceInputJson = mapper.writeValueAsString(resourceInput);
+
+        final Map<String, String> runtimeValues = Collections.singletonMap("resource", resourceInputJson);
+        final ResolvedCommand resolvedCommand = commandResolutionService.resolve(commandWrapper.id(), runtimeValues, mockUser);
+
+        assertThat(resolvedCommand.mounts(), hasSize(1));
+        final ResolvedCommandMount resolvedCommandMount = resolvedCommand.mounts().get(0);
+        assertThat(resolvedCommandMount.viaSetupCommand(), is("xnat/test-setup-command:latest:setup-command"));
+
+        final String resolvedCommandMountPath = resolvedCommandMount.xnatHostPath();
+        assertThat(resolvedCommandMountPath, is(resolvedCommandMount.containerHostPath()));
+        assertThat(resolvedCommandMountPath, startsWith(buildDir));
+
+        assertThat(resolvedCommand.setupCommands(), hasSize(1));
+        final ResolvedCommand resolvedSetupCommand = resolvedCommand.setupCommands().get(0);
+        assertThat(resolvedSetupCommand.commandId(), is(setupCommand.id()));
+        assertThat(resolvedSetupCommand.commandName(), is(setupCommand.name()));
+        assertThat(resolvedSetupCommand.image(), is(setupCommand.image()));
+        assertThat(resolvedSetupCommand.wrapperId(), is(0L));
+        assertThat(resolvedSetupCommand.wrapperName(), is(""));
+        assertThat(resolvedSetupCommand.commandLine(), is(setupCommand.commandLine()));
+        assertThat(resolvedSetupCommand.workingDirectory(), is(setupCommand.workingDirectory()));
+
+        assertThat(resolvedSetupCommand.mounts(), hasSize(2));
+        for (final ResolvedCommandMount setupMount : resolvedSetupCommand.mounts()) {
+            assertThat(setupMount.viaSetupCommand(), is(nullValue()));
+            assertThat(setupMount.xnatHostPath(), is(setupMount.containerHostPath()));
+            if (setupMount.name().equals("input")) {
+                assertThat(setupMount.writable(), is(false));
+                assertThat(setupMount.containerPath(), is("/input"));
+                assertThat(setupMount.xnatHostPath(), is(resourceDir));
+            } else if (setupMount.name().equals("output")) {
+                assertThat(setupMount.containerPath(), is("/output"));
+                assertThat(setupMount.writable(), is(true));
+                assertThat(setupMount.xnatHostPath(), is(resolvedCommandMountPath));
+            } else {
+                fail("The only mounts on the resolved setup command should be named \"input\" and \"output\".");
+            }
+        }
+
     }
 }

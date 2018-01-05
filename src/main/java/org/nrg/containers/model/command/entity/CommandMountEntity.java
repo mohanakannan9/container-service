@@ -1,9 +1,6 @@
 package org.nrg.containers.model.command.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
-import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.envers.Audited;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandMount;
@@ -14,7 +11,6 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
-import javax.persistence.Transient;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -23,10 +19,10 @@ import java.util.Objects;
 public class CommandMountEntity implements Serializable {
 
     private long id;
-    @JsonIgnore private CommandEntity commandEntity;
-    @JsonProperty(required = true) private String name;
+    private CommandEntity commandEntity;
+    private String name;
     private Boolean writable;
-    @JsonProperty("path") private String containerPath;
+    private String containerPath;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -85,12 +81,6 @@ public class CommandMountEntity implements Serializable {
         this.setWritable(commandMount.writable());
         this.setContainerPath(commandMount.path());
         return this;
-    }
-
-    @Transient
-    @ApiModelProperty(hidden = true)
-    public String toBindMountString(final String hostPath) {
-        return hostPath + ":" + containerPath + (writable?"":":ro");
     }
 
     @Override

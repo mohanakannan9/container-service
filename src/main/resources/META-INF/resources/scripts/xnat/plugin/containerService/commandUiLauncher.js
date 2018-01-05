@@ -767,6 +767,11 @@ var XNAT = getObject(XNAT || {});
                                     inputs[i].type = 'hidden';
                                     inputs[i].value = inputs[i].ui.default.values[0].value || inputs[i].value;
 
+                                    // handle non-standard boolean input values in bulk hidden inputs
+                                    if (inputs[i].ui.default.type === 'boolean') {
+                                        inputs[i].value = booleanEval(inputs[i].value)
+                                    }
+
                                     var inputElement = launcher.formInputs(inputs[i]);
                                     $bulkInputContainer.append(inputElement);
 
@@ -1201,8 +1206,8 @@ var XNAT = getObject(XNAT || {});
         if (!targets || targets.length === 0) return false;
         var targetObj = rootElement + '=' + targets.toString();
         var launchUrl = (projectId) ?
-            '/xapi/projects/'+projectId+'/wrappers/'+wrapperId+'/bulklaunch?'+targetObj :
-            '/xapi/wrappers/'+wrapperId+'/bulklaunch?'+targetObj;
+            rootUrl('/xapi/projects/'+projectId+'/wrappers/'+wrapperId+'/bulklaunch?'+targetObj) :
+            rootUrl('/xapi/wrappers/'+wrapperId+'/bulklaunch?'+targetObj);
 
         xmodal.loading.open({ title: 'Configuring Container Launcher' });
         XNAT.xhr.getJSON({
@@ -1257,11 +1262,15 @@ var XNAT = getObject(XNAT || {});
 
     launcher.addMenuItem = function(command,commandSet){
         commandSet = commandSet || [];
+        var label = (command['wrapper-description'].length) ?
+            command['wrapper-description'] :
+            command['wrapper-name'];
+
         if (command.enabled){
             commandSet.push(
                 spawn('li', [
                     spawn('a', {
-                        html: command['wrapper-description'],
+                        html: label,
                         href: '#!',
                         className: 'commandLauncher',
                         data: {
@@ -1291,8 +1300,11 @@ var XNAT = getObject(XNAT || {});
     launcher.addYUIMenuItem = function(command){
         if (command.enabled) {
             var launcher = command.launcher || "default";
+            var label = (command['wrapper-description'].length) ?
+                command['wrapper-description'] :
+                command['wrapper-name'];
             containerMenuItems[0].submenu.itemdata.push({
-                text: command['wrapper-description'],
+                text: label,
                 url: 'javascript:openCommandLauncher({ wrapperid:"'+command['wrapper-id']+'", launcher: "'+launcher+'", rootElement: "'+ command['root-element-name'] + '" })',
                 classname: 'enabled wrapped' // injects a custom classname onto the surrounding li element.
             });

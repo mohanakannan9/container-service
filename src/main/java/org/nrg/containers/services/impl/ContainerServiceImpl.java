@@ -50,11 +50,13 @@ import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
 import static org.nrg.containers.model.command.entity.CommandType.DOCKER;
+import static org.nrg.containers.model.command.entity.CommandType.DOCKER_SETUP;
 import static org.nrg.containers.model.command.entity.CommandWrapperInputType.ASSESSOR;
 import static org.nrg.containers.model.command.entity.CommandWrapperInputType.PROJECT;
 import static org.nrg.containers.model.command.entity.CommandWrapperInputType.RESOURCE;
@@ -143,6 +145,11 @@ public class ContainerServiceImpl implements ContainerService {
     }
 
     @Override
+    public List<Container> retrieveSetupContainersForParent(final long parentId) {
+        return toPojo(containerEntityService.retrieveSetupContainersForParent(parentId));
+    }
+
+    @Override
     @Nullable
     public Container addContainerEventToHistory(final ContainerEvent containerEvent, final UserI userI) {
         final ContainerEntity containerEntity = containerEntityService.addContainerEventToHistory(containerEvent, userI);
@@ -203,8 +210,15 @@ public class ContainerServiceImpl implements ContainerService {
     public Container launchResolvedCommand(final ResolvedCommand resolvedCommand,
                                            final UserI userI)
             throws NoDockerServerException, DockerServerException, ContainerException, UnsupportedOperationException {
-        if (resolvedCommand.type().equals(DOCKER.getName())) {
-            return launchResolvedDockerCommand(resolvedCommand, userI);
+        return launchResolvedCommand(resolvedCommand, userI, null);
+    }
+
+    private Container launchResolvedCommand(final ResolvedCommand resolvedCommand,
+                                            final UserI userI,
+                                            final Container parent)
+            throws NoDockerServerException, DockerServerException, ContainerException, UnsupportedOperationException {
+        if (resolvedCommand.type().equals(DOCKER.getName()) || resolvedCommand.type().equals(DOCKER_SETUP.getName())) {
+            return launchResolvedDockerCommand(resolvedCommand, userI, parent);
         } else {
             throw new UnsupportedOperationException("Cannot launch a command of type " + resolvedCommand.type());
         }
@@ -212,7 +226,8 @@ public class ContainerServiceImpl implements ContainerService {
 
     @Nonnull
     private Container launchResolvedDockerCommand(final ResolvedCommand resolvedCommand,
-                                                  final UserI userI)
+                                                  final UserI userI,
+                                                  final Container parent)
             throws NoDockerServerException, DockerServerException, ContainerException {
         log.info("Preparing to launch resolved command.");
         final ResolvedCommand preparedToLaunch = prepareToLaunch(resolvedCommand, userI);
@@ -223,9 +238,25 @@ public class ContainerServiceImpl implements ContainerService {
         log.info("Recording container launch.");
         final String workflowId = makeWorkflowIfAppropriate(resolvedCommand, createdContainerOrService, userI);
         final Container savedContainerOrService = toPojo(containerEntityService.save(fromPojo(
-                createdContainerOrService.toBuilder().workflowId(workflowId).build()
+                createdContainerOrService.toBuilder()
+                        .workflowId(workflowId)
+                        .setParentProperties(parent)
+                        .build()
         ), userI));
 
+        if (resolvedCommand.setupCommands().size() > 0) {
+            log.info("Launching setup containers.");
+            for (final ResolvedCommand resolvedSetupCommand : resolvedCommand.setupCommands()) {
+                launchResolvedCommand(resolvedSetupCommand, userI, savedContainerOrService);
+            }
+        } else {
+            startContainer(userI, savedContainerOrService);
+        }
+
+        return savedContainerOrService;
+    }
+
+    private void startContainer(final UserI userI, final Container savedContainerOrService) throws NoDockerServerException, ContainerException {
         log.info("Starting container.");
         try {
             containerControlApi.startContainer(savedContainerOrService.containerId());
@@ -234,8 +265,6 @@ public class ContainerServiceImpl implements ContainerService {
             handleFailure(savedContainerOrService);
             throw new ContainerException("Failed to start");
         }
-
-        return createdContainerOrService;
     }
 
     @Nonnull
@@ -259,9 +288,7 @@ public class ContainerServiceImpl implements ContainerService {
 
     @Override
     public void processEvent(final ContainerEvent event) {
-        if (log.isDebugEnabled()) {
-            log.debug("Processing container event");
-        }
+        log.debug("Processing container event");
         final Container container = retrieve(event.containerId());
 
 
@@ -281,11 +308,11 @@ public class ContainerServiceImpl implements ContainerService {
             } catch (UserInitException | UserNotFoundException e) {
                 log.error("Could not update container status. Could not get user details for user " + userLogin, e);
             }
+        } else {
+            log.debug("Nothing to do. Container was null after retrieving by id {}.", event.containerId());
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug("Done processing docker container event: " + event);
-        }
+        log.debug("Done processing docker container event: {}", event);
     }
 
     @Override
@@ -344,40 +371,94 @@ public class ContainerServiceImpl implements ContainerService {
 
     @Override
     public void finalize(final Container container, final UserI userI) {
-        // Assumption: At most one container history item will have a non-null exit code.
-        // "": This event is an exit event (status == kill, die, or oom) but the attributes map
-        //      did not contain an "exitCode" key
-        // "0": success
-        // "1" to "255": failure
-        String exitCode = null;
-        for (final ContainerHistory history : container.history()) {
-            if (history.exitCode() != null) {
-                exitCode = history.exitCode();
-                break;
-            }
-        }
-        finalize(container, userI, exitCode);
+        finalize(container, userI, container.exitCode());
     }
 
     @Override
     public void finalize(final Container container, final UserI userI, final String exitCode) {
-        log.info("Finalizing ContainerExecution {} for container {}.", container.databaseId(), container.containerId());
+        log.info("Finalizing Container {}, container id {}.", container.databaseId(), container.containerId());
 
-        final Container finalized = containerFinalizeService.finalizeContainer(container, userI, exitCode);
+        final Container finalized = containerFinalizeService.finalizeContainer(container, userI, exitCodeIsFailed(exitCode));
 
-        log.info("Done uploading for ContainerExecution {}. Now saving information about created outputs.", container.databaseId());
+        log.info("Done uploading for Container {}. Now saving information about created outputs.", container.databaseId());
 
         containerEntityService.update(fromPojo(finalized));
         log.debug("Done saving outputs for Container {}.", container.databaseId());
+
+        final Container parent = finalized.parentContainer();
+        if (parent != null) {
+            log.info("Container {} is a setup container for parent container {}. Checking whether parent needs a status change.", container.databaseId(), parent.databaseId());
+            final List<Container> setupContainers = retrieveSetupContainersForParent(parent.databaseId());
+            final List<Container> failedExitCode = new ArrayList<>();
+            final List<Container> nullExitCode = new ArrayList<>();
+            for (final Container setupContainer : setupContainers) {
+                if (exitCodeIsFailed(setupContainer.exitCode())) {
+                    failedExitCode.add(setupContainer);
+                } else if (setupContainer.exitCode() == null) {
+                    nullExitCode.add(setupContainer);
+                }
+            }
+
+            if (failedExitCode.size() > 0) {
+                // If any of the setup containers failed, we must kill the rest and fail the main container.
+                log.info("One or more setup containers have failed. Killing the rest and failing the parent.");
+                for (final Container setupContainer : setupContainers) {
+                    if (failedExitCode.contains(setupContainer)) {
+                        log.debug("Setup container {} with container id {} failed.", setupContainer.databaseId(), setupContainer.containerId());
+                    } else if (nullExitCode.contains(setupContainer)) {
+                        log.info("Setup container {} with container id {} has no exit code. Attempting to kill it.", setupContainer.databaseId(), setupContainer.containerId());
+                        try {
+                            kill(setupContainer, userI);
+                        } catch (NoDockerServerException | DockerServerException | NotFoundException e) {
+                            log.error(String.format("Failed to kill setup container %d.", setupContainer.databaseId()), e);
+                        }
+                    } else {
+                        log.debug("Setup container {} with container id {} succeeded.", setupContainer.databaseId(), setupContainer.containerId());
+                    }
+                }
+
+                final String failedContainerMessageTemplate = "ID %d, container id %s";
+                final String failedContainerMessage;
+                if (failedExitCode.size() == 1) {
+                    final Container failed = failedExitCode.get(0);
+                    failedContainerMessage = "Failed setup container: " + String.format(failedContainerMessageTemplate, failed.databaseId(), failed.containerId());
+                } else {
+                    final StringBuilder sb = new StringBuilder();
+                    sb.append("Failed setup containers: ");
+                    sb.append(String.format(failedContainerMessageTemplate, failedExitCode.get(0).databaseId(), failedExitCode.get(0).containerId()));
+                    for (int i = 1; i < failedExitCode.size(); i++) {
+                        sb.append("; ");
+                        sb.append(String.format(failedContainerMessageTemplate, failedExitCode.get(i).databaseId(), failedExitCode.get(i).containerId()));
+                    }
+                    sb.append(".");
+                    failedContainerMessage = sb.toString();
+                }
+
+                log.info("Setting status to \"Failed Setup\" for parent container {} with container id {}.", parent.databaseId(), parent.containerId());
+                addContainerHistoryItem(parent, ContainerHistory.fromSystem("Failed Setup", failedContainerMessage), userI);
+            } else if (nullExitCode.size() == 0) {
+                // If none of the setup containers have failed and none of the exit codes are null,
+                // that means all the setup containers have succeeded.
+                // We should start the parent container.
+                log.info("All setup containers for parent Container {} are finished and not failed. Starting container id {}.", parent.databaseId(), parent.containerId());
+                try {
+                    startContainer(userI, parent);
+                } catch (NoDockerServerException | ContainerException e) {
+                    log.error("Failed to start parent Container {} with container id {}.", parent.databaseId(), parent.containerId());
+                }
+            }
+        }
     }
 
     @Override
-    @Nonnull
     public String kill(final String containerId, final UserI userI)
             throws NoDockerServerException, DockerServerException, NotFoundException {
         // TODO check user permissions. How?
-        final Container container = get(containerId);
+        return kill(get(containerId), userI);
+    }
 
+    private String kill(final Container container, final UserI userI)
+            throws NoDockerServerException, DockerServerException, NotFoundException {
         addContainerHistoryItem(container, ContainerHistory.fromUserAction("Killed", userI.getLogin()), userI);
 
         final String containerDockerId = container.containerId();
@@ -623,5 +704,22 @@ public class ContainerServiceImpl implements ContainerService {
     @Nonnull
     private ContainerEntityHistory fromPojo(@Nonnull final ContainerHistory containerHistory) {
         return ContainerEntityHistory.fromPojo(containerHistory);
+    }
+
+    private boolean exitCodeIsFailed(final String exitCode) {
+        // Assume that everything is fine unless the exit code is explicitly > 0.
+        // So exitCode="0", ="", =null all count as not failed.
+        boolean isFailed = false;
+        if (StringUtils.isNotBlank(exitCode)) {
+            Long exitCodeNumber = null;
+            try {
+                exitCodeNumber = Long.parseLong(exitCode);
+            } catch (NumberFormatException e) {
+                // ignored
+            }
+
+            isFailed = exitCodeNumber != null && exitCodeNumber > 0;
+        }
+        return isFailed;
     }
 }

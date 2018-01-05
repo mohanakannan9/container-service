@@ -10,7 +10,7 @@ projectCommandConfigsPanel:
     footer: false
     contents:
         projCommandConfigDescription:
-            tag: "p"
+            tag: div.message
             contents:
                 "This panel lists all enabled commands from all installed images, and allows project owners to define a custom configuration for each command. This configuration will be used by default by all users in this project, but users can override certain parameters."
         projCommandConfigListContainer:

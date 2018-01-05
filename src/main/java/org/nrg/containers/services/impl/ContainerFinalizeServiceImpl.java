@@ -29,7 +29,6 @@ import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.restlet.util.XNATRestConstants;
 import org.nrg.xnat.services.archive.CatalogService;
-import org.nrg.xnat.utils.WorkflowUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,9 +67,9 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
     }
 
     @Override
-    public Container finalizeContainer(final Container toFinalize, final UserI userI, final String exitCode) {
+    public Container finalizeContainer(final Container toFinalize, final UserI userI, final boolean isFailed) {
         final ContainerFinalizeHelper helper =
-                new ContainerFinalizeHelper(toFinalize, userI, exitCode);
+                new ContainerFinalizeHelper(toFinalize, userI, isFailed);
         return helper.finalizeContainer();
     }
 
@@ -88,24 +87,10 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
 
         private ContainerFinalizeHelper(final Container toFinalize,
                                         final UserI userI,
-                                        final String exitCode) {
+                                        final boolean isFailed) {
             this.toFinalize = toFinalize;
             this.userI = userI;
-            // this.exitCode = exitCode;
-
-            // Assume that everything is fine unless the exit code is explicitly > 0.
-            // So exitCode="0", ="", =null all count as success.
-            isFailed = false;
-            if (StringUtils.isNotBlank(exitCode)) {
-                Long exitCodeNumber = null;
-                try {
-                    exitCodeNumber = Long.parseLong(exitCode);
-                } catch (NumberFormatException e) {
-                    // ignored
-                }
-
-                isFailed = exitCodeNumber != null && exitCodeNumber > 0;
-            }
+            this.isFailed = isFailed;
 
             untransportedMounts = Maps.newHashMap();
             transportedMounts = Maps.newHashMap();
@@ -148,6 +133,7 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
                 // TODO We know the container has failed. Should we send an email?
                 ContainerUtils.updateWorkflowStatus(toFinalize.workflowId(), PersistentWorkflowUtils.FAILED, userI);
                 finalizedContainerBuilder.status("Failed")
+                        .addHistoryItem(Container.ContainerHistory.fromSystem("Failed", ""))
                         .statusTime(new Date());
             }
 

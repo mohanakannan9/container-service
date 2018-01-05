@@ -374,9 +374,24 @@ public class DockerServiceImpl implements DockerService {
         }
     }
 
-    public void removeImage(final String imageId, final Boolean force)
+    public void removeImageById(final String imageId, final Boolean force)
             throws NoDockerServerException, DockerServerException {
+        final List<DockerImageAndCommandSummary> dockerImageAndCommandSummaries = getImageSummaries();
+
         controlApi.deleteImageById(imageId, force);
+
+        for (final DockerImageAndCommandSummary dockerImageAndCommandSummary : dockerImageAndCommandSummaries) {
+            if (dockerImageAndCommandSummary.imageId() != null &&
+                    (dockerImageAndCommandSummary.imageId().equals(imageId) || dockerImageAndCommandSummary.imageId().contains(imageId))) {
+                for (final Command command : dockerImageAndCommandSummary.commands()) {
+                    // The commands in the command summary list can have ID 0 if they are in the image labels but not saved in DB.
+                    if (command.id() != 0L) {
+                        commandService.delete(command.id());
+                    }
+                }
+            }
+        }
+
     }
 
     @Override

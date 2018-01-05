@@ -24,7 +24,10 @@ public interface CommandService {
     List<Command> findByProperties(Map<String, Object> properties);
     Command update(Command updates) throws NotFoundException, CommandValidationException;
     void delete(long id);
+    void delete(Command command);
     List<Command> save(final List<Command> commands);
+    List<Command> getByImage(String image);
+    void deleteByImage(String image);
 
     CommandWrapper addWrapper(long commandId, CommandWrapper commandWrapper) throws CommandValidationException, NotFoundException;
     CommandWrapper addWrapper(Command command, CommandWrapper commandWrapper) throws CommandValidationException, NotFoundException;
@@ -53,8 +56,6 @@ public interface CommandService {
     void deleteSiteConfiguration(long commandId, String wrapperName, final String username) throws CommandConfigurationException, NotFoundException;
     void deleteProjectConfiguration(String project, long wrapperId, final String username) throws CommandConfigurationException, NotFoundException;
     void deleteProjectConfiguration(String project, long commandId, String wrapperName, final String username) throws CommandConfigurationException, NotFoundException;
-    void deleteAllConfiguration(long wrapperId);
-    void deleteAllConfiguration(long commandId, String wrapperName) throws NotFoundException;
 
     void enableForSite(long wrapperId, final String username, final String reason) throws CommandConfigurationException, NotFoundException;
     void enableForSite(long commandId, String wrapperName, final String username, final String reason) throws CommandConfigurationException, NotFoundException;
