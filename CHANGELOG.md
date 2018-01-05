@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.4.1
+
+Not yet released.
+
+### Features
+
+*
+
+### Bugfixes
+
+*
+
 ## 1.4.0
 
 [Released 2018-01-05](https://github.com/NrgXnat/container-service/releases/tag/1.4.0).
@@ -30,6 +42,7 @@
 * [CS-450][] Restrict usage of command automation to commands that match the context of selected events
 * [CS-454][] Container working directory was not being saved at launch
 
+[CS-340]: https://issues.xnat.org/browse/CS-340
 [CS-355]: https://issues.xnat.org/browse/CS-355
 [CS-420]: https://issues.xnat.org/browse/CS-420
 [CS-421]: https://issues.xnat.org/browse/CS-421
