@@ -15,6 +15,8 @@ import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.ContainerNotFoundException;
 import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.ContainerInfo;
+import com.spotify.docker.client.messages.Image;
+import com.spotify.docker.client.messages.ImageInfo;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
@@ -26,7 +28,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.nrg.containers.api.DockerControlApi;
-import org.nrg.containers.config.DockerIntegrationTestConfig;
+import org.nrg.containers.config.EventPullingIntegrationTestConfig;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.model.container.auto.Container;
@@ -39,6 +41,8 @@ import org.nrg.containers.model.xnat.Session;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerService;
 import org.nrg.containers.services.DockerServerService;
+import org.nrg.containers.services.DockerService;
+import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.PermissionsServiceI;
@@ -102,7 +106,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
 @PowerMockRunnerDelegate(SpringJUnit4ClassRunner.class)
 @PrepareForTest({UriParserUtils.class, XFTManager.class})
 @PowerMockIgnore({"org.apache.*", "java.*", "javax.*", "org.w3c.*", "com.sun.*"})
-@ContextConfiguration(classes = DockerIntegrationTestConfig.class)
+@ContextConfiguration(classes = EventPullingIntegrationTestConfig.class)
 @Transactional
 public class CommandLaunchIntegrationTest {
     private static final Logger log = LoggerFactory.getLogger(CommandLaunchIntegrationTest.class);
@@ -127,6 +131,7 @@ public class CommandLaunchIntegrationTest {
     @Autowired private CommandService commandService;
     @Autowired private ContainerService containerService;
     @Autowired private DockerControlApi controlApi;
+    @Autowired private DockerService dockerService;
     @Autowired private AliasTokenService mockAliasTokenService;
     @Autowired private DockerServerService dockerServerService;
     @Autowired private SiteConfigPreferences mockSiteConfigPreferences;
@@ -227,6 +232,7 @@ public class CommandLaunchIntegrationTest {
         when(XFTManager.isInitialized()).thenReturn(true);
 
         CLIENT = controlApi.getClient();
+        CLIENT.pull("busybox:latest");
     }
 
     @After
@@ -711,6 +717,61 @@ public class CommandLaunchIntegrationTest {
         final Container exited = containerService.get(container.databaseId());
         printContainerLogs(exited);
         assertThat(exited.workingDirectory(), is(workingDirectory));
+    }
+
+    @Test
+    @DirtiesContext
+    public void testDeleteCommandWhenDeleteImageAfterLaunchingContainer() throws Exception {
+        assumeThat(canConnectToDocker(), is(true));
+
+        final String imageName = "xnat/testy-test";
+        final String resourceDir = Paths.get(ClassLoader.getSystemResource("commandLaunchTest").toURI()).toString().replace("%20", " ");
+        final Path testDir = Paths.get(resourceDir, "/testDeleteCommandWhenDeleteImageAfterLaunchingContainer");
+
+        final String imageId = CLIENT.build(testDir, imageName);
+
+        final List<Command> commands = dockerService.saveFromImageLabels(imageName);
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        final Command command = commands.get(0);
+        final CommandWrapper wrapper = command.xnatCommandWrappers().get(0);
+
+        final Container container = containerService.resolveCommandAndLaunchContainer(wrapper.id(), Collections.<String, String>emptyMap(), mockUser);
+        containersToCleanUp.add(container.containerId());
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        await().until(containerIsRunning(container), is(false));
+
+        final Container exited = containerService.get(container.databaseId());
+        printContainerLogs(exited);
+
+        dockerService.removeImageById(imageId, true);
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        try {
+            dockerService.getImage(imageId);
+            fail("We expect a NotFoundException to be thrown when getting an image that we have removed. If this line is executed it means no exception was thrown.");
+        } catch (NotFoundException ignored) {
+            // exception is expected
+        } catch (Exception e) {
+            fail("We expect a NotFoundException to be thrown when getting an image that we have removed. If this line is executed it means another exception type was thrown.\n" + e.getClass().getName() + ": " + e.getMessage());
+        }
+
+        final Command retrieved = commandService.retrieve(command.id());
+        assertThat(retrieved, is(nullValue(Command.class)));
+
+        final Command.CommandWrapper retrievedWrapper = commandService.retrieveWrapper(wrapper.id());
+        assertThat(retrievedWrapper, is(nullValue(Command.CommandWrapper.class)));
+
     }
 
     @SuppressWarnings("deprecation")

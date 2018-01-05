@@ -1,0 +1,11 @@
+{
+    "name": "command",
+    "image": "xnat/testy-test:latest",
+    "version": "0",
+    "command-line": "echo hello world",
+    "xnat": [
+        {
+            "name": "placeholder"
+        }
+    ]
+}
