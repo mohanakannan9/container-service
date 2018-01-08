@@ -810,6 +810,7 @@ public abstract class Command {
     public static abstract class CommandWrapper {
         @JsonProperty("id") public abstract long id();
         @Nullable @JsonProperty("name") public abstract String name();
+        @Nullable @JsonProperty("label") public abstract String label();
         @Nullable @JsonProperty("description") public abstract String description();
         @JsonProperty("contexts") public abstract ImmutableSet<String> contexts();
         @JsonProperty("external-inputs") public abstract ImmutableList<CommandWrapperExternalInput> externalInputs();
@@ -819,6 +820,7 @@ public abstract class Command {
         @JsonCreator
         static CommandWrapper create(@JsonProperty("id") final long id,
                                      @JsonProperty("name") final String name,
+                                     @JsonProperty("label") final String label,
                                      @JsonProperty("description") final String description,
                                      @JsonProperty("contexts") final Set<String> contexts,
                                      @JsonProperty("external-inputs") final List<CommandWrapperExternalInput> externalInputs,
@@ -827,6 +829,7 @@ public abstract class Command {
             return builder()
                     .id(id)
                     .name(name == null ? "" : name)
+                    .label(label)
                     .description(description)
                     .contexts(contexts == null ? Collections.<String>emptySet() : contexts)
                     .externalInputs(externalInputs == null ? Collections.<CommandWrapperExternalInput>emptyList() : externalInputs)
@@ -838,6 +841,7 @@ public abstract class Command {
         public static CommandWrapper create(final CommandWrapperCreation creation) {
             return builder()
                     .name(creation.name())
+                    .label(creation.label())
                     .description(creation.description())
                     .contexts(creation.contexts() == null ? Collections.<String>emptySet() : creation.contexts())
                     .externalInputs(creation.externalInputs() == null ? Collections.<CommandWrapperExternalInput>emptyList() : creation.externalInputs())
@@ -898,6 +902,7 @@ public abstract class Command {
             return builder()
                     .id(commandWrapperEntity.getId())
                     .name(commandWrapperEntity.getName())
+                    .label(commandWrapperEntity.getLabel())
                     .description(commandWrapperEntity.getDescription())
                     .contexts(contexts)
                     .externalInputs(external)
@@ -921,6 +926,8 @@ public abstract class Command {
             public abstract Builder id(long id);
 
             public abstract Builder name(String name);
+
+            public abstract Builder label(String label);
 
             public abstract Builder description(String description);
 
@@ -964,6 +971,7 @@ public abstract class Command {
     @JsonInclude(JsonInclude.Include.ALWAYS)
     public static abstract class CommandWrapperCreation {
         @Nullable @JsonProperty("name") public abstract String name();
+        @Nullable @JsonProperty("label") public abstract String label();
         @Nullable @JsonProperty("description") public abstract String description();
         @JsonProperty("contexts") public abstract ImmutableSet<String> contexts();
         @JsonProperty("external-inputs") public abstract ImmutableList<CommandWrapperExternalInput> externalInputs();
@@ -972,12 +980,13 @@ public abstract class Command {
 
         @JsonCreator
         static CommandWrapperCreation create(@JsonProperty("name") final String name,
+                                             @JsonProperty("label") final String label,
                                              @JsonProperty("description") final String description,
                                              @JsonProperty("contexts") final Set<String> contexts,
                                              @JsonProperty("external-inputs") final List<CommandWrapperExternalInput> externalInputs,
                                              @JsonProperty("derived-inputs") final List<CommandWrapperDerivedInput> derivedInputs,
                                              @JsonProperty("output-handlers") final List<CommandWrapperOutputCreation> outputHandlers) {
-            return new AutoValue_Command_CommandWrapperCreation(name, description,
+            return new AutoValue_Command_CommandWrapperCreation(name, label, description,
                     contexts == null ? ImmutableSet.<String>of() : ImmutableSet.copyOf(contexts),
                     externalInputs == null ? ImmutableList.<CommandWrapperExternalInput>of() : ImmutableList.copyOf(externalInputs),
                     derivedInputs == null ? ImmutableList.<CommandWrapperDerivedInput>of() : ImmutableList.copyOf(derivedInputs),
