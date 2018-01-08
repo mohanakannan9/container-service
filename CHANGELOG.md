@@ -9,6 +9,7 @@ Not yet released.
 * Change name of Command Wrapper Output property `as-a-child-of-wraper-input` to `as-a-child-of`. This is to support [CS-80][] and allow uploading outputs to other outputs. (Note that the title of the database column has not changed, and is still `wrapperInputName`.)
 * [CS-80][] Allow command wrapper output handlers to create new objects as children of objects created by previous output handlers. The previous behavior allowed outputs to be handled only by wrapper inputs.
 * [CS-457][] Add `label` field to command wrapper. This will be used to represent the command wrapper in the "Run Container" menu going forward.
+* [CS-458][] `GET /commands/available` includes command and wrapper labels
 
 ### Other
 
@@ -17,6 +18,7 @@ Not yet released.
 
 [CS-80]: https://issues.xnat.org/browse/CS-80
 [CS-457]: https://issues.xnat.org/browse/CS-457
+[CS-458]: https://issues.xnat.org/browse/CS-458
 [CS-480]: https://issues.xnat.org/browse/CS-480
 
 ## 1.5.1
