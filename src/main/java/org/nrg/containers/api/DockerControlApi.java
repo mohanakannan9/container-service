@@ -52,6 +52,7 @@ import org.nrg.containers.model.image.docker.DockerImage;
 import org.nrg.containers.model.server.docker.DockerServerBase.DockerServer;
 import org.nrg.containers.services.CommandLabelService;
 import org.nrg.containers.services.DockerServerService;
+import org.nrg.containers.utils.ShellSplitter;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.xft.security.UserI;
@@ -378,8 +379,7 @@ public class DockerControlApi implements ContainerControlApi {
                         .image(imageName)
                         .attachStdout(true)
                         .attachStderr(true)
-                        .cmd("/bin/sh", "-c", runCommand)
-                        .entrypoint("") // CS-433 Override any entrypoint image specifies
+                        .cmd(ShellSplitter.shellSplit(runCommand))
                         .env(environmentVariables)
                         .workingDir(workingDirectory)
                         .build();
@@ -484,7 +484,7 @@ public class DockerControlApi implements ContainerControlApi {
         final TaskSpec taskSpec = TaskSpec.builder()
                 .containerSpec(ContainerSpec.builder()
                         .image(imageName)
-                        .command("/bin/sh", "-c", runCommand)
+                        .args(ShellSplitter.shellSplit(runCommand))
                         .env(environmentVariables)
                         .dir(workingDirectory)
                         .mounts(mounts)

@@ -623,7 +623,7 @@ public class CommandLaunchIntegrationTest {
                 .name("will-fail")
                 .image("busybox:latest")
                 .version("0")
-                .commandLine("exit 1")
+                .commandLine("/bin/sh -c \"exit 1\"")
                 .addCommandWrapper(CommandWrapper.builder()
                         .name("placeholder")
                         .build())
