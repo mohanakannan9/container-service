@@ -308,6 +308,7 @@ public class DockerControlApi implements ContainerControlApi {
                         createService(server,
                                 resolvedCommand.image(),
                                 resolvedCommand.commandLine(),
+                                resolvedCommand.overrideEntrypoint(),
                                 resolvedCommand.mounts(),
                                 environmentVariables,
                                 resolvedCommand.ports(),
@@ -318,6 +319,7 @@ public class DockerControlApi implements ContainerControlApi {
                         createContainer(server,
                                 resolvedCommand.image(),
                                 resolvedCommand.commandLine(),
+                                resolvedCommand.overrideEntrypoint(),
                                 resolvedCommand.mounts(),
                                 environmentVariables,
                                 resolvedCommand.ports(),
@@ -329,6 +331,7 @@ public class DockerControlApi implements ContainerControlApi {
     private String createContainer(final DockerServer server,
                                    final String imageName,
                                    final String runCommand,
+                                   final boolean overrideEntrypoint,
                                    final List<ResolvedCommandMount> resolvedCommandMounts,
                                    final List<String> environmentVariables,
                                    final Map<String, String> ports,
@@ -380,6 +383,7 @@ public class DockerControlApi implements ContainerControlApi {
                         .attachStdout(true)
                         .attachStderr(true)
                         .cmd(ShellSplitter.shellSplit(runCommand))
+                        .entrypoint(overrideEntrypoint ? Collections.singletonList("") : null)
                         .env(environmentVariables)
                         .workingDir(workingDirectory)
                         .build();
@@ -425,6 +429,7 @@ public class DockerControlApi implements ContainerControlApi {
     private String createService(final DockerServer server,
                                  final String imageName,
                                  final String runCommand,
+                                 final boolean overrideEntrypoint,
                                  final List<ResolvedCommandMount> resolvedCommandMounts,
                                  final List<String> environmentVariables,
                                  final Map<String, String> ports,
@@ -481,14 +486,20 @@ public class DockerControlApi implements ContainerControlApi {
                     .readOnly(!resolvedCommandMount.writable())
                     .build());
         }
+
+        final ContainerSpec.Builder containerSpecBuilder = ContainerSpec.builder()
+                .image(imageName)
+                .env(environmentVariables)
+                .dir(workingDirectory)
+                .mounts(mounts);
+        if (overrideEntrypoint) {
+            containerSpecBuilder.command("/bin/sh", "-c", runCommand);
+        } else {
+            containerSpecBuilder.args(ShellSplitter.shellSplit(runCommand));
+        }
+
         final TaskSpec taskSpec = TaskSpec.builder()
-                .containerSpec(ContainerSpec.builder()
-                        .image(imageName)
-                        .args(ShellSplitter.shellSplit(runCommand))
-                        .env(environmentVariables)
-                        .dir(workingDirectory)
-                        .mounts(mounts)
-                        .build())
+                .containerSpec(containerSpecBuilder.build())
                 .restartPolicy(RestartPolicy.builder()
                         .condition("none")
                         .build())
