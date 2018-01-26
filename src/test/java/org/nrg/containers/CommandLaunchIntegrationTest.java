@@ -119,6 +119,7 @@ public class CommandLaunchIntegrationTest {
     private final String FAKE_ALIAS = "alias";
     private final String FAKE_SECRET = "secret";
     private final String FAKE_HOST = "mock://url";
+    private final boolean swarmMode = false;
 
     private boolean testIsOnCircleCi;
 
@@ -197,7 +198,7 @@ public class CommandLaunchIntegrationTest {
             }
         }
 
-        dockerServerService.setServer(DockerServer.create(0L, "name", containerHost, certPath, false));
+        dockerServerService.setServer(DockerServer.create(0L, "name", containerHost, certPath, swarmMode));
 
         // Mock the userI
         mockUser = mock(UserI.class);
@@ -238,7 +239,11 @@ public class CommandLaunchIntegrationTest {
     @After
     public void cleanup() throws Exception {
         for (final String containerToCleanUp : containersToCleanUp) {
-            CLIENT.removeContainer(containerToCleanUp, DockerClient.RemoveContainerParam.forceKill());
+            if (swarmMode) {
+                CLIENT.removeService(containerToCleanUp);
+            } else {
+                CLIENT.removeContainer(containerToCleanUp, DockerClient.RemoveContainerParam.forceKill());
+            }
         }
         containersToCleanUp.clear();
 
@@ -302,7 +307,7 @@ public class CommandLaunchIntegrationTest {
         runtimeValues.put("T1-scantype", t1Scantype);
 
         final Container execution = containerService.resolveCommandAndLaunchContainer(commandWrapper.id(), runtimeValues, mockUser);
-        containersToCleanUp.add(execution.containerId());
+        containersToCleanUp.add(swarmMode ? execution.serviceId() : execution.containerId());
         await().until(containerIsRunning(execution), is(false));
 
         // Raw inputs
@@ -417,7 +422,7 @@ public class CommandLaunchIntegrationTest {
         runtimeValues.put("project", projectJson);
 
         final Container execution = containerService.resolveCommandAndLaunchContainer(commandWrapper.id(), runtimeValues, mockUser);
-        containersToCleanUp.add(execution.containerId());
+        containersToCleanUp.add(swarmMode ? execution.serviceId() : execution.containerId());
         await().until(containerIsRunning(execution), is(false));
 
         // Raw inputs
@@ -626,7 +631,7 @@ public class CommandLaunchIntegrationTest {
         TestTransaction.start();
 
         final Container container = containerService.resolveCommandAndLaunchContainer(willFailWrapper.id(), Collections.<String, String>emptyMap(), mockUser);
-        containersToCleanUp.add(container.containerId());
+        containersToCleanUp.add(swarmMode ? container.serviceId() : container.containerId());
 
         TestTransaction.flagForCommit();
         TestTransaction.end();
@@ -665,7 +670,7 @@ public class CommandLaunchIntegrationTest {
         TestTransaction.start();
 
         final Container container = containerService.resolveCommandAndLaunchContainer(wrapper.id(), Collections.<String, String>emptyMap(), mockUser);
-        containersToCleanUp.add(container.containerId());
+        containersToCleanUp.add(swarmMode ? container.serviceId() : container.containerId());
 
         TestTransaction.flagForCommit();
         TestTransaction.end();
@@ -706,7 +711,7 @@ public class CommandLaunchIntegrationTest {
         TestTransaction.start();
 
         final Container container = containerService.resolveCommandAndLaunchContainer(wrapper.id(), Collections.<String, String>emptyMap(), mockUser);
-        containersToCleanUp.add(container.containerId());
+        containersToCleanUp.add(swarmMode ? container.serviceId() : container.containerId());
 
         TestTransaction.flagForCommit();
         TestTransaction.end();
@@ -740,7 +745,7 @@ public class CommandLaunchIntegrationTest {
         final CommandWrapper wrapper = command.xnatCommandWrappers().get(0);
 
         final Container container = containerService.resolveCommandAndLaunchContainer(wrapper.id(), Collections.<String, String>emptyMap(), mockUser);
-        containersToCleanUp.add(container.containerId());
+        containersToCleanUp.add(swarmMode ? container.serviceId() : container.containerId());
 
         TestTransaction.flagForCommit();
         TestTransaction.end();
