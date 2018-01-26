@@ -545,13 +545,14 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     @Override
-    public void startContainer(final String containerOrServiceId) throws DockerServerException, NoDockerServerException {
-        startContainer(containerOrServiceId, getServer());
+    public void startContainer(final Container containerOrService) throws DockerServerException, NoDockerServerException {
+        startContainer(containerOrService, getServer());
     }
 
-    private void startContainer(final String containerOrServiceId,
+    private void startContainer(final Container containerOrService,
                                 final DockerServer server) throws DockerServerException {
         final boolean swarmMode = server.swarmMode();
+        final String containerOrServiceId = swarmMode ? containerOrService.serviceId() : containerOrService.containerId();
         try (final DockerClient client = getClient(server)) {
             if (swarmMode) {
                 log.debug("Inspecting service " + containerOrServiceId);
@@ -580,8 +581,8 @@ public class DockerControlApi implements ContainerControlApi {
             }
         } catch (DockerException | InterruptedException e) {
             log.error(e.getMessage());
-            final String containerOrService = swarmMode ? "service" : "container";
-            throw new DockerServerException("Could not start " + containerOrService + " " + containerOrServiceId, e);
+            final String containerOrServiceStr = swarmMode ? "service" : "container";
+            throw new DockerServerException("Could not start " + containerOrServiceStr + " " + containerOrServiceId, e);
         }
     }
 

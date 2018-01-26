@@ -259,7 +259,7 @@ public class ContainerServiceImpl implements ContainerService {
     private void startContainer(final UserI userI, final Container savedContainerOrService) throws NoDockerServerException, ContainerException {
         log.info("Starting container.");
         try {
-            containerControlApi.startContainer(savedContainerOrService.containerId());
+            containerControlApi.startContainer(savedContainerOrService);
         } catch (DockerServerException e) {
             addContainerHistoryItem(savedContainerOrService, ContainerHistory.fromSystem("Failed", "Did not start." + e.getMessage()), userI);
             handleFailure(savedContainerOrService);
