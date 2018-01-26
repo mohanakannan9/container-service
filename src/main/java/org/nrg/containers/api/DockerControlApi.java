@@ -889,27 +889,29 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     @Override
+    @Nullable
     public ServiceTask getTaskForService(final Container service) throws NoDockerServerException, DockerServerException {
         return getTaskForService(getServer(), service);
     }
 
     @Override
+    @Nullable
     public ServiceTask getTaskForService(final DockerServer dockerServer, final Container service)
             throws DockerServerException {
         try (final DockerClient client = getClient(dockerServer)) {
-            final List<Task> tasks = client.listTasks(Task.Criteria.builder().serviceName(service.serviceId()).build());
+            log.trace("Inspecting service {}.", service.serviceId());
+            final com.spotify.docker.client.messages.swarm.Service serviceResponse = client.inspectService(service.serviceId());
+            log.trace("Service {} has name {}.", service.serviceId(), serviceResponse.spec().name());
+            log.trace("Finding tasks for service name {}.", serviceResponse.spec().name());
+            final List<Task> tasks = client.listTasks(Task.Criteria.builder().serviceName(serviceResponse.spec().name()).build());
+
             if (tasks.size() == 1) {
-                final Task task = tasks.get(0);
-                return ServiceTask.builder()
-                        .serviceId(service.serviceId())
-                        .taskId(task.id())
-                        .nodeId(task.nodeId())
-                        .status(task.status().state())
-                        .statusTime(task.status().timestamp())
-                        .message(task.status().message())
-                        .exitCode(task.status().containerStatus().exitCode())
-                        .containerId(task.status().containerStatus().containerId())
-                        .build();
+                log.trace("Found one task for service name {}.", serviceResponse.spec().name());
+                return ServiceTask.create(tasks.get(0), service.serviceId());
+            } else if (tasks.size() == 0) {
+                log.trace("No tasks found for service name {}.", serviceResponse.spec().name());
+            } else {
+                log.trace("Found {} tasks for service name {}. Not sure which to use.", serviceResponse.spec().name());
             }
         } catch (DockerException | InterruptedException e) {
             log.error(e.getMessage(), e);
@@ -929,7 +931,11 @@ public class DockerControlApi implements ContainerControlApi {
     @Override
     public void throwTaskEventForService(final DockerServer dockerServer, final Container service) throws DockerServerException {
         final ServiceTask task = getTaskForService(dockerServer, service);
-        eventService.triggerEvent(ServiceTaskEvent.create(task, service));
+        if (task != null) {
+            final ServiceTaskEvent serviceTaskEvent = ServiceTaskEvent.create(task, service);
+            log.trace("Throwing service task event for service {}.", serviceTaskEvent.service().serviceId());
+            eventService.triggerEvent(serviceTaskEvent);
+        }
     }
 
     /**

@@ -22,6 +22,19 @@ public abstract class ServiceTask {
     @Nullable public abstract String message();
     @Nullable public abstract Integer exitCode();
 
+    public static ServiceTask create(final @Nonnull Task task, final String serviceId) {
+        return ServiceTask.builder()
+                .serviceId(serviceId)
+                .taskId(task.id())
+                .nodeId(task.nodeId())
+                .status(task.status().state())
+                .statusTime(task.status().timestamp())
+                .message(task.status().message())
+                .exitCode(task.status().containerStatus().exitCode())
+                .containerId(task.status().containerStatus().containerId())
+                .build();
+    }
+
     public boolean isExitStatus() {
         return exitStatusPattern.matcher(status()).matches();
     }
