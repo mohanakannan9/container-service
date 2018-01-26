@@ -562,6 +562,9 @@ public class DockerControlApi implements ContainerControlApi {
                 }
                 final ServiceSpec originalSpec = service.spec();
                 final ServiceSpec updatedSpec = ServiceSpec.builder()
+                        .name(originalSpec.name())
+                        .labels(originalSpec.labels())
+                        .updateConfig(originalSpec.updateConfig())
                         .taskTemplate(originalSpec.taskTemplate())
                         .endpointSpec(originalSpec.endpointSpec())
                         .mode(ServiceMode.builder()
@@ -571,7 +574,7 @@ public class DockerControlApi implements ContainerControlApi {
                                 .build())
                         .build();
                 final Long version = service.version() != null && service.version().index() != null ?
-                        service.version().index() + 1 : null;
+                        service.version().index() : null;
 
                 log.info("Setting service replication to 1.");
                 client.updateService(containerOrServiceId, version, updatedSpec);
