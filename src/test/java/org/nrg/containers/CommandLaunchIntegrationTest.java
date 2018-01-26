@@ -17,6 +17,8 @@ import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.ContainerInfo;
 import com.spotify.docker.client.messages.Image;
 import com.spotify.docker.client.messages.ImageInfo;
+import com.spotify.docker.client.messages.swarm.Service;
+import com.spotify.docker.client.messages.swarm.Task;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
@@ -33,6 +35,7 @@ import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.model.container.auto.Container;
 import org.nrg.containers.model.container.auto.Container.ContainerMount;
+import org.nrg.containers.model.container.auto.ServiceTask;
 import org.nrg.containers.model.server.docker.DockerServerBase.DockerServer;
 import org.nrg.containers.model.xnat.Project;
 import org.nrg.containers.model.xnat.Resource;
@@ -637,7 +640,11 @@ public class CommandLaunchIntegrationTest {
         TestTransaction.end();
         TestTransaction.start();
 
+        log.debug("Waiting until task has started");
+        await().until(containerHasStarted(container), is(true));
+        log.debug("Waiting until task has finished");
         await().until(containerIsRunning(container), is(false));
+        log.debug("Waiting until status updater has picked up finished task and added item to history");
         await().until(containerHistoryHasItemFromSystem(container.databaseId()), is(true));
 
         final Container exited = containerService.get(container.databaseId());
@@ -815,12 +822,54 @@ public class CommandLaunchIntegrationTest {
         };
     }
 
+    private Callable<Boolean> containerHasStarted(final Container container) {
+        return new Callable<Boolean>() {
+            public Boolean call() throws Exception {
+                try {
+                    if (swarmMode) {
+                        final Service serviceResponse = CLIENT.inspectService(container.serviceId());
+                        final List<Task> tasks = CLIENT.listTasks(Task.Criteria.builder().serviceName(serviceResponse.spec().name()).build());
+                        if (tasks.size() != 1) {
+                            return false;
+                        }
+                        final Task task = tasks.get(0);
+                        final ServiceTask serviceTask = ServiceTask.create(task, container.serviceId());
+                        if (serviceTask.hasNotStarted()) {
+                            return false;
+                        }
+                        return true;
+                    } else {
+                        final ContainerInfo containerInfo = CLIENT.inspectContainer(container.containerId());
+                        return (!containerInfo.state().status().equals("created"));
+                    }
+                } catch (ContainerNotFoundException ignored) {
+                    // Ignore exception. If container is not found, it is not running.
+                    return false;
+                }
+            }
+        };
+    }
+
     private Callable<Boolean> containerIsRunning(final Container container) {
         return new Callable<Boolean>() {
             public Boolean call() throws Exception {
                 try {
-                    final ContainerInfo containerInfo = CLIENT.inspectContainer(container.containerId());
-                    return containerInfo.state().running();
+                    if (swarmMode) {
+                        final Service serviceResponse = CLIENT.inspectService(container.serviceId());
+                        final List<Task> tasks = CLIENT.listTasks(Task.Criteria.builder().serviceName(serviceResponse.spec().name()).build());
+                        for (final Task task : tasks) {
+                            final ServiceTask serviceTask = ServiceTask.create(task, container.serviceId());
+                            if (serviceTask.isExitStatus()) {
+                                return false;
+                            } else if (serviceTask.status().equals("running")) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    } else {
+                        final ContainerInfo containerInfo = CLIENT.inspectContainer(container.containerId());
+                        return containerInfo.state().running();
+                    }
                 } catch (ContainerNotFoundException ignored) {
                     // Ignore exception. If container is not found, it is not running.
                     return false;
