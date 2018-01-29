@@ -36,16 +36,20 @@ public abstract class ServiceTask {
     }
 
     public boolean isExitStatus() {
-        return exitStatusPattern.matcher(status()).matches();
+        final String status = status();
+        return status != null && exitStatusPattern.matcher(status).matches();
     }
 
     public boolean hasNotStarted() {
-        return hasNotStartedPattern.matcher(status()).matches();
+        final String status = status();
+        return status == null || hasNotStartedPattern.matcher(status).matches();
     }
 
     public static Builder builder() {
         return new AutoValue_ServiceTask.Builder();
     }
+
+    public abstract Builder toBuilder();
 
     @AutoValue.Builder
     public abstract static class Builder {

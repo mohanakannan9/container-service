@@ -925,7 +925,25 @@ public class DockerControlApi implements ContainerControlApi {
             }
 
             if (task != null) {
-                return ServiceTask.create(task, service.serviceId());
+                final ServiceTask serviceTask = ServiceTask.create(task, service.serviceId());
+
+                if (serviceTask.isExitStatus() && serviceTask.exitCode() == null) {
+                    // The Task is supposed to have the container exit code, but docker doesn't report it where it should.
+                    // So go get the container info and get the exit code
+                    log.debug("Looking up exit code for container {}.", serviceTask.containerId());
+                    if (serviceTask.containerId() != null) {
+                        final ContainerInfo containerInfo = client.inspectContainer(serviceTask.containerId());
+                        if (containerInfo.state().exitCode() == null) {
+                            log.debug("Welp. Container exit code is null on the container too.");
+                        } else {
+                            return serviceTask.toBuilder().exitCode(containerInfo.state().exitCode()).build();
+                        }
+                    } else {
+                        log.error("Cannot look up exit code. Container ID is null.");
+                    }
+                }
+
+                return serviceTask;
             }
         } catch (DockerException | InterruptedException e) {
             log.error(e.getMessage(), e);
