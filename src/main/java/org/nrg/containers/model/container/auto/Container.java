@@ -62,7 +62,8 @@ public abstract class Container {
 
     @JsonIgnore
     public boolean isSwarmService() {
-        return swarm() != null && swarm();
+        final Boolean swarm = swarm();
+        return swarm != null && swarm;
     }
 
     @JsonIgnore
