@@ -35,6 +35,8 @@ import com.spotify.docker.client.messages.swarm.ServiceMode;
 import com.spotify.docker.client.messages.swarm.ServiceSpec;
 import com.spotify.docker.client.messages.swarm.Task;
 import com.spotify.docker.client.messages.swarm.TaskSpec;
+import com.spotify.docker.client.messages.swarm.ResourceRequirements;
+import com.spotify.docker.client.messages.swarm.Resources;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.events.model.DockerContainerEvent;
 import org.nrg.containers.events.model.ServiceTaskEvent;
@@ -302,6 +304,17 @@ public class DockerControlApi implements ContainerControlApi {
                 resolvedCommand.workingDirectory() :
                 null;
 
+        // let resource constraints default to 0, so they're ignored by Docker
+        final Long reserveMemory = resolvedCommand.reserveMemory() == null ?
+                0L :
+                resolvedCommand.reserveMemory();
+        final Long limitMemory = resolvedCommand.limitMemory() == null ?
+                0L :
+                resolvedCommand.limitMemory();
+        final Double limitCpu = resolvedCommand.limitCpu() == null ?
+                0D :
+                resolvedCommand.limitCpu();
+
         final DockerServer server = getServer();
         return server.swarmMode() ?
                 Container.serviceFromResolvedCommand(resolvedCommand,
@@ -312,7 +325,10 @@ public class DockerControlApi implements ContainerControlApi {
                                 resolvedCommand.mounts(),
                                 environmentVariables,
                                 resolvedCommand.ports(),
-                                workingDirectory),
+                                workingDirectory,
+                                reserveMemory,
+                                limitMemory,
+                                limitCpu),
                         userI.getLogin()
                 ) :
                 Container.containerFromResolvedCommand(resolvedCommand,
@@ -323,7 +339,10 @@ public class DockerControlApi implements ContainerControlApi {
                                 resolvedCommand.mounts(),
                                 environmentVariables,
                                 resolvedCommand.ports(),
-                                workingDirectory),
+                                workingDirectory,
+                                reserveMemory,
+                                limitMemory,
+                                limitCpu),
                         userI.getLogin()
                 );
     }
@@ -335,7 +354,10 @@ public class DockerControlApi implements ContainerControlApi {
                                    final List<ResolvedCommandMount> resolvedCommandMounts,
                                    final List<String> environmentVariables,
                                    final Map<String, String> ports,
-                                   final String workingDirectory)
+                                   final String workingDirectory,
+                                   final Long reserveMemory,
+                                   final Long limitMemory,
+                                   final Double limitCpu)
             throws DockerServerException, ContainerException {
 
         final List<String> bindMounts = Lists.newArrayList();
@@ -375,6 +397,9 @@ public class DockerControlApi implements ContainerControlApi {
                 HostConfig.builder()
                         .binds(bindMounts)
                         .portBindings(portBindings)
+                        .memoryReservation(1024 * 1024 * reserveMemory) // megabytes to bytes
+                        .memory(1024 * 1024 * limitMemory) // megabytes to bytes
+                        .nanoCpus((new Double(1e9 * limitCpu)).longValue()) // number of cpus (double) to nano-cpus (long, = cpu / 10^9)
                         .build();
         final ContainerConfig containerConfig =
                 ContainerConfig.builder()
@@ -433,7 +458,10 @@ public class DockerControlApi implements ContainerControlApi {
                                  final List<ResolvedCommandMount> resolvedCommandMounts,
                                  final List<String> environmentVariables,
                                  final Map<String, String> ports,
-                                 final String workingDirectory)
+                                 final String workingDirectory,
+                                 final Long reserveMemory,
+                                 final Long limitMemory,
+                                 final Double limitCpu)
             throws DockerServerException, ContainerException {
 
         final List<PortConfig> portConfigs = Lists.newArrayList();
@@ -502,6 +530,15 @@ public class DockerControlApi implements ContainerControlApi {
                 .containerSpec(containerSpecBuilder.build())
                 .restartPolicy(RestartPolicy.builder()
                         .condition("none")
+                        .build())
+                .resources(ResourceRequirements.builder()
+                        .reservations(Resources.builder()
+                            .memoryBytes(1024 * 1024 * reserveMemory) // megabytes to bytes
+                            .build())
+                        .limits(Resources.builder()
+                            .memoryBytes(1024 * 1024 * limitMemory) // megabytes to bytes
+                            .nanoCpus((new Double(1e9 * limitCpu)).longValue()) // number of cpus (double) to nano-cpus (long, = cpu / 10^9)
+                            .build())
                         .build())
                 .build();
         final ServiceSpec serviceSpec =

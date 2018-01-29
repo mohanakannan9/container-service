@@ -49,6 +49,9 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
     private List<CommandInputEntity> inputs;
     private List<CommandOutputEntity> outputs;
     private List<CommandWrapperEntity> commandWrapperEntities;
+    private Long reserveMemory;
+    private Long limitMemory;
+    private Double limitCpu;
 
     @Nonnull
     public static CommandEntity fromPojo(@Nonnull final Command command) {
@@ -84,6 +87,9 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         this.setCommandLine(command.commandLine());
         this.setOverrideEntrypoint(command.overrideEntrypoint());
         this.setEnvironmentVariables(command.environmentVariables());
+        this.setReserveMemory(command.reserveMemory());
+        this.setLimitMemory(command.limitMemory());
+        this.setLimitCpu(command.limitCpu());
 
         final Map<String, Command.CommandMount> mountsByName = new HashMap<>();
         for (final Command.CommandMount commandMount : command.mounts()) {
@@ -244,6 +250,30 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
 
     public void setOverrideEntrypoint(final Boolean overrideEntrypoint) {
         this.overrideEntrypoint = overrideEntrypoint;
+    }
+
+    public Long getReserveMemory() {
+        return reserveMemory;
+    }
+
+    public void setReserveMemory(Long reserveMemory) {
+        this.reserveMemory = reserveMemory;
+    }
+
+    public Long getLimitMemory() {
+        return limitMemory;
+    }
+
+    public void setLimitMemory(Long limitMemory) {
+        this.limitMemory = limitMemory;
+    }
+
+    public Double getLimitCpu() {
+        return limitCpu;
+    }
+
+    public void setLimitCpu(Double limitCpu) {
+        this.limitCpu = limitCpu;
     }
 
     @OneToMany(mappedBy = "commandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
