@@ -48,6 +48,7 @@ import org.nrg.containers.services.DockerService;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.services.AliasTokenService;
@@ -107,7 +108,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
 
 @RunWith(PowerMockRunner.class)
 @PowerMockRunnerDelegate(SpringJUnit4ClassRunner.class)
-@PrepareForTest({UriParserUtils.class, XFTManager.class})
+@PrepareForTest({UriParserUtils.class, XFTManager.class, Users.class})
 @PowerMockIgnore({"org.apache.*", "java.*", "javax.*", "org.w3c.*", "com.sun.*"})
 @ContextConfiguration(classes = EventPullingIntegrationTestConfig.class)
 @Transactional
@@ -222,6 +223,9 @@ public class CommandLaunchIntegrationTest {
         mockAliasToken.setAlias(FAKE_ALIAS);
         mockAliasToken.setSecret(FAKE_SECRET);
         when(mockAliasTokenService.issueTokenForUser(mockUser)).thenReturn(mockAliasToken);
+
+        mockStatic(Users.class);
+        when(Users.getUser(FAKE_USER)).thenReturn(mockUser);
 
         // Mock the site config preferences
         buildDir = folder.newFolder().getAbsolutePath();
