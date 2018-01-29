@@ -376,7 +376,11 @@ public class ContainerServiceImpl implements ContainerService {
 
     @Override
     public void finalize(final Container container, final UserI userI, final String exitCode) {
-        log.info("Finalizing Container {}, container id {}.", container.databaseId(), container.containerId());
+        if (container.isSwarmService()) {
+            log.info("Finalizing Container {}, service id {}.", container.databaseId(), container.serviceId());
+        } else {
+            log.info("Finalizing Container {}, container id {}.", container.databaseId(), container.containerId());
+        }
 
         final Container finalized = containerFinalizeService.finalizeContainer(container, userI, exitCodeIsFailed(exitCode));
 
