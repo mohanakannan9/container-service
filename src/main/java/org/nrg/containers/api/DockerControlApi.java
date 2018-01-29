@@ -902,19 +902,30 @@ public class DockerControlApi implements ContainerControlApi {
     public ServiceTask getTaskForService(final DockerServer dockerServer, final Container service)
             throws DockerServerException {
         try (final DockerClient client = getClient(dockerServer)) {
-            log.trace("Inspecting service {}.", service.serviceId());
-            final com.spotify.docker.client.messages.swarm.Service serviceResponse = client.inspectService(service.serviceId());
-            log.trace("Service {} has name {}.", service.serviceId(), serviceResponse.spec().name());
-            log.trace("Finding tasks for service name {}.", serviceResponse.spec().name());
-            final List<Task> tasks = client.listTasks(Task.Criteria.builder().serviceName(serviceResponse.spec().name()).build());
+            Task task = null;
 
-            if (tasks.size() == 1) {
-                log.trace("Found one task for service name {}.", serviceResponse.spec().name());
-                return ServiceTask.create(tasks.get(0), service.serviceId());
-            } else if (tasks.size() == 0) {
-                log.trace("No tasks found for service name {}.", serviceResponse.spec().name());
+            if (service.taskId() == null) {
+                log.trace("Service {} does not have task information yet.", service.serviceId());
+                final com.spotify.docker.client.messages.swarm.Service serviceResponse = client.inspectService(service.serviceId());
+                log.trace("Service {} has name {}. Finding tasks by service name.", service.serviceId(), serviceResponse.spec().name());
+                final List<Task> tasks = client.listTasks(Task.Criteria.builder().serviceName(serviceResponse.spec().name()).build());
+
+                if (tasks.size() == 1) {
+                    log.trace("Found one task for service name {}.", serviceResponse.spec().name());
+                    task = tasks.get(0);
+                } else if (tasks.size() == 0) {
+                    log.trace("No tasks found for service name {}.", serviceResponse.spec().name());
+                } else {
+                    log.trace("Found {} tasks for service name {}. Not sure which to use.", serviceResponse.spec().name());
+                }
             } else {
-                log.trace("Found {} tasks for service name {}. Not sure which to use.", serviceResponse.spec().name());
+                log.trace("Service {} has task ID {}.", service.serviceId(), service.taskId());
+                final String taskId = service.taskId();
+                task = client.inspectTask(taskId);
+            }
+
+            if (task != null) {
+                return ServiceTask.create(task, service.serviceId());
             }
         } catch (DockerException | InterruptedException e) {
             log.error(e.getMessage(), e);
