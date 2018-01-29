@@ -51,6 +51,7 @@ public abstract class Command {
     @Nullable @JsonProperty("hash") public abstract String hash();
     @Nullable @JsonProperty("working-directory") public abstract String workingDirectory();
     @Nullable @JsonProperty("command-line") public abstract String commandLine();
+    @Nullable @JsonProperty("override-entrypoint") public abstract Boolean overrideEntrypoint();
     @JsonProperty("mounts") public abstract ImmutableList<CommandMount> mounts();
     @JsonProperty("environment-variables") public abstract ImmutableMap<String, String> environmentVariables();
     @JsonProperty("ports") public abstract ImmutableMap<String, String> ports();
@@ -72,6 +73,7 @@ public abstract class Command {
                           @JsonProperty("hash") final String hash,
                           @JsonProperty("working-directory") final String workingDirectory,
                           @JsonProperty("command-line") final String commandLine,
+                          @JsonProperty("override-entrypoint") final Boolean overrideEntrypoint,
                           @JsonProperty("mounts") final List<CommandMount> mounts,
                           @JsonProperty("environment-variables") final Map<String, String> environmentVariables,
                           @JsonProperty("ports") final Map<String, String> ports,
@@ -92,6 +94,7 @@ public abstract class Command {
                 .hash(hash)
                 .workingDirectory(workingDirectory)
                 .commandLine(commandLine)
+                .overrideEntrypoint(overrideEntrypoint)
                 .mounts(mounts == null ? Collections.<CommandMount>emptyList() : mounts)
                 .environmentVariables(environmentVariables == null ? Collections.<String, String>emptyMap() : environmentVariables)
                 .ports(ports == null ? Collections.<String, String>emptyMap() : ports)
@@ -117,6 +120,7 @@ public abstract class Command {
                 .type(commandEntity.getType().getName())
                 .workingDirectory(commandEntity.getWorkingDirectory())
                 .commandLine(commandEntity.getCommandLine())
+                .overrideEntrypoint(commandEntity.getOverrideEntrypoint())
                 .environmentVariables(commandEntity.getEnvironmentVariables() == null ?
                         Collections.<String, String>emptyMap() :
                         commandEntity.getEnvironmentVariables())
@@ -479,6 +483,8 @@ public abstract class Command {
         public abstract Builder workingDirectory(String workingDirectory);
 
         public abstract Builder commandLine(String commandLine);
+
+        public abstract Builder overrideEntrypoint(Boolean overrideEntrypoint);
 
         public abstract Builder mounts(List<CommandMount> mounts);
         public abstract Builder mounts(CommandMount... mounts);
@@ -1298,6 +1304,7 @@ public abstract class Command {
         @Nullable @JsonProperty("hash") public abstract String hash();
         @Nullable @JsonProperty("working-directory") public abstract String workingDirectory();
         @Nullable @JsonProperty("command-line") public abstract String commandLine();
+        @Nullable @JsonProperty("override-entrypoint") public abstract Boolean overrideEntrypoint();
         @JsonProperty("mounts") public abstract ImmutableList<CommandMount> mounts();
         @JsonProperty("environment-variables") public abstract ImmutableMap<String, String> environmentVariables();
         @JsonProperty("ports") public abstract ImmutableMap<String, String> ports();
@@ -1318,6 +1325,7 @@ public abstract class Command {
                                       @JsonProperty("hash") final String hash,
                                       @JsonProperty("working-directory") final String workingDirectory,
                                       @JsonProperty("command-line") final String commandLine,
+                                      @JsonProperty("override-entrypoint") final Boolean overrideEntrypoint,
                                       @JsonProperty("mounts") final List<CommandMount> mounts,
                                       @JsonProperty("environment-variables") final Map<String, String> environmentVariables,
                                       @JsonProperty("ports") final Map<String, String> ports,
@@ -1325,7 +1333,7 @@ public abstract class Command {
                                       @JsonProperty("outputs") final List<CommandOutput> outputs,
                                       @JsonProperty("xnat") final List<CommandWrapperCreation> commandWrapperCreations) {
             return new AutoValue_Command_CommandCreation(name, label, description, version, schemaVersion, infoUrl, image,
-                    type, index, hash, workingDirectory, commandLine,
+                    type, index, hash, workingDirectory, commandLine, overrideEntrypoint,
                     mounts == null ? ImmutableList.<CommandMount>of() : ImmutableList.copyOf(mounts),
                     environmentVariables == null ? ImmutableMap.<String, String>of() : ImmutableMap.copyOf(environmentVariables),
                     ports == null ? ImmutableMap.<String, String>of() : ImmutableMap.copyOf(ports),
@@ -1354,6 +1362,7 @@ public abstract class Command {
         @Nullable public abstract String hash();
         @Nullable public abstract String workingDirectory();
         @Nullable public abstract String commandLine();
+        @Nullable public abstract Boolean overrideEntrypoint();
         public abstract ImmutableList<CommandMount> mounts();
         public abstract ImmutableMap<String, String> environmentVariables();
         public abstract ImmutableMap<String, String> ports();
@@ -1374,6 +1383,7 @@ public abstract class Command {
                     .type(command.type())
                     .workingDirectory(command.workingDirectory())
                     .commandLine(command.commandLine())
+                    .overrideEntrypoint(command.overrideEntrypoint())
                     .environmentVariables(command.environmentVariables())
                     .mounts(command.mounts())
                     .index(command.index())
@@ -1401,6 +1411,7 @@ public abstract class Command {
             public abstract Builder hash(String hash);
             public abstract Builder workingDirectory(String workingDirectory);
             public abstract Builder commandLine(String commandLine);
+            public abstract Builder overrideEntrypoint(Boolean overrideEntrypoint);
 
             public abstract Builder mounts(List<CommandMount> mounts);
             public abstract Builder mounts(CommandMount... mounts);

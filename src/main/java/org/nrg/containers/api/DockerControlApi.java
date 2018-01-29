@@ -52,6 +52,7 @@ import org.nrg.containers.model.image.docker.DockerImage;
 import org.nrg.containers.model.server.docker.DockerServerBase.DockerServer;
 import org.nrg.containers.services.CommandLabelService;
 import org.nrg.containers.services.DockerServerService;
+import org.nrg.containers.utils.ShellSplitter;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.xft.security.UserI;
@@ -307,6 +308,7 @@ public class DockerControlApi implements ContainerControlApi {
                         createService(server,
                                 resolvedCommand.image(),
                                 resolvedCommand.commandLine(),
+                                resolvedCommand.overrideEntrypoint(),
                                 resolvedCommand.mounts(),
                                 environmentVariables,
                                 resolvedCommand.ports(),
@@ -317,6 +319,7 @@ public class DockerControlApi implements ContainerControlApi {
                         createContainer(server,
                                 resolvedCommand.image(),
                                 resolvedCommand.commandLine(),
+                                resolvedCommand.overrideEntrypoint(),
                                 resolvedCommand.mounts(),
                                 environmentVariables,
                                 resolvedCommand.ports(),
@@ -328,6 +331,7 @@ public class DockerControlApi implements ContainerControlApi {
     private String createContainer(final DockerServer server,
                                    final String imageName,
                                    final String runCommand,
+                                   final boolean overrideEntrypoint,
                                    final List<ResolvedCommandMount> resolvedCommandMounts,
                                    final List<String> environmentVariables,
                                    final Map<String, String> ports,
@@ -378,8 +382,8 @@ public class DockerControlApi implements ContainerControlApi {
                         .image(imageName)
                         .attachStdout(true)
                         .attachStderr(true)
-                        .cmd("/bin/sh", "-c", runCommand)
-                        .entrypoint("") // CS-433 Override any entrypoint image specifies
+                        .cmd(ShellSplitter.shellSplit(runCommand))
+                        .entrypoint(overrideEntrypoint ? Collections.singletonList("") : null)
                         .env(environmentVariables)
                         .workingDir(workingDirectory)
                         .build();
@@ -425,6 +429,7 @@ public class DockerControlApi implements ContainerControlApi {
     private String createService(final DockerServer server,
                                  final String imageName,
                                  final String runCommand,
+                                 final boolean overrideEntrypoint,
                                  final List<ResolvedCommandMount> resolvedCommandMounts,
                                  final List<String> environmentVariables,
                                  final Map<String, String> ports,
@@ -481,14 +486,20 @@ public class DockerControlApi implements ContainerControlApi {
                     .readOnly(!resolvedCommandMount.writable())
                     .build());
         }
+
+        final ContainerSpec.Builder containerSpecBuilder = ContainerSpec.builder()
+                .image(imageName)
+                .env(environmentVariables)
+                .dir(workingDirectory)
+                .mounts(mounts);
+        if (overrideEntrypoint) {
+            containerSpecBuilder.command("/bin/sh", "-c", runCommand);
+        } else {
+            containerSpecBuilder.args(ShellSplitter.shellSplit(runCommand));
+        }
+
         final TaskSpec taskSpec = TaskSpec.builder()
-                .containerSpec(ContainerSpec.builder()
-                        .image(imageName)
-                        .command("/bin/sh", "-c", runCommand)
-                        .env(environmentVariables)
-                        .dir(workingDirectory)
-                        .mounts(mounts)
-                        .build())
+                .containerSpec(containerSpecBuilder.build())
                 .restartPolicy(RestartPolicy.builder()
                         .condition("none")
                         .build())

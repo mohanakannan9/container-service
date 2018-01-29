@@ -43,6 +43,7 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
     private String image;
     private String workingDirectory;
     private String commandLine;
+    private Boolean overrideEntrypoint;
     private List<CommandMountEntity> mounts;
     private Map<String, String> environmentVariables;
     private List<CommandInputEntity> inputs;
@@ -81,6 +82,7 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         this.setImage(command.image());
         this.setWorkingDirectory(command.workingDirectory());
         this.setCommandLine(command.commandLine());
+        this.setOverrideEntrypoint(command.overrideEntrypoint());
         this.setEnvironmentVariables(command.environmentVariables());
 
         final Map<String, Command.CommandMount> mountsByName = new HashMap<>();
@@ -236,6 +238,14 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         this.commandLine = commandLine;
     }
 
+    public Boolean getOverrideEntrypoint() {
+        return overrideEntrypoint;
+    }
+
+    public void setOverrideEntrypoint(final Boolean overrideEntrypoint) {
+        this.overrideEntrypoint = overrideEntrypoint;
+    }
+
     @OneToMany(mappedBy = "commandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<CommandMountEntity> getMounts() {
         return mounts;
@@ -383,6 +393,7 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
                 .add("image", image)
                 .add("workingDirectory", workingDirectory)
                 .add("commandLine", commandLine)
+                .add("overrideEntrypoint", overrideEntrypoint)
                 .add("mounts", mounts)
                 .add("environmentVariables", environmentVariables)
                 .add("inputs", inputs)

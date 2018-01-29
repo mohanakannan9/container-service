@@ -623,7 +623,7 @@ public class CommandLaunchIntegrationTest {
                 .name("will-fail")
                 .image("busybox:latest")
                 .version("0")
-                .commandLine("exit 1")
+                .commandLine("/bin/sh -c \"exit 1\"")
                 .addCommandWrapper(CommandWrapper.builder()
                         .name("placeholder")
                         .build())
@@ -652,6 +652,45 @@ public class CommandLaunchIntegrationTest {
         printContainerLogs(exited);
         assertThat(exited.exitCode(), is("1"));
         assertThat(exited.status(), is("Failed"));
+    }
+
+    @Test
+    @DirtiesContext
+    public void testEntrypointIsPreserved() throws Exception {
+        assumeThat(canConnectToDocker(), is(true));
+
+        CLIENT.pull("busybox:latest");
+
+        final String resourceDir = Paths.get(ClassLoader.getSystemResource("commandLaunchTest").toURI()).toString().replace("%20", " ");
+        final Path testDir = Paths.get(resourceDir, "/testEntrypointIsPreserved");
+        final String commandJsonFile = Paths.get(testDir.toString(), "/command.json").toString();
+
+        final String imageName = "xnat/entrypoint-test:latest";
+        CLIENT.build(testDir, imageName);
+        imagesToCleanUp.add(imageName);
+
+        final Command commandToCreate = mapper.readValue(new File(commandJsonFile), Command.class);
+        final Command command = commandService.create(commandToCreate);
+        final CommandWrapper wrapper = command.xnatCommandWrappers().get(0);
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        final Container container = containerService.resolveCommandAndLaunchContainer(wrapper.id(), Collections.<String, String>emptyMap(), mockUser);
+        containersToCleanUp.add(swarmMode ? container.serviceId() : container.containerId());
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        await().until(containerIsRunning(container), is(false));
+        await().until(containerHasLogPaths(container.databaseId())); // Thus we know it has been finalized
+
+        final Container exited = containerService.get(container.databaseId());
+        printContainerLogs(exited);
+        assertThat(exited.status(), is(not("Failed")));
+        assertThat(exited.exitCode(), is("0"));
     }
 
     @Test
