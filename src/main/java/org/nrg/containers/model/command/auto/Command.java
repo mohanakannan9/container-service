@@ -1236,6 +1236,7 @@ public abstract class Command {
         @JsonIgnore public abstract long id();
         @Nullable @JsonProperty("name") public abstract String name();
         @Nullable @JsonProperty("accepts-command-output") public abstract String commandOutputName();
+        @Nullable @JsonProperty("via-wrapup-command") public abstract String viaWrapupCommand();
         @Nullable @JsonProperty("as-a-child-of-wrapper-input") public abstract String wrapperInputName();
         @JsonProperty("type") public abstract String type();
         @Nullable @JsonProperty("label") public abstract String label();
@@ -1244,12 +1245,14 @@ public abstract class Command {
         public static CommandWrapperOutput create(@JsonProperty("name") final String name,
                                                   @JsonProperty("accepts-command-output") final String commandOutputName,
                                                   @JsonProperty("as-a-child-of-wrapper-input") final String wrapperInputName,
+                                                  @JsonProperty("via-wrapup-command") final String viaWrapupCommand,
                                                   @JsonProperty("type") final String type,
                                                   @JsonProperty("label") final String label) {
             return builder()
                     .name(name)
                     .commandOutputName(commandOutputName)
                     .wrapperInputName(wrapperInputName)
+                    .viaWrapupCommand(viaWrapupCommand)
                     .type(type == null ? CommandWrapperOutputEntity.DEFAULT_TYPE.getName() : type)
                     .label(label)
                     .build();
@@ -1264,6 +1267,7 @@ public abstract class Command {
                     .name(wrapperOutput.getName())
                     .commandOutputName(wrapperOutput.getCommandOutputName())
                     .wrapperInputName(wrapperOutput.getWrapperInputName())
+                    .viaWrapupCommand(wrapperOutput.getViaWrapupCommand())
                     .type(wrapperOutput.getType().getName())
                     .label(wrapperOutput.getLabel())
                     .build();
