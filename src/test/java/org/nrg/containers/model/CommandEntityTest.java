@@ -103,8 +103,13 @@ public class CommandEntityTest {
 
         final String outputHandlerName = "output-handler-name";
         final String outputHandlerLabel = "a_label";
-        final CommandWrapperOutput outputHandler = CommandWrapperOutput.create(outputHandlerName,
-                commandOutputName, externalInputName, "Resource", outputHandlerLabel);
+        final CommandWrapperOutput outputHandler = CommandWrapperOutput.builder()
+                .name(outputHandlerName)
+                .commandOutputName(commandOutputName)
+                .wrapperInputName(externalInputName)
+                .type("Resource")
+                .label(outputHandlerLabel)
+                .build();
 
         final String commandWrapperName = "wrappername";
         final String commandWrapperDesc = "the wrapper description";

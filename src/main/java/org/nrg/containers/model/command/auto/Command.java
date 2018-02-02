@@ -1246,41 +1246,42 @@ public abstract class Command {
                                                   @JsonProperty("as-a-child-of-wrapper-input") final String wrapperInputName,
                                                   @JsonProperty("type") final String type,
                                                   @JsonProperty("label") final String label) {
-            return create(
-                    0L,
-                    name,
-                    commandOutputName,
-                    wrapperInputName,
-                    type == null ? CommandWrapperOutputEntity.DEFAULT_TYPE.getName() : type,
-                    label);
-        }
-
-        public static CommandWrapperOutput create(final long id,
-                                                  final String name,
-                                                  final String commandOutputName,
-                                                  final String xnatInputName,
-                                                  final String type,
-                                                  final String label) {
-            return new AutoValue_Command_CommandWrapperOutput(
-                    id,
-                    name,
-                    commandOutputName,
-                    xnatInputName,
-                    type == null ? CommandWrapperOutputEntity.DEFAULT_TYPE.getName() : type,
-                    label);
+            return builder()
+                    .name(name)
+                    .commandOutputName(commandOutputName)
+                    .wrapperInputName(wrapperInputName)
+                    .type(type == null ? CommandWrapperOutputEntity.DEFAULT_TYPE.getName() : type)
+                    .label(label)
+                    .build();
         }
 
         public static CommandWrapperOutput create(final CommandWrapperOutputEntity wrapperOutput) {
             if (wrapperOutput == null) {
                 return null;
             }
-            return create(wrapperOutput.getId(), wrapperOutput.getName(), wrapperOutput.getCommandOutputName(), wrapperOutput.getWrapperInputName(), wrapperOutput.getType().getName(), wrapperOutput.getLabel());
+            return builder()
+                    .id(wrapperOutput.getId())
+                    .name(wrapperOutput.getName())
+                    .commandOutputName(wrapperOutput.getCommandOutputName())
+                    .wrapperInputName(wrapperOutput.getWrapperInputName())
+                    .type(wrapperOutput.getType().getName())
+                    .label(wrapperOutput.getLabel())
+                    .build();
         }
 
         public CommandWrapperOutput applyConfiguration(final CommandOutputConfiguration commandOutputConfiguration) {
-            return create(this.id(), this.name(), this.commandOutputName(), this.wrapperInputName(), this.type(),
-                    commandOutputConfiguration.label());
+            return toBuilder()
+                    .label(commandOutputConfiguration.label())
+                    .build();
         }
+
+        public static Builder builder() {
+            return new AutoValue_Command_CommandWrapperOutput.Builder()
+                    .id(0L)
+                    .type(CommandWrapperOutputEntity.DEFAULT_TYPE.getName());
+        }
+
+        public abstract Builder toBuilder();
 
         @Nonnull
         List<String> validate() {
@@ -1302,6 +1303,25 @@ public abstract class Command {
             }
 
             return errors;
+        }
+
+        @AutoValue.Builder
+        public abstract static class Builder {
+            public abstract Builder id(final long id);
+
+            public abstract Builder name(final String name);
+
+            public abstract Builder commandOutputName(final String commandOutputName);
+
+            public abstract Builder viaWrapupCommand(final String viaWrapupCommand);
+
+            public abstract Builder wrapperInputName(final String wrapperInputName);
+
+            public abstract Builder type(final String type);
+
+            public abstract Builder label(final String label);
+
+            public abstract CommandWrapperOutput build();
         }
     }
 
