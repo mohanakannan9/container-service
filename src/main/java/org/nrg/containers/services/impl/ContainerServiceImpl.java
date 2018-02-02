@@ -59,6 +59,7 @@ import java.util.regex.Pattern;
 
 import static org.nrg.containers.model.command.entity.CommandType.DOCKER;
 import static org.nrg.containers.model.command.entity.CommandType.DOCKER_SETUP;
+import static org.nrg.containers.model.command.entity.CommandType.DOCKER_WRAPUP;
 import static org.nrg.containers.model.command.entity.CommandWrapperInputType.ASSESSOR;
 import static org.nrg.containers.model.command.entity.CommandWrapperInputType.PROJECT;
 import static org.nrg.containers.model.command.entity.CommandWrapperInputType.RESOURCE;
@@ -219,7 +220,9 @@ public class ContainerServiceImpl implements ContainerService {
                                             final UserI userI,
                                             final Container parent)
             throws NoDockerServerException, DockerServerException, ContainerException, UnsupportedOperationException {
-        if (resolvedCommand.type().equals(DOCKER.getName()) || resolvedCommand.type().equals(DOCKER_SETUP.getName())) {
+        if (resolvedCommand.type().equals(DOCKER.getName()) ||
+                resolvedCommand.type().equals(DOCKER_SETUP.getName()) ||
+                resolvedCommand.type().equals(DOCKER_WRAPUP.getName())) {
             return launchResolvedDockerCommand(resolvedCommand, userI, parent);
         } else {
             throw new UnsupportedOperationException("Cannot launch a command of type " + resolvedCommand.type());

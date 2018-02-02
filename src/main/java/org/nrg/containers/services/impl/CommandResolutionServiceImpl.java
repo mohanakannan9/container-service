@@ -398,6 +398,9 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 case DOCKER_SETUP:
                     typeStringForLog = "setup";
                     break;
+                case DOCKER_WRAPUP:
+                    typeStringForLog = "wrapup";
+                    break;
                 default:
                     throw new CommandResolutionException("A method intended to resolve only special command types was called with a command of type " + type.getName());
             }

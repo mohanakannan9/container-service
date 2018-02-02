@@ -36,6 +36,7 @@ public abstract class ResolvedCommand {
     @JsonProperty("outputs") public abstract ImmutableList<ResolvedCommandOutput> outputs();
     @JsonProperty("working-directory") @Nullable public abstract String workingDirectory();
     @JsonProperty("setup-commands") public abstract ImmutableList<ResolvedCommand> setupCommands();
+    @JsonProperty("wrapup-commands") public abstract ImmutableList<ResolvedCommand> wrapupCommands();
     @JsonProperty("reserve-memory") @Nullable public abstract Long reserveMemory();
     @JsonProperty("limit-memory") @Nullable public abstract Long limitMemory();
     @JsonProperty("limit-cpu") @Nullable public abstract Double limitCpu();
@@ -220,12 +221,14 @@ public abstract class ResolvedCommand {
             return this;
         }
         public abstract Builder mounts(List<ResolvedCommandMount> mounts);
+        public abstract Builder mounts(ResolvedCommandMount... mounts);
         public abstract ImmutableList.Builder<ResolvedCommandMount> mountsBuilder();
         public Builder addMount(final ResolvedCommandMount mount) {
             mountsBuilder().add(mount);
             return this;
         }
         public abstract Builder outputs(List<ResolvedCommandOutput> outputs);
+        public abstract Builder outputs(ResolvedCommandOutput... outputs);
         public abstract ImmutableList.Builder<ResolvedCommandOutput> outputsBuilder();
         public Builder addOutput(final ResolvedCommandOutput output) {
             outputsBuilder().add(output);
@@ -234,9 +237,18 @@ public abstract class ResolvedCommand {
         public abstract Builder workingDirectory(String workingDirectory);
 
         public abstract Builder setupCommands(List<ResolvedCommand> setupCommands);
+        public abstract Builder setupCommands(ResolvedCommand... setupCommands);
         public abstract ImmutableList.Builder<ResolvedCommand> setupCommandsBuilder();
         public Builder addSetupCommand(final ResolvedCommand setupCommand) {
             setupCommandsBuilder().add(setupCommand);
+            return this;
+        }
+
+        public abstract Builder wrapupCommands(List<ResolvedCommand> wrapupCommands);
+        public abstract Builder wrapupCommands(ResolvedCommand... wrapupCommands);
+        public abstract ImmutableList.Builder<ResolvedCommand> wrapupCommandsBuilder();
+        public Builder addWrapupCommand(final ResolvedCommand wrapupCommand) {
+            wrapupCommandsBuilder().add(wrapupCommand);
             return this;
         }
 
