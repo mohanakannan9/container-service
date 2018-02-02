@@ -265,9 +265,11 @@ public abstract class Command {
         if (type().equals(CommandType.DOCKER.getName())) {
             errors.addAll(validateDockerCommand());
         } else if (type().equals(CommandType.DOCKER_SETUP.getName())) {
-            errors.addAll(validateDockerSetupCommand());
+            errors.addAll(validateDockerSetupOrWrapupCommand("Setup"));
+        } else if (type().equals(CommandType.DOCKER_WRAPUP.getName())) {
+            errors.addAll(validateDockerSetupOrWrapupCommand("Wrapup"));
         } else {
-            errors.add(commandName + "Cannot instantiate command of type \"" + type() + "\". Known types: " + StringUtils.join(commandTypeNames, ", "));
+            errors.add(commandName + "Cannot validate command of type \"" + type() + "\". Known types: " + StringUtils.join(commandTypeNames, ", "));
         }
 
         return errors;
@@ -444,27 +446,27 @@ public abstract class Command {
     }
 
     @Nonnull
-    private List<String> validateDockerSetupCommand() {
+    private List<String> validateDockerSetupOrWrapupCommand(final String setupOrWrapup) {
         final List<String> errors = new ArrayList<>();
         final String commandName = "Command \"" + name() + "\" - ";
 
         if (mounts().size() > 0) {
-            errors.add(commandName + "Setup commands cannot declare any mounts.");
+            errors.add(commandName + " " + setupOrWrapup + " commands cannot declare any mounts.");
         }
         if (inputs().size() > 0) {
-            errors.add(commandName + "Setup commands cannot declare any inputs.");
+            errors.add(commandName + " " + setupOrWrapup + " commands cannot declare any inputs.");
         }
         if (outputs().size() > 0) {
-            errors.add(commandName + "Setup commands cannot declare any outputs.");
+            errors.add(commandName + " " + setupOrWrapup + " commands cannot declare any outputs.");
         }
         if (xnatCommandWrappers().size() > 0) {
-            errors.add(commandName + "Setup commands cannot declare any wrappers.");
+            errors.add(commandName + " " + setupOrWrapup + " commands cannot declare any wrappers.");
         }
         if (environmentVariables().size() > 0) {
-            errors.add(commandName + "Setup commands cannot declare any environment variables.");
+            errors.add(commandName + " " + setupOrWrapup + " commands cannot declare any environment variables.");
         }
         if (ports().size() > 0) {
-            errors.add(commandName + "Setup commands cannot declare any ports.");
+            errors.add(commandName + " " + setupOrWrapup + " commands cannot declare any ports.");
         }
 
 

@@ -13,6 +13,7 @@ import org.nrg.containers.model.command.entity.CommandWrapperExternalInputEntity
 import org.nrg.containers.model.command.entity.CommandWrapperOutputEntity;
 import org.nrg.containers.model.command.entity.DockerCommandEntity;
 import org.nrg.containers.model.command.entity.DockerSetupCommandEntity;
+import org.nrg.containers.model.command.entity.DockerWrapupCommandEntity;
 import org.nrg.containers.services.ContainerEntityService;
 import org.nrg.transporter.TransportService;
 import org.nrg.transporter.TransportServiceImpl;
@@ -78,6 +79,7 @@ public class CommandTestConfig {
                 CommandEntity.class,
                 DockerCommandEntity.class,
                 DockerSetupCommandEntity.class,
+                DockerWrapupCommandEntity.class,
                 CommandInputEntity.class,
                 CommandOutputEntity.class,
                 CommandMountEntity.class,
