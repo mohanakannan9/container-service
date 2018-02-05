@@ -228,10 +228,7 @@ public abstract class Container {
     }
 
     private static Container.Builder buildFromResolvedCommand(final ResolvedCommand resolvedCommand) {
-        String containerSubtype = null;
-        if (resolvedCommand.type().equals(CommandType.DOCKER_SETUP.getName())) {
-            containerSubtype = "setup";
-        }
+
         return builder()
                 .databaseId(0L)
                 .commandId(resolvedCommand.commandId())
@@ -241,7 +238,7 @@ public abstract class Container {
                 .overrideEntrypoint(resolvedCommand.overrideEntrypoint())
                 .workingDirectory(resolvedCommand.workingDirectory())
                 .environmentVariables(resolvedCommand.environmentVariables())
-                .subtype(containerSubtype)
+                .subtype(resolvedCommand.type())
                 .mountsFromResolvedCommand(resolvedCommand.mounts())
                 .addRawInputs(resolvedCommand.rawInputValues())
                 .addCommandInputs(resolvedCommand.commandInputValues())

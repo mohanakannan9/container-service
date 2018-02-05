@@ -16,6 +16,7 @@ import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.command.auto.ResolvedInputTreeNode;
 import org.nrg.containers.model.command.auto.ResolvedInputValue;
+import org.nrg.containers.model.command.entity.CommandType;
 import org.nrg.containers.model.container.auto.Container;
 import org.nrg.containers.model.container.auto.Container.ContainerHistory;
 import org.nrg.containers.model.container.auto.ServiceTask;
@@ -390,7 +391,8 @@ public class ContainerServiceImpl implements ContainerService {
         log.debug("Done saving outputs for Container {}.", container.databaseId());
 
         final Container parent = finalized.parentContainer();
-        if (parent != null) {
+        final String subtype = container.subtype();
+        if (parent != null && subtype != null && subtype.equals(CommandType.DOCKER_SETUP.getName())) {
             log.info("Container {} is a setup container for parent container {}. Checking whether parent needs a status change.", container.databaseId(), parent.databaseId());
             final List<Container> setupContainers = retrieveSetupContainersForParent(parent.databaseId());
             final List<Container> failedExitCode = new ArrayList<>();

@@ -3,6 +3,7 @@ package org.nrg.containers.services.impl;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.daos.ContainerEntityRepository;
 import org.nrg.containers.events.model.ContainerEvent;
+import org.nrg.containers.model.command.entity.CommandType;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.container.entity.ContainerEntityHistory;
 import org.nrg.containers.services.ContainerEntityService;
@@ -82,7 +83,7 @@ public class HibernateContainerEntityService
 
     @Override
     public List<ContainerEntity> retrieveSetupContainersForParent(final long parentId) {
-        return getDao().retrieveContainersForParentWithSubtype(parentId, "setup");
+        return getDao().retrieveContainersForParentWithSubtype(parentId, CommandType.DOCKER_SETUP.getName());
     }
 
     @Override
