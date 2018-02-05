@@ -87,6 +87,11 @@ public class HibernateContainerEntityService
     }
 
     @Override
+    public List<ContainerEntity> retrieveWrapupContainersForParent(final long parentId) {
+        return getDao().retrieveContainersForParentWithSubtype(parentId, CommandType.DOCKER_WRAPUP.getName());
+    }
+
+    @Override
     @Nullable
     public ContainerEntity addContainerEventToHistory(final ContainerEvent containerEvent, final UserI userI) {
         final ContainerEntity containerEntity = retrieve(containerEvent.containerId());

@@ -153,6 +153,11 @@ public class ContainerServiceImpl implements ContainerService {
     }
 
     @Override
+    public List<Container> retrieveWrapupContainersForParent(final long parentId) {
+        return toPojo(containerEntityService.retrieveWrapupContainersForParent(parentId));
+    }
+
+    @Override
     @Nullable
     public Container addContainerEventToHistory(final ContainerEvent containerEvent, final UserI userI) {
         final ContainerEntity containerEntity = containerEntityService.addContainerEventToHistory(containerEvent, userI);
