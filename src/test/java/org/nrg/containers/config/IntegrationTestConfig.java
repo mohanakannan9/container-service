@@ -37,7 +37,6 @@ import org.nrg.containers.services.DockerHubService;
 import org.nrg.containers.services.DockerServerEntityService;
 import org.nrg.containers.services.DockerServerService;
 import org.nrg.containers.services.DockerService;
-import org.nrg.containers.services.SetupCommandService;
 import org.nrg.containers.services.impl.CommandLabelServiceImpl;
 import org.nrg.containers.services.impl.CommandResolutionServiceImpl;
 import org.nrg.containers.services.impl.ContainerFinalizeServiceImpl;
@@ -46,7 +45,6 @@ import org.nrg.containers.services.impl.DockerServerServiceImpl;
 import org.nrg.containers.services.impl.DockerServiceImpl;
 import org.nrg.containers.services.impl.HibernateContainerEntityService;
 import org.nrg.containers.services.impl.HibernateDockerServerEntityService;
-import org.nrg.containers.services.impl.SetupCommandServiceImpl;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.services.NrgEventService;
 import org.nrg.transporter.TransportService;
@@ -156,14 +154,8 @@ public class IntegrationTestConfig {
                                                              final ConfigService configService,
                                                              final SiteConfigPreferences siteConfigPreferences,
                                                              final ObjectMapper objectMapper,
-                                                             final SetupCommandService setupCommandService) {
-        return new CommandResolutionServiceImpl(commandService, configService, siteConfigPreferences, objectMapper, setupCommandService);
-    }
-
-    @Bean
-    public SetupCommandService setupCommandService(final CommandService commandService,
-                                                   final DockerService dockerService) {
-        return new SetupCommandServiceImpl(commandService, dockerService);
+                                                             final DockerService dockerService) {
+        return new CommandResolutionServiceImpl(commandService, configService, siteConfigPreferences, objectMapper, dockerService);
     }
 
     @Bean

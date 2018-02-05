@@ -33,15 +33,15 @@ import org.nrg.containers.model.command.auto.Command.CommandWrapperInput;
 import org.nrg.containers.model.command.auto.Command.CommandWrapperOutput;
 import org.nrg.containers.model.command.auto.Command.ConfiguredCommand;
 import org.nrg.containers.model.command.auto.Command.Input;
+import org.nrg.containers.model.command.auto.PreresolvedInputTreeNode;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.command.auto.ResolvedCommand.PartiallyResolvedCommand;
 import org.nrg.containers.model.command.auto.ResolvedCommand.PartiallyResolvedCommandMount;
-import org.nrg.containers.model.command.auto.ResolvedCommandMount;
 import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandOutput;
-import org.nrg.containers.model.command.auto.ResolvedInputValue;
-import org.nrg.containers.model.command.auto.PreresolvedInputTreeNode;
+import org.nrg.containers.model.command.auto.ResolvedCommandMount;
 import org.nrg.containers.model.command.auto.ResolvedInputTreeNode;
 import org.nrg.containers.model.command.auto.ResolvedInputTreeNode.ResolvedInputTreeValueAndChildren;
+import org.nrg.containers.model.command.auto.ResolvedInputValue;
 import org.nrg.containers.model.xnat.Assessor;
 import org.nrg.containers.model.xnat.Project;
 import org.nrg.containers.model.xnat.Resource;
@@ -52,7 +52,7 @@ import org.nrg.containers.model.xnat.XnatFile;
 import org.nrg.containers.model.xnat.XnatModelObject;
 import org.nrg.containers.services.CommandResolutionService;
 import org.nrg.containers.services.CommandService;
-import org.nrg.containers.services.SetupCommandService;
+import org.nrg.containers.services.DockerService;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -104,19 +104,19 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
     private final ConfigService configService;
     private final SiteConfigPreferences siteConfigPreferences;
     private final ObjectMapper mapper;
-    private final SetupCommandService setupCommandService;
+    private final DockerService dockerService;
 
     @Autowired
     public CommandResolutionServiceImpl(final CommandService commandService,
                                         final ConfigService configService,
                                         final SiteConfigPreferences siteConfigPreferences,
                                         final ObjectMapper mapper,
-                                        final SetupCommandService setupCommandService) {
+                                        final DockerService dockerService) {
         this.commandService = commandService;
         this.configService = configService;
         this.siteConfigPreferences = siteConfigPreferences;
         this.mapper = mapper;
-        this.setupCommandService = setupCommandService;
+        this.dockerService = dockerService;
     }
 
     @Override
@@ -382,7 +382,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             log.debug("Resolving setup command {}.", setupCommandImage);
             final Command setupCommand;
             try {
-                setupCommand = setupCommandService.getSetupCommand(setupCommandImage);
+                setupCommand = dockerService.getCommandByImage(setupCommandImage);
             } catch (NotFoundException e) {
                 throw new CommandResolutionException("Could not resolve setup command with image " + setupCommandImage, e);
             }

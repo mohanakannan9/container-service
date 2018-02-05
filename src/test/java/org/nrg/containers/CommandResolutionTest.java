@@ -39,8 +39,6 @@ import org.nrg.containers.model.xnat.Session;
 import org.nrg.containers.services.CommandResolutionService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerConfigService;
-import org.nrg.containers.services.DockerService;
-import org.nrg.containers.services.SetupCommandService;
 import org.nrg.framework.constants.Scope;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xft.security.UserI;
@@ -61,9 +59,7 @@ import java.util.Set;
 
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.isA;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.startsWith;
