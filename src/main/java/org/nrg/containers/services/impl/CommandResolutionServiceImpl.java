@@ -1877,7 +1877,11 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
 
                 if (hasDirectory && writable) {
                     // The mount has a directory and is set to "writable". We must copy files from the root directory into a writable build directory.
-                    localDirectory = getBuildDirectory(partiallyResolvedCommandMount);
+                    try {
+                        localDirectory = getBuildDirectory();
+                    } catch (IOException e) {
+                        throw new ContainerMountResolutionException("Could not create build directory.", partiallyResolvedCommandMount, e);
+                    }
                     log.debug("Mount \"{}\" has a root directory and is set to \"writable\". Copying all files from the root directory to build directory.", resolvedCommandMountName);
 
                     // TODO CS-54 We must copy all files out of the root directory to a build directory.
@@ -1893,7 +1897,11 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 }
             } else {
                 log.debug("Mount \"{}\" has no input files. Ensuring mount is set to \"writable\" and creating new build directory.", resolvedCommandMountName);
-                localDirectory = getBuildDirectory(partiallyResolvedCommandMount);
+                try {
+                    localDirectory = getBuildDirectory();
+                } catch (IOException e) {
+                    throw new ContainerMountResolutionException("Could not create build directory.", partiallyResolvedCommandMount, e);
+                }
                 resolvedCommandMountBuilder.writable(true);
             }
 
@@ -1906,7 +1914,12 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 // into the setup command as its input, along with another writable build directory as its output.
                 // Then we mount the output build directory into this mount.
                 // In that way, the setup command will write to the mount whatever files we need to find.
-                final String writableMountPath = getBuildDirectory(partiallyResolvedCommandMount);
+                final String writableMountPath;
+                try {
+                    writableMountPath = getBuildDirectory();
+                } catch (IOException e) {
+                    throw new ContainerMountResolutionException("Could not create build directory.", partiallyResolvedCommandMount, e);
+                }
                 resolvedSetupCommands.add(resolveSpecialCommandType(CommandType.DOCKER_SETUP, partiallyResolvedCommandMount.viaSetupCommand(), localDirectory, writableMountPath));
                 pathToMount = writableMountPath;
             } else {
@@ -2084,16 +2097,12 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
         }
     }
 
-    private String getBuildDirectory(final PartiallyResolvedCommandMount mount) throws ContainerMountResolutionException {
+    @Nonnull
+    private String getBuildDirectory() throws IOException {
         final String rootBuildPath = siteConfigPreferences.getBuildPath();
         final String uuid = UUID.randomUUID().toString();
         final String buildDir = FilenameUtils.concat(rootBuildPath, uuid);
-        final Path created;
-        try {
-            created = Files.createDirectory(Paths.get(buildDir));
-        } catch (IOException | NullPointerException e) {
-            throw new ContainerMountResolutionException("Could not create build directory " + buildDir, mount, e);
-        }
+        final Path created = Files.createDirectory(Paths.get(buildDir));
         created.toFile().setWritable(true);
         return buildDir;
     }
