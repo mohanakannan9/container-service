@@ -352,6 +352,12 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                                 StringUtils.join(missingRequiredInputs, ", "))
                 );
             }
+            final List<ResolvedCommandOutput> resolvedCommandOutputs = resolveOutputs(resolvedInputTrees, resolvedInputValuesByReplacementKey);
+            final String resolvedCommandLine = resolveCommandLine(resolvedInputTrees);
+            final Map<String, String> resolvedEnvironmentVariables = resolveEnvironmentVariables(resolvedInputValuesByReplacementKey);
+            final String resolvedWorkingDirectory = resolveWorkingDirectory(resolvedInputValuesByReplacementKey);
+            final Map<String, String> resolvedPorts = resolvePorts(resolvedInputValuesByReplacementKey);
+            final List<ResolvedCommandMount> resolvedCommandMounts = resolveCommandMounts(resolvedInputTrees, resolvedInputValuesByReplacementKey);
 
             final ResolvedCommand resolvedCommand = ResolvedCommand.builder()
                     .wrapperId(commandWrapper.id())
@@ -365,12 +371,12 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                     .overrideEntrypoint(command.overrideEntrypoint() == null ? Boolean.FALSE : command.overrideEntrypoint())
                     .rawInputValues(inputValues)
                     .resolvedInputTrees(resolvedInputTrees)
-                    .outputs(resolveOutputs(resolvedInputTrees, resolvedInputValuesByReplacementKey))
-                    .commandLine(resolveCommandLine(resolvedInputTrees))
-                    .environmentVariables(resolveEnvironmentVariables(resolvedInputValuesByReplacementKey))
-                    .workingDirectory(resolveWorkingDirectory(resolvedInputValuesByReplacementKey))
-                    .ports(resolvePorts(resolvedInputValuesByReplacementKey))
-                    .mounts(resolveCommandMounts(resolvedInputTrees, resolvedInputValuesByReplacementKey))
+                    .outputs(resolvedCommandOutputs)
+                    .commandLine(resolvedCommandLine)
+                    .environmentVariables(resolvedEnvironmentVariables)
+                    .workingDirectory(resolvedWorkingDirectory)
+                    .ports(resolvedPorts)
+                    .mounts(resolvedCommandMounts)
                     .setupCommands(resolvedSetupCommands)
                     .reserveMemory(command.reserveMemory())
                     .limitMemory(command.limitMemory())
