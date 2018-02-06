@@ -77,6 +77,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -358,6 +359,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             final String resolvedWorkingDirectory = resolveWorkingDirectory(resolvedInputValuesByReplacementKey);
             final Map<String, String> resolvedPorts = resolvePorts(resolvedInputValuesByReplacementKey);
             final List<ResolvedCommandMount> resolvedCommandMounts = resolveCommandMounts(resolvedInputTrees, resolvedInputValuesByReplacementKey);
+            final List<ResolvedCommand> resolvedWrapupCommands = resolveWrapupCommands(resolvedCommandOutputs, resolvedCommandMounts);
 
             final ResolvedCommand resolvedCommand = ResolvedCommand.builder()
                     .wrapperId(commandWrapper.id())
@@ -378,6 +380,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                     .ports(resolvedPorts)
                     .mounts(resolvedCommandMounts)
                     .setupCommands(resolvedSetupCommands)
+                    .wrapupCommands(resolvedWrapupCommands)
                     .reserveMemory(command.reserveMemory())
                     .limitMemory(command.limitMemory())
                     .limitCpu(command.limitCpu())
@@ -1742,6 +1745,39 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 }
             }
             return resolvedMounts;
+        }
+
+        @Nonnull
+        private List<ResolvedCommand> resolveWrapupCommands(final List<ResolvedCommandOutput> resolvedCommandOutputs,
+                                                            final List<ResolvedCommandMount> resolvedCommandMounts)
+                throws CommandResolutionException {
+            final List<ResolvedCommand> resolvedWrapupCommands = new ArrayList<>();
+            Map<String, ResolvedCommandMount> resolvedCommandMountMap = null;
+            for (final ResolvedCommandOutput resolvedCommandOutput : resolvedCommandOutputs) {
+                if (resolvedCommandOutput.viaWrapupCommand() != null) {
+
+                    final String outputMountName = resolvedCommandOutput.mount();
+                    if (resolvedCommandMountMap == null) {
+                        resolvedCommandMountMap = new HashMap<>();
+                        for (final ResolvedCommandMount resolvedCommandMount : resolvedCommandMounts) {
+                            resolvedCommandMountMap.put(resolvedCommandMount.name(), resolvedCommandMount);
+                        }
+                    }
+                    final ResolvedCommandMount resolvedCommandMount = resolvedCommandMountMap.get(outputMountName);
+                    assert resolvedCommandMount != null; // Command output must refer to a mount that exists, otherwise command would have failed validation.
+
+                    final String writableMountPath;
+                    try {
+                        writableMountPath = getBuildDirectory();
+                    } catch (IOException e) {
+                        throw new CommandResolutionException("Could not create build directory.", e);
+                    }
+
+                    resolvedWrapupCommands.add(resolveSpecialCommandType(CommandType.DOCKER_WRAPUP, resolvedCommandOutput.viaWrapupCommand(), resolvedCommandMount.xnatHostPath(), writableMountPath));
+                }
+            }
+
+            return resolvedWrapupCommands;
         }
 
         @Nonnull
