@@ -42,6 +42,7 @@ import org.nrg.containers.model.command.auto.ResolvedCommandMount;
 import org.nrg.containers.model.command.auto.ResolvedInputTreeNode;
 import org.nrg.containers.model.command.auto.ResolvedInputTreeNode.ResolvedInputTreeValueAndChildren;
 import org.nrg.containers.model.command.auto.ResolvedInputValue;
+import org.nrg.containers.model.command.entity.CommandType;
 import org.nrg.containers.model.xnat.Assessor;
 import org.nrg.containers.model.xnat.Project;
 import org.nrg.containers.model.xnat.Resource;
@@ -381,19 +382,35 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             return resolvedCommand;
         }
 
-        private void resolveSetupCommand(final String setupCommandImage, final String inputMountPath, final String outputMountPath) throws CommandResolutionException {
-            log.debug("Resolving setup command {}.", setupCommandImage);
-            final Command setupCommand;
+        private ResolvedCommand resolveSpecialCommandType(final CommandType type,
+                                                          final String image,
+                                                          final String inputMountPath,
+                                                          final String outputMountPath)
+                throws CommandResolutionException {
+            final String typeStringForLog;
+            switch (type) {
+                case DOCKER_SETUP:
+                    typeStringForLog = "setup";
+                    break;
+                default:
+                    throw new CommandResolutionException("A method intended to resolve only special command types was called with a command of type " + type.getName());
+            }
+            log.debug("Resolving {} command from image {}.", typeStringForLog, image);
+            final Command command;
             try {
-                setupCommand = dockerService.getCommandByImage(setupCommandImage);
+                command = dockerService.getCommandByImage(image);
             } catch (NotFoundException e) {
-                throw new CommandResolutionException("Could not resolve setup command with image " + setupCommandImage, e);
+                throw new CommandResolutionException(String.format("Could not resolve %s command with image %s.", typeStringForLog, image), e);
             }
 
-            final ResolvedCommand resolvedSetupCommand = ResolvedCommand.fromSetupCommand(setupCommand, inputMountPath, outputMountPath);
+            if (!command.type().equals(type.getName())) {
+                throw new CommandResolutionException(
+                        String.format("Command %s from image %s has type %s, but I expected it to have type %s.",
+                                command.name(), image, command.type(), type.getName()));
+            }
 
-            log.debug("Adding resolved setup command to list.");
-            resolvedSetupCommands.add(resolvedSetupCommand);
+            log.debug("Done resolving {} command {} from image {}.", typeStringForLog, command.name(), image);
+            return ResolvedCommand.fromSpecialCommandType(command, inputMountPath, outputMountPath);
         }
 
         private void checkForIllegalInputValue(final String inputName,
@@ -1870,7 +1887,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 // Then we mount the output build directory into this mount.
                 // In that way, the setup command will write to the mount whatever files we need to find.
                 final String writableMountPath = getBuildDirectory(partiallyResolvedCommandMount);
-                resolveSetupCommand(partiallyResolvedCommandMount.viaSetupCommand(), localDirectory, writableMountPath);
+                resolvedSetupCommands.add(resolveSpecialCommandType(CommandType.DOCKER_SETUP, partiallyResolvedCommandMount.viaSetupCommand(), localDirectory, writableMountPath));
                 pathToMount = writableMountPath;
             } else {
                 pathToMount = localDirectory;
