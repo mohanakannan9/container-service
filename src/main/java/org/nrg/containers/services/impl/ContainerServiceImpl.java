@@ -378,25 +378,31 @@ public class ContainerServiceImpl implements ContainerService {
     @Override
     public void finalize(final Container notFinalized, final UserI userI, final String exitCode) {
         final long databaseId = notFinalized.databaseId();
-        if (notFinalized.isSwarmService()) {
-            log.info("Finalizing Container {}, service id {}.", databaseId, notFinalized.serviceId());
-        } else {
-            log.info("Finalizing Container {}, container id {}.", databaseId, notFinalized.containerId());
-        }
+        log.debug("Beginning finalization for container {}.", databaseId);
+
+        // Once we are sure there are no wrapup containers left to launch, finalize
+        final String serviceOrContainer = notFinalized.isSwarmService() ? "service" : "container";
+        final String serviceOrContainerId = notFinalized.isSwarmService() ? notFinalized.serviceId() : notFinalized.containerId();
+        log.info("Finalizing Container {}, {} id {}.", databaseId, serviceOrContainer, serviceOrContainerId);
 
         final Container finalized = containerFinalizeService.finalizeContainer(notFinalized, userI, exitCodeIsFailed(exitCode));
 
-        log.info("Done uploading for Container {}. Now saving information about created outputs.", databaseId);
+        log.debug("Done uploading for Container {}. Now saving information about created outputs.", databaseId);
 
         containerEntityService.update(fromPojo(finalized));
-        log.debug("Done saving outputs for Container {}.", databaseId);
 
         final Container parent = finalized.parentContainer();
+        if (parent == null) {
+            // Nothing left to do. This container is done.
+            log.debug("Done finalizing Container {}, {} id {}.", databaseId, serviceOrContainer, serviceOrContainerId);
+            return;
+        }
+        final long parentDatabaseId = parent.databaseId();
+        final String parentContainerId = parent.containerId();
+
         final String subtype = finalized.subtype();
         if (parent != null && subtype != null && subtype.equals(CommandType.DOCKER_SETUP.getName())) {
-            final long parentDatabaseId = parent.databaseId();
-            final String parentContainerId = parent.containerId();
-            log.info("Container {} is a setup container for parent container {}. Checking whether parent needs a status change.", databaseId, parentDatabaseId);
+            log.debug("Container {} is a setup container for parent container {}. Checking whether parent needs a status change.", databaseId, parentDatabaseId);
             final List<Container> setupContainers = retrieveSetupContainersForParent(parentDatabaseId);
             final List<Container> failedExitCode = new ArrayList<>();
             final List<Container> nullExitCode = new ArrayList<>();
@@ -414,14 +420,14 @@ public class ContainerServiceImpl implements ContainerService {
 
             if (numFailed > 0) {
                 // If any of the setup containers failed, we must kill the rest and fail the main container.
-                log.info("One or more setup containers have failed. Killing the rest and failing the parent.");
+                log.debug("One or more setup containers have failed. Killing the rest and failing the parent.");
                 for (final Container setupContainer : setupContainers) {
                     final long setupDatabaseId = setupContainer.databaseId();
                     final String setupContainerId = setupContainer.containerId();
                     if (failedExitCode.contains(setupContainer)) {
                         log.debug("Setup container {} with container id {} failed.", setupDatabaseId, setupContainerId);
                     } else if (nullExitCode.contains(setupContainer)) {
-                        log.info("Setup container {} with container id {} has no exit code. Attempting to kill it.", setupDatabaseId, setupContainerId);
+                        log.debug("Setup container {} with container id {} has no exit code. Attempting to kill it.", setupDatabaseId, setupContainerId);
                         try {
                             kill(setupContainer, userI);
                         } catch (NoDockerServerException | DockerServerException | NotFoundException e) {
@@ -460,7 +466,7 @@ public class ContainerServiceImpl implements ContainerService {
                 addContainerHistoryItem(parent, ContainerHistory.fromSystem("Failed Setup", message), userI);
             } else if (numNull > 0) {
                 final int numLeft = numSetup - numNull;
-                log.info("Not changing parent status. {} setup containers left to finish.", numLeft);
+                log.debug("Not changing parent status. {} setup containers left to finish.", numLeft);
             } else {
                 // If none of the setup containers have failed and none of the exit codes are null,
                 // that means all the setup containers have succeeded.
