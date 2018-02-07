@@ -64,9 +64,9 @@ public interface ContainerService {
     void processEvent(final ContainerEvent event);
     void processEvent(final ServiceTaskEvent event);
 
-    void finalize(final String containerId, final UserI userI) throws NotFoundException;
-    void finalize(final Container container, final UserI userI);
-    void finalize(final Container container, final UserI userI, final String exitCode);
+    void finalize(final String containerId, final UserI userI) throws NotFoundException, ContainerException;
+    void finalize(final Container container, final UserI userI) throws ContainerException;
+    void finalize(final Container container, final UserI userI, final String exitCode) throws ContainerException;
 
     String kill(final String containerId, final UserI userI)
             throws NoDockerServerException, DockerServerException, NotFoundException;

@@ -9,6 +9,7 @@ import org.nrg.containers.events.model.ContainerEvent;
 import org.nrg.containers.events.model.ServiceTaskEvent;
 import org.nrg.containers.exceptions.CommandResolutionException;
 import org.nrg.containers.exceptions.ContainerException;
+import org.nrg.containers.exceptions.ContainerFinalizationException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoDockerServerException;
 import org.nrg.containers.exceptions.UnauthorizedException;
@@ -308,6 +309,8 @@ public class ContainerServiceImpl implements ContainerService {
                 }
             } catch (UserInitException | UserNotFoundException e) {
                 log.error("Could not update container status. Could not get user details for user " + userLogin, e);
+            } catch (ContainerException e) {
+                log.error("Container finalization failed.", e);
             }
         } else {
             log.debug("Nothing to do. Container was null after retrieving by id {}.", event.containerId());
@@ -357,6 +360,8 @@ public class ContainerServiceImpl implements ContainerService {
                 }
             } catch (UserInitException | UserNotFoundException e) {
                 log.error("Could not update container status. Could not get user details for user " + userLogin, e);
+            } catch (ContainerException e) {
+                log.error("Container finalization failed.", e);
             }
         }
 
@@ -366,17 +371,17 @@ public class ContainerServiceImpl implements ContainerService {
     }
 
     @Override
-    public void finalize(final String containerId, final UserI userI) throws NotFoundException {
+    public void finalize(final String containerId, final UserI userI) throws NotFoundException, ContainerException {
         finalize(get(containerId), userI);
     }
 
     @Override
-    public void finalize(final Container container, final UserI userI) {
+    public void finalize(final Container container, final UserI userI) throws ContainerException {
         finalize(container, userI, container.exitCode());
     }
 
     @Override
-    public void finalize(final Container notFinalized, final UserI userI, final String exitCode) {
+    public void finalize(final Container notFinalized, final UserI userI, final String exitCode) throws ContainerException {
         final long databaseId = notFinalized.databaseId();
         log.debug("Beginning finalization for container {}.", databaseId);
 
@@ -401,7 +406,13 @@ public class ContainerServiceImpl implements ContainerService {
         final String parentContainerId = parent.containerId();
 
         final String subtype = finalized.subtype();
-        if (parent != null && subtype != null && subtype.equals(CommandType.DOCKER_SETUP.getName())) {
+        if (subtype == null) {
+            throw new ContainerFinalizationException(finalized,
+                    String.format("Can't finalize container %d. It has a non-null parent with ID %d, but a null subtype. I don't know what to do with that.", databaseId, parentDatabaseId)
+            );
+        }
+
+        if (subtype.equals(DOCKER_SETUP.getName())) {
             log.debug("Container {} is a setup container for parent container {}. Checking whether parent needs a status change.", databaseId, parentDatabaseId);
             final List<Container> setupContainers = retrieveSetupContainersForParent(parentDatabaseId);
             final List<Container> failedExitCode = new ArrayList<>();
