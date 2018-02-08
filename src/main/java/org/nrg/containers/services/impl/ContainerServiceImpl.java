@@ -456,6 +456,10 @@ public class ContainerServiceImpl implements ContainerService {
 
         containerEntityService.update(fromPojo(finalized));
 
+        // Now check if this container *is* a setup or wrapup container.
+        // If so, we need to re-check the parent.
+        // If this is a setup container, parent can (maybe) be launched.
+        // If this is a wrapup container, parent can (maybe) be finalized.
         final Container parent = finalized.parent();
         if (parent == null) {
             // Nothing left to do. This container is done.
@@ -475,80 +479,130 @@ public class ContainerServiceImpl implements ContainerService {
         if (subtype.equals(DOCKER_SETUP.getName())) {
             log.debug("Container {} is a setup container for parent container {}. Checking whether parent needs a status change.", databaseId, parentDatabaseId);
             final List<Container> setupContainers = retrieveSetupContainersForParent(parentDatabaseId);
-            final List<Container> failedExitCode = new ArrayList<>();
-            final List<Container> nullExitCode = new ArrayList<>();
-            for (final Container setupContainer : setupContainers) {
-                if (exitCodeIsFailed(setupContainer.exitCode())) {
-                    failedExitCode.add(setupContainer);
-                } else if (setupContainer.exitCode() == null) {
-                    nullExitCode.add(setupContainer);
-                }
-            }
-
-            final int numSetup = setupContainers.size();
-            final int numFailed = failedExitCode.size();
-            final int numNull = nullExitCode.size();
-
-            if (numFailed > 0) {
-                // If any of the setup containers failed, we must kill the rest and fail the main container.
-                log.debug("One or more setup containers have failed. Killing the rest and failing the parent.");
-                for (final Container setupContainer : setupContainers) {
-                    final long setupDatabaseId = setupContainer.databaseId();
-                    final String setupContainerId = setupContainer.containerId();
-                    if (failedExitCode.contains(setupContainer)) {
-                        log.debug("Setup container {} with container id {} failed.", setupDatabaseId, setupContainerId);
-                    } else if (nullExitCode.contains(setupContainer)) {
-                        log.debug("Setup container {} with container id {} has no exit code. Attempting to kill it.", setupDatabaseId, setupContainerId);
+            if (setupContainers != null && setupContainers.size() > 0) {
+                final Runnable startMainContainer = new Runnable() {
+                    @Override
+                    public void run() {
+                        // If none of the setup containers have failed and none of the exit codes are null,
+                        // that means all the setup containers have succeeded.
+                        // We should start the parent container.
+                        log.info("All setup containers for parent Container {} are finished and not failed. Starting container id {}.", parentDatabaseId, parentContainerId);
                         try {
-                            kill(setupContainer, userI);
-                        } catch (NoDockerServerException | DockerServerException | NotFoundException e) {
-                            log.error(String.format("Failed to kill setup container %d.", setupDatabaseId), e);
+                            startContainer(userI, parent);
+                        } catch (NoDockerServerException | ContainerException e) {
+                            log.error("Failed to start parent Container {} with container id {}.", parentDatabaseId, parentContainerId);
                         }
-                    } else {
-                        log.debug("Setup container {} with container id {} succeeded.", setupDatabaseId, setupContainerId);
                     }
-                }
+                };
 
-                final String failedContainerMessageTemplate = "ID %d, container id %s";
-                final String failedContainerMessage;
-                if (failedExitCode.size() == 1) {
-                    final Container failed = failedExitCode.get(0);
-                    failedContainerMessage = "Failed setup container: " + String.format(failedContainerMessageTemplate, failed.databaseId(), failed.containerId());
+                checkIfSpecialContainersFailed(setupContainers, parent, startMainContainer, "Setup", userI);
+            }
+        } else if (subtype.equals(DOCKER_WRAPUP.getName())) {
+            // This is a wrapup container.
+            // Did this container succeed or fail?
+            // If it failed, go mark all the other wrapup containers failed and also the parent.
+            // If it succeeded, then finalize the parent.
+
+            log.debug("Container {} is a wrapup container for parent container {}.", databaseId, parentDatabaseId);
+
+            log.debug("Container {} is a setup container for parent container {}. Checking whether parent needs a status change.", databaseId, parentDatabaseId);
+            final List<Container> wrapupContainers = retrieveWrapupContainersForParent(parentDatabaseId);
+            if (wrapupContainers != null && wrapupContainers.size() > 0) {
+                final Runnable finalizeMainContainer = new Runnable() {
+                    @Override
+                    public void run() {
+                        // If none of the wrapup containers have failed and none of the exit codes are null,
+                        // that means all the wrapup containers have succeeded.
+                        // We should finalize the parent container.
+                        log.info("All wrapup containers for parent Container {} are finished and not failed. Finalizing container id {}.", parentDatabaseId, parentContainerId);
+                        try {
+                            ContainerServiceImpl.this.finalize(parent, userI);
+                        } catch (NoDockerServerException | DockerServerException | ContainerException e) {
+                            log.error("Failed to finalize parent Container {} with container id {}.", parentDatabaseId, parentContainerId);
+                        }
+                    }
+                };
+
+                checkIfSpecialContainersFailed(wrapupContainers, parent, finalizeMainContainer, "Wrapup", userI);
+            }
+        }
+    }
+
+    private void checkIfSpecialContainersFailed(final List<Container> specialContainers,
+                                                final Container parent,
+                                                final Runnable successAction,
+                                                final String setupOrWrapup,
+                                                final UserI userI) {
+        final long parentDatabaseId = parent.databaseId();
+        final String parentContainerId = parent.containerId();
+
+        final List<Container> failedExitCode = new ArrayList<>();
+        final List<Container> nullExitCode = new ArrayList<>();
+        for (final Container specialContainer : specialContainers) {
+            if (exitCodeIsFailed(specialContainer.exitCode())) {
+                failedExitCode.add(specialContainer);
+            } else if (specialContainer.exitCode() == null) {
+                nullExitCode.add(specialContainer);
+            }
+        }
+
+        final int numSpecial = specialContainers.size();
+        final int numFailed = failedExitCode.size();
+        final int numNull = nullExitCode.size();
+
+        if (numFailed > 0) {
+            // If any of the special containers failed, we must kill the rest and fail the main container.
+            log.debug("One or more {} containers have failed. Killing the rest and failing the parent.", setupOrWrapup);
+            for (final Container specialContainer : specialContainers) {
+                final long databaseId = specialContainer.databaseId();
+                final String containerId = specialContainer.containerId();
+                if (failedExitCode.contains(specialContainer)) {
+                    log.debug("{} container {} with container id {} failed.", setupOrWrapup, databaseId, containerId);
+                } else if (nullExitCode.contains(specialContainer)) {
+                    log.debug("{} container {} with container id {} has no exit code. Attempting to kill it.", setupOrWrapup, databaseId, containerId);
+                    try {
+                        kill(specialContainer, userI);
+                    } catch (NoDockerServerException | DockerServerException | NotFoundException e) {
+                        log.error(String.format("Failed to kill %s container %d.", setupOrWrapup, databaseId), e);
+                    }
                 } else {
-                    final StringBuilder sb = new StringBuilder();
-                    sb.append("Failed setup containers: ");
-                    sb.append(String.format(failedContainerMessageTemplate, failedExitCode.get(0).databaseId(), failedExitCode.get(0).containerId()));
-                    for (int i = 1; i < failedExitCode.size(); i++) {
-                        sb.append("; ");
-                        sb.append(String.format(failedContainerMessageTemplate, failedExitCode.get(i).databaseId(), failedExitCode.get(i).containerId()));
-                    }
-                    sb.append(".");
-                    failedContainerMessage = sb.toString();
-                }
-
-                log.info("Setting status to \"Failed Setup\" for parent container {} with container id {}.", parentDatabaseId, parentContainerId);
-                addContainerHistoryItem(parent, ContainerHistory.fromSystem("Failed Setup", failedContainerMessage), userI);
-            } else if (numNull == numSetup) {
-                // This is an error. We know at least one setup container has finished because we have reached this "finalize" method.
-                // At least one of the setup containers should have a non-null exit status.
-                final String message = "All setup containers have null statuses, but one of them should be finished.";
-                log.error(message);
-                log.info("Setting status to \"Failed Setup\" for parent container {} with container id {}.", parentDatabaseId, parentContainerId);
-                addContainerHistoryItem(parent, ContainerHistory.fromSystem("Failed Setup", message), userI);
-            } else if (numNull > 0) {
-                final int numLeft = numSetup - numNull;
-                log.debug("Not changing parent status. {} setup containers left to finish.", numLeft);
-            } else {
-                // If none of the setup containers have failed and none of the exit codes are null,
-                // that means all the setup containers have succeeded.
-                // We should start the parent container.
-                log.info("All setup containers for parent Container {} are finished and not failed. Starting container id {}.", parentDatabaseId, parentContainerId);
-                try {
-                    startContainer(userI, parent);
-                } catch (NoDockerServerException | ContainerException e) {
-                    log.error("Failed to start parent Container {} with container id {}.", parentDatabaseId, parentContainerId);
+                    log.debug("{} container {} with container id {} succeeded.", setupOrWrapup, databaseId, containerId);
                 }
             }
+
+            final String failedContainerMessageTemplate = "ID %d, container id %s";
+            final String failedContainerMessage;
+            if (failedExitCode.size() == 1) {
+                final Container failed = failedExitCode.get(0);
+                failedContainerMessage = "Failed " + setupOrWrapup + " container: " + String.format(failedContainerMessageTemplate, failed.databaseId(), failed.containerId());
+            } else {
+                final StringBuilder sb = new StringBuilder();
+                sb.append("Failed ");
+                sb.append(setupOrWrapup);
+                sb.append("containers: ");
+                sb.append(String.format(failedContainerMessageTemplate, failedExitCode.get(0).databaseId(), failedExitCode.get(0).containerId()));
+                for (int i = 1; i < failedExitCode.size(); i++) {
+                    sb.append("; ");
+                    sb.append(String.format(failedContainerMessageTemplate, failedExitCode.get(i).databaseId(), failedExitCode.get(i).containerId()));
+                }
+                sb.append(".");
+                failedContainerMessage = sb.toString();
+            }
+
+            log.info("Setting status to \"Failed {}\" for parent container {} with container id {}.", setupOrWrapup, parentDatabaseId, parentContainerId);
+            addContainerHistoryItem(parent, ContainerHistory.fromSystem("Failed " + setupOrWrapup, failedContainerMessage), userI);
+        } else if (numNull == numSpecial) {
+            // This is an error. We know at least one setup container has finished because we have reached this "finalize" method.
+            // At least one of the setup containers should have a non-null exit status.
+            final String message = "All " + setupOrWrapup + " containers have null statuses, but one of them should be finished.";
+            log.error(message);
+            log.info("Setting status to \"Failed {}\" for parent container {} with container id {}.", setupOrWrapup, parentDatabaseId, parentContainerId);
+            addContainerHistoryItem(parent, ContainerHistory.fromSystem("Failed " + setupOrWrapup, message), userI);
+        } else if (numNull > 0) {
+            final int numLeft = numSpecial - numNull;
+            log.debug("Not changing parent status. {} {} containers left to finish.", numLeft, setupOrWrapup);
+        } else {
+            successAction.run();
         }
     }
 
