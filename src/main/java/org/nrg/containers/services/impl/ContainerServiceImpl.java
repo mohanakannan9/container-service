@@ -53,6 +53,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -272,21 +273,30 @@ public class ContainerServiceImpl implements ContainerService {
     @Nonnull
     private ResolvedCommand prepareToLaunch(final ResolvedCommand resolvedCommand,
                                             final UserI userI) {
-        final ResolvedCommand.Builder resolvedCommandBuilder =
-                resolvedCommand.toBuilder();
-
-        // Add default environment variables & create new alias token
-        final AliasToken token = aliasTokenService.issueTokenForUser(userI);
-        final String processingUrl = (String)siteConfigPreferences.getProperty("processingUrl", siteConfigPreferences.getSiteUrl());
-        resolvedCommandBuilder.addEnvironmentVariable("XNAT_USER", token.getAlias())
-                .addEnvironmentVariable("XNAT_PASS", token.getSecret())
-                .addEnvironmentVariable("XNAT_HOST", processingUrl);
-
-        return resolvedCommandBuilder.build();
+        return resolvedCommand.toBuilder()
+                .addEnvironmentVariables(getDefaultEnvironmentVariablesForLaunch(userI))
+                .build();
     }
 
+    @Nonnull
+    private Container prepareToLaunch(final Container toLaunch,
+                                      final UserI userI) {
+        return toLaunch.toBuilder()
+                .addEnvironmentVariables(getDefaultEnvironmentVariablesForLaunch(userI))
+                .build();
+    }
 
+    private Map<String, String> getDefaultEnvironmentVariablesForLaunch(final UserI userI) {
+        final AliasToken token = aliasTokenService.issueTokenForUser(userI);
+        final String processingUrl = (String)siteConfigPreferences.getProperty("processingUrl", siteConfigPreferences.getSiteUrl());
 
+        final Map<String, String> defaultEnvironmentVariables = new HashMap<>();
+        defaultEnvironmentVariables.put("XNAT_USER", token.getAlias());
+        defaultEnvironmentVariables.put("XNAT_PASS", token.getSecret());
+        defaultEnvironmentVariables.put("XNAT_HOST", processingUrl);
+
+        return defaultEnvironmentVariables;
+    }
 
     @Override
     public void processEvent(final ContainerEvent event) {

@@ -204,6 +204,15 @@ public abstract class ResolvedCommand {
             environmentVariablesBuilder().put(name, value);
             return this;
         }
+        public Builder addEnvironmentVariables(final Map<String, String> environmentVariables) {
+            if (environmentVariables != null) {
+                for (final Map.Entry<String, String> env : environmentVariables.entrySet()) {
+                    addEnvironmentVariable(env.getKey(), env.getValue());
+                }
+            }
+            return this;
+        }
+
         public abstract Builder ports(Map<String, String> ports);
         public abstract ImmutableMap.Builder<String, String> portsBuilder();
         public Builder addPort(final String name, final String value) {

@@ -370,6 +370,14 @@ public abstract class Container {
             environmentVariablesBuilder().put(envKey, envValue);
             return this;
         }
+        public Builder addEnvironmentVariables(final Map<String, String> environmentVariables) {
+            if (environmentVariables != null) {
+                for (final Map.Entry<String, String> env : environmentVariables.entrySet()) {
+                    addEnvironmentVariable(env.getKey(), env.getValue());
+                }
+            }
+            return this;
+        }
 
         public abstract Builder mounts(List<ContainerMount> mounts);
         abstract ImmutableList.Builder<ContainerMount> mountsBuilder();
