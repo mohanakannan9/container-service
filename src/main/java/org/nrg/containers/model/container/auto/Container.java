@@ -503,6 +503,11 @@ public abstract class Container {
                             null)));
         }
 
+        @JsonIgnore
+        public String toBindMountString() {
+            return containerHostPath() + ":" + containerPath() + (writable() ? "" : ":ro");
+        }
+
         public static Builder builder() {
             return new AutoValue_Container_ContainerMount.Builder();
         }

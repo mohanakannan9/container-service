@@ -95,7 +95,7 @@ public class ContainerRestApi extends AbstractXapiRestController {
 
     @XapiRequestMapping(value = "/{id}/finalize", method = POST, produces = JSON, restrictTo = Admin)
     @ApiOperation(value = "Finalize Container")
-    public void finalize(final @PathVariable String id) throws NotFoundException, ContainerException {
+    public void finalize(final @PathVariable String id) throws NotFoundException, ContainerException, DockerServerException, NoDockerServerException {
         final UserI userI = XDAT.getUserDetails();
         containerService.finalize(id, userI);
     }

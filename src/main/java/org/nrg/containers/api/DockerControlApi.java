@@ -67,6 +67,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -275,8 +276,8 @@ public class DockerControlApi implements ContainerControlApi {
      * Launch image on Docker server, either by scheduling a swarm service or directly creating a container
      *
      * @param resolvedCommand A ResolvedDockerCommand. All templates are resolved, all mount paths exist.
-     * @param userI
-     * @return ID of created Container or Service
+     * @param userI The XNAT user launching the container
+     * @return Created Container or Service
      **/
     @Override
     public Container createContainerOrSwarmService(final ResolvedCommand resolvedCommand, final UserI userI)
@@ -315,43 +316,154 @@ public class DockerControlApi implements ContainerControlApi {
                 0D :
                 resolvedCommand.limitCpu();
 
+        final List<ResolvedCommandMount> resolvedCommandMounts = resolvedCommand.mounts();
         final DockerServer server = getServer();
-        return server.swarmMode() ?
-                Container.serviceFromResolvedCommand(resolvedCommand,
-                        createService(server,
-                                resolvedCommand.image(),
-                                resolvedCommand.commandLine(),
-                                resolvedCommand.overrideEntrypoint(),
-                                resolvedCommand.mounts(),
-                                environmentVariables,
-                                resolvedCommand.ports(),
-                                workingDirectory,
-                                reserveMemory,
-                                limitMemory,
-                                limitCpu),
-                        userI.getLogin()
-                ) :
-                Container.containerFromResolvedCommand(resolvedCommand,
-                        createContainer(server,
-                                resolvedCommand.image(),
-                                resolvedCommand.commandLine(),
-                                resolvedCommand.overrideEntrypoint(),
-                                resolvedCommand.mounts(),
-                                environmentVariables,
-                                resolvedCommand.ports(),
-                                workingDirectory,
-                                reserveMemory,
-                                limitMemory,
-                                limitCpu),
-                        userI.getLogin()
-                );
+        if (server.swarmMode()) {
+            final List<Mount> mounts = new ArrayList<>(resolvedCommandMounts.size());
+            for (final ResolvedCommandMount resolvedCommandMount : resolvedCommandMounts) {
+                mounts.add(Mount.builder()
+                        .source(resolvedCommandMount.containerHostPath())
+                        .target(resolvedCommandMount.containerPath())
+                        .readOnly(!resolvedCommandMount.writable())
+                        .build());
+            }
+
+            return Container.serviceFromResolvedCommand(resolvedCommand,
+                    createService(server,
+                            resolvedCommand.image(),
+                            resolvedCommand.commandLine(),
+                            resolvedCommand.overrideEntrypoint(),
+                            mounts,
+                            environmentVariables,
+                            resolvedCommand.ports(),
+                            workingDirectory,
+                            reserveMemory,
+                            limitMemory,
+                            limitCpu),
+                    userI.getLogin()
+            );
+        } else {
+            final List<String> bindMounts = new ArrayList<>(resolvedCommandMounts.size());
+            for (final ResolvedCommandMount mount : resolvedCommandMounts) {
+                bindMounts.add(mount.toBindMountString());
+            }
+
+            return Container.containerFromResolvedCommand(resolvedCommand,
+                    createContainer(server,
+                            resolvedCommand.image(),
+                            resolvedCommand.commandLine(),
+                            resolvedCommand.overrideEntrypoint(),
+                            bindMounts,
+                            environmentVariables,
+                            resolvedCommand.ports(),
+                            workingDirectory,
+                            reserveMemory,
+                            limitMemory,
+                            limitCpu),
+                    userI.getLogin()
+            );
+        }
+    }
+
+    /**
+     * Launch image on Docker server, either by scheduling a swarm service or directly creating a container
+     *
+     * @param container A Container object, populated with all the information needed to launch.
+     * @param userI The XNAT user launching the container
+     * @return Created Container or Service
+     **/
+    @Override
+    public Container createContainerOrSwarmService(final Container container, final UserI userI) throws NoDockerServerException, ContainerException, DockerServerException {
+        for (final Container.ContainerMount mount : container.mounts()) {
+            final File mountFile = Paths.get(mount.xnatHostPath()).toFile();
+            if (!mountFile.exists()) {
+                if (mountFile.isDirectory()) {
+                    mountFile.mkdirs();
+                } else {
+                    mountFile.getParentFile().mkdirs();
+                }
+            }
+        }
+
+        final List<String> environmentVariables = Lists.newArrayList();
+        for (final Map.Entry<String, String> env : container.environmentVariables().entrySet()) {
+            environmentVariables.add(StringUtils.join(new String[] {env.getKey(), env.getValue()}, "="));
+        }
+        final String workingDirectory = StringUtils.isNotBlank(container.workingDirectory()) ?
+                container.workingDirectory() :
+                null;
+
+        // let resource constraints default to 0, so they're ignored by Docker
+        final Long reserveMemory = container.reserveMemory() == null ?
+                0L :
+                container.reserveMemory();
+        final Long limitMemory = container.limitMemory() == null ?
+                0L :
+                container.limitMemory();
+        final Double limitCpu = container.limitCpu() == null ?
+                0D :
+                container.limitCpu();
+
+        final DockerServer server = getServer();
+
+        final List<Container.ContainerMount> containerMounts = container.mounts();
+        final Boolean overrideEntrypointMayBeNull = container.overrideEntrypoint();
+        final boolean overrideEntrypoint = overrideEntrypointMayBeNull != null && overrideEntrypointMayBeNull;
+        if (server.swarmMode()) {
+            final List<Mount> mounts = new ArrayList<>(containerMounts.size());
+            for (final Container.ContainerMount containerMount : containerMounts) {
+                mounts.add(Mount.builder()
+                        .source(containerMount.containerHostPath())
+                        .target(containerMount.containerPath())
+                        .readOnly(!containerMount.writable())
+                        .build());
+            }
+
+            final String serviceId = createService(server,
+                    container.dockerImage(),
+                    container.commandLine(),
+                    overrideEntrypoint,
+                    mounts,
+                    environmentVariables,
+                    container.ports(),
+                    workingDirectory,
+                    reserveMemory,
+                    limitMemory,
+                    limitCpu);
+            return container.toBuilder()
+                    .serviceId(serviceId)
+                    .userId(userI.getLogin())
+                    .build();
+        } else {
+            final List<String> bindMounts = new ArrayList<>(containerMounts.size());
+            for (final Container.ContainerMount mount : containerMounts) {
+                bindMounts.add(mount.toBindMountString());
+            }
+
+            final String containerId = createContainer(server,
+                    container.dockerImage(),
+                    container.commandLine(),
+                    overrideEntrypoint,
+                    bindMounts,
+                    environmentVariables,
+                    container.ports(),
+                    workingDirectory,
+                    reserveMemory,
+                    limitMemory,
+                    limitCpu);
+
+            return container.toBuilder()
+                    .containerId(containerId)
+                    .userId(userI.getLogin())
+                    .build();
+        }
     }
 
     private String createContainer(final DockerServer server,
                                    final String imageName,
                                    final String runCommand,
                                    final boolean overrideEntrypoint,
-                                   final List<ResolvedCommandMount> resolvedCommandMounts,
+                                   final List<String> bindMounts,
                                    final List<String> environmentVariables,
                                    final Map<String, String> ports,
                                    final String workingDirectory,
@@ -359,11 +471,6 @@ public class DockerControlApi implements ContainerControlApi {
                                    final Long limitMemory,
                                    final Double limitCpu)
             throws DockerServerException, ContainerException {
-
-        final List<String> bindMounts = Lists.newArrayList();
-        for (final ResolvedCommandMount mount : resolvedCommandMounts) {
-            bindMounts.add(mount.toBindMountString());
-        }
 
         final Map<String, List<PortBinding>> portBindings = Maps.newHashMap();
         final List<String> portStringList = Lists.newArrayList();
@@ -455,7 +562,7 @@ public class DockerControlApi implements ContainerControlApi {
                                  final String imageName,
                                  final String runCommand,
                                  final boolean overrideEntrypoint,
-                                 final List<ResolvedCommandMount> resolvedCommandMounts,
+                                 final List<Mount> mounts,
                                  final List<String> environmentVariables,
                                  final Map<String, String> ports,
                                  final String workingDirectory,
@@ -504,15 +611,10 @@ public class DockerControlApi implements ContainerControlApi {
         // We get the bind mounts strings here not to use for creating the service,
         // but simply for the debug log
         // The Mount objects are what we need for the service
-        final List<String> bindMounts = Lists.newArrayList();
-        final List<Mount> mounts = Lists.newArrayList();
-        for (final ResolvedCommandMount resolvedCommandMount : resolvedCommandMounts) {
-            bindMounts.add(resolvedCommandMount.toBindMountString());
-            mounts.add(Mount.builder()
-                    .source(resolvedCommandMount.containerHostPath())
-                    .target(resolvedCommandMount.containerPath())
-                    .readOnly(!resolvedCommandMount.writable())
-                    .build());
+        final List<String> bindMounts = new ArrayList<>(mounts.size());
+        for (final Mount mount : mounts) {
+            final Boolean ro = mount.readOnly();
+            bindMounts.add(mount.source() + ":" + mount.target() + (ro != null && ro ? ":ro" : ""));
         }
 
         final ContainerSpec.Builder containerSpecBuilder = ContainerSpec.builder()

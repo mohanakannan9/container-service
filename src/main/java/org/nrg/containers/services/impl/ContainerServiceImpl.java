@@ -52,6 +52,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -278,6 +279,40 @@ public class ContainerServiceImpl implements ContainerService {
     }
 
     @Nonnull
+    private List<Container> launchWrapupContainersForParent(final Container parent, final UserI userI) throws DockerServerException, NoDockerServerException, ContainerException {
+        final long parentDatabaseId = parent.databaseId();
+        log.debug("Launching wrapup containers for parent container {}.", parentDatabaseId);
+
+        final List<Container> wrapupContainersToLaunch = retrieveWrapupContainersForParent(parentDatabaseId);
+        if (wrapupContainersToLaunch == null || wrapupContainersToLaunch.size() == 0) {
+            log.debug("No wrapup containers to launch for parent container {}.", parentDatabaseId);
+            return Collections.emptyList();
+        }
+
+        final List<Container> launched = new ArrayList<>(wrapupContainersToLaunch.size());
+        for (final Container wrapupContainerToLaunch : wrapupContainersToLaunch) {
+            launched.add(launchContainer(wrapupContainerToLaunch, userI));
+        }
+
+        return launched;
+    }
+
+    @Nonnull
+    private Container launchContainer(final Container toLaunch, final UserI userI) throws DockerServerException, NoDockerServerException, ContainerException {
+        final Container preparedToLaunch = prepareToLaunch(toLaunch, userI);
+
+        log.info("Creating docker container for wrapup container {}.", toLaunch.databaseId());
+        final Container createdContainerOrService = containerControlApi.createContainerOrSwarmService(preparedToLaunch, userI);
+
+        log.info("Updating wrapup container {}.", toLaunch.databaseId());
+        containerEntityService.update(fromPojo(createdContainerOrService));
+
+        startContainer(userI, createdContainerOrService);
+
+        return createdContainerOrService;
+    }
+
+    @Nonnull
     private ResolvedCommand prepareToLaunch(final ResolvedCommand resolvedCommand,
                                             final UserI userI) {
         return resolvedCommand.toBuilder()
@@ -326,7 +361,7 @@ public class ContainerServiceImpl implements ContainerService {
                 }
             } catch (UserInitException | UserNotFoundException e) {
                 log.error("Could not update container status. Could not get user details for user " + userLogin, e);
-            } catch (ContainerException e) {
+            } catch (ContainerException | NoDockerServerException | DockerServerException e) {
                 log.error("Container finalization failed.", e);
             }
         } else {
@@ -377,7 +412,7 @@ public class ContainerServiceImpl implements ContainerService {
                 }
             } catch (UserInitException | UserNotFoundException e) {
                 log.error("Could not update container status. Could not get user details for user " + userLogin, e);
-            } catch (ContainerException e) {
+            } catch (ContainerException | NoDockerServerException | DockerServerException e) {
                 log.error("Container finalization failed.", e);
             }
         }
@@ -388,19 +423,27 @@ public class ContainerServiceImpl implements ContainerService {
     }
 
     @Override
-    public void finalize(final String containerId, final UserI userI) throws NotFoundException, ContainerException {
+    public void finalize(final String containerId, final UserI userI) throws NotFoundException, ContainerException, NoDockerServerException, DockerServerException {
         finalize(get(containerId), userI);
     }
 
     @Override
-    public void finalize(final Container container, final UserI userI) throws ContainerException {
+    public void finalize(final Container container, final UserI userI) throws ContainerException, DockerServerException, NoDockerServerException {
         finalize(container, userI, container.exitCode());
     }
 
     @Override
-    public void finalize(final Container notFinalized, final UserI userI, final String exitCode) throws ContainerException {
+    public void finalize(final Container notFinalized, final UserI userI, final String exitCode) throws ContainerException, NoDockerServerException, DockerServerException {
         final long databaseId = notFinalized.databaseId();
         log.debug("Beginning finalization for container {}.", databaseId);
+
+        // Check if this container is the parent to any wrapup containers that haven't been launched.
+        // If we find any, launch them.
+        final List<Container> launchedWrapupContainers = launchWrapupContainersForParent(notFinalized, userI);
+        if (launchedWrapupContainers.size() > 0) {
+            log.debug("Pausing finalization for container {} to wait for {} wrapup containers to finish.", databaseId, launchedWrapupContainers.size());
+            return;
+        }
 
         // Once we are sure there are no wrapup containers left to launch, finalize
         final String serviceOrContainer = notFinalized.isSwarmService() ? "service" : "container";
