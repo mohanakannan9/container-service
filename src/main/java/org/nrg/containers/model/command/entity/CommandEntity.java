@@ -428,7 +428,10 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
                 .add("environmentVariables", environmentVariables)
                 .add("inputs", inputs)
                 .add("outputs", outputs)
-                .add("xnatCommandWrappers", commandWrapperEntities);
+                .add("xnatCommandWrappers", commandWrapperEntities)
+                .add("reserveMemory", reserveMemory)
+                .add("limitMemory", limitMemory)
+                .add("limitCpu", limitCpu);
     }
 
     @Override
