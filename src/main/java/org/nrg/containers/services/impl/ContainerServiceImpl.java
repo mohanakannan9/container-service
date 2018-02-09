@@ -297,25 +297,6 @@ public class ContainerServiceImpl implements ContainerService {
     }
 
     @Nonnull
-    private List<Container> launchWrapupContainersForParent(final Container parent, final UserI userI) throws DockerServerException, NoDockerServerException, ContainerException {
-        final long parentDatabaseId = parent.databaseId();
-        log.debug("Launching wrapup containers for parent container {}.", parentDatabaseId);
-
-        final List<Container> wrapupContainersToLaunch = retrieveWrapupContainersForParent(parentDatabaseId);
-        if (wrapupContainersToLaunch == null || wrapupContainersToLaunch.size() == 0) {
-            log.debug("No wrapup containers to launch for parent container {}.", parentDatabaseId);
-            return Collections.emptyList();
-        }
-
-        final List<Container> launched = new ArrayList<>(wrapupContainersToLaunch.size());
-        for (final Container wrapupContainerToLaunch : wrapupContainersToLaunch) {
-            launched.add(launchContainerFromDbObject(wrapupContainerToLaunch, userI));
-        }
-
-        return launched;
-    }
-
-    @Nonnull
     private Container launchContainerFromDbObject(final Container toLaunch, final UserI userI) throws DockerServerException, NoDockerServerException, ContainerException {
         final Container preparedToLaunch = prepareToLaunch(toLaunch, userI);
 
@@ -457,10 +438,29 @@ public class ContainerServiceImpl implements ContainerService {
 
         // Check if this container is the parent to any wrapup containers that haven't been launched.
         // If we find any, launch them.
-        final List<Container> launchedWrapupContainers = launchWrapupContainersForParent(notFinalized, userI);
-        if (launchedWrapupContainers.size() > 0) {
-            log.debug("Pausing finalization for container {} to wait for {} wrapup containers to finish.", databaseId, launchedWrapupContainers.size());
+        boolean launchedWrapupContainers = false;
+        final List<Container> wrapupContainers = retrieveWrapupContainersForParent(databaseId);
+        if (wrapupContainers.size() > 0) {
+            log.debug("Container {} is parent to {} wrapup containers.", databaseId, wrapupContainers.size());
+            // Have these wrapup containers already been launched?
+            // If they have container or service IDs, then we know they have been launched.
+            // If they have been launched, we assume they have also been completed. That's how we get back here.
+            for (final Container wrapupContainer : wrapupContainers) {
+                if (StringUtils.isBlank(wrapupContainer.containerId()) && StringUtils.isBlank(wrapupContainer.serviceId())) {
+                    log.debug("Launching wrapup container {}.", wrapupContainer.databaseId());
+                    // This wrapup container has not been launched yet. Launch it now.
+                    launchedWrapupContainers = true;
+                    launchContainerFromDbObject(wrapupContainer, userI);
+                }
+            }
+        }
+
+
+        if (launchedWrapupContainers) {
+            log.debug("Pausing finalization for container {} to wait for wrapup containers to finish.", databaseId);
             return;
+        } else {
+            log.debug("All wrapup containers are complete.");
         }
 
         // Once we are sure there are no wrapup containers left to launch, finalize
