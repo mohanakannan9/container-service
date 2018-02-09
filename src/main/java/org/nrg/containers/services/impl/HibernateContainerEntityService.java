@@ -82,11 +82,13 @@ public class HibernateContainerEntityService
     }
 
     @Override
+    @Nonnull
     public List<ContainerEntity> retrieveSetupContainersForParent(final long parentId) {
         return getDao().retrieveContainersForParentWithSubtype(parentId, CommandType.DOCKER_SETUP.getName());
     }
 
     @Override
+    @Nonnull
     public List<ContainerEntity> retrieveWrapupContainersForParent(final long parentId) {
         return getDao().retrieveContainersForParentWithSubtype(parentId, CommandType.DOCKER_WRAPUP.getName());
     }

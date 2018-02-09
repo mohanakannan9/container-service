@@ -108,6 +108,7 @@ public class ContainerEntityRepository extends AbstractHibernateDAO<ContainerEnt
     }
 
     @SuppressWarnings("unchecked")
+    @Nonnull
     private List<ContainerEntity> initializeAndReturnList(final List result) {
         if (result != null) {
             try {

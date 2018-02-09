@@ -149,11 +149,13 @@ public class ContainerServiceImpl implements ContainerService {
     }
 
     @Override
+    @Nonnull
     public List<Container> retrieveSetupContainersForParent(final long parentId) {
         return toPojo(containerEntityService.retrieveSetupContainersForParent(parentId));
     }
 
     @Override
+    @Nonnull
     public List<Container> retrieveWrapupContainersForParent(final long parentId) {
         return toPojo(containerEntityService.retrieveWrapupContainersForParent(parentId));
     }
@@ -495,7 +497,7 @@ public class ContainerServiceImpl implements ContainerService {
         if (subtype.equals(DOCKER_SETUP.getName())) {
             log.debug("Container {} is a setup container for parent container {}. Checking whether parent needs a status change.", databaseId, parentDatabaseId);
             final List<Container> setupContainers = retrieveSetupContainersForParent(parentDatabaseId);
-            if (setupContainers != null && setupContainers.size() > 0) {
+            if (setupContainers.size() > 0) {
                 final Runnable startMainContainer = new Runnable() {
                     @Override
                     public void run() {
@@ -521,9 +523,8 @@ public class ContainerServiceImpl implements ContainerService {
 
             log.debug("Container {} is a wrapup container for parent container {}.", databaseId, parentDatabaseId);
 
-            log.debug("Container {} is a setup container for parent container {}. Checking whether parent needs a status change.", databaseId, parentDatabaseId);
-            final List<Container> wrapupContainers = retrieveWrapupContainersForParent(parentDatabaseId);
-            if (wrapupContainers != null && wrapupContainers.size() > 0) {
+            final List<Container> wrapupContainersForParent = retrieveWrapupContainersForParent(parentDatabaseId);
+            if (wrapupContainersForParent.size() > 0) {
                 final Runnable finalizeMainContainer = new Runnable() {
                     @Override
                     public void run() {
@@ -539,7 +540,7 @@ public class ContainerServiceImpl implements ContainerService {
                     }
                 };
 
-                checkIfSpecialContainersFailed(wrapupContainers, parent, finalizeMainContainer, "Wrapup", userI);
+                checkIfSpecialContainersFailed(wrapupContainersForParent, parent, finalizeMainContainer, "Wrapup", userI);
             }
         }
     }
