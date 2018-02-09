@@ -52,7 +52,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -468,7 +467,7 @@ public class ContainerServiceImpl implements ContainerService {
         final String serviceOrContainerId = notFinalized.isSwarmService() ? notFinalized.serviceId() : notFinalized.containerId();
         log.info("Finalizing Container {}, {} id {}.", databaseId, serviceOrContainer, serviceOrContainerId);
 
-        final Container finalized = containerFinalizeService.finalizeContainer(notFinalized, userI, exitCodeIsFailed(exitCode));
+        final Container finalized = containerFinalizeService.finalizeContainer(notFinalized, userI, exitCodeIsFailed(exitCode), wrapupContainers);
 
         log.debug("Done uploading for Container {}. Now saving information about created outputs.", databaseId);
 
