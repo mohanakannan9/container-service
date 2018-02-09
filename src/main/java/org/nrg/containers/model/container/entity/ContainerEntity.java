@@ -101,7 +101,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
         this.setCommandLine(containerPojo.commandLine());
         this.setWorkingDirectory(containerPojo.workingDirectory());
         this.setSubtype(containerPojo.subtype());
-        this.setParentContainerEntity(fromPojo(containerPojo.parentContainer()));
+        this.setParentContainerEntity(fromPojo(containerPojo.parent()));
         this.setEnvironmentVariables(containerPojo.environmentVariables());
         this.setPorts(containerPojo.ports());
         this.setLogPaths(containerPojo.logPaths());

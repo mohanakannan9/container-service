@@ -17,7 +17,6 @@ import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.command.auto.ResolvedInputTreeNode;
 import org.nrg.containers.model.command.auto.ResolvedInputValue;
-import org.nrg.containers.model.command.entity.CommandType;
 import org.nrg.containers.model.container.auto.Container;
 import org.nrg.containers.model.container.auto.Container.ContainerHistory;
 import org.nrg.containers.model.container.auto.ServiceTask;
@@ -243,7 +242,7 @@ public class ContainerServiceImpl implements ContainerService {
         final Container savedContainerOrService = toPojo(containerEntityService.save(fromPojo(
                 createdContainerOrService.toBuilder()
                         .workflowId(workflowId)
-                        .setParentProperties(parent)
+                        .parent(parent)
                         .build()
         ), userI));
 
@@ -406,7 +405,7 @@ public class ContainerServiceImpl implements ContainerService {
 
         containerEntityService.update(fromPojo(finalized));
 
-        final Container parent = finalized.parentContainer();
+        final Container parent = finalized.parent();
         if (parent == null) {
             // Nothing left to do. This container is done.
             log.debug("Done finalizing Container {}, {} id {}.", databaseId, serviceOrContainer, serviceOrContainerId);
