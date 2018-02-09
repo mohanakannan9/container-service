@@ -432,6 +432,7 @@ public class DockerControlApi implements ContainerControlApi {
                     limitCpu);
             return container.toBuilder()
                     .serviceId(serviceId)
+                    .swarm(true)
                     .userId(userI.getLogin())
                     .build();
         } else {

@@ -261,6 +261,13 @@ public class ContainerServiceImpl implements ContainerService {
                 launchResolvedCommand(resolvedSetupCommand, userI, savedContainerOrService);
             }
         } else {
+            if (resolvedCommand.wrapupCommands().size() > 0) {
+                log.info("Creating wrapup container objects in database (not creating docker containers).");
+                for (final ResolvedCommand resolvedWrapupCommand : resolvedCommand.wrapupCommands()) {
+                    final Container wrapupContainer = createWrapupContainerInDbFromResolvedCommand(resolvedWrapupCommand, savedContainerOrService, userI);
+                    log.debug("Created wrapup container {} for parent container {}.", wrapupContainer.databaseId(), savedContainerOrService.databaseId());
+                }
+            }
             startContainer(userI, savedContainerOrService);
         }
 
@@ -279,6 +286,15 @@ public class ContainerServiceImpl implements ContainerService {
     }
 
     @Nonnull
+    private Container createWrapupContainerInDbFromResolvedCommand(final ResolvedCommand resolvedCommand, final Container parent, final UserI userI) {
+        final Container toCreate = Container.containerFromResolvedCommand(resolvedCommand, null, userI.getLogin()).toBuilder()
+                .parent(parent)
+                .subtype(DOCKER_WRAPUP.getName())
+                .build();
+        return toPojo(containerEntityService.create(fromPojo(toCreate)));
+    }
+
+    @Nonnull
     private List<Container> launchWrapupContainersForParent(final Container parent, final UserI userI) throws DockerServerException, NoDockerServerException, ContainerException {
         final long parentDatabaseId = parent.databaseId();
         log.debug("Launching wrapup containers for parent container {}.", parentDatabaseId);
@@ -291,14 +307,14 @@ public class ContainerServiceImpl implements ContainerService {
 
         final List<Container> launched = new ArrayList<>(wrapupContainersToLaunch.size());
         for (final Container wrapupContainerToLaunch : wrapupContainersToLaunch) {
-            launched.add(launchContainer(wrapupContainerToLaunch, userI));
+            launched.add(launchContainerFromDbObject(wrapupContainerToLaunch, userI));
         }
 
         return launched;
     }
 
     @Nonnull
-    private Container launchContainer(final Container toLaunch, final UserI userI) throws DockerServerException, NoDockerServerException, ContainerException {
+    private Container launchContainerFromDbObject(final Container toLaunch, final UserI userI) throws DockerServerException, NoDockerServerException, ContainerException {
         final Container preparedToLaunch = prepareToLaunch(toLaunch, userI);
 
         log.info("Creating docker container for wrapup container {}.", toLaunch.databaseId());
