@@ -23,9 +23,9 @@ import java.util.concurrent.TimeUnit;
 @Import({IntegrationTestConfig.class})
 public class EventPullingIntegrationTestConfig implements SchedulingConfigurer {
     @Bean
-    public DockerStatusUpdater dockerEventPuller(final DockerControlApi dockerControlApi,
-                                                 final DockerServerService dockerServerService,
-                                                 final ContainerService containerService) {
+    public DockerStatusUpdater dockerStatusUpdater(final DockerControlApi dockerControlApi,
+                                                   final DockerServerService dockerServerService,
+                                                   final ContainerService containerService) {
         return new DockerStatusUpdater(dockerControlApi, dockerServerService, containerService);
     }
 

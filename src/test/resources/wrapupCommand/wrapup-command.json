@@ -1,0 +1,10 @@
+{
+    "name": "wrapup-command",
+    "description": "A wrapup command",
+    "type": "docker-wrapup",
+    "image": "xnat/test-wrapup-command:latest",
+    "command-line": "wrapup-command-script.sh",
+    "inputs": [],
+    "mounts": [],
+    "xnat": []
+}
