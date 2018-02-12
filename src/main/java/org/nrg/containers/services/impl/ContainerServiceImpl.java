@@ -256,19 +256,20 @@ public class ContainerServiceImpl implements ContainerService {
                         .build()
         ), userI));
 
+        if (resolvedCommand.wrapupCommands().size() > 0) {
+            log.info("Creating wrapup container objects in database (not creating docker containers).");
+            for (final ResolvedCommand resolvedWrapupCommand : resolvedCommand.wrapupCommands()) {
+                final Container wrapupContainer = createWrapupContainerInDbFromResolvedCommand(resolvedWrapupCommand, savedContainerOrService, userI);
+                log.debug("Created wrapup container {} for parent container {}.", wrapupContainer.databaseId(), savedContainerOrService.databaseId());
+            }
+        }
+
         if (resolvedCommand.setupCommands().size() > 0) {
             log.info("Launching setup containers.");
             for (final ResolvedCommand resolvedSetupCommand : resolvedCommand.setupCommands()) {
                 launchResolvedCommand(resolvedSetupCommand, userI, savedContainerOrService);
             }
         } else {
-            if (resolvedCommand.wrapupCommands().size() > 0) {
-                log.info("Creating wrapup container objects in database (not creating docker containers).");
-                for (final ResolvedCommand resolvedWrapupCommand : resolvedCommand.wrapupCommands()) {
-                    final Container wrapupContainer = createWrapupContainerInDbFromResolvedCommand(resolvedWrapupCommand, savedContainerOrService, userI);
-                    log.debug("Created wrapup container {} for parent container {}.", wrapupContainer.databaseId(), savedContainerOrService.databaseId());
-                }
-            }
             startContainer(userI, savedContainerOrService);
         }
 
