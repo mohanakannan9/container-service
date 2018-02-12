@@ -1755,7 +1755,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             Map<String, ResolvedCommandMount> resolvedCommandMountMap = null;
             for (final ResolvedCommandOutput resolvedCommandOutput : resolvedCommandOutputs) {
                 if (resolvedCommandOutput.viaWrapupCommand() != null) {
-
+                    log.debug("Found wrapup command \"{}\" for output handler \"{}\".", resolvedCommandOutput.viaWrapupCommand(), resolvedCommandOutput.name());
                     final String outputMountName = resolvedCommandOutput.mount();
                     if (resolvedCommandMountMap == null) {
                         resolvedCommandMountMap = new HashMap<>();
