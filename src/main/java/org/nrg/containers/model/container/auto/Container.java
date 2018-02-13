@@ -584,6 +584,7 @@ public abstract class Container {
         @JsonProperty("label") public abstract String label();
         @Nullable @JsonProperty("created") public abstract String created();
         @JsonProperty("handled-by-wrapper-input") public abstract String handledByWrapperInput();
+        @Nullable @JsonProperty("via-wrapup-container") public abstract String viaWrapupContainer();
 
         @JsonCreator
         public static ContainerOutput create(@JsonProperty("id") final long databaseId,
@@ -595,7 +596,8 @@ public abstract class Container {
                                              @JsonProperty("glob") final String glob,
                                              @JsonProperty("label") final String label,
                                              @JsonProperty("created") final String created,
-                                             @JsonProperty("handled-by-wrapper-input") final String handledByWrapperInput) {
+                                             @JsonProperty("handled-by-wrapper-input") final String handledByWrapperInput,
+                                             @JsonProperty("viaWrapupContainer") final String viaWrapupContainer) {
             return builder()
                     .databaseId(databaseId)
                     .name(name)
@@ -607,13 +609,22 @@ public abstract class Container {
                     .label(label)
                     .created(created)
                     .handledByWrapperInput(handledByWrapperInput)
+                    .viaWrapupContainer(viaWrapupContainer)
                     .build();
         }
 
         public static ContainerOutput create(final ContainerEntityOutput containerEntityOutput) {
-            return create(containerEntityOutput.getId(), containerEntityOutput.getName(), containerEntityOutput.getType(), containerEntityOutput.isRequired(),
-                    containerEntityOutput.getMount(), containerEntityOutput.getPath(), containerEntityOutput.getGlob(),
-                    containerEntityOutput.getLabel(), containerEntityOutput.getCreated(), containerEntityOutput.getHandledByXnatCommandInput());
+            return create(containerEntityOutput.getId(),
+                    containerEntityOutput.getName(),
+                    containerEntityOutput.getType(),
+                    containerEntityOutput.isRequired(),
+                    containerEntityOutput.getMount(),
+                    containerEntityOutput.getPath(),
+                    containerEntityOutput.getGlob(),
+                    containerEntityOutput.getLabel(),
+                    containerEntityOutput.getCreated(),
+                    containerEntityOutput.getHandledByXnatCommandInput(),
+                    containerEntityOutput.getViaWrapupContainer());
         }
 
         public static ContainerOutput create(final ResolvedCommand.ResolvedCommandOutput resolvedCommandOutput) {
@@ -626,7 +637,8 @@ public abstract class Container {
                     resolvedCommandOutput.glob(),
                     resolvedCommandOutput.label(),
                     null,
-                    resolvedCommandOutput.handledByWrapperInput());
+                    resolvedCommandOutput.handledByWrapperInput(),
+                    resolvedCommandOutput.viaWrapupCommand());
         }
 
         public static Builder builder() {
@@ -647,6 +659,7 @@ public abstract class Container {
             public abstract Builder label(String label);
             public abstract Builder created(String created);
             public abstract Builder handledByWrapperInput(String handledByWrapperInput);
+            public abstract Builder viaWrapupContainer(String viaWrapupContainer);
 
             public abstract ContainerOutput build();
         }

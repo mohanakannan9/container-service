@@ -356,6 +356,7 @@ public abstract class ResolvedCommand {
         @JsonProperty("glob") @Nullable public abstract String glob();
         @JsonProperty("label") public abstract String label();
         @JsonProperty("handled-by-wrapper-input") public abstract String handledByWrapperInput();
+        @Nullable @JsonProperty("via-wrapup-command") public abstract String viaWrapupCommand();
 
         public static Builder builder() {
             return new AutoValue_ResolvedCommand_ResolvedCommandOutput.Builder();
@@ -371,6 +372,7 @@ public abstract class ResolvedCommand {
             public abstract Builder glob(String glob);
             public abstract Builder label(String label);
             public abstract Builder handledByWrapperInput(String handledByWrapperInput);
+            public abstract Builder viaWrapupCommand(String viaWrapupCommand);
 
             public abstract ResolvedCommandOutput build();
         }

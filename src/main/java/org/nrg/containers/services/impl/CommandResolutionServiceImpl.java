@@ -1596,6 +1596,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                     .glob(commandOutput.glob())
                     .type(commandOutputHandler.type())
                     .handledByWrapperInput(commandOutputHandler.wrapperInputName())
+                    .viaWrapupCommand(commandOutputHandler.viaWrapupCommand())
                     .path(resolveTemplate(commandOutput.path(), resolvedInputValuesByReplacementKey))
                     .label(resolveTemplate(commandOutputHandler.label(), resolvedInputValuesByReplacementKey))
                     .build();
