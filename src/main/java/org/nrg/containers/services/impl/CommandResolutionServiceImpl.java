@@ -1476,93 +1476,14 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             }
 
             for (final CommandOutput commandOutput : command.outputs()) {
-                log.info("Resolving command output \"{}\".", commandOutput.name());
-                log.debug("{}", commandOutput);
 
-                // TODO fix this in validation
-                final CommandWrapperOutput commandOutputHandler = xnatCommandOutputsByCommandOutputName.get(commandOutput.name());
-                if (commandOutputHandler == null) {
-                    throw new CommandResolutionException(String.format("No wrapper output handler was configured to handle command output \"%s\".", commandOutput.name()));
+                final ResolvedCommandOutput resolvedOutput = resolveCommandOutput(commandOutput, resolvedInputTrees, resolvedInputValuesByReplacementKey,
+                        xnatCommandOutputsByCommandOutputName);
+                if (resolvedOutput == null) {
+                    continue;
                 }
-                log.debug("Found Output Handler \"{}\" for Command output \"{}\".", commandOutputHandler.name(), commandOutput.name());
-
-                // Fail fast: if we will not be able to create the output, either throw or log that now and don't try later.
-                // First check that the handler input has a unique value
-                final ResolvedInputValue parentInputResolvedValue = getInputValueByName(commandOutputHandler.wrapperInputName(), resolvedInputTrees);
-                if (parentInputResolvedValue == null) {
-                    final String message = String.format("Cannot resolve output \"%s\". " +
-                                    "Input \"%s\" is supposed to handle the output, but it does not have a uniquely resolved value. " +
-                                    "Either there is no value, or there are multiple values." +
-                                    "(We can't loop over input values yet, so the latter is an error as much as the former.)",
-                            commandOutput.name(), commandOutputHandler.wrapperInputName());
-                    if (Boolean.TRUE.equals(commandOutput.required())) {
-                        throw new CommandResolutionException(message);
-                    } else {
-                        log.error("Skipping output \"{}\".", commandOutput.name());
-                        log.error(message);
-                        continue;
-                    }
-                }
-
-                // Next check that the handler input's value is an XNAT object
-                final String parentValue = parentInputResolvedValue.value() != null ? parentInputResolvedValue.value() : "";
-                URIManager.DataURIA uri = null;
-                try {
-                    uri = UriParserUtils.parseURI(parentValue.startsWith("/archive") ? parentValue : "/archive" + parentValue);
-                } catch (MalformedURLException ignored) {
-                    // ignored
-                }
-
-                if (uri == null || !(uri instanceof ArchiveItemURI)) {
-                    final String message = String.format("Cannot resolve output \"%s\". " +
-                                    "Input \"%s\" is supposed to handle the output, but it does not have an XNAT object value.",
-                            commandOutput.name(), commandOutputHandler.wrapperInputName());
-                    if (Boolean.TRUE.equals(commandOutput.required())) {
-                        throw new CommandResolutionException(message);
-                    } else {
-                        log.error("Skipping output \"{}\".", commandOutput.name());
-                        log.error(message);
-                        continue;
-                    }
-                }
-
-                // Next check that the user has edit permissions on the handler input's XNAT object
-                final URIManager.ArchiveItemURI resourceURI = (URIManager.ArchiveItemURI) uri;
-                final ArchivableItem item = resourceURI.getSecurityItem();
-                boolean canEdit;
-                try {
-                    canEdit = Permissions.canEdit(userI, item);
-                } catch (Exception ignored) {
-                    canEdit = false;
-                }
-                if (!canEdit) {
-                    final String message = String.format("Cannot resolve output \"%s\". " +
-                                    "Input \"%s\" is supposed to handle the output, but user \"%s\" does not have permission " +
-                                    "to edit the XNAT object \"%s\".",
-                            commandOutput.name(), commandOutputHandler.wrapperInputName(),
-                            userI.getLogin(), parentValue);
-                    if (Boolean.TRUE.equals(commandOutput.required())) {
-                        throw new CommandResolutionException(message);
-                    } else {
-                        log.error("Skipping output \"{}\".", commandOutput.name());
-                        log.error(message);
-                        continue;
-                    }
-                }
-
-                final ResolvedCommandOutput resolvedOutput = ResolvedCommandOutput.builder()
-                        .name(commandOutput.name())
-                        .required(commandOutput.required())
-                        .mount(commandOutput.mount())
-                        .glob(commandOutput.glob())
-                        .type(commandOutputHandler.type())
-                        .handledByWrapperInput(commandOutputHandler.wrapperInputName())
-                        .path(resolveTemplate(commandOutput.path(), resolvedInputValuesByReplacementKey))
-                        .label(resolveTemplate(commandOutputHandler.label(), resolvedInputValuesByReplacementKey))
-                        .build();
 
                 log.debug("Adding resolved output \"{}\" to resolved command.", resolvedOutput.name());
-
                 resolvedOutputs.add(resolvedOutput);
             }
 
@@ -1576,6 +1497,99 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 log.debug(message);
             }
             return resolvedOutputs;
+        }
+
+        @Nullable
+        private ResolvedCommandOutput resolveCommandOutput(final CommandOutput commandOutput,
+                                                           final List<ResolvedInputTreeNode<? extends Input>> resolvedInputTrees,
+                                                           final Map<String, String> resolvedInputValuesByReplacementKey,
+                                                           final Map<String, CommandWrapperOutput> xnatCommandOutputsByCommandOutputName)
+                throws CommandResolutionException {
+            log.info("Resolving command output \"{}\".", commandOutput.name());
+            log.debug("{}", commandOutput);
+
+            // TODO fix this in validation
+            final CommandWrapperOutput commandOutputHandler = xnatCommandOutputsByCommandOutputName.get(commandOutput.name());
+            if (commandOutputHandler == null) {
+                throw new CommandResolutionException(String.format("No wrapper output handler was configured to handle command output \"%s\".", commandOutput.name()));
+            }
+            log.debug("Found Output Handler \"{}\" for Command output \"{}\".", commandOutputHandler.name(), commandOutput.name());
+
+            // Fail fast: if we will not be able to create the output, either throw or log that now and don't try later.
+            // First check that the handler input has a unique value
+            final ResolvedInputValue parentInputResolvedValue = getInputValueByName(commandOutputHandler.wrapperInputName(), resolvedInputTrees);
+            if (parentInputResolvedValue == null) {
+                final String message = String.format("Cannot resolve output \"%s\". " +
+                                "Input \"%s\" is supposed to handle the output, but it does not have a uniquely resolved value. " +
+                                "Either there is no value, or there are multiple values." +
+                                "(We can't loop over input values yet, so the latter is an error as much as the former.)",
+                        commandOutput.name(), commandOutputHandler.wrapperInputName());
+                if (Boolean.TRUE.equals(commandOutput.required())) {
+                    throw new CommandResolutionException(message);
+                } else {
+                    log.error("Skipping output \"{}\".", commandOutput.name());
+                    log.error(message);
+                    return null;
+                }
+            }
+
+            // Next check that the handler input's value is an XNAT object
+            final String parentValueMayBeNull = parentInputResolvedValue.value();
+            final String parentValue = parentValueMayBeNull != null ? parentValueMayBeNull : "";
+            URIManager.DataURIA uri = null;
+            try {
+                uri = UriParserUtils.parseURI(parentValue.startsWith("/archive") ? parentValue : "/archive" + parentValue);
+            } catch (MalformedURLException ignored) {
+                // ignored
+            }
+
+            if (uri == null || !(uri instanceof ArchiveItemURI)) {
+                final String message = String.format("Cannot resolve output \"%s\". " +
+                                "Input \"%s\" is supposed to handle the output, but it does not have an XNAT object value.",
+                        commandOutput.name(), commandOutputHandler.wrapperInputName());
+                if (Boolean.TRUE.equals(commandOutput.required())) {
+                    throw new CommandResolutionException(message);
+                } else {
+                    log.error("Skipping output \"{}\".", commandOutput.name());
+                    log.error(message);
+                    return null;
+                }
+            }
+
+            // Next check that the user has edit permissions on the handler input's XNAT object
+            final URIManager.ArchiveItemURI resourceURI = (URIManager.ArchiveItemURI) uri;
+            final ArchivableItem item = resourceURI.getSecurityItem();
+            boolean canEdit;
+            try {
+                canEdit = Permissions.canEdit(userI, item);
+            } catch (Exception ignored) {
+                canEdit = false;
+            }
+            if (!canEdit) {
+                final String message = String.format("Cannot resolve output \"%s\". " +
+                                "Input \"%s\" is supposed to handle the output, but user \"%s\" does not have permission " +
+                                "to edit the XNAT object \"%s\".",
+                        commandOutput.name(), commandOutputHandler.wrapperInputName(),
+                        userI.getLogin(), parentValue);
+                if (Boolean.TRUE.equals(commandOutput.required())) {
+                    throw new CommandResolutionException(message);
+                } else {
+                    log.error("Skipping output \"{}\".", commandOutput.name());
+                    log.error(message);
+                    return null;
+                }
+            }
+
+            return ResolvedCommandOutput.builder()
+                    .name(commandOutput.name())
+                    .required(commandOutput.required())
+                    .mount(commandOutput.mount())
+                    .glob(commandOutput.glob())
+                    .type(commandOutputHandler.type())
+                    .handledByWrapperInput(commandOutputHandler.wrapperInputName())
+                    .path(resolveTemplate(commandOutput.path(), resolvedInputValuesByReplacementKey))
+                    .label(resolveTemplate(commandOutputHandler.label(), resolvedInputValuesByReplacementKey))
+                    .build();
         }
 
         @Nonnull
