@@ -9,7 +9,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.exceptions.ContainerException;
-import org.nrg.containers.exceptions.ContainerFinalizationException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoDockerServerException;
 import org.nrg.containers.exceptions.UnauthorizedException;
@@ -109,7 +108,7 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
             } else {
                 wrapupContainerMap = new HashMap<>();
                 for (final Container wrapupContainer : wrapupContainers) {
-                    wrapupContainerMap.put(wrapupContainer.dockerImage(), wrapupContainer);
+                    wrapupContainerMap.put(wrapupContainer.parentSourceObjectName(), wrapupContainer);
                 }
             }
         }
@@ -274,7 +273,7 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
                 mountXnatHostPath = mount.xnatHostPath();
             } else {
                 log.debug(prefix + "Output files are provided by wrapup container \"{}\".", viaWrapupContainer);
-                final Container wrapupContainer = getWrapupContainer(viaWrapupContainer);
+                final Container wrapupContainer = getWrapupContainer(output.name());
                 if (wrapupContainer == null) {
                     throw new ContainerException(prefix + "Container output \"" + output.name() + "\" " +
                             "must be processed via wrapup container \"" + viaWrapupContainer + "\" which was not found.");
@@ -450,8 +449,8 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
         }
 
         @Nullable
-        private Container getWrapupContainer(final String wrapupContainerImageName) {
-            return wrapupContainerMap.get(wrapupContainerImageName);
+        private Container getWrapupContainer(final String parentSourceObjectName) {
+            return wrapupContainerMap.get(parentSourceObjectName);
         }
 
         private List<File> matchGlob(final String rootPath, final String glob) {
