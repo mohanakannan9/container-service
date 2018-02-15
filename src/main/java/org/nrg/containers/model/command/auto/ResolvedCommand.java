@@ -36,9 +36,11 @@ public abstract class ResolvedCommand {
     @JsonProperty("outputs") public abstract ImmutableList<ResolvedCommandOutput> outputs();
     @JsonProperty("working-directory") @Nullable public abstract String workingDirectory();
     @JsonProperty("setup-commands") public abstract ImmutableList<ResolvedCommand> setupCommands();
+    @JsonProperty("wrapup-commands") public abstract ImmutableList<ResolvedCommand> wrapupCommands();
     @JsonProperty("reserve-memory") @Nullable public abstract Long reserveMemory();
     @JsonProperty("limit-memory") @Nullable public abstract Long limitMemory();
     @JsonProperty("limit-cpu") @Nullable public abstract Double limitCpu();
+    @JsonProperty("parent-source-object-name") @Nullable public abstract String parentSourceObjectName();
 
     @JsonProperty("external-wrapper-input-values")
     public ImmutableMap<String, String> externalWrapperInputValues() {
@@ -136,13 +138,17 @@ public abstract class ResolvedCommand {
     /**
      * Creates ResolvedCommands for setup and wrapup commands.
      * @param command The Command definition for the setup or wrapup command
-     * @param inputMountPath
-     * @param outputMountPath
-     * @return
+     * @param inputMountPath Path on the host to the input mount
+     * @param outputMountPath Path on the host to the output mount
+     * @param parentSourceObjectName Name of the Resolved Command Mount / Container Mount (for setup commands) or
+     *                               Resolved Command Output / Container Ouput (for wrapup commands) from which this
+     *                               special Resolved Command is being created.
+     * @return A Resolved Setup Command or Resolved Wrapup Command
      */
     public static ResolvedCommand fromSpecialCommandType(final Command command,
                                                          final String inputMountPath,
-                                                         final String outputMountPath) {
+                                                         final String outputMountPath,
+                                                         final String parentSourceObjectName) {
         return builder()
                 .wrapperId(0L)
                 .wrapperName("")
@@ -155,6 +161,7 @@ public abstract class ResolvedCommand {
                 .reserveMemory(command.reserveMemory())
                 .limitMemory(command.limitMemory())
                 .limitCpu(command.limitCpu())
+                .parentSourceObjectName(parentSourceObjectName)
                 .addMount(ResolvedCommandMount.builder()
                         .name("input")
                         .containerPath("/input")
@@ -220,12 +227,14 @@ public abstract class ResolvedCommand {
             return this;
         }
         public abstract Builder mounts(List<ResolvedCommandMount> mounts);
+        public abstract Builder mounts(ResolvedCommandMount... mounts);
         public abstract ImmutableList.Builder<ResolvedCommandMount> mountsBuilder();
         public Builder addMount(final ResolvedCommandMount mount) {
             mountsBuilder().add(mount);
             return this;
         }
         public abstract Builder outputs(List<ResolvedCommandOutput> outputs);
+        public abstract Builder outputs(ResolvedCommandOutput... outputs);
         public abstract ImmutableList.Builder<ResolvedCommandOutput> outputsBuilder();
         public Builder addOutput(final ResolvedCommandOutput output) {
             outputsBuilder().add(output);
@@ -234,15 +243,25 @@ public abstract class ResolvedCommand {
         public abstract Builder workingDirectory(String workingDirectory);
 
         public abstract Builder setupCommands(List<ResolvedCommand> setupCommands);
+        public abstract Builder setupCommands(ResolvedCommand... setupCommands);
         public abstract ImmutableList.Builder<ResolvedCommand> setupCommandsBuilder();
         public Builder addSetupCommand(final ResolvedCommand setupCommand) {
             setupCommandsBuilder().add(setupCommand);
             return this;
         }
 
+        public abstract Builder wrapupCommands(List<ResolvedCommand> wrapupCommands);
+        public abstract Builder wrapupCommands(ResolvedCommand... wrapupCommands);
+        public abstract ImmutableList.Builder<ResolvedCommand> wrapupCommandsBuilder();
+        public Builder addWrapupCommand(final ResolvedCommand wrapupCommand) {
+            wrapupCommandsBuilder().add(wrapupCommand);
+            return this;
+        }
+
         public abstract Builder reserveMemory(Long reserveMemory);
         public abstract Builder limitMemory(Long limitMemory);
         public abstract Builder limitCpu(Double limitCpu);
+        public abstract Builder parentSourceObjectName(String parentSourceObjectName);
 
         public abstract ResolvedCommand build();
     }
@@ -344,6 +363,7 @@ public abstract class ResolvedCommand {
         @JsonProperty("glob") @Nullable public abstract String glob();
         @JsonProperty("label") public abstract String label();
         @JsonProperty("handled-by-wrapper-input") public abstract String handledByWrapperInput();
+        @Nullable @JsonProperty("via-wrapup-command") public abstract String viaWrapupCommand();
 
         public static Builder builder() {
             return new AutoValue_ResolvedCommand_ResolvedCommandOutput.Builder();
@@ -359,6 +379,7 @@ public abstract class ResolvedCommand {
             public abstract Builder glob(String glob);
             public abstract Builder label(String label);
             public abstract Builder handledByWrapperInput(String handledByWrapperInput);
+            public abstract Builder viaWrapupCommand(String viaWrapupCommand);
 
             public abstract ResolvedCommandOutput build();
         }

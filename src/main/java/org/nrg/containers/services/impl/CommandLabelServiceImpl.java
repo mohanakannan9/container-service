@@ -57,7 +57,6 @@ public class CommandLabelServiceImpl implements CommandLabelService {
                         // So we add them now.
                         commandsToReturn.add(
                                 command.toBuilder()
-                                        .type(CommandType.DOCKER.getName())
                                         .image(imageName)
                                         .hash(dockerImage.imageId())
                                         .build()

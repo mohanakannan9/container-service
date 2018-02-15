@@ -1,0 +1,16 @@
+{
+  "id": "session1",
+  "type": "Session",
+  "label": "session1",
+  "uri": "/experiments/session1",
+  "xsiType": "xnat:aSession",
+  "resources": [
+    {
+      "id": 0,
+      "type": "Resource",
+      "label": "RESOURCE",
+      "xsiType": "xnat:aResource",
+      "uri": "/experiments/session1/resources/RESOURCE"
+    }
+  ]
+}

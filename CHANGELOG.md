@@ -40,10 +40,11 @@ Not yet released.
 
 ### Bugfixes
 
-*
+* [CS-475][] Ensure references to setup and wrapup containers can be resolved unambiguously by including the name of the source object on the parent container for which we created this particular setup or wrapup container.
 
 [nrgxnat/container-service#6]: https://github.com/NrgXnat/container-service/pull/6
 [CS-461]: https://issues.xnat.org/browse/CS-461
+[CS-475]: https://issues.xnat.org/browse/CS-475
 [entrypoint-post]: https://groups.google.com/forum/#!msg/xnat_discussion/NBVjAS8gXhU/Zu7xJngCAgAJ
 
 ## 1.4.0

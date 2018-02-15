@@ -392,4 +392,17 @@ public class CommandEntityTest {
         assertThat(errors, is(Matchers.<String>emptyIterable()));
         final CommandEntity createdSetupCommandEntity = commandEntityService.create(CommandEntity.fromPojo(setupCommand));
     }
+
+    @Test
+    @DirtiesContext
+    public void testCreateWrapupCommand() throws Exception {
+        final Command wrapup = Command.builder()
+                .name("wrapup")
+                .type("docker-wrapup")
+                .image("a-wrapup-image")
+                .build();
+        final List<String> errors = wrapup.validate();
+        assertThat(errors, is(Matchers.<String>emptyIterable()));
+        final CommandEntity createdWrapupCommandEntity = commandEntityService.create(CommandEntity.fromPojo(wrapup));
+    }
 }

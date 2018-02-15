@@ -265,9 +265,11 @@ public abstract class Command {
         if (type().equals(CommandType.DOCKER.getName())) {
             errors.addAll(validateDockerCommand());
         } else if (type().equals(CommandType.DOCKER_SETUP.getName())) {
-            errors.addAll(validateDockerSetupCommand());
+            errors.addAll(validateDockerSetupOrWrapupCommand("Setup"));
+        } else if (type().equals(CommandType.DOCKER_WRAPUP.getName())) {
+            errors.addAll(validateDockerSetupOrWrapupCommand("Wrapup"));
         } else {
-            errors.add(commandName + "Cannot instantiate command of type \"" + type() + "\". Known types: " + StringUtils.join(commandTypeNames, ", "));
+            errors.add(commandName + "Cannot validate command of type \"" + type() + "\". Known types: " + StringUtils.join(commandTypeNames, ", "));
         }
 
         return errors;
@@ -444,27 +446,27 @@ public abstract class Command {
     }
 
     @Nonnull
-    private List<String> validateDockerSetupCommand() {
+    private List<String> validateDockerSetupOrWrapupCommand(final String setupOrWrapup) {
         final List<String> errors = new ArrayList<>();
         final String commandName = "Command \"" + name() + "\" - ";
 
         if (mounts().size() > 0) {
-            errors.add(commandName + "Setup commands cannot declare any mounts.");
+            errors.add(commandName + " " + setupOrWrapup + " commands cannot declare any mounts.");
         }
         if (inputs().size() > 0) {
-            errors.add(commandName + "Setup commands cannot declare any inputs.");
+            errors.add(commandName + " " + setupOrWrapup + " commands cannot declare any inputs.");
         }
         if (outputs().size() > 0) {
-            errors.add(commandName + "Setup commands cannot declare any outputs.");
+            errors.add(commandName + " " + setupOrWrapup + " commands cannot declare any outputs.");
         }
         if (xnatCommandWrappers().size() > 0) {
-            errors.add(commandName + "Setup commands cannot declare any wrappers.");
+            errors.add(commandName + " " + setupOrWrapup + " commands cannot declare any wrappers.");
         }
         if (environmentVariables().size() > 0) {
-            errors.add(commandName + "Setup commands cannot declare any environment variables.");
+            errors.add(commandName + " " + setupOrWrapup + " commands cannot declare any environment variables.");
         }
         if (ports().size() > 0) {
-            errors.add(commandName + "Setup commands cannot declare any ports.");
+            errors.add(commandName + " " + setupOrWrapup + " commands cannot declare any ports.");
         }
 
 
@@ -1236,6 +1238,7 @@ public abstract class Command {
         @JsonIgnore public abstract long id();
         @Nullable @JsonProperty("name") public abstract String name();
         @Nullable @JsonProperty("accepts-command-output") public abstract String commandOutputName();
+        @Nullable @JsonProperty("via-wrapup-command") public abstract String viaWrapupCommand();
         @Nullable @JsonProperty("as-a-child-of-wrapper-input") public abstract String wrapperInputName();
         @JsonProperty("type") public abstract String type();
         @Nullable @JsonProperty("label") public abstract String label();
@@ -1244,12 +1247,14 @@ public abstract class Command {
         public static CommandWrapperOutput create(@JsonProperty("name") final String name,
                                                   @JsonProperty("accepts-command-output") final String commandOutputName,
                                                   @JsonProperty("as-a-child-of-wrapper-input") final String wrapperInputName,
+                                                  @JsonProperty("via-wrapup-command") final String viaWrapupCommand,
                                                   @JsonProperty("type") final String type,
                                                   @JsonProperty("label") final String label) {
             return builder()
                     .name(name)
                     .commandOutputName(commandOutputName)
                     .wrapperInputName(wrapperInputName)
+                    .viaWrapupCommand(viaWrapupCommand)
                     .type(type == null ? CommandWrapperOutputEntity.DEFAULT_TYPE.getName() : type)
                     .label(label)
                     .build();
@@ -1264,6 +1269,7 @@ public abstract class Command {
                     .name(wrapperOutput.getName())
                     .commandOutputName(wrapperOutput.getCommandOutputName())
                     .wrapperInputName(wrapperOutput.getWrapperInputName())
+                    .viaWrapupCommand(wrapperOutput.getViaWrapupCommand())
                     .type(wrapperOutput.getType().getName())
                     .label(wrapperOutput.getLabel())
                     .build();

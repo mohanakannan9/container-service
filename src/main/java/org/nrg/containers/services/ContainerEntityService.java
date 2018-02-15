@@ -22,6 +22,7 @@ public interface ContainerEntityService extends BaseHibernateService<ContainerEn
     List<ContainerEntity> retrieveNonfinalizedServices();
 
     List<ContainerEntity> retrieveSetupContainersForParent(long parentId);
+    List<ContainerEntity> retrieveWrapupContainersForParent(long parentId);
 
     ContainerEntity addContainerEventToHistory(final ContainerEvent containerEvent, final UserI userI);
     ContainerEntityHistory addContainerHistoryItem(final ContainerEntity containerEntity,
