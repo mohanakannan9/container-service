@@ -51,4 +51,6 @@ public interface DockerService {
     DockerImage getImage(String imageId) throws NoDockerServerException, NotFoundException;
     void removeImageById(String imageId, Boolean force) throws NotFoundException, NoDockerServerException, DockerServerException;
     List<Command> saveFromImageLabels(String imageName) throws DockerServerException, NotFoundException, NoDockerServerException;
+
+    Command getCommandByImage(String image) throws NotFoundException;
 }

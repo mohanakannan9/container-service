@@ -19,6 +19,7 @@ import javax.persistence.Transient;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -50,8 +51,10 @@ public class ContainerEntity extends AbstractHibernateEntity {
     private Date statusTime;
     private String dockerImage;
     private String commandLine;
+    private Boolean overrideEntrypoint;
     private String workingDirectory;
     private Map<String, String> environmentVariables = Maps.newHashMap();
+    private Map<String, String> ports = new HashMap<>();
     private List<ContainerEntityMount> mounts = Lists.newArrayList();
     private String containerId;
     private String workflowId;
@@ -62,11 +65,14 @@ public class ContainerEntity extends AbstractHibernateEntity {
     private String nodeId;
     private String subtype;
     private ContainerEntity parentContainerEntity;
+    private String parentSourceObjectName;
     private List<ContainerEntityInput> inputs;
     private List<ContainerEntityOutput> outputs;
     private List<ContainerEntityHistory> history = Lists.newArrayList();
     private List<String> logPaths;
-
+    private Long reserveMemory;
+    private Long limitMemory;
+    private Double limitCpu;
 
     public ContainerEntity() {}
 
@@ -96,8 +102,10 @@ public class ContainerEntity extends AbstractHibernateEntity {
         this.setCommandLine(containerPojo.commandLine());
         this.setWorkingDirectory(containerPojo.workingDirectory());
         this.setSubtype(containerPojo.subtype());
-        this.setParentContainerEntity(fromPojo(containerPojo.parentContainer()));
+        this.setParentContainerEntity(fromPojo(containerPojo.parent()));
+        this.setParentSourceObjectName(containerPojo.parentSourceObjectName());
         this.setEnvironmentVariables(containerPojo.environmentVariables());
+        this.setPorts(containerPojo.ports());
         this.setLogPaths(containerPojo.logPaths());
         this.setMounts(Lists.newArrayList(Lists.transform(
                 containerPojo.mounts(), new Function<Container.ContainerMount, ContainerEntityMount>() {
@@ -131,6 +139,9 @@ public class ContainerEntity extends AbstractHibernateEntity {
                     }
                 }))
         );
+        this.setReserveMemory(containerPojo.reserveMemory());
+        this.setLimitMemory(containerPojo.limitMemory());
+        this.setLimitCpu(containerPojo.limitCpu());
 
         return this;
     }
@@ -195,6 +206,14 @@ public class ContainerEntity extends AbstractHibernateEntity {
         this.commandLine = commandLine;
     }
 
+    public Boolean getOverrideEntrypoint() {
+        return overrideEntrypoint;
+    }
+
+    public void setOverrideEntrypoint(final Boolean overrideEntrypoint) {
+        this.overrideEntrypoint = overrideEntrypoint;
+    }
+
     public String getWorkingDirectory() {
         return workingDirectory;
     }
@@ -212,6 +231,15 @@ public class ContainerEntity extends AbstractHibernateEntity {
         this.environmentVariables = environmentVariables == null ?
                 Maps.<String, String>newHashMap() :
                 environmentVariables;
+    }
+
+    @ElementCollection
+    public Map<String, String> getPorts() {
+        return ports;
+    }
+
+    public void setPorts(final Map<String, String> ports) {
+        this.ports = ports == null ? new HashMap<String, String>() : ports;
     }
 
     public String getSubtype() {
@@ -292,6 +320,30 @@ public class ContainerEntity extends AbstractHibernateEntity {
         this.nodeId = nodeId;
     }
 
+    public Long getReserveMemory() {
+        return reserveMemory;
+    }
+
+    public void setReserveMemory(final Long reserveMemory) {
+        this.reserveMemory = reserveMemory;
+    }
+
+    public Long getLimitMemory() {
+        return limitMemory;
+    }
+
+    public void setLimitMemory(final Long limitMemory) {
+        this.limitMemory = limitMemory;
+    }
+
+    public Double getLimitCpu() {
+        return limitCpu;
+    }
+
+    public void setLimitCpu(final Double limitCpu) {
+        this.limitCpu = limitCpu;
+    }
+
     @ManyToOne
     public ContainerEntity getParentContainerEntity() {
         return parentContainerEntity;
@@ -299,6 +351,14 @@ public class ContainerEntity extends AbstractHibernateEntity {
 
     public void setParentContainerEntity(final ContainerEntity parentContainerEntity) {
         this.parentContainerEntity = parentContainerEntity;
+    }
+
+    public String getParentSourceObjectName() {
+        return parentSourceObjectName;
+    }
+
+    public void setParentSourceObjectName(final String parentSourceObjectName) {
+        this.parentSourceObjectName = parentSourceObjectName;
     }
 
     @OneToMany(mappedBy = "containerEntity", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -489,6 +549,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
                 .add("subtype", subtype)
                 .add("parentContainerEntityId", parentContainerEntity == null ? null : parentContainerEntity.getId())
                 .add("parentContainerEntityContainerId", parentContainerEntity == null ? null : parentContainerEntity.getContainerId())
+                .add("parentSourceObjectName", parentSourceObjectName)
                 .add("workflowId", workflowId)
                 .add("commandId", commandId)
                 .add("wrapperId", wrapperId)
@@ -496,13 +557,18 @@ public class ContainerEntity extends AbstractHibernateEntity {
                 .add("statusTime", statusTime)
                 .add("dockerImage", dockerImage)
                 .add("commandLine", commandLine)
+                .add("overrideEntrypoint", overrideEntrypoint)
                 .add("workingDirectory", workingDirectory)
                 .add("environmentVariables", environmentVariables)
+                .add("ports", ports)
                 .add("mounts", mounts)
                 .add("inputs", inputs)
                 .add("outputs", outputs)
                 .add("history", history)
                 .add("logPaths", logPaths)
+                .add("reserveMemory", reserveMemory)
+                .add("limitMemory", limitMemory)
+                .add("limitCpu", limitCpu)
                 .toString();
     }
 }

@@ -27,6 +27,7 @@ public class CommandWrapperOutputEntity {
     private String name;
     private String commandOutputName;
     private String wrapperInputName;
+    private String viaWrapupCommand;
     private Type type;
     private String label;
 
@@ -42,6 +43,7 @@ public class CommandWrapperOutputEntity {
         this.setName(commandWrapperOutput.name());
         this.setCommandOutputName(commandWrapperOutput.commandOutputName());
         this.setWrapperInputName(commandWrapperOutput.wrapperInputName());
+        this.setViaWrapupCommand(commandWrapperOutput.viaWrapupCommand());
         this.setLabel(commandWrapperOutput.label());
 
         switch (commandWrapperOutput.type()) {
@@ -105,8 +107,16 @@ public class CommandWrapperOutputEntity {
         return wrapperInputName;
     }
 
-    public void setWrapperInputName(final String xnatInputName) {
-        this.wrapperInputName = xnatInputName;
+    public void setWrapperInputName(final String wrapperInputName) {
+        this.wrapperInputName = wrapperInputName;
+    }
+
+    public String getViaWrapupCommand() {
+        return viaWrapupCommand;
+    }
+
+    public void setViaWrapupCommand(final String viaWrapupCommand) {
+        this.viaWrapupCommand = viaWrapupCommand;
     }
 
     public String getLabel() {
@@ -138,6 +148,7 @@ public class CommandWrapperOutputEntity {
                 .add("name", name)
                 .add("commandOutputName", commandOutputName)
                 .add("wrapperInputName", wrapperInputName)
+                .add("viaWrapupCommand", viaWrapupCommand)
                 .add("type", type)
                 .add("label", label)
                 .toString();

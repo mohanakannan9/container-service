@@ -43,11 +43,15 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
     private String image;
     private String workingDirectory;
     private String commandLine;
+    private Boolean overrideEntrypoint;
     private List<CommandMountEntity> mounts;
     private Map<String, String> environmentVariables;
     private List<CommandInputEntity> inputs;
     private List<CommandOutputEntity> outputs;
     private List<CommandWrapperEntity> commandWrapperEntities;
+    private Long reserveMemory;
+    private Long limitMemory;
+    private Double limitCpu;
 
     @Nonnull
     public static CommandEntity fromPojo(@Nonnull final Command command) {
@@ -58,6 +62,9 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
                 break;
             case "docker-setup":
                 commandEntity = DockerSetupCommandEntity.fromPojo(command);
+                break;
+            case "docker-wrapup":
+                commandEntity = DockerWrapupCommandEntity.fromPojo(command);
                 break;
             default:
                 // This should have been caught already, but still...
@@ -81,7 +88,11 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         this.setImage(command.image());
         this.setWorkingDirectory(command.workingDirectory());
         this.setCommandLine(command.commandLine());
+        this.setOverrideEntrypoint(command.overrideEntrypoint());
         this.setEnvironmentVariables(command.environmentVariables());
+        this.setReserveMemory(command.reserveMemory());
+        this.setLimitMemory(command.limitMemory());
+        this.setLimitCpu(command.limitCpu());
 
         final Map<String, Command.CommandMount> mountsByName = new HashMap<>();
         for (final Command.CommandMount commandMount : command.mounts()) {
@@ -236,6 +247,38 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         this.commandLine = commandLine;
     }
 
+    public Boolean getOverrideEntrypoint() {
+        return overrideEntrypoint;
+    }
+
+    public void setOverrideEntrypoint(final Boolean overrideEntrypoint) {
+        this.overrideEntrypoint = overrideEntrypoint;
+    }
+
+    public Long getReserveMemory() {
+        return reserveMemory;
+    }
+
+    public void setReserveMemory(Long reserveMemory) {
+        this.reserveMemory = reserveMemory;
+    }
+
+    public Long getLimitMemory() {
+        return limitMemory;
+    }
+
+    public void setLimitMemory(Long limitMemory) {
+        this.limitMemory = limitMemory;
+    }
+
+    public Double getLimitCpu() {
+        return limitCpu;
+    }
+
+    public void setLimitCpu(Double limitCpu) {
+        this.limitCpu = limitCpu;
+    }
+
     @OneToMany(mappedBy = "commandEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<CommandMountEntity> getMounts() {
         return mounts;
@@ -383,11 +426,15 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
                 .add("image", image)
                 .add("workingDirectory", workingDirectory)
                 .add("commandLine", commandLine)
+                .add("overrideEntrypoint", overrideEntrypoint)
                 .add("mounts", mounts)
                 .add("environmentVariables", environmentVariables)
                 .add("inputs", inputs)
                 .add("outputs", outputs)
-                .add("xnatCommandWrappers", commandWrapperEntities);
+                .add("xnatCommandWrappers", commandWrapperEntities)
+                .add("reserveMemory", reserveMemory)
+                .add("limitMemory", limitMemory)
+                .add("limitCpu", limitCpu);
     }
 
     @Override

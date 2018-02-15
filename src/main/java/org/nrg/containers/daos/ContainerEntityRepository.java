@@ -26,6 +26,7 @@ public class ContainerEntityRepository extends AbstractHibernateDAO<ContainerEnt
         }
         Hibernate.initialize(entity);
         Hibernate.initialize(entity.getEnvironmentVariables());
+        Hibernate.initialize(entity.getPorts());
         Hibernate.initialize(entity.getHistory());
         Hibernate.initialize(entity.getMounts());
         if (entity.getMounts() != null) {
@@ -107,6 +108,7 @@ public class ContainerEntityRepository extends AbstractHibernateDAO<ContainerEnt
     }
 
     @SuppressWarnings("unchecked")
+    @Nonnull
     private List<ContainerEntity> initializeAndReturnList(final List result) {
         if (result != null) {
             try {

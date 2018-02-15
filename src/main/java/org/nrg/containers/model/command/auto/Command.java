@@ -51,12 +51,16 @@ public abstract class Command {
     @Nullable @JsonProperty("hash") public abstract String hash();
     @Nullable @JsonProperty("working-directory") public abstract String workingDirectory();
     @Nullable @JsonProperty("command-line") public abstract String commandLine();
+    @Nullable @JsonProperty("override-entrypoint") public abstract Boolean overrideEntrypoint();
     @JsonProperty("mounts") public abstract ImmutableList<CommandMount> mounts();
     @JsonProperty("environment-variables") public abstract ImmutableMap<String, String> environmentVariables();
     @JsonProperty("ports") public abstract ImmutableMap<String, String> ports();
     @JsonProperty("inputs") public abstract ImmutableList<CommandInput> inputs();
     @JsonProperty("outputs") public abstract ImmutableList<CommandOutput> outputs();
     @JsonProperty("xnat") public abstract ImmutableList<CommandWrapper> xnatCommandWrappers();
+    @Nullable @JsonProperty("reserve-memory") public abstract Long reserveMemory();
+    @Nullable @JsonProperty("limit-memory") public abstract Long limitMemory();
+    @Nullable @JsonProperty("limit-cpu") public abstract Double limitCpu();
 
     @JsonCreator
     static Command create(@JsonProperty("id") final long id,
@@ -72,12 +76,16 @@ public abstract class Command {
                           @JsonProperty("hash") final String hash,
                           @JsonProperty("working-directory") final String workingDirectory,
                           @JsonProperty("command-line") final String commandLine,
+                          @JsonProperty("override-entrypoint") final Boolean overrideEntrypoint,
                           @JsonProperty("mounts") final List<CommandMount> mounts,
                           @JsonProperty("environment-variables") final Map<String, String> environmentVariables,
                           @JsonProperty("ports") final Map<String, String> ports,
                           @JsonProperty("inputs") final List<CommandInput> inputs,
                           @JsonProperty("outputs") final List<CommandOutput> outputs,
-                          @JsonProperty("xnat") final List<CommandWrapper> xnatCommandWrappers) {
+                          @JsonProperty("xnat") final List<CommandWrapper> xnatCommandWrappers,
+                          @JsonProperty("reserve-memory") final Long reserveMemory,
+                          @JsonProperty("limit-memory") final Long limitMemory,
+                          @JsonProperty("limit-cpu") final Double limitCpu) {
         return builder()
                 .id(id)
                 .name(name)
@@ -92,12 +100,16 @@ public abstract class Command {
                 .hash(hash)
                 .workingDirectory(workingDirectory)
                 .commandLine(commandLine)
+                .overrideEntrypoint(overrideEntrypoint)
                 .mounts(mounts == null ? Collections.<CommandMount>emptyList() : mounts)
                 .environmentVariables(environmentVariables == null ? Collections.<String, String>emptyMap() : environmentVariables)
                 .ports(ports == null ? Collections.<String, String>emptyMap() : ports)
                 .inputs(inputs == null ? Collections.<CommandInput>emptyList() : inputs)
                 .outputs(outputs == null ? Collections.<CommandOutput>emptyList() : outputs)
                 .xnatCommandWrappers(xnatCommandWrappers == null ? Collections.<CommandWrapper>emptyList() : xnatCommandWrappers)
+                .reserveMemory(reserveMemory)
+                .limitMemory(limitMemory)
+                .limitCpu(limitCpu)
                 .build();
     }
 
@@ -117,6 +129,10 @@ public abstract class Command {
                 .type(commandEntity.getType().getName())
                 .workingDirectory(commandEntity.getWorkingDirectory())
                 .commandLine(commandEntity.getCommandLine())
+                .overrideEntrypoint(commandEntity.getOverrideEntrypoint())
+                .reserveMemory(commandEntity.getReserveMemory())
+                .limitMemory(commandEntity.getLimitMemory())
+                .limitCpu(commandEntity.getLimitCpu())
                 .environmentVariables(commandEntity.getEnvironmentVariables() == null ?
                         Collections.<String, String>emptyMap() :
                         commandEntity.getEnvironmentVariables())
@@ -189,6 +205,9 @@ public abstract class Command {
                 .hash(creation.hash())
                 .workingDirectory(creation.workingDirectory())
                 .commandLine(creation.commandLine())
+                .reserveMemory(creation.reserveMemory())
+                .limitMemory(creation.limitMemory())
+                .limitCpu(creation.limitCpu())
                 .mounts(creation.mounts() == null ? Collections.<CommandMount>emptyList() : creation.mounts())
                 .environmentVariables(creation.environmentVariables() == null ? Collections.<String, String>emptyMap() : creation.environmentVariables())
                 .ports(creation.ports() == null ? Collections.<String, String>emptyMap() : creation.ports())
@@ -246,9 +265,11 @@ public abstract class Command {
         if (type().equals(CommandType.DOCKER.getName())) {
             errors.addAll(validateDockerCommand());
         } else if (type().equals(CommandType.DOCKER_SETUP.getName())) {
-            errors.addAll(validateDockerSetupCommand());
+            errors.addAll(validateDockerSetupOrWrapupCommand("Setup"));
+        } else if (type().equals(CommandType.DOCKER_WRAPUP.getName())) {
+            errors.addAll(validateDockerSetupOrWrapupCommand("Wrapup"));
         } else {
-            errors.add(commandName + "Cannot instantiate command of type \"" + type() + "\". Known types: " + StringUtils.join(commandTypeNames, ", "));
+            errors.add(commandName + "Cannot validate command of type \"" + type() + "\". Known types: " + StringUtils.join(commandTypeNames, ", "));
         }
 
         return errors;
@@ -425,27 +446,27 @@ public abstract class Command {
     }
 
     @Nonnull
-    private List<String> validateDockerSetupCommand() {
+    private List<String> validateDockerSetupOrWrapupCommand(final String setupOrWrapup) {
         final List<String> errors = new ArrayList<>();
         final String commandName = "Command \"" + name() + "\" - ";
 
         if (mounts().size() > 0) {
-            errors.add(commandName + "Setup commands cannot declare any mounts.");
+            errors.add(commandName + " " + setupOrWrapup + " commands cannot declare any mounts.");
         }
         if (inputs().size() > 0) {
-            errors.add(commandName + "Setup commands cannot declare any inputs.");
+            errors.add(commandName + " " + setupOrWrapup + " commands cannot declare any inputs.");
         }
         if (outputs().size() > 0) {
-            errors.add(commandName + "Setup commands cannot declare any outputs.");
+            errors.add(commandName + " " + setupOrWrapup + " commands cannot declare any outputs.");
         }
         if (xnatCommandWrappers().size() > 0) {
-            errors.add(commandName + "Setup commands cannot declare any wrappers.");
+            errors.add(commandName + " " + setupOrWrapup + " commands cannot declare any wrappers.");
         }
         if (environmentVariables().size() > 0) {
-            errors.add(commandName + "Setup commands cannot declare any environment variables.");
+            errors.add(commandName + " " + setupOrWrapup + " commands cannot declare any environment variables.");
         }
         if (ports().size() > 0) {
-            errors.add(commandName + "Setup commands cannot declare any ports.");
+            errors.add(commandName + " " + setupOrWrapup + " commands cannot declare any ports.");
         }
 
 
@@ -479,6 +500,8 @@ public abstract class Command {
         public abstract Builder workingDirectory(String workingDirectory);
 
         public abstract Builder commandLine(String commandLine);
+
+        public abstract Builder overrideEntrypoint(Boolean overrideEntrypoint);
 
         public abstract Builder mounts(List<CommandMount> mounts);
         public abstract Builder mounts(CommandMount... mounts);
@@ -525,6 +548,10 @@ public abstract class Command {
             xnatCommandWrappersBuilder().add(commandWrapper);
             return this;
         }
+
+        public abstract Builder reserveMemory(Long reserveMemory);
+        public abstract Builder limitMemory(Long limitMemory);
+        public abstract Builder limitCpu(Double limitCpu);
 
         public abstract Command build();
     }
@@ -1211,6 +1238,7 @@ public abstract class Command {
         @JsonIgnore public abstract long id();
         @Nullable @JsonProperty("name") public abstract String name();
         @Nullable @JsonProperty("accepts-command-output") public abstract String commandOutputName();
+        @Nullable @JsonProperty("via-wrapup-command") public abstract String viaWrapupCommand();
         @Nullable @JsonProperty("as-a-child-of-wrapper-input") public abstract String wrapperInputName();
         @JsonProperty("type") public abstract String type();
         @Nullable @JsonProperty("label") public abstract String label();
@@ -1219,43 +1247,47 @@ public abstract class Command {
         public static CommandWrapperOutput create(@JsonProperty("name") final String name,
                                                   @JsonProperty("accepts-command-output") final String commandOutputName,
                                                   @JsonProperty("as-a-child-of-wrapper-input") final String wrapperInputName,
+                                                  @JsonProperty("via-wrapup-command") final String viaWrapupCommand,
                                                   @JsonProperty("type") final String type,
                                                   @JsonProperty("label") final String label) {
-            return create(
-                    0L,
-                    name,
-                    commandOutputName,
-                    wrapperInputName,
-                    type == null ? CommandWrapperOutputEntity.DEFAULT_TYPE.getName() : type,
-                    label);
-        }
-
-        public static CommandWrapperOutput create(final long id,
-                                                  final String name,
-                                                  final String commandOutputName,
-                                                  final String xnatInputName,
-                                                  final String type,
-                                                  final String label) {
-            return new AutoValue_Command_CommandWrapperOutput(
-                    id,
-                    name,
-                    commandOutputName,
-                    xnatInputName,
-                    type == null ? CommandWrapperOutputEntity.DEFAULT_TYPE.getName() : type,
-                    label);
+            return builder()
+                    .name(name)
+                    .commandOutputName(commandOutputName)
+                    .wrapperInputName(wrapperInputName)
+                    .viaWrapupCommand(viaWrapupCommand)
+                    .type(type == null ? CommandWrapperOutputEntity.DEFAULT_TYPE.getName() : type)
+                    .label(label)
+                    .build();
         }
 
         public static CommandWrapperOutput create(final CommandWrapperOutputEntity wrapperOutput) {
             if (wrapperOutput == null) {
                 return null;
             }
-            return create(wrapperOutput.getId(), wrapperOutput.getName(), wrapperOutput.getCommandOutputName(), wrapperOutput.getWrapperInputName(), wrapperOutput.getType().getName(), wrapperOutput.getLabel());
+            return builder()
+                    .id(wrapperOutput.getId())
+                    .name(wrapperOutput.getName())
+                    .commandOutputName(wrapperOutput.getCommandOutputName())
+                    .wrapperInputName(wrapperOutput.getWrapperInputName())
+                    .viaWrapupCommand(wrapperOutput.getViaWrapupCommand())
+                    .type(wrapperOutput.getType().getName())
+                    .label(wrapperOutput.getLabel())
+                    .build();
         }
 
         public CommandWrapperOutput applyConfiguration(final CommandOutputConfiguration commandOutputConfiguration) {
-            return create(this.id(), this.name(), this.commandOutputName(), this.wrapperInputName(), this.type(),
-                    commandOutputConfiguration.label());
+            return toBuilder()
+                    .label(commandOutputConfiguration.label())
+                    .build();
         }
+
+        public static Builder builder() {
+            return new AutoValue_Command_CommandWrapperOutput.Builder()
+                    .id(0L)
+                    .type(CommandWrapperOutputEntity.DEFAULT_TYPE.getName());
+        }
+
+        public abstract Builder toBuilder();
 
         @Nonnull
         List<String> validate() {
@@ -1278,6 +1310,25 @@ public abstract class Command {
 
             return errors;
         }
+
+        @AutoValue.Builder
+        public abstract static class Builder {
+            public abstract Builder id(final long id);
+
+            public abstract Builder name(final String name);
+
+            public abstract Builder commandOutputName(final String commandOutputName);
+
+            public abstract Builder viaWrapupCommand(final String viaWrapupCommand);
+
+            public abstract Builder wrapperInputName(final String wrapperInputName);
+
+            public abstract Builder type(final String type);
+
+            public abstract Builder label(final String label);
+
+            public abstract CommandWrapperOutput build();
+        }
     }
 
     /**
@@ -1298,12 +1349,16 @@ public abstract class Command {
         @Nullable @JsonProperty("hash") public abstract String hash();
         @Nullable @JsonProperty("working-directory") public abstract String workingDirectory();
         @Nullable @JsonProperty("command-line") public abstract String commandLine();
+        @Nullable @JsonProperty("override-entrypoint") public abstract Boolean overrideEntrypoint();
         @JsonProperty("mounts") public abstract ImmutableList<CommandMount> mounts();
         @JsonProperty("environment-variables") public abstract ImmutableMap<String, String> environmentVariables();
         @JsonProperty("ports") public abstract ImmutableMap<String, String> ports();
         @JsonProperty("inputs") public abstract ImmutableList<CommandInput> inputs();
         @JsonProperty("outputs") public abstract ImmutableList<CommandOutput> outputs();
         @JsonProperty("xnat") public abstract ImmutableList<CommandWrapperCreation> commandWrapperCreations();
+        @Nullable @JsonProperty("reserve-memory") public abstract Long reserveMemory();
+        @Nullable @JsonProperty("limit-memory") public abstract Long limitMemory();
+        @Nullable @JsonProperty("limit-cpu") public abstract Double limitCpu();
 
         @JsonCreator
         static CommandCreation create(@JsonProperty("name") final String name,
@@ -1318,20 +1373,25 @@ public abstract class Command {
                                       @JsonProperty("hash") final String hash,
                                       @JsonProperty("working-directory") final String workingDirectory,
                                       @JsonProperty("command-line") final String commandLine,
+                                      @JsonProperty("override-entrypoint") final Boolean overrideEntrypoint,
                                       @JsonProperty("mounts") final List<CommandMount> mounts,
                                       @JsonProperty("environment-variables") final Map<String, String> environmentVariables,
                                       @JsonProperty("ports") final Map<String, String> ports,
                                       @JsonProperty("inputs") final List<CommandInput> inputs,
                                       @JsonProperty("outputs") final List<CommandOutput> outputs,
-                                      @JsonProperty("xnat") final List<CommandWrapperCreation> commandWrapperCreations) {
+                                      @JsonProperty("xnat") final List<CommandWrapperCreation> commandWrapperCreations,
+                                      @JsonProperty("reserve-memory") final Long reserveMemory,
+                                      @JsonProperty("limit-memory") final Long limitMemory,
+                                      @JsonProperty("limit-cpu") final Double limitCpu) {
             return new AutoValue_Command_CommandCreation(name, label, description, version, schemaVersion, infoUrl, image,
-                    type, index, hash, workingDirectory, commandLine,
+                    type, index, hash, workingDirectory, commandLine, overrideEntrypoint,
                     mounts == null ? ImmutableList.<CommandMount>of() : ImmutableList.copyOf(mounts),
                     environmentVariables == null ? ImmutableMap.<String, String>of() : ImmutableMap.copyOf(environmentVariables),
                     ports == null ? ImmutableMap.<String, String>of() : ImmutableMap.copyOf(ports),
                     inputs == null ? ImmutableList.<CommandInput>of() : ImmutableList.copyOf(inputs),
                     outputs == null ? ImmutableList.<CommandOutput>of() : ImmutableList.copyOf(outputs),
-                    commandWrapperCreations == null ? ImmutableList.<CommandWrapperCreation>of() : ImmutableList.copyOf(commandWrapperCreations));
+                    commandWrapperCreations == null ? ImmutableList.<CommandWrapperCreation>of() : ImmutableList.copyOf(commandWrapperCreations),
+                    reserveMemory, limitMemory, limitCpu);
         }
     }
 
@@ -1354,12 +1414,16 @@ public abstract class Command {
         @Nullable public abstract String hash();
         @Nullable public abstract String workingDirectory();
         @Nullable public abstract String commandLine();
+        @Nullable public abstract Boolean overrideEntrypoint();
         public abstract ImmutableList<CommandMount> mounts();
         public abstract ImmutableMap<String, String> environmentVariables();
         public abstract ImmutableMap<String, String> ports();
         public abstract ImmutableList<CommandInput> inputs();
         public abstract ImmutableList<CommandOutput> outputs();
         public abstract CommandWrapper wrapper();
+        @Nullable public abstract Long reserveMemory();
+        @Nullable public abstract Long limitMemory();
+        @Nullable public abstract Double limitCpu();
 
         public static ConfiguredCommand.Builder initialize(final Command command) {
             return builder()
@@ -1374,12 +1438,16 @@ public abstract class Command {
                     .type(command.type())
                     .workingDirectory(command.workingDirectory())
                     .commandLine(command.commandLine())
+                    .overrideEntrypoint(command.overrideEntrypoint())
                     .environmentVariables(command.environmentVariables())
                     .mounts(command.mounts())
                     .index(command.index())
                     .hash(command.hash())
                     .ports(command.ports())
-                    .outputs(command.outputs());
+                    .outputs(command.outputs())
+                    .reserveMemory(command.reserveMemory())
+                    .limitMemory(command.limitMemory())
+                    .limitCpu(command.limitCpu());
         }
 
         static Builder builder() {
@@ -1401,6 +1469,7 @@ public abstract class Command {
             public abstract Builder hash(String hash);
             public abstract Builder workingDirectory(String workingDirectory);
             public abstract Builder commandLine(String commandLine);
+            public abstract Builder overrideEntrypoint(Boolean overrideEntrypoint);
 
             public abstract Builder mounts(List<CommandMount> mounts);
             public abstract Builder mounts(CommandMount... mounts);
@@ -1441,6 +1510,10 @@ public abstract class Command {
             }
 
             public abstract Builder wrapper(CommandWrapper commandWrapper);
+
+            public abstract Builder reserveMemory(Long reserveMemory);
+            public abstract Builder limitMemory(Long limitMemory);
+            public abstract Builder limitCpu(Double limitCpu);
 
             public abstract ConfiguredCommand build();
         }

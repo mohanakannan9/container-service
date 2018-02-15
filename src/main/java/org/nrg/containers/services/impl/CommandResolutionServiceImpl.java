@@ -33,15 +33,16 @@ import org.nrg.containers.model.command.auto.Command.CommandWrapperInput;
 import org.nrg.containers.model.command.auto.Command.CommandWrapperOutput;
 import org.nrg.containers.model.command.auto.Command.ConfiguredCommand;
 import org.nrg.containers.model.command.auto.Command.Input;
+import org.nrg.containers.model.command.auto.PreresolvedInputTreeNode;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.command.auto.ResolvedCommand.PartiallyResolvedCommand;
 import org.nrg.containers.model.command.auto.ResolvedCommand.PartiallyResolvedCommandMount;
-import org.nrg.containers.model.command.auto.ResolvedCommandMount;
 import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandOutput;
-import org.nrg.containers.model.command.auto.ResolvedInputValue;
-import org.nrg.containers.model.command.auto.PreresolvedInputTreeNode;
+import org.nrg.containers.model.command.auto.ResolvedCommandMount;
 import org.nrg.containers.model.command.auto.ResolvedInputTreeNode;
 import org.nrg.containers.model.command.auto.ResolvedInputTreeNode.ResolvedInputTreeValueAndChildren;
+import org.nrg.containers.model.command.auto.ResolvedInputValue;
+import org.nrg.containers.model.command.entity.CommandType;
 import org.nrg.containers.model.xnat.Assessor;
 import org.nrg.containers.model.xnat.Project;
 import org.nrg.containers.model.xnat.Resource;
@@ -52,7 +53,7 @@ import org.nrg.containers.model.xnat.XnatFile;
 import org.nrg.containers.model.xnat.XnatModelObject;
 import org.nrg.containers.services.CommandResolutionService;
 import org.nrg.containers.services.CommandService;
-import org.nrg.containers.services.SetupCommandService;
+import org.nrg.containers.services.DockerService;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -76,6 +77,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -104,19 +106,19 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
     private final ConfigService configService;
     private final SiteConfigPreferences siteConfigPreferences;
     private final ObjectMapper mapper;
-    private final SetupCommandService setupCommandService;
+    private final DockerService dockerService;
 
     @Autowired
     public CommandResolutionServiceImpl(final CommandService commandService,
                                         final ConfigService configService,
                                         final SiteConfigPreferences siteConfigPreferences,
                                         final ObjectMapper mapper,
-                                        final SetupCommandService setupCommandService) {
+                                        final DockerService dockerService) {
         this.commandService = commandService;
         this.configService = configService;
         this.siteConfigPreferences = siteConfigPreferences;
         this.mapper = mapper;
-        this.setupCommandService = setupCommandService;
+        this.dockerService = dockerService;
     }
 
     @Override
@@ -328,6 +330,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                     .commandDescription(command.description())
                     .image(command.image())
                     .type(command.type())
+                    .overrideEntrypoint(command.overrideEntrypoint() == null ? Boolean.FALSE : command.overrideEntrypoint())
                     .rawInputValues(inputValues)
                     .resolvedInputTrees(resolvedInputTrees)
                     .build();
@@ -350,6 +353,13 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                                 StringUtils.join(missingRequiredInputs, ", "))
                 );
             }
+            final List<ResolvedCommandOutput> resolvedCommandOutputs = resolveOutputs(resolvedInputTrees, resolvedInputValuesByReplacementKey);
+            final String resolvedCommandLine = resolveCommandLine(resolvedInputTrees);
+            final Map<String, String> resolvedEnvironmentVariables = resolveEnvironmentVariables(resolvedInputValuesByReplacementKey);
+            final String resolvedWorkingDirectory = resolveWorkingDirectory(resolvedInputValuesByReplacementKey);
+            final Map<String, String> resolvedPorts = resolvePorts(resolvedInputValuesByReplacementKey);
+            final List<ResolvedCommandMount> resolvedCommandMounts = resolveCommandMounts(resolvedInputTrees, resolvedInputValuesByReplacementKey);
+            final List<ResolvedCommand> resolvedWrapupCommands = resolveWrapupCommands(resolvedCommandOutputs, resolvedCommandMounts);
 
             final ResolvedCommand resolvedCommand = ResolvedCommand.builder()
                     .wrapperId(commandWrapper.id())
@@ -360,15 +370,20 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                     .commandDescription(command.description())
                     .image(command.image())
                     .type(command.type())
+                    .overrideEntrypoint(command.overrideEntrypoint() == null ? Boolean.FALSE : command.overrideEntrypoint())
                     .rawInputValues(inputValues)
                     .resolvedInputTrees(resolvedInputTrees)
-                    .outputs(resolveOutputs(resolvedInputTrees, resolvedInputValuesByReplacementKey))
-                    .commandLine(resolveCommandLine(resolvedInputTrees))
-                    .environmentVariables(resolveEnvironmentVariables(resolvedInputValuesByReplacementKey))
-                    .workingDirectory(resolveWorkingDirectory(resolvedInputValuesByReplacementKey))
-                    .ports(resolvePorts(resolvedInputValuesByReplacementKey))
-                    .mounts(resolveCommandMounts(resolvedInputTrees, resolvedInputValuesByReplacementKey))
+                    .outputs(resolvedCommandOutputs)
+                    .commandLine(resolvedCommandLine)
+                    .environmentVariables(resolvedEnvironmentVariables)
+                    .workingDirectory(resolvedWorkingDirectory)
+                    .ports(resolvedPorts)
+                    .mounts(resolvedCommandMounts)
                     .setupCommands(resolvedSetupCommands)
+                    .wrapupCommands(resolvedWrapupCommands)
+                    .reserveMemory(command.reserveMemory())
+                    .limitMemory(command.limitMemory())
+                    .limitCpu(command.limitCpu())
                     .build();
 
             log.info("Done resolving command.");
@@ -376,19 +391,39 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             return resolvedCommand;
         }
 
-        private void resolveSetupCommand(final String setupCommandImage, final String inputMountPath, final String outputMountPath) throws CommandResolutionException {
-            log.debug("Resolving setup command {}.", setupCommandImage);
-            final Command setupCommand;
+        private ResolvedCommand resolveSpecialCommandType(final CommandType type,
+                                                          final String image,
+                                                          final String inputMountPath,
+                                                          final String outputMountPath,
+                                                          final String parentSourceObjectName)
+                throws CommandResolutionException {
+            final String typeStringForLog;
+            switch (type) {
+                case DOCKER_SETUP:
+                    typeStringForLog = "setup";
+                    break;
+                case DOCKER_WRAPUP:
+                    typeStringForLog = "wrapup";
+                    break;
+                default:
+                    throw new CommandResolutionException("A method intended to resolve only special command types was called with a command of type " + type.getName());
+            }
+            log.debug("Resolving {} command from image {}.", typeStringForLog, image);
+            final Command command;
             try {
-                setupCommand = setupCommandService.getSetupCommand(setupCommandImage);
+                command = dockerService.getCommandByImage(image);
             } catch (NotFoundException e) {
-                throw new CommandResolutionException("Could not resolve setup command with image " + setupCommandImage, e);
+                throw new CommandResolutionException(String.format("Could not resolve %s command with image %s.", typeStringForLog, image), e);
             }
 
-            final ResolvedCommand resolvedSetupCommand = ResolvedCommand.fromSetupCommand(setupCommand, inputMountPath, outputMountPath);
+            if (!command.type().equals(type.getName())) {
+                throw new CommandResolutionException(
+                        String.format("Command %s from image %s has type %s, but I expected it to have type %s.",
+                                command.name(), image, command.type(), type.getName()));
+            }
 
-            log.debug("Adding resolved setup command to list.");
-            resolvedSetupCommands.add(resolvedSetupCommand);
+            log.debug("Done resolving {} command {} from image {}.", typeStringForLog, command.name(), image);
+            return ResolvedCommand.fromSpecialCommandType(command, inputMountPath, outputMountPath, parentSourceObjectName);
         }
 
         private void checkForIllegalInputValue(final String inputName,
@@ -1454,93 +1489,14 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             }
 
             for (final CommandOutput commandOutput : command.outputs()) {
-                log.info("Resolving command output \"{}\".", commandOutput.name());
-                log.debug("{}", commandOutput);
 
-                // TODO fix this in validation
-                final CommandWrapperOutput commandOutputHandler = xnatCommandOutputsByCommandOutputName.get(commandOutput.name());
-                if (commandOutputHandler == null) {
-                    throw new CommandResolutionException(String.format("No wrapper output handler was configured to handle command output \"%s\".", commandOutput.name()));
+                final ResolvedCommandOutput resolvedOutput = resolveCommandOutput(commandOutput, resolvedInputTrees, resolvedInputValuesByReplacementKey,
+                        xnatCommandOutputsByCommandOutputName);
+                if (resolvedOutput == null) {
+                    continue;
                 }
-                log.debug("Found Output Handler \"{}\" for Command output \"{}\".", commandOutputHandler.name(), commandOutput.name());
-
-                // Fail fast: if we will not be able to create the output, either throw or log that now and don't try later.
-                // First check that the handler input has a unique value
-                final ResolvedInputValue parentInputResolvedValue = getInputValueByName(commandOutputHandler.wrapperInputName(), resolvedInputTrees);
-                if (parentInputResolvedValue == null) {
-                    final String message = String.format("Cannot resolve output \"%s\". " +
-                                    "Input \"%s\" is supposed to handle the output, but it does not have a uniquely resolved value. " +
-                                    "Either there is no value, or there are multiple values." +
-                                    "(We can't loop over input values yet, so the latter is an error as much as the former.)",
-                            commandOutput.name(), commandOutputHandler.wrapperInputName());
-                    if (Boolean.TRUE.equals(commandOutput.required())) {
-                        throw new CommandResolutionException(message);
-                    } else {
-                        log.error("Skipping output \"{}\".", commandOutput.name());
-                        log.error(message);
-                        continue;
-                    }
-                }
-
-                // Next check that the handler input's value is an XNAT object
-                final String parentValue = parentInputResolvedValue.value() != null ? parentInputResolvedValue.value() : "";
-                URIManager.DataURIA uri = null;
-                try {
-                    uri = UriParserUtils.parseURI(parentValue.startsWith("/archive") ? parentValue : "/archive" + parentValue);
-                } catch (MalformedURLException ignored) {
-                    // ignored
-                }
-
-                if (uri == null || !(uri instanceof ArchiveItemURI)) {
-                    final String message = String.format("Cannot resolve output \"%s\". " +
-                                    "Input \"%s\" is supposed to handle the output, but it does not have an XNAT object value.",
-                            commandOutput.name(), commandOutputHandler.wrapperInputName());
-                    if (Boolean.TRUE.equals(commandOutput.required())) {
-                        throw new CommandResolutionException(message);
-                    } else {
-                        log.error("Skipping output \"{}\".", commandOutput.name());
-                        log.error(message);
-                        continue;
-                    }
-                }
-
-                // Next check that the user has edit permissions on the handler input's XNAT object
-                final URIManager.ArchiveItemURI resourceURI = (URIManager.ArchiveItemURI) uri;
-                final ArchivableItem item = resourceURI.getSecurityItem();
-                boolean canEdit;
-                try {
-                    canEdit = Permissions.canEdit(userI, item);
-                } catch (Exception ignored) {
-                    canEdit = false;
-                }
-                if (!canEdit) {
-                    final String message = String.format("Cannot resolve output \"%s\". " +
-                                    "Input \"%s\" is supposed to handle the output, but user \"%s\" does not have permission " +
-                                    "to edit the XNAT object \"%s\".",
-                            commandOutput.name(), commandOutputHandler.wrapperInputName(),
-                            userI.getLogin(), parentValue);
-                    if (Boolean.TRUE.equals(commandOutput.required())) {
-                        throw new CommandResolutionException(message);
-                    } else {
-                        log.error("Skipping output \"{}\".", commandOutput.name());
-                        log.error(message);
-                        continue;
-                    }
-                }
-
-                final ResolvedCommandOutput resolvedOutput = ResolvedCommandOutput.builder()
-                        .name(commandOutput.name())
-                        .required(commandOutput.required())
-                        .mount(commandOutput.mount())
-                        .glob(commandOutput.glob())
-                        .type(commandOutputHandler.type())
-                        .handledByWrapperInput(commandOutputHandler.wrapperInputName())
-                        .path(resolveTemplate(commandOutput.path(), resolvedInputValuesByReplacementKey))
-                        .label(resolveTemplate(commandOutputHandler.label(), resolvedInputValuesByReplacementKey))
-                        .build();
 
                 log.debug("Adding resolved output \"{}\" to resolved command.", resolvedOutput.name());
-
                 resolvedOutputs.add(resolvedOutput);
             }
 
@@ -1554,6 +1510,100 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 log.debug(message);
             }
             return resolvedOutputs;
+        }
+
+        @Nullable
+        private ResolvedCommandOutput resolveCommandOutput(final CommandOutput commandOutput,
+                                                           final List<ResolvedInputTreeNode<? extends Input>> resolvedInputTrees,
+                                                           final Map<String, String> resolvedInputValuesByReplacementKey,
+                                                           final Map<String, CommandWrapperOutput> xnatCommandOutputsByCommandOutputName)
+                throws CommandResolutionException {
+            log.info("Resolving command output \"{}\".", commandOutput.name());
+            log.debug("{}", commandOutput);
+
+            // TODO fix this in validation
+            final CommandWrapperOutput commandOutputHandler = xnatCommandOutputsByCommandOutputName.get(commandOutput.name());
+            if (commandOutputHandler == null) {
+                throw new CommandResolutionException(String.format("No wrapper output handler was configured to handle command output \"%s\".", commandOutput.name()));
+            }
+            log.debug("Found Output Handler \"{}\" for Command output \"{}\".", commandOutputHandler.name(), commandOutput.name());
+
+            // Fail fast: if we will not be able to create the output, either throw or log that now and don't try later.
+            // First check that the handler input has a unique value
+            final ResolvedInputValue parentInputResolvedValue = getInputValueByName(commandOutputHandler.wrapperInputName(), resolvedInputTrees);
+            if (parentInputResolvedValue == null) {
+                final String message = String.format("Cannot resolve output \"%s\". " +
+                                "Input \"%s\" is supposed to handle the output, but it does not have a uniquely resolved value. " +
+                                "Either there is no value, or there are multiple values." +
+                                "(We can't loop over input values yet, so the latter is an error as much as the former.)",
+                        commandOutput.name(), commandOutputHandler.wrapperInputName());
+                if (Boolean.TRUE.equals(commandOutput.required())) {
+                    throw new CommandResolutionException(message);
+                } else {
+                    log.error("Skipping output \"{}\".", commandOutput.name());
+                    log.error(message);
+                    return null;
+                }
+            }
+
+            // Next check that the handler input's value is an XNAT object
+            final String parentValueMayBeNull = parentInputResolvedValue.value();
+            final String parentValue = parentValueMayBeNull != null ? parentValueMayBeNull : "";
+            URIManager.DataURIA uri = null;
+            try {
+                uri = UriParserUtils.parseURI(parentValue.startsWith("/archive") ? parentValue : "/archive" + parentValue);
+            } catch (MalformedURLException ignored) {
+                // ignored
+            }
+
+            if (uri == null || !(uri instanceof ArchiveItemURI)) {
+                final String message = String.format("Cannot resolve output \"%s\". " +
+                                "Input \"%s\" is supposed to handle the output, but it does not have an XNAT object value.",
+                        commandOutput.name(), commandOutputHandler.wrapperInputName());
+                if (Boolean.TRUE.equals(commandOutput.required())) {
+                    throw new CommandResolutionException(message);
+                } else {
+                    log.error("Skipping output \"{}\".", commandOutput.name());
+                    log.error(message);
+                    return null;
+                }
+            }
+
+            // Next check that the user has edit permissions on the handler input's XNAT object
+            final URIManager.ArchiveItemURI resourceURI = (URIManager.ArchiveItemURI) uri;
+            final ArchivableItem item = resourceURI.getSecurityItem();
+            boolean canEdit;
+            try {
+                canEdit = Permissions.canEdit(userI, item);
+            } catch (Exception ignored) {
+                canEdit = false;
+            }
+            if (!canEdit) {
+                final String message = String.format("Cannot resolve output \"%s\". " +
+                                "Input \"%s\" is supposed to handle the output, but user \"%s\" does not have permission " +
+                                "to edit the XNAT object \"%s\".",
+                        commandOutput.name(), commandOutputHandler.wrapperInputName(),
+                        userI.getLogin(), parentValue);
+                if (Boolean.TRUE.equals(commandOutput.required())) {
+                    throw new CommandResolutionException(message);
+                } else {
+                    log.error("Skipping output \"{}\".", commandOutput.name());
+                    log.error(message);
+                    return null;
+                }
+            }
+
+            return ResolvedCommandOutput.builder()
+                    .name(commandOutput.name())
+                    .required(commandOutput.required())
+                    .mount(commandOutput.mount())
+                    .glob(commandOutput.glob())
+                    .type(commandOutputHandler.type())
+                    .handledByWrapperInput(commandOutputHandler.wrapperInputName())
+                    .viaWrapupCommand(commandOutputHandler.viaWrapupCommand())
+                    .path(resolveTemplate(commandOutput.path(), resolvedInputValuesByReplacementKey))
+                    .label(resolveTemplate(commandOutputHandler.label(), resolvedInputValuesByReplacementKey))
+                    .build();
         }
 
         @Nonnull
@@ -1699,6 +1749,39 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
         }
 
         @Nonnull
+        private List<ResolvedCommand> resolveWrapupCommands(final List<ResolvedCommandOutput> resolvedCommandOutputs,
+                                                            final List<ResolvedCommandMount> resolvedCommandMounts)
+                throws CommandResolutionException {
+            final List<ResolvedCommand> resolvedWrapupCommands = new ArrayList<>();
+            Map<String, ResolvedCommandMount> resolvedCommandMountMap = null;
+            for (final ResolvedCommandOutput resolvedCommandOutput : resolvedCommandOutputs) {
+                if (resolvedCommandOutput.viaWrapupCommand() != null) {
+                    log.debug("Found wrapup command \"{}\" for output handler \"{}\".", resolvedCommandOutput.viaWrapupCommand(), resolvedCommandOutput.name());
+                    final String outputMountName = resolvedCommandOutput.mount();
+                    if (resolvedCommandMountMap == null) {
+                        resolvedCommandMountMap = new HashMap<>();
+                        for (final ResolvedCommandMount resolvedCommandMount : resolvedCommandMounts) {
+                            resolvedCommandMountMap.put(resolvedCommandMount.name(), resolvedCommandMount);
+                        }
+                    }
+                    final ResolvedCommandMount resolvedCommandMount = resolvedCommandMountMap.get(outputMountName);
+                    assert resolvedCommandMount != null; // Command output must refer to a mount that exists, otherwise command would have failed validation.
+
+                    final String writableMountPath;
+                    try {
+                        writableMountPath = getBuildDirectory();
+                    } catch (IOException e) {
+                        throw new CommandResolutionException("Could not create build directory.", e);
+                    }
+
+                    resolvedWrapupCommands.add(resolveSpecialCommandType(CommandType.DOCKER_WRAPUP, resolvedCommandOutput.viaWrapupCommand(), resolvedCommandMount.xnatHostPath(), writableMountPath, resolvedCommandOutput.name()));
+                }
+            }
+
+            return resolvedWrapupCommands;
+        }
+
+        @Nonnull
         private Map<String, ResolvedInputTreeNode<? extends Input>> findMountSourceInputs(final ResolvedInputTreeNode<? extends Input> node) {
             Map<String, ResolvedInputTreeNode<? extends Input>> mountSourceInputs = Maps.newHashMap();
 
@@ -1835,7 +1918,11 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
 
                 if (hasDirectory && writable) {
                     // The mount has a directory and is set to "writable". We must copy files from the root directory into a writable build directory.
-                    localDirectory = getBuildDirectory(partiallyResolvedCommandMount);
+                    try {
+                        localDirectory = getBuildDirectory();
+                    } catch (IOException e) {
+                        throw new ContainerMountResolutionException("Could not create build directory.", partiallyResolvedCommandMount, e);
+                    }
                     log.debug("Mount \"{}\" has a root directory and is set to \"writable\". Copying all files from the root directory to build directory.", resolvedCommandMountName);
 
                     // TODO CS-54 We must copy all files out of the root directory to a build directory.
@@ -1851,7 +1938,11 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 }
             } else {
                 log.debug("Mount \"{}\" has no input files. Ensuring mount is set to \"writable\" and creating new build directory.", resolvedCommandMountName);
-                localDirectory = getBuildDirectory(partiallyResolvedCommandMount);
+                try {
+                    localDirectory = getBuildDirectory();
+                } catch (IOException e) {
+                    throw new ContainerMountResolutionException("Could not create build directory.", partiallyResolvedCommandMount, e);
+                }
                 resolvedCommandMountBuilder.writable(true);
             }
 
@@ -1864,8 +1955,13 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 // into the setup command as its input, along with another writable build directory as its output.
                 // Then we mount the output build directory into this mount.
                 // In that way, the setup command will write to the mount whatever files we need to find.
-                final String writableMountPath = getBuildDirectory(partiallyResolvedCommandMount);
-                resolveSetupCommand(partiallyResolvedCommandMount.viaSetupCommand(), localDirectory, writableMountPath);
+                final String writableMountPath;
+                try {
+                    writableMountPath = getBuildDirectory();
+                } catch (IOException e) {
+                    throw new ContainerMountResolutionException("Could not create build directory.", partiallyResolvedCommandMount, e);
+                }
+                resolvedSetupCommands.add(resolveSpecialCommandType(CommandType.DOCKER_SETUP, partiallyResolvedCommandMount.viaSetupCommand(), localDirectory, writableMountPath, partiallyResolvedCommandMount.name()));
                 pathToMount = writableMountPath;
             } else {
                 pathToMount = localDirectory;
@@ -2042,16 +2138,12 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
         }
     }
 
-    private String getBuildDirectory(final PartiallyResolvedCommandMount mount) throws ContainerMountResolutionException {
+    @Nonnull
+    private String getBuildDirectory() throws IOException {
         final String rootBuildPath = siteConfigPreferences.getBuildPath();
         final String uuid = UUID.randomUUID().toString();
         final String buildDir = FilenameUtils.concat(rootBuildPath, uuid);
-        final Path created;
-        try {
-            created = Files.createDirectory(Paths.get(buildDir));
-        } catch (IOException | NullPointerException e) {
-            throw new ContainerMountResolutionException("Could not create build directory " + buildDir, mount, e);
-        }
+        final Path created = Files.createDirectory(Paths.get(buildDir));
         created.toFile().setWritable(true);
         return buildDir;
     }

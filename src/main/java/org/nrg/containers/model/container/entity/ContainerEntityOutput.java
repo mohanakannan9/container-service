@@ -30,19 +30,9 @@ public class ContainerEntityOutput implements Serializable {
     private String label;
     private String created;
     private String handledByXnatCommandInput;
+    private String viaWrapupContainer;
 
     public ContainerEntityOutput() {}
-
-    public ContainerEntityOutput(final ResolvedCommandOutput resolvedCommandOutput) {
-        this.name = resolvedCommandOutput.name();
-        this.required = resolvedCommandOutput.required();
-        this.mount = resolvedCommandOutput.mount();
-        this.path = resolvedCommandOutput.path();
-        this.glob = resolvedCommandOutput.glob();
-        this.label = resolvedCommandOutput.label();
-        this.type = resolvedCommandOutput.type();
-        this.handledByXnatCommandInput = resolvedCommandOutput.handledByWrapperInput();
-    }
 
     public static ContainerEntityOutput fromPojo(final Container.ContainerOutput containerOutputPojo) {
         final ContainerEntityOutput containerEntityOutput = new ContainerEntityOutput();
@@ -61,6 +51,7 @@ public class ContainerEntityOutput implements Serializable {
         this.setLabel(containerOutputPojo.label());
         this.setCreated(containerOutputPojo.created());
         this.setHandledByXnatCommandInput(containerOutputPojo.handledByWrapperInput());
+        this.setViaWrapupContainer(containerOutputPojo.viaWrapupContainer());
         return this;
     }
 
@@ -152,6 +143,14 @@ public class ContainerEntityOutput implements Serializable {
         this.handledByXnatCommandInput = handledByXnatCommandInput;
     }
 
+    public String getViaWrapupContainer() {
+        return viaWrapupContainer;
+    }
+
+    public void setViaWrapupContainer(final String viaWrapupContainer) {
+        this.viaWrapupContainer = viaWrapupContainer;
+    }
+
     @Column(columnDefinition = "TEXT")
     public String getCreated() {
         return created;
@@ -175,12 +174,13 @@ public class ContainerEntityOutput implements Serializable {
                 Objects.equals(this.glob, that.glob) &&
                 Objects.equals(this.label, that.label) &&
                 Objects.equals(this.handledByXnatCommandInput, that.handledByXnatCommandInput) &&
+                Objects.equals(this.viaWrapupContainer, that.viaWrapupContainer) &&
                 Objects.equals(this.created, that.created);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, type, required, mount, path, glob, label, handledByXnatCommandInput, created);
+        return Objects.hash(id, name, type, required, mount, path, glob, label, handledByXnatCommandInput, viaWrapupContainer, created);
     }
 
     @Override
@@ -195,6 +195,7 @@ public class ContainerEntityOutput implements Serializable {
                 .add("glob", glob)
                 .add("label", label)
                 .add("handledByXnatInput", handledByXnatCommandInput)
+                .add("viaWrapupContainer", viaWrapupContainer)
                 .add("created", created)
                 .toString();
     }

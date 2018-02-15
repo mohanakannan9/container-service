@@ -103,8 +103,13 @@ public class CommandEntityTest {
 
         final String outputHandlerName = "output-handler-name";
         final String outputHandlerLabel = "a_label";
-        final CommandWrapperOutput outputHandler = CommandWrapperOutput.create(outputHandlerName,
-                commandOutputName, externalInputName, "Resource", outputHandlerLabel);
+        final CommandWrapperOutput outputHandler = CommandWrapperOutput.builder()
+                .name(outputHandlerName)
+                .commandOutputName(commandOutputName)
+                .wrapperInputName(externalInputName)
+                .type("Resource")
+                .label(outputHandlerLabel)
+                .build();
 
         final String commandWrapperName = "wrappername";
         final String commandWrapperDesc = "the wrapper description";
@@ -124,6 +129,9 @@ public class CommandEntityTest {
                 .infoUrl("http://abc.xyz")
                 .addEnvironmentVariable("foo", "bar")
                 .commandLine("cmd #foo# #my_cool_input#")
+                .reserveMemory(4000L)
+                .limitMemory(8000L)
+                .limitCpu(0.5D)
                 .addMount(mountIn)
                 .addMount(mountOut)
                 .addInput(coolInput)
@@ -383,5 +391,18 @@ public class CommandEntityTest {
         final List<String> errors = setupCommand.validate();
         assertThat(errors, is(Matchers.<String>emptyIterable()));
         final CommandEntity createdSetupCommandEntity = commandEntityService.create(CommandEntity.fromPojo(setupCommand));
+    }
+
+    @Test
+    @DirtiesContext
+    public void testCreateWrapupCommand() throws Exception {
+        final Command wrapup = Command.builder()
+                .name("wrapup")
+                .type("docker-wrapup")
+                .image("a-wrapup-image")
+                .build();
+        final List<String> errors = wrapup.validate();
+        assertThat(errors, is(Matchers.<String>emptyIterable()));
+        final CommandEntity createdWrapupCommandEntity = commandEntityService.create(CommandEntity.fromPojo(wrapup));
     }
 }

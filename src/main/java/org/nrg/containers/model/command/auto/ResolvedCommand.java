@@ -7,7 +7,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import org.nrg.containers.model.command.entity.CommandEntity;
-import org.nrg.containers.model.command.entity.CommandType;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -30,12 +29,18 @@ public abstract class ResolvedCommand {
     @JsonProperty("raw-input-values") public abstract ImmutableMap<String, String> rawInputValues();
     @JsonIgnore public abstract ImmutableList<ResolvedInputTreeNode<? extends Command.Input>> resolvedInputTrees();
     @JsonProperty("command-line") public abstract String commandLine();
+    @JsonProperty("overrideEntrypoint") public abstract Boolean overrideEntrypoint();
     @JsonProperty("environment-variables") public abstract ImmutableMap<String, String> environmentVariables();
     @JsonProperty("ports") public abstract ImmutableMap<String, String> ports();
     @JsonProperty("mounts") public abstract ImmutableList<ResolvedCommandMount> mounts();
     @JsonProperty("outputs") public abstract ImmutableList<ResolvedCommandOutput> outputs();
     @JsonProperty("working-directory") @Nullable public abstract String workingDirectory();
     @JsonProperty("setup-commands") public abstract ImmutableList<ResolvedCommand> setupCommands();
+    @JsonProperty("wrapup-commands") public abstract ImmutableList<ResolvedCommand> wrapupCommands();
+    @JsonProperty("reserve-memory") @Nullable public abstract Long reserveMemory();
+    @JsonProperty("limit-memory") @Nullable public abstract Long limitMemory();
+    @JsonProperty("limit-cpu") @Nullable public abstract Double limitCpu();
+    @JsonProperty("parent-source-object-name") @Nullable public abstract String parentSourceObjectName();
 
     @JsonProperty("external-wrapper-input-values")
     public ImmutableMap<String, String> externalWrapperInputValues() {
@@ -126,21 +131,37 @@ public abstract class ResolvedCommand {
 
     public static Builder builder() {
         return new AutoValue_ResolvedCommand.Builder()
-                .type(CommandEntity.DEFAULT_TYPE.getName());
+                .type(CommandEntity.DEFAULT_TYPE.getName())
+                .overrideEntrypoint(Boolean.FALSE);
     }
 
-    public static ResolvedCommand fromSetupCommand(final Command setupCommand,
-                                                   final String inputMountPath,
-                                                   final String outputMountPath) {
+    /**
+     * Creates ResolvedCommands for setup and wrapup commands.
+     * @param command The Command definition for the setup or wrapup command
+     * @param inputMountPath Path on the host to the input mount
+     * @param outputMountPath Path on the host to the output mount
+     * @param parentSourceObjectName Name of the Resolved Command Mount / Container Mount (for setup commands) or
+     *                               Resolved Command Output / Container Ouput (for wrapup commands) from which this
+     *                               special Resolved Command is being created.
+     * @return A Resolved Setup Command or Resolved Wrapup Command
+     */
+    public static ResolvedCommand fromSpecialCommandType(final Command command,
+                                                         final String inputMountPath,
+                                                         final String outputMountPath,
+                                                         final String parentSourceObjectName) {
         return builder()
                 .wrapperId(0L)
                 .wrapperName("")
-                .type(CommandType.DOCKER_SETUP.getName())
-                .commandId(setupCommand.id())
-                .commandName(setupCommand.name())
-                .image(setupCommand.image())
-                .commandLine(setupCommand.commandLine())
-                .workingDirectory(setupCommand.workingDirectory())
+                .type(command.type())
+                .commandId(command.id())
+                .commandName(command.name())
+                .image(command.image())
+                .commandLine(command.commandLine())
+                .workingDirectory(command.workingDirectory())
+                .reserveMemory(command.reserveMemory())
+                .limitMemory(command.limitMemory())
+                .limitCpu(command.limitCpu())
+                .parentSourceObjectName(parentSourceObjectName)
                 .addMount(ResolvedCommandMount.builder()
                         .name("input")
                         .containerPath("/input")
@@ -183,12 +204,22 @@ public abstract class ResolvedCommand {
             return this;
         }
         public abstract Builder commandLine(String commandLine);
+        public abstract Builder overrideEntrypoint(Boolean overrideEntrypoint);
         public abstract Builder environmentVariables(Map<String, String> environmentVariables);
         public abstract ImmutableMap.Builder<String, String> environmentVariablesBuilder();
         public Builder addEnvironmentVariable(final String name, final String value) {
             environmentVariablesBuilder().put(name, value);
             return this;
         }
+        public Builder addEnvironmentVariables(final Map<String, String> environmentVariables) {
+            if (environmentVariables != null) {
+                for (final Map.Entry<String, String> env : environmentVariables.entrySet()) {
+                    addEnvironmentVariable(env.getKey(), env.getValue());
+                }
+            }
+            return this;
+        }
+
         public abstract Builder ports(Map<String, String> ports);
         public abstract ImmutableMap.Builder<String, String> portsBuilder();
         public Builder addPort(final String name, final String value) {
@@ -196,12 +227,14 @@ public abstract class ResolvedCommand {
             return this;
         }
         public abstract Builder mounts(List<ResolvedCommandMount> mounts);
+        public abstract Builder mounts(ResolvedCommandMount... mounts);
         public abstract ImmutableList.Builder<ResolvedCommandMount> mountsBuilder();
         public Builder addMount(final ResolvedCommandMount mount) {
             mountsBuilder().add(mount);
             return this;
         }
         public abstract Builder outputs(List<ResolvedCommandOutput> outputs);
+        public abstract Builder outputs(ResolvedCommandOutput... outputs);
         public abstract ImmutableList.Builder<ResolvedCommandOutput> outputsBuilder();
         public Builder addOutput(final ResolvedCommandOutput output) {
             outputsBuilder().add(output);
@@ -210,11 +243,25 @@ public abstract class ResolvedCommand {
         public abstract Builder workingDirectory(String workingDirectory);
 
         public abstract Builder setupCommands(List<ResolvedCommand> setupCommands);
+        public abstract Builder setupCommands(ResolvedCommand... setupCommands);
         public abstract ImmutableList.Builder<ResolvedCommand> setupCommandsBuilder();
         public Builder addSetupCommand(final ResolvedCommand setupCommand) {
             setupCommandsBuilder().add(setupCommand);
             return this;
         }
+
+        public abstract Builder wrapupCommands(List<ResolvedCommand> wrapupCommands);
+        public abstract Builder wrapupCommands(ResolvedCommand... wrapupCommands);
+        public abstract ImmutableList.Builder<ResolvedCommand> wrapupCommandsBuilder();
+        public Builder addWrapupCommand(final ResolvedCommand wrapupCommand) {
+            wrapupCommandsBuilder().add(wrapupCommand);
+            return this;
+        }
+
+        public abstract Builder reserveMemory(Long reserveMemory);
+        public abstract Builder limitMemory(Long limitMemory);
+        public abstract Builder limitCpu(Double limitCpu);
+        public abstract Builder parentSourceObjectName(String parentSourceObjectName);
 
         public abstract ResolvedCommand build();
     }
@@ -229,12 +276,14 @@ public abstract class ResolvedCommand {
         @Nullable public abstract String commandDescription();
         public abstract String image();
         public abstract String type();
+        public abstract Boolean overrideEntrypoint();
         public abstract ImmutableMap<String, String> rawInputValues();
         public abstract ImmutableList<ResolvedInputTreeNode<? extends Command.Input>> resolvedInputTrees();
 
         public static Builder builder() {
             return new AutoValue_ResolvedCommand_PartiallyResolvedCommand.Builder()
-                    .type(CommandEntity.DEFAULT_TYPE.getName());
+                    .type(CommandEntity.DEFAULT_TYPE.getName())
+                    .overrideEntrypoint(Boolean.FALSE);
         }
 
         @AutoValue.Builder
@@ -247,6 +296,7 @@ public abstract class ResolvedCommand {
             public abstract Builder commandDescription(String commandDescription);
             public abstract Builder image(String image);
             public abstract Builder type(String type);
+            public abstract Builder overrideEntrypoint(Boolean overrideEntrypoint);
             public abstract Builder rawInputValues(Map<String, String> rawInputValues);
             public abstract ImmutableMap.Builder<String, String> rawInputValuesBuilder();
             public Builder addRawInputValue(final String inputName, final String inputValue) {
@@ -313,6 +363,7 @@ public abstract class ResolvedCommand {
         @JsonProperty("glob") @Nullable public abstract String glob();
         @JsonProperty("label") public abstract String label();
         @JsonProperty("handled-by-wrapper-input") public abstract String handledByWrapperInput();
+        @Nullable @JsonProperty("via-wrapup-command") public abstract String viaWrapupCommand();
 
         public static Builder builder() {
             return new AutoValue_ResolvedCommand_ResolvedCommandOutput.Builder();
@@ -328,6 +379,7 @@ public abstract class ResolvedCommand {
             public abstract Builder glob(String glob);
             public abstract Builder label(String label);
             public abstract Builder handledByWrapperInput(String handledByWrapperInput);
+            public abstract Builder viaWrapupCommand(String viaWrapupCommand);
 
             public abstract ResolvedCommandOutput build();
         }

@@ -14,7 +14,6 @@ import org.nrg.containers.events.model.ContainerEvent;
 import org.nrg.containers.events.model.DockerContainerEvent;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.command.auto.ResolvedCommandMount;
-import org.nrg.containers.model.command.entity.CommandType;
 import org.nrg.containers.model.container.ContainerInputType;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.container.entity.ContainerEntityHistory;
@@ -48,21 +47,26 @@ public abstract class Container {
     @Nullable @JsonProperty("node-id") public abstract String nodeId();
     @JsonProperty("docker-image") public abstract String dockerImage();
     @JsonProperty("command-line") public abstract String commandLine();
+    @Nullable @JsonProperty("override-entrypoint") public abstract Boolean overrideEntrypoint();
     @Nullable @JsonProperty("working-directory") public abstract String workingDirectory();
     @Nullable @JsonProperty("subtype") public abstract String subtype();
-    @Nullable @JsonProperty("parent-database-id") public abstract Long parentDatabaseId();
-    @Nullable @JsonProperty("parent-container-id") public abstract String parentContainerId();
-    @JsonIgnore @Nullable public abstract Container parentContainer();
+    @Nullable @JsonIgnore public abstract Container parent();
+    @Nullable @JsonProperty("parent-source-object-name") public abstract String parentSourceObjectName();
     @JsonProperty("env") public abstract ImmutableMap<String, String> environmentVariables();
+    @JsonProperty("ports") public abstract ImmutableMap<String, String> ports();
     @JsonProperty("mounts") public abstract ImmutableList<ContainerMount> mounts();
     @JsonProperty("inputs") public abstract ImmutableList<ContainerInput> inputs();
     @JsonProperty("outputs") public abstract ImmutableList<ContainerOutput> outputs();
     @JsonProperty("history") public abstract ImmutableList<ContainerHistory> history();
     @JsonProperty("log-paths") public abstract ImmutableList<String> logPaths();
+    @Nullable @JsonProperty("reserve-memory") public abstract Long reserveMemory();
+    @Nullable @JsonProperty("limit-memory") public abstract Long limitMemory();
+    @Nullable @JsonProperty("limit-cpu") public abstract Double limitCpu();
 
     @JsonIgnore
     public boolean isSwarmService() {
-        return swarm() != null && swarm();
+        final Boolean swarm = swarm();
+        return swarm != null && swarm;
     }
 
     @JsonIgnore
@@ -99,16 +103,20 @@ public abstract class Container {
                                    @JsonProperty("node-id") final String nodeId,
                                    @JsonProperty("docker-image") final String dockerImage,
                                    @JsonProperty("command-line") final String commandLine,
+                                   @JsonProperty("override-entrypoint") final Boolean overrideEntrypoint,
                                    @JsonProperty("working-directory") final String workingDirectory,
                                    @JsonProperty("subtype") final String subtype,
-                                   @JsonProperty("parent-database-id") final long parentDatabaseId,
-                                   @JsonProperty("parent-container-id") final String parentContainerId,
+                                   @JsonProperty("parent-source-object-name") final String parentSourceObjectName,
                                    @JsonProperty("env") final Map<String, String> environmentVariables,
+                                   @JsonProperty("ports") final Map<String, String> ports,
                                    @JsonProperty("mounts") final List<ContainerMount> mounts,
                                    @JsonProperty("inputs") final List<ContainerInput> inputs,
                                    @JsonProperty("outputs") final List<ContainerOutput> outputs,
                                    @JsonProperty("history") final List<ContainerHistory> history,
-                                   @JsonProperty("log-paths") final List<String> logPaths) {
+                                   @JsonProperty("log-paths") final List<String> logPaths,
+                                   @JsonProperty("reserve-memory") final Long reserveMemory,
+                                   @JsonProperty("limit-memory") final Long limitMemory,
+                                   @JsonProperty("limit-cpu") final Double limitCpu) {
 
         return builder()
                 .databaseId(databaseId)
@@ -125,16 +133,20 @@ public abstract class Container {
                 .nodeId(nodeId)
                 .dockerImage(dockerImage)
                 .commandLine(commandLine)
+                .overrideEntrypoint(overrideEntrypoint)
                 .workingDirectory(workingDirectory)
                 .subtype(subtype)
-                .parentDatabaseId(parentDatabaseId)
-                .parentContainerId(parentContainerId)
+                .parentSourceObjectName(parentSourceObjectName)
                 .environmentVariables(environmentVariables == null ? Collections.<String, String>emptyMap() : environmentVariables)
+                .ports(ports == null ? Collections.<String, String>emptyMap() : ports)
                 .mounts(mounts == null ? Collections.<ContainerMount>emptyList() : mounts)
                 .inputs(inputs == null ? Collections.<ContainerInput>emptyList() : inputs)
                 .outputs(outputs == null ? Collections.<ContainerOutput>emptyList() : outputs)
                 .history(history == null ? Collections.<ContainerHistory>emptyList() : history)
                 .logPaths(logPaths == null ? Collections.<String>emptyList() : logPaths)
+                .reserveMemory(reserveMemory)
+                .limitMemory(limitMemory)
+                .limitCpu(limitCpu)
                 .build();
     }
 
@@ -157,12 +169,13 @@ public abstract class Container {
                 .nodeId(containerEntity.getNodeId())
                 .dockerImage(containerEntity.getDockerImage())
                 .commandLine(containerEntity.getCommandLine())
+                .overrideEntrypoint(containerEntity.getOverrideEntrypoint())
                 .workingDirectory(containerEntity.getWorkingDirectory())
                 .subtype(containerEntity.getSubtype())
-                .parentContainer(create(containerEntity.getParentContainerEntity()))
-                .parentDatabaseId(containerEntity.getParentContainerEntity() != null ? containerEntity.getParentContainerEntity().getId() : null)
-                .parentContainerId(containerEntity.getParentContainerEntity() != null ? containerEntity.getParentContainerEntity().getContainerId() : null)
+                .parent(create(containerEntity.getParentContainerEntity()))
+                .parentSourceObjectName(containerEntity.getParentSourceObjectName())
                 .environmentVariables(containerEntity.getEnvironmentVariables() == null ? Collections.<String, String>emptyMap() : containerEntity.getEnvironmentVariables())
+                .ports(containerEntity.getPorts() == null ? Collections.<String, String>emptyMap() : containerEntity.getPorts())
                 .logPaths(containerEntity.getLogPaths() == null ? Collections.<String>emptyList() : containerEntity.getLogPaths())
                 .mounts(containerEntity.getMounts() == null ?
                         Collections.<ContainerMount>emptyList() :
@@ -200,6 +213,9 @@ public abstract class Container {
                             }
                         })
                 )
+                .reserveMemory(containerEntity.getReserveMemory())
+                .limitMemory(containerEntity.getLimitMemory())
+                .limitCpu(containerEntity.getLimitCpu())
                 .build();
     }
 
@@ -223,25 +239,28 @@ public abstract class Container {
     }
 
     private static Container.Builder buildFromResolvedCommand(final ResolvedCommand resolvedCommand) {
-        String containerSubtype = null;
-        if (resolvedCommand.type().equals(CommandType.DOCKER_SETUP.getName())) {
-            containerSubtype = "setup";
-        }
+
         return builder()
                 .databaseId(0L)
                 .commandId(resolvedCommand.commandId())
                 .wrapperId(resolvedCommand.wrapperId())
                 .dockerImage(resolvedCommand.image())
                 .commandLine(resolvedCommand.commandLine())
+                .overrideEntrypoint(resolvedCommand.overrideEntrypoint())
                 .workingDirectory(resolvedCommand.workingDirectory())
                 .environmentVariables(resolvedCommand.environmentVariables())
-                .subtype(containerSubtype)
+                .ports(resolvedCommand.ports())
+                .subtype(resolvedCommand.type())
                 .mountsFromResolvedCommand(resolvedCommand.mounts())
                 .addRawInputs(resolvedCommand.rawInputValues())
                 .addCommandInputs(resolvedCommand.commandInputValues())
                 .addExternalWrapperInputs(resolvedCommand.externalWrapperInputValues())
                 .addDerivedWrapperInputs(resolvedCommand.derivedWrapperInputValues())
-                .addOutputsFromResolvedCommand(resolvedCommand.outputs());
+                .addOutputsFromResolvedCommand(resolvedCommand.outputs())
+                .reserveMemory(resolvedCommand.reserveMemory())
+                .limitMemory(resolvedCommand.limitMemory())
+                .limitCpu(resolvedCommand.limitCpu())
+                .parentSourceObjectName(resolvedCommand.parentSourceObjectName());
     }
 
     public static Builder builder() {
@@ -323,6 +342,7 @@ public abstract class Container {
         public abstract Builder userId(String userId);
         public abstract Builder dockerImage(String dockerImage);
         public abstract Builder commandLine(String commandLine);
+        public abstract Builder overrideEntrypoint(Boolean overrideEntrypoint);
         public abstract Builder workingDirectory(String workingDirectory);
         public abstract Builder swarm(Boolean swarm);
         public abstract Builder serviceId(String serviceId);
@@ -331,21 +351,31 @@ public abstract class Container {
         public abstract Builder status(String status);
         public abstract Builder statusTime(Date statusTime);
         public abstract Builder subtype(String subtype);
-        public abstract Builder parentDatabaseId(Long parentDatabaseId);
-        public abstract Builder parentContainerId(String parentContainerId);
-        public abstract Builder parentContainer(Container parentContainer);
-
-        public Builder setParentProperties(final Container parentContainer) {
-            return this
-                    .parentContainer(parentContainer)
-                    .parentContainerId(parentContainer == null ? null : parentContainer.containerId())
-                    .parentDatabaseId(parentContainer == null ? null : parentContainer.databaseId());
-        }
+        public abstract Builder parent(Container parent);
+        public abstract Builder parentSourceObjectName(String parentSourceObjectName);
+        public abstract Builder reserveMemory(Long reserveMemory);
+        public abstract Builder limitMemory(Long limitMemory);
+        public abstract Builder limitCpu(Double limitCpu);
 
         public abstract Builder environmentVariables(Map<String, String> environmentVariables);
         abstract ImmutableMap.Builder<String, String> environmentVariablesBuilder();
         public Builder addEnvironmentVariable(final String envKey, final String envValue) {
             environmentVariablesBuilder().put(envKey, envValue);
+            return this;
+        }
+        public Builder addEnvironmentVariables(final Map<String, String> environmentVariables) {
+            if (environmentVariables != null) {
+                for (final Map.Entry<String, String> env : environmentVariables.entrySet()) {
+                    addEnvironmentVariable(env.getKey(), env.getValue());
+                }
+            }
+            return this;
+        }
+
+        public abstract Builder ports(Map<String, String> ports);
+        public abstract ImmutableMap.Builder<String, String> portsBuilder();
+        public Builder addPort(final String name, final String value) {
+            portsBuilder().put(name, value);
             return this;
         }
 
@@ -479,6 +509,11 @@ public abstract class Container {
                             null)));
         }
 
+        @JsonIgnore
+        public String toBindMountString() {
+            return containerHostPath() + ":" + containerPath() + (writable() ? "" : ":ro");
+        }
+
         public static Builder builder() {
             return new AutoValue_Container_ContainerMount.Builder();
         }
@@ -560,6 +595,7 @@ public abstract class Container {
         @JsonProperty("label") public abstract String label();
         @Nullable @JsonProperty("created") public abstract String created();
         @JsonProperty("handled-by-wrapper-input") public abstract String handledByWrapperInput();
+        @Nullable @JsonProperty("via-wrapup-container") public abstract String viaWrapupContainer();
 
         @JsonCreator
         public static ContainerOutput create(@JsonProperty("id") final long databaseId,
@@ -571,7 +607,8 @@ public abstract class Container {
                                              @JsonProperty("glob") final String glob,
                                              @JsonProperty("label") final String label,
                                              @JsonProperty("created") final String created,
-                                             @JsonProperty("handled-by-wrapper-input") final String handledByWrapperInput) {
+                                             @JsonProperty("handled-by-wrapper-input") final String handledByWrapperInput,
+                                             @JsonProperty("viaWrapupContainer") final String viaWrapupContainer) {
             return builder()
                     .databaseId(databaseId)
                     .name(name)
@@ -583,13 +620,22 @@ public abstract class Container {
                     .label(label)
                     .created(created)
                     .handledByWrapperInput(handledByWrapperInput)
+                    .viaWrapupContainer(viaWrapupContainer)
                     .build();
         }
 
         public static ContainerOutput create(final ContainerEntityOutput containerEntityOutput) {
-            return create(containerEntityOutput.getId(), containerEntityOutput.getName(), containerEntityOutput.getType(), containerEntityOutput.isRequired(),
-                    containerEntityOutput.getMount(), containerEntityOutput.getPath(), containerEntityOutput.getGlob(),
-                    containerEntityOutput.getLabel(), containerEntityOutput.getCreated(), containerEntityOutput.getHandledByXnatCommandInput());
+            return create(containerEntityOutput.getId(),
+                    containerEntityOutput.getName(),
+                    containerEntityOutput.getType(),
+                    containerEntityOutput.isRequired(),
+                    containerEntityOutput.getMount(),
+                    containerEntityOutput.getPath(),
+                    containerEntityOutput.getGlob(),
+                    containerEntityOutput.getLabel(),
+                    containerEntityOutput.getCreated(),
+                    containerEntityOutput.getHandledByXnatCommandInput(),
+                    containerEntityOutput.getViaWrapupContainer());
         }
 
         public static ContainerOutput create(final ResolvedCommand.ResolvedCommandOutput resolvedCommandOutput) {
@@ -602,7 +648,8 @@ public abstract class Container {
                     resolvedCommandOutput.glob(),
                     resolvedCommandOutput.label(),
                     null,
-                    resolvedCommandOutput.handledByWrapperInput());
+                    resolvedCommandOutput.handledByWrapperInput(),
+                    resolvedCommandOutput.viaWrapupCommand());
         }
 
         public static Builder builder() {
@@ -623,6 +670,7 @@ public abstract class Container {
             public abstract Builder label(String label);
             public abstract Builder created(String created);
             public abstract Builder handledByWrapperInput(String handledByWrapperInput);
+            public abstract Builder viaWrapupContainer(String viaWrapupContainer);
 
             public abstract ContainerOutput build();
         }

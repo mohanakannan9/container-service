@@ -1,5 +1,52 @@
 # Changelog
 
+## 1.5.0
+
+[Released 2018-02-15](https://github.com/NrgXnat/container-service/releases/tag/1.5.0).
+
+### Features
+
+* [CS-461][] and [CS-462][] Change handling of image entrypoint. (Reverts changes introduced in 1.4.0 by [CS-433][].) For discussion of this issue, see this [xnat_discussion board post][entrypoint-post].
+    The APIs we had been using are these for containers...
+    ```
+    Image.Cmd = ["/bin/sh", "-c", "COMMAND"]
+    Image.Entrypoint = [""]
+    ```
+    And these for swarm services...
+    ```
+    ContainerSpec.Command = ["/bin/sh", "-c", "COMMAND"]
+    ContainerSpec.Args = null
+    ```
+    This caused the image entrypoint to be overriden in all cases, with no recourse for the command author. With this pair of changes, we change the way we use the APIs to launch containers in all cases, but also provide an optional property on the Command (`"override-entrypoint"`) for whether to override the entrypoint or not (defaulting to `false`, i.e. do not override). So now, whether overriding the entrypoint or not, we pass the resolved command-line string to this API for containers...
+    ```
+    Image.Cmd = COMMAND (split into tokens like a shell would)
+    ```
+    Depending on whether the entrypoint is overridden or not, we set this value for containers...
+    ```
+    Image.Entrypoint = [""] (to override the entrypoint, or)
+    Image.Entrypoint = null (to leave the entrypoint it as is)
+    ```
+    For swarm services, we have to use different APIs depending on whether we override the entrypoint or not. When not overriding, we use...
+    ```
+    ContainerSpec.Command = null
+    ContainerSpec.Args = COMMAND (split into tokens like a shell would)
+    ```
+    When overriding, we use
+    ```
+    ContainerSpec.Command = ["/bin/sh", "-c", COMMAND] (command not split into tokens, because the /bin/sh will do that)
+    ContainerSpec.Args = null
+    ```
+* [nrgxnat/container-service#6][] Add option to reserve memory and/or limit memory and CPU usage of containers via command entries "reserve-memory", "limit-memory", "limit-cpu". Update command documentation accordingly.
+
+### Bugfixes
+
+* [CS-475][] Ensure references to setup and wrapup containers can be resolved unambiguously by including the name of the source object on the parent container for which we created this particular setup or wrapup container.
+
+[nrgxnat/container-service#6]: https://github.com/NrgXnat/container-service/pull/6
+[CS-461]: https://issues.xnat.org/browse/CS-461
+[CS-475]: https://issues.xnat.org/browse/CS-475
+[entrypoint-post]: https://groups.google.com/forum/#!msg/xnat_discussion/NBVjAS8gXhU/Zu7xJngCAgAJ
+
 ## 1.4.0
 
 [Released 2018-01-05](https://github.com/NrgXnat/container-service/releases/tag/1.4.0).
@@ -30,6 +77,7 @@
 * [CS-450][] Restrict usage of command automation to commands that match the context of selected events
 * [CS-454][] Container working directory was not being saved at launch
 
+[CS-340]: https://issues.xnat.org/browse/CS-340
 [CS-355]: https://issues.xnat.org/browse/CS-355
 [CS-420]: https://issues.xnat.org/browse/CS-420
 [CS-421]: https://issues.xnat.org/browse/CS-421

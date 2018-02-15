@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoDockerServerException;
 import org.nrg.containers.model.container.auto.Container;
@@ -94,7 +95,7 @@ public class ContainerRestApi extends AbstractXapiRestController {
 
     @XapiRequestMapping(value = "/{id}/finalize", method = POST, produces = JSON, restrictTo = Admin)
     @ApiOperation(value = "Finalize Container")
-    public void finalize(final @PathVariable String id) throws NotFoundException {
+    public void finalize(final @PathVariable String id) throws NotFoundException, ContainerException, DockerServerException, NoDockerServerException {
         final UserI userI = XDAT.getUserDetails();
         containerService.finalize(id, userI);
     }
@@ -198,7 +199,7 @@ public class ContainerRestApi extends AbstractXapiRestController {
     }
 
     @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
-    @ExceptionHandler(value = {DockerServerException.class})
+    @ExceptionHandler(value = {DockerServerException.class, ContainerException.class})
     public String handleDockerServerException(final Exception e) {
         return e.getMessage();
     }

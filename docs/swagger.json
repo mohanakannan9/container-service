@@ -2,7 +2,7 @@
   "swagger" : "2.0",
   "info" : {
     "description" : "XAPI endpoints for the XNAT Container Service",
-    "version" : "1.4.0",
+    "version" : "1.5.0",
     "title" : "Container Service API",
     "contact" : {
       "name" : "John Flavin",
@@ -2321,16 +2321,6 @@
           "type" : "string",
           "readOnly" : true
         },
-        "command-id" : {
-          "type" : "integer",
-          "format" : "int64",
-          "readOnly" : true
-        },
-        "wrapper-id" : {
-          "type" : "integer",
-          "format" : "int64",
-          "readOnly" : true
-        },
         "command-name" : {
           "type" : "string",
           "readOnly" : true
@@ -2349,6 +2339,16 @@
         },
         "image-type" : {
           "type" : "string",
+          "readOnly" : true
+        },
+        "command-id" : {
+          "type" : "integer",
+          "format" : "int64",
+          "readOnly" : true
+        },
+        "wrapper-id" : {
+          "type" : "integer",
+          "format" : "int64",
           "readOnly" : true
         }
       }
@@ -2409,6 +2409,10 @@
           "type" : "string",
           "readOnly" : true
         },
+        "override-entrypoint" : {
+          "type" : "boolean",
+          "readOnly" : true
+        },
         "mounts" : {
           "type" : "array",
           "readOnly" : true,
@@ -2450,6 +2454,21 @@
           "items" : {
             "$ref" : "#/definitions/CommandWrapper"
           }
+        },
+        "reserve-memory" : {
+          "type" : "integer",
+          "format" : "int64",
+          "readOnly" : true
+        },
+        "limit-memory" : {
+          "type" : "integer",
+          "format" : "int64",
+          "readOnly" : true
+        },
+        "limit-cpu" : {
+          "type" : "number",
+          "format" : "double",
+          "readOnly" : true
         }
       }
     },
@@ -2523,6 +2542,10 @@
           "type" : "string",
           "readOnly" : true
         },
+        "override-entrypoint" : {
+          "type" : "boolean",
+          "readOnly" : true
+        },
         "mounts" : {
           "type" : "array",
           "readOnly" : true,
@@ -2564,6 +2587,21 @@
           "items" : {
             "$ref" : "#/definitions/CommandWrapperCreation"
           }
+        },
+        "reserve-memory" : {
+          "type" : "integer",
+          "format" : "int64",
+          "readOnly" : true
+        },
+        "limit-memory" : {
+          "type" : "integer",
+          "format" : "int64",
+          "readOnly" : true
+        },
+        "limit-cpu" : {
+          "type" : "number",
+          "format" : "double",
+          "readOnly" : true
         }
       }
     },
@@ -2581,11 +2619,11 @@
         "enabled" : {
           "type" : "boolean"
         },
-        "disabled" : {
+        "created" : {
           "type" : "string",
           "format" : "date-time"
         },
-        "created" : {
+        "disabled" : {
           "type" : "string",
           "format" : "date-time"
         },
@@ -3013,6 +3051,10 @@
           "type" : "string",
           "readOnly" : true
         },
+        "via-wrapup-command" : {
+          "type" : "string",
+          "readOnly" : true
+        },
         "type" : {
           "type" : "string",
           "readOnly" : true
@@ -3255,10 +3297,6 @@
           "type" : "string",
           "readOnly" : true
         },
-        "label" : {
-          "type" : "string",
-          "readOnly" : true
-        },
         "required" : {
           "type" : "boolean",
           "readOnly" : true
@@ -3267,12 +3305,9 @@
           "type" : "string",
           "readOnly" : true
         },
-        "children" : {
-          "type" : "array",
-          "readOnly" : true,
-          "items" : {
-            "type" : "string"
-          }
+        "label" : {
+          "type" : "string",
+          "readOnly" : true
         },
         "ui" : {
           "type" : "object",
@@ -3281,11 +3316,18 @@
             "$ref" : "#/definitions/LaunchUiInputValuesAndType"
           }
         },
-        "user-settable" : {
+        "children" : {
+          "type" : "array",
+          "readOnly" : true,
+          "items" : {
+            "type" : "string"
+          }
+        },
+        "advanced" : {
           "type" : "boolean",
           "readOnly" : true
         },
-        "advanced" : {
+        "user-settable" : {
           "type" : "boolean",
           "readOnly" : true
         }

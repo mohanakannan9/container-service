@@ -1,0 +1,57 @@
+{
+    "name": "command-with-wrapup-command",
+    "description": "A command with a wrapup command",
+    "type": "docker",
+    "image": "busybox:latest",
+    "command-line": "main-command-script.sh",
+    "inputs": [],
+    "mounts": [
+        {
+            "name": "in",
+            "path": "/input"
+        },
+        {
+            "name": "out",
+            "path": "/output",
+            "writable": true
+        }
+    ],
+    "outputs": [
+        {
+            "name": "output",
+            "mount": "out"
+        }
+    ],
+    "xnat": [
+        {
+            "name": "wrapper",
+            "description": "Use a wrapup command on the output handler",
+            "external-inputs": [
+                {
+                    "name": "session",
+                    "description": "A session",
+                    "type": "Session",
+                    "required": true
+                }
+            ],
+            "derived-inputs": [
+                {
+                    "name": "resource",
+                    "description": "A fake resource, which will be mounted",
+                    "type": "Resource",
+                    "provides-files-for-command-mount": "in",
+                    "derived-from-wrapper-input": "session"
+                }
+            ],
+            "output-handlers": [
+                {
+                    "name": "output-handler",
+                    "accepts-command-output": "output",
+                    "via-wrapup-command": "xnat/test-wrapup-command:latest:wrapup-command",
+                    "as-a-child-of-wrapper-input": "session",
+                    "label": "WRAPUP"
+                }
+            ]
+        }
+    ]
+}

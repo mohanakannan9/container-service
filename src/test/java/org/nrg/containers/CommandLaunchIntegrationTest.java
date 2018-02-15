@@ -12,15 +12,17 @@ import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.LoggingBuildHandler;
 import com.spotify.docker.client.exceptions.ContainerNotFoundException;
 import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.ContainerInfo;
-import com.spotify.docker.client.messages.Image;
-import com.spotify.docker.client.messages.ImageInfo;
+import com.spotify.docker.client.messages.swarm.Service;
+import com.spotify.docker.client.messages.swarm.Task;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.hamcrest.CustomTypeSafeMatcher;
+import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -33,6 +35,7 @@ import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.auto.Command.CommandWrapper;
 import org.nrg.containers.model.container.auto.Container;
 import org.nrg.containers.model.container.auto.Container.ContainerMount;
+import org.nrg.containers.model.container.auto.ServiceTask;
 import org.nrg.containers.model.server.docker.DockerServerBase.DockerServer;
 import org.nrg.containers.model.xnat.Project;
 import org.nrg.containers.model.xnat.Resource;
@@ -45,6 +48,7 @@ import org.nrg.containers.services.DockerService;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.services.AliasTokenService;
@@ -83,28 +87,31 @@ import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 
 import static org.awaitility.Awaitility.await;
+import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
 import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasItemInArray;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.notNull;
 import static org.mockito.Mockito.mock;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 @RunWith(PowerMockRunner.class)
 @PowerMockRunnerDelegate(SpringJUnit4ClassRunner.class)
-@PrepareForTest({UriParserUtils.class, XFTManager.class})
+@PrepareForTest({UriParserUtils.class, XFTManager.class, Users.class})
 @PowerMockIgnore({"org.apache.*", "java.*", "javax.*", "org.w3c.*", "com.sun.*"})
 @ContextConfiguration(classes = EventPullingIntegrationTestConfig.class)
 @Transactional
@@ -119,6 +126,7 @@ public class CommandLaunchIntegrationTest {
     private final String FAKE_ALIAS = "alias";
     private final String FAKE_SECRET = "secret";
     private final String FAKE_HOST = "mock://url";
+    private final boolean swarmMode = false;
 
     private boolean testIsOnCircleCi;
 
@@ -197,7 +205,7 @@ public class CommandLaunchIntegrationTest {
             }
         }
 
-        dockerServerService.setServer(DockerServer.create(0L, "name", containerHost, certPath, false));
+        dockerServerService.setServer(DockerServer.create(0L, "name", containerHost, certPath, swarmMode));
 
         // Mock the userI
         mockUser = mock(UserI.class);
@@ -219,6 +227,9 @@ public class CommandLaunchIntegrationTest {
         mockAliasToken.setSecret(FAKE_SECRET);
         when(mockAliasTokenService.issueTokenForUser(mockUser)).thenReturn(mockAliasToken);
 
+        mockStatic(Users.class);
+        when(Users.getUser(FAKE_USER)).thenReturn(mockUser);
+
         // Mock the site config preferences
         buildDir = folder.newFolder().getAbsolutePath();
         archiveDir = folder.newFolder().getAbsolutePath();
@@ -238,7 +249,11 @@ public class CommandLaunchIntegrationTest {
     @After
     public void cleanup() throws Exception {
         for (final String containerToCleanUp : containersToCleanUp) {
-            CLIENT.removeContainer(containerToCleanUp, DockerClient.RemoveContainerParam.forceKill());
+            if (swarmMode) {
+                CLIENT.removeService(containerToCleanUp);
+            } else {
+                CLIENT.removeContainer(containerToCleanUp, DockerClient.RemoveContainerParam.forceKill());
+            }
         }
         containersToCleanUp.clear();
 
@@ -302,7 +317,7 @@ public class CommandLaunchIntegrationTest {
         runtimeValues.put("T1-scantype", t1Scantype);
 
         final Container execution = containerService.resolveCommandAndLaunchContainer(commandWrapper.id(), runtimeValues, mockUser);
-        containersToCleanUp.add(execution.containerId());
+        containersToCleanUp.add(swarmMode ? execution.serviceId() : execution.containerId());
         await().until(containerIsRunning(execution), is(false));
 
         // Raw inputs
@@ -417,7 +432,7 @@ public class CommandLaunchIntegrationTest {
         runtimeValues.put("project", projectJson);
 
         final Container execution = containerService.resolveCommandAndLaunchContainer(commandWrapper.id(), runtimeValues, mockUser);
-        containersToCleanUp.add(execution.containerId());
+        containersToCleanUp.add(swarmMode ? execution.serviceId() : execution.containerId());
         await().until(containerIsRunning(execution), is(false));
 
         // Raw inputs
@@ -581,7 +596,7 @@ public class CommandLaunchIntegrationTest {
         printContainerLogs(mainContainerAWhileAfterLaunch, "main");
 
         // Sanity Checks
-        assertThat(setupContainer.parentContainer(), is(mainContainerAWhileAfterLaunch));
+        assertThat(setupContainer.parent(), is(mainContainerAWhileAfterLaunch));
         assertThat(setupContainer.status(), is(not("Failed")));
 
         // Check main container's input mount for contents
@@ -601,6 +616,127 @@ public class CommandLaunchIntegrationTest {
         assertThat(contentsOfMainContainerMountDir, hasItemInArray(pathEndsWith("another-file")));
     }
 
+    @Test
+    @DirtiesContext
+    public void testLaunchCommandWithWrapupCommand() throws Exception {
+        assumeThat(SystemUtils.IS_OS_WINDOWS_7, is(false));
+        assumeThat(canConnectToDocker(), is(true));
+
+        // This test fails on Circle CI because we cannot mount local directories into containers
+        assumeThat(testIsOnCircleCi, is(false));
+
+        CLIENT.pull("busybox:latest");
+
+        final Path wrapupCommandDirPath = Paths.get(ClassLoader.getSystemResource("wrapupCommand").toURI());
+        final String wrapupCommandDir = wrapupCommandDirPath.toString().replace("%20", " ");
+
+        final String commandWithWrapupCommandJsonFile = Paths.get(wrapupCommandDir, "/command-with-wrapup-command.json").toString();
+        final Command commandWithWrapupCommandToCreate = mapper.readValue(new File(commandWithWrapupCommandJsonFile), Command.class);
+        final Command commandWithWrapupCommand = commandService.create(commandWithWrapupCommandToCreate);
+
+        // We could hard-code the name of the image we referenced in the "via-wrapup-command" property, or we could pull it out.
+        // Let's do the latter, so in case we change it later this will not fail.
+        assertThat(commandWithWrapupCommand.xnatCommandWrappers(), hasSize(1));
+        final CommandWrapper commandWithWrapupCommandWrapper = commandWithWrapupCommand.xnatCommandWrappers().get(0);
+        assertThat(commandWithWrapupCommandWrapper.outputHandlers(), hasSize(1));
+        assertThat(commandWithWrapupCommandWrapper.outputHandlers().get(0).viaWrapupCommand(), not(isEmptyOrNullString()));
+        final String wrapupCommandImageAndCommandName = commandWithWrapupCommandWrapper.outputHandlers().get(0).viaWrapupCommand();
+        final String[] wrapupCommandSplitOnColon = wrapupCommandImageAndCommandName.split(":");
+        assertThat(wrapupCommandSplitOnColon, arrayWithSize(3));
+        final String wrapupCommandImageName = wrapupCommandSplitOnColon[0] + ":" + wrapupCommandSplitOnColon[1];
+        final String wrapupCommandName = wrapupCommandSplitOnColon[2];
+
+        final String commandWithWrapupCommandImageName = commandWithWrapupCommand.image();
+
+        // Build two images: the wrapup image and the main image
+        CLIENT.build(wrapupCommandDirPath, wrapupCommandImageName, "Dockerfile.wrapup", new LoggingBuildHandler());
+        CLIENT.build(wrapupCommandDirPath, commandWithWrapupCommandImageName, "Dockerfile.main", new LoggingBuildHandler());
+        imagesToCleanUp.add(wrapupCommandImageName);
+        imagesToCleanUp.add(commandWithWrapupCommandImageName);
+
+        // Make the wrapup command from the json file.
+        // Assert that its name and image are the same ones referred to in the "via-wrapup-command" property
+        final String wrapupCommandJsonFile = Paths.get(wrapupCommandDir, "/wrapup-command.json").toString();
+        final Command wrapupCommandToCreate = mapper.readValue(new File(wrapupCommandJsonFile), Command.class);
+        final Command wrapupCommand = commandService.create(wrapupCommandToCreate);
+        assertThat(wrapupCommand.name(), is(wrapupCommandName));
+        assertThat(wrapupCommand.image(), is(wrapupCommandImageName));
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        // Set up input object(s)
+        final String sessionInputJsonPath = wrapupCommandDir + "/session.json";
+        // I need to set the resource directory to a temp directory
+        final String resourceDir = folder.newFolder("resource").getAbsolutePath();
+        final Session sessionInput = mapper.readValue(new File(sessionInputJsonPath), Session.class);
+        assertThat(sessionInput.getResources(), Matchers.<Resource>hasSize(1));
+        final Resource resource = sessionInput.getResources().get(0);
+        resource.setDirectory(resourceDir);
+        final Map<String, String> runtimeValues = Collections.singletonMap("session", mapper.writeValueAsString(sessionInput));
+
+        // Write a few test files to the resource
+        final byte[] testFileContents = "contents of the file".getBytes();
+        final String[] fileNames = new String[] {"a", "b", "c", "d", "e", "f", "g"};
+        for (final String filename : fileNames) {
+            Files.write(Paths.get(resourceDir, filename), testFileContents);
+        }
+
+        // Ensure the session XNAT object will be returned by the call to UriParserUtils.parseURI
+        final ArchivableItem mockSessionItem = mock(ArchivableItem.class);
+        final ExptURI mockUriObject = mock(ExptURI.class);
+        when(UriParserUtils.parseURI("/archive" + sessionInput.getUri())).thenReturn(mockUriObject);
+        when(mockUriObject.getSecurityItem()).thenReturn(mockSessionItem);
+
+        // Time to launch this thing
+        final Container mainContainerRightAfterLaunch = containerService.resolveCommandAndLaunchContainer(commandWithWrapupCommandWrapper.id(), runtimeValues, mockUser);
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+        log.debug("Waiting for ten seconds. Peace!");
+        Thread.sleep(10000); // Wait for container to finish
+
+        final Container mainContainerAWhileAfterLaunch = containerService.get(mainContainerRightAfterLaunch.databaseId());
+        final List<Container> wrapupContainers = containerService.retrieveWrapupContainersForParent(mainContainerAWhileAfterLaunch.databaseId());
+        assertThat(wrapupContainers, hasSize(1));
+        final Container wrapupContainer = wrapupContainers.get(0);
+
+        // Print the logs for debugging in case weird stuff happened
+        printContainerLogs(wrapupContainer, "wrapup");
+        printContainerLogs(mainContainerAWhileAfterLaunch, "main");
+
+        // Sanity Checks
+        assertThat(wrapupContainer.parent(), is(mainContainerAWhileAfterLaunch));
+        assertThat(wrapupContainer.status(), is(not("Failed")));
+
+        // This is what we will be testing, and why it validates that the wrapup container worked.
+        // The wrapup container wrote "found-files.txt" to the output mount. The contents of the file
+        // will be the locations (from find) of all the files in the input mount.
+
+        final String[] expectedFileContentsByLine = new String[fileNames.length + 1];
+        expectedFileContentsByLine[0] = "/input";
+        for (int i = 0; i < fileNames.length; i++) {
+            expectedFileContentsByLine[i+1] = "/input/" + fileNames[i];
+        }
+
+        // Check wrapup container's output mount for contents
+        ContainerMount wrapupContainerOutputMount = null;
+        for (final ContainerMount wrapupMount : wrapupContainer.mounts()) {
+            if (wrapupMount.name().equals("output")) {
+                wrapupContainerOutputMount = wrapupMount;
+            }
+        }
+        assertThat(wrapupContainerOutputMount, notNullValue(ContainerMount.class));
+        final File wrapupContainerOutputMountDir = new File(wrapupContainerOutputMount.xnatHostPath());
+        final File[] contentsOfWrapupContainerOutputMountDir = wrapupContainerOutputMountDir.listFiles();
+
+        assertThat(contentsOfWrapupContainerOutputMountDir, Matchers.<File>arrayWithSize(1));
+        assertThat(contentsOfWrapupContainerOutputMountDir, hasItemInArray(pathEndsWith("found-files.txt")));
+        final File foundFilesDotTxt = contentsOfWrapupContainerOutputMountDir[0];
+        final String[] foundFilesDotTxtContentByLine = readFile(foundFilesDotTxt);
+        assertThat(foundFilesDotTxtContentByLine, arrayContainingInAnyOrder(expectedFileContentsByLine));
+    }
 
     @Test
     @DirtiesContext
@@ -614,7 +750,7 @@ public class CommandLaunchIntegrationTest {
                 .name("will-fail")
                 .image("busybox:latest")
                 .version("0")
-                .commandLine("exit 1")
+                .commandLine("/bin/sh -c \"exit 1\"")
                 .addCommandWrapper(CommandWrapper.builder()
                         .name("placeholder")
                         .build())
@@ -626,19 +762,62 @@ public class CommandLaunchIntegrationTest {
         TestTransaction.start();
 
         final Container container = containerService.resolveCommandAndLaunchContainer(willFailWrapper.id(), Collections.<String, String>emptyMap(), mockUser);
-        containersToCleanUp.add(container.containerId());
+        containersToCleanUp.add(swarmMode ? container.serviceId() : container.containerId());
 
         TestTransaction.flagForCommit();
         TestTransaction.end();
         TestTransaction.start();
 
+        log.debug("Waiting until task has started");
+        await().until(containerHasStarted(container), is(true));
+        log.debug("Waiting until task has finished");
         await().until(containerIsRunning(container), is(false));
+        log.debug("Waiting until status updater has picked up finished task and added item to history");
         await().until(containerHistoryHasItemFromSystem(container.databaseId()), is(true));
 
         final Container exited = containerService.get(container.databaseId());
         printContainerLogs(exited);
         assertThat(exited.exitCode(), is("1"));
         assertThat(exited.status(), is("Failed"));
+    }
+
+    @Test
+    @DirtiesContext
+    public void testEntrypointIsPreserved() throws Exception {
+        assumeThat(canConnectToDocker(), is(true));
+
+        CLIENT.pull("busybox:latest");
+
+        final String resourceDir = Paths.get(ClassLoader.getSystemResource("commandLaunchTest").toURI()).toString().replace("%20", " ");
+        final Path testDir = Paths.get(resourceDir, "/testEntrypointIsPreserved");
+        final String commandJsonFile = Paths.get(testDir.toString(), "/command.json").toString();
+
+        final String imageName = "xnat/entrypoint-test:latest";
+        CLIENT.build(testDir, imageName);
+        imagesToCleanUp.add(imageName);
+
+        final Command commandToCreate = mapper.readValue(new File(commandJsonFile), Command.class);
+        final Command command = commandService.create(commandToCreate);
+        final CommandWrapper wrapper = command.xnatCommandWrappers().get(0);
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        final Container container = containerService.resolveCommandAndLaunchContainer(wrapper.id(), Collections.<String, String>emptyMap(), mockUser);
+        containersToCleanUp.add(swarmMode ? container.serviceId() : container.containerId());
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+        TestTransaction.start();
+
+        await().until(containerIsRunning(container), is(false));
+        await().until(containerHasLogPaths(container.databaseId())); // Thus we know it has been finalized
+
+        final Container exited = containerService.get(container.databaseId());
+        printContainerLogs(exited);
+        assertThat(exited.status(), is(not("Failed")));
+        assertThat(exited.exitCode(), is("0"));
     }
 
     @Test
@@ -665,7 +844,7 @@ public class CommandLaunchIntegrationTest {
         TestTransaction.start();
 
         final Container container = containerService.resolveCommandAndLaunchContainer(wrapper.id(), Collections.<String, String>emptyMap(), mockUser);
-        containersToCleanUp.add(container.containerId());
+        containersToCleanUp.add(swarmMode ? container.serviceId() : container.containerId());
 
         TestTransaction.flagForCommit();
         TestTransaction.end();
@@ -706,7 +885,7 @@ public class CommandLaunchIntegrationTest {
         TestTransaction.start();
 
         final Container container = containerService.resolveCommandAndLaunchContainer(wrapper.id(), Collections.<String, String>emptyMap(), mockUser);
-        containersToCleanUp.add(container.containerId());
+        containersToCleanUp.add(swarmMode ? container.serviceId() : container.containerId());
 
         TestTransaction.flagForCommit();
         TestTransaction.end();
@@ -740,7 +919,7 @@ public class CommandLaunchIntegrationTest {
         final CommandWrapper wrapper = command.xnatCommandWrappers().get(0);
 
         final Container container = containerService.resolveCommandAndLaunchContainer(wrapper.id(), Collections.<String, String>emptyMap(), mockUser);
-        containersToCleanUp.add(container.containerId());
+        containersToCleanUp.add(swarmMode ? container.serviceId() : container.containerId());
 
         TestTransaction.flagForCommit();
         TestTransaction.end();
@@ -776,11 +955,15 @@ public class CommandLaunchIntegrationTest {
 
     @SuppressWarnings("deprecation")
     private String[] readFile(final String outputFilePath) throws IOException {
-        final File outputFile = new File(outputFilePath);
-        if (!outputFile.canRead()) {
-            throw new IOException("Cannot read output file " + outputFile.getAbsolutePath());
+        return readFile(new File(outputFilePath));
+    }
+
+    @SuppressWarnings("deprecation")
+    private String[] readFile(final File file) throws IOException {
+        if (!file.canRead()) {
+            throw new IOException("Cannot read output file " + file.getAbsolutePath());
         }
-        return FileUtils.readFileToString(outputFile).split("\\n");
+        return FileUtils.readFileToString(file).split("\\n");
     }
 
     private void printContainerLogs(final Container container) throws IOException {
@@ -788,6 +971,11 @@ public class CommandLaunchIntegrationTest {
     }
 
     private void printContainerLogs(final Container container, final String containerTypeForLogs) throws IOException {
+        log.debug("Trying to print {} container logs.", containerTypeForLogs);
+        if (container.logPaths().size() == 0) {
+            log.debug("No logs.");
+            return;
+        }
         for (final String containerLogPath : container.logPaths()) {
             final String[] containerLogPathComponents = containerLogPath.split("/");
             final String containerLogName = containerLogPathComponents[containerLogPathComponents.length - 1];
@@ -810,12 +998,54 @@ public class CommandLaunchIntegrationTest {
         };
     }
 
+    private Callable<Boolean> containerHasStarted(final Container container) {
+        return new Callable<Boolean>() {
+            public Boolean call() throws Exception {
+                try {
+                    if (swarmMode) {
+                        final Service serviceResponse = CLIENT.inspectService(container.serviceId());
+                        final List<Task> tasks = CLIENT.listTasks(Task.Criteria.builder().serviceName(serviceResponse.spec().name()).build());
+                        if (tasks.size() != 1) {
+                            return false;
+                        }
+                        final Task task = tasks.get(0);
+                        final ServiceTask serviceTask = ServiceTask.create(task, container.serviceId());
+                        if (serviceTask.hasNotStarted()) {
+                            return false;
+                        }
+                        return true;
+                    } else {
+                        final ContainerInfo containerInfo = CLIENT.inspectContainer(container.containerId());
+                        return (!containerInfo.state().status().equals("created"));
+                    }
+                } catch (ContainerNotFoundException ignored) {
+                    // Ignore exception. If container is not found, it is not running.
+                    return false;
+                }
+            }
+        };
+    }
+
     private Callable<Boolean> containerIsRunning(final Container container) {
         return new Callable<Boolean>() {
             public Boolean call() throws Exception {
                 try {
-                    final ContainerInfo containerInfo = CLIENT.inspectContainer(container.containerId());
-                    return containerInfo.state().running();
+                    if (swarmMode) {
+                        final Service serviceResponse = CLIENT.inspectService(container.serviceId());
+                        final List<Task> tasks = CLIENT.listTasks(Task.Criteria.builder().serviceName(serviceResponse.spec().name()).build());
+                        for (final Task task : tasks) {
+                            final ServiceTask serviceTask = ServiceTask.create(task, container.serviceId());
+                            if (serviceTask.isExitStatus()) {
+                                return false;
+                            } else if (serviceTask.status().equals("running")) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    } else {
+                        final ContainerInfo containerInfo = CLIENT.inspectContainer(container.containerId());
+                        return containerInfo.state().running();
+                    }
                 } catch (ContainerNotFoundException ignored) {
                     // Ignore exception. If container is not found, it is not running.
                     return false;

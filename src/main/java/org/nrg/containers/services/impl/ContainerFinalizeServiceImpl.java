@@ -34,12 +34,15 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -67,9 +70,9 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
     }
 
     @Override
-    public Container finalizeContainer(final Container toFinalize, final UserI userI, final boolean isFailed) {
+    public Container finalizeContainer(final Container toFinalize, final UserI userI, final boolean isFailed, final List<Container> wrapupContainers) {
         final ContainerFinalizeHelper helper =
-                new ContainerFinalizeHelper(toFinalize, userI, isFailed);
+                new ContainerFinalizeHelper(toFinalize, userI, isFailed, wrapupContainers);
         return helper.finalizeContainer();
     }
 
@@ -85,9 +88,12 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
 
         private String prefix;
 
+        private Map<String, Container> wrapupContainerMap;
+
         private ContainerFinalizeHelper(final Container toFinalize,
                                         final UserI userI,
-                                        final boolean isFailed) {
+                                        final boolean isFailed,
+                                        final List<Container> wrapupContainers) {
             this.toFinalize = toFinalize;
             this.userI = userI;
             this.isFailed = isFailed;
@@ -96,6 +102,15 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
             transportedMounts = Maps.newHashMap();
 
             prefix = "Container " + toFinalize.databaseId() + ": ";
+
+            if (wrapupContainers == null || wrapupContainers.size() == 0) {
+                wrapupContainerMap = Collections.emptyMap();
+            } else {
+                wrapupContainerMap = new HashMap<>();
+                for (final Container wrapupContainer : wrapupContainers) {
+                    wrapupContainerMap.put(wrapupContainer.parentSourceObjectName(), wrapupContainer);
+                }
+            }
         }
 
         private Container finalizeContainer() {
@@ -242,26 +257,44 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
         }
 
         private ContainerOutput uploadOutput(final ContainerOutput output) throws ContainerException, UnauthorizedException {
-            if (log.isInfoEnabled()) {
-                log.info(String.format(prefix + "Uploading output \"%s\".", output.name()));
-            }
-            if (log.isDebugEnabled()) {
-                log.debug(output.toString());
+            log.info(prefix + "Uploading output \"{}\".", output.name());
+            log.debug("{}", output);
+
+            final String mountXnatHostPath;
+            final String viaWrapupContainer = output.viaWrapupContainer();
+            if (StringUtils.isBlank(viaWrapupContainer)) {
+                final String mountName = output.mount();
+                final ContainerMount mount = getMount(mountName);
+                if (mount == null) {
+                    throw new ContainerException(String.format(prefix + "Mount \"%s\" does not exist.", mountName));
+                }
+
+                log.debug(prefix + "Output files are provided by mount \"{}\": {}", mountName, mount);
+                mountXnatHostPath = mount.xnatHostPath();
+            } else {
+                log.debug(prefix + "Output files are provided by wrapup container \"{}\".", viaWrapupContainer);
+                final Container wrapupContainer = getWrapupContainer(output.name());
+                if (wrapupContainer == null) {
+                    throw new ContainerException(prefix + "Container output \"" + output.name() + "\" " +
+                            "must be processed via wrapup container \"" + viaWrapupContainer + "\" which was not found.");
+                }
+
+                ContainerMount wrapupOutputMount = null;
+                for (final ContainerMount mount : wrapupContainer.mounts()) {
+                    if (mount.name().equals("output")) {
+                        wrapupOutputMount = mount;
+                    }
+                }
+                if (wrapupOutputMount == null) {
+                    throw new ContainerException(prefix + "Container output \"" + output.name() + "\" " +
+                            "was processed via wrapup container \"" + wrapupContainer.databaseId() + "\" which has no output mount.");
+                }
+
+                mountXnatHostPath = wrapupOutputMount.xnatHostPath();
             }
 
-            final String mountName = output.mount();
-            final ContainerMount mount = getMount(mountName);
-            if (mount == null) {
-                throw new ContainerException(String.format(prefix + "Mount \"%s\" does not exist.", mountName));
-            }
-
-            if (log.isDebugEnabled()) {
-                log.debug(String.format(prefix + "Output files are provided by mount \"%s\": %s", mount.name(), mount));
-            }
-
-            final String mountXnatHostPath = mount.xnatHostPath();
             if (StringUtils.isBlank(mountXnatHostPath)) {
-                throw new ContainerException(String.format(prefix + "Cannot upload output \"%s\". Mount \"%s\" has a blank path to the files on the XNAT machine.", output.name(), mount.name()));
+                throw new ContainerException(String.format(prefix + "Cannot upload output \"%s\". The path to the files on the XNAT machine is blank.", output.name()));
             }
 
             final String relativeFilePath = output.path() != null ? output.path() : "";
@@ -272,12 +305,12 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
             final List<File> toUpload = matchGlob(filePath, globMatcher);
             if (toUpload == null || toUpload.size() == 0) {
                 if (output.required()) {
-                    throw new ContainerException(String.format(prefix + "Nothing to upload for output \"%s\". Mount \"%s\" has no files.", output.name(), mount.name()));
+                    throw new ContainerException(String.format(prefix + "Nothing to upload for output \"%s\".", output.name()));
                 }
                 return output;
             }
 
-            final String label = StringUtils.isNotBlank(output.label()) ? output.label() : mountName;
+            final String label = StringUtils.isNotBlank(output.label()) ? output.label() : output.name();
 
             String parentUri = getWrapperInputValue(output.handledByWrapperInput());
             if (parentUri == null) {
@@ -291,8 +324,8 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
             final String type = output.type();
             if (type.equals(RESOURCE.getName())) {
                 if (log.isDebugEnabled()) {
-                    final String template = prefix + "Inserting file resource.\n\tuser: %s\n\tparentUri: %s\n\tlabel: %s\n\ttoUpload: %s";
-                    log.debug(String.format(template, userI.getLogin(), parentUri, label, toUpload));
+                    final String template = prefix + "Inserting file resource.\n\tuser: {}\n\tparentUri: {}\n\tlabel: {}\n\ttoUpload: {}";
+                    log.debug(template, userI.getLogin(), parentUri, label, toUpload);
                 }
 
                 try {
@@ -362,7 +395,7 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
             }
 
 
-            log.info(String.format(prefix + "Done uploading output \"%s\". URI of created output: %s", output.name(), createdUri));
+            log.info(prefix + "Done uploading output \"{}\". URI of created output: {}", output.name(), createdUri);
             return output.toBuilder().created(createdUri).build();
         }
 
@@ -413,6 +446,11 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
             }
 
             return wrapperInputs.get(inputName);
+        }
+
+        @Nullable
+        private Container getWrapupContainer(final String parentSourceObjectName) {
+            return wrapupContainerMap.get(parentSourceObjectName);
         }
 
         private List<File> matchGlob(final String rootPath, final String glob) {
