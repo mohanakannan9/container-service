@@ -36,13 +36,13 @@ Not yet released.
     ContainerSpec.Command = ["/bin/sh", "-c", COMMAND] (command not split into tokens, because the /bin/sh will do that)
     ContainerSpec.Args = null
     ```
-
-* Add option to reserve memory and/or limit memory and CPU usage of containers via command entries "reserve-memory", "limit-memory", "limit-cpu". Update command documentation accordingly. (https://github.com/NrgXnat/container-service/pull/6)
+* [nrgxnat/container-service#6][] Add option to reserve memory and/or limit memory and CPU usage of containers via command entries "reserve-memory", "limit-memory", "limit-cpu". Update command documentation accordingly.
 
 ### Bugfixes
 
 *
 
+[nrgxnat/container-service#6]: https://github.com/NrgXnat/container-service/pull/6
 [CS-461]: https://issues.xnat.org/browse/CS-461
 [entrypoint-post]: https://groups.google.com/forum/#!msg/xnat_discussion/NBVjAS8gXhU/Zu7xJngCAgAJ
 

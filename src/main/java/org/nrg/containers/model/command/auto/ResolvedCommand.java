@@ -7,7 +7,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import org.nrg.containers.model.command.entity.CommandEntity;
-import org.nrg.containers.model.command.entity.CommandType;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -134,21 +133,28 @@ public abstract class ResolvedCommand {
                 .overrideEntrypoint(Boolean.FALSE);
     }
 
-    public static ResolvedCommand fromSetupCommand(final Command setupCommand,
-                                                   final String inputMountPath,
-                                                   final String outputMountPath) {
+    /**
+     * Creates ResolvedCommands for setup and wrapup commands.
+     * @param command The Command definition for the setup or wrapup command
+     * @param inputMountPath
+     * @param outputMountPath
+     * @return
+     */
+    public static ResolvedCommand fromSpecialCommandType(final Command command,
+                                                         final String inputMountPath,
+                                                         final String outputMountPath) {
         return builder()
                 .wrapperId(0L)
                 .wrapperName("")
-                .type(CommandType.DOCKER_SETUP.getName())
-                .commandId(setupCommand.id())
-                .commandName(setupCommand.name())
-                .image(setupCommand.image())
-                .commandLine(setupCommand.commandLine())
-                .workingDirectory(setupCommand.workingDirectory())
-                .reserveMemory(setupCommand.reserveMemory())
-                .limitMemory(setupCommand.limitMemory())
-                .limitCpu(setupCommand.limitCpu())
+                .type(command.type())
+                .commandId(command.id())
+                .commandName(command.name())
+                .image(command.image())
+                .commandLine(command.commandLine())
+                .workingDirectory(command.workingDirectory())
+                .reserveMemory(command.reserveMemory())
+                .limitMemory(command.limitMemory())
+                .limitCpu(command.limitCpu())
                 .addMount(ResolvedCommandMount.builder()
                         .name("input")
                         .containerPath("/input")
@@ -198,6 +204,15 @@ public abstract class ResolvedCommand {
             environmentVariablesBuilder().put(name, value);
             return this;
         }
+        public Builder addEnvironmentVariables(final Map<String, String> environmentVariables) {
+            if (environmentVariables != null) {
+                for (final Map.Entry<String, String> env : environmentVariables.entrySet()) {
+                    addEnvironmentVariable(env.getKey(), env.getValue());
+                }
+            }
+            return this;
+        }
+
         public abstract Builder ports(Map<String, String> ports);
         public abstract ImmutableMap.Builder<String, String> portsBuilder();
         public Builder addPort(final String name, final String value) {

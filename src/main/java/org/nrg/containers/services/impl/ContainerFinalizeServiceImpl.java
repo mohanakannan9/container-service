@@ -242,12 +242,8 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
         }
 
         private ContainerOutput uploadOutput(final ContainerOutput output) throws ContainerException, UnauthorizedException {
-            if (log.isInfoEnabled()) {
-                log.info(String.format(prefix + "Uploading output \"%s\".", output.name()));
-            }
-            if (log.isDebugEnabled()) {
-                log.debug(output.toString());
-            }
+            log.info(prefix + "Uploading output \"{}\".", output.name());
+            log.debug("{}", output);
 
             final String mountName = output.mount();
             final ContainerMount mount = getMount(mountName);
@@ -255,9 +251,7 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
                 throw new ContainerException(String.format(prefix + "Mount \"%s\" does not exist.", mountName));
             }
 
-            if (log.isDebugEnabled()) {
-                log.debug(String.format(prefix + "Output files are provided by mount \"%s\": %s", mount.name(), mount));
-            }
+            log.debug(prefix + "Output files are provided by mount \"{}\": {}", mount.name(), mount);
 
             final String mountXnatHostPath = mount.xnatHostPath();
             if (StringUtils.isBlank(mountXnatHostPath)) {
@@ -291,8 +285,8 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
             final String type = output.type();
             if (type.equals(RESOURCE.getName())) {
                 if (log.isDebugEnabled()) {
-                    final String template = prefix + "Inserting file resource.\n\tuser: %s\n\tparentUri: %s\n\tlabel: %s\n\ttoUpload: %s";
-                    log.debug(String.format(template, userI.getLogin(), parentUri, label, toUpload));
+                    final String template = prefix + "Inserting file resource.\n\tuser: {}\n\tparentUri: {}\n\tlabel: {}\n\ttoUpload: {}";
+                    log.debug(template, userI.getLogin(), parentUri, label, toUpload);
                 }
 
                 try {
@@ -362,7 +356,7 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
             }
 
 
-            log.info(String.format(prefix + "Done uploading output \"%s\". URI of created output: %s", output.name(), createdUri));
+            log.info(prefix + "Done uploading output \"{}\". URI of created output: {}", output.name(), createdUri);
             return output.toBuilder().created(createdUri).build();
         }
 

@@ -14,7 +14,6 @@ import org.nrg.containers.events.model.ContainerEvent;
 import org.nrg.containers.events.model.DockerContainerEvent;
 import org.nrg.containers.model.command.auto.ResolvedCommand;
 import org.nrg.containers.model.command.auto.ResolvedCommandMount;
-import org.nrg.containers.model.command.entity.CommandType;
 import org.nrg.containers.model.container.ContainerInputType;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.container.entity.ContainerEntityHistory;
@@ -51,10 +50,9 @@ public abstract class Container {
     @Nullable @JsonProperty("override-entrypoint") public abstract Boolean overrideEntrypoint();
     @Nullable @JsonProperty("working-directory") public abstract String workingDirectory();
     @Nullable @JsonProperty("subtype") public abstract String subtype();
-    @Nullable @JsonProperty("parent-database-id") public abstract Long parentDatabaseId();
-    @Nullable @JsonProperty("parent-container-id") public abstract String parentContainerId();
-    @JsonIgnore @Nullable public abstract Container parentContainer();
+    @JsonIgnore @Nullable public abstract Container parent();
     @JsonProperty("env") public abstract ImmutableMap<String, String> environmentVariables();
+    @JsonProperty("ports") public abstract ImmutableMap<String, String> ports();
     @JsonProperty("mounts") public abstract ImmutableList<ContainerMount> mounts();
     @JsonProperty("inputs") public abstract ImmutableList<ContainerInput> inputs();
     @JsonProperty("outputs") public abstract ImmutableList<ContainerOutput> outputs();
@@ -107,9 +105,8 @@ public abstract class Container {
                                    @JsonProperty("override-entrypoint") final Boolean overrideEntrypoint,
                                    @JsonProperty("working-directory") final String workingDirectory,
                                    @JsonProperty("subtype") final String subtype,
-                                   @JsonProperty("parent-database-id") final long parentDatabaseId,
-                                   @JsonProperty("parent-container-id") final String parentContainerId,
                                    @JsonProperty("env") final Map<String, String> environmentVariables,
+                                   @JsonProperty("ports") final Map<String, String> ports,
                                    @JsonProperty("mounts") final List<ContainerMount> mounts,
                                    @JsonProperty("inputs") final List<ContainerInput> inputs,
                                    @JsonProperty("outputs") final List<ContainerOutput> outputs,
@@ -137,9 +134,8 @@ public abstract class Container {
                 .overrideEntrypoint(overrideEntrypoint)
                 .workingDirectory(workingDirectory)
                 .subtype(subtype)
-                .parentDatabaseId(parentDatabaseId)
-                .parentContainerId(parentContainerId)
                 .environmentVariables(environmentVariables == null ? Collections.<String, String>emptyMap() : environmentVariables)
+                .ports(ports == null ? Collections.<String, String>emptyMap() : ports)
                 .mounts(mounts == null ? Collections.<ContainerMount>emptyList() : mounts)
                 .inputs(inputs == null ? Collections.<ContainerInput>emptyList() : inputs)
                 .outputs(outputs == null ? Collections.<ContainerOutput>emptyList() : outputs)
@@ -173,10 +169,9 @@ public abstract class Container {
                 .overrideEntrypoint(containerEntity.getOverrideEntrypoint())
                 .workingDirectory(containerEntity.getWorkingDirectory())
                 .subtype(containerEntity.getSubtype())
-                .parentContainer(create(containerEntity.getParentContainerEntity()))
-                .parentDatabaseId(containerEntity.getParentContainerEntity() != null ? containerEntity.getParentContainerEntity().getId() : null)
-                .parentContainerId(containerEntity.getParentContainerEntity() != null ? containerEntity.getParentContainerEntity().getContainerId() : null)
+                .parent(create(containerEntity.getParentContainerEntity()))
                 .environmentVariables(containerEntity.getEnvironmentVariables() == null ? Collections.<String, String>emptyMap() : containerEntity.getEnvironmentVariables())
+                .ports(containerEntity.getPorts() == null ? Collections.<String, String>emptyMap() : containerEntity.getPorts())
                 .logPaths(containerEntity.getLogPaths() == null ? Collections.<String>emptyList() : containerEntity.getLogPaths())
                 .mounts(containerEntity.getMounts() == null ?
                         Collections.<ContainerMount>emptyList() :
@@ -250,6 +245,7 @@ public abstract class Container {
                 .overrideEntrypoint(resolvedCommand.overrideEntrypoint())
                 .workingDirectory(resolvedCommand.workingDirectory())
                 .environmentVariables(resolvedCommand.environmentVariables())
+                .ports(resolvedCommand.ports())
                 .subtype(resolvedCommand.type())
                 .mountsFromResolvedCommand(resolvedCommand.mounts())
                 .addRawInputs(resolvedCommand.rawInputValues())
@@ -350,24 +346,30 @@ public abstract class Container {
         public abstract Builder status(String status);
         public abstract Builder statusTime(Date statusTime);
         public abstract Builder subtype(String subtype);
-        public abstract Builder parentDatabaseId(Long parentDatabaseId);
-        public abstract Builder parentContainerId(String parentContainerId);
-        public abstract Builder parentContainer(Container parentContainer);
+        public abstract Builder parent(Container parent);
         public abstract Builder reserveMemory(Long reserveMemory);
         public abstract Builder limitMemory(Long limitMemory);
         public abstract Builder limitCpu(Double limitCpu);
-
-        public Builder setParentProperties(final Container parentContainer) {
-            return this
-                    .parentContainer(parentContainer)
-                    .parentContainerId(parentContainer == null ? null : parentContainer.containerId())
-                    .parentDatabaseId(parentContainer == null ? null : parentContainer.databaseId());
-        }
 
         public abstract Builder environmentVariables(Map<String, String> environmentVariables);
         abstract ImmutableMap.Builder<String, String> environmentVariablesBuilder();
         public Builder addEnvironmentVariable(final String envKey, final String envValue) {
             environmentVariablesBuilder().put(envKey, envValue);
+            return this;
+        }
+        public Builder addEnvironmentVariables(final Map<String, String> environmentVariables) {
+            if (environmentVariables != null) {
+                for (final Map.Entry<String, String> env : environmentVariables.entrySet()) {
+                    addEnvironmentVariable(env.getKey(), env.getValue());
+                }
+            }
+            return this;
+        }
+
+        public abstract Builder ports(Map<String, String> ports);
+        public abstract ImmutableMap.Builder<String, String> portsBuilder();
+        public Builder addPort(final String name, final String value) {
+            portsBuilder().put(name, value);
             return this;
         }
 

@@ -590,7 +590,7 @@ public class CommandLaunchIntegrationTest {
         printContainerLogs(mainContainerAWhileAfterLaunch, "main");
 
         // Sanity Checks
-        assertThat(setupContainer.parentContainer(), is(mainContainerAWhileAfterLaunch));
+        assertThat(setupContainer.parent(), is(mainContainerAWhileAfterLaunch));
         assertThat(setupContainer.status(), is(not("Failed")));
 
         // Check main container's input mount for contents

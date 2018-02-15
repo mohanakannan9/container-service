@@ -19,6 +19,7 @@ import javax.persistence.Transient;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +54,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
     private Boolean overrideEntrypoint;
     private String workingDirectory;
     private Map<String, String> environmentVariables = Maps.newHashMap();
+    private Map<String, String> ports = new HashMap<>();
     private List<ContainerEntityMount> mounts = Lists.newArrayList();
     private String containerId;
     private String workflowId;
@@ -99,8 +101,9 @@ public class ContainerEntity extends AbstractHibernateEntity {
         this.setCommandLine(containerPojo.commandLine());
         this.setWorkingDirectory(containerPojo.workingDirectory());
         this.setSubtype(containerPojo.subtype());
-        this.setParentContainerEntity(fromPojo(containerPojo.parentContainer()));
+        this.setParentContainerEntity(fromPojo(containerPojo.parent()));
         this.setEnvironmentVariables(containerPojo.environmentVariables());
+        this.setPorts(containerPojo.ports());
         this.setLogPaths(containerPojo.logPaths());
         this.setMounts(Lists.newArrayList(Lists.transform(
                 containerPojo.mounts(), new Function<Container.ContainerMount, ContainerEntityMount>() {
@@ -226,6 +229,15 @@ public class ContainerEntity extends AbstractHibernateEntity {
         this.environmentVariables = environmentVariables == null ?
                 Maps.<String, String>newHashMap() :
                 environmentVariables;
+    }
+
+    @ElementCollection
+    public Map<String, String> getPorts() {
+        return ports;
+    }
+
+    public void setPorts(final Map<String, String> ports) {
+        this.ports = ports == null ? new HashMap<String, String>() : ports;
     }
 
     public String getSubtype() {
@@ -537,6 +549,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
                 .add("overrideEntrypoint", overrideEntrypoint)
                 .add("workingDirectory", workingDirectory)
                 .add("environmentVariables", environmentVariables)
+                .add("ports", ports)
                 .add("mounts", mounts)
                 .add("inputs", inputs)
                 .add("outputs", outputs)
