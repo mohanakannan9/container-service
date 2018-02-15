@@ -40,6 +40,7 @@ public abstract class ResolvedCommand {
     @JsonProperty("reserve-memory") @Nullable public abstract Long reserveMemory();
     @JsonProperty("limit-memory") @Nullable public abstract Long limitMemory();
     @JsonProperty("limit-cpu") @Nullable public abstract Double limitCpu();
+    @JsonProperty("parent-source-object-name") @Nullable public abstract String parentSourceObjectName();
 
     @JsonProperty("external-wrapper-input-values")
     public ImmutableMap<String, String> externalWrapperInputValues() {
@@ -137,13 +138,17 @@ public abstract class ResolvedCommand {
     /**
      * Creates ResolvedCommands for setup and wrapup commands.
      * @param command The Command definition for the setup or wrapup command
-     * @param inputMountPath
-     * @param outputMountPath
-     * @return
+     * @param inputMountPath Path on the host to the input mount
+     * @param outputMountPath Path on the host to the output mount
+     * @param parentSourceObjectName Name of the Resolved Command Mount / Container Mount (for setup commands) or
+     *                               Resolved Command Output / Container Ouput (for wrapup commands) from which this
+     *                               special Resolved Command is being created.
+     * @return A Resolved Setup Command or Resolved Wrapup Command
      */
     public static ResolvedCommand fromSpecialCommandType(final Command command,
                                                          final String inputMountPath,
-                                                         final String outputMountPath) {
+                                                         final String outputMountPath,
+                                                         final String parentSourceObjectName) {
         return builder()
                 .wrapperId(0L)
                 .wrapperName("")
@@ -156,6 +161,7 @@ public abstract class ResolvedCommand {
                 .reserveMemory(command.reserveMemory())
                 .limitMemory(command.limitMemory())
                 .limitCpu(command.limitCpu())
+                .parentSourceObjectName(parentSourceObjectName)
                 .addMount(ResolvedCommandMount.builder()
                         .name("input")
                         .containerPath("/input")
@@ -255,6 +261,7 @@ public abstract class ResolvedCommand {
         public abstract Builder reserveMemory(Long reserveMemory);
         public abstract Builder limitMemory(Long limitMemory);
         public abstract Builder limitCpu(Double limitCpu);
+        public abstract Builder parentSourceObjectName(String parentSourceObjectName);
 
         public abstract ResolvedCommand build();
     }

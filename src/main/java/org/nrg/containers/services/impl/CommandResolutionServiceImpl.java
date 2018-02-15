@@ -394,7 +394,8 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
         private ResolvedCommand resolveSpecialCommandType(final CommandType type,
                                                           final String image,
                                                           final String inputMountPath,
-                                                          final String outputMountPath)
+                                                          final String outputMountPath,
+                                                          final String parentSourceObjectName)
                 throws CommandResolutionException {
             final String typeStringForLog;
             switch (type) {
@@ -422,7 +423,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             }
 
             log.debug("Done resolving {} command {} from image {}.", typeStringForLog, command.name(), image);
-            return ResolvedCommand.fromSpecialCommandType(command, inputMountPath, outputMountPath);
+            return ResolvedCommand.fromSpecialCommandType(command, inputMountPath, outputMountPath, parentSourceObjectName);
         }
 
         private void checkForIllegalInputValue(final String inputName,
@@ -1773,7 +1774,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                         throw new CommandResolutionException("Could not create build directory.", e);
                     }
 
-                    resolvedWrapupCommands.add(resolveSpecialCommandType(CommandType.DOCKER_WRAPUP, resolvedCommandOutput.viaWrapupCommand(), resolvedCommandMount.xnatHostPath(), writableMountPath));
+                    resolvedWrapupCommands.add(resolveSpecialCommandType(CommandType.DOCKER_WRAPUP, resolvedCommandOutput.viaWrapupCommand(), resolvedCommandMount.xnatHostPath(), writableMountPath, resolvedCommandOutput.name()));
                 }
             }
 
@@ -1960,7 +1961,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 } catch (IOException e) {
                     throw new ContainerMountResolutionException("Could not create build directory.", partiallyResolvedCommandMount, e);
                 }
-                resolvedSetupCommands.add(resolveSpecialCommandType(CommandType.DOCKER_SETUP, partiallyResolvedCommandMount.viaSetupCommand(), localDirectory, writableMountPath));
+                resolvedSetupCommands.add(resolveSpecialCommandType(CommandType.DOCKER_SETUP, partiallyResolvedCommandMount.viaSetupCommand(), localDirectory, writableMountPath, partiallyResolvedCommandMount.name()));
                 pathToMount = writableMountPath;
             } else {
                 pathToMount = localDirectory;

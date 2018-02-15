@@ -65,6 +65,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
     private String nodeId;
     private String subtype;
     private ContainerEntity parentContainerEntity;
+    private String parentSourceObjectName;
     private List<ContainerEntityInput> inputs;
     private List<ContainerEntityOutput> outputs;
     private List<ContainerEntityHistory> history = Lists.newArrayList();
@@ -102,6 +103,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
         this.setWorkingDirectory(containerPojo.workingDirectory());
         this.setSubtype(containerPojo.subtype());
         this.setParentContainerEntity(fromPojo(containerPojo.parent()));
+        this.setParentSourceObjectName(containerPojo.parentSourceObjectName());
         this.setEnvironmentVariables(containerPojo.environmentVariables());
         this.setPorts(containerPojo.ports());
         this.setLogPaths(containerPojo.logPaths());
@@ -351,6 +353,14 @@ public class ContainerEntity extends AbstractHibernateEntity {
         this.parentContainerEntity = parentContainerEntity;
     }
 
+    public String getParentSourceObjectName() {
+        return parentSourceObjectName;
+    }
+
+    public void setParentSourceObjectName(final String parentSourceObjectName) {
+        this.parentSourceObjectName = parentSourceObjectName;
+    }
+
     @OneToMany(mappedBy = "containerEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<ContainerEntityInput> getInputs() {
         return inputs;
@@ -539,6 +549,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
                 .add("subtype", subtype)
                 .add("parentContainerEntityId", parentContainerEntity == null ? null : parentContainerEntity.getId())
                 .add("parentContainerEntityContainerId", parentContainerEntity == null ? null : parentContainerEntity.getContainerId())
+                .add("parentSourceObjectName", parentSourceObjectName)
                 .add("workflowId", workflowId)
                 .add("commandId", commandId)
                 .add("wrapperId", wrapperId)
