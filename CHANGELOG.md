@@ -20,6 +20,7 @@ Not yet released.
 
 ### Features
 
+* [CS-464][] Wrapup commands / containers
 * [CS-461][] and [CS-462][] Change handling of image entrypoint. (Reverts changes introduced in 1.4.0 by [CS-433][].) For discussion of this issue, see this [xnat_discussion board post][entrypoint-post].
     The APIs we had been using are these for containers...
     ```
@@ -55,9 +56,13 @@ Not yet released.
 ### Bugfixes
 
 * [CS-475][] Ensure references to setup and wrapup containers can be resolved unambiguously by including the name of the source object on the parent container for which we created this particular setup or wrapup container.
+* Run tests in swarm mode as well as non-swarm. Fix bugs and broken tests.
 
 [nrgxnat/container-service#6]: https://github.com/NrgXnat/container-service/pull/6
+[CS-433]: https://issues.xnat.org/browse/CS-433
 [CS-461]: https://issues.xnat.org/browse/CS-461
+[CS-462]: https://issues.xnat.org/browse/CS-462
+[CS-464]: https://issues.xnat.org/browse/CS-464
 [CS-475]: https://issues.xnat.org/browse/CS-475
 [entrypoint-post]: https://groups.google.com/forum/#!msg/xnat_discussion/NBVjAS8gXhU/Zu7xJngCAgAJ
 
