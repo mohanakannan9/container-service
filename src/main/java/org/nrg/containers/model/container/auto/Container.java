@@ -608,7 +608,7 @@ public abstract class Container {
                                              @JsonProperty("label") final String label,
                                              @JsonProperty("created") final String created,
                                              @JsonProperty("handled-by-wrapper-input") final String handledByWrapperInput,
-                                             @JsonProperty("viaWrapupContainer") final String viaWrapupContainer) {
+                                             @JsonProperty("via-wrapup-container") final String viaWrapupContainer) {
             return builder()
                     .databaseId(databaseId)
                     .name(name)
