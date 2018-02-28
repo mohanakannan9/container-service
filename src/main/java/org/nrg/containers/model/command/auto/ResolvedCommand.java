@@ -362,7 +362,7 @@ public abstract class ResolvedCommand {
         @JsonProperty("path") @Nullable public abstract String path();
         @JsonProperty("glob") @Nullable public abstract String glob();
         @JsonProperty("label") public abstract String label();
-        @JsonProperty("handled-by-wrapper-input") public abstract String handledByWrapperInput();
+        @JsonProperty("handled-by") public abstract String handledBy();
         @Nullable @JsonProperty("via-wrapup-command") public abstract String viaWrapupCommand();
 
         public static Builder builder() {
@@ -378,7 +378,7 @@ public abstract class ResolvedCommand {
             public abstract Builder path(String path);
             public abstract Builder glob(String glob);
             public abstract Builder label(String label);
-            public abstract Builder handledByWrapperInput(String handledByWrapperInput);
+            public abstract Builder handledBy(String handledBy);
             public abstract Builder viaWrapupCommand(String viaWrapupCommand);
 
             public abstract ResolvedCommandOutput build();

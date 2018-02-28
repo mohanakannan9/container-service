@@ -3,7 +3,6 @@ package org.nrg.containers.model.container.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
 import org.hibernate.envers.Audited;
-import org.nrg.containers.model.command.auto.ResolvedCommand.ResolvedCommandOutput;
 import org.nrg.containers.model.container.auto.Container;
 
 import javax.persistence.Column;
@@ -50,7 +49,7 @@ public class ContainerEntityOutput implements Serializable {
         this.setGlob(containerOutputPojo.glob());
         this.setLabel(containerOutputPojo.label());
         this.setCreated(containerOutputPojo.created());
-        this.setHandledByXnatCommandInput(containerOutputPojo.handledByWrapperInput());
+        this.setHandledByXnatCommandInput(containerOutputPojo.handledBy());
         this.setViaWrapupContainer(containerOutputPojo.viaWrapupContainer());
         return this;
     }

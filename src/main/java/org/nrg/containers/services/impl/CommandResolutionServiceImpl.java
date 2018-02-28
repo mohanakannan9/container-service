@@ -1599,7 +1599,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                     .mount(commandOutput.mount())
                     .glob(commandOutput.glob())
                     .type(commandOutputHandler.type())
-                    .handledByWrapperInput(commandOutputHandler.targetName())
+                    .handledBy(commandOutputHandler.targetName())
                     .viaWrapupCommand(commandOutputHandler.viaWrapupCommand())
                     .path(resolveTemplate(commandOutput.path(), resolvedInputValuesByReplacementKey))
                     .label(resolveTemplate(commandOutputHandler.label(), resolvedInputValuesByReplacementKey))

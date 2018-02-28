@@ -312,9 +312,9 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
 
             final String label = StringUtils.isNotBlank(output.label()) ? output.label() : output.name();
 
-            String parentUri = getWrapperInputValue(output.handledByWrapperInput());
+            String parentUri = getWrapperInputValue(output.handledBy());
             if (parentUri == null) {
-                throw new ContainerException(String.format(prefix + "Cannot upload output \"%s\". Could not instantiate object from input \"%s\".", output.name(), output.handledByWrapperInput()));
+                throw new ContainerException(String.format(prefix + "Cannot upload output \"%s\". Could not instantiate object from input \"%s\".", output.name(), output.handledBy()));
             }
             if (!parentUri.startsWith("/archive")) {
                 parentUri = "/archive" + parentUri;
