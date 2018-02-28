@@ -6,11 +6,13 @@ Not yet released.
 
 ### Features
 
-
+* Change name of Command Wrapper Output property `as-a-child-of-wraper-input` to `as-a-child-of`. This is to support [CS-80][] and allow uploading outputs to other outputs. (Note that the title of the database column has not changed, and is still `wrapperInputName`.)
 
 ### Bugfixes
 
 
+
+[CS-80]: https://issues.xnat.org/browse/CS-80
 
 ## 1.5.1
 

@@ -108,7 +108,7 @@ If you want XNAT to execute your docker image, you will need a Command. The Comm
                         "type": "",
                         "accepts-command-output": "",
                         "via-wrapup-command": "",
-                        "as-a-child-of-wrapper-input": "",
+                        "as-a-child-of": "",
                         "label": ""
                     }
                 ]
@@ -191,7 +191,7 @@ If you want XNAT to execute your docker image, you will need a Command. The Comm
         - **type** - The type of object that will be created in XNAT. Currently only `"Resource"` is accepted.
         - **accepts-command-output** - The name of a [command output](#command-outputs) whose files will be handled.
         - **via-wrapup-command** - A reference to a wrapup command image (format: `repo/image:version[:commandname]` where the `commandname` is optional). See the page on [Wrapup Commands](https://wiki.xnat.org/display/CS/Wrapup+Commands) for more.
-        - **as-a-child-of-wrapper-input** - The name of a [wrapper input](#wrapper-inputs)—either external or derived—that refers to an XNAT object. The output files will be uploaded as a new child of that object.
+        - **as-a-child-of** - The name of a [wrapper input](#wrapper-inputs)—either external or derived—that refers to an XNAT object, or the name of a [wrapper output](#output-handling) that creates an XNAT object. The output files will be uploaded as a new child of that object.
         - **label** - The label of the new Resource that will be created from these files.
 
 
