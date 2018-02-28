@@ -42,7 +42,7 @@ public class CommandWrapperOutputEntity {
         }
         this.setName(commandWrapperOutput.name());
         this.setCommandOutputName(commandWrapperOutput.commandOutputName());
-        this.setWrapperInputName(commandWrapperOutput.wrapperInputName());
+        this.setWrapperInputName(commandWrapperOutput.targetName());
         this.setViaWrapupCommand(commandWrapperOutput.viaWrapupCommand());
         this.setLabel(commandWrapperOutput.label());
 

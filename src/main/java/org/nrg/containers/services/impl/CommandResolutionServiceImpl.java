@@ -1530,13 +1530,13 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
 
             // Fail fast: if we will not be able to create the output, either throw or log that now and don't try later.
             // First check that the handler input has a unique value
-            final ResolvedInputValue parentInputResolvedValue = getInputValueByName(commandOutputHandler.wrapperInputName(), resolvedInputTrees);
+            final ResolvedInputValue parentInputResolvedValue = getInputValueByName(commandOutputHandler.targetName(), resolvedInputTrees);
             if (parentInputResolvedValue == null) {
                 final String message = String.format("Cannot resolve output \"%s\". " +
                                 "Input \"%s\" is supposed to handle the output, but it does not have a uniquely resolved value. " +
                                 "Either there is no value, or there are multiple values." +
                                 "(We can't loop over input values yet, so the latter is an error as much as the former.)",
-                        commandOutput.name(), commandOutputHandler.wrapperInputName());
+                        commandOutput.name(), commandOutputHandler.targetName());
                 if (Boolean.TRUE.equals(commandOutput.required())) {
                     throw new CommandResolutionException(message);
                 } else {
@@ -1559,7 +1559,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             if (uri == null || !(uri instanceof ArchiveItemURI)) {
                 final String message = String.format("Cannot resolve output \"%s\". " +
                                 "Input \"%s\" is supposed to handle the output, but it does not have an XNAT object value.",
-                        commandOutput.name(), commandOutputHandler.wrapperInputName());
+                        commandOutput.name(), commandOutputHandler.targetName());
                 if (Boolean.TRUE.equals(commandOutput.required())) {
                     throw new CommandResolutionException(message);
                 } else {
@@ -1582,7 +1582,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 final String message = String.format("Cannot resolve output \"%s\". " +
                                 "Input \"%s\" is supposed to handle the output, but user \"%s\" does not have permission " +
                                 "to edit the XNAT object \"%s\".",
-                        commandOutput.name(), commandOutputHandler.wrapperInputName(),
+                        commandOutput.name(), commandOutputHandler.targetName(),
                         userI.getLogin(), parentValue);
                 if (Boolean.TRUE.equals(commandOutput.required())) {
                     throw new CommandResolutionException(message);
@@ -1599,7 +1599,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                     .mount(commandOutput.mount())
                     .glob(commandOutput.glob())
                     .type(commandOutputHandler.type())
-                    .handledByWrapperInput(commandOutputHandler.wrapperInputName())
+                    .handledByWrapperInput(commandOutputHandler.targetName())
                     .viaWrapupCommand(commandOutputHandler.viaWrapupCommand())
                     .path(resolveTemplate(commandOutput.path(), resolvedInputValuesByReplacementKey))
                     .label(resolveTemplate(commandOutputHandler.label(), resolvedInputValuesByReplacementKey))
