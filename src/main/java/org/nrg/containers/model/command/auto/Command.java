@@ -406,20 +406,22 @@ public abstract class Command {
                 final List<String> outputErrors = Lists.newArrayList();
                 outputErrors.addAll(Lists.transform(output.validate(), addWrapperNameToError));
 
-                if (wrapperOutputNames.contains(output.name())) {
-                    errors.add(wrapperName + "output handler name \"" + output.name() + "\" is not unique.");
-                } else {
-                    wrapperOutputNames.add(output.name());
-                }
-
                 if (!outputNames.contains(output.commandOutputName())) {
                     errors.add(wrapperName + "output handler refers to unknown command output \"" + output.commandOutputName() + "\". Known outputs: " + knownOutputs + ".");
                 } else {
                     handledOutputs.add(output.commandOutputName());
                 }
 
-                if (!wrapperInputNames.contains(output.targetName())) {
-                    errors.add(wrapperName + "output handler refers to unknown XNAT input \"" + output.targetName() + "\". Known inputs: " + knownWrapperInputs + ".");
+                if (!(wrapperInputNames.contains(output.targetName()) || wrapperOutputNames.contains(output.targetName()))) {
+                    errors.add(wrapperName + "output handler does not refer to a known wrapper input or output. \"as-a-child-of\": \"" + output.targetName() + "\"." +
+                            "\nKnown inputs: " + knownWrapperInputs + "." +
+                            "\nKnown outputs (so far): " + StringUtils.join(wrapperOutputNames, ", ") + ".");
+                }
+
+                if (wrapperOutputNames.contains(output.name())) {
+                    errors.add(wrapperName + "output handler name \"" + output.name() + "\" is not unique.");
+                } else {
+                    wrapperOutputNames.add(output.name());
                 }
 
                 if (!outputErrors.isEmpty()) {
