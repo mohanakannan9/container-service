@@ -90,6 +90,8 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
 
         private Map<String, Container> wrapupContainerMap;
 
+        private Map<String, String> wrapperInputAndOutputValues;
+
         private ContainerFinalizeHelper(final Container toFinalize,
                                         final UserI userI,
                                         final boolean isFailed,
@@ -111,6 +113,10 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
                     wrapupContainerMap.put(wrapupContainer.parentSourceObjectName(), wrapupContainer);
                 }
             }
+
+            // Pre-populate the map of wrapper input and output values with the inputs.
+            // Output URI values will be added as we create them here.
+            wrapperInputAndOutputValues = new HashMap<>(toFinalize.getWrapperInputs());
         }
 
         private Container finalizeContainer() {
@@ -396,6 +402,9 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
 
 
             log.info(prefix + "Done uploading output \"{}\". URI of created output: {}", output.name(), createdUri);
+
+            wrapperInputAndOutputValues.put(output.name(), createdUri);
+            
             return output.toBuilder().created(createdUri).build();
         }
 
@@ -437,15 +446,14 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
                 log.debug(String.format(prefix + "Getting URI for input \"%s\".", inputName));
             }
 
-            final Map<String, String> wrapperInputs = toFinalize.getWrapperInputs();
-            if (!wrapperInputs.containsKey(inputName)) {
-                if (log.isDebugEnabled()) {
-                    log.debug(String.format(prefix + "No input found with name \"%s\". Input name set: %s", inputName, wrapperInputs.keySet()));
-                }
-                return null;
+            if (wrapperInputAndOutputValues.containsKey(inputName)) {
+                return wrapperInputAndOutputValues.get(inputName);
             }
 
-            return wrapperInputs.get(inputName);
+            if (log.isDebugEnabled()) {
+                log.debug(String.format(prefix + "No input or output found with name \"%s\".", inputName));
+            }
+            return null;
         }
 
         @Nullable
