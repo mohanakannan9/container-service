@@ -1,4 +1,4 @@
-package org.nrg.containers.services;
+package org.nrg.containers.utils;
 
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;

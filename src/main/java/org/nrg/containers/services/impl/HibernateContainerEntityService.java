@@ -7,7 +7,7 @@ import org.nrg.containers.model.command.entity.CommandType;
 import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.container.entity.ContainerEntityHistory;
 import org.nrg.containers.services.ContainerEntityService;
-import org.nrg.containers.services.ContainerUtils;
+import org.nrg.containers.utils.ContainerUtils;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.xft.security.UserI;
