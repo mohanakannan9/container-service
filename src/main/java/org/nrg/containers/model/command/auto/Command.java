@@ -406,20 +406,22 @@ public abstract class Command {
                 final List<String> outputErrors = Lists.newArrayList();
                 outputErrors.addAll(Lists.transform(output.validate(), addWrapperNameToError));
 
-                if (wrapperOutputNames.contains(output.name())) {
-                    errors.add(wrapperName + "output handler name \"" + output.name() + "\" is not unique.");
-                } else {
-                    wrapperOutputNames.add(output.name());
-                }
-
                 if (!outputNames.contains(output.commandOutputName())) {
                     errors.add(wrapperName + "output handler refers to unknown command output \"" + output.commandOutputName() + "\". Known outputs: " + knownOutputs + ".");
                 } else {
                     handledOutputs.add(output.commandOutputName());
                 }
 
-                if (!wrapperInputNames.contains(output.wrapperInputName())) {
-                    errors.add(wrapperName + "output handler refers to unknown XNAT input \"" + output.wrapperInputName() + "\". Known inputs: " + knownWrapperInputs + ".");
+                if (!(wrapperInputNames.contains(output.targetName()) || wrapperOutputNames.contains(output.targetName()))) {
+                    errors.add(wrapperName + "output handler does not refer to a known wrapper input or output. \"as-a-child-of\": \"" + output.targetName() + "\"." +
+                            "\nKnown inputs: " + knownWrapperInputs + "." +
+                            "\nKnown outputs (so far): " + StringUtils.join(wrapperOutputNames, ", ") + ".");
+                }
+
+                if (wrapperOutputNames.contains(output.name())) {
+                    errors.add(wrapperName + "output handler name \"" + output.name() + "\" is not unique.");
+                } else {
+                    wrapperOutputNames.add(output.name());
                 }
 
                 if (!outputErrors.isEmpty()) {
@@ -839,7 +841,14 @@ public abstract class Command {
                     .contexts(creation.contexts() == null ? Collections.<String>emptySet() : creation.contexts())
                     .externalInputs(creation.externalInputs() == null ? Collections.<CommandWrapperExternalInput>emptyList() : creation.externalInputs())
                     .derivedInputs(creation.derivedInputs() == null ? Collections.<CommandWrapperDerivedInput>emptyList() : creation.derivedInputs())
-                    .outputHandlers(creation.outputHandlers() == null ? Collections.<CommandWrapperOutput>emptyList() : creation.outputHandlers())
+                    .outputHandlers(creation.outputHandlers() == null ?
+                            Collections.<CommandWrapperOutput>emptyList() :
+                            Lists.<CommandWrapperOutput>newArrayList(Lists.transform(creation.outputHandlers(), new Function<CommandWrapperOutputCreation, CommandWrapperOutput>() {
+                        @Override
+                        public CommandWrapperOutput apply(final CommandWrapperOutputCreation input) {
+                            return CommandWrapperOutput.create(input);
+                        }
+                    })))
                     .build();
         }
 
@@ -958,7 +967,7 @@ public abstract class Command {
         @JsonProperty("contexts") public abstract ImmutableSet<String> contexts();
         @JsonProperty("external-inputs") public abstract ImmutableList<CommandWrapperExternalInput> externalInputs();
         @JsonProperty("derived-inputs") public abstract ImmutableList<CommandWrapperDerivedInput> derivedInputs();
-        @JsonProperty("output-handlers") public abstract ImmutableList<CommandWrapperOutput> outputHandlers();
+        @JsonProperty("output-handlers") public abstract ImmutableList<CommandWrapperOutputCreation> outputHandlers();
 
         @JsonCreator
         static CommandWrapperCreation create(@JsonProperty("name") final String name,
@@ -966,12 +975,12 @@ public abstract class Command {
                                              @JsonProperty("contexts") final Set<String> contexts,
                                              @JsonProperty("external-inputs") final List<CommandWrapperExternalInput> externalInputs,
                                              @JsonProperty("derived-inputs") final List<CommandWrapperDerivedInput> derivedInputs,
-                                             @JsonProperty("output-handlers") final List<CommandWrapperOutput> outputHandlers) {
+                                             @JsonProperty("output-handlers") final List<CommandWrapperOutputCreation> outputHandlers) {
             return new AutoValue_Command_CommandWrapperCreation(name, description,
                     contexts == null ? ImmutableSet.<String>of() : ImmutableSet.copyOf(contexts),
                     externalInputs == null ? ImmutableList.<CommandWrapperExternalInput>of() : ImmutableList.copyOf(externalInputs),
                     derivedInputs == null ? ImmutableList.<CommandWrapperDerivedInput>of() : ImmutableList.copyOf(derivedInputs),
-                    outputHandlers == null ? ImmutableList.<CommandWrapperOutput>of() : ImmutableList.copyOf(outputHandlers));
+                    outputHandlers == null ? ImmutableList.<CommandWrapperOutputCreation>of() : ImmutableList.copyOf(outputHandlers));
         }
     }
 
@@ -1239,21 +1248,21 @@ public abstract class Command {
         @Nullable @JsonProperty("name") public abstract String name();
         @Nullable @JsonProperty("accepts-command-output") public abstract String commandOutputName();
         @Nullable @JsonProperty("via-wrapup-command") public abstract String viaWrapupCommand();
-        @Nullable @JsonProperty("as-a-child-of-wrapper-input") public abstract String wrapperInputName();
+        @Nullable @JsonProperty("as-a-child-of") public abstract String targetName();
         @JsonProperty("type") public abstract String type();
         @Nullable @JsonProperty("label") public abstract String label();
 
         @JsonCreator
         public static CommandWrapperOutput create(@JsonProperty("name") final String name,
                                                   @JsonProperty("accepts-command-output") final String commandOutputName,
-                                                  @JsonProperty("as-a-child-of-wrapper-input") final String wrapperInputName,
+                                                  @JsonProperty("as-a-child-of") final String targetName,
                                                   @JsonProperty("via-wrapup-command") final String viaWrapupCommand,
                                                   @JsonProperty("type") final String type,
                                                   @JsonProperty("label") final String label) {
             return builder()
                     .name(name)
                     .commandOutputName(commandOutputName)
-                    .wrapperInputName(wrapperInputName)
+                    .targetName(targetName)
                     .viaWrapupCommand(viaWrapupCommand)
                     .type(type == null ? CommandWrapperOutputEntity.DEFAULT_TYPE.getName() : type)
                     .label(label)
@@ -1268,10 +1277,21 @@ public abstract class Command {
                     .id(wrapperOutput.getId())
                     .name(wrapperOutput.getName())
                     .commandOutputName(wrapperOutput.getCommandOutputName())
-                    .wrapperInputName(wrapperOutput.getWrapperInputName())
+                    .targetName(wrapperOutput.getWrapperInputName())
                     .viaWrapupCommand(wrapperOutput.getViaWrapupCommand())
                     .type(wrapperOutput.getType().getName())
                     .label(wrapperOutput.getLabel())
+                    .build();
+        }
+
+        public static CommandWrapperOutput create(final CommandWrapperOutputCreation commandWrapperOutputCreation) {
+            return builder()
+                    .name(commandWrapperOutputCreation.name())
+                    .commandOutputName(commandWrapperOutputCreation.commandOutputName())
+                    .targetName(commandWrapperOutputCreation.targetName())
+                    .viaWrapupCommand(commandWrapperOutputCreation.viaWrapupCommand())
+                    .type(commandWrapperOutputCreation.type())
+                    .label(commandWrapperOutputCreation.label())
                     .build();
         }
 
@@ -1300,8 +1320,8 @@ public abstract class Command {
             if (StringUtils.isBlank(commandOutputName())) {
                 errors.add("Command wrapper output \"" + name() + "\" - property \"accepts-command-output\" cannot be blank.");
             }
-            if (StringUtils.isBlank(wrapperInputName())) {
-                errors.add("Command wrapper output \"" + name() + "\" - property \"as-a-child-of-wrapper-input\" cannot be blank.");
+            if (StringUtils.isBlank(targetName())) {
+                errors.add("Command wrapper output \"" + name() + "\" - property \"as-a-child-of\" cannot be blank.");
             }
             final List<String> types = CommandWrapperOutputEntity.Type.names();
             if (!types.contains(type())) {
@@ -1321,7 +1341,7 @@ public abstract class Command {
 
             public abstract Builder viaWrapupCommand(final String viaWrapupCommand);
 
-            public abstract Builder wrapperInputName(final String wrapperInputName);
+            public abstract Builder targetName(final String targetName);
 
             public abstract Builder type(final String type);
 
@@ -1394,6 +1414,55 @@ public abstract class Command {
                     reserveMemory, limitMemory, limitCpu);
         }
     }
+
+    @AutoValue
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    public static abstract class CommandWrapperOutputCreation {
+        @Nullable @JsonProperty("name") public abstract String name();
+        @Nullable @JsonProperty("accepts-command-output") public abstract String commandOutputName();
+        @Nullable @JsonProperty("via-wrapup-command") public abstract String viaWrapupCommand();
+        @Nullable @JsonProperty("as-a-child-of") public abstract String targetName();
+        @JsonProperty("type") public abstract String type();
+        @Nullable @JsonProperty("label") public abstract String label();
+
+        @JsonCreator
+        public static CommandWrapperOutputCreation create(@JsonProperty("name") final String name,
+                                                          @JsonProperty("accepts-command-output") final String commandOutputName,
+                                                          @JsonProperty("as-a-child-of") final String targetName,
+                                                          @JsonProperty("as-a-child-of-wrapper-input") final String oldStyleTargetName,
+                                                          @JsonProperty("via-wrapup-command") final String viaWrapupCommand,
+                                                          @JsonProperty("type") final String type,
+                                                          @JsonProperty("label") final String label) {
+            return builder()
+                    .name(name)
+                    .commandOutputName(commandOutputName)
+                    .targetName(targetName != null ? targetName : oldStyleTargetName)
+                    .viaWrapupCommand(viaWrapupCommand)
+                    .type(type == null ? CommandWrapperOutputEntity.DEFAULT_TYPE.getName() : type)
+                    .label(label)
+                    .build();
+        }
+
+        public static Builder builder() {
+            return new AutoValue_Command_CommandWrapperOutputCreation.Builder()
+                    .type(CommandWrapperOutputEntity.DEFAULT_TYPE.getName());
+        }
+
+        public abstract Builder toBuilder();
+
+        @AutoValue.Builder
+        public abstract static class Builder {
+            public abstract Builder name(final String name);
+            public abstract Builder commandOutputName(final String commandOutputName);
+            public abstract Builder viaWrapupCommand(final String viaWrapupCommand);
+            public abstract Builder targetName(final String targetName);
+            public abstract Builder type(final String type);
+            public abstract Builder label(final String label);
+
+            public abstract CommandWrapperOutputCreation build();
+        }
+    }
+
 
     /**
      * A command with project- or site-wide configuration applied. Contains only a single wrapper.
