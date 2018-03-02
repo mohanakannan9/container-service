@@ -594,7 +594,7 @@ public abstract class Container {
         @Nullable @JsonProperty("glob") public abstract String glob();
         @JsonProperty("label") public abstract String label();
         @Nullable @JsonProperty("created") public abstract String created();
-        @JsonProperty("handled-by-wrapper-input") public abstract String handledByWrapperInput();
+        @JsonProperty("handled-by") public abstract String handledBy();
         @Nullable @JsonProperty("via-wrapup-container") public abstract String viaWrapupContainer();
 
         @JsonCreator
@@ -607,8 +607,8 @@ public abstract class Container {
                                              @JsonProperty("glob") final String glob,
                                              @JsonProperty("label") final String label,
                                              @JsonProperty("created") final String created,
-                                             @JsonProperty("handled-by-wrapper-input") final String handledByWrapperInput,
-                                             @JsonProperty("viaWrapupContainer") final String viaWrapupContainer) {
+                                             @JsonProperty("handled-by") final String handledByWrapperInput,
+                                             @JsonProperty("via-wrapup-container") final String viaWrapupContainer) {
             return builder()
                     .databaseId(databaseId)
                     .name(name)
@@ -619,7 +619,7 @@ public abstract class Container {
                     .glob(glob)
                     .label(label)
                     .created(created)
-                    .handledByWrapperInput(handledByWrapperInput)
+                    .handledBy(handledByWrapperInput)
                     .viaWrapupContainer(viaWrapupContainer)
                     .build();
         }
@@ -648,7 +648,7 @@ public abstract class Container {
                     resolvedCommandOutput.glob(),
                     resolvedCommandOutput.label(),
                     null,
-                    resolvedCommandOutput.handledByWrapperInput(),
+                    resolvedCommandOutput.handledBy(),
                     resolvedCommandOutput.viaWrapupCommand());
         }
 
@@ -669,7 +669,7 @@ public abstract class Container {
             public abstract Builder glob(String glob);
             public abstract Builder label(String label);
             public abstract Builder created(String created);
-            public abstract Builder handledByWrapperInput(String handledByWrapperInput);
+            public abstract Builder handledBy(String handledBy);
             public abstract Builder viaWrapupContainer(String viaWrapupContainer);
 
             public abstract ContainerOutput build();

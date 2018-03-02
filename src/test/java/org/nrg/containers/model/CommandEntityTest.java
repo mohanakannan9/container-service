@@ -106,7 +106,7 @@ public class CommandEntityTest {
         final CommandWrapperOutput outputHandler = CommandWrapperOutput.builder()
                 .name(outputHandlerName)
                 .commandOutputName(commandOutputName)
-                .wrapperInputName(externalInputName)
+                .targetName(externalInputName)
                 .type("Resource")
                 .label(outputHandlerLabel)
                 .build();
