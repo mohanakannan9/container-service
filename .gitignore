@@ -19,3 +19,4 @@ hibernate.cfg.xml
 # Ignore script-generated .html and .html.confluence documentation
 *.html
 *.html.confluence
+container-service-api.md

@@ -1,20 +1,42 @@
 # Changelog
 
+## 1.5.1
+
+[Released 2018-03-15](https://github.com/NrgXnat/container-service/releases/tag/1.5.1).
+
+### Bugfixes
+
+* Restores wildcard expansion for container command-line strings.
+    To do this, modified behavior introduced in previous version. When `override-entrypoint` is `null` or `false`, the container is created with...
+    ```
+    Image.Cmd = COMMAND (split into tokens like a shell would)
+    Image.Entrypoint = null (to leave the entrypoint it as is)
+    ```
+    But when `override-entrypoint` is `true`...
+    ```
+    Image.Cmd = ["/bin/sh", "-c", COMMAND]
+    Image.Entrypoint = null (to leave the entrypoint it as is)
+    ```
+    Adding back the explicit `/bin/sh` is what restores the ability to expand wildcards.
+
+[CS-479]: https://issues.xnat.org/browse/CS-479
+
 ## 1.5.0
 
 [Released 2018-02-15](https://github.com/NrgXnat/container-service/releases/tag/1.5.0).
 
 ### Features
 
+* [CS-464][] Wrapup commands / containers
 * [CS-461][] and [CS-462][] Change handling of image entrypoint. (Reverts changes introduced in 1.4.0 by [CS-433][].) For discussion of this issue, see this [xnat_discussion board post][entrypoint-post].
     The APIs we had been using are these for containers...
     ```
-    Image.Cmd = ["/bin/sh", "-c", "COMMAND"]
+    Image.Cmd = ["/bin/sh", "-c", COMMAND]
     Image.Entrypoint = [""]
     ```
     And these for swarm services...
     ```
-    ContainerSpec.Command = ["/bin/sh", "-c", "COMMAND"]
+    ContainerSpec.Command = ["/bin/sh", "-c", COMMAND]
     ContainerSpec.Args = null
     ```
     This caused the image entrypoint to be overriden in all cases, with no recourse for the command author. With this pair of changes, we change the way we use the APIs to launch containers in all cases, but also provide an optional property on the Command (`"override-entrypoint"`) for whether to override the entrypoint or not (defaulting to `false`, i.e. do not override). So now, whether overriding the entrypoint or not, we pass the resolved command-line string to this API for containers...
@@ -41,9 +63,13 @@
 ### Bugfixes
 
 * [CS-475][] Ensure references to setup and wrapup containers can be resolved unambiguously by including the name of the source object on the parent container for which we created this particular setup or wrapup container.
+* Run tests in swarm mode as well as non-swarm. Fix bugs and broken tests.
 
 [nrgxnat/container-service#6]: https://github.com/NrgXnat/container-service/pull/6
+[CS-433]: https://issues.xnat.org/browse/CS-433
 [CS-461]: https://issues.xnat.org/browse/CS-461
+[CS-462]: https://issues.xnat.org/browse/CS-462
+[CS-464]: https://issues.xnat.org/browse/CS-464
 [CS-475]: https://issues.xnat.org/browse/CS-475
 [entrypoint-post]: https://groups.google.com/forum/#!msg/xnat_discussion/NBVjAS8gXhU/Zu7xJngCAgAJ
 

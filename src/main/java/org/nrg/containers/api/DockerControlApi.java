@@ -515,7 +515,7 @@ public class DockerControlApi implements ContainerControlApi {
                         .image(imageName)
                         .attachStdout(true)
                         .attachStderr(true)
-                        .cmd(ShellSplitter.shellSplit(runCommand))
+                        .cmd(overrideEntrypoint ? Lists.newArrayList("/bin/sh", "-c", runCommand) : ShellSplitter.shellSplit(runCommand))
                         .entrypoint(overrideEntrypoint ? Collections.singletonList("") : null)
                         .env(environmentVariables)
                         .workingDir(workingDirectory)
