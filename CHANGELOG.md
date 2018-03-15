@@ -21,7 +21,7 @@ Not yet released.
 
 ### Bugfixes
 
-* Restores wildcard expansion for container command-line strings.
+* [CS-479][] Restores wildcard expansion for container command-line strings.
     To do this, modified behavior introduced in previous version. When `override-entrypoint` is `null` or `false`, the container is created with...
     ```
     Image.Cmd = COMMAND (split into tokens like a shell would)
