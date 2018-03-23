@@ -592,7 +592,7 @@ public abstract class Container {
         @JsonProperty("mount") public abstract String mount();
         @Nullable @JsonProperty("path") public abstract String path();
         @Nullable @JsonProperty("glob") public abstract String glob();
-        @JsonProperty("label") public abstract String label();
+        @Nullable @JsonProperty("label") public abstract String label();
         @Nullable @JsonProperty("created") public abstract String created();
         @JsonProperty("handled-by") public abstract String handledBy();
         @Nullable @JsonProperty("via-wrapup-container") public abstract String viaWrapupContainer();
