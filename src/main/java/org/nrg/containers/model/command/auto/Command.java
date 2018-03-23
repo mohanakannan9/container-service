@@ -1329,7 +1329,7 @@ public abstract class Command {
                 errors.add(prefix + "Unknown type \"" + type() + "\". Known types: " + StringUtils.join(types, ", "));
             }
 
-            if (type().equals(CommandWrapperOutputEntity.Type.RESOURCE.name()) && StringUtils.isBlank(label())) {
+            if (type().equals(CommandWrapperOutputEntity.Type.RESOURCE.getName()) && StringUtils.isBlank(label())) {
                 errors.add(prefix + "when type = Resource, label cannot be blank.");
             }
 
