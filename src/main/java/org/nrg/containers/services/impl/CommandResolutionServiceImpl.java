@@ -1634,20 +1634,21 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                     // Ok, we have found an output. Make sure it can handle another output.
                     // Basically, *this* output handler needs to make a resource, and the
                     // *target* output handler needs to make an assessor.
-                    if (!(commandOutputHandler.type().equals(CommandWrapperOutputEntity.Type.RESOURCE.name())
-                            && otherOutputHandler.type().equals(CommandWrapperOutputEntity.Type.ASSESSOR.name()))) {
+                    final boolean thisHandlerIsAResource = commandOutputHandler.type().equals(CommandWrapperOutputEntity.Type.RESOURCE.name());
+                    final boolean targetHandlerIsAnAssessor = otherOutputHandler.type().equals(CommandWrapperOutputEntity.Type.ASSESSOR.name());
+                    if (!(thisHandlerIsAResource && targetHandlerIsAnAssessor)) {
                         // This output is supposed to be uploaded to an object that is created by another output,
                         // but that can only happen (as of now, 2018-03-23) when the first output is an assessor
                         // and any subsequent outputs are resources
-                        final String message = String.format("Cannot resolve output \"%s\". " +
-                                        "Handler \"%s\" has type \"%s\" and target \"%s\", but handler \"%s\" is of type \"%s\"." +
-                                        "Those types don't work that way.",
-                                commandOutput.name(), commandOutputHandler.name(), commandOutputHandler.type(),
-                                commandOutputHandler.targetName(), otherOutputHandler.name(), otherOutputHandler.type());
-                        if (Boolean.TRUE.equals(commandOutput.required())) {
+                        final String message = String.format("Cannot resolve handler \"%1$s\". " +
+                                        "Handler \"%1$s\" has type \"%2$s\"; target handler \"%3$s\" has type \"%4$s\". " +
+                                        "Handler \"%1$s\" must be type Resource, target handler \"%3$s\" needs to be type Assessor.",
+                                commandOutputHandler.name(), commandOutputHandler.type(),
+                                commandOutputHandler.targetName(), otherOutputHandler.type());
+                        if (Boolean.TRUE.equals(commandOutput.required()) && !outputHasAtLeastOneLegitHandler) {
                             throw new CommandResolutionException(message);
                         } else {
-                            log.error("Skipping output \"{}\".", commandOutput.name());
+                            log.error("Skipping handler \"{}\".", commandOutputHandler.name());
                             log.error(message);
                             continue;
                         }
