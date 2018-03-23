@@ -1634,8 +1634,8 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                     // Ok, we have found an output. Make sure it can handle another output.
                     // Basically, *this* output handler needs to make a resource, and the
                     // *target* output handler needs to make an assessor.
-                    final boolean thisHandlerIsAResource = commandOutputHandler.type().equals(CommandWrapperOutputEntity.Type.RESOURCE.name());
-                    final boolean targetHandlerIsAnAssessor = otherOutputHandler.type().equals(CommandWrapperOutputEntity.Type.ASSESSOR.name());
+                    final boolean thisHandlerIsAResource = commandOutputHandler.type().equals(CommandWrapperOutputEntity.Type.RESOURCE.getName());
+                    final boolean targetHandlerIsAnAssessor = otherOutputHandler.type().equals(CommandWrapperOutputEntity.Type.ASSESSOR.getName());
                     if (!(thisHandlerIsAResource && targetHandlerIsAnAssessor)) {
                         // This output is supposed to be uploaded to an object that is created by another output,
                         // but that can only happen (as of now, 2018-03-23) when the first output is an assessor
