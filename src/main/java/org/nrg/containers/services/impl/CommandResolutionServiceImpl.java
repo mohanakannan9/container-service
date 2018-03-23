@@ -1657,7 +1657,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
 
                 log.debug("Handler \"{}\" for command output \"{}\" looks legit.", commandOutputHandler.name(), commandOutput.name());
                 resolvedCommandOutputs.add(ResolvedCommandOutput.builder()
-                        .name(commandOutput.name())
+                        .name(commandOutput.name()+":"+commandOutputHandler.name())
                         .required(commandOutput.required())
                         .mount(commandOutput.mount())
                         .glob(commandOutput.glob())
