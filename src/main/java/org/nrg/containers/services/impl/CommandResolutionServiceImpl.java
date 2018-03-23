@@ -1542,7 +1542,8 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             log.debug("Found {} Output Handlers for Command output \"{}\".", commandOutputHandlers.size(), commandOutput.name());
 
             for (final CommandWrapperOutput commandOutputHandler : commandOutputHandlers) {
-                log.debug("Found Output Handler \"{}\" for Command output \"{}\".", commandOutputHandler.name(), commandOutput.name());
+                log.debug("Found Output Handler \"{}\" for Command output \"{}\". Checking if its target \"{}\" is an input.",
+                        commandOutputHandler.name(), commandOutput.name(), commandOutputHandler.targetName());
 
                 // Here's how these outputs can be structured
                 // 1. They will upload back to some input object. This is like they have a session come in as
@@ -1557,6 +1558,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                 final ResolvedInputValue parentInputResolvedValue = getInputValueByName(commandOutputHandler.targetName(), resolvedInputTrees);
                 if (parentInputResolvedValue != null) {
                     // If we are here, we know the target is an input and we have its value.
+                    log.debug("Handler \"{}\"'s target is input \"{}\". Checking if the input's value makes a legit target.", commandOutputHandler.name(), commandOutputHandler.targetName());
 
                     // Next check that the handler target input's value is an XNAT object
                     final String parentValueMayBeNull = parentInputResolvedValue.value();
@@ -1608,6 +1610,8 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                     // If we are here, either the output handler is uploading to another output,
                     // or its target is just wrong and we can't find anything
 
+                    log.debug("Handler \"{}\"'s target \"{}\" is not an input with a unique value. Is it another output handler?", commandOutputHandler.name(), commandOutputHandler.targetName());
+
                     final CommandWrapperOutput otherOutputHandler = wrapperOutputsByName.get(commandOutputHandler.targetName());
                     if (otherOutputHandler == null) {
                         // Looks like we can't find an input or an output to which this handler intends to upload its output
@@ -1624,13 +1628,13 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                         }
                     }
 
+                    log.debug("Handler \"{}\"'s target \"{}\" is another output handler. Checking if the two handlers' types are compatible.", commandOutputHandler.name(), commandOutputHandler.targetName());
+
                     // Ok, we have found an output. Make sure it can handle another output.
                     // Basically, *this* output handler needs to make a resource, and the
                     // *target* output handler needs to make an assessor.
-                    if (commandOutputHandler.type().equals(CommandWrapperOutputEntity.Type.RESOURCE.name())
-                            && otherOutputHandler.type().equals(CommandWrapperOutputEntity.Type.ASSESSOR.name())) {
-                        // This is fine. 
-                    } else {
+                    if (!(commandOutputHandler.type().equals(CommandWrapperOutputEntity.Type.RESOURCE.name())
+                            && otherOutputHandler.type().equals(CommandWrapperOutputEntity.Type.ASSESSOR.name()))) {
                         // This output is supposed to be uploaded to an object that is created by another output,
                         // but that can only happen (as of now, 2018-03-23) when the first output is an assessor
                         // and any subsequent outputs are resources
@@ -1649,6 +1653,7 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                     }
                 }
 
+                log.debug("Handler \"{}\" for command output \"{}\" looks legit.", commandOutputHandler.name(), commandOutput.name());
                 resolvedCommandOutputs.add(ResolvedCommandOutput.builder()
                         .name(commandOutput.name())
                         .required(commandOutput.required())
