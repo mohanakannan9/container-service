@@ -348,7 +348,7 @@ public class CommandLaunchIntegrationTest {
                 return output == null ? "" : output.name();
             }
         });
-        assertThat(outputNames, contains("data", "text-file"));
+        assertThat(outputNames, contains("data:data-output", "text-file:text-file-output"));
 
         // Environment variables
         final Map<String, String> expectedEnvironmentVariables = Maps.newHashMap();
@@ -454,7 +454,7 @@ public class CommandLaunchIntegrationTest {
                 return output.name();
             }
         });
-        assertThat(outputNames, contains("outputs"));
+        assertThat(outputNames, contains("outputs:file-and-dir-lists"));
 
         // Environment variables
         final Map<String, String> expectedEnvironmentVariables = Maps.newHashMap();
