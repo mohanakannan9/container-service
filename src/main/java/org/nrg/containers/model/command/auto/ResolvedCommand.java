@@ -361,7 +361,7 @@ public abstract class ResolvedCommand {
         @JsonProperty("mount") public abstract String mount();
         @JsonProperty("path") @Nullable public abstract String path();
         @JsonProperty("glob") @Nullable public abstract String glob();
-        @JsonProperty("label") public abstract String label();
+        @JsonProperty("label") @Nullable public abstract String label();
         @JsonProperty("handled-by") public abstract String handledBy();
         @Nullable @JsonProperty("via-wrapup-command") public abstract String viaWrapupCommand();
 
