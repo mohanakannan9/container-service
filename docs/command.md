@@ -64,6 +64,7 @@ If you want XNAT to execute your docker image, you will need a Command. The Comm
                 "description": "",
                 "required": true,
                 "mount": "",
+                "path": "",
                 "glob": ""
             }
         ],
