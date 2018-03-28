@@ -1317,15 +1317,20 @@ public abstract class Command {
                 errors.add("Command wrapper output - name cannot be blank.");
             }
 
+            final String prefix = "Command wrapper output \"" + name() + "\" - ";
             if (StringUtils.isBlank(commandOutputName())) {
-                errors.add("Command wrapper output \"" + name() + "\" - property \"accepts-command-output\" cannot be blank.");
+                errors.add(prefix + "property \"accepts-command-output\" cannot be blank.");
             }
             if (StringUtils.isBlank(targetName())) {
-                errors.add("Command wrapper output \"" + name() + "\" - property \"as-a-child-of\" cannot be blank.");
+                errors.add(prefix + "property \"as-a-child-of\" cannot be blank.");
             }
             final List<String> types = CommandWrapperOutputEntity.Type.names();
             if (!types.contains(type())) {
-                errors.add("Command wrapper output \"" + name() + "\" - Unknown type \"" + type() + "\". Known types: " + StringUtils.join(types, ", "));
+                errors.add(prefix + "Unknown type \"" + type() + "\". Known types: " + StringUtils.join(types, ", "));
+            }
+
+            if (type().equals(CommandWrapperOutputEntity.Type.RESOURCE.getName()) && StringUtils.isBlank(label())) {
+                errors.add(prefix + "when type = Resource, label cannot be blank.");
             }
 
             return errors;
