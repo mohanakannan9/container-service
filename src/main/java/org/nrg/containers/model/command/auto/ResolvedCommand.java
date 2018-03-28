@@ -356,12 +356,14 @@ public abstract class ResolvedCommand {
     @AutoValue
     public abstract static class ResolvedCommandOutput {
         @JsonProperty("name") public abstract String name();
+        @JsonProperty("from-command-output") public abstract String fromCommandOutput();
+        @JsonProperty("from-output-handler") public abstract String fromOutputHandler();
         @JsonProperty("type") public abstract String type();
         @JsonProperty("required") public abstract Boolean required();
         @JsonProperty("mount") public abstract String mount();
         @JsonProperty("path") @Nullable public abstract String path();
         @JsonProperty("glob") @Nullable public abstract String glob();
-        @JsonProperty("label") public abstract String label();
+        @JsonProperty("label") @Nullable public abstract String label();
         @JsonProperty("handled-by") public abstract String handledBy();
         @Nullable @JsonProperty("via-wrapup-command") public abstract String viaWrapupCommand();
 
@@ -372,6 +374,8 @@ public abstract class ResolvedCommand {
         @AutoValue.Builder
         public static abstract class Builder {
             public abstract Builder name(String name);
+            public abstract Builder fromCommandOutput(String fromCommandOutput);
+            public abstract Builder fromOutputHandler(String fromOutputHandler);
             public abstract Builder type(String type);
             public abstract Builder required(Boolean required);
             public abstract Builder mount(String mount);
