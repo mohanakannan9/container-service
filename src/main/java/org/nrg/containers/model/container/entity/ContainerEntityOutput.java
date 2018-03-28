@@ -21,6 +21,8 @@ public class ContainerEntityOutput implements Serializable {
     private long id;
     @JsonIgnore private ContainerEntity containerEntity;
     private String name;
+    private String fromCommandOutput;
+    private String fromOutputHandler;
     private String type;
     private Boolean required;
     private String mount;
@@ -42,6 +44,8 @@ public class ContainerEntityOutput implements Serializable {
     public ContainerEntityOutput update(final Container.ContainerOutput containerOutputPojo) {
         this.setId(containerOutputPojo.databaseId());
         this.setName(containerOutputPojo.name());
+        this.setFromCommandOutput(containerOutputPojo.fromCommandOutput());
+        this.setFromOutputHandler(containerOutputPojo.fromOutputHandler());
         this.setType(containerOutputPojo.type());
         this.setRequired(containerOutputPojo.required());
         this.setMount(containerOutputPojo.mount());
@@ -79,6 +83,22 @@ public class ContainerEntityOutput implements Serializable {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getFromCommandOutput() {
+        return fromCommandOutput;
+    }
+
+    public void setFromCommandOutput(final String fromCommandOutput) {
+        this.fromCommandOutput = fromCommandOutput;
+    }
+
+    public String getFromOutputHandler() {
+        return fromOutputHandler;
+    }
+
+    public void setFromOutputHandler(final String fromOutputHandler) {
+        this.fromOutputHandler = fromOutputHandler;
     }
 
     public String getType() {
@@ -166,6 +186,8 @@ public class ContainerEntityOutput implements Serializable {
         final ContainerEntityOutput that = (ContainerEntityOutput) o;
         return Objects.equals(this.id, that.id) &&
                 Objects.equals(this.name, that.name) &&
+                Objects.equals(this.fromCommandOutput, that.fromCommandOutput) &&
+                Objects.equals(this.fromOutputHandler, that.fromOutputHandler) &&
                 Objects.equals(this.type, that.type) &&
                 Objects.equals(this.required, that.required) &&
                 Objects.equals(this.mount, that.mount) &&
@@ -179,7 +201,7 @@ public class ContainerEntityOutput implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, type, required, mount, path, glob, label, handledByXnatCommandInput, viaWrapupContainer, created);
+        return Objects.hash(id, name, fromCommandOutput, fromOutputHandler, type, required, mount, path, glob, label, handledByXnatCommandInput, viaWrapupContainer, created);
     }
 
     @Override
@@ -187,6 +209,8 @@ public class ContainerEntityOutput implements Serializable {
         return MoreObjects.toStringHelper(this)
                 .add("id", id)
                 .add("name", name)
+                .add("fromCommandOutput", fromCommandOutput)
+                .add("fromOutputHandler", fromOutputHandler)
                 .add("type", type)
                 .add("required", required)
                 .add("mount", mount)

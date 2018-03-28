@@ -403,7 +403,10 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
 
             log.info(prefix + "Done uploading output \"{}\". URI of created output: {}", output.name(), createdUri);
 
-            wrapperInputAndOutputValues.put(output.name(), createdUri);
+            // We use the "fromOutputHandler" property here rather than name. The reason is that we will be looking
+            // up the value later based on what users set in subsequent handers' "handled-by" properties, and the value
+            // they put in that property is going to be the output handler name.
+            wrapperInputAndOutputValues.put(output.fromOutputHandler(), createdUri);
             
             return output.toBuilder().created(createdUri).build();
         }
