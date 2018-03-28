@@ -587,6 +587,8 @@ public abstract class Container {
     public static abstract class ContainerOutput {
         @JsonProperty("id") public abstract long databaseId();
         @JsonProperty("name") public abstract String name();
+        @Nullable @JsonProperty("from-command-output") public abstract String fromCommandOutput();
+        @Nullable @JsonProperty("from-output-handler") public abstract String fromOutputHandler();
         @JsonProperty("type") public abstract String type();
         @JsonProperty("required") public abstract Boolean required();
         @JsonProperty("mount") public abstract String mount();
@@ -600,6 +602,8 @@ public abstract class Container {
         @JsonCreator
         public static ContainerOutput create(@JsonProperty("id") final long databaseId,
                                              @JsonProperty("name") final String name,
+                                             @JsonProperty("from-command-output") final String fromCommandOutput,
+                                             @JsonProperty("from-output-handler") final String fromOutputHandler,
                                              @JsonProperty("type") final String type,
                                              @JsonProperty("required") final Boolean required,
                                              @JsonProperty("mount") final String mount,
@@ -612,6 +616,8 @@ public abstract class Container {
             return builder()
                     .databaseId(databaseId)
                     .name(name)
+                    .fromCommandOutput(fromCommandOutput)
+                    .fromOutputHandler(fromOutputHandler)
                     .type(type)
                     .required(required)
                     .mount(mount)
@@ -627,6 +633,8 @@ public abstract class Container {
         public static ContainerOutput create(final ContainerEntityOutput containerEntityOutput) {
             return create(containerEntityOutput.getId(),
                     containerEntityOutput.getName(),
+                    containerEntityOutput.getFromCommandOutput(),
+                    containerEntityOutput.getFromOutputHandler(),
                     containerEntityOutput.getType(),
                     containerEntityOutput.isRequired(),
                     containerEntityOutput.getMount(),
@@ -641,6 +649,8 @@ public abstract class Container {
         public static ContainerOutput create(final ResolvedCommand.ResolvedCommandOutput resolvedCommandOutput) {
             return create(0L,
                     resolvedCommandOutput.name(),
+                    resolvedCommandOutput.fromCommandOutput(),
+                    resolvedCommandOutput.fromOutputHandler(),
                     resolvedCommandOutput.type(),
                     resolvedCommandOutput.required(),
                     resolvedCommandOutput.mount(),
@@ -662,6 +672,8 @@ public abstract class Container {
         public static abstract class Builder {
             public abstract Builder databaseId(long databaseId);
             public abstract Builder name(String name);
+            public abstract Builder fromCommandOutput(String fromCommandOutput);
+            public abstract Builder fromOutputHandler(String fromOutputHandler);
             public abstract Builder type(String type);
             public abstract Builder required(Boolean required);
             public abstract Builder mount(String mount);
