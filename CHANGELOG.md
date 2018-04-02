@@ -22,7 +22,6 @@ Not yet released.
 
 * [CS-480][] Deprecate `Container.ContainerMount.inputFiles`. Having a list of input files for a mount is nice during command resolution, but it doesn't make much sense to store that list. As of now no new containers will have anything in their mounts' `inputFiles`. Old containers will still report their values for `inputFiles` for now, but this may change in the future.
 
-
 [CS-29]: https://issues.xnat.org/browse/CS-29
 [CS-80]: https://issues.xnat.org/browse/CS-80
 [CS-407]: https://issues.xnat.org/browse/CS-407
