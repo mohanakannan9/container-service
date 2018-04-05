@@ -20,6 +20,7 @@ public class ContainerEntityRepository extends AbstractHibernateDAO<ContainerEnt
     private static final Logger log = LoggerFactory.getLogger(ContainerEntityRepository.class);
 
     @Override
+    @SuppressWarnings("deprecation")
     public void initialize(final ContainerEntity entity) {
         if (entity == null) {
             return;

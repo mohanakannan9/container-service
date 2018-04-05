@@ -461,9 +461,18 @@ public abstract class Container {
         @JsonProperty("xnat-host-path") public abstract String xnatHostPath();
         @JsonProperty("container-host-path") public abstract String containerHostPath();
         @JsonProperty("container-path") public abstract String containerPath();
-        @JsonProperty("input-files") public abstract ImmutableList<ContainerMountFiles> inputFiles();
+
+        /**
+         * This used to return a list of the files that were found in an input mount. But we didn't use it anywhere in
+         * the code. Now I think it just takes up space in the database for nothing.
+         *
+         * @return An empty list
+         * @deprecated Since 2.0.0
+         */
+        @Deprecated @JsonProperty("input-files") public abstract ImmutableList<ContainerMountFiles> inputFiles();
 
         @JsonCreator
+        @SuppressWarnings("deprecation")
         public static ContainerMount create(@JsonProperty("id") final long databaseId,
                                             @JsonProperty("name") final String name,
                                             @JsonProperty("writable") final boolean writable,
@@ -482,6 +491,7 @@ public abstract class Container {
                     .build();
         }
 
+        @SuppressWarnings("deprecation")
         public static ContainerMount create(final ContainerEntityMount containerEntityMount) {
             final List<ContainerMountFiles> containerMountFiles = containerEntityMount.getInputFiles() == null ? null :
                     Lists.transform(containerEntityMount.getInputFiles(), new Function<ContainerMountFilesEntity, ContainerMountFiles>() {
@@ -502,11 +512,7 @@ public abstract class Container {
                     resolvedCommandMount.xnatHostPath(),
                     resolvedCommandMount.containerHostPath(),
                     resolvedCommandMount.containerPath(),
-                    Collections.singletonList(ContainerMountFiles.create(0L,
-                            resolvedCommandMount.fromWrapperInput(),
-                            resolvedCommandMount.fromUri(),
-                            resolvedCommandMount.fromRootDirectory(),
-                            null)));
+                    null);
         }
 
         @JsonIgnore
@@ -529,18 +535,20 @@ public abstract class Container {
             public abstract Builder containerHostPath(String containerHostPath);
             public abstract Builder containerPath(String containerPath);
 
-            public abstract Builder inputFiles(List<ContainerMountFiles> inputFiles);
-            abstract ImmutableList.Builder<ContainerMountFiles> inputFilesBuilder();
-            public Builder addInputFiles(final ContainerMountFiles inputFiles) {
-                inputFilesBuilder().add(inputFiles);
-                return this;
-            }
+            @Deprecated public abstract Builder inputFiles(List<ContainerMountFiles> inputFiles);
+            @Deprecated abstract ImmutableList.Builder<ContainerMountFiles> inputFilesBuilder();
 
             public abstract ContainerMount build();
         }
     }
 
+    /**
+     * A file mounted when a container was launched. No longer used.
+     *
+     * @deprecated Since 2.0.0
+     */
     @AutoValue
+    @Deprecated
     public static abstract class ContainerMountFiles {
         @JsonProperty("id") public abstract long databaseId();
         @Nullable @JsonProperty("from-xnat-input") public abstract String fromXnatInput();
