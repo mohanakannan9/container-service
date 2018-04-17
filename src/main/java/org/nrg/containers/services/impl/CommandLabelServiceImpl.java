@@ -48,15 +48,16 @@ public class CommandLabelServiceImpl implements CommandLabelService {
         final String labelValue = labels.get(LABEL_KEY);
         if (StringUtils.isNotBlank(labelValue)) {
             try {
-                final List<Command> commandsFromLabels =
-                        objectMapper.readValue(labelValue, new TypeReference<List<Command>>() {});
+                final List<Command.CommandCreation> commandCreationsFromLabels =
+                        objectMapper.readValue(labelValue, new TypeReference<List<Command.CommandCreation>>() {});
 
-                if (commandsFromLabels != null && !commandsFromLabels.isEmpty()) {
-                    for (final Command command : commandsFromLabels) {
+                if (commandCreationsFromLabels != null && !commandCreationsFromLabels.isEmpty()) {
+                    for (final Command.CommandCreation commandCreation : commandCreationsFromLabels) {
                         // The command as read from the image may not contain all the values we want to store
                         // So we add them now.
                         commandsToReturn.add(
-                                command.toBuilder()
+                                Command.create(commandCreation)
+                                        .toBuilder()
                                         .image(imageName)
                                         .hash(dockerImage.imageId())
                                         .build()
