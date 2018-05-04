@@ -205,6 +205,7 @@ public abstract class Command {
                 .hash(creation.hash())
                 .workingDirectory(creation.workingDirectory())
                 .commandLine(creation.commandLine())
+                .overrideEntrypoint(creation.overrideEntrypoint())
                 .reserveMemory(creation.reserveMemory())
                 .limitMemory(creation.limitMemory())
                 .limitCpu(creation.limitCpu())
