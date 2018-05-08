@@ -329,12 +329,13 @@ public class ContainerServiceImpl implements ContainerService {
 
     private Map<String, String> getDefaultEnvironmentVariablesForLaunch(final UserI userI) {
         final AliasToken token = aliasTokenService.issueTokenForUser(userI);
-        final String processingUrl = (String)siteConfigPreferences.getProperty("processingUrl", siteConfigPreferences.getSiteUrl());
+        final String processingUrl = (String)siteConfigPreferences.getProperty("processingUrl");
+        final String xnatHostUrl = StringUtils.isBlank(processingUrl) ? siteConfigPreferences.getSiteUrl() : processingUrl;
 
         final Map<String, String> defaultEnvironmentVariables = new HashMap<>();
         defaultEnvironmentVariables.put("XNAT_USER", token.getAlias());
         defaultEnvironmentVariables.put("XNAT_PASS", token.getSecret());
-        defaultEnvironmentVariables.put("XNAT_HOST", processingUrl);
+        defaultEnvironmentVariables.put("XNAT_HOST", xnatHostUrl);
 
         return defaultEnvironmentVariables;
     }
