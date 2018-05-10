@@ -29,7 +29,7 @@ buildscript {
 }
 
 group 'org.nrg'
-version '2.0.0-SNAPSHOT'
+version '2.0.0-rc1-DEMO'
 
 apply plugin: 'java'
 apply plugin: 'idea'
@@ -42,7 +42,7 @@ apply plugin: "com.github.zhurlik.swagger"
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
-def vXnat = '1.7.3'
+def vXnat = '1.7.5-DEMO-SNAPSHOT'
 def vXnatDev = '1.7.5-SNAPSHOT'
 def vMockito = '1.10.19'
 def vJavassist = '3.21.0-GA'
