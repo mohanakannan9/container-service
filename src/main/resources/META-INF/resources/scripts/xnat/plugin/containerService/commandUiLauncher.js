@@ -1374,7 +1374,8 @@ var XNAT = getObject(XNAT || {});
 
                             if (scanCommands.length > 0){
                                 var scanActionTarget = $('tr#scan-'+scan['id']).find('.single-scan-actions-menu');
-                                scanActionTarget.append(scanCommands).parents('td').find('.inline-actions-menu-toggle').removeClass('hidden');
+                                scanActionTarget.append(scanCommands)
+                                $('.run-menu').show(); 
                             }
                         });
 
