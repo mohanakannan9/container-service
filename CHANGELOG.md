@@ -10,12 +10,15 @@ Not yet released.
 * [CS-80][] Allow command wrapper output handlers to create new objects as children of objects created by previous output handlers. The previous behavior allowed outputs to be handled only by wrapper inputs.
 * [CS-457][] Add `label` field to command wrapper. This will be used to represent the command wrapper in the "Run Container" menu going forward.
 * [CS-458][] `GET /commands/available` includes command and wrapper labels
+* [CS-29][] Enable output handlers to have type "`Assessor`". If a command output points to an assessor XML, the output handler can now upload that XML and create the assessor object in XNAT.
+* Manually refresh resource catalog when uploading resources. (We used to rely on the Catalog Service to do this, but it doesn't anymore.)
 
 ### Other
 
 * [CS-480][] Deprecate `Container.ContainerMount.inputFiles`. Having a list of input files for a mount is nice during command resolution, but it doesn't make much sense to store that list. As of now no new containers will have anything in their mounts' `inputFiles`. Old containers will still report their values for `inputFiles` for now, but this may change in the future.
 
 
+[CS-29]: https://issues.xnat.org/browse/CS-29
 [CS-80]: https://issues.xnat.org/browse/CS-80
 [CS-457]: https://issues.xnat.org/browse/CS-457
 [CS-458]: https://issues.xnat.org/browse/CS-458
