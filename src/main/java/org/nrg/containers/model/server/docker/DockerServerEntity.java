@@ -17,6 +17,8 @@ public class DockerServerEntity extends AbstractHibernateEntity {
     private String certPath;
     private Date lastEventCheckTime;
     private boolean swarmMode;
+    private String pathTranslationXnatPrefix;
+    private String pathTranslationDockerPrefix;
 
     public static DockerServerEntity create(final DockerServer dockerServer) {
         return new DockerServerEntity().update(dockerServer);
@@ -28,6 +30,8 @@ public class DockerServerEntity extends AbstractHibernateEntity {
         this.certPath = dockerServer.certPath();
         this.swarmMode = dockerServer.swarmMode();
         this.lastEventCheckTime = dockerServer.lastEventCheckTime();
+        this.pathTranslationXnatPrefix = dockerServer.pathTranslationXnatPrefix();
+        this.pathTranslationDockerPrefix = dockerServer.pathTranslationDockerPrefix();
         return this;
     }
 
@@ -75,6 +79,22 @@ public class DockerServerEntity extends AbstractHibernateEntity {
         this.swarmMode = swarmMode;
     }
 
+    public String getPathTranslationXnatPrefix() {
+        return pathTranslationXnatPrefix;
+    }
+
+    public void setPathTranslationXnatPrefix(final String pathTranslationXnatPrefix) {
+        this.pathTranslationXnatPrefix = pathTranslationXnatPrefix;
+    }
+
+    public String getPathTranslationDockerPrefix() {
+        return pathTranslationDockerPrefix;
+    }
+
+    public void setPathTranslationDockerPrefix(final String pathTranslationDockerPrefix) {
+        this.pathTranslationDockerPrefix = pathTranslationDockerPrefix;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
@@ -85,12 +105,14 @@ public class DockerServerEntity extends AbstractHibernateEntity {
                 Objects.equals(this.name, that.name) &&
                 Objects.equals(this.host, that.host) &&
                 Objects.equals(this.certPath, that.certPath) &&
-                Objects.equals(this.lastEventCheckTime, that.lastEventCheckTime);
+                Objects.equals(this.lastEventCheckTime, that.lastEventCheckTime) &&
+                Objects.equals(this.pathTranslationXnatPrefix, that.pathTranslationXnatPrefix) &&
+                Objects.equals(this.pathTranslationDockerPrefix, that.pathTranslationDockerPrefix);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), name, host, certPath, lastEventCheckTime, swarmMode);
+        return Objects.hash(super.hashCode(), name, host, certPath, lastEventCheckTime, swarmMode, pathTranslationXnatPrefix, pathTranslationDockerPrefix);
     }
 
 }
