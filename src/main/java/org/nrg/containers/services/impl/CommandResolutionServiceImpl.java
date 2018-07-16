@@ -44,6 +44,7 @@ import org.nrg.containers.model.command.auto.ResolvedInputTreeNode.ResolvedInput
 import org.nrg.containers.model.command.auto.ResolvedInputValue;
 import org.nrg.containers.model.command.entity.CommandType;
 import org.nrg.containers.model.command.entity.CommandWrapperOutputEntity;
+import org.nrg.containers.model.server.docker.DockerServerBase;
 import org.nrg.containers.model.xnat.Assessor;
 import org.nrg.containers.model.xnat.Project;
 import org.nrg.containers.model.xnat.Resource;
@@ -249,6 +250,9 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
         private final DocumentContext commandWrapperJsonpathSearchContext;
         private String containerHost;
 
+        private String pathTranslationXnatPrefix = null;
+        private String pathTranslationContainerHostPrefix = null;
+
         private List<ResolvedCommand> resolvedSetupCommands;
 
         // Caches
@@ -259,6 +263,15 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                                         final UserI userI) throws CommandResolutionException {
             this.commandWrapper = configuredCommand.wrapper();
             this.command = configuredCommand;
+
+            try {
+                log.debug("Getting docker server to read path prefixes.");
+                final DockerServerBase.DockerServerWithPing dockerServer = dockerService.getServer();
+                pathTranslationXnatPrefix = dockerServer.pathTranslationXnatPrefix();
+                pathTranslationContainerHostPrefix = dockerServer.pathTranslationDockerPrefix();
+            } catch (NotFoundException e) {
+                log.debug("Could not get docker server. I'll keep going, but this is likely to cause other problems down the line.");
+            }
 
             // Set up JSONPath search contexts
             final Configuration c = Configuration.defaultConfiguration().addOptions(Option.ALWAYS_RETURN_LIST);
@@ -2043,11 +2056,17 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
             log.debug("Setting mount \"{}\" xnat host path to \"{}\".", resolvedCommandMountName, pathToMount);
             resolvedCommandMountBuilder.xnatHostPath(pathToMount);
 
-            log.debug("Transporting mount \"{}\".", resolvedCommandMountName);
+            // log.debug("Transporting mount \"{}\".", resolvedCommandMountName);
             // final Path pathOnContainerHost = transportService.transport(containerHost, Paths.get(buildDirectory));
             // TODO transporting is currently a no-op, and the code is simpler if we don't pretend that we are doing something here.
-            log.debug("Setting mount \"{}\" container host path to \"{}\".", resolvedCommandMountName, pathToMount);
-            resolvedCommandMountBuilder.containerHostPath(pathToMount);
+
+            // Translate paths from XNAT prefix to container host prefix
+            final String containerHostPath =
+                    (pathTranslationXnatPrefix != null && pathTranslationContainerHostPrefix != null) ?
+                            pathToMount.replace(pathTranslationXnatPrefix, pathTranslationContainerHostPrefix) :
+                            pathToMount;
+            log.debug("Setting mount \"{}\" container host path to \"{}\".", resolvedCommandMountName, containerHostPath);
+            resolvedCommandMountBuilder.containerHostPath(containerHostPath);
 
             return resolvedCommandMountBuilder.build();
         }

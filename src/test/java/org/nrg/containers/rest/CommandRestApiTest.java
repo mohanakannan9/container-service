@@ -109,7 +109,7 @@ public class CommandRestApiTest {
         // Mock out the prefs bean
         final String containerServerName = "testy test";
         final String containerHost = "unix:///var/run/docker.sock";
-        final DockerServer dockerServer = DockerServer.create(0L, containerServerName, containerHost, null, false);
+        final DockerServer dockerServer = DockerServer.create(0L, containerServerName, containerHost, null, false, null, null);
         when(mockDockerServerService.getServer()).thenReturn(dockerServer);
 
         // Mock the userI
