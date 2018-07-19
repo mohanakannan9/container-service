@@ -44,3 +44,13 @@ label.switchbox.disabled > input + .switchbox-outer {
     border-color: #d3d3d3;
     box-shadow: none;
 }
+
+/* modal divider */
+
+p.divider,
+div.xnat-dialog > .body p.divider {
+    border-top: 1px solid #ccc;
+    margin-top: 1em;
+    margin-bottom: 2em;
+    padding-top: 1em;
+}
