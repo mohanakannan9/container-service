@@ -71,10 +71,7 @@ var XNAT = getObject(XNAT || {});
         if (inputs.length){
             inputs.forEach(function($input){
                 if (!$input.val()){
-                    errorMsg.push( spawn('li', [
-                        spawn('strong', $input.prop('name')),
-                        ' requires a value.'
-                    ]) );
+                    errorMsg.push('<b>' + $input.prop('name') + '</b> requires a value.');
                     $input.addClass('invalid');
                 }
             });
