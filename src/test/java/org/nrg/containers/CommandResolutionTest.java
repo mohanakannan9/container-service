@@ -9,6 +9,7 @@ import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
 import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -32,6 +33,7 @@ import org.nrg.containers.model.command.entity.CommandType;
 import org.nrg.containers.model.configuration.CommandConfiguration;
 import org.nrg.containers.model.configuration.CommandConfiguration.CommandInputConfiguration;
 import org.nrg.containers.model.configuration.CommandConfigurationInternal;
+import org.nrg.containers.model.server.docker.DockerServerBase;
 import org.nrg.containers.model.xnat.Project;
 import org.nrg.containers.model.xnat.Resource;
 import org.nrg.containers.model.xnat.Scan;
@@ -39,6 +41,7 @@ import org.nrg.containers.model.xnat.Session;
 import org.nrg.containers.services.CommandResolutionService;
 import org.nrg.containers.services.CommandService;
 import org.nrg.containers.services.ContainerConfigService;
+import org.nrg.containers.services.DockerService;
 import org.nrg.framework.constants.Scope;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xft.security.UserI;
@@ -79,11 +82,15 @@ public class CommandResolutionTest {
     private Map<String, CommandWrapper> xnatCommandWrappers;
     private String buildDir;
 
+    private String pathTranslationXnatPrefix = "/some/fake/xnat/path";
+    private String pathTranslationContainerHostPrefix = "/some/other/fake/path/to/another/place";
+
     @Autowired private ObjectMapper mapper;
     @Autowired private CommandService commandService;
     @Autowired private CommandResolutionService commandResolutionService;
     @Autowired private ConfigService mockConfigService;
     @Autowired private SiteConfigPreferences mockSiteConfigPreferences;
+    @Autowired private DockerService dockerService;
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder(new File("/tmp"));
@@ -126,6 +133,8 @@ public class CommandResolutionTest {
 
         buildDir = folder.newFolder().getAbsolutePath();
         when(mockSiteConfigPreferences.getBuildPath()).thenReturn(buildDir);
+
+        dockerService.setServer(DockerServerBase.DockerServer.create(0L, "test", "unix:///var/run/docker.sock", null, false, pathTranslationXnatPrefix, pathTranslationContainerHostPrefix));
     }
 
     @Test
@@ -684,5 +693,37 @@ public class CommandResolutionTest {
             }
         }
 
+    }
+
+    @Test
+    @DirtiesContext
+    public void testPathTranslation() throws Exception {
+
+        final String testResourceDir = Paths.get(ClassLoader.getSystemResource("commandResolutionTest/testPathTranslation").toURI()).toString().replace("%20", " ");
+        final String commandJsonFile = testResourceDir + "/command.json";
+        final Command command = commandService.create(mapper.readValue(new File(commandJsonFile), Command.class));
+        final CommandWrapper wrapper = command.xnatCommandWrappers().get(0);
+
+        final String inputPath = testResourceDir + "/resource.json";
+
+        // Make a fake local directory path, and a fake container host directory path, using the prefixes.
+        final String xnatHostDir = pathTranslationXnatPrefix + "/this/part/should/stay";
+        final String containerHostDir = xnatHostDir.replace(pathTranslationXnatPrefix, pathTranslationContainerHostPrefix);
+
+        final Resource resource = mapper.readValue(new File(inputPath), Resource.class);
+        resource.setDirectory(xnatHostDir);
+        resource.getFiles().get(0).setPath(xnatHostDir + "/" + resource.getFiles().get(0).getName());
+        final String resourceRuntimeJson = mapper.writeValueAsString(resource);
+
+        final Map<String, String> runtimeValues = Maps.newHashMap();
+        runtimeValues.put("resource", resourceRuntimeJson);
+
+        final ResolvedCommand resolvedCommand = commandResolutionService.resolve(wrapper.id(), runtimeValues, mockUser);
+
+        assertThat(resolvedCommand.mounts(), Matchers.<ResolvedCommandMount>hasSize(1));
+
+        final ResolvedCommandMount resolvedMount = resolvedCommand.mounts().get(0);
+        assertThat(resolvedMount.xnatHostPath(), is(xnatHostDir));
+        assertThat(resolvedMount.containerHostPath(), is(containerHostDir));
     }
 }

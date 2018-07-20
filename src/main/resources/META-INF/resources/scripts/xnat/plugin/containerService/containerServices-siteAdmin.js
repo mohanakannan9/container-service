@@ -71,21 +71,49 @@ var XNAT = getObject(XNAT || {});
         if (inputs.length){
             inputs.forEach(function($input){
                 if (!$input.val()){
-                    errorMsg.push( spawn('li', [
-                        spawn('strong', $input.prop('name')),
-                        ' requires a value.'
-                    ]) );
+                    errorMsg.push('<b>' + $input.prop('name') + '</b> requires a value.');
                     $input.addClass('invalid');
                 }
             });
 
             if (errorMsg.length) {
-                return spawn('div', [
-                    spawn('p', 'Errors found:'),
-                    spawn('ul', errorMsg)
-                ]);
-            }
+                return errorMsg;
+            } else return false;
         } else return false;
+    }
+
+    function csMultiFieldValidator(fields){
+        var errorMsg = [];
+
+        // both fields must be populated or must be empty in order to pass validation
+        // field values do not have to match
+        if (isArray(fields) && fields.length > 1) {
+            var control = fields[0];
+            var requiredEntry = ($(control).val().length > 0), passValidation = true, fieldNames = [];
+            fields.forEach(function(field){
+                if (requiredEntry !== ($(field).val().length > 0)) passValidation = false;
+                fieldNames.push( $(field).prop('name') );
+            });
+
+            if (!passValidation) {
+                $(fields).addClass('invalid');
+                errorMsg.push('The following fields must all be populated, or all be empty: <b>' + fieldNames.join('</b>, <b>') + '</b>.');
+            } else return false;
+        }
+        else {
+            errorMsg.push('Validation error: Not enough inputs to compare');
+        }
+        return errorMsg;
+    }
+
+    function displayErrors(errorMsg) {
+        var errors = [];
+        errorMsg.forEach(function(msg){ errors.push(spawn('li',msg)) });
+
+        return spawn('div',[
+            spawn('p', 'Errors found:'),
+            spawn('ul', errors)
+        ]);
     }
 
 
@@ -159,6 +187,19 @@ var XNAT = getObject(XNAT || {});
                             onText: 'ON',
                             offText: 'OFF',
                             value: 'true'
+                        }),
+                        spawn('p.divider', '<strong>Path Translation (Optional)</strong><br> Use these settings to resolve differences between your XNAT archive mount point and the Docker Server mount point for your XNAT data.'),
+                        XNAT.ui.panel.input.text({
+                            name: 'path-translation-xnat-prefix',
+                            label: 'XNAT Path Prefix',
+                            addClass: 'path-prefix',
+                            description: 'Enter the XNAT_HOME server path, i.e. "/data/xnat"'
+                        }),
+                        XNAT.ui.panel.input.text({
+                            name: 'path-translation-docker-prefix',
+                            label: 'Docker Server Path Prefix',
+                            addClass: 'path-prefix',
+                            description: 'Enter the Docker Server path to the XNAT_HOME mount, i.e. "/docker/my-data/XNAT"'
                         })
                     ])
                 );
@@ -176,14 +217,20 @@ var XNAT = getObject(XNAT || {});
                     action: function(obj){
                         var $form = obj.$modal.find('form');
                         var $host = $form.find('input[name=host]');
+                        var pathPrefixes = $form.find('input.path-prefix').toArray();
 
                         $form.find(':input').removeClass('invalid');
 
-                        if (csValidator([$host])) {
+                        var errors = [];
+                        if (csValidator([$host]).length) errors = errors.concat(csValidator([$host]));
+                        if (csMultiFieldValidator(pathPrefixes).length) errors = errors.concat(csMultiFieldValidator(pathPrefixes));
+
+                        if (errors.length) {
+
                             XNAT.dialog.open({
                                 title: 'Validation Error',
                                 width: 300,
-                                content: csValidator([$host])
+                                content: displayErrors(errors)
                             })
                         } else {
                             XNAT.dialog.closeAll();
@@ -225,6 +272,9 @@ var XNAT = getObject(XNAT || {});
     };
 
     function submitHostEditor($form){
+        // validate path prefix fields
+
+
         $form.submitJSON({
             method: 'POST',
             url: containerHostUrl(),
@@ -447,11 +497,12 @@ var XNAT = getObject(XNAT || {});
 
                         $form.find(':input').removeClass('invalid');
 
-                        if (csValidator([$url,$name])) {
+                        var errors = csValidator([$url,$name]);
+                        if (errors.length) {
                             XNAT.dialog.open({
                                 title: 'Validation Error',
                                 width: 300,
-                                content: csValidator([$url,$name])
+                                content: displayErrors(errors)
                             })
                         } else {
                             xmodal.loading.open({ title: 'Validating host URL'});
@@ -817,11 +868,13 @@ var XNAT = getObject(XNAT || {});
                         // validate form inputs, then pull them into the URI querystring and create an XHR request.
                         $form.find(':input').removeClass('invalid');
 
-                        if (csValidator([$image,$tag])) {
+                        var errors = csValidator([$image,$tag]);
+                        if (errors.length) {
+
                             XNAT.dialog.open({
                                 title: 'Validation Error',
                                 width: 300,
-                                content: csValidator([$image,$tag])
+                                content: displayErrors(errors)
                             })
                         } else {
                             // stitch together the image and tag definition, if a tag value was specified.
