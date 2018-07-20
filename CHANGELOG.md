@@ -11,6 +11,7 @@ Not yet released.
 * [CS-457][] Add `label` field to command wrapper. This will be used to represent the command wrapper in the "Run Container" menu going forward.
 * [CS-458][] `GET /commands/available` includes command and wrapper labels
 * Manually refresh resource catalog when uploading resources. (We used to rely on the Catalog Service to do this, but it doesn't anymore.)
+* [CS-407][] Add docker host setting to translate mount paths. If xnat sees a path at /data/xnat/x/y/z but your docker host sees the same path at /my/path/x/y/z, you can include these path prefixes in your docker server settings. If you're using REST, set the properties "path-translation-xnat-prefix" and "path-translation-docker-prefix" respectively. If you're using the Plugin Settings UI, the fields will be there.
 
 ### Bugfixes
 
@@ -22,6 +23,7 @@ Not yet released.
 
 
 [CS-80]: https://issues.xnat.org/browse/CS-80
+[CS-407]: https://issues.xnat.org/browse/CS-407
 [CS-457]: https://issues.xnat.org/browse/CS-457
 [CS-458]: https://issues.xnat.org/browse/CS-458
 [CS-480]: https://issues.xnat.org/browse/CS-480
