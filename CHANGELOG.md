@@ -12,6 +12,7 @@ Not yet released.
 * [CS-458][] `GET /commands/available` includes command and wrapper labels
 * Manually refresh resource catalog when uploading resources. (We used to rely on the Catalog Service to do this, but it doesn't anymore.)
 * [CS-407][] Add docker host setting to translate mount paths. If xnat sees a path at /data/xnat/x/y/z but your docker host sees the same path at /my/path/x/y/z, you can include these path prefixes in your docker server settings. If you're using REST, set the properties "path-translation-xnat-prefix" and "path-translation-docker-prefix" respectively. If you're using the Plugin Settings UI, the fields will be there.
+* [CS-494][] Add docker host setting for whether to check on server startup if all the images referenced by commands are present, and pull them if not.
 * [CS-502][] When a container is launched with the project-specific launch APIs (`/xapi/projects/{project}/.../launch`), that project is now saved as a property on the container.
 * [CS-503][] Add APIs to get containers by project.
 
@@ -32,6 +33,8 @@ Not yet released.
 [CS-480]: https://issues.xnat.org/browse/CS-480
 [CS-488]: https://issues.xnat.org/browse/CS-488
 [CS-492]: https://issues.xnat.org/browse/CS-492
+[CS-494]: https://issues.xnat.org/browse/CS-494
+[CS-500]: https://issues.xnat.org/browse/CS-500
 [CS-502]: https://issues.xnat.org/browse/CS-502
 [CS-503]: https://issues.xnat.org/browse/CS-503
 
