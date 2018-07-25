@@ -100,6 +100,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
         this.setSwarm(containerPojo.swarm());
         this.setDockerImage(containerPojo.dockerImage());
         this.setCommandLine(containerPojo.commandLine());
+        this.setOverrideEntrypoint(containerPojo.overrideEntrypoint());
         this.setWorkingDirectory(containerPojo.workingDirectory());
         this.setSubtype(containerPojo.subtype());
         this.setParentContainerEntity(fromPojo(containerPojo.parent()));
