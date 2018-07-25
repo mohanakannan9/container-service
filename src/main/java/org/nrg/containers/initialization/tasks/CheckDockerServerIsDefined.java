@@ -1,5 +1,6 @@
 package org.nrg.containers.initialization.tasks;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.containers.model.server.docker.DockerServerBase.DockerServer;
 import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
@@ -13,9 +14,9 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+@Slf4j
 @Component
 public class CheckDockerServerIsDefined extends AbstractInitializingTask {
-    private static final Logger log = LoggerFactory.getLogger(CheckDockerServerIsDefined.class);
     private final DockerServerService dockerServerService;
     @SuppressWarnings("deprecation") private final DockerServerPrefsBean dockerServerPrefsBean;
 

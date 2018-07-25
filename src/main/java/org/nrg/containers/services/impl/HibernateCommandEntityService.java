@@ -2,6 +2,7 @@ package org.nrg.containers.services.impl;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.exception.ConstraintViolationException;
 import org.nrg.containers.daos.CommandEntityRepository;
 import org.nrg.containers.model.command.entity.CommandEntity;
@@ -22,11 +23,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 @Transactional
 public class HibernateCommandEntityService extends AbstractHibernateEntityService<CommandEntity, CommandEntityRepository>
         implements CommandEntityService {
-    private static final Logger log = LoggerFactory.getLogger(HibernateCommandEntityService.class);
 
     @Override
     @Nonnull

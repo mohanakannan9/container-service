@@ -18,6 +18,7 @@ import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.ContainerInfo;
 import com.spotify.docker.client.messages.swarm.Service;
 import com.spotify.docker.client.messages.swarm.Task;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
@@ -109,6 +110,7 @@ import static org.mockito.Mockito.mock;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 
+@Slf4j
 @RunWith(PowerMockRunner.class)
 @PowerMockRunnerDelegate(SpringJUnit4ClassRunner.class)
 @PrepareForTest({UriParserUtils.class, XFTManager.class, Users.class})
@@ -116,8 +118,6 @@ import static org.powermock.api.mockito.PowerMockito.when;
 @ContextConfiguration(classes = EventPullingIntegrationTestConfig.class)
 @Transactional
 public class CommandLaunchIntegrationTest {
-    private static final Logger log = LoggerFactory.getLogger(CommandLaunchIntegrationTest.class);
-
     private UserI mockUser;
     private String buildDir;
     private String archiveDir;

@@ -1,5 +1,6 @@
 package org.nrg.containers.initialization.tasks;
 
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.containers.model.dockerhub.DockerHubBase;
 import org.nrg.containers.services.DockerHubService;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
@@ -12,9 +13,9 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+@Slf4j
 @Component
 public class CheckDefaultDockerHub extends AbstractInitializingTask {
-    private static final Logger log = LoggerFactory.getLogger(CheckDefaultDockerHub.class);
     private final DockerHubService dockerHubService;
     private final SiteConfigPreferences siteConfigPreferences;
 

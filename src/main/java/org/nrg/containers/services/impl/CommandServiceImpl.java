@@ -9,6 +9,7 @@ import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
 import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.containers.exceptions.CommandValidationException;
 import org.nrg.containers.model.command.auto.CommandSummaryForContext;
 import org.nrg.containers.model.configuration.CommandConfiguration;
@@ -46,9 +47,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+@Slf4j
 @Service
 public class CommandServiceImpl implements CommandService, InitializingBean {
-    private static final Logger log = LoggerFactory.getLogger(CommandServiceImpl.class);
 
     private final CommandEntityService commandEntityService;
     private final ContainerConfigService containerConfigService;

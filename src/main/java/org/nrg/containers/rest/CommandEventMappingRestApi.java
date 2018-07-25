@@ -3,6 +3,7 @@ package org.nrg.containers.rest;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.exceptions.BadRequestException;
 import org.nrg.containers.model.CommandEventMapping;
@@ -40,6 +41,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 import static org.springframework.web.bind.annotation.RequestMethod.PUT;
 
+@Slf4j
 @XapiRestController
 @RequestMapping("/commandeventmapping")
 @Api("Command Event Mapping API for XNAT Container Service")
@@ -47,7 +49,6 @@ public class CommandEventMappingRestApi extends AbstractXapiRestController {
     private static final String JSON = MediaType.APPLICATION_JSON_UTF8_VALUE;
     private static final String TEXT = MediaType.TEXT_PLAIN_VALUE;
     private static final String FORM = MediaType.APPLICATION_FORM_URLENCODED_VALUE;
-    private static final Logger log = LoggerFactory.getLogger(CommandEventMappingRestApi.class);
 
     private CommandEventMappingService commandEventMappingService;
 

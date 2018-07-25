@@ -3,6 +3,7 @@ package org.nrg.containers.services.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.model.command.auto.Command;
 import org.nrg.containers.model.command.entity.CommandType;
@@ -19,9 +20,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 public class CommandLabelServiceImpl implements CommandLabelService {
-    private static final Logger log = LoggerFactory.getLogger(CommandLabelService.class);
 
     private final ObjectMapper objectMapper;
 
