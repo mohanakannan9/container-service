@@ -360,7 +360,7 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
                     catalogService.refreshResourceCatalog(userI, createdUri);
                 } catch (ServerException | ClientException e) {
                     final String message = String.format(prefix + "Could not refresh catalog for resource %s.", createdUri);
-                    log.error(message);
+                    log.error(message, e);
                 }
             } else if (type.equals(ASSESSOR.getName())) {
                 /* TODO Waiting on XNAT-4556
