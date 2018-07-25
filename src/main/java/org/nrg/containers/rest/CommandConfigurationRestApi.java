@@ -2,6 +2,7 @@ package org.nrg.containers.rest;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.exceptions.BadRequestException;
 import org.nrg.containers.exceptions.CommandResolutionException;
@@ -41,10 +42,10 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 import static org.springframework.web.bind.annotation.RequestMethod.PUT;
 
+@Slf4j
 @XapiRestController
 @Api("Command Configuration API for XNAT Container service")
 public class CommandConfigurationRestApi extends AbstractXapiRestController {
-    private static final Logger log = LoggerFactory.getLogger(CommandConfigurationRestApi.class);
 
     private CommandService commandService;
 

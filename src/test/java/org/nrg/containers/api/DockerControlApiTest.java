@@ -8,6 +8,7 @@ import com.spotify.docker.client.messages.ContainerCreation;
 import com.spotify.docker.client.messages.HostConfig;
 import com.spotify.docker.client.messages.Info;
 import com.spotify.docker.client.messages.Version;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.hamcrest.CustomTypeSafeMatcher;
 import org.hamcrest.Matcher;
@@ -50,11 +51,10 @@ import static org.junit.Assume.assumeThat;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
+@Slf4j
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = DockerControlApiTestConfig.class)
 public class DockerControlApiTest {
-    private static final Logger log = LoggerFactory.getLogger(DockerControlApiTest.class);
-
     private static String CONTAINER_HOST;
     private static String CERT_PATH;
 

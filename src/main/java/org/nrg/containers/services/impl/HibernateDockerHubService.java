@@ -24,7 +24,6 @@ import java.util.List;
 public class HibernateDockerHubService
         extends AbstractHibernateEntityService<DockerHubEntity, DockerHubDao>
         implements DockerHubService {
-    private static final Logger log = LoggerFactory.getLogger(HibernateDockerHubService.class);
 
     private final ContainerConfigService containerConfigService;
 

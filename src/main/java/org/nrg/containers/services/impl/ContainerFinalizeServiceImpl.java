@@ -4,6 +4,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
@@ -50,9 +51,9 @@ import java.util.Map;
 import static org.nrg.containers.model.command.entity.CommandWrapperOutputEntity.Type.ASSESSOR;
 import static org.nrg.containers.model.command.entity.CommandWrapperOutputEntity.Type.RESOURCE;
 
+@Slf4j
 @Service
 public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
-    private static final Logger log = LoggerFactory.getLogger(ContainerFinalizeServiceImpl.class);
 
     private final ContainerControlApi containerControlApi;
     private final SiteConfigPreferences siteConfigPreferences;

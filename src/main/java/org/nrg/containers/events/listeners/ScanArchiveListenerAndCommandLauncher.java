@@ -3,6 +3,7 @@ package org.nrg.containers.events.listeners;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.events.model.ScanArchiveEventToLaunchCommands;
 import org.nrg.containers.exceptions.CommandResolutionException;
@@ -32,9 +33,9 @@ import java.util.Map;
 
 import static reactor.bus.selector.Selectors.type;
 
+@Slf4j
 @Service
 public class ScanArchiveListenerAndCommandLauncher implements Consumer<Event<ScanArchiveEventToLaunchCommands>> {
-    private static final Logger log = LoggerFactory.getLogger(ScanArchiveListenerAndCommandLauncher.class);
     private static final String EVENT_ID = "ScanArchived";
 
     private ObjectMapper mapper;

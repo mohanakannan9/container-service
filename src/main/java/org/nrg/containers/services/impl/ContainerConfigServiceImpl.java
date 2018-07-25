@@ -2,6 +2,7 @@ package org.nrg.containers.services.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
@@ -17,9 +18,9 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Nullable;
 import java.io.IOException;
 
+@Slf4j
 @Service
 public class ContainerConfigServiceImpl implements ContainerConfigService {
-    private static final Logger log = LoggerFactory.getLogger(ContainerConfigService.class);
 
     private final ConfigService configService;
     private final ObjectMapper mapper;

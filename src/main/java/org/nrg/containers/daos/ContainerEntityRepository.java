@@ -1,5 +1,6 @@
 package org.nrg.containers.daos;
 
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Hibernate;
 import org.hibernate.criterion.Restrictions;
 import org.nrg.containers.model.container.entity.ContainerEntity;
@@ -15,9 +16,9 @@ import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
 
+@Slf4j
 @Repository
 public class ContainerEntityRepository extends AbstractHibernateDAO<ContainerEntity> {
-    private static final Logger log = LoggerFactory.getLogger(ContainerEntityRepository.class);
 
     @Override
     @SuppressWarnings("deprecation")

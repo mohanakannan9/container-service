@@ -1,5 +1,6 @@
 package org.nrg.containers.services.impl;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.daos.ContainerEntityRepository;
 import org.nrg.containers.events.model.ContainerEvent;
@@ -20,12 +21,12 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 
+@Slf4j
 @Service
 @Transactional
 public class HibernateContainerEntityService
         extends AbstractHibernateEntityService<ContainerEntity, ContainerEntityRepository>
         implements ContainerEntityService {
-    private static final Logger log = LoggerFactory.getLogger(HibernateContainerEntityService.class);
 
     @Override
     @Nonnull

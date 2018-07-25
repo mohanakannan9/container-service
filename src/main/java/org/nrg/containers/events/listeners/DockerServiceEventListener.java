@@ -1,5 +1,6 @@
 package org.nrg.containers.events.listeners;
 
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.containers.events.model.ServiceTaskEvent;
 import org.nrg.containers.services.ContainerService;
 import org.slf4j.Logger;
@@ -12,9 +13,9 @@ import reactor.fn.Consumer;
 
 import static reactor.bus.selector.Selectors.type;
 
+@Slf4j
 @Component
 public class DockerServiceEventListener implements Consumer<Event<ServiceTaskEvent>> {
-    private static final Logger log = LoggerFactory.getLogger(DockerServiceEventListener.class);
     private ContainerService containerService;
 
     @Autowired

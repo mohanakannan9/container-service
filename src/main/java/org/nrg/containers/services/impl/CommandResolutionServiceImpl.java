@@ -13,6 +13,7 @@ import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.TypeRef;
 import com.jayway.jsonpath.spi.mapper.MappingException;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.services.ConfigService;
@@ -100,9 +101,9 @@ import static org.nrg.containers.model.command.entity.CommandWrapperInputType.SE
 import static org.nrg.containers.model.command.entity.CommandWrapperInputType.STRING;
 import static org.nrg.containers.model.command.entity.CommandWrapperInputType.SUBJECT;
 
+@Slf4j
 @Service
 public class CommandResolutionServiceImpl implements CommandResolutionService {
-    private final Logger log = LoggerFactory.getLogger(CommandResolutionServiceImpl.class);
 
     private final CommandService commandService;
     private final ConfigService configService;

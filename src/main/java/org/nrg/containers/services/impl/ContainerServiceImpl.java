@@ -3,6 +3,7 @@ package org.nrg.containers.services.impl;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.events.model.ContainerEvent;
@@ -67,9 +68,9 @@ import static org.nrg.containers.model.command.entity.CommandWrapperInputType.SC
 import static org.nrg.containers.model.command.entity.CommandWrapperInputType.SESSION;
 import static org.nrg.containers.model.command.entity.CommandWrapperInputType.SUBJECT;
 
+@Slf4j
 @Service
 public class ContainerServiceImpl implements ContainerService {
-    private static final Logger log = LoggerFactory.getLogger(ContainerServiceImpl.class);
     private static final Pattern exitCodePattern = Pattern.compile("kill|die|oom\\((\\d+|x)\\)");
 
     private final ContainerControlApi containerControlApi;

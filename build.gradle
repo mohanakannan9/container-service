@@ -160,6 +160,8 @@ dependencies {
 
     compile "org.slf4j:slf4j-api"
     compile "org.slf4j:slf4j-log4j12"
+    compile "org.projectlombok:lombok:1.18.0"
+    apt "org.projectlombok:lombok:1.18.0"
 
     compile "commons-lang:commons-lang"
 

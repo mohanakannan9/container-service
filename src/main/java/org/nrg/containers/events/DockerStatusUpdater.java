@@ -1,6 +1,7 @@
 package org.nrg.containers.events;
 
 import com.google.common.collect.Lists;
+import lombok.extern.slf4j.Slf4j;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoDockerServerException;
@@ -21,9 +22,9 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
+@Slf4j
 @Component
 public class DockerStatusUpdater implements Runnable {
-    private static final Logger log = LoggerFactory.getLogger(DockerStatusUpdater.class);
 
     private ContainerControlApi controlApi;
     private DockerServerService dockerServerService;

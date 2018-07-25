@@ -37,6 +37,7 @@ import com.spotify.docker.client.messages.swarm.Task;
 import com.spotify.docker.client.messages.swarm.TaskSpec;
 import com.spotify.docker.client.messages.swarm.ResourceRequirements;
 import com.spotify.docker.client.messages.swarm.Resources;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.events.model.DockerContainerEvent;
 import org.nrg.containers.events.model.ServiceTaskEvent;
@@ -78,9 +79,9 @@ import static com.spotify.docker.client.DockerClient.EventsParam.type;
 import static com.spotify.docker.client.DockerClient.EventsParam.until;
 import static org.nrg.containers.services.CommandLabelService.LABEL_KEY;
 
+@Slf4j
 @Service
 public class DockerControlApi implements ContainerControlApi {
-    private static final Logger log = LoggerFactory.getLogger(DockerControlApi.class);
 
     private final DockerServerService dockerServerService;
     private final CommandLabelService commandLabelService;
