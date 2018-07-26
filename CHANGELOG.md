@@ -17,6 +17,7 @@ Not yet released.
 ### Bugfixes
 
 * [CS-488][] Allow wrappers to derive `Session` inputs from `Assessor` inputs, in the same way you can derive `Session`s from `Scan`s.
+* [CS-492][] Save `override-entrypoint` property on `Container` entity. (It was being used properly to make the docker container, but not saved in database.)
 
 ### Other
 
@@ -29,6 +30,7 @@ Not yet released.
 [CS-458]: https://issues.xnat.org/browse/CS-458
 [CS-480]: https://issues.xnat.org/browse/CS-480
 [CS-488]: https://issues.xnat.org/browse/CS-488
+[CS-492]: https://issues.xnat.org/browse/CS-492
 
 ## 1.5.1
 
