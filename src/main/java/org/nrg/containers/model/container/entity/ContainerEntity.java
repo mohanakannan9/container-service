@@ -73,6 +73,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
     private Long reserveMemory;
     private Long limitMemory;
     private Double limitCpu;
+    private String project;
 
     public ContainerEntity() {}
 
@@ -94,6 +95,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
         this.setContainerId(containerPojo.containerId());
         this.setWorkflowId(containerPojo.workflowId());
         this.setUserId(containerPojo.userId());
+        this.setProject(containerPojo.project());
         this.setServiceId(containerPojo.serviceId());
         this.setTaskId(containerPojo.taskId());
         this.setNodeId(containerPojo.nodeId());
@@ -525,6 +527,14 @@ public class ContainerEntity extends AbstractHibernateEntity {
         this.logPaths = logPaths;
     }
 
+    public String getProject() {
+        return project;
+    }
+
+    public void setProject(final String project) {
+        this.project = project;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
@@ -549,6 +559,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
                 .add("nodeId", nodeId)
                 .add("userId", userId)
                 .add("subtype", subtype)
+                .add("project", project)
                 .add("parentContainerEntityId", parentContainerEntity == null ? null : parentContainerEntity.getId())
                 .add("parentContainerEntityContainerId", parentContainerEntity == null ? null : parentContainerEntity.getContainerId())
                 .add("parentSourceObjectName", parentSourceObjectName)
