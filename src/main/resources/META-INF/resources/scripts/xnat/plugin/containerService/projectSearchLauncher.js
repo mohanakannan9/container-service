@@ -1,6 +1,8 @@
 console.log('containerServices-projectSearchLauncher.js');
 
 var XNAT = getObject(XNAT || {});
+XNAT.plugin = getObject(XNAT.plugin || {});
+XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
 
 (function(factory){
     if (typeof define === 'function' && define.amd) {
@@ -166,8 +168,8 @@ var XNAT = getObject(XNAT || {});
                 var targetList = [];
                 if (data.ResultSet.Result.length){
                     data.ResultSet.Result.forEach(function(target){
-                        // determine the label field -- it differs for each project and data type.
-                        var labelField = Object.keys(target).find(findLabel);
+                        // determine the label field -- it differs for each project and data type. Return the first matching value.
+                        var labelField = Object.keys(target).filter(findLabel)[0];
                         targetList.push({ 'accession-id': target.key, 'label': target[labelField] });
                     });
                 }
