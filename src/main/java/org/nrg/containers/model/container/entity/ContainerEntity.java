@@ -530,12 +530,13 @@ public class ContainerEntity extends AbstractHibernateEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final ContainerEntity that = (ContainerEntity) o;
-        return Objects.equals(this.containerId, that.containerId);
+        return Objects.equals(this.containerId, that.containerId) &&
+                Objects.equals(this.serviceId, that.serviceId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(containerId);
+        return Objects.hash(containerId, serviceId);
     }
 
     @Override
