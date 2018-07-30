@@ -41,6 +41,7 @@ public abstract class Container {
     @Nullable @JsonProperty("container-id") public abstract String containerId();
     @Nullable @JsonProperty("workflow-id") public abstract String workflowId();
     @JsonProperty("user-id") public abstract String userId();
+    @JsonProperty("project") @Nullable public abstract String project();
     @Nullable @JsonProperty("swarm") public abstract Boolean swarm();
     @Nullable @JsonProperty("service-id") public abstract String serviceId();
     @Nullable @JsonProperty("task-id") public abstract String taskId();
@@ -97,6 +98,7 @@ public abstract class Container {
                                    @JsonProperty("container-id") final String containerId,
                                    @JsonProperty("workflow-id") final String workflowId,
                                    @JsonProperty("user-id") final String userId,
+                                   @JsonProperty("project") final String project,
                                    @JsonProperty("swarm") final Boolean swarm,
                                    @JsonProperty("service-id") final String serviceId,
                                    @JsonProperty("task-id") final String taskId,
@@ -127,6 +129,7 @@ public abstract class Container {
                 .containerId(containerId)
                 .workflowId(workflowId)
                 .userId(userId)
+                .project(project)
                 .swarm(swarm)
                 .serviceId(serviceId)
                 .taskId(taskId)
@@ -163,6 +166,7 @@ public abstract class Container {
                 .containerId(containerEntity.getContainerId())
                 .workflowId(containerEntity.getWorkflowId())
                 .userId(containerEntity.getUserId())
+                .project(containerEntity.getProject())
                 .swarm(containerEntity.getSwarm())
                 .serviceId(containerEntity.getServiceId())
                 .taskId(containerEntity.getTaskId())
@@ -244,6 +248,7 @@ public abstract class Container {
                 .databaseId(0L)
                 .commandId(resolvedCommand.commandId())
                 .wrapperId(resolvedCommand.wrapperId())
+                .project(resolvedCommand.project())
                 .dockerImage(resolvedCommand.image())
                 .commandLine(resolvedCommand.commandLine())
                 .overrideEntrypoint(resolvedCommand.overrideEntrypoint())
@@ -340,6 +345,7 @@ public abstract class Container {
         public abstract Builder containerId(String containerId);
         public abstract Builder workflowId(String workflowId);
         public abstract Builder userId(String userId);
+        public abstract Builder project(String project);
         public abstract Builder dockerImage(String dockerImage);
         public abstract Builder commandLine(String commandLine);
         public abstract Builder overrideEntrypoint(Boolean overrideEntrypoint);

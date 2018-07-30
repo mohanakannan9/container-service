@@ -147,7 +147,10 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                                                final Map<String, String> inputValues,
                                                final UserI userI)
             throws NotFoundException, CommandResolutionException, UnauthorizedException {
-        return preResolve(commandService.getAndConfigure(project, wrapperId), inputValues, userI);
+        return preResolve(commandService.getAndConfigure(project, wrapperId), inputValues, userI)
+                .toBuilder()
+                .project(project)
+                .build();
     }
 
     @Override
@@ -157,7 +160,10 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                                                final Map<String, String> inputValues,
                                                final UserI userI)
             throws NotFoundException, CommandResolutionException, UnauthorizedException {
-        return preResolve(commandService.getAndConfigure(project, commandId, wrapperName), inputValues, userI);
+        return preResolve(commandService.getAndConfigure(project, commandId, wrapperName), inputValues, userI)
+                .toBuilder()
+                .project(project)
+                .build();
     }
 
     @Override
@@ -192,7 +198,10 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                                    final Map<String, String> inputValues,
                                    final UserI userI)
             throws NotFoundException, CommandResolutionException, UnauthorizedException {
-        return resolve(commandService.getAndConfigure(project, wrapperId), inputValues, userI);
+        return resolve(commandService.getAndConfigure(project, wrapperId), inputValues, userI)
+                .toBuilder()
+                .project(project)
+                .build();
     }
 
     @Override
@@ -202,7 +211,10 @@ public class CommandResolutionServiceImpl implements CommandResolutionService {
                                    final Map<String, String> inputValues,
                                    final UserI userI)
             throws NotFoundException, CommandResolutionException, UnauthorizedException {
-        return resolve(commandService.getAndConfigure(project, commandId, wrapperName), inputValues, userI);
+        return resolve(commandService.getAndConfigure(project, commandId, wrapperName), inputValues, userI)
+                .toBuilder()
+                .project(project)
+                .build();
     }
 
     // @Override

@@ -26,6 +26,7 @@ public abstract class ResolvedCommand {
     @JsonProperty("command-description") @Nullable public abstract String commandDescription();
     @JsonProperty("image") public abstract String image();
     @JsonProperty("type") public abstract String type();
+    @JsonProperty("project") @Nullable public abstract String project();
     @JsonProperty("raw-input-values") public abstract ImmutableMap<String, String> rawInputValues();
     @JsonIgnore public abstract ImmutableList<ResolvedInputTreeNode<? extends Command.Input>> resolvedInputTrees();
     @JsonProperty("command-line") public abstract String commandLine();
@@ -191,6 +192,7 @@ public abstract class ResolvedCommand {
         public abstract Builder commandDescription(String commandDescription);
         public abstract Builder image(String image);
         public abstract Builder type(String type);
+        public abstract Builder project(String project);
         public abstract Builder rawInputValues(Map<String, String> rawInputValues);
         public abstract ImmutableMap.Builder<String, String> rawInputValuesBuilder();
         public Builder addRawInputValue(final String inputName, final String inputValue) {
@@ -276,6 +278,7 @@ public abstract class ResolvedCommand {
         @Nullable public abstract String commandDescription();
         public abstract String image();
         public abstract String type();
+        @Nullable public abstract String project();
         public abstract Boolean overrideEntrypoint();
         public abstract ImmutableMap<String, String> rawInputValues();
         public abstract ImmutableList<ResolvedInputTreeNode<? extends Command.Input>> resolvedInputTrees();
@@ -285,6 +288,8 @@ public abstract class ResolvedCommand {
                     .type(CommandEntity.DEFAULT_TYPE.getName())
                     .overrideEntrypoint(Boolean.FALSE);
         }
+
+        public abstract Builder toBuilder();
 
         @AutoValue.Builder
         public static abstract class Builder {
@@ -296,6 +301,7 @@ public abstract class ResolvedCommand {
             public abstract Builder commandDescription(String commandDescription);
             public abstract Builder image(String image);
             public abstract Builder type(String type);
+            public abstract Builder project(String project);
             public abstract Builder overrideEntrypoint(Boolean overrideEntrypoint);
             public abstract Builder rawInputValues(Map<String, String> rawInputValues);
             public abstract ImmutableMap.Builder<String, String> rawInputValuesBuilder();
