@@ -12,8 +12,6 @@ import org.nrg.containers.utils.ContainerUtils;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.xft.security.UserI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -68,6 +66,16 @@ public class HibernateContainerEntityService
     public void delete(final String containerId) throws NotFoundException {
         final ContainerEntity toDelete = get(containerId);
         delete(toDelete.getId());
+    }
+
+    @Override
+    public List<ContainerEntity> getAll(final Boolean nonfinalized, final String project) {
+        return (nonfinalized == null || !nonfinalized) ? getDao().getAll(project) : getDao().getAllNonfinalized(project);
+    }
+
+    @Override
+    public List<ContainerEntity> getAll(final Boolean nonfinalized) {
+        return (nonfinalized == null || !nonfinalized) ? getAll() : getDao().getAllNonfinalized();
     }
 
     @Override
