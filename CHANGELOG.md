@@ -13,6 +13,8 @@ Not yet released.
 * [CS-29][] Enable output handlers to have type "`Assessor`". If a command output points to an assessor XML, the output handler can now upload that XML and create the assessor object in XNAT.
 * Manually refresh resource catalog when uploading resources. (We used to rely on the Catalog Service to do this, but it doesn't anymore.)
 * [CS-407][] Add docker host setting to translate mount paths. If xnat sees a path at /data/xnat/x/y/z but your docker host sees the same path at /my/path/x/y/z, you can include these path prefixes in your docker server settings. If you're using REST, set the properties "path-translation-xnat-prefix" and "path-translation-docker-prefix" respectively. If you're using the Plugin Settings UI, the fields will be there.
+* [CS-502][] When a container is launched with the project-specific launch APIs (`/xapi/projects/{project}/.../launch`), that project is now saved as a property on the container.
+* [CS-503][] Add APIs to get containers by project.
 
 ### Bugfixes
 
@@ -31,6 +33,8 @@ Not yet released.
 [CS-480]: https://issues.xnat.org/browse/CS-480
 [CS-488]: https://issues.xnat.org/browse/CS-488
 [CS-492]: https://issues.xnat.org/browse/CS-492
+[CS-502]: https://issues.xnat.org/browse/CS-502
+[CS-503]: https://issues.xnat.org/browse/CS-503
 
 ## 1.5.1
 
