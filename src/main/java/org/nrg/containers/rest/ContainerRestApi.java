@@ -70,7 +70,7 @@ public class ContainerRestApi extends AbstractXapiRestController {
     @XapiRequestMapping(value = "/containers", method = GET, restrictTo = Admin)
     @ApiOperation(value = "Get all Containers")
     @ResponseBody
-    public List<Container> getAll(final @RequestParam Boolean nonfinalized) {
+    public List<Container> getAll(final @RequestParam(required = false) Boolean nonfinalized) {
         return Lists.transform(containerService.getAll(nonfinalized), new Function<Container, Container>() {
             @Override
             public Container apply(final Container input) {
@@ -83,7 +83,7 @@ public class ContainerRestApi extends AbstractXapiRestController {
     @ApiOperation(value = "Get all Containers by project")
     @ResponseBody
     public List<Container> getAll(final @PathVariable String project,
-                                  final @RequestParam Boolean nonfinalized) {
+                                  final @RequestParam(required = false) Boolean nonfinalized) {
         return Lists.transform(containerService.getAll(nonfinalized, project), new Function<Container, Container>() {
             @Override
             public Container apply(final Container input) {
