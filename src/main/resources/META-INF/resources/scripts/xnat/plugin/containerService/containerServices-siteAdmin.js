@@ -474,11 +474,21 @@ var XNAT = getObject(XNAT || {});
             beforeShow: function(obj){
                 var $formContainer = obj.$modal.find('.xnat-dialog-content');
                 $formContainer.addClass('panel').find('form').append(tmpl.html());
-                $formContainer.find('.pad20').append(XNAT.ui.panel.input.switchbox({
-                    name: 'default',
-                    label: 'Set Default Hub?',
-                    value: 'false'
-                }));
+                $formContainer.find('.panel-body').append(
+                    XNAT.ui.panel.input.switchbox({
+                        name: 'default',
+                        label: 'Set Default Hub?',
+                        value: 'false'
+                    })
+                );
+                if (!isNew) {
+                    $formContainer.find('.panel-body').append(
+                        XNAT.ui.panel.input.hidden({
+                            name: 'id',
+                            id: 'hub-id'
+                        })
+                    );
+                }
                 if (item && isDefined(item.url)) {
                     $formContainer.find('form').setValues(item);
                 }
