@@ -140,6 +140,11 @@ public class ContainerServiceImpl implements ContainerService {
     }
 
     @Override
+    public List<Container> getAll(final String project) {
+        return getAll(null, project);
+    }
+
+    @Override
     public List<Container> getAll(final Boolean nonfinalized) {
         return toPojo(containerEntityService.getAll(nonfinalized));
     }
