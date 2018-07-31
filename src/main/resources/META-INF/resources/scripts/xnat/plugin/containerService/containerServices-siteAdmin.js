@@ -158,8 +158,7 @@ var XNAT = getObject(XNAT || {});
 
     // dialog to create/edit hosts
     containerHostManager.dialog = function(item, isNew){
-        var tmpl = $('#container-host-editor-template').find('form').clone(),
-            doWhat = (isNew) ? 'Create' : 'Edit';
+        var doWhat = (isNew) ? 'Create' : 'Edit';
         item = item || {};
         XNAT.dialog.open({
             title: doWhat + ' Container Server Host',
@@ -201,6 +200,14 @@ var XNAT = getObject(XNAT || {});
                             label: 'Docker Server Path Prefix',
                             addClass: 'path-prefix',
                             description: 'Enter the Docker Server path to the XNAT_HOME mount, i.e. "/docker/my-data/XNAT"'
+                        }),
+                        spawn('p.divider', '<strong>Re-Pull Images on Init (Optional)</strong><br> Use this setting to force the Docker server to re-pull your images whenever the Apache Tomcat server is restarted. Images are only pulled if they are missing.'),
+                        XNAT.ui.panel.input.switchbox({
+                            name: 'pull-images-on-xnat-init',
+                            label: 'Re-pull Images?',
+                            onText: 'ON',
+                            offText: 'OFF',
+                            value: 'false'
                         })
                     ])
                 );
