@@ -77,10 +77,6 @@ imageHostsPanel:
                         style:
                             padding: 20px 0
                     contents:
-                        id:
-                            kind: panel.input.hidden
-                            id: hub-id
-                            name: id
                         name:
                             kind: panel.input.text
                             id: hub-name
