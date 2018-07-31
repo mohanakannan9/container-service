@@ -109,6 +109,44 @@ public class ContainerEntityRepository extends AbstractHibernateDAO<ContainerEnt
         return initializeAndReturnList(setupContainersResult);
     }
 
+    @Nonnull
+    public List<ContainerEntity> getAll(final String project) {
+        return initializeAndReturnList(findByProperty("project", project));
+    }
+
+    @Nonnull
+    public List<ContainerEntity> getAllNonfinalized() {
+        final List list = getSession()
+                .createCriteria(ContainerEntity.class)
+                .add(Restrictions.conjunction()
+                        .add(Restrictions.not(Restrictions.disjunction()
+                                .add(Restrictions.like("status", "Complete"))
+                                .add(Restrictions.like("status", "Done"))
+                                .add(Restrictions.like("status", "Failed"))
+                                .add(Restrictions.like("status", "Killed"))
+                        ))
+                )
+                .list();
+        return initializeAndReturnList(list);
+    }
+
+    @Nonnull
+    public List<ContainerEntity> getAllNonfinalized(final String project) {
+        final List list = getSession()
+                .createCriteria(ContainerEntity.class)
+                .add(Restrictions.conjunction()
+                        .add(Restrictions.eq("project", project))
+                        .add(Restrictions.not(Restrictions.disjunction()
+                                .add(Restrictions.like("status", "Complete"))
+                                .add(Restrictions.like("status", "Done"))
+                                .add(Restrictions.like("status", "Failed"))
+                                .add(Restrictions.like("status", "Killed"))
+                        ))
+                )
+                .list();
+        return initializeAndReturnList(list);
+    }
+
     @SuppressWarnings("unchecked")
     @Nonnull
     private List<ContainerEntity> initializeAndReturnList(final List result) {

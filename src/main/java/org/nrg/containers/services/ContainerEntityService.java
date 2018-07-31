@@ -18,6 +18,9 @@ public interface ContainerEntityService extends BaseHibernateService<ContainerEn
     ContainerEntity get(final String containerId) throws NotFoundException;
     void delete(final String containerId) throws NotFoundException;
 
+    List<ContainerEntity> getAll(Boolean nonfinalized, String project);
+    List<ContainerEntity> getAll(Boolean nonfinalized);
+
     List<ContainerEntity> retrieveServices();
     List<ContainerEntity> retrieveNonfinalizedServices();
 
