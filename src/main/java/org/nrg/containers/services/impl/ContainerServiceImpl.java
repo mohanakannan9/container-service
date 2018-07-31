@@ -41,8 +41,6 @@ import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.utils.WorkflowUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -134,6 +132,21 @@ public class ContainerServiceImpl implements ContainerService {
     @Override
     public void delete(final String containerId) throws NotFoundException {
         containerEntityService.delete(containerId);
+    }
+
+    @Override
+    public List<Container> getAll(final Boolean nonfinalized, final String project) {
+        return toPojo(containerEntityService.getAll(nonfinalized, project));
+    }
+
+    @Override
+    public List<Container> getAll(final String project) {
+        return getAll(null, project);
+    }
+
+    @Override
+    public List<Container> getAll(final Boolean nonfinalized) {
+        return toPojo(containerEntityService.getAll(nonfinalized));
     }
 
     @Override
