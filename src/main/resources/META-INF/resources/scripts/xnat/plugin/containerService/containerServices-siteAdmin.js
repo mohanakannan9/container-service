@@ -126,6 +126,7 @@ var XNAT = getObject(XNAT || {});
     var containerHostManager,
         undefined,
         rootUrl = XNAT.url.rootUrl,
+        restUrl = XNAT.url.restUrl,
         csrfUrl = XNAT.url.csrfUrl;
 
     XNAT.plugin =
@@ -139,7 +140,7 @@ var XNAT = getObject(XNAT || {});
 
     function containerHostUrl(appended){
         appended = isDefined(appended) ? '/' + appended : '';
-        return rootUrl('/xapi/docker/server' + appended);
+        return restUrl('/xapi/docker/server' + appended);
     }
 
     // get the list of hosts
@@ -441,9 +442,9 @@ var XNAT = getObject(XNAT || {});
     function imageHostUrl(isDefault,appended){
         appended = isDefined(appended) ? '/' + appended : '';
         if (isDefault) {
-            return rootUrl('/xapi/docker/hubs' + appended + '?default='+isDefault)
+            return restUrl('/xapi/docker/hubs' + appended + '?default='+isDefault)
         } else {
-            return rootUrl('/xapi/docker/hubs' + appended);
+            return restUrl('/xapi/docker/hubs' + appended);
         }
     }
 
@@ -774,7 +775,7 @@ var XNAT = getObject(XNAT || {});
     function imageUrl(appended,force){
         appended = (appended) ? '/' + appended : '';
         force = (force) ? '?force=true' : '';
-        return rootUrl('/xapi/docker/images' + appended + force);
+        return restUrl('/xapi/docker/images' + appended + force);
     }
 
     function commandUrl(appended){
@@ -1814,11 +1815,11 @@ var XNAT = getObject(XNAT || {});
     XNAT.plugin.containerService.projectList = projectList = [];
 
     function getProjectListUrl(){
-        return rootUrl('/data/projects?format=json');
+        return restUrl('/data/projects?format=json');
     }
     function getCommandAutomationUrl(appended){
         appended = (appended) ? '?'+appended : '';
-        return rootUrl('/xapi/commandeventmapping' + appended);
+        return restUrl('/xapi/commandeventmapping' + appended);
     }
     function commandAutomationIdUrl(id){
         return csrfUrl('/xapi/commandeventmapping/' + id );
@@ -2229,7 +2230,7 @@ var XNAT = getObject(XNAT || {});
 
     function getCommandHistoryUrl(appended){
         appended = (appended) ? '?'+appended : '';
-        return rootUrl('/xapi/containers' + appended);
+        return restUrl('/xapi/containers' + appended);
     }
 
     function viewHistoryDialog(e, onclose){
@@ -2455,7 +2456,7 @@ var XNAT = getObject(XNAT || {});
                     apply: function(){
                         var projectId = (this.project) ? this.project : getProjectIdFromMounts(this);
                         if (projectId) {
-                            return spawn('a',{ href: '/data/projects/'+ projectId + '?format=html', html: projectId });
+                            return spawn('a',{ href: rootUrl('/data/projects/'+ projectId + '?format=html'), html: projectId });
                         } else {
                             return 'Unknown';
                         }
