@@ -1209,7 +1209,7 @@ var XNAT = getObject(XNAT || {});
 
         function deleteImage(image,force) {
             var content;
-            force = !!(force);
+            force = force || false;
             if (!force) {
                 content = spawn('div',[
                     spawn('p','Are you sure you\'d like to delete the '+image.tags[0]+' image?'),
