@@ -55,6 +55,10 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
             ]
         });
     }
+    function queueCount($list){
+        var numChecked = $list.find('input[type=checkbox]:checked').not('.selectable-select-all').length;
+        $(document).find('#queue-targets').html(numChecked);
+    }
 
     projectSearchLauncher.confirmTargets = function(targetList, config){
         // config contains information necessary to build the container launcher
@@ -70,12 +74,25 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
                 content: spawn('div.targetList.panel'),
                 beforeShow: function(obj){
                     var inputArea = obj.$modal.find('.targetList');
-                    inputArea
-                        .off('change','input[type=checkbox]')
-                        .on('change','input[type=checkbox]', function(){
-                            var numChecked = inputArea.find('input[type=checkbox]:checked').not('.selectable-select-all').length;
-                            $(document).find('#queue-targets').html(numChecked);
-                        });
+                    if (!document.documentMode){
+                        inputArea
+                            .off('change','input[type=checkbox]')
+                            .on('change','input[type=checkbox]', function(){
+                                queueCount(inputArea);
+                            });
+                    } else {
+                        inputArea
+                            .off('mouseup','.selectable-select-one')
+                            .on('mouseup','.selectable-select-one', function(){
+                                // HACK: wait for selectable table behavior to process, then check checkbox status
+                                window.setTimeout(queueCount,50,inputArea);
+                            })
+                            .on('mouseup','.selectable-select-all', function(){
+                                // HACK: wait for selectable table behavior to process, then check checkbox status
+                                window.setTimeout(queueCount,50,inputArea);
+                            })
+                    }
+                    
                     inputArea.append(spawn('!',[
                         spawn('h3', '<b id="queue-targets">' + targetList.length + '</b> '+config['root-element-name']+s+' queued for this container launch.'),
                         spawn('p','Select some or all to launch on, or add filters to your search table.')
