@@ -842,7 +842,7 @@ var XNAT = getObject(XNAT || {});
             padding: 0,
             beforeShow: function(obj){
                 var $formContainer = obj.$modal.find('.xnat-dialog-content');
-                $formContainer.addClass('panel').find('form').append(tmpl.html());
+                $formContainer.addClass('panel pad20').find('form').append(tmpl.html());
 
                 if (item && isDefined(item.image)) {
                     $formContainer.setValues(item);
