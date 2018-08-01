@@ -31,6 +31,7 @@ var XNAT = getObject(XNAT || {});
         projConfigDefinition,
         undefined,
         rootUrl = XNAT.url.rootUrl,
+        restUrl = XNAT.url.restUrl,
         csrfUrl = XNAT.url.csrfUrl,
         commandList,
         wrapperList;
@@ -96,7 +97,7 @@ var XNAT = getObject(XNAT || {});
 
     function commandUrl(appended){
         appended = isDefined(appended) ? appended : '';
-        return rootUrl('/xapi/commands' + appended);
+        return restUrl('/xapi/commands' + appended);
     }
 
     function configUrl(commandId,wrapperName,appended){
@@ -615,7 +616,7 @@ var XNAT = getObject(XNAT || {});
 
     function getCommandAutomationUrl(appended){
         appended = (appended) ? '?'+appended : '';
-        return rootUrl('/xapi/commandeventmapping' + appended);
+        return restUrl('/xapi/commandeventmapping' + appended);
     }
     function postCommandAutomationUrl(flag){
         flag = (flag) ? '/'+flag : ''; // can be used to set 'enabled' or 'disabled' flag
@@ -966,7 +967,7 @@ var XNAT = getObject(XNAT || {});
         if (commandList.length && Object.keys(XNAT.plugin.containerService.wrapperList).length){
             // initialize automation table
             XNAT.xhr.getJSON({
-                url: rootUrl('/xapi/users/' + PAGE.username + '/roles'),
+                url: restUrl('/xapi/users/' + PAGE.username + '/roles'),
                 success: function (userRoles) {
                     isAdmin = (userRoles.indexOf('Administrator') >= 0);
 
