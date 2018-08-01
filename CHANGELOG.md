@@ -20,6 +20,7 @@ Not yet released.
 
 * [CS-488][] Allow wrappers to derive `Session` inputs from `Assessor` inputs, in the same way you can derive `Session`s from `Scan`s.
 * [CS-492][] Save `override-entrypoint` property on `Container` entity. (It was being used properly to make the docker container, but not saved in database.)
+* [CS-500][] When swarm mode is on, do not use non-null exit status as a way to determine is container is finished. That exit code has a bad default value of `0`. See [moby/moby#37577](https://github.com/moby/moby/issues/37577).
 
 ### Other
 
@@ -33,6 +34,7 @@ Not yet released.
 [CS-480]: https://issues.xnat.org/browse/CS-480
 [CS-488]: https://issues.xnat.org/browse/CS-488
 [CS-492]: https://issues.xnat.org/browse/CS-492
+[CS-500]: https://issues.xnat.org/browse/CS-500
 [CS-502]: https://issues.xnat.org/browse/CS-502
 [CS-503]: https://issues.xnat.org/browse/CS-503
 
