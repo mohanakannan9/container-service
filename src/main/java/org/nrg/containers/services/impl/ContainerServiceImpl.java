@@ -417,7 +417,7 @@ public class ContainerServiceImpl implements ContainerService {
                     // We have already added this task and can safely skip it.
                     log.debug("Skipping task status we have already seen.");
                 } else {
-                    if (task.exitCode() != null || task.isExitStatus()) {
+                    if (task.isExitStatus()) {
                         log.debug("Service has exited. Finalizing.");
                         final String exitCodeString = task.exitCode() == null ? null : String.valueOf(task.exitCode());
                         final Container serviceWithAddedEvent = retrieve(service.databaseId());
