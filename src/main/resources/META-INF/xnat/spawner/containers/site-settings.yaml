@@ -8,46 +8,6 @@ dockerSetupPanel:
     name: dockerSetupPanel
     label: Docker Server Setup
     contents:
-        containerHostTemplate:
-            tag: "div#container-host-editor-template.html-template"
-            contents:
-                containerHostEditor:
-                    kind: panel.form
-                    name: containerHostEditor
-                    id: container-host-editor
-                    header: false
-                    footer: false
-                    action: /xapi/docker/server
-                    contentType: json
-                    contents:
-                        pad:
-                            tag: div.pad20top
-                        name:
-                            kind: panel.input.text
-                            id: name
-                            name: name
-                            label: Host Name
-                            validation: not-empty
-                        host:
-                            kind: panel.input.text
-                            id: host
-                            name: host
-                            label: Host Path
-                            validation: not-empty
-                        certPath:
-                            kind: panel.input.text
-                            id: cert-path
-                            name: certPath
-                            label: "Certificate Path"
-                        swarmMode:
-                            kind: panel.input.switchbox
-                            id: swarm-mode
-                            name: swarmMode
-                            label: "Toggle Swarm Mode"
-                            onText: "ON"
-                            offText: "OFF"
-                            value: "true"
-
         containerHostTable:
             tag: "div#container-host-manager"
         csStylesheet:
