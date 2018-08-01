@@ -1262,9 +1262,9 @@ var XNAT = getObject(XNAT || {});
 
     launcher.addMenuItem = function(command,commandSet){
         commandSet = commandSet || [];
-        var label = (command['wrapper-description'].length) ?
-            command['wrapper-description'] :
-            command['wrapper-name'];
+        var label = command['wrapper-name'];
+        if (command['wrapper-description'].length) label = command['wrapper-description'];
+        if (command['wrapper-label'].length) label = command['wrapper-label'];
 
         if (command.enabled){
             commandSet.push(
@@ -1300,9 +1300,10 @@ var XNAT = getObject(XNAT || {});
     launcher.addYUIMenuItem = function(command){
         if (command.enabled) {
             var launcher = command.launcher || "default";
-            var label = (command['wrapper-description'].length) ?
-                command['wrapper-description'] :
-                command['wrapper-name'];
+            var label = command['wrapper-name'];
+            if (command['wrapper-description'].length) label = command['wrapper-description'];
+            if (command['wrapper-label'].length) label = command['wrapper-label'];
+
             containerMenuItems[0].submenu.itemdata.push({
                 text: label,
                 url: 'javascript:openCommandLauncher({ wrapperid:"'+command['wrapper-id']+'", launcher: "'+launcher+'", rootElement: "'+ command['root-element-name'] + '" })',
