@@ -70,8 +70,14 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
                 content: spawn('div.targetList.panel'),
                 beforeShow: function(obj){
                     var inputArea = obj.$modal.find('.targetList');
+                    inputArea
+                        .off('change','input[type=checkbox]')
+                        .on('change','input[type=checkbox]', function(){
+                            var numChecked = inputArea.find('input[type=checkbox]:checked').not('.selectable-select-all').length;
+                            $(document).find('#queue-targets').html(numChecked);
+                        });
                     inputArea.append(spawn('!',[
-                        spawn('h3', targetList.length + ' '+config['root-element-name']+s+' queued for this container launch.'),
+                        spawn('h3', '<b id="queue-targets">' + targetList.length + '</b> '+config['root-element-name']+s+' queued for this container launch.'),
                         spawn('p','Select some or all to launch on, or add filters to your search table.')
                         ]));
 
@@ -87,14 +93,22 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
                     {
                         label: 'OK',
                         isDefault: true,
+                        close: false,
                         action: function(obj){
                             var targets = [];
                             obj.$modal.find('input.target').each(function(){
                                 if ($(this).prop('checked')) targets.push($(this).val());
                             });
-                            var rootElementName = obj.$modal.find('input[name=root-element-name]').val();
-                            var wrapperId = obj.$modal.find('input[name=wrapper-id]').val();
-                            XNAT.plugin.containerService.launcher.bulkLaunchDialog(wrapperId,rootElementName,targets);
+
+                            if (!targets.length) {
+                                XNAT.ui.dialog.message('Error: No '+ config['root-element-name']+'s are selected.');
+                                return false;
+                            } else {
+                                var rootElementName = obj.$modal.find('input[name=root-element-name]').val();
+                                var wrapperId = obj.$modal.find('input[name=wrapper-id]').val();
+                                XNAT.ui.dialog.closeAll();
+                                XNAT.plugin.containerService.launcher.bulkLaunchDialog(wrapperId,rootElementName,targets);
+                            }
                         }
                     },
                     {
