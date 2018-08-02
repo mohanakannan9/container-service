@@ -14,6 +14,8 @@
 console.log('containerServices-projectSettings.js');
 
 var XNAT = getObject(XNAT || {});
+XNAT.plugin = getObject(XNAT.plugin || {});
+XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
 
 (function(factory){
     if (typeof define === 'function' && define.amd) {
@@ -35,12 +37,6 @@ var XNAT = getObject(XNAT || {});
         csrfUrl = XNAT.url.csrfUrl,
         commandList,
         wrapperList;
-    
-    XNAT.plugin =
-        getObject(XNAT.plugin || {});
-
-    XNAT.plugin.containerService = 
-        getObject(XNAT.plugin.containerService || {});
 
     XNAT.plugin.containerService.projCommandConfigManager = projCommandConfigManager =
         getObject(XNAT.plugin.containerService.projCommandConfigManager || {});
