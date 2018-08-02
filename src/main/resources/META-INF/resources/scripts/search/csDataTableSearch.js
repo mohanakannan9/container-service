@@ -871,8 +871,8 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
                             data.forEach(function(availableCommand){
                                 if (availableCommand.enabled) {
                                     var label = availableCommand['wrapper-name'];
-                                    if (availableCommand['wrapper-description'].length) label=availableCommand['wrapper-description'];
-                                    if (availableCommand['wrapper-label'].length) label=availableCommand['wrapper-label'];
+                                    if (availableCommand['wrapper-description']) if (availableCommand['wrapper-description'].length) label=availableCommand['wrapper-description'];
+                                    if (availableCommand['wrapper-label']) if (availableCommand['wrapper-label'].length) label=availableCommand['wrapper-label'];
 
                                     submenuitems.push({
                                         text: label,
