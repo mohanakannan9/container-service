@@ -13,9 +13,12 @@ dockerSetupPanel:
         csStylesheet:
         #   tag: link|rel="stylesheet"|type="text/css"|href="/scripts/xnat/plugin/containerService/containerConfig.css"
             tag: link|rel="stylesheet"|type="text/css"|href="~/scripts/xnat/plugin/containerService/containerConfig.css"
+        csHistoryScript:
+#           tag: script|src="/scripts/xnat/plugin/containerService/containerService-history.js"
+            tag: script|src="~/scripts/xnat/plugin/containerService/containerService-history.js"
         csSiteAdminScripts:
-#           tag: script|src="/scripts/xnat/plugin/containerService/containerServices-siteAdmin.js"
-            tag: script|src="~/scripts/xnat/plugin/containerService/containerServices-siteAdmin.js"
+#           tag: script|src="/scripts/xnat/plugin/containerService/containerService-siteAdmin.js"
+            tag: script|src="~/scripts/xnat/plugin/containerService/containerService-siteAdmin.js"
 
 imageHostsPanel:
     kind: panel
