@@ -88,6 +88,14 @@ var XNAT = getObject(XNAT || {});
             return csrfUrl('/xapi/wrappers/'+wrapperId+'/bulklaunch');
         }
     }
+    function bulkProjectLaunchUrl(project,wrapperId,rootElements){
+        // array of root elements can be provided
+        if (rootElements) {
+            return csrfUrl('/xapi/projects/'+project+'/wrappers/'+wrapperId+'/bulklaunch?'+rootElements)
+        } else {
+            return csrfUrl('/xapi/projects/'+project+'/wrappers/'+wrapperId+'/bulklaunch');
+        }
+    }
     function sessionUrl(){
         var sessionId = (XNAT.data.context.isImageSession) ? XNAT.data.context.ID : null;
         if (!sessionId) return false;
@@ -627,7 +635,7 @@ var XNAT = getObject(XNAT || {});
         }
     }
 
-    function launchManyContainers(inputArray,rootElement,wrapperId,targets){
+    function launchManyContainers(inputArray,rootElement,wrapperId,targets,project){
         /* In a bulk launcher, a list of input objects will be passed to the launcher.
          * The launcher should consider the target elements to be static
          * (i.e. once selected and sent to the bulk launcher, the user shouldn't be re-selecting them)
@@ -636,6 +644,8 @@ var XNAT = getObject(XNAT || {});
          * If there are child elements of non-root inputs, they will be treated as standard inputs so they can be bulk-settable
          * After the user makes their selections, a bulk object is assembled from the inputs and sent to the bulk launcher
          */
+
+        project = project || false;
 
         var inputList = Object.keys(inputArray[0]);
 
@@ -876,11 +886,14 @@ var XNAT = getObject(XNAT || {});
                                 });
 
                                 var dataToPost = bulkData;
+                                var launchUrl = (project) ?
+                                    bulkProjectLaunchUrl(project,wrapperId) :
+                                    bulkLaunchUrl(wrapperId);
 
                                 xmodal.loading.open({ title: 'Launching Container(s)...' });
 
                                 XNAT.xhr.postJSON({
-                                    url: bulkLaunchUrl(wrapperId),
+                                    url: launchUrl,
                                     data: JSON.stringify(dataToPost),
                                     success: function(data){
                                         xmodal.loading.close();
@@ -1199,14 +1212,17 @@ var XNAT = getObject(XNAT || {});
         });
     };
 
-    launcher.bulkLaunchDialog = function(wrapperId,rootElement,targets){
+    launcher.bulkLaunchDialog = function(wrapperId,rootElement,targets,project){
         // 'targets' should be formatted as a one-dimensional array of XNAT data values (i.e. scan IDs) that a container will run on in series.
         // the 'root element' should match one of the inputs in the command config object, and overwrite it with the values provided in the 'targets' array
 
+        project = project || false;
+        if (projectId.length && !project) project = projectId;
+
         if (!targets || targets.length === 0) return false;
         var targetObj = rootElement + '=' + targets.toString();
-        var launchUrl = (projectId) ?
-            rootUrl('/xapi/projects/'+projectId+'/wrappers/'+wrapperId+'/bulklaunch?'+targetObj) :
+        var launchUrl = (project) ?
+            rootUrl('/xapi/projects/'+project+'/wrappers/'+wrapperId+'/bulklaunch?'+targetObj) :
             rootUrl('/xapi/wrappers/'+wrapperId+'/bulklaunch?'+targetObj);
 
         xmodal.loading.open({ title: 'Configuring Container Launcher' });
@@ -1222,7 +1238,7 @@ var XNAT = getObject(XNAT || {});
             success: function(data){
                 xmodal.loading.close();
                 var inputs = data.inputs;
-                launchManyContainers(inputs,rootElement,wrapperId,targets);
+                launchManyContainers(inputs,rootElement,wrapperId,targets,project);
             }
         });
     };
