@@ -542,6 +542,9 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
 
             // once command list is known, initialize automation panel
             commandAutomation.init();
+            
+            // then initialize the history table
+            XNAT.plugin.containerService.historyTable.init(getProjectId());
         });
 
         projCommandConfigManager.$table = $(pccmTable.table);
