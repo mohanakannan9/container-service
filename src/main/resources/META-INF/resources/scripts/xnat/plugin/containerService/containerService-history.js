@@ -8,10 +8,10 @@
  */
 
 /*!
- * Site-wide Admin UI functions for Container Services
+ * History Table Generator for Container Services
  */
 
-console.log('containerServices-siteAdmin.js');
+console.log('containerService-history.js');
 
 var XNAT = getObject(XNAT || {});
 XNAT.plugin = getObject(XNAT.plugin || {});
@@ -76,8 +76,6 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
      * Command History *
      * =============== */
 
-    console.log('commandHistory.js');
-
     var historyTable, containerHistory, wrapperList;
 
     XNAT.plugin.containerService.historyTable = historyTable =
@@ -93,6 +91,10 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
         appended = (appended) ? '?' + appended : '';
         return restUrl('/xapi/containers' + appended);
     }
+    function getProjectHistoryUrl(projectId, appended) {
+        appended = (appended) ? '?' + appended : '';
+        return restUrl('/xapi/projects/'+projectId+'/containers'+appended);
+    }
 
     function viewHistoryDialog(e, onclose) {
         e.preventDefault();
@@ -100,11 +102,13 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
         XNAT.plugin.containerService.historyTable.viewHistory(historyId);
     }
 
-    function sortHistoryData(callback) {
-        callback = isFunction(callback) ? callback : function () {
-        };
+    function sortHistoryData(context) {
 
-        var URL = getCommandHistoryUrl();
+
+        var URL = (context === 'site') ?
+            getCommandHistoryUrl() :
+            getProjectHistoryUrl(context);
+
         return XNAT.xhr.getJSON(URL)
             .success(function (data) {
                 if (data.length) {
@@ -134,7 +138,6 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
 
                     return data;
                 }
-                callback.apply(this, arguments);
             })
     }
 
@@ -483,11 +486,13 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
         }
     };
 
-    historyTable.init = historyTable.refresh = function (container) {
-        var $manager = $$(container || '#command-history-container'),
+    historyTable.init = historyTable.refresh = function (context) {
+        context = context || 'site';
+
+        var $manager = $('#command-history-container'),
             _historyTable;
 
-        sortHistoryData().done(function (data) {
+        sortHistoryData(context).done(function (data) {
             if (data.length) {
                 // sort list of container launches by execution time, descending
                 data = data.sort(function (a, b) {
@@ -502,8 +507,11 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
                         historyTable: spawnHistoryTable(data)
                     });
                     _historyTable.done(function () {
+                        var msg = (context === 'site') ?
+                            data.length + ' Containers Launched On This Site' :
+                            data.length + ' Containers Launched For '+context;
                         $manager.empty().append(
-                            spawn('h3', {style: {'margin-bottom': '1em'}}, data.length + ' Containers Launched On This Site')
+                            spawn('h3', {style: {'margin-bottom': '1em'}}, msg)
                         );
                         this.render($manager, 20);
                     });
