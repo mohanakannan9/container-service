@@ -795,7 +795,7 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
             url: imageUrl(),
             dataType: 'json',
             success: function(data){
-                imageListManager.hosts = data;
+                imageListManager.images = data;
                 callback.apply(this, arguments);
             }
         });
@@ -1273,6 +1273,8 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
 
         imageListManager.getAll().done(function(data){
             if (data.length > 0) {
+                data = data.sort(function(a,b){ return (a['image-id'] > b['image-id']) ? 1 : -1; })
+
                 for (var i=0, j=data.length; i<j; i++) {
                     var imageInfo = data[i];
                     $manager.append(spawn('div.imageContainer',[
