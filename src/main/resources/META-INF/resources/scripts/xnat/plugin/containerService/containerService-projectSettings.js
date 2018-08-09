@@ -14,6 +14,8 @@
 console.log('containerServices-projectSettings.js');
 
 var XNAT = getObject(XNAT || {});
+XNAT.plugin = getObject(XNAT.plugin || {});
+XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
 
 (function(factory){
     if (typeof define === 'function' && define.amd) {
@@ -35,12 +37,6 @@ var XNAT = getObject(XNAT || {});
         csrfUrl = XNAT.url.csrfUrl,
         commandList,
         wrapperList;
-    
-    XNAT.plugin =
-        getObject(XNAT.plugin || {});
-
-    XNAT.plugin.containerService = 
-        getObject(XNAT.plugin.containerService || {});
 
     XNAT.plugin.containerService.projCommandConfigManager = projCommandConfigManager =
         getObject(XNAT.plugin.containerService.projCommandConfigManager || {});
@@ -546,6 +542,9 @@ var XNAT = getObject(XNAT || {});
 
             // once command list is known, initialize automation panel
             commandAutomation.init();
+            
+            // then initialize the history table
+            XNAT.plugin.containerService.historyTable.init(getProjectId());
         });
 
         projCommandConfigManager.$table = $(pccmTable.table);
