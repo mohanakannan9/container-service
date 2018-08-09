@@ -163,11 +163,10 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
         var $dataRows = [];
 
         var styles = {
-            image: (150 - 24) + 'px',
             command: (200 - 24) + 'px',
-            user: (120 - 24) + 'px',
-            date: (100 - 24) + 'px',
-            project: (100 - 24) + 'px'
+            user: (90 - 24) + 'px',
+            DATE: (100 - 24) + 'px',
+            ROOTELEMENT: (120 - 24) + 'px'
         };
         // var altStyles = {};
         // forOwn(styles, function(name, val){
@@ -199,16 +198,16 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
                 tr.id = data.id;
                 addDataAttrs(tr, {filter: '0'});
             },
-            sortable: 'id, image, command, user, DATE, PROJECT',
-            filter: 'image, command, user, DATE, PROJECT',
+            sortable: 'command, user, DATE, ROOTELEMENT',
+            filter: 'command, user, DATE, ROOTELEMENT',
             items: {
                 // by convention, name 'custom' columns with ALL CAPS
                 // 'custom' columns do not correspond directly with
                 // a data item
                 DATE: {
                     label: 'Date',
-                    th: {className: 'container-launch center'},
-                    td: {className: 'container-launch center mono'},
+                    th: {className: 'container-launch'},
+                    td: {className: 'container-launch'},
                     filter: function (table) {
                         var MIN = 60 * 1000;
                         var HOUR = MIN * 60;
@@ -216,7 +215,7 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
                         var X24HRS = HOUR * 24;
                         var X7DAYS = X24HRS * 7;
                         var X30DAYS = X24HRS * 30;
-                        return spawn('div.center', [XNAT.ui.select.menu({
+                        return spawn('!', [XNAT.ui.select.menu({
                             value: 0,
                             options: {
                                 all: {
@@ -287,13 +286,13 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
                         ])
                     }
                 },
-                image: {
-                    label: 'Image',
-                    filter: true, // add filter: true to individual items to add a filter,
-                    apply: function () {
-                        return this['docker-image'];
-                    }
-                },
+                // image: {
+                //     label: 'Image',
+                //     filter: true, // add filter: true to individual items to add a filter,
+                //     apply: function () {
+                //         return this['docker-image'];
+                //     }
+                // },
                 command: {
                     label: 'Command',
                     filter: true,
@@ -306,7 +305,7 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
 
                         return spawn('a.view-history', {
                             href: '#!',
-                            title: 'View command history and logs',
+                            title: 'From image: '+this['docker-image'],
                             data: {'id': this.id},
                             html: label
                         });
@@ -319,21 +318,53 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
                         return this['user-id']
                     }
                 },
-                PROJECT: {
-                    label: 'Project',
+                ROOTELEMENT: {
+                    label: 'Root Element',
+                    th: {style: { width: '180px' }},
                     filter: true,
-                    apply: function () {
-                        var projectId = (this.project) ? this.project : getProjectIdFromMounts(this);
-                        if (projectId) {
-                            return spawn('a', {
-                                href: rootUrl('/data/projects/' + projectId + '?format=html'),
-                                html: projectId
+                    apply: function(){
+                        var rootElements = this.inputs.filter(function(input){ if (input.type === "wrapper-external") return input });
+                        if (rootElements.length) {
+                            var elementsToDisplay = [];
+                            rootElements.forEach(function(element){
+                                var label = (element.value.indexOf('scans') >= 0) ?
+                                    'session: ' + element.value.split('/')[3] + ' <br>scan: ' + element.value.split('/')[element.value.split('/').length-1] :
+                                    element.name + ': ' + element.value.split('/')[element.value.split('/').length-1];
+
+                                var link = (element.value.indexOf('scans') >= 0) ?
+                                    element.value.split('/scans')[0] :
+                                    element.value;
+
+                                elementsToDisplay.push(
+                                    spawn('a.root-element', {
+                                        href: XNAT.url.rootUrl('/data/'+link+'?format=html'),
+                                        html: label
+                                    })
+                                );
                             });
-                        } else {
+
+                            return spawn('!',elementsToDisplay)
+                        }
+                        else {
                             return 'Unknown';
                         }
                     }
                 }
+                // PROJECT: {
+                //     label: 'Project',
+                //     filter: true,
+                //     apply: function () {
+                //         var projectId = (this.project) ? this.project : getProjectIdFromMounts(this);
+                //         if (projectId) {
+                //             return spawn('a', {
+                //                 href: rootUrl('/data/projects/' + projectId + '?format=html'),
+                //                 html: projectId
+                //             });
+                //         } else {
+                //             return 'Unknown';
+                //         }
+                //     }
+                // }
             }
         }
     }
