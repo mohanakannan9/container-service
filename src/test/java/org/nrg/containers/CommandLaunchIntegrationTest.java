@@ -102,7 +102,6 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.notNull;
 import static org.mockito.Mockito.mock;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
@@ -202,7 +201,7 @@ public class CommandLaunchIntegrationTest {
             }
         }
 
-        dockerServerService.setServer(DockerServer.create("name", containerHost));
+        dockerServerService.setServer(DockerServer.create(0L, "Test server", containerHost, certPath, false, null, null, null, false));
 
         // Mock the userI
         mockUser = mock(UserI.class);
