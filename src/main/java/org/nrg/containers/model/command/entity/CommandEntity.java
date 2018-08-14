@@ -10,6 +10,7 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.annotation.Nonnull;
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
@@ -239,6 +240,7 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         this.workingDirectory = workingDirectory;
     }
 
+    @Column(length = 2048)
     public String getCommandLine() {
         return commandLine;
     }

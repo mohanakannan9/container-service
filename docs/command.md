@@ -129,7 +129,7 @@ If you want XNAT to execute your docker image, you will need a Command. The Comm
 - **index** - (Docker images only) The index, or hub, where this image can be found. For instance, if the image is on the public Docker Hub, the index value should be "https://index.docker.io/v1/".
 - **hash** - (Docker images only) A sha hash value for the image.
 - **working-directory** - The working directory in which the command line should be executed.
-- **command-line** - This string is a templatized version of the command-line string that will be executed inside the container. The templatized portions will be resolved at launch time with the values of the command's inputs. See the section on [template strings](#template-strings) below for more detail.
+- **command-line** - This string is a templatized version of the command-line string that will be executed inside the container. The templatized portions will be resolved at launch time with the values of the command's inputs. See the section on [template strings](#template-strings) below for more detail. The length of the string that can be stored in this field is 2048.
 - **reserve-memory** Integer value in MB to ensure containers have at least this much memory available
 - **limit-memory** Integer value in MB to ensure containers don't use more memory than this
 - **limit-cpu** Float value to ensure containers don't use more cycle shares than this. For example, a value of 1.5 would mean the container can't use more cycles than 1.5 CPUs are capable of.

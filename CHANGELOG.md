@@ -15,6 +15,7 @@ Not yet released.
 * [CS-494][] Add docker host setting for whether to check on server startup if all the images referenced by commands are present, and pull them if not.
 * [CS-502][] When a container is launched with the project-specific launch APIs (`/xapi/projects/{project}/.../launch`), that project is now saved as a property on the container.
 * [CS-503][] Add APIs to get containers by project.
+* [CS-513][] Increase length of `command-line` field to 2048 characters.
 
 ### Bugfixes
 
@@ -37,6 +38,7 @@ Not yet released.
 [CS-500]: https://issues.xnat.org/browse/CS-500
 [CS-502]: https://issues.xnat.org/browse/CS-502
 [CS-503]: https://issues.xnat.org/browse/CS-503
+[CS-513]: https://issues.xnat.org/browse/CS-513
 
 ## 1.5.1
 
