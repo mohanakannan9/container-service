@@ -2279,21 +2279,40 @@ var XNAT = getObject(XNAT || {});
             })
     }
 
-    function getProjectIdFromMounts(entry){
-        var mounts = entry.mounts;
-        // assume that the first mount of a container is an input from a project. Parse the URI for that mount and return the project ID.
-        if (mounts.length) {
-            var inputMount = mounts[0]['xnat-host-path'];
-            if (inputMount === undefined) return false;
+//    function getProjectIdFromMounts(entry){
+//        var mounts = entry.mounts;
+//        // assume that the first mount of a container is an input from a project. Parse the URI for that mount and return the project ID.
+//        if (mounts.length) {
+//            var inputMount = mounts[0]['xnat-host-path'];
+//            if (inputMount === undefined) return false;
+//
+//            inputMount = inputMount.replace('/data/xnat/archive/','');
+//            inputMount = inputMount.replace('/data/archive/','');
+//            inputMount = inputMount.replace('/REST/archive/','');
+//            var inputMountEls = inputMount.split('/');
+//            return inputMountEls[0];
+//        } else {
+//            return false;
+//        }
+//    }
 
-            inputMount = inputMount.replace('/data/xnat/archive/','');
-            inputMount = inputMount.replace('/data/archive/','');
-            inputMount = inputMount.replace('/REST/archive/','');
-            var inputMountEls = inputMount.split('/');
-            return inputMountEls[0];
-        } else {
-            return false;
-        }
+      function getProjectIdFromMounts(entry){
+	        var mounts = entry.mounts;
+		    // assume that the first mount of a container is an input from a project. Parse the URI for that mount and return the project ID.
+		    if (mounts.length) {
+		       var inputMount = mounts[0]['xnat-host-path'];
+		       if (inputMount === undefined) return false;
+	           var i = inputMount.indexOf("/data/archive/");
+	           if (i == -1) {
+	   				return false;
+				}else {
+	                 inputMount = inputMount.substr(i+14);
+	   			}
+	            var inputMountEls = inputMount.split('/');
+	               return inputMountEls[0];
+	        } else {
+		        return false;
+	        }
     }
 
     function spawnHistoryTable(sortedHistoryObj){

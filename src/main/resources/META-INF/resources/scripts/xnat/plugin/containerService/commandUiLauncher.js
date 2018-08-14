@@ -8,7 +8,7 @@
  */
 
 /*!
- * Flexible script to be used in the UI to launch 
+ * Flexible script to be used in the UI to launch
  */
 
 console.log('commandUiLauncher.js');
@@ -39,7 +39,7 @@ var XNAT = getObject(XNAT || {});
     XNAT.plugin =
         getObject(XNAT.plugin || {});
 
-    XNAT.plugin.containerService = 
+    XNAT.plugin.containerService =
         getObject(XNAT.plugin.containerService || {});
 
     XNAT.plugin.containerService.launcher = launcher =
@@ -546,9 +546,16 @@ var XNAT = getObject(XNAT || {});
                                     success: function(data){
                                         xmodal.loading.close();
 
-                                        var messageContent = (data.status === 'success') ?
-                                            spawn('p',{ style: { 'word-wrap': 'break-word'}}, 'Container ID: '+data['container-id'] ) :
-                                            spawn('p', data.message);
+                                        var messageContent;
+                                        if (data.status === 'success') {
+												if ( data['type'] === 'service') {
+													messageContent = spawn('p',{ style: { 'word-wrap': 'break-word'}}, 'Service ID: '+data['service-id']);
+												}else {
+													messageContent = spawn('p',{ style: { 'word-wrap': 'break-word'}}, 'Container ID: '+data['container-id']);
+											    }
+										}else {
+											messageContent = spawn('p', data.message);
+										}
 
                                         XNAT.ui.dialog.open({
                                             title: 'Container Launch <span style="text-transform: capitalize">'+data.status+'</span>',
@@ -900,13 +907,17 @@ var XNAT = getObject(XNAT || {});
 
                                         if (data.successes.length > 0) {
                                             messageContent.push( spawn('h3',{'style': {'margin-top': '2em' }},'Successful Container Launches') );
-
-                                            data.successes.forEach(function(success){
-                                                messageContent.push( spawn('p',[
-                                                    spawn('strong','Container ID: '),
-                                                    spawn('span',success['container-id'])
-                                                ]) );
-                                                messageContent.push( spawn('div',prettifyJSON(success.params)) );
+                                        	
+                                          data.successes.forEach(function(success){
+												if (success['type'] === 'service') {
+													messageContent.push( spawn('p',[spawn('strong','Service ID: '),spawn('span',success['service-id']) ]));
+												}else {
+													messageContent.push( spawn('p',[
+														spawn('strong','Container ID: '),
+														spawn('span',success['container-id'])
+													]) );
+												}
+												 messageContent.push( spawn('div',prettifyJSON(success.params)) );
                                             });
                                         }
 
@@ -1344,7 +1355,7 @@ var XNAT = getObject(XNAT || {});
         });
 
         // Special case: If this is a session, run a second context check for scans
-        // only support scan-level actions if the new scan table is found. 
+        // only support scan-level actions if the new scan table is found.
         if (XNAT.data.context.isImageSession && document.getElementById('selectable-table-scans')) {
             var xsiScanType = xsiType.replace('Session','Scan');
 
@@ -1376,7 +1387,7 @@ var XNAT = getObject(XNAT || {});
                             if (scanCommands.length > 0){
                                 var scanActionTarget = $('tr#scan-'+scan['id']).find('.single-scan-actions-menu');
                                 scanActionTarget.append(scanCommands)
-                                $('.run-menu').show(); 
+                                $('.run-menu').show();
                             }
                         });
 
@@ -1394,7 +1405,7 @@ var XNAT = getObject(XNAT || {});
                 }
             });
         }
-        
+
     };
 
     launcher.open = window.openCommandLauncher = function(obj){

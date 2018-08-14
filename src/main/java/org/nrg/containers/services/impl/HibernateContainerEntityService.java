@@ -57,10 +57,19 @@ public class HibernateContainerEntityService
     public ContainerEntity get(final String containerId) throws NotFoundException {
         final ContainerEntity containerEntity = retrieve(containerId);
         if (containerEntity == null) {
-            throw new NotFoundException("No container with ID " + containerId);
+     		//Could be service id - try by service id
+            final ContainerEntity containerEntityByServiceId = getDao().retrieveByServiceId(containerId);
+            if (containerEntityByServiceId == null) {
+	     		throw new NotFoundException("No container with ID " + containerId);
+		    }else {
+	            initialize(containerEntityByServiceId);
+	            return containerEntityByServiceId;
+		    }
         }
         return containerEntity;
     }
+
+
 
     @Override
     public void delete(final String containerId) throws NotFoundException {

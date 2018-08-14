@@ -218,7 +218,7 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
     };
 
     this.completeInit = function(o){
-        this.initResults = JSON.parse(o.responseText);
+        this.initResults = eval("(" + o.responseText + ")");
         this.onTableInit.fire();
         this.render();
         var that = this;
@@ -453,7 +453,7 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
         //xmodal.loading.close();
         this.startTime = (new Date()).getTime();
         var dt = document.getElementById(this.div_table_id);
-        dt.innerHTML = sanitizeHandlers(obj.responseText);
+        dt.innerHTML = obj.responseText;
         //alert(dt.innerHTML);
         var tbl = dt.getElementsByTagName("TABLE")[0];
         var sprite = serverRoot + "/scripts/yui/build/assets/skins/images/xnat-sprite.png";
@@ -751,7 +751,7 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
                         onclick: { fn: this.search.spreadsheetClick, scope: this.search }
                     });
 
-                    var spec = window.available_elements_getByName(this.en);
+                    var spec = window.available_elements.getByName(this.en);
                     if (spec != null || this.en === "wrk:workflowData") {
                         submenuitems.push({
                             text: 'Email',
@@ -870,12 +870,8 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
                         try {
                             data.forEach(function(availableCommand){
                                 if (availableCommand.enabled) {
-                                    var label = availableCommand['wrapper-name'];
-                                    if (availableCommand['wrapper-description'].length) label=availableCommand['wrapper-description'];
-                                    if (availableCommand['wrapper-label'].length) label=availableCommand['wrapper-label'];
-
                                     submenuitems.push({
-                                        text: label,
+                                        text: availableCommand['wrapper-description'],
                                         classname: 'projectContainerLauncher',
                                         onclick: {
                                             fn: XNAT.plugin.containerService.projectSearchLauncher.open,
