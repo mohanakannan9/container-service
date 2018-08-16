@@ -18,8 +18,6 @@ import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xft.security.UserI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
@@ -100,7 +98,7 @@ public class DockerServiceIntegrationTest {
             }
         }
 
-        dockerServerService.setServer(DockerServer.create(0L, "name", containerHost, certPath, false, null, null));
+        dockerServerService.setServer(DockerServer.create("name", containerHost));
 
         // Mock the userI
         mockUser = Mockito.mock(UserI.class);
