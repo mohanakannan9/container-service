@@ -7,6 +7,7 @@ import com.google.common.collect.Maps;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
+import org.nrg.action.ServerException;
 import org.nrg.containers.api.ContainerControlApi;
 import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.DockerServerException;
@@ -353,6 +354,13 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
                     throw new UnauthorizedException(message);
                 } catch (Exception e) {
                     throw new ContainerException(prefix + "Could not upload files to resource.", e);
+                }
+
+                try {
+                    catalogService.refreshResourceCatalog(userI, createdUri);
+                } catch (ServerException | ClientException e) {
+                    final String message = String.format(prefix + "Could not refresh catalog for resource %s.", createdUri);
+                    log.error(message);
                 }
             } else if (type.equals(ASSESSOR.getName())) {
                 /* TODO Waiting on XNAT-4556
