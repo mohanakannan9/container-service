@@ -614,6 +614,12 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
         return true;
     };
 
+    this.openProcessingLauncherClick = function(name, eventObj, menuItem){
+        this.openProcessingLauncher(serverRoot + "/app/action/BulkLaunchAction", this.getXML(), document.getElementById(this.div_table_id));
+        return true;
+    };
+
+
     this.loadSearchManager = function(){
         //if(this.sm==undefined){
         dynamicJSLoad('SearchXMLManager', 'search/searchManager.js');
@@ -919,6 +925,35 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
     this.getXML = function(){
         return this.xml;
     }
+
+    this.openProcessingLauncher = function(_url, _searchXML, divContent){
+        var tempForm = document.createElement("FORM");
+        tempForm.method = "POST";
+        tempForm.action = _url;
+
+        var tempInput = document.createElement("INPUT");
+
+        tempInput.type = "hidden";
+        tempInput.name = "search_xml";
+        tempInput.value = _searchXML;
+
+        tempForm.appendChild(tempInput);
+
+
+        var cs = document.createElement("input");
+        cs.type = "hidden";
+        cs.name = "XNAT_CSRF";
+        cs.value = csrfToken;
+        tempForm.appendChild(cs);
+
+
+        if (divContent != undefined) {
+            divContent.appendChild(tempForm);
+        }
+        tempForm.submit();
+    };
+
+
     this.sendSearch = function(_url, _searchXML, divContent){
         var tempForm = document.createElement("FORM");
         tempForm.method = "POST";
