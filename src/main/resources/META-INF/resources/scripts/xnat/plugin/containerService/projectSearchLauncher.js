@@ -92,7 +92,7 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
                                 window.setTimeout(queueCount,50,inputArea);
                             })
                     }
-                    
+
                     inputArea.append(spawn('!',[
                         spawn('h3', '<b id="queue-targets">' + targetList.length + '</b> '+config['root-element-name']+s+' queued for this container launch.'),
                         spawn('p','Select some or all to launch on, or add filters to your search table.')
@@ -142,52 +142,97 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
         }
     };
 
-    function selectableTable(data){
-        var tableHeader = spawn('div.data-table-wrapper.no-body',[
-            spawn('table.xnat-table.fixed-header.clean',[
-                spawn('thead',[
-                    spawn('tr',[
-                        spawn('th.toggle-all',{ style: { width: '45px' }},[
-                            spawn('input.selectable-select-all|type=checkbox',{ title: 'Toggle All'})
-                        ]),
-                        spawn('th.left',{ style: { width: '200px' }},'Label'),
-                        spawn('th.left',{ style: { width: '213px' }},'XNAT Accession ID')
-                    ])
-                ])
-            ])
-        ]);
+function selectableTable(data) {
+    var divContent =  '<div class="data-table-container" style="display: inline-block;" >  ';
+    divContent += '	<div class="data-table-wrapper no-body" style=" padding-right: 0">						';
+    divContent +=     '	       <table id="xnat-table-header" class="xnat-table clean fixed-header" style="border:none;">		';
+    divContent +=     '	            <thead>												';
+    divContent +=     '		            <tr id="xnat-table-header-row1">								';
+    divContent +=     '		                <th class="toggle-all" style="width: 45px;">						';
+    divContent +=     '		                    <input type="checkbox" class="selectable-select-all" id="toggle-all-sessiions" title="Toggle All" />	';
+    divContent +=     '		                </th>															';
+    divContent +=     '		                <th align="left" style="width: 200px;">						';
+    divContent +=     '		                    Label	';
+    divContent +=     '		                </th>															';
+    divContent +=     '		                <th align="left" style="width: 200px;">						';
+    divContent +=     '		                    XNAT Accession ID	';
+    divContent +=     '		                </th>															';
 
-        var tableBodyRows = [];
+    divContent +=     '		            </tr>															';
+    divContent +=     '	            </thead>																';
+    divContent +=     '	        </table>																';
+    divContent +=     '	</div>																		';
+    divContent +=     '	<div class="data-table-wrapper no-header" style="max-height: 300px; overflow-y: auto">							';
+    divContent +=     '	        <table id="xnat-table-datarows" class="xnat-table clean selectable" style="border: none;">						';
+    divContent +=     '		            <tbody id="xnat-table-datarows-tbody">												';
+
+    data.forEach(function(row){
+	 divContent += '<tr valign="top" id="session-'+ row['accession-id'] + '">';
+	 divContent +='<td class="session-actions-controls session-selector center" style="width: 45px;">';
+	 divContent +='<input type="checkbox" class="selectable-select-one target" id="select-'+row['accession-id']+'" value="'+row['accession-id']+'"/>';
+	 divContent +='</td>';
+	 divContent +='<td style="width: 200px;">';
+	 divContent +=row['label'];
+	 divContent +='</td>';
+	 divContent +='<td style="width: 213px;">';
+	 divContent +=row['accession-id'];
+	 divContent +='</td>';
+	 divContent += '</tr>';
+   });
+    divContent +=     '		            </tbody>																';
+    divContent +=     '	        </table>																';
+    divContent +=     ' </div>						';
+    divContent += '</div>';
+ return divContent;
+}
+
+
+//    function selectableTable(data){
+//        var tableHeader = spawn('div.data-table-wrapper.no-body',[
+//            spawn('table.xnat-table.fixed-header.clean',[
+//                spawn('thead',[
+//                    spawn('tr',[
+//                        spawn('th.toggle-all',{ style: { width: '45px' }},[
+//                            spawn('input.selectable-select-all|type=checkbox',{ title: 'Toggle All'})
+//                        ]),
+//                        spawn('th.left',{ style: { width: '200px' }},'Label'),
+//                        spawn('th.left',{ style: { width: '213px' }},'XNAT Accession ID')
+//                    ])
+//                ])
+//            ])
+//        ]);
+
+//        var tableBodyRows = [];
         // loop over an array of data, populate the table body rows
         // max table width in a 500-px dialog is 458px
-        data.forEach(function(row){
-            tableBodyRows.push(
-                spawn('tr.selectable-tr',{ id: row['accession-id'] },[
-                    spawn('td.table-action-controls.table-selector.center',{ style: { width: '45px' }}, [
-                        spawn('input.selectable-select-one.target|type=checkbox', { value: row['accession-id'] })
-                    ]),
-                    spawn('td',{ style: { width: '200px' }},row['label']),
-                    spawn('td',{ style: { width: '213px' }},row['accession-id'])
-                ])
-            );
-        });
-        
-        var tableBody = spawn('div.data-table-wrapper.no-header',{
-            style: {
-                'max-height': '300px',
-                'overflow-y': 'auto'
-            }
-        },[
-            spawn('table.xnat-table.clean.selectable',[
-                spawn('tbody', tableBodyRows )
-            ])
-        ]);
+//        data.forEach(function(row){
+//            tableBodyRows.push(
+//                spawn('tr.selectable-tr',{ id: row['accession-id'] },[
+//                    spawn('td.table-action-controls.table-selector.center',{ style: { width: '45px' }}, [
+//                        spawn('input.selectable-select-one.target|type=checkbox', { value: row['accession-id'] })
+//                    ]),
+//                    spawn('td',{ style: { width: '200px' }},row['label']),
+//                    spawn('td',{ style: { width: '213px' }},row['accession-id'])
+//                ])
+//            );
+//        });
 
-        return spawn('div.data-table-container',[
-            tableHeader,
-            tableBody
-        ]);
-    }
+//        var tableBody = spawn('div.data-table-wrapper.no-header',{
+//            style: {
+//                'max-height': '300px',
+//                'overflow-y': 'auto'
+//            }
+//        },[
+//            spawn('table.xnat-table.clean.selectable',[
+//                spawn('tbody', tableBodyRows )
+//            ])
+//        ]);
+
+//        return spawn('div.data-table-container',[
+//            tableHeader,
+//            tableBody
+//        ]);
+//    }
 
     projectSearchLauncher.open = function(){
         // find obj in the config param of the passed object

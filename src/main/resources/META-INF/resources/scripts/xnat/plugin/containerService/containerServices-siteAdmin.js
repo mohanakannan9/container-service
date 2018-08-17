@@ -2587,27 +2587,29 @@ var XNAT = getObject(XNAT || {});
 
                 // check logs and populate buttons at bottom of modal
                 if (key === 'log-paths') {
-                    // returns an array of log paths
-                    historyEntry[key].forEach(function(logPath){
-                        if (logPath.indexOf('stdout.log') > 0) {
-                            historyDialogButtons.push({
-                                label: 'View StdOut.log',
-                                close: false,
-                                action: function(){
-                                    historyTable.viewLog(historyEntry['container-id'],'stdout')
-                                }
-                            });
-                        }
-                        if (logPath.indexOf('stderr.log') > 0) {
-                            historyDialogButtons.push({
-                                label: 'View StdErr.log',
-                                close: false,
-                                action: function(){
-                                    historyTable.viewLog(historyEntry['container-id'],'stderr')
-                                }
-                            })
-                        }
-                    });
+                  historyDialogButtons.push({
+						label: 'View StdOut.log',
+						close: false,
+						action: function(){
+							var jobid = historyEntry['container-id'];
+							if (!jobid || jobid === "") {
+								jobid = historyEntry['service-id'];
+							}
+							historyTable.viewLog(jobid,'stdout')
+						}
+  					});
+
+					historyDialogButtons.push({
+						label: 'View StdErr.log',
+						close: false,
+						action: function(){
+							var jobid = historyEntry['container-id'];
+							if (!jobid || jobid === "") {
+								jobid = historyEntry['service-id'];
+							}
+							historyTable.viewLog(jobid,'stderr')
+						}
+					})
                 }
                 if (key === 'setup-container-id') {
                     historyDialogButtons.push({

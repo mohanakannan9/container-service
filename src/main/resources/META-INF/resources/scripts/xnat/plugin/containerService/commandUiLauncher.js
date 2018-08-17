@@ -1310,10 +1310,14 @@ var XNAT = getObject(XNAT || {});
     /* to be replaced when we kill YUI */
     launcher.addYUIMenuItem = function(command){
         if (command.enabled) {
+           // var launcher = command.launcher || "default";
+           // var label = command['wrapper-name'];
+           // if (command['wrapper-description'].length) label = command['wrapper-description'];
+           // if (command['wrapper-label'].length) label = command['wrapper-label'];
             var launcher = command.launcher || "default";
-            var label = command['wrapper-name'];
-            if (command['wrapper-description'].length) label = command['wrapper-description'];
-            if (command['wrapper-label'].length) label = command['wrapper-label'];
+            var label = (command['wrapper-description'].length) ?
+                command['wrapper-description'] :
+                command['wrapper-name'];
 
             containerMenuItems[0].submenu.itemdata.push({
                 text: label,
