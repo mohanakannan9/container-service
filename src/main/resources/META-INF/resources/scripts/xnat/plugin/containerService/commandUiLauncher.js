@@ -907,7 +907,7 @@ var XNAT = getObject(XNAT || {});
 
                                         if (data.successes.length > 0) {
                                             messageContent.push( spawn('h3',{'style': {'margin-top': '2em' }},'Successful Container Launches') );
-                                        	
+
                                           data.successes.forEach(function(success){
 												if (success['type'] === 'service') {
 													messageContent.push( spawn('p',[spawn('strong','Service ID: '),spawn('span',success['service-id']) ]));
@@ -1273,9 +1273,12 @@ var XNAT = getObject(XNAT || {});
 
     launcher.addMenuItem = function(command,commandSet){
         commandSet = commandSet || [];
-        var label = command['wrapper-name'];
-        if (command['wrapper-description'].length) label = command['wrapper-description'];
-        if (command['wrapper-label'].length) label = command['wrapper-label'];
+//        var label = command['wrapper-name'];
+//        if (command['wrapper-description'].length) label = command['wrapper-description'];
+//        if (command['wrapper-label'].length) label = command['wrapper-label'];
+        var label = (command['wrapper-description'].length) ?
+            command['wrapper-description'] :
+            command['wrapper-name'];
 
         if (command.enabled){
             commandSet.push(
