@@ -2,7 +2,6 @@ package org.nrg.containers.model.server.docker;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
 import org.apache.commons.lang3.StringUtils;
@@ -22,7 +21,6 @@ public abstract class DockerServerBase {
     @JsonProperty("pull-images-on-xnat-init") public abstract Boolean pullImagesOnXnatInit();
 
     @AutoValue
-    @JsonInclude(JsonInclude.Include.ALWAYS)
     public abstract static class DockerServer extends DockerServerBase {
         public static final DockerServer DEFAULT_SOCKET = DockerServer.create("Local socket", "unix:///var/run/docker.sock");
 
@@ -112,7 +110,6 @@ public abstract class DockerServerBase {
     }
 
     @AutoValue
-    @JsonInclude(JsonInclude.Include.ALWAYS)
     public static abstract class DockerServerWithPing extends DockerServerBase {
         @Nullable @JsonProperty("ping") public abstract Boolean ping();
 

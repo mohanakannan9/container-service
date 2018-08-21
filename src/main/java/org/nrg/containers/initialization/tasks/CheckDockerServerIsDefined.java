@@ -7,8 +7,6 @@ import org.nrg.containers.model.server.docker.DockerServerPrefsBean;
 import org.nrg.containers.services.DockerServerService;
 import org.nrg.xnat.initialization.tasks.AbstractInitializingTask;
 import org.nrg.xnat.initialization.tasks.InitializingTaskException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

@@ -2,8 +2,6 @@ package org.nrg.containers.model.server.docker;
 
 import org.nrg.containers.model.server.docker.DockerServerBase.DockerServer;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.persistence.Entity;
 import java.util.Date;
@@ -11,7 +9,6 @@ import java.util.Objects;
 
 @Entity
 public class DockerServerEntity extends AbstractHibernateEntity {
-    private static final Logger _log = LoggerFactory.getLogger(DockerServerEntity.class);
     private String name;
     private String host;
     private String certPath;

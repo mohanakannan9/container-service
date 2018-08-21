@@ -101,7 +101,7 @@ public class ContainerRestApi extends AbstractXapiRestController {
 
     @XapiRequestMapping(value = "/containers/{id}", method = DELETE, restrictTo = Admin)
     @ApiOperation(value = "Get Container by container server ID")
-    public ResponseEntity<Void> delete(final @PathVariable String id) throws NotFoundException {
+    public ResponseEntity<Void> delete(final @PathVariable String id) {
         containerService.delete(id);
         return ResponseEntity.noContent().build();
     }

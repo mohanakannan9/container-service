@@ -125,12 +125,12 @@ public class ContainerServiceImpl implements ContainerService {
     }
 
     @Override
-    public void delete(final long id) throws NotFoundException {
+    public void delete(final long id) {
         containerEntityService.delete(id);
     }
 
     @Override
-    public void delete(final String containerId) throws NotFoundException {
+    public void delete(final String containerId) {
         containerEntityService.delete(containerId);
     }
 

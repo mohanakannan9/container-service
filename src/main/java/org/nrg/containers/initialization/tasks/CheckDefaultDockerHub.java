@@ -6,8 +6,6 @@ import org.nrg.containers.services.DockerHubService;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.initialization.tasks.AbstractInitializingTask;
 import org.nrg.xnat.initialization.tasks.InitializingTaskException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

@@ -11,8 +11,6 @@ import org.nrg.containers.model.command.entity.CommandWrapperEntity;
 import org.nrg.containers.model.command.entity.DockerCommandEntity;
 import org.nrg.framework.exceptions.NotFoundException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.Nonnull;

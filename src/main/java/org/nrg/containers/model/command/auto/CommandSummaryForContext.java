@@ -1,7 +1,6 @@
 package org.nrg.containers.model.command.auto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
 import com.google.common.annotations.VisibleForTesting;
@@ -13,7 +12,6 @@ import javax.annotation.Nullable;
  * a list of commands that are available to be launched for a given context.
  */
 @AutoValue
-@JsonInclude(JsonInclude.Include.ALWAYS)
 public abstract class CommandSummaryForContext {
     @JsonProperty("command-id") public abstract long commandId();
     @JsonProperty("command-name") public abstract String commandName();

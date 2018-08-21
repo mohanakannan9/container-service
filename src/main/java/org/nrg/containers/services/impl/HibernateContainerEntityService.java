@@ -63,9 +63,13 @@ public class HibernateContainerEntityService
     }
 
     @Override
-    public void delete(final String containerId) throws NotFoundException {
-        final ContainerEntity toDelete = get(containerId);
-        delete(toDelete.getId());
+    public void delete(final String containerId) {
+        try {
+            final ContainerEntity toDelete = get(containerId);
+            delete(toDelete.getId());
+        } catch (NotFoundException e) {
+            // pass
+        }
     }
 
     @Override

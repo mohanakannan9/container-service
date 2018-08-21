@@ -7,8 +7,6 @@ import org.nrg.containers.model.container.entity.ContainerEntity;
 import org.nrg.containers.model.container.entity.ContainerEntityHistory;
 import org.nrg.containers.model.container.entity.ContainerEntityMount;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.Nonnull;

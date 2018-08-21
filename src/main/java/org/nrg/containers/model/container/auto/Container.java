@@ -2,7 +2,6 @@ package org.nrg.containers.model.container.auto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Function;
@@ -29,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 
 @AutoValue
-@JsonInclude(JsonInclude.Include.ALWAYS)
 public abstract class Container {
     @JsonIgnore private String exitCode;
 

@@ -36,7 +36,6 @@ import java.util.Map;
 import java.util.Set;
 
 @AutoValue
-@JsonInclude(JsonInclude.Include.ALWAYS)
 public abstract class Command {
     @JsonProperty("id") public abstract long id();
     @Nullable @JsonProperty("name") public abstract String name();

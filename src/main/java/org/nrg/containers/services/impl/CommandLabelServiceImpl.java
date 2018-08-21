@@ -6,11 +6,8 @@ import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.model.command.auto.Command;
-import org.nrg.containers.model.command.entity.CommandType;
 import org.nrg.containers.model.image.docker.DockerImage;
 import org.nrg.containers.services.CommandLabelService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

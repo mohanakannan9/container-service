@@ -10,8 +10,6 @@ import org.nrg.config.services.ConfigService;
 import org.nrg.containers.model.configuration.CommandConfigurationInternal;
 import org.nrg.containers.services.ContainerConfigService;
 import org.nrg.framework.constants.Scope;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
