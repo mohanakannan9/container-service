@@ -1,5 +1,6 @@
 package org.nrg.containers.api;
 
+import com.spotify.docker.client.exceptions.ServiceNotFoundException;
 import org.nrg.containers.events.model.DockerContainerEvent;
 import org.nrg.containers.exceptions.ContainerException;
 import org.nrg.containers.exceptions.DockerServerException;
@@ -62,8 +63,8 @@ public interface ContainerControlApi {
 
     void killContainer(final String id) throws NoDockerServerException, DockerServerException, NotFoundException;
 
-    ServiceTask getTaskForService(Container service) throws NoDockerServerException, DockerServerException;
-    ServiceTask getTaskForService(DockerServer dockerServer, Container service) throws DockerServerException;
-    void throwTaskEventForService(Container service) throws NoDockerServerException, DockerServerException;
-    void throwTaskEventForService(DockerServer dockerServer, Container service) throws DockerServerException;
+    ServiceTask getTaskForService(Container service) throws NoDockerServerException, DockerServerException, ServiceNotFoundException;
+    ServiceTask getTaskForService(DockerServer dockerServer, Container service) throws DockerServerException, ServiceNotFoundException;
+    void throwTaskEventForService(Container service) throws NoDockerServerException, DockerServerException, ServiceNotFoundException;
+    void throwTaskEventForService(DockerServer dockerServer, Container service) throws DockerServerException, ServiceNotFoundException;
 }

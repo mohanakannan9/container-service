@@ -15,6 +15,7 @@ import com.spotify.docker.client.exceptions.ContainerNotFoundException;
 import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.exceptions.ImageNotFoundException;
+import com.spotify.docker.client.exceptions.ServiceNotFoundException;
 import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
 import com.spotify.docker.client.messages.ContainerInfo;
@@ -1045,14 +1046,14 @@ public class DockerControlApi implements ContainerControlApi {
 
     @Override
     @Nullable
-    public ServiceTask getTaskForService(final Container service) throws NoDockerServerException, DockerServerException {
+    public ServiceTask getTaskForService(final Container service) throws NoDockerServerException, DockerServerException, ServiceNotFoundException {
         return getTaskForService(getServer(), service);
     }
 
     @Override
     @Nullable
     public ServiceTask getTaskForService(final DockerServer dockerServer, final Container service)
-            throws DockerServerException {
+            throws DockerServerException, ServiceNotFoundException {
         try (final DockerClient client = getClient(dockerServer)) {
             Task task = null;
 
@@ -1097,6 +1098,9 @@ public class DockerControlApi implements ContainerControlApi {
 
                 return serviceTask;
             }
+        } catch (ServiceNotFoundException e) {
+            log.error(e.getMessage());
+            throw e;
         } catch (DockerException | InterruptedException e) {
             log.error(e.getMessage(), e);
             throw new DockerServerException(e);
@@ -1108,12 +1112,12 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     @Override
-    public void throwTaskEventForService(final Container service) throws NoDockerServerException, DockerServerException {
+    public void throwTaskEventForService(final Container service) throws NoDockerServerException, DockerServerException, ServiceNotFoundException {
         throwTaskEventForService(getServer(), service);
     }
 
     @Override
-    public void throwTaskEventForService(final DockerServer dockerServer, final Container service) throws DockerServerException {
+    public void throwTaskEventForService(final DockerServer dockerServer, final Container service) throws DockerServerException, ServiceNotFoundException {
         final ServiceTask task = getTaskForService(dockerServer, service);
         if (task != null) {
             final ServiceTaskEvent serviceTaskEvent = ServiceTaskEvent.create(task, service);

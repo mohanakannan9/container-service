@@ -135,6 +135,11 @@ public class ContainerServiceImpl implements ContainerService {
     }
 
     @Override
+    public void update(final Container container) {
+        containerEntityService.update(fromPojo(container));
+    }
+
+    @Override
     public List<Container> getAll(final Boolean nonfinalized, final String project) {
         return toPojo(containerEntityService.getAll(nonfinalized, project));
     }
