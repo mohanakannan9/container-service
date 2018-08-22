@@ -182,7 +182,7 @@ sitewideCommandHistoryPanel:
     contents:
         commandHistoryTableContainer:
             tag: div#command-history-container
-            contents: No history to display yet
+            contents: Loading history entries...
 
 #################################################
 ####  Root Site Admin Spawner Config Object  ####

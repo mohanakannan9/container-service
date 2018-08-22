@@ -171,8 +171,8 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
         // });
         return {
             kind: 'table.dataTable',
-            name: 'userProfiles',
-            id: 'user-profiles',
+            name: 'containerHistoryTable',
+            id: 'container-history-table',
             // load: URL,
             data: sortedHistoryObj,
             before: {
@@ -529,24 +529,21 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
                     return (a.history[0]['time-recorded'] < b.history[0]['time-recorded']) ? 1 : -1
                 });
 
-                setTimeout(function () {
-                    $manager.html('loading...');
-                }, 1);
-                setTimeout(function () {
-                    _historyTable = XNAT.spawner.spawn({
-                        historyTable: spawnHistoryTable(data)
-                    });
-                    _historyTable.done(function () {
-                        var msg = (context === 'site') ?
-                            data.length + ' Containers Launched On This Site' :
-                            data.length + ' Containers Launched For '+context;
-                        $manager.empty().append(
-                            spawn('h3', {style: {'margin-bottom': '1em'}}, msg)
-                        );
-                        this.render($manager, 20);
-                    });
-                }, 10);
-                // return _usersTable;
+                _historyTable = XNAT.spawner.spawn({
+                    historyTable: spawnHistoryTable(data)
+                });
+                _historyTable.done(function () {
+                    var msg = (context === 'site') ?
+                        data.length + ' Containers Launched On This Site' :
+                        data.length + ' Containers Launched For '+context;
+                    $manager.empty().append(
+                        spawn('h3', {style: {'margin-bottom': '1em'}}, msg)
+                    );
+                    this.render($manager, 20);
+                });
+            }
+            else {
+                $manager.empty().append('No history entries to display')
             }
         });
     };

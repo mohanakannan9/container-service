@@ -56,7 +56,7 @@ projectCommandHistoryPanel:
     contents:
         projectCommandHistoryTableContainer:
             tag: div#command-history-container
-            contents: No history to display yet
+            contents: Loading history entries...
 
 
 projectSettings:
