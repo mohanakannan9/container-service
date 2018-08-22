@@ -21,6 +21,8 @@ Not yet released.
 
 * [CS-488][] Allow wrappers to derive `Session` inputs from `Assessor` inputs, in the same way you can derive `Session`s from `Scan`s.
 * [CS-492][] Save `override-entrypoint` property on `Container` entity. (It was being used properly to make the docker container, but not saved in database.)
+* [CS-510][] Enable fetching logs from a running service.
+* History UI now fetches logs by container database id, not container docker id (or service id).
 
 ### Other
 
@@ -38,6 +40,7 @@ Not yet released.
 [CS-500]: https://issues.xnat.org/browse/CS-500
 [CS-502]: https://issues.xnat.org/browse/CS-502
 [CS-503]: https://issues.xnat.org/browse/CS-503
+[CS-510]: https://issues.xnat.org/browse/CS-510
 [CS-513]: https://issues.xnat.org/browse/CS-513
 
 ## 1.5.1

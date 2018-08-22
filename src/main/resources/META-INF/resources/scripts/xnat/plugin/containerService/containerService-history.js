@@ -457,7 +457,7 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
                                 label: 'View StdOut.log',
                                 close: false,
                                 action: function () {
-                                    historyTable.viewLog(historyEntry['container-id'], 'stdout')
+                                    historyTable.viewLog(historyEntry['id'], 'stdout')
                                 }
                             });
                         }
@@ -466,7 +466,7 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
                                 label: 'View StdErr.log',
                                 close: false,
                                 action: function () {
-                                    historyTable.viewLog(historyEntry['container-id'], 'stderr')
+                                    historyTable.viewLog(historyEntry['id'], 'stderr')
                                 }
                             })
                         }
