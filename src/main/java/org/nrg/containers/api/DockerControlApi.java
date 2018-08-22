@@ -888,17 +888,17 @@ public class DockerControlApi implements ContainerControlApi {
     }
 
     @Override
-    public String getContainerStdoutLog(final String containerId) throws NoDockerServerException, DockerServerException {
-        return getContainerLog(containerId, LogsParam.stdout());
+    public String getStdoutLog(final Container container) throws NoDockerServerException, DockerServerException {
+        return getContainerLog(container, LogsParam.stdout());
     }
 
     @Override
-    public String getContainerStderrLog(final String containerId) throws NoDockerServerException, DockerServerException {
-        return getContainerLog(containerId, LogsParam.stderr());
+    public String getStderrLog(final Container container) throws NoDockerServerException, DockerServerException {
+        return getContainerLog(container, LogsParam.stderr());
     }
 
-    private String getContainerLog(final String containerId, final LogsParam logType) throws NoDockerServerException, DockerServerException {
-        try (final LogStream logStream = getClient().logs(containerId, logType)) {
+    private String getContainerLog(final Container container, final LogsParam logType) throws NoDockerServerException, DockerServerException {
+        try (final LogStream logStream = logStream(container, logType)) {
             return logStream.readFully();
         } catch (NoDockerServerException e) {
             throw e;
@@ -908,25 +908,11 @@ public class DockerControlApi implements ContainerControlApi {
         }
     }
 
-    @Override
-    public String getServiceStdoutLog(final String serviceId) throws NoDockerServerException, DockerServerException {
-        return getServiceLog(serviceId, LogsParam.stdout());
-    }
-
-    @Override
-    public String getServiceStderrLog(final String serviceId) throws NoDockerServerException, DockerServerException {
-        return getServiceLog(serviceId, LogsParam.stderr());
-    }
-
-    private String getServiceLog(final String serviceId, final LogsParam logType) throws DockerServerException, NoDockerServerException {
-        try (final LogStream logStream = getClient().serviceLogs(serviceId, logType)) {
-            return logStream.readFully();
-        } catch (NoDockerServerException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            throw new DockerServerException(e);
-        }
+    private LogStream logStream(final Container container, final LogsParam logType) throws DockerServerException, NoDockerServerException, DockerException, InterruptedException {
+        final DockerServer server = getServer();
+        return server.swarmMode() && container.isSwarmService() ?
+                getClient(server).serviceLogs(container.serviceId(), logType) :
+                getClient(server).logs(container.containerId(), logType);
     }
 
     @VisibleForTesting

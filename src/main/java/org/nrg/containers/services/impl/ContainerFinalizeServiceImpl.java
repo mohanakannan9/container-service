@@ -32,6 +32,7 @@ import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.restlet.util.XNATRestConstants;
 import org.nrg.xnat.services.archive.CatalogService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.method.P;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
@@ -208,35 +209,19 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
         }
 
         private String getStderrLogStr() {
-            if (toFinalize.isSwarmService()) {
-                try {
-                    return containerControlApi.getServiceStderrLog(toFinalize.serviceId());
-                } catch (DockerServerException | NoDockerServerException e) {
-                    log.error(prefix + "Could not get service stderr log.", e);
-                }
-            } else {
-                try {
-                    return containerControlApi.getContainerStderrLog(toFinalize.containerId());
-                } catch (DockerServerException | NoDockerServerException e) {
-                    log.error(prefix + "Could not get container stderr log.", e);
-                }
+            try {
+                return containerControlApi.getStderrLog(toFinalize);
+            } catch (DockerServerException | NoDockerServerException e) {
+                log.error(prefix + "Could not get stderr log.", e);
             }
             return null;
         }
 
         private String getStdoutLogStr() {
-            if (toFinalize.isSwarmService()) {
-                try {
-                    return containerControlApi.getServiceStdoutLog(toFinalize.serviceId());
-                } catch (DockerServerException | NoDockerServerException e) {
-                    log.error(prefix + "Could not get service stdout log.", e);
-                }
-            } else {
-                try {
-                    return containerControlApi.getContainerStdoutLog(toFinalize.containerId());
-                } catch (DockerServerException | NoDockerServerException e) {
-                    log.error(prefix + "Could not get container stdout log.", e);
-                }
+            try {
+                return containerControlApi.getStdoutLog(toFinalize);
+            } catch (DockerServerException | NoDockerServerException e) {
+                log.error(prefix + "Could not get stdout log.", e);
             }
             return null;
         }

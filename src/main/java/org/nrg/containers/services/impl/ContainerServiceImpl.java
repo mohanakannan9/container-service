@@ -706,11 +706,10 @@ public class ContainerServiceImpl implements ContainerService {
         final String logPath = container.getLogPath(logFileName);
         if (StringUtils.isBlank(logPath)) {
             // If log path is blank, that means we have not yet saved the logs from docker. Go fetch them now.
-            final String containerOrServiceId = container.isSwarmService() ? container.serviceId() : container.containerId();
             if (ContainerService.STDOUT_LOG_NAME.contains(logFileName)) {
-                return new ByteArrayInputStream(containerControlApi.getServiceStdoutLog(containerOrServiceId).getBytes());
+                return new ByteArrayInputStream(containerControlApi.getStdoutLog(container).getBytes());
             } else if (ContainerService.STDERR_LOG_NAME.contains(logFileName)) {
-                return new ByteArrayInputStream(containerControlApi.getServiceStderrLog(containerOrServiceId).getBytes());
+                return new ByteArrayInputStream(containerControlApi.getStderrLog(container).getBytes());
             } else {
                 return null;
             }
