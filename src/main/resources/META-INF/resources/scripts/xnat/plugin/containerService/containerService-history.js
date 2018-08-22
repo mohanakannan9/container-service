@@ -84,9 +84,6 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
     XNAT.plugin.containerService.containerHistory = containerHistory =
         getObject(XNAT.plugin.containerService.containerHistory || {});
 
-    XNAT.plugin.containerService.wrapperList = wrapperList =
-        getObject(XNAT.plugin.containerService.wrapperList || {});
-
     function getCommandHistoryUrl(appended) {
         appended = (appended) ? '?' + appended : '';
         return restUrl('/xapi/containers' + appended);
@@ -297,10 +294,11 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
                     label: 'Command',
                     filter: true,
                     apply: function () {
-                        var label = (wrapperList[this['wrapper-id']]) ?
-                            (wrapperList[this['wrapper-id']].description) ?
-                                wrapperList[this['wrapper-id']].description :
-                                wrapperList[this['wrapper-id']].name
+                        var wrapper = XNAT.plugin.containerService.wrapperList[this['wrapper-id']];
+                        var label = (wrapper) ?
+                            (wrapper.description) ?
+                                wrapper.description :
+                                wrapper.name
                             : this['command-line'];
 
                         return spawn('a.view-history', {
@@ -519,6 +517,7 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
 
     historyTable.init = historyTable.refresh = function (context) {
         context = context || 'site';
+        wrapperList = getObject(XNAT.plugin.containerService.wrapperList || {});
 
         var $manager = $('#command-history-container'),
             _historyTable;
