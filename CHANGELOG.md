@@ -16,6 +16,7 @@ Not yet released.
 * [CS-502][] When a container is launched with the project-specific launch APIs (`/xapi/projects/{project}/.../launch`), that project is now saved as a property on the container.
 * [CS-503][] Add APIs to get containers by project.
 * [CS-513][] Increase length of `command-line` field to 2048 characters.
+* Include a container's database ID in the `LaunchReport` returned after launch.
 
 ### Bugfixes
 
