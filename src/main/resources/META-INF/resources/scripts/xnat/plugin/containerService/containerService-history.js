@@ -377,11 +377,11 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
 
                 XNAT.dialog.open({
                     title: 'View ' + logFile,
-                    width: 500,
+                    width: 850,
                     content: null,
                     beforeShow: function (obj) {
                         data.forEach(function (newLine) {
-                            obj.$modal.find('.xnat-dialog-content').append(spawn('code', {'style': {'display': 'block'}}, newLine));
+                            obj.$modal.find('.xnat-dialog-content').append(spawn('pre', {'style': {'font-size':'12px','margin':'0', 'white-space':'pre-wrap'}}, newLine));
                         });
                     },
                     buttons: [
