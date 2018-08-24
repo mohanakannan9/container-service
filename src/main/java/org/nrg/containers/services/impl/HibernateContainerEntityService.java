@@ -46,7 +46,7 @@ public class HibernateContainerEntityService
             final Long containerDatabaseId = Long.parseLong(containerId);
             return retrieve(containerDatabaseId);
         } catch (NumberFormatException e) {
-            final ContainerEntity containerEntity = getDao().retrieveByContainerId(containerId);
+            final ContainerEntity containerEntity = getDao().retrieveByContainerOrServiceId(containerId);
             initialize(containerEntity);
             return containerEntity;
         }

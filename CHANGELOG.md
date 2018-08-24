@@ -24,6 +24,7 @@ Not yet released.
 * [CS-492][] Save `override-entrypoint` property on `Container` entity. (It was being used properly to make the docker container, but not saved in database.)
 * [CS-510][] Enable fetching logs from a running service.
 * History UI now fetches logs by container database id, not container docker id (or service id).
+* [CS-520][] Can get containers by service ID. This applies to the internal `ContainerService.get(String id)` as well as REST `/xapi/containers/{id}`.
 
 ### Other
 

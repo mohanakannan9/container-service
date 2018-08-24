@@ -43,8 +43,15 @@ public class ContainerEntityRepository extends AbstractHibernateDAO<ContainerEnt
     }
 
     @Nullable
-    public ContainerEntity retrieveByContainerId(final @Nonnull String containerId) {
-        return findByUniqueProperty("containerId", containerId);
+    public ContainerEntity retrieveByContainerOrServiceId(final @Nonnull String containerId) {
+        final ContainerEntity containerEntity = (ContainerEntity) getSession()
+                .createCriteria(ContainerEntity.class)
+                .add(Restrictions.disjunction()
+                        .add(Restrictions.eq("containerId", containerId))
+                        .add(Restrictions.eq("serviceId", containerId)))
+                .uniqueResult();
+        initialize(containerEntity);
+        return containerEntity;
     }
 
     public void addHistoryItem(final @Nonnull ContainerEntity containerEntity,
