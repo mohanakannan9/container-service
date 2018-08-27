@@ -144,10 +144,12 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
         if (mounts.length) {
             var inputMount = mounts[0]['xnat-host-path'];
             if (inputMount === undefined) return false;
-
-            inputMount = inputMount.replace('/data/xnat/archive/', '');
-            inputMount = inputMount.replace('/data/archive/', '');
-            inputMount = inputMount.replace('/REST/archive/', '');
+            var i = inputMount.indexOf("/data/archive/");
+            if (i == -1) {
+                return false;
+            }else {
+                inputMount = inputMount.substr(i+14);
+            }
             var inputMountEls = inputMount.split('/');
             return inputMountEls[0];
         } else {
