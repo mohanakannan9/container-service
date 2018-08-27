@@ -29,6 +29,7 @@ import com.spotify.docker.client.messages.ServiceCreateResponse;
 import com.spotify.docker.client.messages.mount.Mount;
 import com.spotify.docker.client.messages.swarm.ContainerSpec;
 import com.spotify.docker.client.messages.swarm.EndpointSpec;
+import com.spotify.docker.client.messages.swarm.Placement;
 import com.spotify.docker.client.messages.swarm.PortConfig;
 import com.spotify.docker.client.messages.swarm.ReplicatedService;
 import com.spotify.docker.client.messages.swarm.RestartPolicy;
@@ -304,7 +305,7 @@ public class DockerControlApi implements ContainerControlApi {
         final String workingDirectory = StringUtils.isNotBlank(resolvedCommand.workingDirectory()) ?
                 resolvedCommand.workingDirectory() :
                 null;
-
+       //reserve 1000L for now
         // let resource constraints default to 0, so they're ignored by Docker
         final Long reserveMemory = resolvedCommand.reserveMemory() == null ?
                 0L :
@@ -628,9 +629,14 @@ public class DockerControlApi implements ContainerControlApi {
         } else {
             containerSpecBuilder.args(ShellSplitter.shellSplit(runCommand));
         }
+       //add constraints to the container command and pass all the way here. hard code for today.
+        List<String> constraints =new ArrayList<String>();
+        constraints.add("node.role == worker");
+
 
         final TaskSpec taskSpec = TaskSpec.builder()
                 .containerSpec(containerSpecBuilder.build())
+                .placement(Placement.create(constraints))
                 .restartPolicy(RestartPolicy.builder()
                         .condition("none")
                         .build())
