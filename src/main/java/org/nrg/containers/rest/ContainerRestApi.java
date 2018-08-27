@@ -176,7 +176,6 @@ public class ContainerRestApi extends AbstractXapiRestController {
                                          final @PathVariable @ApiParam(allowableValues = "stdout, stderr") String file)
             throws NoDockerServerException, DockerServerException, NotFoundException {
         UserI userI = XDAT.getUserDetails();
-
         final InputStream logStream = containerService.getLogStream(containerId, file);
         final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         byte[] buffer = new byte[1024];
