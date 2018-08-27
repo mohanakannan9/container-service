@@ -67,7 +67,7 @@ public class ContainerRestApi extends AbstractXapiRestController {
         this.containerService = containerService;
     }
 
-    @XapiRequestMapping(value = "/containers", method = GET, restrictTo = Admin)
+    @XapiRequestMapping(value = "/containers", method = GET)
     @ApiOperation(value = "Get all Containers")
     @ResponseBody
     public List<Container> getAll(final @RequestParam(required = false) Boolean nonfinalized) {
@@ -79,7 +79,7 @@ public class ContainerRestApi extends AbstractXapiRestController {
         });
     }
 
-    @XapiRequestMapping(value = "/projects/{project}/containers", method = GET, restrictTo = Admin)
+    @XapiRequestMapping(value = "/projects/{project}/containers", method = GET)
     @ApiOperation(value = "Get all Containers by project")
     @ResponseBody
     public List<Container> getAll(final @PathVariable String project,
@@ -92,14 +92,14 @@ public class ContainerRestApi extends AbstractXapiRestController {
         });
     }
 
-    @XapiRequestMapping(value = "/containers/{id}", method = GET, restrictTo = Admin)
+    @XapiRequestMapping(value = "/containers/{id}", method = GET)
     @ApiOperation(value = "Get Containers by database ID")
     @ResponseBody
     public Container get(final @PathVariable String id) throws NotFoundException {
         return scrubPasswordEnv(containerService.get(id));
     }
 
-    @XapiRequestMapping(value = "/containers/{id}", method = DELETE, restrictTo = Admin)
+    @XapiRequestMapping(value = "/containers/{id}", method = DELETE)
     @ApiOperation(value = "Get Container by container server ID")
     public ResponseEntity<Void> delete(final @PathVariable String id) {
         containerService.delete(id);
@@ -113,7 +113,7 @@ public class ContainerRestApi extends AbstractXapiRestController {
         containerService.finalize(id, userI);
     }
 
-    @XapiRequestMapping(value = "/containers/{id}/kill", method = POST, restrictTo = Admin)
+    @XapiRequestMapping(value = "/containers/{id}/kill", method = POST)
     @ApiOperation(value = "Kill Container")
     @ResponseBody
     public String kill(final @PathVariable String id)
@@ -131,7 +131,7 @@ public class ContainerRestApi extends AbstractXapiRestController {
         return container.toBuilder().environmentVariables(scrubbedEnvironmentVariables).build();
     }
 
-    @XapiRequestMapping(value = "/containers/{containerId}/logs", method = GET, restrictTo = Admin)
+    @XapiRequestMapping(value = "/containers/{containerId}/logs", method = GET)
     @ApiOperation(value = "Get Container logs",
             notes = "Return stdout and stderr logs as a zip")
     public void getLogs(final @PathVariable String containerId,
@@ -169,7 +169,7 @@ public class ContainerRestApi extends AbstractXapiRestController {
         response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
     }
 
-    @XapiRequestMapping(value = "/containers/{containerId}/logs/{file}", method = GET, restrictTo = Admin)
+    @XapiRequestMapping(value = "/containers/{containerId}/logs/{file}", method = GET)
     @ApiOperation(value = "Get Container logs", notes = "Return either stdout or stderr logs")
     @ResponseBody
     public ResponseEntity<String> getLog(final @PathVariable String containerId,
