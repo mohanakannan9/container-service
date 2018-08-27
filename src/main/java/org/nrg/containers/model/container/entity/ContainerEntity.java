@@ -516,7 +516,11 @@ public class ContainerEntity extends AbstractHibernateEntity {
 
     @Transient
     public boolean isItemInHistory(final ContainerEntityHistory historyItem) {
-        return this.history != null && this.history.contains(historyItem);
+        if (this.history == null) {
+            return false;
+        }
+        historyItem.setContainerEntity(this);
+        return this.history.contains(historyItem);
 
     }
 

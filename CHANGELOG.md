@@ -42,6 +42,7 @@ Not yet released.
 * [CS-510][] Enable fetching logs from a running service.
 * History UI now fetches logs by container database id, not container docker id (or service id).
 * [CS-520][] Can get containers by service ID. This applies to the internal `ContainerService.get(String id)` as well as REST `/xapi/containers/{id}`.
+* Prevent generating duplicate `ContainerEntityHistory` items (and audit table entries) by improving equality check.
 
 ### Other
 
