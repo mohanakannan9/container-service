@@ -875,7 +875,7 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
                                     if (availableCommand['wrapper-label']) if (availableCommand['wrapper-label'].length) label=availableCommand['wrapper-label'];
 
                                     submenuitems.push({
-                                        text: label,
+                                        text: availableCommand['wrapper-description'],
                                         classname: 'projectContainerLauncher',
                                         onclick: {
                                             fn: XNAT.plugin.containerService.projectSearchLauncher.open,
