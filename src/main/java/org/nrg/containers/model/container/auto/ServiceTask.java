@@ -22,10 +22,11 @@ public abstract class ServiceTask {
     @Nullable public abstract String containerId();
     @Nullable public abstract String message();
     @Nullable public abstract String err();
-    @Nullable public abstract Integer exitCode();
+    @Nullable public abstract Long exitCode();
 
     public static ServiceTask create(final @Nonnull Task task, final String serviceId) {
         final ContainerStatus containerStatus = task.status().containerStatus();
+        final Integer exitCode = containerStatus == null ? null : containerStatus.exitCode();
         return ServiceTask.builder()
                 .serviceId(serviceId)
                 .taskId(task.id())
@@ -34,7 +35,7 @@ public abstract class ServiceTask {
                 .statusTime(task.status().timestamp())
                 .message(task.status().message())
                 .err(task.status().err())
-                .exitCode(containerStatus == null ? null : containerStatus.exitCode())
+                .exitCode(exitCode == null ? null : new Long(exitCode))
                 .containerId(containerStatus == null ? null : containerStatus.containerId())
                 .build();
     }
@@ -65,7 +66,7 @@ public abstract class ServiceTask {
         public abstract Builder statusTime(final Date statusTime);
         public abstract Builder message(final String message);
         public abstract Builder err(final String err);
-        public abstract Builder exitCode(final Integer exitCode);
+        public abstract Builder exitCode(final Long exitCode);
 
         public abstract ServiceTask build();
     }
