@@ -33,6 +33,7 @@ Not yet released.
     * Container
         * Command-line
 * Include a container's database ID in the `LaunchReport` returned after launch.
+* Add a new container status: "Finalizing". This is set when the container has finished and container service begins its finalization process (uploading outputs and logs). When finalization is finished, the status is set to "Complete" as before.
 
 ### Bugfixes
 

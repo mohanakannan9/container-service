@@ -423,6 +423,7 @@ public class ContainerServiceImpl implements ContainerService {
                     log.debug("Skipping task status we have already seen.");
                 } else {
                     if (task.isExitStatus()) {
+                        addContainerHistoryItem(service, ContainerHistory.fromSystem("Finalizing","Processing finished. Uploading files." ), userI);
                         log.debug("Service has exited. Finalizing.");
                         final String exitCodeString = task.exitCode() == null ? null : String.valueOf(task.exitCode());
                         final Container serviceWithAddedEvent = retrieve(service.databaseId());
