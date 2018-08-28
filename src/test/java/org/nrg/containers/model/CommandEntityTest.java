@@ -392,7 +392,7 @@ public class CommandEntityTest {
     public void testLongCommandLine() throws Exception {
         final String alphanumeric = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
         final SecureRandom rnd = new SecureRandom();
-        final int stringSize = 2048;  // We explicitly set length of command-line column to 2048.
+        final int stringSize = 2048;
 
         final StringBuilder sb = new StringBuilder( stringSize );
         for( int i = 0; i < stringSize; i++ ) {
@@ -411,16 +411,6 @@ public class CommandEntityTest {
         commitTransaction();
 
         assertThat(commandEntityService.get(command.getId()).getCommandLine(), is(longString));
-
-        // Now test that if we add one more character the save fails.
-        expectedException.expect(is(instanceOf(DataException.class)));
-        final CommandEntity shouldFail = commandEntityService.create(
-                CommandEntity.fromPojo(Command.builder()
-                        .name("longer")
-                        .image("foo")
-                        .commandLine(sb.append(0).toString())
-                        .build())
-        );
     }
 
     public void commitTransaction() {

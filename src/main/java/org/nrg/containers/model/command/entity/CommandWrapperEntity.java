@@ -9,6 +9,7 @@ import org.nrg.containers.model.command.auto.Command;
 
 import javax.annotation.Nonnull;
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -132,6 +133,7 @@ public class CommandWrapperEntity implements Serializable {
         this.label = label;
     }
 
+    @Column(columnDefinition = "TEXT")
     public String getDescription() {
         return description;
     }

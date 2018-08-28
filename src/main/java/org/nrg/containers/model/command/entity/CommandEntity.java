@@ -192,6 +192,7 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         this.label = label;
     }
 
+    @Column(columnDefinition = "TEXT")
     public String getDescription() {
         return description;
     }
@@ -240,7 +241,7 @@ public abstract class CommandEntity extends AbstractHibernateEntity {
         this.workingDirectory = workingDirectory;
     }
 
-    @Column(length = 2048)
+    @Column(columnDefinition = "TEXT")
     public String getCommandLine() {
         return commandLine;
     }

@@ -15,7 +15,23 @@ Not yet released.
 * [CS-494][] Add docker host setting for whether to check on server startup if all the images referenced by commands are present, and pull them if not.
 * [CS-502][] When a container is launched with the project-specific launch APIs (`/xapi/projects/{project}/.../launch`), that project is now saved as a property on the container.
 * [CS-503][] Add APIs to get containers by project.
-* [CS-513][] Increase length of `command-line` field to 2048 characters.
+* [CS-513][] Increase length of several fields:
+    * Command
+        * Description
+        * Command-line
+    * Command Input
+        * Description
+        * Default value
+    * Command Wrapper
+        * Description
+    * Command Wrapper Derived Input
+        * Description
+        * Default value
+    * Command Wrapper External Input
+        * Description
+        * Default value
+    * Container
+        * Command-line
 * Include a container's database ID in the `LaunchReport` returned after launch.
 
 ### Bugfixes

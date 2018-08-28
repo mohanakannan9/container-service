@@ -11,6 +11,7 @@ import org.nrg.containers.model.container.auto.Container;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
@@ -201,6 +202,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
         this.dockerImage = dockerImage;
     }
 
+    @Column(columnDefinition = "TEXT")
     public String getCommandLine() {
         return commandLine;
     }

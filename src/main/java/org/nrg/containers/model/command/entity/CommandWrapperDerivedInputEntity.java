@@ -5,6 +5,7 @@ import org.hibernate.envers.Audited;
 import org.nrg.containers.model.command.auto.Command;
 
 import javax.annotation.Nonnull;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -149,6 +150,7 @@ public class CommandWrapperDerivedInputEntity {
         this.name = name;
     }
 
+    @Column(columnDefinition = "TEXT")
     public String getDescription() {
         return description;
     }
@@ -197,6 +199,7 @@ public class CommandWrapperDerivedInputEntity {
         this.viaSetupCommand = viaSetupCommand;
     }
 
+    @Column(columnDefinition = "TEXT")
     public String getDefaultValue() {
         return defaultValue;
     }
