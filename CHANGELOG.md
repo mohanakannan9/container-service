@@ -62,6 +62,7 @@ Not yet released.
 [CS-503]: https://issues.xnat.org/browse/CS-503
 [CS-510]: https://issues.xnat.org/browse/CS-510
 [CS-513]: https://issues.xnat.org/browse/CS-513
+[CS-520]: https://issues.xnat.org/browse/CS-520
 
 ## 1.5.1
 
