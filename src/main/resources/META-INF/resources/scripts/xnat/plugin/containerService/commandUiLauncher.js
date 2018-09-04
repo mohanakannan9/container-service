@@ -562,9 +562,16 @@ var XNAT = getObject(XNAT || {});
                                     success: function(data){
                                         xmodal.loading.close();
 
-                                        var messageContent = (data.status === 'success') ?
-                                            spawn('p',{ style: { 'word-wrap': 'break-word'}}, 'Container ID: '+data['container-id'] ) :
-                                            spawn('p', data.message);
+                                        var messageContent;
+                                        if (data.status === 'success') {
+                                            if ( data['type'] === 'service') {
+                                                messageContent = spawn('p',{ style: { 'word-wrap': 'break-word'}}, 'Service ID: '+data['service-id']);
+                                            } else {
+                                                messageContent = spawn('p',{ style: { 'word-wrap': 'break-word'}}, 'Container ID: '+data['container-id']);
+                                            }
+										}else {
+											messageContent = spawn('p', data.message);
+										}
 
                                         XNAT.ui.dialog.open({
                                             title: 'Container Launch <span style="text-transform: capitalize">'+data.status+'</span>',
@@ -923,10 +930,14 @@ var XNAT = getObject(XNAT || {});
                                             messageContent.push( spawn('h3',{'style': {'margin-top': '2em' }},'Successful Container Launches') );
 
                                             data.successes.forEach(function(success){
-                                                messageContent.push( spawn('p',[
-                                                    spawn('strong','Container ID: '),
-                                                    spawn('span',success['container-id'])
-                                                ]) );
+												if (success['type'] === 'service') {
+													messageContent.push( spawn('p',[spawn('strong','Service ID: '),spawn('span',success['service-id']) ]));
+												} else {
+													messageContent.push( spawn('p',[
+														spawn('strong','Container ID: '),
+														spawn('span',success['container-id'])
+													]) );
+												}
                                                 messageContent.push( spawn('div',prettifyJSON(success.params)) );
                                             });
                                         }

@@ -33,6 +33,7 @@ Not yet released.
     * Container
         * Command-line
 * Include a container's database ID in the `LaunchReport` returned after launch.
+* Add a new container status: "Finalizing". This is set when the container has finished and container service begins its finalization process (uploading outputs and logs). When finalization is finished, the status is set to "Complete" as before.
 
 ### Bugfixes
 
@@ -41,6 +42,7 @@ Not yet released.
 * [CS-510][] Enable fetching logs from a running service.
 * History UI now fetches logs by container database id, not container docker id (or service id).
 * [CS-520][] Can get containers by service ID. This applies to the internal `ContainerService.get(String id)` as well as REST `/xapi/containers/{id}`.
+* Prevent generating duplicate `ContainerEntityHistory` items (and audit table entries) by improving equality check.
 
 ### Other
 
