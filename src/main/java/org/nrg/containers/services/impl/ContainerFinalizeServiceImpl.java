@@ -361,13 +361,13 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
                     log.error(message);
                     throw new ContainerException(message, e);
                 }
-
-                try {
-                    catalogService.refreshResourceCatalog(userI, createdUri);
-                } catch (ServerException | ClientException e) {
-                    final String message = String.format(prefix + "Could not refresh catalog for resource %s.", createdUri);
-                    log.error(message, e);
-                }
+               //Mohana - CatalogService calls refreshCatalog and so this is not needed again.  	
+               // try {
+               //    catalogService.refreshResourceCatalog(userI, createdUri);
+               // } catch (ServerException | ClientException e) {
+               //     final String message = String.format(prefix + "Could not refresh catalog for resource %s.", createdUri);
+               //     log.error(message, e);
+               // }
             } else if (type.equals(ASSESSOR.getName())) {
 
                 final ContainerMount mount = getMount(output.mount());
