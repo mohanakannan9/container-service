@@ -103,7 +103,8 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
                     inputArea.append(
                         spawn('!',[
                             spawn('input|type=hidden',{ name: 'root-element-name', value: config['root-element-name'] }),
-                            spawn('input|type=hidden',{ name: 'wrapper-id', value: config['wrapper-id'] })
+                            spawn('input|type=hidden',{ name: 'wrapper-id', value: config['wrapper-id'] }),
+                            spawn('input|type=hidden',{ name: 'command-id', value: config['command-id'] })
                             ]));
                 },
                 buttons: [
@@ -123,8 +124,9 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
                             } else {
                                 var rootElementName = obj.$modal.find('input[name=root-element-name]').val();
                                 var wrapperId = obj.$modal.find('input[name=wrapper-id]').val();
+                                var commandId = obj.$modal.find('input[name=command-id]').val();
                                 XNAT.ui.dialog.closeAll();
-                                XNAT.plugin.containerService.launcher.bulkLaunchDialog(wrapperId,rootElementName,targets);
+                                XNAT.plugin.containerService.launcher.bulkLaunchDialog(commandId,wrapperId,rootElementName,targets);
                             }
                         }
                     },
