@@ -327,8 +327,12 @@ public abstract class Container {
 
     @JsonIgnore
     public String getLogPath(final String filename) {
+		String fullFileName = filename;
+		if (!filename.endsWith(".log")) {
+			fullFileName += ".log";
+		}
         for (final String path : logPaths()) {
-            if (path.endsWith(filename)) {
+            if (path.endsWith(fullFileName)) {
                 return path;
             }
         }

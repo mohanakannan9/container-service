@@ -124,6 +124,9 @@ public class ContainerServiceImpl implements ContainerService {
         return toPojo(containerEntityService.get(containerId));
     }
 
+
+
+
     @Override
     public void delete(final long id) {
         containerEntityService.delete(id);
@@ -707,10 +710,18 @@ public class ContainerServiceImpl implements ContainerService {
         final String logPath = container.getLogPath(logFileName);
         if (StringUtils.isBlank(logPath)) {
             // If log path is blank, that means we have not yet saved the logs from docker. Go fetch them now.
-            if (ContainerService.STDOUT_LOG_NAME.contains(logFileName)) {
-                return new ByteArrayInputStream(containerControlApi.getStdoutLog(container).getBytes());
+			if (ContainerService.STDOUT_LOG_NAME.contains(logFileName)) {
+            	if(container.isSwarmService()){
+                    return new ByteArrayInputStream(containerControlApi.getServiceStdoutLog(container.serviceId()).getBytes());
+            	}else{
+                    return new ByteArrayInputStream(containerControlApi.getContainerStdoutLog(container.containerId()).getBytes());
+            	}
             } else if (ContainerService.STDERR_LOG_NAME.contains(logFileName)) {
-                return new ByteArrayInputStream(containerControlApi.getStderrLog(container).getBytes());
+            	if(container.isSwarmService()){
+            		return new ByteArrayInputStream(containerControlApi.getServiceStderrLog(container.serviceId()).getBytes());
+            	}else{
+                    return new ByteArrayInputStream(containerControlApi.getContainerStderrLog(container.containerId()).getBytes());
+            	}
             } else {
                 return null;
             }

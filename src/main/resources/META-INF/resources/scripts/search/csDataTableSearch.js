@@ -888,6 +888,7 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
                                             obj: {
                                                 'root-element-name': availableCommand['root-element-name'],
                                                 'wrapper-id': availableCommand['wrapper-id'],
+                                                'command-id': availableCommand['command-id'],
                                                 'search-id': that.initResults.ResultSet.ID
                                             },
                                             scope: this.search

@@ -20,6 +20,7 @@ public interface ContainerEntityService extends BaseHibernateService<ContainerEn
     List<ContainerEntity> getAll(Boolean nonfinalized, String project);
     List<ContainerEntity> getAll(Boolean nonfinalized);
 
+
     List<ContainerEntity> retrieveServices();
     List<ContainerEntity> retrieveNonfinalizedServices();
 

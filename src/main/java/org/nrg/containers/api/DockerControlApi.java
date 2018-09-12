@@ -921,6 +921,48 @@ public class DockerControlApi implements ContainerControlApi {
                 getClient(server).logs(container.containerId(), logType);
     }
 
+    @Override
+    public String getContainerStdoutLog(final String containerId) throws NoDockerServerException, DockerServerException {
+        return getContainerLog(containerId, LogsParam.stdout());
+    }
+
+    @Override
+    public String getContainerStderrLog(final String containerId) throws NoDockerServerException, DockerServerException {
+        return getContainerLog(containerId, LogsParam.stderr());
+    }
+
+    private String getContainerLog(final String containerId, final LogsParam logType) throws NoDockerServerException, DockerServerException {
+        try (final LogStream logStream = getClient().logs(containerId, logType)) {
+            return logStream.readFully();
+        } catch (NoDockerServerException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw new DockerServerException(e);
+        }
+    }
+
+    @Override
+    public String getServiceStdoutLog(final String serviceId) throws NoDockerServerException, DockerServerException {
+        return getServiceLog(serviceId, LogsParam.stdout());
+    }
+
+    @Override
+    public String getServiceStderrLog(final String serviceId) throws NoDockerServerException, DockerServerException {
+        return getServiceLog(serviceId, LogsParam.stderr());
+    }
+
+    private String getServiceLog(final String serviceId, final LogsParam logType) throws DockerServerException, NoDockerServerException {
+        try (final LogStream logStream = getClient().serviceLogs(serviceId, logType)) {
+            return logStream.readFully();
+        } catch (NoDockerServerException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw new DockerServerException(e);
+        }
+    }    
+    
     @VisibleForTesting
     @Nonnull
     public DockerClient getClient() throws NoDockerServerException, DockerServerException {
