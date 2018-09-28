@@ -15,8 +15,8 @@ public abstract class ServiceTask {
     private static final Pattern hasNotStartedPattern = Pattern.compile("new|allocated|pending|assigned|accepted|preparing|ready|starting");
 
     public abstract String serviceId();
-    public abstract String taskId();
-    public abstract String nodeId();
+    @Nullable public abstract String taskId();
+    @Nullable public abstract String nodeId();
     public abstract String status();
     @Nullable public abstract Date statusTime();
     @Nullable public abstract String containerId();

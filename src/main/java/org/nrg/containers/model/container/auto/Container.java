@@ -282,6 +282,8 @@ public abstract class Container {
         return inputs;
     }
 
+   
+    
     @JsonIgnore
     public Map<String, String> getCommandInputs() {
         return getInputs(ContainerInputType.COMMAND);
