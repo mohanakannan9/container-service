@@ -651,7 +651,7 @@ var XNAT = getObject(XNAT || {});
     }
 
     
-    function launchManyContainers(inputJson,rootElement,wrapperId,targets){
+    function launchManyContainers(inputJson,rootElement,wrapperId,targets, targetLabels){
         /* In a bulk launcher, a list of input objects will be passed to the launcher.
          * The launcher should consider the target elements to be static
          * (i.e. once selected and sent to the bulk launcher, the user shouldn't be re-selecting them)
@@ -1112,7 +1112,8 @@ var XNAT = getObject(XNAT || {});
         });
     };
     
-    launcher.bulkLaunchDialog = function(commandId,wrapperId,rootElement,targets){
+
+    launcher.bulkLaunchDialog = function(project,commandId,wrapperId,rootElement,targets, targetLabels){
         // 'targets' should be formatted as a one-dimensional array of XNAT data values (i.e. scan IDs) that a container will run on in series.
         // the 'root element' should match one of the inputs in the command config object, and overwrite it with the values provided in the 'targets' array
 
@@ -1134,6 +1135,7 @@ var XNAT = getObject(XNAT || {});
             success: function(data){
                 xmodal.loading.close();
                 var inputs = data.inputs;
+                launchManyContainers(inputs,rootElement,wrapperId,targets,targetLabels);
             }
         });
     };

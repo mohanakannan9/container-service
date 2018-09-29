@@ -103,7 +103,8 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
                         spawn('!',[
                             spawn('input|type=hidden',{ name: 'root-element-name', value: config['root-element-name'] }),
                             spawn('input|type=hidden',{ name: 'wrapper-id', value: config['wrapper-id'] }),
-                            spawn('input|type=hidden',{ name: 'command-id', value: config['command-id'] })
+                            spawn('input|type=hidden',{ name: 'command-id', value: config['command-id'] }),
+                            spawn('input|type=hidden',{ name: 'project-id', value: config['project-id'] }),                            
                             ]));
                 },
                 buttons: [
@@ -113,8 +114,13 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
                         close: false,
                         action: function(obj){
                             var targets = [];
+                            var targetLabels = [];
                             obj.$modal.find('input.target').each(function(){
-                                if ($(this).prop('checked')) targets.push($(this).val());
+                                if ($(this).prop('checked')) {
+                                	var accessionId = $(this).val();
+                                	targets.push(accessionId);
+                                	targetLabels.push(obj.$modal.find('input[name=label-'+accessionId+']').val());
+                                 }	
                             });
 
                             if (!targets.length) {
@@ -124,8 +130,10 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
                                 var rootElementName = obj.$modal.find('input[name=root-element-name]').val();
                                 var wrapperId = obj.$modal.find('input[name=wrapper-id]').val();
                                 var commandId = obj.$modal.find('input[name=command-id]').val();
+                                var projectId = obj.$modal.find('input[name=project-id]').val();
                                 XNAT.ui.dialog.closeAll();
-                                XNAT.plugin.containerService.launcher.bulkLaunchDialog(commandId,wrapperId,rootElementName,targets);
+                                
+                                XNAT.plugin.containerService.launcher.bulkLaunchDialog(projectId,commandId,wrapperId,rootElementName,targets,targetLabels);
                             }
                         }
                     },
@@ -171,6 +179,8 @@ function selectableTable(data) {
 	 divContent += '<tr valign="top" id="session-'+ row['accession-id'] + '">';
 	 divContent +='<td class="session-actions-controls session-selector center" style="width: 45px;">';
 	 divContent +='<input type="checkbox" class="selectable-select-one target" id="select-'+row['accession-id']+'" value="'+row['accession-id']+'"/>';
+	 divContent +='<input type="hidden" id="label-'+row['accession-id']+'" value="'+row['label']+'"/>';
+
 	 divContent +='</td>';
 	 divContent +='<td style="width: 200px;">';
 	 divContent +=row['label'];

@@ -889,6 +889,7 @@ function DataTableSearch(_div_table_id, obj, _config, _options){
                                                 'root-element-name': availableCommand['root-element-name'],
                                                 'wrapper-id': availableCommand['wrapper-id'],
                                                 'command-id': availableCommand['command-id'],
+                                                'project-id': XNAT.data.context.projectID,
                                                 'search-id': that.initResults.ResultSet.ID
                                             },
                                             scope: this.search
