@@ -16,7 +16,7 @@ public class ContainerUtils {
                 log.debug("Found workflow {}.", workflow.getWorkflowId());
 
                 if (workflow.getStatus() == null || !workflow.getStatus().equals(status)) {
-                    log.debug("Updating workflow {} status to \"{}\".", workflow.getWorkflowId(), status);
+                    log.info("Updating workflow {} pipeline \"{}\" from \"{}\" to \"{}\".", workflow.getWorkflowId(),workflow.getPipelineName(),workflow.getStatus(), status);
 
                     workflow.setStatus(status);
                     try {

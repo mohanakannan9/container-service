@@ -149,7 +149,7 @@ public class HibernateContainerEntityService
             log.debug("" + history);
         }
         getDao().addHistoryItem(containerEntity, history);
-
+        
         ContainerUtils.updateWorkflowStatus(containerEntity.getWorkflowId(), containerEntity.getStatus(), userI);
 
         return history;
