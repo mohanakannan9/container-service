@@ -987,7 +987,9 @@ public class DockerControlApi implements ContainerControlApi {
         }
 
         try {
-            return clientBuilder.build();
+            log.trace("DOCKER CLIENT URI IS: " + clientBuilder.uri().toString());
+
+        	return clientBuilder.build();
         } catch (Throwable e) {
             log.error("Could not create DockerClient instance. Reason: " + e.getMessage());
             throw new DockerServerException(e);
@@ -1088,11 +1090,13 @@ public class DockerControlApi implements ContainerControlApi {
             throws DockerServerException, ServiceNotFoundException {
         try (final DockerClient client = getClient(dockerServer)) {
             Task task = null;
-
+            log.trace("Attempting task for service:"+ service.toString());
+            log.trace("Service details: SERVICE: " + service.serviceId() + " STATUS: " + service.status() + " TASK: " + service.taskId() + " NODE: " + service.nodeId() + " CONTAINER: " + service.containerId() + " DBID: " + service.databaseId() + " WOKKFLOW: " + service.workflowId() );
             if (service.taskId() == null) {
                 log.trace("Service {} does not have task information yet.", service.serviceId());
                 final com.spotify.docker.client.messages.swarm.Service serviceResponse = client.inspectService(service.serviceId());
-                log.trace("Service {} has name {}. Finding tasks by service name.", service.serviceId(), serviceResponse.spec().name());
+                log.trace("Service {} has name {}. Finding tasks by service name.", service.serviceId(), serviceResponse.spec().name() );
+                log.trace(" SERVICERESPONSE: " + serviceResponse.toString());
                 final List<Task> tasks = client.listTasks(Task.Criteria.builder().serviceName(serviceResponse.spec().name()).build());
 
                 if (tasks.size() == 1) {
@@ -1134,6 +1138,7 @@ public class DockerControlApi implements ContainerControlApi {
             log.error(e.getMessage());
             throw e;
         } catch (DockerException | InterruptedException e) {
+        	log.trace("INTERRUPTED: " + e.getMessage());
             log.error(e.getMessage(), e);
             throw new DockerServerException(e);
         } catch (DockerServerException e) {
@@ -1155,6 +1160,8 @@ public class DockerControlApi implements ContainerControlApi {
             final ServiceTaskEvent serviceTaskEvent = ServiceTaskEvent.create(task, service);
             log.trace("Throwing service task event for service {}.", serviceTaskEvent.service().serviceId());
             eventService.triggerEvent(serviceTaskEvent);
+        }else {
+        	log.debug("Appears that the task has not been assigned for " + service.serviceId() + " : " + service.status());
         }
     }
 

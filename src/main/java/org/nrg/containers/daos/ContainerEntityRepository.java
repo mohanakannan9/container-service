@@ -101,10 +101,16 @@ public class ContainerEntityRepository extends AbstractHibernateDAO<ContainerEnt
                                 .add(Restrictions.like("status", "Done"))
                                 .add(Restrictions.like("status", "Failed"))
                                 .add(Restrictions.like("status", "Killed"))
+                                .add(Restrictions.like("status", "Finalizing"))
                         ))
                 )
                 .list();
-        return initializeAndReturnList(servicesResult);
+        List<ContainerEntity> ces = initializeAndReturnList(servicesResult);
+        log.trace("FOLLOWING SERVICES ARE NOT FINAL: ");
+        for (ContainerEntity ce:ces) {
+        	log.trace("NONFINALIZED: " + ce.getServiceId() + " STATUS: " + ce.getStatus() + " " + " TASK: " + ce.getTaskId() + " WORKFLOW: " + ce.getWorkflowId() );
+        }
+        return ces;
     }
 
     @Nonnull
@@ -134,6 +140,7 @@ public class ContainerEntityRepository extends AbstractHibernateDAO<ContainerEnt
                                 .add(Restrictions.like("status", "Done"))
                                 .add(Restrictions.like("status", "Failed"))
                                 .add(Restrictions.like("status", "Killed"))
+                                .add(Restrictions.like("status", "Finalizing"))
                         ))
                 )
                 .list();

@@ -112,6 +112,7 @@ public class DockerStatusUpdater implements Runnable {
         } else {
             log.info("Did not update status successfully.");
         }
+        log.trace("DOCKERSTATUSUPDATER: RUN COMPLETE");
     }
 
     @Nonnull
@@ -138,7 +139,8 @@ public class DockerStatusUpdater implements Runnable {
     private UpdateReport updateServices(final DockerServer dockerServer) {
         final UpdateReport report = UpdateReport.create();
         for (final Container service : containerService.retrieveNonfinalizedServices()) {
-            // log.debug("Getting Task info for Service {}.", service.serviceId());
+            log.debug("Getting Task info for Service {}.", service.serviceId());
+            log.debug("DIAGNOSTICS:"+service.toString());
             try {
                 controlApi.throwTaskEventForService(dockerServer, service);
                 report.add(UpdateReportEntry.success(service.serviceId()));
