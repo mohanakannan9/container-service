@@ -45,7 +45,7 @@ public class ContainersConfig {
     public TriggerTask dockerEventPullerTask(final DockerStatusUpdater dockerStatusUpdater) {
         return new TriggerTask(
                 dockerStatusUpdater,
-                new PeriodicTrigger(10L, TimeUnit.SECONDS)
+                new PeriodicTrigger(120L, TimeUnit.SECONDS)
         );
     }
 }
