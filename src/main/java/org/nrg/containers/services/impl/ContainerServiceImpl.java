@@ -439,13 +439,15 @@ public class ContainerServiceImpl implements ContainerService {
                 	//Hence limit the number of finalizations.
                 	int countOfContainersBeingFinalized = containerEntityService.howContainersManyAreBeingFinalized();
                     if (task.isExitStatus()  ) {
-                    	//Reduce load on the XNAT Server wrt to refreshCatalog like possibly blocking tasks
+                    	//Reduce load on the XNAT Server wrt to refreshCatalog like tasks possibly blocking finalization
+                    	//Poor (wo)man's queue
                     	if (countOfContainersBeingFinalized < ContainersConfig.MAX_FINALIZING_LIMIT) {
                             addContainerHistoryItem(service, ContainerHistory.fromSystem("Finalizing","Processing finished. Uploading files." ), userI);
                             log.debug("Service has exited. Finalizing.");
                             final String exitCodeString = task.exitCode() == null ? null : String.valueOf(task.exitCode());
                             final Container serviceWithAddedEvent = retrieve(service.databaseId());
                             //Do the finalization in its own thread. That way we dont block the DockerStatusUpdater
+                            //Dont want to deal with RejectionHandler just yet
                             final Runnable finalizeContainer = new Runnable() {
                                 @Override
                                 public void run() {
