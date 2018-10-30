@@ -51,6 +51,7 @@ public class ContainersConfig {
     public Module guavaModule() {
         return new GuavaModule();
     }
+	
 
     @Bean
     public ObjectMapper objectMapper(final Jackson2ObjectMapperBuilder objectMapperBuilder) {
@@ -64,4 +65,6 @@ public class ContainersConfig {
                 new PeriodicTrigger(10L, TimeUnit.SECONDS)
         );
     }
+    
+
 }

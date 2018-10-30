@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import com.spotify.docker.client.exceptions.ServiceNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.nrg.containers.api.ContainerControlApi;
+import org.nrg.containers.config.ContainersConfig;
 import org.nrg.containers.exceptions.DockerServerException;
 import org.nrg.containers.exceptions.NoDockerServerException;
 import org.nrg.containers.model.container.auto.Container;
@@ -27,6 +28,7 @@ import java.util.List;
 @Component
 public class DockerStatusUpdater implements Runnable {
 
+	private static boolean firstLaunch = false;  
     private ContainerControlApi controlApi;
     private DockerServerService dockerServerService;
     private ContainerService containerService;

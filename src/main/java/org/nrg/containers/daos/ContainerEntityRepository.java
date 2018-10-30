@@ -116,6 +116,16 @@ public class ContainerEntityRepository extends AbstractHibernateDAO<ContainerEnt
     @Nonnull
     public int howContainersManyAreBeingFinalized() {
         int countOfContainersBeingFinalized = 0;
+        List<ContainerEntity> ces = retrieveServicesInFinalizingState();
+        if (ces != null) {
+        	countOfContainersBeingFinalized = ces.size();
+        }
+        log.trace("At present " + countOfContainersBeingFinalized + " are being finalized");
+        return countOfContainersBeingFinalized;
+    }
+
+    @Nonnull
+    public List<ContainerEntity> retrieveServicesInFinalizingState() {
     	final List finalizingResult = getSession()
                 .createCriteria(ContainerEntity.class)
                 .add(Restrictions.conjunction()
@@ -124,14 +134,10 @@ public class ContainerEntityRepository extends AbstractHibernateDAO<ContainerEnt
                 )
                 .list();
         List<ContainerEntity> ces = initializeAndReturnList(finalizingResult);
-        if (ces != null) {
-        	countOfContainersBeingFinalized = ces.size();
-        }
-        log.trace("At present " + countOfContainersBeingFinalized + " are being finalized");
         for (ContainerEntity ce:ces) {
         	log.trace("FINALIZING NOW: " + ce.getServiceId() + " STATUS: " + ce.getStatus() + " " + " TASK: " + ce.getTaskId() + " WORKFLOW: " + ce.getWorkflowId() );
         }
-        return countOfContainersBeingFinalized;
+        return ces;
     }
 
     

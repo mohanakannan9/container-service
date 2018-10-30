@@ -106,6 +106,13 @@ public class HibernateContainerEntityService
 
     @Override
     @Nonnull
+    public List<ContainerEntity> retrieveServicesInFinalizingState() {
+        return getDao().retrieveServicesInFinalizingState();
+    }
+
+    
+    @Override
+    @Nonnull
     public int howContainersManyAreBeingFinalized() {
         return getDao().howContainersManyAreBeingFinalized();
     }

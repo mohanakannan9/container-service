@@ -181,6 +181,35 @@ public class ContainerServiceImpl implements ContainerService {
 
     @Override
     @Nonnull
+
+    public void resetFinalizingStatusToWaiting() {
+    	List<ContainerEntity> finalizingContainerEntities =  containerEntityService.retrieveServicesInFinalizingState();
+    	if (finalizingContainerEntities == null || finalizingContainerEntities.size() == 0) {
+    		log.info("Appears that no containers are in orphaned finalizing state");
+    		return;
+    	}else {
+	    		List<Container> finalizingContainers  = toPojo(finalizingContainerEntities);
+	    		//Now update the finalizing state to Waiting
+	            for (final Container s : finalizingContainers) {
+		            	Container service = retrieve(s.databaseId()); 
+		                if (service != null) {
+		                	log.info("Found Service " + service.serviceId() + " Task: " + service.taskId() + " Workflow: " + service.workflowId() + " in possibly abandoned finalizing state");
+		                    final String userLogin = service.userId();
+			                try {    
+			                    final UserI userI = Users.getUser(userLogin);
+			                    addContainerHistoryItem(service, ContainerHistory.fromSystem("Waiting","Reset status from Finalizing to Waiting." ), userI);
+			                	log.info("Updated Service " + service.serviceId() + " Task: " + service.taskId() + " Workflow: " + service.workflowId() + " to Waiting state");
+			                }catch(UserNotFoundException | UserInitException e) {
+			                    log.error("Could not update container status. Could not get user details for user " + userLogin, e);
+			        		}
+		                }
+	            }
+    	}
+    }
+
+    
+    @Override
+    @Nonnull
     public List<Container> retrieveSetupContainersForParent(final long parentId) {
         return toPojo(containerEntityService.retrieveSetupContainersForParent(parentId));
     }
