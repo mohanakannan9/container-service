@@ -475,7 +475,7 @@ public class ContainerServiceImpl implements ContainerService {
                 } else {
                 	//Assumption is that only in Swarm mode containers would be intensive (time and space)
                 	//Hence limit the number of finalizations.
-                	int countOfContainersBeingFinalized = containerEntityService.howContainersManyAreBeingFinalized();
+                	int countOfContainersBeingFinalized = containerEntityService.howManyContainersAreBeingFinalized();
                     if (task.isExitStatus()  ) {
                     	//Reduce load on the XNAT Server wrt to refreshCatalog like tasks possibly blocking finalization
                     	//Poor (wo)man's queue

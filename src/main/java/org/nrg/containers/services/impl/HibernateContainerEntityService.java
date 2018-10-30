@@ -113,7 +113,7 @@ public class HibernateContainerEntityService
     
     @Override
     @Nonnull
-    public int howContainersManyAreBeingFinalized() {
+    public int howManyContainersAreBeingFinalized() {
         return getDao().howContainersManyAreBeingFinalized();
     }
 
