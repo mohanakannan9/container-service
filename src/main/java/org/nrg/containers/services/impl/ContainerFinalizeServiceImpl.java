@@ -194,7 +194,6 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
                         .statusTime(new Date());
                 sendContainerStatusUpdateEmail( false, pipeline_name,xnatId,xnatLabel, project, logPaths);
             }
-
             return finalizedContainerBuilder.build();
         }
 

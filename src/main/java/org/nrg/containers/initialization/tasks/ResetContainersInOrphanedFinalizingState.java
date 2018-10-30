@@ -30,12 +30,12 @@ public class ResetContainersInOrphanedFinalizingState extends AbstractInitializi
 	  
 	    @Override
 	    protected void callImpl() throws InitializingTaskException {
-	        log.debug("Checking if any containers exist in orphaned Finalizing state  in database. If they do, resetting them to Waiting");
+	        log.debug("Checking if any containers exist in orphaned Finalizing state  in database. If they do, resetting them to Waiting/Failed");
 	    	//MR: 10/30/2018 - If this is the first time the DockerStatusUpdater is running
 	    	//Look for all containers which are in Finalizing state
 	    	//These are probably in "hung" state
 	    	//Change the state of these to Waiting
-    		containerService.resetFinalizingStatusToWaiting();
-    		log.debug("Reset Complete Orphaned Finalizing states to Waiting State");
+    		containerService.resetFinalizingStatusToWaitingOrFailed();
+    		log.debug("Reset Complete Orphaned Finalizing states to Waiting/Failed State");
 	    }
 }
