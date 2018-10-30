@@ -135,7 +135,7 @@ public class ContainerEntityRepository extends AbstractHibernateDAO<ContainerEnt
                 .list();
         List<ContainerEntity> ces = initializeAndReturnList(finalizingResult);
         for (ContainerEntity ce:ces) {
-        	log.trace("FINALIZING NOW: " + ce.getServiceId() + " STATUS: " + ce.getStatus() + " " + " TASK: " + ce.getTaskId() + " WORKFLOW: " + ce.getWorkflowId() );
+        	log.trace("FINALIZING STATE: " + ce.getServiceId() + " STATUS: " + ce.getStatus() + " " + " TASK: " + ce.getTaskId() + " WORKFLOW: " + ce.getWorkflowId() );
         }
         return ces;
     }
