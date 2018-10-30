@@ -519,7 +519,7 @@ public class ContainerEntity extends AbstractHibernateEntity {
     	if (this.history == null){
     		return false;
     	}
-    	historyItem.setContainerEntity(this);
+    	//historyItem.setContainerEntity(this);
         return this.history.contains(historyItem);
 
     }
