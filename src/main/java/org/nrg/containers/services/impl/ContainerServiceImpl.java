@@ -190,7 +190,7 @@ public class ContainerServiceImpl implements ContainerService {
     		return;
     	}else {
 	    		List<Container> finalizingContainers  = toPojo(finalizingContainerEntities);
-	    		//Now update the finalizing state to Waiting
+	    		//Now update the finalizing state to Waiting or Failed
 	            for (final Container s : finalizingContainers) {
 		            	Container service = retrieve(s.databaseId()); 
 		                if (service != null) {
