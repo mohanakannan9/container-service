@@ -1,8 +1,7 @@
 package org.nrg.containers.config;
 
-import com.fasterxml.jackson.databind.Module;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.guava.GuavaModule;
+import java.util.concurrent.TimeUnit;
+
 import org.nrg.containers.events.DockerStatusUpdater;
 import org.nrg.framework.annotations.XnatPlugin;
 import org.nrg.transporter.config.TransporterConfig;
@@ -14,10 +13,13 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+import org.springframework.scheduling.concurrent.ThreadPoolExecutorFactoryBean;
 import org.springframework.scheduling.config.TriggerTask;
 import org.springframework.scheduling.support.PeriodicTrigger;
 
-import java.util.concurrent.TimeUnit;
+import com.fasterxml.jackson.databind.Module;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.guava.GuavaModule;
 
 @Configuration
 @XnatPlugin(value = "containers",
@@ -31,7 +33,21 @@ import java.util.concurrent.TimeUnit;
         excludeFilters = @Filter(type = FilterType.REGEX, pattern = ".*TestConfig.*", value = {}))
 @Import({RootConfig.class, TransporterConfig.class})
 public class ContainersConfig {
-    @Bean
+
+	public static final int MAX_FINALIZING_LIMIT = 5;
+
+	@Bean
+	public ThreadPoolExecutorFactoryBean threadPoolExecutorFactoryBean() {
+		//return new ThreadPoolExecutorFactoryBean();
+		ThreadPoolExecutorFactoryBean tBean = new ThreadPoolExecutorFactoryBean();
+		tBean.setCorePoolSize(MAX_FINALIZING_LIMIT);
+		tBean.setThreadNamePrefix("container-finalizing-");
+		return tBean;
+	}
+	
+
+	
+	@Bean
     public Module guavaModule() {
         return new GuavaModule();
     }
@@ -45,7 +61,7 @@ public class ContainersConfig {
     public TriggerTask dockerEventPullerTask(final DockerStatusUpdater dockerStatusUpdater) {
         return new TriggerTask(
                 dockerStatusUpdater,
-                new PeriodicTrigger(120L, TimeUnit.SECONDS)
+                new PeriodicTrigger(10L, TimeUnit.SECONDS)
         );
     }
 }

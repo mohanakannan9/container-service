@@ -1,11 +1,32 @@
 package org.nrg.containers.services.impl;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import lombok.extern.slf4j.Slf4j;
+import static org.nrg.containers.model.command.entity.CommandType.DOCKER;
+import static org.nrg.containers.model.command.entity.CommandType.DOCKER_SETUP;
+import static org.nrg.containers.model.command.entity.CommandType.DOCKER_WRAPUP;
+import static org.nrg.containers.model.command.entity.CommandWrapperInputType.ASSESSOR;
+import static org.nrg.containers.model.command.entity.CommandWrapperInputType.PROJECT;
+import static org.nrg.containers.model.command.entity.CommandWrapperInputType.RESOURCE;
+import static org.nrg.containers.model.command.entity.CommandWrapperInputType.SCAN;
+import static org.nrg.containers.model.command.entity.CommandWrapperInputType.SESSION;
+import static org.nrg.containers.model.command.entity.CommandWrapperInputType.SUBJECT;
+
+import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.regex.Pattern;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.containers.api.ContainerControlApi;
+import org.nrg.containers.config.ContainersConfig;
 import org.nrg.containers.events.model.ContainerEvent;
 import org.nrg.containers.events.model.ServiceTaskEvent;
 import org.nrg.containers.exceptions.CommandResolutionException;
@@ -42,29 +63,14 @@ import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.concurrent.ThreadPoolExecutorFactoryBean;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
-import static org.nrg.containers.model.command.entity.CommandType.DOCKER;
-import static org.nrg.containers.model.command.entity.CommandType.DOCKER_SETUP;
-import static org.nrg.containers.model.command.entity.CommandType.DOCKER_WRAPUP;
-import static org.nrg.containers.model.command.entity.CommandWrapperInputType.ASSESSOR;
-import static org.nrg.containers.model.command.entity.CommandWrapperInputType.PROJECT;
-import static org.nrg.containers.model.command.entity.CommandWrapperInputType.RESOURCE;
-import static org.nrg.containers.model.command.entity.CommandWrapperInputType.SCAN;
-import static org.nrg.containers.model.command.entity.CommandWrapperInputType.SESSION;
-import static org.nrg.containers.model.command.entity.CommandWrapperInputType.SUBJECT;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
@@ -77,6 +83,8 @@ public class ContainerServiceImpl implements ContainerService {
     private final AliasTokenService aliasTokenService;
     private final SiteConfigPreferences siteConfigPreferences;
     private final ContainerFinalizeService containerFinalizeService;
+    private final ExecutorService	executorService;
+
 
     @Autowired
     public ContainerServiceImpl(final ContainerControlApi containerControlApi,
@@ -84,13 +92,15 @@ public class ContainerServiceImpl implements ContainerService {
                                 final CommandResolutionService commandResolutionService,
                                 final AliasTokenService aliasTokenService,
                                 final SiteConfigPreferences siteConfigPreferences,
-                                final ContainerFinalizeService containerFinalizeService) {
+                                final ContainerFinalizeService containerFinalizeService,
+                                final ThreadPoolExecutorFactoryBean executorFactoryBean) {
         this.containerControlApi = containerControlApi;
         this.containerEntityService = containerEntityService;
         this.commandResolutionService = commandResolutionService;
         this.aliasTokenService = aliasTokenService;
         this.siteConfigPreferences = siteConfigPreferences;
         this.containerFinalizeService = containerFinalizeService;
+        this.executorService = executorFactoryBean.getObject();
     }
 
     @Override
@@ -425,18 +435,36 @@ public class ContainerServiceImpl implements ContainerService {
                     // We have already added this task and can safely skip it.
                     log.debug("Skipping task status we have already seen.");
                 } else {
-                    if (task.isExitStatus()) {
-                        addContainerHistoryItem(service, ContainerHistory.fromSystem("Finalizing","Processing finished. Uploading files." ), userI);
-                        log.debug("Service has exited. Finalizing.");
-                        final String exitCodeString = task.exitCode() == null ? null : String.valueOf(task.exitCode());
-                        final Container serviceWithAddedEvent = retrieve(service.databaseId());
-                        finalize(serviceWithAddedEvent, userI, exitCodeString);
+                	//Assumption is that only in Swarm mode containers would be intensive (time and space)
+                	//Hence limit the number of finalizations.
+                	int countOfContainersBeingFinalized = containerEntityService.howContainersManyAreBeingFinalized();
+                    if (task.isExitStatus()  ) {
+                    	//Reduce load on the XNAT Server wrt to refreshCatalog like possibly blocking tasks
+                    	if (countOfContainersBeingFinalized < ContainersConfig.MAX_FINALIZING_LIMIT) {
+                            addContainerHistoryItem(service, ContainerHistory.fromSystem("Finalizing","Processing finished. Uploading files." ), userI);
+                            log.debug("Service has exited. Finalizing.");
+                            final String exitCodeString = task.exitCode() == null ? null : String.valueOf(task.exitCode());
+                            final Container serviceWithAddedEvent = retrieve(service.databaseId());
+                            //Do the finalization in its own thread. That way we dont block the DockerStatusUpdater
+                            final Runnable finalizeContainer = new Runnable() {
+                                @Override
+                                public void run() {
+                                	try {
+                                		ContainerServiceImpl.this.finalize(serviceWithAddedEvent, userI, exitCodeString);
+                                    } catch (ContainerException | NoDockerServerException | DockerServerException e) {
+                                        log.error("Container finalization failed.", e);
+                                    }
+                                }
+                            };
+                            executorService.submit(finalizeContainer);
+                    	}else {
+                            addContainerHistoryItem(service, ContainerHistory.fromSystem("Waiting","Processing finished. Waiting to upload files." ), userI);
+                    		log.info("As there are " +countOfContainersBeingFinalized + "/" + ContainersConfig.MAX_FINALIZING_LIMIT + " being finalized at present. Delaying service " + service.serviceId() + " Workflow: " + service.workflowId() + " finalization");
+                    	}
                     }
                 }
             } catch (UserInitException | UserNotFoundException e) {
                 log.error("Could not update container status. Could not get user details for user " + userLogin, e);
-            } catch (ContainerException | NoDockerServerException | DockerServerException e) {
-                log.error("Container finalization failed.", e);
             }
         }
 

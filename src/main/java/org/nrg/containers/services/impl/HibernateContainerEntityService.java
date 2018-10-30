@@ -106,6 +106,13 @@ public class HibernateContainerEntityService
 
     @Override
     @Nonnull
+    public int howContainersManyAreBeingFinalized() {
+        return getDao().howContainersManyAreBeingFinalized();
+    }
+
+    
+    @Override
+    @Nonnull
     public List<ContainerEntity> retrieveSetupContainersForParent(final long parentId) {
         return getDao().retrieveContainersForParentWithSubtype(parentId, CommandType.DOCKER_SETUP.getName());
     }

@@ -47,7 +47,8 @@ public class DockerStatusUpdater implements Runnable {
 
     @Override
     public void run() {
-        log.trace("Attempting to update status with docker.");
+    	log.trace("-----------------------------------------------------------------------------");
+    	log.trace("Attempting to update status with docker.");
 
         final String skipMessage = "Skipping attempt to update status.";
 
@@ -64,24 +65,28 @@ public class DockerStatusUpdater implements Runnable {
         try {
             dockerServer = dockerServerService.getServer();
         } catch (NotFoundException e) {
-            // ignored
+            log.error("Docker server not found");
         }
         if (dockerServer == null) {
-            if (!haveLoggedNoServerInDb) {
+        	log.trace("Docker server is null");
+        	if (!haveLoggedNoServerInDb) {
                 log.info("No docker server has been defined (or enabled) in the database. " + skipMessage);
                 haveLoggedNoServerInDb = true;
                 haveLoggedXftInitFailure = false;
             }
-            return;
+        	log.trace("haveLoggedNoServerInDb "+ haveLoggedNoServerInDb + " about to return ");
+        	return;
         }
 
         if (!controlApi.canConnect()) {
-            if (!haveLoggedDockerConnectFailure) {
+            log.info("Cannot connect to  docker server " + dockerServer.name() + ". " + skipMessage);
+        	if (!haveLoggedDockerConnectFailure) {
                 log.info("Cannot ping docker server " + dockerServer.name() + ". " + skipMessage);
                 haveLoggedDockerConnectFailure = true;
                 haveLoggedXftInitFailure = false;
                 haveLoggedNoServerInDb = false;
             }
+        	log.trace("haveLoggedDockerConnectFailure: " + haveLoggedDockerConnectFailure + " about to return");
             return;
         }
 
@@ -112,7 +117,10 @@ public class DockerStatusUpdater implements Runnable {
         } else {
             log.info("Did not update status successfully.");
         }
+    	log.trace("-----------------------------------------------------------------------------");
         log.trace("DOCKERSTATUSUPDATER: RUN COMPLETE");
+    	log.trace("-----------------------------------------------------------------------------");
+
     }
 
     @Nonnull
