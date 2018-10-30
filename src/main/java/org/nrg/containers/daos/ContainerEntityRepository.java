@@ -114,7 +114,7 @@ public class ContainerEntityRepository extends AbstractHibernateDAO<ContainerEnt
     }
 
     @Nonnull
-    public int howContainersManyAreBeingFinalized() {
+    public int howManyContainersAreBeingFinalized() {
         int countOfContainersBeingFinalized = 0;
         List<ContainerEntity> ces = retrieveServicesInFinalizingState();
         if (ces != null) {
