@@ -28,7 +28,6 @@ import java.util.List;
 @Component
 public class DockerStatusUpdater implements Runnable {
 
-	private static boolean firstLaunch = false;  
     private ContainerControlApi controlApi;
     private DockerServerService dockerServerService;
     private ContainerService containerService;
