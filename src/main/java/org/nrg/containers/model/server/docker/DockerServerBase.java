@@ -14,12 +14,14 @@ public abstract class DockerServerBase {
     @JsonProperty("name") public abstract String name();
     @JsonProperty("host") public abstract String host();
     @Nullable @JsonProperty("cert-path") public abstract String certPath();
+    @JsonProperty("container-finalization-pool-limit") public abstract Integer containerFinalizationPoolLimit();
     @JsonProperty("swarm-mode") public abstract boolean swarmMode();
     @JsonIgnore public abstract Date lastEventCheckTime();
     @Nullable @JsonProperty("path-translation-xnat-prefix") public abstract String pathTranslationXnatPrefix();
     @Nullable @JsonProperty("path-translation-docker-prefix") public abstract String pathTranslationDockerPrefix();
     @JsonProperty("pull-images-on-xnat-init") public abstract Boolean pullImagesOnXnatInit();
 
+    static public  Integer containerFinalizationPoolLimitDefault=10;
     @AutoValue
     public abstract static class DockerServer extends DockerServerBase {
         public static final DockerServer DEFAULT_SOCKET = DockerServer.create("Local socket", "unix:///var/run/docker.sock");
@@ -29,22 +31,24 @@ public abstract class DockerServerBase {
                                           @JsonProperty("name") final String name,
                                           @JsonProperty("host") final String host,
                                           @JsonProperty("cert-path") final String certPath,
+                                          @JsonProperty("container-finalization-pool-limit") final Integer containerFinalizationPoolLimit,
                                           @JsonProperty("swarm-mode") final Boolean swarmMode,
                                           @JsonProperty("path-translation-xnat-prefix") final String pathTranslationXnatPrefix,
                                           @JsonProperty("path-translation-docker-prefix") final String pathTranslationDockerPrefix,
                                           @JsonProperty("pull-images-on-xnat-init") final Boolean pullImagesOnXnatInit) {
-            return create(id, name, host, certPath, swarmMode, null, pathTranslationXnatPrefix, pathTranslationDockerPrefix, pullImagesOnXnatInit);
+            return create(id, name, host, certPath,containerFinalizationPoolLimit, swarmMode, null, pathTranslationXnatPrefix, pathTranslationDockerPrefix, pullImagesOnXnatInit);
         }
 
         public static DockerServer create(final String name,
                                           final String host) {
-            return create(0L, name, host, null, false, null, null, null, null);
+            return create(0L, name, host, null,containerFinalizationPoolLimitDefault, false, null, null, null, null);
         }
 
         public static DockerServer create(final Long id,
                                           final String name,
                                           final String host,
                                           final String certPath,
+                                          final Integer containerFinalizationPoolLimit,
                                           final Boolean swarmMode,
                                           final Date lastEventCheckTime,
                                           final String pathTranslationXnatPrefix,
@@ -55,6 +59,7 @@ public abstract class DockerServerBase {
                     StringUtils.isBlank(name) ? host : name,
                     host,
                     certPath,
+                    containerFinalizationPoolLimit != null ? containerFinalizationPoolLimit : containerFinalizationPoolLimitDefault,
                     swarmMode != null && swarmMode,
                     lastEventCheckTime != null ? lastEventCheckTime : new Date(),
                     pathTranslationXnatPrefix,
@@ -70,6 +75,7 @@ public abstract class DockerServerBase {
                     dockerServerEntity.getName(),
                     dockerServerEntity.getHost(),
                     dockerServerEntity.getCertPath(),
+                    dockerServerEntity.getContainerFinalizationPoolLimit(),
                     dockerServerEntity.getSwarmMode(),
                     dockerServerEntity.getLastEventCheckTime(),
                     dockerServerEntity.getPathTranslationXnatPrefix(),
@@ -85,6 +91,7 @@ public abstract class DockerServerBase {
                     dockerServerPrefsBean.getName(),
                     dockerServerPrefsBean.getHost(),
                     dockerServerPrefsBean.getCertPath(),
+                    dockerServerPrefsBean.getContainerFinalizationPoolLimit(),
                     false,
                     dockerServerPrefsBean.getLastEventCheckTime(),
                     null,
@@ -100,6 +107,7 @@ public abstract class DockerServerBase {
                             this.name(),
                             this.host(),
                             this.certPath(),
+                            this.containerFinalizationPoolLimit(),
                             this.swarmMode(),
                             newLastEventCheckTime,
                             this.pathTranslationXnatPrefix(),
@@ -118,12 +126,13 @@ public abstract class DockerServerBase {
                                                   @JsonProperty("name") final String name,
                                                   @JsonProperty("host") final String host,
                                                   @JsonProperty("cert-path") final String certPath,
+                                                  @JsonProperty("container-finalization-pool-limit") final Integer containerFinalizationPoolLimit,
                                                   @JsonProperty("swarm-mode") final Boolean swarmMode,
                                                   @JsonProperty("path-translation-xnat-prefix") final String pathTranslationXnatPrefix,
                                                   @JsonProperty("path-translation-docker-prefix") final String pathTranslationDockerPrefix,
                                                   @JsonProperty("pull-images-on-xnat-init") final Boolean pullImagesOnXnatInit,
                                                   @JsonProperty("ping") final Boolean ping) {
-            return create(id == null ? 0L : id, name, host, certPath, swarmMode, new Date(0),
+            return create(id == null ? 0L : id, name, host, certPath,containerFinalizationPoolLimit, swarmMode, new Date(0),
                     pathTranslationXnatPrefix, pathTranslationDockerPrefix, pullImagesOnXnatInit, ping);
         }
 
@@ -131,6 +140,7 @@ public abstract class DockerServerBase {
                                                   final String name,
                                                   final String host,
                                                   final String certPath,
+                                                  final Integer containerFinalizationPoolLimit,
                                                   final Boolean swarmMode,
                                                   final Date lastEventCheckTime,
                                                   final String pathTranslationXnatPrefix,
@@ -142,6 +152,7 @@ public abstract class DockerServerBase {
                     StringUtils.isBlank(name) ? host : name,
                     host,
                     certPath,
+                    containerFinalizationPoolLimit != null ? containerFinalizationPoolLimit : containerFinalizationPoolLimitDefault,
                     swarmMode != null && swarmMode,
                     lastEventCheckTime != null ? lastEventCheckTime : new Date(0),
                     pathTranslationXnatPrefix,
@@ -157,6 +168,7 @@ public abstract class DockerServerBase {
                     dockerServer.name(),
                     dockerServer.host(),
                     dockerServer.certPath(),
+                    dockerServer.containerFinalizationPoolLimit(),
                     dockerServer.swarmMode(),
                     dockerServer.lastEventCheckTime(),
                     dockerServer.pathTranslationXnatPrefix(),
@@ -166,4 +178,8 @@ public abstract class DockerServerBase {
             );
         }
     }
+
+	public static Integer getContainerFinalizationPoolLimitDefault() {
+		return containerFinalizationPoolLimitDefault;
+	}
 }

@@ -54,6 +54,7 @@ import org.nrg.containers.model.container.auto.ContainerMessage;
 import org.nrg.containers.model.container.auto.ServiceTask;
 import org.nrg.containers.model.dockerhub.DockerHubBase.DockerHub;
 import org.nrg.containers.model.image.docker.DockerImage;
+import org.nrg.containers.model.server.docker.DockerServerBase;
 import org.nrg.containers.model.server.docker.DockerServerBase.DockerServer;
 import org.nrg.containers.services.CommandLabelService;
 import org.nrg.containers.services.DockerServerService;
@@ -1222,4 +1223,13 @@ public class DockerControlApi implements ContainerControlApi {
                         null
         );
     }
+    
+    public Integer getContainerFinalizationPoolLimit() {
+    	try{
+    		return this.getServer().containerFinalizationPoolLimit();
+    	}catch(NoDockerServerException ex){
+    		return DockerServerBase.getContainerFinalizationPoolLimitDefault();
+    	}
+    }
+
 }
