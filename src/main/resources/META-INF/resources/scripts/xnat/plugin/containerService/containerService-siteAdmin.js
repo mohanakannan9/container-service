@@ -1289,23 +1289,28 @@ XNAT.plugin.containerService = getObject(XNAT.plugin.containerService || {});
             if (data.length > 0) {
                 data = data.sort(function(a,b){ return (a['image-id'] > b['image-id']) ? 1 : -1; })
 
-                for (var i=0, j=data.length; i<j; i++) {
-                    var imageInfo = data[i];
-                    $manager.append(spawn('div.imageContainer',[
-                        spawn('h3.imageTitle',[
-                            (imageInfo.tags[0])=="<none>:<none>"?imageInfo['image-id']:imageInfo.tags[0],
-                            spawn( 'span.pull-right',[
-                                deleteImageButton(imageInfo)
+                data.forEach(function(imageInfo){
+                    if (imageInfo.tags.length && imageInfo.tags[0] !== "<none>:<none>") {
+                        $manager.append(spawn('div.imageContainer',[
+                            spawn('h3.imageTitle',[
+                                (imageInfo.tags[0])=="<none>:<none>"?imageInfo['image-id']:imageInfo.tags[0],
+                                spawn( 'span.pull-right',[
+                                    deleteImageButton(imageInfo)
+                                ]),
+                                spawn( 'span.pull-right.pad10h',[
+                                    newCommandButton(imageInfo)
+                                ])
                             ]),
-                            spawn( 'span.pull-right.pad10h',[
-                                newCommandButton(imageInfo)
+                            spawn('div.imageCommandList',[
+                                commandListManager.table(imageInfo.tags[0])
                             ])
-                        ]),
-                        spawn('div.imageCommandList',[
-                            commandListManager.table(imageInfo.tags[0])
-                        ])
-                    ]));
-                }
+                        ]));
+                    }
+                    else {
+                        $manager.append(spawn('div.alert', '<b>Error:</b> Image ID ['+imageInfo['image-id']+'] does not have any tag info and cannot be displayed.'));
+                    }
+                })
+
             } else {
                 $manager.append(spawn('p',['There are no images installed in this XNAT.']));
             }

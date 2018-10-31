@@ -180,7 +180,6 @@ function selectableTable(data) {
 	 divContent +='<td class="session-actions-controls session-selector center" style="width: 45px;">';
 	 divContent +='<input type="checkbox" class="selectable-select-one target" id="select-'+row['accession-id']+'" value="'+row['accession-id']+'"/>';
 	 divContent +='<input type="hidden" id="label-'+row['accession-id']+'" value="'+row['label']+'"/>';
-
 	 divContent +='</td>';
 	 divContent +='<td style="width: 200px;">';
 	 divContent +=row['label'];
