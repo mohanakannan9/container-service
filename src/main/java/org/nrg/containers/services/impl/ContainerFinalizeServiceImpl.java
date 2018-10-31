@@ -188,13 +188,12 @@ public class ContainerFinalizeServiceImpl implements ContainerFinalizeService {
                 sendContainerStatusUpdateEmail( true, pipeline_name,xnatId,xnatLabel, project, logPaths);
                 
             } else {
-                // TODO We know the container has failed. Should we send an email?
                 ContainerUtils.updateWorkflowStatus(toFinalize.workflowId(), PersistentWorkflowUtils.FAILED, userI);
                 finalizedContainerBuilder.status("Failed")
                         .addHistoryItem(Container.ContainerHistory.fromSystem("Failed", ""))
                         .statusTime(new Date());
+                sendContainerStatusUpdateEmail( false, pipeline_name,xnatId,xnatLabel, project, logPaths);
             }
-
             return finalizedContainerBuilder.build();
         }
 

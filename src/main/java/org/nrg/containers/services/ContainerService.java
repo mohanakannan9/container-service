@@ -37,7 +37,7 @@ public interface ContainerService {
 
     List<Container> retrieveServices();
     List<Container> retrieveNonfinalizedServices();
-    void resetFinalizingStatusToWaiting();
+    void resetFinalizingStatusToWaitingOrFailed();
 
     List<Container> retrieveSetupContainersForParent(long parentId);
     List<Container> retrieveWrapupContainersForParent(long parentId);
