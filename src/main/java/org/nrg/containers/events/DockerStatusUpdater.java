@@ -147,6 +147,7 @@ public class DockerStatusUpdater implements Runnable {
     @Nonnull
     private UpdateReport updateServices(final DockerServer dockerServer) {
         final UpdateReport report = UpdateReport.create();
+        //TODO : Optimize this code so that waiting ones are handled first
         for (final Container service : containerService.retrieveNonfinalizedServices()) {
             log.debug("Getting Task info for Service {}.", service.serviceId());
             log.debug("DIAGNOSTICS:"+service.toString());
