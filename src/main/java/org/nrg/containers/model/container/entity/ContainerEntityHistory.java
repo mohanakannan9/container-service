@@ -159,12 +159,13 @@ public class ContainerEntityHistory {
         if (o == null || getClass() != o.getClass()) return false;
         final ContainerEntityHistory that = (ContainerEntityHistory) o;
         return Objects.equals(this.containerEntity, that.containerEntity) &&
-                Objects.equals(this.status, that.status);
+               Objects.equals(this.status, that.status) &&
+               Objects.equals(this.externalTimestamp, that.externalTimestamp);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(containerEntity, status);
+        return Objects.hash(containerEntity, status,externalTimestamp);
     }
 
     @Override

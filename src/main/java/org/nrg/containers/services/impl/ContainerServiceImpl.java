@@ -468,6 +468,8 @@ public class ContainerServiceImpl implements ContainerService {
             try {
                 final UserI userI = Users.getUser(userLogin);
                 final ContainerHistory taskHistoryItem = ContainerHistory.fromServiceTask(task);
+                //should not update Waiting and Finalizing do something else.
+                
                 final ContainerHistory createdTaskHistoryItem = addContainerHistoryItem(service, taskHistoryItem, userI);
                 if (createdTaskHistoryItem == null) {
                     // We have already added this task and can safely skip it.
@@ -479,7 +481,7 @@ public class ContainerServiceImpl implements ContainerService {
                     if (task.isExitStatus()  ) {
                     	//Reduce load on the XNAT Server wrt to refreshCatalog like tasks possibly blocking finalization
                     	//Poor (wo)man's queue
-                    	if (countOfContainersBeingFinalized < ContainersConfig.MAX_FINALIZING_LIMIT) {
+                    	if (countOfContainersBeingFinalized < containerControlApi.getContainerFinalizationPoolLimit()) {
                             addContainerHistoryItem(service, ContainerHistory.fromSystem("Finalizing","Processing finished. Uploading files." ), userI);
                             log.debug("Service has exited. Finalizing.");
                             final String exitCodeString = task.exitCode() == null ? null : String.valueOf(task.exitCode());
@@ -499,8 +501,10 @@ public class ContainerServiceImpl implements ContainerService {
                             executorService.submit(finalizeContainer);
                     	}else {
                             addContainerHistoryItem(service, ContainerHistory.fromSystem("Waiting","Processing finished. Waiting to upload files." ), userI);
-                    		log.info("As there are " +countOfContainersBeingFinalized + "/" + ContainersConfig.MAX_FINALIZING_LIMIT + " being finalized at present. Delaying service " + service.serviceId() + " Workflow: " + service.workflowId() + " finalization");
+                    		log.info("As there are " +countOfContainersBeingFinalized + "/" + containerControlApi.getContainerFinalizationPoolLimit() + " being finalized at present. Delaying service " + service.serviceId() + " Workflow: " + service.workflowId() + " finalization");
                     	}
+                		log.info("There are " +countOfContainersBeingFinalized + "/" + containerControlApi.getContainerFinalizationPoolLimit() + " being finalized at present.");
+
                     }
                 }
             } catch (UserInitException | UserNotFoundException e) {
@@ -512,7 +516,7 @@ public class ContainerServiceImpl implements ContainerService {
             log.debug("Done processing service task event: " + event);
         }
     }
-
+    
     @Override
     public void finalize(final String containerId, final UserI userI) throws NotFoundException, ContainerException, NoDockerServerException, DockerServerException {
         finalize(get(containerId), userI);
