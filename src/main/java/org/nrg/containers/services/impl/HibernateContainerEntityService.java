@@ -110,13 +110,22 @@ public class HibernateContainerEntityService
         return getDao().retrieveServicesInFinalizingState();
     }
 
+    @Override
+    @Nonnull
+    public List<ContainerEntity> retrieveServicesInWaitingState() {
+        return getDao().retrieveServicesInWaitingState();
+    }
     
     @Override
     @Nonnull
     public int howManyContainersAreBeingFinalized() {
         return getDao().howManyContainersAreBeingFinalized();
     }
-
+    @Override
+    @Nonnull
+    public int howManyContainersAreWaiting() {
+        return getDao().howManyContainersAreWaiting();
+    }
     
     @Override
     @Nonnull
@@ -153,7 +162,7 @@ public class HibernateContainerEntityService
                                                           final UserI userI) {
         if (containerEntity.isItemInHistory(history)) {
             if (log.isDebugEnabled()) {
-                log.debug("Event has already been recorded.");
+                log.debug("Event has already been recorded.{}",containerEntity.getId());
             }
             return null;
         }

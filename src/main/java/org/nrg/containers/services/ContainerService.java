@@ -37,6 +37,8 @@ public interface ContainerService {
 
     List<Container> retrieveServices();
     List<Container> retrieveNonfinalizedServices();
+    List<Container> retrieveServicesInWaitingState();
+    
     void resetFinalizingStatusToWaitingOrFailed();
 
     List<Container> retrieveSetupContainersForParent(long parentId);
@@ -83,4 +85,5 @@ public interface ContainerService {
     Map<String, InputStream> getLogStreams(String containerId) throws NotFoundException, NoDockerServerException, DockerServerException;
     InputStream getLogStream(long id, String logFileName) throws NotFoundException, NoDockerServerException, DockerServerException;
     InputStream getLogStream(String containerId, String logFileName) throws NotFoundException, NoDockerServerException, DockerServerException;
+	boolean isWaiting(Container service);
 }

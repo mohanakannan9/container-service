@@ -24,6 +24,7 @@ public interface ContainerEntityService extends BaseHibernateService<ContainerEn
     List<ContainerEntity> retrieveServices();
     List<ContainerEntity> retrieveNonfinalizedServices();
     List<ContainerEntity> retrieveServicesInFinalizingState();
+    List<ContainerEntity> retrieveServicesInWaitingState();
     int howManyContainersAreBeingFinalized();
 
     List<ContainerEntity> retrieveSetupContainersForParent(long parentId);
@@ -32,4 +33,6 @@ public interface ContainerEntityService extends BaseHibernateService<ContainerEn
     ContainerEntity addContainerEventToHistory(final ContainerEvent containerEvent, final UserI userI);
     ContainerEntityHistory addContainerHistoryItem(final ContainerEntity containerEntity,
                                                    final ContainerEntityHistory history, final UserI userI);
+
+	int howManyContainersAreWaiting();
 }

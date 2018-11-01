@@ -77,6 +77,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class ContainerServiceImpl implements ContainerService {
     private static final Pattern exitCodePattern = Pattern.compile("kill|die|oom\\((\\d+|x)\\)");
+    private static final String waiting = "Waiting";
 
     private final ContainerControlApi containerControlApi;
     private final ContainerEntityService containerEntityService;
@@ -445,13 +446,16 @@ public class ContainerServiceImpl implements ContainerService {
     public void processEvent(final ServiceTaskEvent event) {
         final ServiceTask task = event.task();
         final Container service;
-        log.debug("Processing service task. Task id \"{}\" for service \"{}\".",
+        if (log.isDebugEnabled()){
+        	log.debug("Processing service task. Task id \"{}\" for service \"{}\".",
                 task.taskId(), task.serviceId());
-
+        }
         // When we create the service, we don't know all the IDs. If this is the first time we
         // have seen a task for this service, we can set those IDs now.
         if (StringUtils.isBlank(event.service().taskId())) {
-            log.debug("Service \"{}\" has no task information yet. Setting it now.", task.serviceId());
+        	if (log.isDebugEnabled()){
+        		log.debug("Service \"{}\" has no task information yet. Setting it now.", task.serviceId());
+        	}
             final Container serviceToUpdate = event.service().toBuilder()
                     .taskId(task.taskId())
                     .containerId(task.containerId())
@@ -468,22 +472,29 @@ public class ContainerServiceImpl implements ContainerService {
             try {
                 final UserI userI = Users.getUser(userLogin);
                 final ContainerHistory taskHistoryItem = ContainerHistory.fromServiceTask(task);
-                //should not update Waiting and Finalizing do something else.
                 
-                final ContainerHistory createdTaskHistoryItem = addContainerHistoryItem(service, taskHistoryItem, userI);
-                if (createdTaskHistoryItem == null) {
+                //process new and waiting events (duplicate docker events are skipped)              
+                if (!isWaiting(service) && addContainerHistoryItem(service, taskHistoryItem, userI) == null) {
                     // We have already added this task and can safely skip it.
-                    log.debug("Skipping task status we have already seen.");
+                	if (log.isDebugEnabled()){
+                		log.debug("Skipping task status we have already seen.");
+                	}
                 } else {
                 	//Assumption is that only in Swarm mode containers would be intensive (time and space)
                 	//Hence limit the number of finalizations.
                 	int countOfContainersBeingFinalized = containerEntityService.howManyContainersAreBeingFinalized();
-                    if (task.isExitStatus()  ) {
+
+                	if (log.isDebugEnabled()){
+                		log.debug("Checking isExitStatus {} and service.status {}",task.isExitStatus(),service.status());
+                	}
+                    if (task.isExitStatus() || isWaiting(service)) {
                     	//Reduce load on the XNAT Server wrt to refreshCatalog like tasks possibly blocking finalization
                     	//Poor (wo)man's queue
                     	if (countOfContainersBeingFinalized < containerControlApi.getContainerFinalizationPoolLimit()) {
                             addContainerHistoryItem(service, ContainerHistory.fromSystem("Finalizing","Processing finished. Uploading files." ), userI);
-                            log.debug("Service has exited. Finalizing.");
+                            if (log.isDebugEnabled()){
+                            	log.debug("Service has exited. Finalizing.");
+                            }
                             final String exitCodeString = task.exitCode() == null ? null : String.valueOf(task.exitCode());
                             final Container serviceWithAddedEvent = retrieve(service.databaseId());
                             //Do the finalization in its own thread. That way we dont block the DockerStatusUpdater
@@ -503,9 +514,16 @@ public class ContainerServiceImpl implements ContainerService {
                             addContainerHistoryItem(service, ContainerHistory.fromSystem("Waiting","Processing finished. Waiting to upload files." ), userI);
                     		log.info("As there are " +countOfContainersBeingFinalized + "/" + containerControlApi.getContainerFinalizationPoolLimit() + " being finalized at present. Delaying service " + service.serviceId() + " Workflow: " + service.workflowId() + " finalization");
                     	}
-                		log.info("There are " +countOfContainersBeingFinalized + "/" + containerControlApi.getContainerFinalizationPoolLimit() + " being finalized at present.");
-
+                    }else{
+                    	if (log.isDebugEnabled()){
+                    		log.debug("Docker event has not exited yet" + service.serviceId() + " Workflow: " + service.workflowId() + service.status());
+                    	}
                     }
+                    if (log.isDebugEnabled()){
+	                	int countOfContainersWaiting = containerEntityService.howManyContainersAreWaiting();
+	            		log.info("There are {}/{} being finalized at present with {} waiting",countOfContainersBeingFinalized,containerControlApi.getContainerFinalizationPoolLimit(),countOfContainersWaiting);
+                    }
+
                 }
             } catch (UserInitException | UserNotFoundException e) {
                 log.error("Could not update container status. Could not get user details for user " + userLogin, e);
@@ -516,7 +534,10 @@ public class ContainerServiceImpl implements ContainerService {
             log.debug("Done processing service task event: " + event);
         }
     }
-    
+    @Override
+    public boolean isWaiting(Container service){
+    	return waiting.equals(service.status());
+    }
     @Override
     public void finalize(final String containerId, final UserI userI) throws NotFoundException, ContainerException, NoDockerServerException, DockerServerException {
         finalize(get(containerId), userI);
@@ -999,4 +1020,9 @@ public class ContainerServiceImpl implements ContainerService {
         }
         return isFailed;
     }
+
+	@Override
+	public List<Container> retrieveServicesInWaitingState() {
+        return toPojo(containerEntityService.retrieveServicesInWaitingState());
+	}
 }
