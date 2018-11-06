@@ -792,7 +792,7 @@ public abstract class Container {
                     .entityType("system")
                     .entityId(null)
                     .timeRecorded(new Date())
-                    .externalTimestamp(null)
+                    .externalTimestamp(Long.toString(System.nanoTime()))
                     .build();
         }
 
@@ -802,7 +802,7 @@ public abstract class Container {
                     .entityType("user")
                     .entityId(username)
                     .timeRecorded(new Date())
-                    .externalTimestamp(null)
+                    .externalTimestamp(Long.toString(System.nanoTime()))
                     .message(null)
                     .build();
         }
