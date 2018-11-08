@@ -13,9 +13,12 @@ import org.nrg.containers.services.ContainerService;
 import org.nrg.containers.services.DockerServerService;
 import org.nrg.containers.utils.ContainerUtils;
 import org.nrg.framework.exceptions.NotFoundException;
+import org.nrg.framework.task.XnatTask;
+import org.nrg.framework.task.services.XnatTaskService;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.schema.XFTManager;
+import org.nrg.xnat.task.AbstractXnatTask;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -26,12 +29,13 @@ import java.util.List;
 
 @Slf4j
 @Component
-public class DockerStatusUpdater implements Runnable {
+@XnatTask(taskId = "DockerStatusUpdater", description = "Docker Status Updater", defaultExecutionResolver = "SingleNodeExecutionResolver", executionResolverConfigurable = true)
+public class DockerStatusUpdater extends AbstractXnatTask implements Runnable {
 
     private ContainerControlApi controlApi;
     private DockerServerService dockerServerService;
     private ContainerService containerService;
-
+    
     private boolean haveLoggedDockerConnectFailure = false;
     private boolean haveLoggedNoServerInDb = false;
     private boolean haveLoggedXftInitFailure = false;
@@ -40,7 +44,9 @@ public class DockerStatusUpdater implements Runnable {
     @SuppressWarnings("SpringJavaAutowiringInspection")
     public DockerStatusUpdater(final ContainerControlApi controlApi,
                                final DockerServerService dockerServerService,
-                               final ContainerService containerService) {
+                               final ContainerService containerService,
+                               final XnatTaskService xnatTaskService) {
+    	super(xnatTaskService);
         this.controlApi = controlApi;
         this.dockerServerService = dockerServerService;
         this.containerService = containerService;
@@ -49,8 +55,14 @@ public class DockerStatusUpdater implements Runnable {
     @Override
     public void run() {
     	log.trace("-----------------------------------------------------------------------------");
-    	log.trace("Attempting to update status with docker.");
 
+log.trace("Attempting to update status with docker.");
+
+    	 if (!shouldRunTask()) {
+    		log.info("Docker Status Updater not configured to run on this node.  Skipping.");
+         	return;
+         }
+    	
         final String skipMessage = "Skipping attempt to update status.";
 
         if (!XFTManager.isInitialized()) {
@@ -90,7 +102,8 @@ public class DockerStatusUpdater implements Runnable {
         	log.trace("haveLoggedDockerConnectFailure: " + haveLoggedDockerConnectFailure + " about to return");
             return;
         }
-
+        
+       
         // Now we should be able to check the status
         final UpdateReport updateReport = dockerServer.swarmMode() ? updateServices(dockerServer) : updateContainers(dockerServer);
         if (updateReport.successful == null) {
@@ -243,4 +256,8 @@ public class DockerStatusUpdater implements Runnable {
             return updateReportEntry;
         }
     }
+
+	protected void runTask() {
+		this.run();
+	}
 }
