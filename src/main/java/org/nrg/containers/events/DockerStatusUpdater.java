@@ -56,7 +56,7 @@ public class DockerStatusUpdater extends AbstractXnatTask implements Runnable {
     public void run() {
     	log.trace("-----------------------------------------------------------------------------");
 
-log.trace("Attempting to update status with docker.");
+    	log.trace("Attempting to update status with docker.");
 
     	 if (!shouldRunTask()) {
     		log.info("Docker Status Updater not configured to run on this node.  Skipping.");
