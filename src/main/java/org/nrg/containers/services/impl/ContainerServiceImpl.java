@@ -519,7 +519,7 @@ public class ContainerServiceImpl implements ContainerService {
                     		log.debug("Docker event has not exited yet" + service.serviceId() + " Workflow: " + service.workflowId() + service.status());
                     	}
                     }
-                    if (log.isDebugEnabled()){
+                    if (log.isInfoEnabled()){
 	                	int countOfContainersWaiting = containerEntityService.howManyContainersAreWaiting();
 	            		log.info("There are {}/{} being finalized at present with {} waiting",countOfContainersBeingFinalized,containerControlApi.getContainerFinalizationPoolLimit(),countOfContainersWaiting);
                     }
